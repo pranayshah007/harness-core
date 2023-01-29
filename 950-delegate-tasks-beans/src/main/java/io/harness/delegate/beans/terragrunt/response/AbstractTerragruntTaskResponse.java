@@ -18,8 +18,10 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
 
 @OwnedBy(CDP)
+@SuperBuilder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public abstract class AbstractTerragruntTaskResponse implements DelegateTaskNotifyResponseData {
   @Getter @Setter DelegateMetaInfo delegateMetaInfo;

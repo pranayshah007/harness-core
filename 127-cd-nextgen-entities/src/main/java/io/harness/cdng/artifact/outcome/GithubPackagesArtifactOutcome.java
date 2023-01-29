@@ -73,6 +73,12 @@ public class GithubPackagesArtifactOutcome implements ArtifactOutcome {
    * */
   String imagePullSecret;
 
+  /**
+   * package type for Github Package such as npm, maven, rubygems, nuget, container
+   *
+   */
+  String packageType;
+
   @Override
   public ArtifactSummary getArtifactSummary() {
     return GithubPackagesArtifactSummary.builder().packageName(packageName).version(version).build();

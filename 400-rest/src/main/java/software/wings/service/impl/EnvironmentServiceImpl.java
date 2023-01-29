@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
 import static io.harness.beans.FeatureName.HARNESS_TAGS;
+import static io.harness.beans.FeatureName.PURGE_DANGLING_APP_ENV_REFS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -35,14 +36,15 @@ import static software.wings.beans.appmanifest.ManifestFile.VALUES_YAML_KEY;
 import static software.wings.beans.yaml.YamlConstants.CONN_STRINGS_FILE;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.MASKED;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.OBTAIN_VALUE;
+import static software.wings.service.intfc.UsageRestrictionsService.UsageRestrictionsClient.ALL;
 import static software.wings.yaml.YamlHelper.trimYaml;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.atteo.evo.inflector.English.plural;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -118,6 +120,8 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.Key;
+import dev.morphia.query.UpdateOperations;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -136,8 +140,6 @@ import javax.annotation.Nonnull;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.UpdateOperations;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 @OwnedBy(CDC)
@@ -421,6 +423,9 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     ensureEnvironmentSafeToDelete(environment);
     cvConfigurationService.deleteConfigurationsForEnvironment(appId, envId);
     delete(environment);
+    if (featureFlagService.isEnabled(PURGE_DANGLING_APP_ENV_REFS, environment.getAccountId())) {
+      usageRestrictionsService.purgeDanglingAppEnvReferences(environment.getAccountId(), ALL);
+    }
   }
 
   @Override

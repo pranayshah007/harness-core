@@ -67,6 +67,7 @@ public class HelmFetchChartVersionTaskNG extends AbstractDelegateRunnableTask {
     String destinationDirectory = getDestinationDirectory(storeDelegateConfig);
     List<String> chartVersions = null;
     try {
+      helmTaskHelperBase.decryptEncryptedDetails(helmChartManifestDelegateConfig);
       chartVersions =
           helmTaskHelperBase.fetchChartVersions(helmChartManifestDelegateConfig, DEFAULT_TIMEOUT, destinationDirectory);
     } catch (Exception e) {
@@ -79,7 +80,7 @@ public class HelmFetchChartVersionTaskNG extends AbstractDelegateRunnableTask {
         .build();
   }
 
-  private String getDestinationDirectory(StoreDelegateConfig storeDelegateConfig) throws IOException {
+  public String getDestinationDirectory(StoreDelegateConfig storeDelegateConfig) throws IOException {
     String destinationDirectory = "";
 
     if (storeDelegateConfig instanceof HttpHelmStoreDelegateConfig) {

@@ -8,7 +8,6 @@
 package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.PARTITION_SIZE_IN_BYTES;
 import static io.harness.delegate.utils.TaskExceptionUtils.calcPercentage;
@@ -52,7 +51,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -240,11 +238,9 @@ public class WinRmSession implements AutoCloseable {
       if (authenticationScheme == AuthenticationScheme.KERBEROS) {
         return executeCommandWithKerberos(scriptExecCommand, output, false);
       } else {
-        // adding output format at the end because there is a bug in powershell 5.1 and bellow which is fixed in 6.1.
-        // https://github.com/PowerShell/PowerShell/issues/5912
-        WinRmToolResponse winRmToolResponse = winRmTool.executeCommand(scriptExecCommand + " -OutputFormat Text");
+        WinRmToolResponse winRmToolResponse = winRmTool.executeCommand(scriptExecCommand);
         writeLogs(winRmToolResponse, output, error);
-        return hasError(winRmToolResponse) ? 1 : winRmToolResponse.getStatusCode();
+        return winRmToolResponse.getStatusCode();
       }
     } catch (Exception e) {
       ResponseMessage details = buildErrorDetailsFromWinRmClientException(e);
@@ -318,34 +314,7 @@ public class WinRmSession implements AutoCloseable {
     }
 
     if (!winRmToolResponse.getStdErr().isEmpty()) {
-      if (isXmlResponse(winRmToolResponse)) {
-        writeLogsFromXmlResponse(error, winRmToolResponse);
-      } else {
-        error.write(winRmToolResponse.getStdErr());
-      }
-    }
-  }
-
-  private boolean isXmlResponse(WinRmToolResponse winRmToolResponse) {
-    return winRmToolResponse.getStdErr() != null && winRmToolResponse.getStdErr().startsWith(START_OF_XML_RESPONSE);
-  }
-
-  private boolean hasError(WinRmToolResponse winRmToolResponse) {
-    return (isXmlResponse(winRmToolResponse) && ERROR_PATTERN.matcher(winRmToolResponse.getStdErr()).find())
-        || (!isXmlResponse(winRmToolResponse)) && !isEmpty(winRmToolResponse.getStdErr());
-  }
-
-  private void writeLogsFromXmlResponse(Writer error, WinRmToolResponse winRmToolResponse) throws IOException {
-    // There is a bug in powershell versions 5.1 and bellow to display output and error in XML format because we are
-    // calling powershell from powershell. The solution is to avoid writing this XML message in execution logs. We
-    // are searching for the error tags in this XML and writing them into execution logs.
-    Matcher matcher = ERROR_PATTERN.matcher(winRmToolResponse.getStdErr());
-    while (matcher.find()) {
-      final String errorString = winRmToolResponse.getStdErr()
-                                     .substring(matcher.start(), matcher.end())
-                                     .replaceFirst(START_OF_ERROR_TAG, "")
-                                     .replaceFirst(END_OF_ERROR_TAG, "");
-      error.write(errorString + "\n");
+      error.write(winRmToolResponse.getStdErr());
     }
   }
 

@@ -26,8 +26,8 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionType;
 
 import software.wings.annotation.EncryptableSetting;
-import software.wings.beans.SecretManagerRuntimeParameters;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SecretManagerRuntimeParameters;
 import software.wings.security.UsageRestrictions;
 import software.wings.service.intfc.security.EncryptedSettingAttributes;
 import software.wings.service.intfc.security.SecretManager;
@@ -251,20 +251,22 @@ public class NoOpSecretManagerImpl implements SecretManager, EncryptedSettingAtt
 
   @Override
   public PageResponse<EncryptedData> listSecrets(String accountId, PageRequest<EncryptedData> pageRequest,
-      String appIdFromRequest, String envIdFromRequest, boolean details, boolean listHidden)
+      String appIdFromRequest, String envIdFromRequest, boolean details, boolean listHidden, boolean ignoreRunTimeUsage)
       throws IllegalAccessException {
     throw new UnsupportedOperationException();
   }
 
   @Override
   public PageResponse<EncryptedData> listSecrets(String accountId, PageRequest<EncryptedData> pageRequest,
-      String appIdFromRequest, String envIdFromRequest, boolean details) throws IllegalAccessException {
+      String appIdFromRequest, String envIdFromRequest, boolean details, boolean ignoreRunTimeUsage)
+      throws IllegalAccessException {
     throw new UnsupportedOperationException();
   }
 
   @Override
   public PageResponse<EncryptedData> listSecretsMappedToAccount(
-      String accountId, PageRequest<EncryptedData> pageRequest, boolean details) throws IllegalAccessException {
+      String accountId, PageRequest<EncryptedData> pageRequest, boolean details, boolean ignoreRunTimeUsage)
+      throws IllegalAccessException {
     throw new UnsupportedOperationException();
   }
 

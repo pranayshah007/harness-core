@@ -13,9 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.jackson.JsonNodeUtils;
-import io.harness.jira.deserializer.JiraIssueDeserializer;
 import io.harness.serializer.JsonUtils;
-import io.harness.servicenow.TicketNG;
+import io.harness.servicenow.misc.TicketNG;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -179,6 +178,8 @@ public class JiraIssueNG implements TicketNG {
         return convertOptionToFinalValue(type, valueNode);
       case TIME_TRACKING:
         return JsonUtils.treeToValue(valueNode, JiraTimeTrackingFieldNG.class);
+      case ISSUE_LINK:
+        return JsonNodeUtils.mustGetString(valueNode, "key");
       default:
         return null;
     }

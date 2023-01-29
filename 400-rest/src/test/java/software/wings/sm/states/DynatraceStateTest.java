@@ -42,6 +42,7 @@ import io.harness.rule.Owner;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.Account;
 import software.wings.beans.AccountType;
 import software.wings.beans.Application;
 import software.wings.beans.DynaTraceConfig;
@@ -121,6 +122,9 @@ public class DynatraceStateTest extends APMStateVerificationTestBase {
 
     AccountService accountService = mock(AccountService.class);
     when(accountService.getAccountType(anyString())).thenReturn(Optional.of(AccountType.PAID));
+
+    Account account = Account.Builder.anAccount().withUuid(accountId).build();
+    persistence.save(account);
 
     dynatraceState = new DynatraceState("DynatraceState");
 

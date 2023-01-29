@@ -16,6 +16,7 @@ public interface Constants {
   String PR = "PR";
   String PUSH = "PUSH";
 
+  // Webhook Triggers
   String AZURE_REPO = "AzureRepo";
   String GITHUB_REPO = "Github";
   String GITLAB_REPO = "Gitlab";
@@ -23,10 +24,34 @@ public interface Constants {
   String AWS_CODECOMMIT_REPO = "AwsCodeCommit";
   String CUSTOM_REPO = "Custom";
 
+  // Artifact Trigger
+
+  String DOCKER_REGISTRY = "DockerRegistry";
+  String NEXUS3_REGISTRY = "Nexus3Registry";
+  String NEXUS2_REGISTRY = "Nexus2Registry";
+  String ARTIFACTORY_REGISTRY = "ArtifactoryRegistry";
+  String GCR = "Gcr";
+  String ECR = "Ecr";
+  String ACR = "Acr";
+  String JENKINS = "Jenkins";
+  String AMAZON_S3 = "AmazonS3";
+  String CUSTOM_ARTIFACT = "CustomArtifact";
+  String GOOGLE_ARTIFACT_REGISTRY = "GoogleArtifactRegistry";
+  String GITHUB_PACKAGES = "GithubPackageRegistry";
+  String AZURE_ARTIFACTS = "AzureArtifacts";
+  String AMI = "AmazonMachineImage";
+
+  // Manifest Triggers
+  String HELM_CHART = "HelmChart";
+
+  // Cron
+  String CRON = "Cron";
+
   String PULL_REQUEST_EVENT_TYPE = "PullRequest";
   String MERGE_REQUEST_EVENT_TYPE = "MergeRequest";
   String PUSH_EVENT_TYPE = "Push";
   String ISSUE_COMMENT_EVENT_TYPE = "IssueComment";
+  String RELEASE_EVENT_TYPE = "Release";
   String MR_COMMENT_EVENT_TYPE = "MRComment";
   String PR_COMMENT_EVENT_TYPE = "PRComment";
 
@@ -88,21 +113,6 @@ public interface Constants {
   String ARTIFACT = "Artifact";
   String ARTIFACT_REF = "artifactRef";
   String MANIFEST_REF = "manifestRef";
-  String DOCKER_REGISTRY = "DockerRegistry";
-  String NEXUS3_REGISTRY = "Nexus3Registry";
-  String NEXUS2_REGISTRY = "Nexus2Registry";
-  String ARTIFACTORY_REGISTRY = "ArtifactoryRegistry";
-  String GCR = "Gcr";
-  String ECR = "Ecr";
-  String HELM_CHART = "HelmChart";
-  String ACR = "Acr";
-  String JENKINS = "Jenkins";
-  String AMAZON_S3 = "AmazonS3";
-  String CUSTOM_ARTIFACT = "CustomArtifact";
-  String GOOGLE_ARTIFACT_REGISTRY = "GoogleArtifactRegistry";
-  String GITHUB_PACKAGES = "GithubPackageRegistry";
-  String AZURE_ARTIFACTS = "AzureArtifacts";
-  String AMI = "AmazonMachineImage";
 
   String MANIFEST_VERSION = "<+trigger.manifest.version>";
   String ARTIFACT_VERSION = "<+trigger.artifact.build>";
@@ -114,4 +124,27 @@ public interface Constants {
   String PIPELINE_INPUTS_VALIDATION_ERROR = "PipelineInputsErrorMetadataV2";
   String MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION = "mandate_custom_webhook_authorization";
   String MANDATE_CUSTOM_WEBHOOK_TRUE_VALUE = "true";
+  String API_SAMPLE_TRIGGER_YAML = "trigger:\n"
+      + "  name: Trigger\n"
+      + "  identifier: Trigger\n"
+      + "  enabled: true\n"
+      + "  orgIdentifier: default\n"
+      + "  projectIdentifier: Terraform_Provider\n"
+      + "  pipelineIdentifier: Terraform_NG_Acc_Tests_With_Notifications\n"
+      + "  source:\n"
+      + "    type: Scheduled\n"
+      + "    spec:\n"
+      + "      type: Cron\n"
+      + "      spec:\n"
+      + "        expression: 0 8,20 * * *\n"
+      + "  inputYaml: |\n"
+      + "    pipeline:\n"
+      + "      identifier: Terraform_NG_Acc_Tests_With_Notifications\n"
+      + "      properties:\n"
+      + "        ci:\n"
+      + "          codebase:\n"
+      + "            build:\n"
+      + "              type: branch\n"
+      + "              spec:\n"
+      + "                branch: main";
 }

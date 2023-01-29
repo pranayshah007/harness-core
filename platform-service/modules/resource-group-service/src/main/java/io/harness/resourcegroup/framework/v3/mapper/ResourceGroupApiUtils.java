@@ -6,9 +6,7 @@
  */
 package io.harness.resourcegroup.framework.v3.mapper;
 
-import io.harness.beans.SortOrder;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.beans.PageRequest;
 import io.harness.resourcegroup.beans.ScopeFilterType;
 import io.harness.resourcegroup.v1.remote.dto.ManagedFilter;
 import io.harness.resourcegroup.v1.remote.dto.ResourceGroupFilterDTO;
@@ -27,14 +25,10 @@ import io.harness.spec.server.resourcegroup.v1.model.ResourceGroupFilterRequestB
 import io.harness.spec.server.resourcegroup.v1.model.ResourceGroupScope;
 import io.harness.spec.server.resourcegroup.v1.model.ResourceGroupsResponse;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.UriBuilder;
 
 public class ResourceGroupApiUtils {
   public static ResourceGroupRequest getResourceGroupRequestAcc(CreateResourceGroupRequest body, String account) {
@@ -42,7 +36,7 @@ public class ResourceGroupApiUtils {
         .resourceGroup(
             ResourceGroupDTO.builder()
                 .accountIdentifier(account)
-                .identifier(body.getSlug())
+                .identifier(body.getIdentifier())
                 .name(body.getName())
                 .color(body.getColor())
                 .tags(body.getTags())
@@ -60,7 +54,7 @@ public class ResourceGroupApiUtils {
             ResourceGroupDTO.builder()
                 .accountIdentifier(account)
                 .orgIdentifier(org)
-                .identifier(body.getSlug())
+                .identifier(body.getIdentifier())
                 .name(body.getName())
                 .color(body.getColor())
                 .tags(body.getTags())
@@ -79,7 +73,7 @@ public class ResourceGroupApiUtils {
                 .accountIdentifier(account)
                 .orgIdentifier(org)
                 .projectIdentifier(project)
-                .identifier(body.getSlug())
+                .identifier(body.getIdentifier())
                 .name(body.getName())
                 .color(body.getColor())
                 .tags(body.getTags())
@@ -150,7 +144,7 @@ public class ResourceGroupApiUtils {
       return null;
     }
     ResourceGroupsResponse resourceGroupsResponse = new ResourceGroupsResponse();
-    resourceGroupsResponse.setSlug(response.getResourceGroup().getIdentifier());
+    resourceGroupsResponse.setIdentifier(response.getResourceGroup().getIdentifier());
     resourceGroupsResponse.setName(response.getResourceGroup().getName());
     resourceGroupsResponse.setColor(response.getResourceGroup().getColor());
     resourceGroupsResponse.setTags(response.getResourceGroup().getTags());
@@ -251,7 +245,7 @@ public class ResourceGroupApiUtils {
       io.harness.spec.server.resourcegroup.v1.model.ResourceSelectorFilter resourceSelectorFilter) {
     return ResourceSelectorFilter.builder()
         .resourceType(resourceSelectorFilter.getResourceType())
-        .resourceIdentifier(resourceSelectorFilter.getResourceSlug())
+        .resourceIdentifier(resourceSelectorFilter.getResourceIdentifier())
         .build();
   }
 
@@ -269,66 +263,5 @@ public class ResourceGroupApiUtils {
       return ManagedFilter.ONLY_CUSTOM;
     }
     throw new InvalidRequestException("Managed Filter type unidentified.");
-  }
-
-  public static PageRequest getPageRequest(Integer page, Integer limit, String field, String order) {
-    if (field == null && order == null) {
-      return PageRequest.builder().pageIndex(page).pageSize(limit).build();
-    }
-    if (order == null || (!order.equalsIgnoreCase("asc") && !order.equalsIgnoreCase("desc"))) {
-      throw new InvalidRequestException("Order of sorting unidentified or null. Accepted values: ASC / DESC");
-    }
-    List<SortOrder> sortOrders = null;
-    if (field != null) {
-      switch (field) {
-        case "slug":
-          field = "identifier";
-          break;
-        case "name":
-          break;
-        case "created":
-          field = "createdAt";
-          break;
-        case "updated":
-          field = "lastUpdatedAt";
-          break;
-        default:
-          throw new InvalidRequestException(
-              "Field provided for sorting unidentified. Accepted values: slug / name / created / updated");
-      }
-      SortOrder sortOrder = new SortOrder(field + "," + order);
-      sortOrders = Collections.singletonList(sortOrder);
-    }
-    return PageRequest.builder().pageIndex(page).pageSize(limit).sortOrders(sortOrders).build();
-  }
-
-  public static ResponseBuilder addLinksHeader(
-      ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
-    ArrayList<Link> links = new ArrayList();
-    links.add(Link.fromUri(UriBuilder.fromPath(path)
-                               .queryParam("page", new Object[] {page})
-                               .queryParam("page_size", new Object[] {limit})
-                               .build(new Object[0]))
-                  .rel("self")
-                  .build(new Object[0]));
-    if (page >= 1) {
-      links.add(Link.fromUri(UriBuilder.fromPath(path)
-                                 .queryParam("page", new Object[] {page - 1})
-                                 .queryParam("page_size", new Object[] {limit})
-                                 .build(new Object[0]))
-                    .rel("previous")
-                    .build(new Object[0]));
-    }
-
-    if (limit == currentResultCount) {
-      links.add(Link.fromUri(UriBuilder.fromPath(path)
-                                 .queryParam("page", new Object[] {page + 1})
-                                 .queryParam("page_size", new Object[] {limit})
-                                 .build(new Object[0]))
-                    .rel("next")
-                    .build(new Object[0]));
-    }
-
-    return responseBuilder.links((Link[]) links.toArray(new Link[links.size()]));
   }
 }

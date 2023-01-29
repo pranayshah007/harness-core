@@ -51,10 +51,10 @@ import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.common.TemplateExpressionProcessor;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.ThirdPartyApiCallLog.FieldType;
@@ -93,6 +93,7 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
@@ -111,7 +112,6 @@ import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.annotations.Transient;
 import org.slf4j.Logger;
 
 /**

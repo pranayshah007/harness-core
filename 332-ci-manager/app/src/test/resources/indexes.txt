@@ -8,6 +8,7 @@ cache {"name": "unique_commutative", "unique": true} {"_id": 1, "contextValue": 
 cache {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 ciExecutionMetadata {"name": "accountIdAndBuildType", "background": true} {"accountId": 1, "buildType": 1}
 ciExecutionMetadata {"name": "accountId_1", "background": true} {"accountId": 1}
+ciExecutionMetadata {"name": "expireAfter_1", "background": true, "expireAfterSeconds": 0} {"expireAfter": 1}
 ciTelemetrySentStatus {"name": "no_dup", "unique": true} {"accountId": 1}
 cibuild {"name": "createdAt_1", "background": true} {"createdAt": 1}
 filters {"name": "unique_accountId_orgId_projectId_name_type_Index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "name": 1, "filterType": 1}
@@ -20,6 +21,7 @@ notifyResponses {"name": "createdAt_1", "background": true} {"createdAt": 1}
 notifyResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 outboxEvents {"name": "blocked_createdAt_nextUnblockAttemptAt_outbox_Idx", "background": true} {"blocked": 1, "createdAt": 1, "nextUnblockAttemptAt": 1}
 outboxEvents {"name": "eventType_blocked_outbox_Idx", "background": true} {"eventType": 1, "blocked": 1}
+pluginMetadataConfig {"name": "pluginMetadataConfigIdx", "background": true} {"version": 1, "metadata.name": 1}
 podDetails {"name": "accountId_1", "background": true} {"accountId": 1}
 primaryVersion {"name": "createdAt_1", "background": true} {"createdAt": 1}
 primaryVersion {"name": "lastUpdatedAt_1", "background": true} {"lastUpdatedAt": 1}

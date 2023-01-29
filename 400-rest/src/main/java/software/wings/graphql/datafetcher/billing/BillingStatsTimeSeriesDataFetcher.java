@@ -149,7 +149,7 @@ public class BillingStatsTimeSeriesDataFetcher
         resultSet = statement.executeQuery(queryData.getQuery());
         successful = true;
         return generateStackedTimeSeriesData(queryData, resultSet, getMinStartTimeFromFilters(filters), timePeriod,
-            unallocatedCostMapping, groupByEntityList);
+            unallocatedCostMapping, groupByEntityList, accountId);
       } catch (SQLException e) {
         retryCount++;
         if (retryCount >= MAX_RETRY) {
@@ -170,7 +170,7 @@ public class BillingStatsTimeSeriesDataFetcher
 
   protected QLBillingStackedTimeSeriesData generateStackedTimeSeriesData(BillingDataQueryMetadata queryData,
       ResultSet resultSet, long startTimeFromFilters, long timePeriod, Map<Long, Double> unallocatedCostMapping,
-      List<QLCCMEntityGroupBy> groupByEntityList) throws SQLException {
+      List<QLCCMEntityGroupBy> groupByEntityList, String accountId) throws SQLException {
     Map<Long, List<QLBillingTimeDataPoint>> qlTimeDataPointMap = new LinkedHashMap<>();
     Map<Long, List<QLBillingTimeDataPoint>> qlTimeCpuPointMap = new LinkedHashMap<>();
     Map<Long, List<QLBillingTimeDataPoint>> qlTimeMemoryPointMap = new LinkedHashMap<>();
@@ -392,7 +392,7 @@ public class BillingStatsTimeSeriesDataFetcher
 
     if (isKeyTypeNode) {
       List<InstanceData> instanceData =
-          instanceDataService.fetchInstanceDataForGivenInstances(new ArrayList<>(instanceIds));
+          instanceDataService.fetchInstanceDataForGivenInstances(accountId, new ArrayList<>(instanceIds));
       if (instanceData != null) {
         Map<String, String> idToName = instanceData.stream().collect(Collectors.toMap(entry
             -> entry.getClusterId() + BillingStatsDefaultKeys.TOKEN + entry.getInstanceId(),

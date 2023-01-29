@@ -11,27 +11,36 @@ import static io.harness.rule.OwnerRule.HEN;
 import static io.harness.rule.OwnerRule.JAMIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.ci.integrationstage.K8InitializeTaskUtilsHelper;
-import io.harness.ci.validation.CIYAMLSanitizationService;
+import io.harness.ci.validation.CIMiningPatternJob;
 import io.harness.ci.validation.CIYAMLSanitizationServiceImpl;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.rule.Owner;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
 public class CIYAMLSanitizationServiceTest extends CIExecutionTestBase {
-  private CIYAMLSanitizationService ciyamlSanitizationService;
+  @Mock CIMiningPatternJob ciMiningPatternJob;
+  @InjectMocks CIYAMLSanitizationServiceImpl ciyamlSanitizationService;
 
   @Before
-  public void setUp() {
-    ciyamlSanitizationService = new CIYAMLSanitizationServiceImpl();
+  public void setup() {
+    initMocks(this);
   }
+
   @Test
   @Owner(developers = HEN)
   @Category(UnitTests.class)
@@ -60,12 +69,14 @@ public class CIYAMLSanitizationServiceTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testMaliciousRun() {
     List<ExecutionWrapperConfig> steps = K8InitializeTaskUtilsHelper.getExecutionMinerWrapperConfigList();
+    Set<String> maliciousMiningPatterns = new HashSet<>();
+    maliciousMiningPatterns.add("dero-stratum-miner");
+    Mockito.when(ciMiningPatternJob.getMaliciousMiningPatterns()).thenReturn(maliciousMiningPatterns);
     boolean validate = false;
     try {
       validate = ciyamlSanitizationService.validate(steps);
-    } catch (Exception e) {
+    } catch (CIStageExecutionException e) {
     }
-
     assertThat(validate).isEqualTo(false);
   }
 }

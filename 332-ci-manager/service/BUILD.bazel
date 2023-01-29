@@ -8,7 +8,9 @@ load("//:tools/bazel/macros.bzl", "run_analysis")
 
 shared_dependencies = [
     "//315-sto-manager/contracts:module",
+    "//310-iacm-manager/contracts:module",
     "//323-sto-utilities:module",
+    "//332-iacm-common:module",
     "//332-ci-manager/contracts:module",
     "//440-connector-nextgen:module",
     "//878-ng-common-utilities:module",
@@ -25,6 +27,7 @@ shared_dependencies = [
     "//960-persistence:module",
     "//999-annotations:module",
     "//clients/pipeline-service/pms-sdk:module",
+    "//clients/queue-service/java-client:module",
     "//product/ci/engine/proto:ciengine_java_proto",
     "//930-ng-license-manager:module",
     "//940-primary-version-manager:module",
@@ -140,7 +143,6 @@ shared_dependencies = [
     "@maven//:com_google_protobuf_protobuf_java",
     "@maven//:com_google_protobuf_protobuf_java_util",
     "@maven//:com_googlecode_javaewah_JavaEWAH",
-    "@maven//:com_hazelcast_hazelcast",
     "@maven//:com_intellij_annotations",
     "@maven//:com_jayway_jsonpath_json_path",
     "@maven//:com_jcraft_harness_jsch_0_1_54_harness_patch",

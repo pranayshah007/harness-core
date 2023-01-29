@@ -18,9 +18,9 @@ import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppRollbackParameters;
 
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.command.AzureWebAppCommandUnit;
 import software.wings.beans.command.CommandUnit;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.azure.manager.AzureTaskExecutionRequest;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionResponse;

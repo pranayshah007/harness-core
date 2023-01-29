@@ -9,6 +9,7 @@ package io.harness.ci.states.V1;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.FeatureName.CIE_HOSTED_VMS;
+import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS_CONCURRENCY;
 import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
 import static io.harness.beans.outcomes.VmDetailsOutcome.VM_DETAILS_OUTCOME;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
@@ -18,6 +19,7 @@ import static io.harness.ci.states.InitializeTaskStep.TASK_BUFFER_TIMEOUT_MILLIS
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.ci.CIInitializeTaskParams.Type.DLITE_VM;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.steps.StepUtils.buildAbstractions;
@@ -27,10 +29,12 @@ import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 
 import io.harness.EntityType;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
 import io.harness.beans.environment.ServiceDefinitionInfo;
+import io.harness.beans.execution.CIInitTaskArgs;
 import io.harness.beans.outcomes.DependencyOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
@@ -38,12 +42,15 @@ import io.harness.beans.outcomes.VmDetailsOutcome.VmDetailsOutcomeBuilder;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.callback.DelegateCallbackToken;
 import io.harness.ci.buildstate.BuildSetupUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.executable.CiAsyncExecutable;
 import io.harness.ci.execution.BackgroundTaskUtility;
+import io.harness.ci.execution.QueueExecutionUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
@@ -66,6 +73,7 @@ import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.VmServiceStatus;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
+import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
 import io.harness.delegate.task.HDelegateTask;
 import io.harness.encryption.Scope;
 import io.harness.eraro.Level;
@@ -74,12 +82,16 @@ import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.ngexception.CILiteEngineException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.helper.SerializedResponseDataHelper;
+import io.harness.hsqs.client.HsqsServiceClient;
+import io.harness.hsqs.client.model.EnqueueRequest;
+import io.harness.hsqs.client.model.EnqueueResponse;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -93,16 +105,18 @@ import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
-import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.steps.matrix.ExpandedExecutionWrapperInfo;
 import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.steps.matrix.StrategyHelper;
@@ -114,6 +128,7 @@ import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -123,14 +138,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(CI)
-public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElementParameters> {
+public class InitializeTaskStepV2 extends CiAsyncExecutable {
   @Inject private ExceptionManager exceptionManager;
-
+  @Inject private AccountClient accountClient;
   @Inject private CIDelegateTaskExecutor ciDelegateTaskExecutor;
 
   @Inject private ConnectorUtils connectorUtils;
@@ -148,8 +165,14 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
   @Inject private BackgroundTaskUtility backgroundTaskUtility;
   @Inject private CILicenseService ciLicenseService;
   @Inject private StrategyHelper strategyHelper;
-  @Inject CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
+  @Inject private CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
 
+  @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
+  @Inject private HsqsServiceClient hsqsServiceClient;
+  @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
+
+  @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
+  @Inject QueueExecutionUtils queueExecutionUtils;
   private static final String DEPENDENCY_OUTCOME = "dependencies";
 
   @Override
@@ -164,19 +187,60 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    log.info("start executeAsyncAfterRbac for initialize step");
+    String logKey = getLogKey(ambiance);
+    String taskId;
+
+    if (ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, AmbianceUtils.getAccountId(ambiance))) {
+      log.info("start executeAsyncAfterRbac for initialize step with queue");
+      taskId = generateUuid();
+      String topic = "ci";
+      String payload = RecastOrchestrationUtils.toJson(
+          CIInitTaskArgs.builder().ambiance(ambiance).callbackId(taskId).stepElementParameters(stepParameters).build());
+      EnqueueRequest enqueueRequest = EnqueueRequest.builder()
+                                          .topic(topic)
+                                          .subTopic(AmbianceUtils.getAccountId(ambiance))
+                                          .producerName(topic)
+                                          .payload(payload)
+                                          .build();
+      try {
+        Response<EnqueueResponse> execute = hsqsServiceClient.enqueue(enqueueRequest).execute();
+        if (execute.code() == 200) {
+          log.info("build queued. message id: {}", execute.body().getItemId());
+        } else {
+          log.info("build queue failed. response code {}", execute.code());
+        }
+      } catch (IOException e) {
+        throw new CIStageExecutionException(format("failed to process execution, queuing failed. runtime Id: {}",
+            AmbianceUtils.getStageRuntimeIdAmbiance(ambiance)));
+      }
+    } else {
+      taskId = executeBuild(ambiance, stepParameters);
+    }
+    InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
+        InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
+
+    sdkGraphVisualizationDataService.publishStepDetailInformation(
+        ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
+    return AsyncExecutableResponse.newBuilder()
+        .addCallbackIds(taskId)
+        .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))
+        .build();
+  }
+
+  public String executeBuild(Ambiance ambiance, StepElementParameters stepParameters) {
+    log.info("start executeAsyncAfterRbac for initialize step async");
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepParameters.getSpec();
 
     String logPrefix = getLogPrefix(ambiance);
-    CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
-        accountExecutionMetadataRepository, ciLicenseService, AmbianceUtils.getAccountId(ambiance));
+    CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(accountExecutionMetadataRepository,
+        ciLicenseService, AmbianceUtils.getAccountId(ambiance), initializeStepInfo.getInfrastructure());
 
-    // populateStrategyExpansion(initializeStepInfo, ambiance);
+    populateStrategyExpansion(initializeStepInfo, ambiance);
     CIInitializeTaskParams buildSetupTaskParams =
         buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);
     boolean executeOnHarnessHostedDelegates = false;
     boolean emitEvent = false;
-    String stageId = ambiance.getStageExecutionId();
+    String stageExecutionId = ambiance.getStageExecutionId();
     List<TaskSelector> taskSelectors = new ArrayList<>();
 
     // Secrets are in decrypted format for DLITE_VM type
@@ -184,9 +248,12 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
       log.info("Created params for build task: {}", buildSetupTaskParams);
     }
     if (buildSetupTaskParams.getType() == DLITE_VM) {
-      HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) initializeStepInfo.getInfrastructure();
-      String platformSelector = vmInitializeTaskParamsBuilder.getHostedPoolId(
-          hostedVmInfraYaml.getSpec().getPlatform(), AmbianceUtils.getAccountId(ambiance));
+      AccountDTO accountDTO =
+          CGRestUtils.getResponse(accountClient.getAccountDTO(AmbianceUtils.getAccountId(ambiance)));
+      if (accountDTO == null) {
+        throw new CIStageExecutionException("Account does not exist, contact Harness support team.");
+      }
+      String platformSelector = ((DliteVmInitializeTaskParams) buildSetupTaskParams).getSetupVmRequest().getPoolID();
       TaskSelector taskSelector = TaskSelector.newBuilder().setSelector(platformSelector).build();
       taskSelectors.add(taskSelector);
       executeOnHarnessHostedDelegates = true;
@@ -210,20 +277,20 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(
         accountId, taskData, abstractions, generateLogAbstractions(ambiance));
 
-    String taskId = ciDelegateTaskExecutor.queueTask(abstractions, task,
-        taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()), new ArrayList<>(),
-        executeOnHarnessHostedDelegates, emitEvent, generateLogAbstractions(ambiance),
-        ambiance.getExpressionFunctorToken());
-    String logKey = getLogKey(ambiance);
+    try {
+      queueExecutionUtils.addActiveExecutionBuild(initializeStepInfo, accountId, stageExecutionId);
+    } catch (Exception ex) {
+      log.error("Failed to add Execution record for {}", stageExecutionId, ex);
+    }
 
-    return AsyncExecutableResponse.newBuilder()
-        .addCallbackIds(taskId)
-        .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))
-        .build();
+    return ciDelegateTaskExecutor.queueTask(abstractions, task,
+        taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()), new ArrayList<>(),
+        executeOnHarnessHostedDelegates, emitEvent, stageExecutionId, generateLogAbstractions(ambiance),
+        ambiance.getExpressionFunctorToken(), true);
   }
 
   @Override
-  public StepResponse handleAsyncResponse(
+  public StepResponse handleAsyncResponseInternal(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     // If any of the responses are in serialized format, deserialize them
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
@@ -440,7 +507,8 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
 
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
     Optional<Integer> maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT));
-    if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
+    if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE
+        && CIStagePlanCreationUtils.isHostedInfra(initializeStepInfo.getInfrastructure())) {
       maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT));
     }
 

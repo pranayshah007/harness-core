@@ -12,7 +12,11 @@ import static io.harness.Microservice.CORE;
 import static io.harness.Microservice.PMS;
 import static io.harness.Microservice.TEMPLATESERVICE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_FULL_SYNC_STREAM;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_COMMIT;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_TO_HARNESS_PROGRESS;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.YAML_CHANGE_SET;
 
 import io.harness.EntityType;
 import io.harness.Microservice;
@@ -72,6 +76,9 @@ import io.harness.gitsync.core.service.YamlChangeSetLifeCycleManagerService;
 import io.harness.gitsync.core.service.YamlChangeSetService;
 import io.harness.gitsync.core.service.webhookevent.GitBranchHookEventExecutionService;
 import io.harness.gitsync.core.service.webhookevent.GitPushEventExecutionService;
+import io.harness.gitsync.event.GitCommitEventListener;
+import io.harness.gitsync.event.GitToHarnessEventListener;
+import io.harness.gitsync.event.YamlChangeSetEventListener;
 import io.harness.gitsync.gitfileactivity.impl.GitSyncServiceImpl;
 import io.harness.gitsync.gitfileactivity.service.GitSyncService;
 import io.harness.gitsync.gitsyncerror.impl.GitSyncErrorServiceImpl;
@@ -79,30 +86,39 @@ import io.harness.gitsync.gitsyncerror.service.GitSyncErrorService;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.persistence.HPersistence;
+import io.harness.threading.ThreadPool;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicReference;
 
 @OwnedBy(DX)
 public class GitSyncModule extends AbstractModule {
-  private static final AtomicReference<GitSyncModule> instanceRef = new AtomicReference<>();
+  private static GitSyncModule gitSyncModule;
   public static final String SCM_ON_MANAGER = "scmOnManager";
   public static final String SCM_ON_DELEGATE = "scmOnDelegate";
+  public static final String GITX_BACKGROUND_CACHE_UPDATE_EXECUTOR_NAME = "gitxBackgroundCacheUpdateExecutorName";
+  private final GitServiceConfiguration gitServiceConfiguration;
 
-  public static GitSyncModule getInstance() {
-    if (instanceRef.get() == null) {
-      instanceRef.compareAndSet(null, new GitSyncModule());
+  private GitSyncModule(GitServiceConfiguration gitServiceConfiguration) {
+    this.gitServiceConfiguration = gitServiceConfiguration;
+  }
+
+  public static GitSyncModule getInstance(GitServiceConfiguration gitServiceConfiguration) {
+    if (gitSyncModule == null) {
+      gitSyncModule = new GitSyncModule(gitServiceConfiguration);
     }
-    return instanceRef.get();
+    return gitSyncModule;
   }
 
   @Provides
@@ -164,6 +180,13 @@ public class GitSyncModule extends AbstractModule {
     bind(FullSyncTriggerService.class).to(FullSyncTriggerServiceImpl.class);
     bind(GitFullSyncConfigService.class).to(GitFullSyncConfigServiceImpl.class);
     bind(GitFileCacheService.class).to(GitFileCacheServiceImpl.class);
+    bind(MessageListener.class).annotatedWith(Names.named(GIT_COMMIT + ENTITY_CRUD)).to(GitCommitEventListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(YAML_CHANGE_SET + ENTITY_CRUD))
+        .to(YamlChangeSetEventListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(GIT_TO_HARNESS_PROGRESS + ENTITY_CRUD))
+        .to(GitToHarnessEventListener.class);
     registerRequiredBindings();
 
     bindFullSyncMessageListeners();
@@ -177,5 +200,14 @@ public class GitSyncModule extends AbstractModule {
 
   private void registerRequiredBindings() {
     requireBinding(HPersistence.class);
+  }
+
+  @Provides
+  @Singleton
+  @Named(GITX_BACKGROUND_CACHE_UPDATE_EXECUTOR_NAME)
+  public ExecutorService orchestrationEventExecutorService() {
+    return ThreadPool.create(
+        gitServiceConfiguration.getGitServiceCacheConfiguration().getBackgroundUpdateThreadPoolConfig(),
+        new ThreadFactoryBuilder().setNameFormat("GitxCachingBackgroundUpdateThread-%d").build());
   }
 }

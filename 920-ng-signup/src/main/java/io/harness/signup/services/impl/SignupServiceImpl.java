@@ -13,11 +13,12 @@ import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.remote.client.CGRestUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getRetryPolicy;
 import static io.harness.signup.services.SignupType.COMMUNITY_PROVISION;
 import static io.harness.utils.CryptoUtils.secureRandAlphaNumString;
 
 import static java.lang.Boolean.FALSE;
-import static org.mindrot.jbcrypt.BCrypt.hashpw;
+import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
 import io.harness.ModuleType;
 import io.harness.TelemetryConstants;
@@ -54,6 +55,7 @@ import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.SignupInviteDTO;
 import io.harness.signup.dto.VerifyTokenResponseDTO;
 import io.harness.signup.entities.SignupVerificationToken;
+import io.harness.signup.entities.SignupVerificationToken.signupVerificationTokensKeys;
 import io.harness.signup.notification.EmailType;
 import io.harness.signup.notification.SignupNotificationHelper;
 import io.harness.signup.services.SignupService;
@@ -93,7 +95,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
-import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
 @Slf4j
 @Singleton
@@ -102,6 +105,9 @@ public class SignupServiceImpl implements SignupService {
   public static final String INTENT = "module";
   public static final String SIGNUP_ACTION = "license_type";
   public static final String EDITION = "plan";
+  private static final long INITIAL_DELAY = 5L;
+  private static final long MAX_DELAY = 10L;
+
   private AccountService accountService;
   private UserClient userClient;
   private SignupValidator signupValidator;
@@ -127,6 +133,10 @@ public class SignupServiceImpl implements SignupService {
   private static final String NG_AUTH_UI_PATH_PREFIX = "auth/";
   private static final String VERIFY_URL_GENERATION_FAILED = "Failed to generate verify url";
   private static final String EMAIL = "email";
+  private static final String VISITOR_TOKEN_KEY = "visitor_token";
+
+  private static final String GA_CLIENT_ID_KEY = "ga_client_id";
+  private static final String REFERER_URL_KEY = "refererURL";
 
   private static String deployVersion = System.getenv().get(DEPLOY_VERSION);
 
@@ -166,7 +176,7 @@ public class SignupServiceImpl implements SignupService {
     AccountDTO account = createAccount(dto);
     UserInfo user = createUser(dto, account);
     sendSucceedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), account.getIdentifier(), user,
-        SignupType.SIGNUP_FORM_FLOW, account.getName(), referer, null);
+        SignupType.SIGNUP_FORM_FLOW, account.getName(), referer, null, null);
     executorService.submit(() -> {
       SignupVerificationToken verificationToken = generateNewToken(user.getEmail());
       try {
@@ -210,7 +220,8 @@ public class SignupServiceImpl implements SignupService {
 
     UserInfo userInfo = null;
     try {
-      userInfo = getResponse(userClient.createCommunityUserAndCompleteSignup(signupRequest));
+      userInfo = getResponse(userClient.createCommunityUserAndCompleteSignup(signupRequest),
+          getRetryPolicy("SignupServiceImpl-Request failed", INITIAL_DELAY, MAX_DELAY, ChronoUnit.SECONDS));
     } catch (InvalidRequestException e) {
       if (e.getMessage().contains("User with this email is already registered")) {
         throw new InvalidRequestException("Email is already signed up", ErrorCode.USER_ALREADY_REGISTERED, USER);
@@ -282,7 +293,7 @@ public class SignupServiceImpl implements SignupService {
    * Complete Signup in email verification blocking flow
    */
   @Override
-  public UserInfo completeSignupInvite(String token, String referer, String gaClientId) {
+  public UserInfo completeSignupInvite(String token, String referer, String gaClientId, String visitorToken) {
     if (DeployVariant.isCommunity(deployVersion)) {
       throw new InvalidRequestException("You are not allowed to complete a signup invite with community edition");
     }
@@ -308,7 +319,8 @@ public class SignupServiceImpl implements SignupService {
       userInfo = getResponse(userClient.completeSignupInvite(verificationToken.getEmail()));
       verificationTokenRepository.delete(verificationToken);
       sendSucceedTelemetryEvent(userInfo.getEmail(), userInfo.getUtmInfo(), userInfo.getDefaultAccountId(), userInfo,
-          SignupType.SIGNUP_FORM_FLOW, userInfo.getAccounts().get(0).getAccountName(), referer, gaClientId);
+          SignupType.SIGNUP_FORM_FLOW, userInfo.getAccounts().get(0).getAccountName(), referer, gaClientId,
+          visitorToken);
 
       UserInfo finalUserInfo = userInfo;
       executorService.submit(() -> {
@@ -471,7 +483,7 @@ public class SignupServiceImpl implements SignupService {
     }
 
     sendSucceedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), account.getIdentifier(), oAuthUser,
-        SignupType.OAUTH_FLOW, account.getName(), dto.getReferer(), dto.getGaClientId());
+        SignupType.OAUTH_FLOW, account.getName(), dto.getReferer(), dto.getGaClientId(), dto.getVisitorToken());
 
     executorService.submit(() -> {
       try {
@@ -567,6 +579,13 @@ public class SignupServiceImpl implements SignupService {
     log.info("Resend verification email for {}", email);
   }
 
+  @Override
+  public void deleteByAccount(String accountId) {
+    Criteria criteria = new Criteria();
+    criteria.and(signupVerificationTokensKeys.accountIdentifier).is(accountId);
+    verificationTokenRepository.deleteAll(verificationTokenRepository.findAllByAccountIdentifier(accountId));
+  }
+
   private UserInfo createUser(SignupDTO signupDTO, AccountDTO account) {
     try {
       String passwordHash = hashpw(signupDTO.getPassword(), BCrypt.gensalt());
@@ -610,7 +629,7 @@ public class SignupServiceImpl implements SignupService {
   }
 
   private void sendSucceedTelemetryEvent(String email, UtmInfo utmInfo, String accountId, UserInfo userInfo,
-      String source, String accountName, String referer, String gaClientId) {
+      String source, String accountName, String referer, String gaClientId, String visitorToken) {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(EMAIL, email);
     properties.put("name", userInfo.getName());
@@ -632,7 +651,7 @@ public class SignupServiceImpl implements SignupService {
     addCreatedInfoInGroupCall(groupProperties, email, utmInfo);
 
     if (referer != null) {
-      groupProperties.put("refererURL", referer);
+      groupProperties.put(REFERER_URL_KEY, referer);
     }
     // group event to register new signed-up user with new account
     telemetryReporter.sendGroupEvent(
@@ -665,10 +684,13 @@ public class SignupServiceImpl implements SignupService {
       trackProperties.put(EDITION, userInfo.getEdition());
     }
     if (referer != null) {
-      trackProperties.put("refererURL", referer);
+      trackProperties.put(REFERER_URL_KEY, referer);
     }
     if (gaClientId != null) {
-      trackProperties.put("ga_client_id", gaClientId);
+      trackProperties.put(GA_CLIENT_ID_KEY, gaClientId);
+    }
+    if (visitorToken != null) {
+      trackProperties.put(VISITOR_TOKEN_KEY, visitorToken);
     }
 
     // Wait 20 seconds, to ensure identify is sent before track

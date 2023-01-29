@@ -46,6 +46,7 @@ public final class PerpetualTaskType {
   public static final String AWS_SSH_WINRM_INSTANCE_SYNC_NG = "AWS_SSH_WINRM_INSTANCE_SYNC_NG";
   public static final String CUSTOM_DEPLOYMENT_INSTANCE_SYNC_NG = "CUSTOM_DEPLOYMENT_INSTANCE_SYNC_NG";
   public static final String TAS_INSTANCE_SYNC_NG = "TAS_INSTANCE_SYNC_NG";
+  public static final String SPOT_INSTANCE_SYNC_NG = "SPOT_INSTANCE_SYNC_NG";
 
   private PerpetualTaskType() {}
 }

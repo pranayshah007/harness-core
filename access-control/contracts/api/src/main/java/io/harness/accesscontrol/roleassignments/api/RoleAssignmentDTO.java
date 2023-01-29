@@ -49,6 +49,7 @@ public class RoleAssignmentDTO {
   @ApiModelProperty(required = true) @NotNull final PrincipalDTO principal;
   @Setter boolean disabled;
   @Getter(AccessLevel.NONE) final Boolean managed;
+  @Getter(AccessLevel.NONE) final Boolean internal;
 
   public Boolean isManaged() {
     return TRUE.equals(managed);

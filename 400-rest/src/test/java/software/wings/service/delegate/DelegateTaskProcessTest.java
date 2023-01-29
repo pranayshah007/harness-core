@@ -122,6 +122,7 @@ import software.wings.beans.LicenseInfo;
 import software.wings.beans.PcfConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.settings.helm.HelmRepoConfigValidationTaskParams;
 import software.wings.beans.yaml.GitCommand.GitCommandType;
@@ -134,7 +135,7 @@ import software.wings.jre.JreConfig;
 import software.wings.licensing.LicenseService;
 import software.wings.service.impl.AssignDelegateServiceImpl;
 import software.wings.service.impl.AuditServiceHelper;
-import software.wings.service.impl.DelegateConnectionDao;
+import software.wings.service.impl.DelegateDao;
 import software.wings.service.impl.DelegateObserver;
 import software.wings.service.impl.DelegateServiceImpl;
 import software.wings.service.impl.DelegateTaskBroadcastHelper;
@@ -233,7 +234,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
   private LoadingCache<ImmutablePair<String, String>, Optional<DelegateConnectionResult>> delegateConnectionResultCache;
 
   @Inject private FeatureTestHelper featureTestHelper;
-  @Inject private DelegateConnectionDao delegateConnectionDao;
+  @Inject private DelegateDao delegateDao;
   @Inject private KryoSerializer kryoSerializer;
 
   private final int port = LocalhostUtils.findFreePort();
@@ -275,7 +276,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     when(mainConfiguration.getLogStreamingServiceConfig()).thenReturn(logSteamingServiceConfig);
 
     PortalConfig portalConfig = new PortalConfig();
-    portalConfig.setCriticalDelegateTaskRejectAtLimit(100000);
+    portalConfig.setImportantDelegateTaskRejectAtLimit(1000);
     portalConfig.setJwtNextGenManagerSecret("**********");
     when(mainConfiguration.getPortal()).thenReturn(portalConfig);
     when(delegateGrpcConfig.getPort()).thenReturn(8080);
@@ -283,6 +284,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     when(accountService.getDelegateConfiguration(anyString()))
         .thenReturn(DelegateConfiguration.builder().delegateVersions(singletonList("0.0.0")).build());
     when(accountService.get(ACCOUNT_ID)).thenReturn(account);
+    when(accountService.getFromCacheWithFallback(anyString())).thenReturn(account);
     when(infraDownloadService.getDownloadUrlForDelegate(anyString(), any()))
         .thenReturn("http://localhost:" + port + "/builds/9/delegate.jar");
     when(infraDownloadService.getCdnWatcherBaseUrl()).thenReturn("http://localhost:9500/builds");
@@ -496,6 +498,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                                   .repoUrl("https://github.com/testtp")
                                                                   .sshSettingAttribute(sshSettingAttribute.toDTO())
                                                                   .build())
+                                                  .sourceType(TerraformSourceType.GIT)
                                                   .secretManagerConfig(null)
                                                   .isGitHostConnectivityCheck(true)
                                                   .build();

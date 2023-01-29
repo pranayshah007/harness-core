@@ -53,7 +53,7 @@ public class InstanceDataServiceImplTest extends WingsBaseTest {
 
   @Before
   public void setUp() {
-    when(instanceDataDao.fetchInstanceDataForGivenInstances(Collections.singletonList(INSTANCE_ID)))
+    when(instanceDataDao.fetchInstanceDataForGivenInstances(ACCOUNT_ID, Collections.singletonList(INSTANCE_ID)))
         .thenReturn(Collections.singletonList(getTestInstanceData()));
     when(instanceDataDao.fetchInstanceDataForGivenInstances(
              ACCOUNT_ID, CLUSTER_ID, Collections.singletonList(INSTANCE_ID)))
@@ -65,7 +65,7 @@ public class InstanceDataServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldFetchInstanceDataForGivenInstances() {
     List<InstanceData> instanceData =
-        instanceDataService.fetchInstanceDataForGivenInstances(Collections.singletonList(INSTANCE_ID));
+        instanceDataService.fetchInstanceDataForGivenInstances(ACCOUNT_ID, Collections.singletonList(INSTANCE_ID));
     assertThat(instanceData.get(0).getUuid()).isEqualTo(UUID);
     assertThat(instanceData.get(0).getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(instanceData.get(0).getClusterId()).isEqualTo(CLUSTER_ID);

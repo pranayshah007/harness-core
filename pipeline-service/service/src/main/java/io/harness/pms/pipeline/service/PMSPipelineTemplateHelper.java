@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
+import static io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper.BOOLEAN_TRUE_VALUE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.enforcement.constants.FeatureRestrictionName;
@@ -22,6 +23,7 @@ import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErro
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.ng.core.template.RefreshRequestDTO;
 import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
@@ -32,6 +34,7 @@ import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
+import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
@@ -61,10 +64,10 @@ public class PMSPipelineTemplateHelper {
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(
-      PipelineEntity pipelineEntity, boolean getMergedTemplateWithTemplateReferences) {
+      PipelineEntity pipelineEntity, boolean getMergedTemplateWithTemplateReferences, boolean loadFromCache) {
     return resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
         pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml(), false, getMergedTemplateWithTemplateReferences,
-        BOOLEAN_FALSE_VALUE);
+        parseLoadFromCache(loadFromCache));
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(
@@ -91,14 +94,17 @@ public class PMSPipelineTemplateHelper {
                   .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
                   .build()));
         }
-        return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
-            null, null, null, null, null, null, null, null, loadFromCache,
-            TemplateApplyRequestDTO.builder()
-                .originalEntityYaml(yaml)
-                .checkForAccess(checkForTemplateAccess)
-                .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
-                .build()));
-
+        GitSyncBranchContext gitSyncBranchContext =
+            GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().build()).build();
+        try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
+          return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
+              null, null, null, null, null, null, null, null, loadFromCache,
+              TemplateApplyRequestDTO.builder()
+                  .originalEntityYaml(yaml)
+                  .checkForAccess(checkForTemplateAccess)
+                  .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                  .build()));
+        }
       } catch (InvalidRequestException e) {
         if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
           throw new NGTemplateResolveException(
@@ -219,5 +225,12 @@ public class PMSPipelineTemplateHelper {
       return gitEntityInfo.getRepoName();
     }
     return gitEntityInfo.getParentEntityRepoName();
+  }
+
+  private String parseLoadFromCache(boolean loadFromCache) {
+    if (loadFromCache) {
+      return BOOLEAN_TRUE_VALUE;
+    }
+    return BOOLEAN_FALSE_VALUE;
   }
 }

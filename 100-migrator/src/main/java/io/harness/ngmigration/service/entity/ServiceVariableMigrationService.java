@@ -47,7 +47,6 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.ServiceTemplateService;
 import software.wings.service.intfc.ServiceVariableService;
 
@@ -62,7 +61,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
@@ -122,17 +120,6 @@ public class ServiceVariableMigrationService extends NgMigrationService {
   }
 
   @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    throw new NotImplementedException("Not implemented for variables");
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    throw new NotImplementedException("Not implemented for service variables");
-  }
-
-  @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
       TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     NGServiceOverrideInfoConfig serviceOverrideInfoConfig =
@@ -152,12 +139,21 @@ public class ServiceVariableMigrationService extends NgMigrationService {
     return handleResp(yamlFile, resp);
   }
 
+  public boolean doReferenceExists(Map<CgEntityId, NGYamlFile> migratedEntities, String envId, String serviceId) {
+    return migratedEntities.containsKey(CgEntityId.builder().type(ENVIRONMENT).id(envId).build())
+        && migratedEntities.containsKey(CgEntityId.builder().type(SERVICE).id(serviceId).build());
+  }
+
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     ServiceVariable serviceVariable = (ServiceVariable) entities.get(entityId).getEntity();
     MigratorExpressionUtils.render(serviceVariable, inputDTO.getCustomExpressions());
     List<NGYamlFile> files = new ArrayList<>();
+
+    if (!doReferenceExists(migratedEntities, serviceVariable.getEnvId(), serviceVariable.getServiceId())) {
+      return files;
+    }
 
     NGYamlFile yamlFile = getBlankServiceOverride(inputDTO, migratedEntities, serviceVariable.getEnvId(),
         serviceVariable.getServiceId(), serviceVariable.getCgBasicInfo());

@@ -57,7 +57,7 @@ public class ManagerKmsEncryptorTest extends CategoryTest {
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     doReturn(EncryptSecretTaskResponse.builder().build())
         .when(delegateService)
-        .executeTask(delegateTaskArgumentCaptor.capture());
+        .executeTaskV2(delegateTaskArgumentCaptor.capture());
 
     doReturn(EMPTY_MAP).when(managerEncryptorHelper).buildAbstractions(any());
     managerKmsEncryptor.encryptSecret("key", "value", vaultConfig);

@@ -63,6 +63,18 @@ public class RollbackPlanCreator {
               .nodeId(infraField.getNode().getUuid() + InfraRollbackPMSPlanCreator.INFRA_ROLLBACK_NODE_ID_SUFFIX)
               .dependentNodeIdentifier(infraNodeFullIdentifier)
               .build());
+    } else {
+      YamlField environmentField = executionField.getNode().nextSiblingNodeFromParentObject(YamlTypes.ENVIRONMENT_YAML);
+      infraRollbackPlan = InfraRollbackPMSPlanCreator.createProvisionerRollbackPlan(environmentField);
+      if (isNotEmpty(infraRollbackPlan.getNodes())) {
+        String infraNodeFullIdentifier =
+            YamlUtils.getQualifiedNameTillGivenField(environmentField.getNode(), YAMLFieldNameConstants.STAGES);
+        stepParametersBuilder.childNode(RollbackNode.builder()
+                                            .nodeId(environmentField.getNode().getUuid()
+                                                + InfraRollbackPMSPlanCreator.INFRA_ROLLBACK_NODE_ID_SUFFIX)
+                                            .dependentNodeIdentifier(infraNodeFullIdentifier)
+                                            .build());
+      }
     }
 
     // ExecutionRollback

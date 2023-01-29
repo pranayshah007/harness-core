@@ -75,7 +75,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
-import static org.mindrot.jbcrypt.BCrypt.hashpw;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyListOf;
@@ -92,6 +91,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -146,8 +146,8 @@ import software.wings.beans.sso.SamlSettings;
 import software.wings.beans.utm.UtmInfo;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.dl.WingsPersistence;
-import software.wings.helpers.ext.mail.EmailData;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
+import software.wings.persistence.mail.EmailData;
 import software.wings.resources.UserResource;
 import software.wings.security.JWT_CATEGORY;
 import software.wings.security.PermissionAttribute.Action;
@@ -161,6 +161,7 @@ import software.wings.service.impl.AccessRequestServiceImpl;
 import software.wings.service.impl.AuditServiceHelper;
 import software.wings.service.impl.AwsMarketPlaceApiHandlerImpl;
 import software.wings.service.impl.HarnessUserGroupServiceImpl;
+import software.wings.service.impl.UserServiceHelper;
 import software.wings.service.impl.UserServiceImpl;
 import software.wings.service.impl.UserServiceLimitChecker;
 import software.wings.service.intfc.AccessRequestService;
@@ -183,6 +184,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import freemarker.template.TemplateException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -207,7 +213,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mindrot.jbcrypt.BCrypt;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -215,11 +220,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
 /**
  * Created by anubhaw on 3/9/16.
@@ -297,6 +298,8 @@ public class UserServiceTest extends WingsBaseTest {
   @Inject WingsPersistence realWingsPersistence;
   @Mock PortalConfig portalConfig;
 
+  @Mock UserServiceHelper userServiceHelper;
+
   @InjectMocks private HarnessUserGroupService harnessUserGroupService = mock(HarnessUserGroupServiceImpl.class);
   @InjectMocks private AccessRequestService accessRequestService = mock(AccessRequestServiceImpl.class);
   private Query<User> userQuery;
@@ -372,7 +375,7 @@ public class UserServiceTest extends WingsBaseTest {
     List<Account> accountList = Arrays.asList(account2);
     when(harnessUserGroupService.listAllowedSupportAccounts(any(), any())).thenReturn(accountList);
 
-    user = userService.get(USER_ID);
+    userService.loadSupportAccounts(user);
 
     assertThat(user.getAccounts().size()).isEqualTo(1);
     assertThat(user.getAccounts().get(0).getUuid()).isEqualTo(account1.getUuid());
@@ -430,7 +433,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(accessRequestService.getActiveAccessRequestForAccount(accountId3))
         .thenReturn(Arrays.asList(accessRequest1, accessRequest2));
     when(harnessUserGroupService.get(harnessUserGroupId)).thenReturn(harnessUserGroup);
-    user = userService.get(USER_ID);
+    userService.loadSupportAccounts(user);
     user.setAccounts(Arrays.asList(account1));
 
     assertThat(user.getAccounts().get(0).getUuid()).isEqualTo(account1.getUuid());
@@ -503,7 +506,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(accessRequestService.getActiveAccessRequestForAccount(accountId3))
         .thenReturn(Arrays.asList(accessRequest1, accessRequest2, accessRequest3));
     when(harnessUserGroupService.get(harnessUserGroupId1)).thenReturn(harnessUserGroup1);
-    user = userService.get(USER_ID);
+    userService.loadSupportAccounts(user);
     user.setAccounts(Arrays.asList(account1));
 
     assertThat(user.getAccounts().get(0).getUuid()).isEqualTo(account1.getUuid());
@@ -917,6 +920,26 @@ public class UserServiceTest extends WingsBaseTest {
     when(userGroupService.list(ACCOUNT_ID,
              aPageRequest().withLimit("0").addFilter(UserGroupKeys.memberIds, HAS, USER_ID).build(), true, null, null))
         .thenReturn(aPageResponse().withResponse(Collections.emptyList()).withTotal(0).withLimit("0").build());
+    userService.delete(ACCOUNT_ID, USER_ID);
+    verify(wingsPersistence).findAndDelete(any(), any());
+    verify(cache).remove(USER_ID);
+    verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId(eq(ACCOUNT_ID), any(User.class));
+  }
+
+  /**
+   * Should delete user flow V2.
+   */
+  @Test
+  @Owner(developers = ANUBHAW)
+  @Category(UnitTests.class)
+  public void shouldDeleteUserV2() {
+    when(wingsPersistence.get(User.class, USER_ID)).thenReturn(userBuilder.uuid(USER_ID).build());
+    when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
+    when(wingsPersistence.findAndDelete(any(), any())).thenReturn(userBuilder.uuid(USER_ID).build());
+    when(userGroupService.list(ACCOUNT_ID,
+             aPageRequest().withLimit("0").addFilter(UserGroupKeys.memberIds, HAS, USER_ID).build(), true, null, null))
+        .thenReturn(aPageResponse().withResponse(Collections.emptyList()).withTotal(0).withLimit("0").build());
+    when(userServiceHelper.isUserActiveInNG(any(), anyString())).thenReturn(false);
     userService.delete(ACCOUNT_ID, USER_ID);
     verify(wingsPersistence).findAndDelete(any(), any());
     verify(cache).remove(USER_ID);

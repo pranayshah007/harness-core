@@ -24,7 +24,8 @@ import org.bson.types.ObjectId;
 @OwnedBy(CE)
 @Slf4j
 public class CDCEntityBulkTaskConverter {
-  public static <T extends PersistentEntity> ChangeEvent<T> convert(Class<T> entityType, Document document) {
+  public static <T extends PersistentEntity> ChangeEvent<T> convert(
+      Class<T> entityType, Document document, String handler) {
     DBObject dbObject = toDBObject(document);
 
     ChangeEventBuilder<T> builder = ChangeEvent.builder();
@@ -32,6 +33,7 @@ public class CDCEntityBulkTaskConverter {
         .changeType(ChangeType.INSERT)
         .entityType(entityType)
         .uuid(getUuidFromDocument(document))
+        .handler(handler)
         .build();
   }
 

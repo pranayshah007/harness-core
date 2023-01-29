@@ -34,14 +34,14 @@ import lombok.NonNull;
 import retrofit2.http.Body;
 
 @Api("health-source-records")
-@Path(CVNextGenConstants.PROJECT_PATH)
+@Path(CVNextGenConstants.HEALTH_SOURCE_PATH)
 @Produces(MediaType.APPLICATION_JSON)
 @NextGenManagerAuth
 public class HealthSourceOnboardingResource {
   @Inject private HealthSourceOnboardingService healthSourceOnboardingService;
 
   @POST
-  @Path("/healthSourceRecords")
+  @Path("/records")
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "Fetch health source raw records by submitting a query to the health source provider.",
@@ -61,7 +61,7 @@ public class HealthSourceOnboardingResource {
   }
 
   @POST
-  @Path("/metricRecords")
+  @Path("/metric-records")
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "Fetch metric records by submitting a query to the health source provider.",
@@ -80,7 +80,7 @@ public class HealthSourceOnboardingResource {
   }
 
   @POST
-  @Path("/logRecords")
+  @Path("/log-records")
   @Timed
   @ExceptionMetered
   @ApiOperation(

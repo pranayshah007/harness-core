@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.SecurityStageNode;
 import io.harness.beans.steps.STOStepInfo;
+import io.harness.beans.steps.nodes.BackgroundStepNode;
 import io.harness.beans.steps.nodes.RunStepNode;
 import io.harness.beans.steps.nodes.SecurityNode;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -94,6 +95,17 @@ public class StoBeansRegistrars {
                                            .build())
                    .availableAtAccountLevel(false)
                    .clazz(RunStepNode.class)
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.BACKGROUND_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .modulesSupported(Collections.singletonList(ModuleType.STO))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .availableAtAccountLevel(false)
+                   .clazz(BackgroundStepNode.class)
                    .build())
           .addAll(createSecurityStepYamlDefinitions())
           .build();

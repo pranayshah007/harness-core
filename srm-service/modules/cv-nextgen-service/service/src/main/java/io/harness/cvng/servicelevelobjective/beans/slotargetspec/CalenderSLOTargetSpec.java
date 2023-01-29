@@ -46,6 +46,7 @@ public class CalenderSLOTargetSpec extends SLOTargetSpec {
     , @JsonSubTypes.Type(value = MonthlyCalenderSpec.class, name = "Monthly"),
         @JsonSubTypes.Type(value = QuarterlyCalenderSpec.class, name = "Quarterly"),
   })
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
   public abstract static class CalenderSpec {
     @JsonIgnore public abstract SLOCalenderType getType();
   }

@@ -53,8 +53,12 @@ public class LogAnalysisResource {
   public RestResponse<List<LogClusterDTO>> getTestData(@QueryParam("verificationTaskId") String verificationTaskId,
       @NotNull @QueryParam("analysisStartTime") Long analysisStartTime,
       @NotNull @QueryParam("analysisEndTime") Long analysisEndTime, @QueryParam("hosts") String commaSeparatedHosts) {
-    return new RestResponse<>(logAnalysisService.getTestData(
-        verificationTaskId, Instant.ofEpochMilli(analysisStartTime), Instant.ofEpochMilli(analysisEndTime)));
+    if (commaSeparatedHosts == null) {
+      return new RestResponse<>(logAnalysisService.getTestData(
+          verificationTaskId, Instant.ofEpochMilli(analysisStartTime), Instant.ofEpochMilli(analysisEndTime)));
+    }
+    return new RestResponse<>(logAnalysisService.getTestDataForDeploymentLog(verificationTaskId,
+        Instant.ofEpochMilli(analysisStartTime), Instant.ofEpochMilli(analysisEndTime), commaSeparatedHosts));
   }
 
   @GET
@@ -109,8 +113,9 @@ public class LogAnalysisResource {
   getPreviousDeploymentAnalysis(@QueryParam("verificationTaskId") String verificationTaskId,
       @QueryParam("analysisStartTime") String analysisStartTime,
       @QueryParam("analysisEndTime") String analysisEndTime) {
-    return new RestResponse<>(logAnalysisService.getPreviousDeploymentAnalysis(verificationTaskId,
-        Instant.ofEpochMilli(Long.parseLong(analysisStartTime)),
-        Instant.ofEpochMilli(Long.parseLong(analysisEndTime))));
+    DeploymentLogAnalysisDTO deploymentLogAnalysisDTO = logAnalysisService.getPreviousDeploymentAnalysis(
+        verificationTaskId, Instant.ofEpochMilli(Long.parseLong(analysisStartTime)),
+        Instant.ofEpochMilli(Long.parseLong(analysisEndTime)));
+    return new RestResponse<>(deploymentLogAnalysisDTO);
   }
 }

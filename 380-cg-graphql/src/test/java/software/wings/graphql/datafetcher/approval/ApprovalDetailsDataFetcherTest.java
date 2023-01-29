@@ -25,6 +25,7 @@ import software.wings.graphql.datafetcher.AbstractDataFetcherTestBase;
 import software.wings.graphql.schema.query.QLApprovalDetailsInput;
 import software.wings.service.intfc.WorkflowExecutionService;
 
+import dev.morphia.query.Query;
 import graphql.schema.DataFetchingEnvironment;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +35,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDC)
 public class ApprovalDetailsDataFetcherTest extends AbstractDataFetcherTestBase {

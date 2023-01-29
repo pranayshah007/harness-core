@@ -18,10 +18,10 @@ import io.harness.ccm.commons.entities.ClusterRecord.ClusterRecordKeys;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import org.bson.types.ObjectId;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(CE)
 public class ClusterRecordDao {
@@ -107,5 +107,11 @@ public class ClusterRecordDao {
     UpdateOperations<ClusterRecord> updateOperations =
         persistence.createUpdateOperations(ClusterRecord.class).set(ClusterRecordKeys.perpetualTaskId, taskId);
     return persistence.findAndModify(query, updateOperations, returnNewOptions);
+  }
+
+  public List<ClusterRecord> getByAccountId(String accountId) {
+    Query<ClusterRecord> query =
+        persistence.createQuery(ClusterRecord.class).field(ClusterRecordKeys.accountId).equal(accountId);
+    return query.asList();
   }
 }

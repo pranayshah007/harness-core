@@ -42,11 +42,11 @@ import software.wings.service.intfc.security.KmsService;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.Query;
 
 /**
  * Created by rsingh on 9/29/17.
@@ -279,8 +279,10 @@ public class KmsServiceImpl extends AbstractSecretServiceImpl implements KmsServ
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, message, USER_SRE);
     }
 
-    Query<EncryptedData> deleteQuery =
-        wingsPersistence.createQuery(EncryptedData.class).field(PARENT_ID_KEY).hasThisOne(kmsConfigId);
+    Query<EncryptedData> deleteQuery = wingsPersistence.createQuery(EncryptedData.class)
+                                           .filter(EncryptedDataKeys.accountId, accountId)
+                                           .field(PARENT_ID_KEY)
+                                           .hasThisOne(kmsConfigId);
     wingsPersistence.delete(deleteQuery);
 
     return deleteSecretManagerAndGenerateAudit(accountId, kmsConfig);

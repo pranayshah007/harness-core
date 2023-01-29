@@ -30,6 +30,7 @@ import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.NGVariable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.Collections;
@@ -94,6 +95,9 @@ public class CustomArtifactConfig implements ArtifactConfig, Visitable {
 
   /** Whether this config corresponds to primary artifact.*/
   @VariableExpression(skipVariableExpression = true) private boolean primaryArtifact;
+
+  /** Whether this config corresponds to trigger.*/
+  @JsonIgnore @VariableExpression(skipVariableExpression = true) private boolean isFromTrigger;
 
   @Override
   public ArtifactSourceType getSourceType() {

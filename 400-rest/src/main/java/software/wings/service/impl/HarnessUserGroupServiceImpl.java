@@ -49,6 +49,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets.SetView;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.Key;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,9 +62,6 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @Slf4j
@@ -91,6 +91,9 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
 
   @Override
   public List<Account> listAllowedSupportAccounts(Set<String> excludeAccountIds, Set<String> fieldsToBeIncluded) {
+    if (isNotEmpty(fieldsToBeIncluded)) {
+      fieldsToBeIncluded.add("accountName");
+    }
     List<Account> supportedAccounts = accountService.listHarnessSupportAccounts(excludeAccountIds, fieldsToBeIncluded);
     supportedAccounts.sort(new AccountComparator());
     return supportedAccounts;
@@ -99,6 +102,13 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
   private static class AccountComparator implements Comparator<Account>, Serializable {
     @Override
     public int compare(Account lhs, Account rhs) {
+      if (lhs.getAccountName() == null && rhs.getAccountName() == null) {
+        return 0;
+      } else if (lhs.getAccountName() == null) {
+        return 1;
+      } else if (rhs.getAccountName() == null) {
+        return -1;
+      }
       return lhs.getAccountName().compareToIgnoreCase(rhs.getAccountName());
     }
   }
@@ -126,7 +136,7 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
 
     SetView<String> membersAffected = symmetricDifference(updatedUserGroup.getMemberIds(), oldMemberIds);
 
-    Set<String> accountsAffected = listAllowedSupportAccounts(Collections.emptySet(), Set.of(AccountKeys.uuid))
+    Set<String> accountsAffected = listAllowedSupportAccounts(Collections.emptySet(), newHashSet(AccountKeys.uuid))
                                        .stream()
                                        .map(Account::getUuid)
                                        .collect(Collectors.toSet());

@@ -191,8 +191,12 @@ public class AccountResource {
   @ExceptionMetered
   public RestResponse<PageResponse<CVEnabledService>> getAllServicesFor24x7(@QueryParam("accountId") String accountId,
       @QueryParam("serviceId") String serviceId, @BeanParam PageRequest<String> request) {
+    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      return new RestResponse<>(
+          accountService.getServices(accountId, UserThreadLocal.get().getPublicUser(true), request, serviceId));
+    }
     return new RestResponse<>(
-        accountService.getServices(accountId, UserThreadLocal.get().getPublicUser(), request, serviceId));
+        accountService.getServices(accountId, UserThreadLocal.get().getPublicUser(false), request, serviceId));
   }
 
   @GET
@@ -200,7 +204,12 @@ public class AccountResource {
   @Timed
   @ExceptionMetered
   public RestResponse<List<Service>> getAllServicesFor24x7(@QueryParam("accountId") String accountId) {
-    return new RestResponse<>(accountService.getServicesBreadCrumb(accountId, UserThreadLocal.get().getPublicUser()));
+    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      return new RestResponse<>(
+          accountService.getServicesBreadCrumb(accountId, UserThreadLocal.get().getPublicUser(true)));
+    }
+    return new RestResponse<>(
+        accountService.getServicesBreadCrumb(accountId, UserThreadLocal.get().getPublicUser(false)));
   }
 
   @PUT
@@ -292,7 +301,8 @@ public class AccountResource {
   @Path("{accountId}/is-product-led")
   @Timed
   @ExceptionMetered
-  public RestResponse<Boolean> updateIsProductLed(@PathParam("accountId") @NotEmpty String accountId,
+  public RestResponse<Boolean> updateIsProductLed(@PathParam("accountId") String accountId,
+      @QueryParam("clientAccountId") @NotNull String clientAccountId,
       @QueryParam("isProductLed") @DefaultValue("false") boolean isProductLed) {
     User existingUser = UserThreadLocal.get();
     if (existingUser == null) {
@@ -300,7 +310,7 @@ public class AccountResource {
     }
 
     if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
-      return new RestResponse<>(accountService.updateIsProductLed(accountId, isProductLed));
+      return new RestResponse<>(accountService.updateIsProductLed(clientAccountId, isProductLed));
     } else {
       return RestResponse.Builder.aRestResponse()
           .withResponseMessages(Lists.newArrayList(
@@ -398,7 +408,7 @@ public class AccountResource {
   public RestResponse<Boolean> disableAccount(
       @QueryParam("accountId") String accountId, @QueryParam("migratedTo") String migratedToClusterUrl) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
-      log.info("Disabling account");
+      log.info("Disabling account: {}", accountId);
       RestResponse<Boolean> response = accountPermissionUtils.checkIfHarnessUser("User not allowed to disable account");
       if (response == null) {
         response = new RestResponse<>(accountService.disableAccount(accountId, urlDecode(migratedToClusterUrl)));

@@ -7,7 +7,6 @@
 
 package io.harness.delegate.beans;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
@@ -24,7 +23,7 @@ public class DelegateTaskEvent {
   private String accountId;
   private String delegateTaskId;
   private boolean sync;
-  @JsonIgnore private String taskType;
+  private String taskType;
 
   /**
    * Getter for property 'accountId'.

@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.mapper;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.artifact.ArtifactUtilities.getArtifactoryRegistryUrl;
 import static io.harness.constants.Constants.AMZ_SUBSCRIPTION_CONFIRMATION_TYPE;
 import static io.harness.constants.Constants.X_AMZ_SNS_MESSAGE_TYPE;
 import static io.harness.constants.Constants.X_BIT_BUCKET_EVENT;
@@ -37,6 +38,13 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
+import io.harness.beans.IdentifierRef;
+import io.harness.connector.ConnectorDTO;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResourceClient;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TriggerException;
 import io.harness.ng.core.mapper.TagMapper;
@@ -88,13 +96,16 @@ import io.harness.ngtriggers.utils.WebhookEventPayloadParser;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.webhook.WebhookConfigProvider;
 import io.harness.webhook.WebhookHelper;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -108,10 +119,13 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -128,6 +142,7 @@ public class NGTriggerElementMapper {
   private WebhookEventPayloadParser webhookEventPayloadParser;
   private WebhookConfigProvider webhookConfigProvider;
   private final PmsFeatureFlagService pmsFeatureFlagService;
+  private ConnectorResourceClient connectorResourceClient;
 
   public NGTriggerConfigV2 toTriggerConfigV2(String yaml) {
     try {
@@ -157,11 +172,7 @@ public class NGTriggerElementMapper {
   }
 
   public String generateNgTriggerConfigV2Yaml(NGTriggerConfigV2 ngTriggerConfigV2) {
-    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()
-                                                     .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
-                                                     .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
-                                                     .disable(USE_NATIVE_TYPE_ID));
-    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    ObjectMapper objectMapper = getObjectMapper();
     try {
       return objectMapper.writeValueAsString(ngTriggerConfigV2);
     } catch (Exception e) {
@@ -170,11 +181,7 @@ public class NGTriggerElementMapper {
   }
 
   public String generateNgTriggerConfigYaml(NGTriggerConfig ngTriggerConfig) throws Exception {
-    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()
-                                                     .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
-                                                     .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
-                                                     .disable(USE_NATIVE_TYPE_ID));
-    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    ObjectMapper objectMapper = getObjectMapper();
     return objectMapper.writeValueAsString(ngTriggerConfig);
   }
 
@@ -220,18 +227,25 @@ public class NGTriggerElementMapper {
       return;
     }
 
+    // Currently, enabled only for GITHUB
     if (newEntity.getType() == WEBHOOK) {
       if (!GITHUB.getEntityMetadataName().equalsIgnoreCase(existingEntity.getMetadata().getWebhook().getType())) {
         return;
       }
 
-      // Currently, enabled only for GITHUB
-      boolean isWebhookPollingEnabled = isWebhookPollingEnabled(
-          existingEntity.getType(), existingEntity.getAccountId(), existingEntity.getPollInterval());
+      // Check if polling was previously enabled or if it is being enabled now
+      String pollInterval =
+          isEmpty(existingEntity.getPollInterval()) ? newEntity.getPollInterval() : existingEntity.getPollInterval();
+
+      boolean isWebhookPollingEnabled =
+          isWebhookPollingEnabled(existingEntity.getType(), existingEntity.getAccountId(), pollInterval);
 
       if (isWebhookPollingEnabled) {
-        if (newEntity.getPollInterval() == null) {
-          throw new InvalidRequestException("Polling Interval cannot be null");
+        if (isNotEmpty(existingEntity.getPollInterval()) && isEmpty(newEntity.getPollInterval())) {
+          throw new InvalidRequestException(
+              String.format("Polling is previously enabled with a value %s. The value cannot be empty or null. "
+                      + "Please enter 0 to unsubscribe or a value greater than 2m and less than 60m to subscribe",
+                  existingEntity.getPollInterval()));
         }
         // Copy entities for webhook git polling
         copyFields(existingEntity, newEntity);
@@ -240,6 +254,10 @@ public class NGTriggerElementMapper {
   }
 
   private void copyFields(NGTriggerEntity existingEntity, NGTriggerEntity newEntity) {
+    if (existingEntity.getMetadata().getBuildMetadata() == null) {
+      log.info("Previously polling was not enabled. Trigger {} updated with polling", newEntity.getIdentifier());
+      return;
+    }
     PollingConfig existingPollingConfig = existingEntity.getMetadata().getBuildMetadata().getPollingConfig();
 
     if (existingPollingConfig != null && isNotEmpty(existingPollingConfig.getSignature())) {
@@ -262,22 +280,25 @@ public class NGTriggerElementMapper {
 
   public NGTriggerEntity toTriggerEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       NGTriggerConfigV2 config, String yaml, boolean withServiceV2) {
-    NGTriggerEntityBuilder entityBuilder = NGTriggerEntity.builder()
-                                               .name(config.getName())
-                                               .identifier(config.getIdentifier())
-                                               .description(config.getDescription())
-                                               .yaml(yaml)
-                                               .type(config.getSource().getType())
-                                               .accountId(accountIdentifier)
-                                               .orgIdentifier(orgIdentifier)
-                                               .projectIdentifier(projectIdentifier)
-                                               .targetIdentifier(config.getPipelineIdentifier())
-                                               .targetType(TargetType.PIPELINE)
-                                               .metadata(toMetadata(config.getSource(), accountIdentifier))
-                                               .enabled(config.getEnabled())
-                                               .pollInterval(config.getSource().getPollInterval())
-                                               .withServiceV2(withServiceV2)
-                                               .tags(TagMapper.convertToList(config.getTags()));
+    NGTriggerEntityBuilder entityBuilder =
+        NGTriggerEntity.builder()
+            .name(config.getName())
+            .identifier(config.getIdentifier())
+            .description(config.getDescription())
+            .yaml(yaml)
+            .type(config.getSource().getType())
+            .accountId(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .targetIdentifier(config.getPipelineIdentifier())
+            .targetType(TargetType.PIPELINE)
+            .metadata(toMetadata(config.getSource(), accountIdentifier))
+            .enabled(config.getEnabled())
+            .pollInterval(config.getSource().getPollInterval() != null ? config.getSource().getPollInterval() : EMPTY)
+            .webhookId(config.getSource().getWebhookId())
+            .withServiceV2(withServiceV2)
+            .tags(TagMapper.convertToList(config.getTags()))
+            .encryptedWebhookSecretIdentifier(config.getEncryptedWebhookSecretIdentifier());
 
     if (config.getSource().getType() == NGTriggerType.SCHEDULED) {
       entityBuilder.nextIterations(new ArrayList<>());
@@ -385,6 +406,11 @@ public class NGTriggerElementMapper {
   }
 
   public NGTriggerResponseDTO toResponseDTO(NGTriggerEntity ngTriggerEntity) {
+    if (pmsFeatureFlagService.isEnabled(
+            ngTriggerEntity.getAccountId(), FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY)) {
+      ngTriggerEntity = getTriggerEntityWithArtifactoryRepositoryUrl(ngTriggerEntity);
+    }
+
     return NGTriggerResponseDTO.builder()
         .name(ngTriggerEntity.getName())
         .identifier(ngTriggerEntity.getIdentifier())
@@ -558,6 +584,131 @@ public class NGTriggerElementMapper {
     return ngTriggerDetailsResponseDTO.build();
   }
 
+  private NGTriggerEntity getTriggerEntityWithArtifactoryRepositoryUrl(NGTriggerEntity ngTriggerEntity) {
+    if (ngTriggerEntity == null) {
+      return null;
+    }
+
+    String triggerYaml = ngTriggerEntity.getYaml();
+
+    YamlNode node = validateAndGetYamlNode(triggerYaml);
+
+    Map<String, Object> resMap = new HashMap<>();
+    if (node != null) {
+      resMap = getResMap(node);
+    }
+
+    LinkedHashMap<String, Object> triggerResMap = (LinkedHashMap<String, Object>) resMap.get("trigger");
+    LinkedHashMap<String, Object> sourceResMap = (LinkedHashMap<String, Object>) triggerResMap.get("source");
+    LinkedHashMap<String, Object> specResMap = (LinkedHashMap<String, Object>) sourceResMap.get("spec");
+
+    String type = String.valueOf(specResMap.get("type"));
+    type = type.substring(1, type.length() - 1);
+    LinkedHashMap<String, Object> configResMap = (LinkedHashMap<String, Object>) specResMap.get("spec");
+
+    if (type.equals("ArtifactoryRegistry")) {
+      if (!configResMap.containsKey("repositoryUrl")) {
+        String finalUrl = null;
+        String connectorRef = String.valueOf(configResMap.get("connectorRef"));
+        connectorRef = connectorRef.substring(1, connectorRef.length() - 1);
+        String repository = String.valueOf(configResMap.get("repository"));
+        repository = repository.substring(1, repository.length() - 1);
+        String repositoryFormat = String.valueOf(configResMap.get("repositoryFormat"));
+        repositoryFormat = repositoryFormat.substring(1, repositoryFormat.length() - 1);
+
+        if (repositoryFormat.equals("docker")) {
+          IdentifierRef connectorIdentifier =
+              IdentifierRefHelper.getIdentifierRef(connectorRef, ngTriggerEntity.getAccountId(),
+                  ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier());
+          ArtifactoryConnectorDTO connector = getConnector(connectorIdentifier);
+          finalUrl = getArtifactoryRegistryUrl(connector.getArtifactoryServerUrl(), null, repository);
+
+          configResMap.put("repositoryUrl", finalUrl);
+        }
+      }
+    }
+
+    specResMap.replace("spec", configResMap);
+    sourceResMap.replace("spec", specResMap);
+    triggerResMap.replace("source", sourceResMap);
+    resMap.replace("trigger", triggerResMap);
+
+    ngTriggerEntity.setYaml(YamlPipelineUtils.writeYamlString(resMap));
+
+    return ngTriggerEntity;
+  }
+
+  private Map<String, Object> getResMap(YamlNode yamlNode) {
+    Map<String, Object> resMap = new LinkedHashMap<>();
+    List<YamlField> childFields = yamlNode.fields();
+
+    for (YamlField childYamlField : childFields) {
+      String fieldName = childYamlField.getName();
+      JsonNode value = childYamlField.getNode().getCurrJsonNode();
+
+      if (value.isValueNode() || YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(value)) {
+        // Value -> ValueNode
+        resMap.put(fieldName, value);
+      } else if (value.isArray()) {
+        // Value -> ArrayNode
+        resMap.put(fieldName, getResMapInArray(childYamlField.getNode()));
+      } else {
+        // Value -> ObjectNode
+        resMap.put(fieldName, getResMap(childYamlField.getNode()));
+      }
+    }
+    return resMap;
+  }
+
+  public ArtifactoryConnectorDTO getConnector(IdentifierRef artifactoryConnectorRef) {
+    Optional<ConnectorDTO> connectorDTO = NGRestUtils.getResponse(connectorResourceClient.get(
+        artifactoryConnectorRef.getIdentifier(), artifactoryConnectorRef.getAccountIdentifier(),
+        artifactoryConnectorRef.getOrgIdentifier(), artifactoryConnectorRef.getProjectIdentifier()));
+
+    if (!connectorDTO.isPresent() || !isAArtifactoryConnector(connectorDTO.get())) {
+      throw new ArtifactoryRegistryException(String.format("Connector not found for identifier : [%s] with scope: [%s]",
+          artifactoryConnectorRef.getIdentifier(), artifactoryConnectorRef.getScope()));
+    }
+    ConnectorInfoDTO connectors = connectorDTO.get().getConnectorInfo();
+    return (ArtifactoryConnectorDTO) connectors.getConnectorConfig();
+  }
+
+  private static boolean isAArtifactoryConnector(@NotNull ConnectorDTO connectorDTO) {
+    return ConnectorType.ARTIFACTORY == connectorDTO.getConnectorInfo().getConnectorType();
+  }
+
+  // Gets the ResMap if the yamlNode is of the type Array
+  private List<Object> getResMapInArray(YamlNode yamlNode) {
+    List<Object> arrayList = new ArrayList<>();
+    // Iterate over the array
+    for (YamlNode arrayElement : yamlNode.asArray()) {
+      if (yamlNode.getCurrJsonNode().isValueNode()) {
+        // Value -> LeafNode
+        arrayList.add(arrayElement);
+      } else if (arrayElement.isArray()) {
+        // Value -> Array
+        arrayList.add(getResMapInArray(arrayElement));
+      } else {
+        // Value -> Object
+        arrayList.add(getResMap(arrayElement));
+      }
+    }
+    return arrayList;
+  }
+
+  private YamlNode validateAndGetYamlNode(String yaml) {
+    if (isEmpty(yaml)) {
+      throw new InvalidRequestException("Service YAML is empty.");
+    }
+    YamlNode yamlNode = null;
+    try {
+      yamlNode = YamlUtils.readTree(yaml).getNode();
+    } catch (IOException e) {
+      log.error("Could not convert yaml to JsonNode. Yaml:\n" + yaml, e);
+    }
+    return yamlNode;
+  }
+
   private List<Integer> generateLastWeekActivityData(NGTriggerEntity ngTriggerEntity) {
     long startTime = System.currentTimeMillis() - Duration.ofDays(DAYS_BEFORE_CURRENT_DATE).toMillis();
     Criteria criteria = TriggerFilterHelper.createCriteriaForTriggerEventCountLastNDays(ngTriggerEntity.getAccountId(),
@@ -616,5 +767,14 @@ public class NGTriggerElementMapper {
                     .append(TriggerHelper.getTriggerRef(ngTriggerEntity))
                     .toString());
     }
+  }
+
+  public ObjectMapper getObjectMapper() {
+    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()
+                                                     .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+                                                     .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
+                                                     .disable(USE_NATIVE_TYPE_ID));
+    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    return objectMapper;
   }
 }

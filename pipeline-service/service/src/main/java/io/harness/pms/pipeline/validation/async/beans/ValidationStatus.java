@@ -7,6 +7,10 @@
 
 package io.harness.pms.pipeline.validation.async.beans;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 public enum ValidationStatus {
   INITIATED,
   IN_PROGRESS,
@@ -14,4 +18,9 @@ public enum ValidationStatus {
   FAILURE,
   ERROR,
   TERMINATED;
+
+  public static boolean isFinalStatus(ValidationStatus status) {
+    Set<ValidationStatus> finalStatuses = new HashSet<>(Arrays.asList(SUCCESS, FAILURE, ERROR, TERMINATED));
+    return finalStatuses.contains(status);
+  }
 }

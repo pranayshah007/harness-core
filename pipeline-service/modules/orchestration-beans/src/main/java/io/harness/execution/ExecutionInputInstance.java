@@ -10,14 +10,17 @@ package io.harness.execution;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.ng.DbAliases;
 
+import dev.morphia.annotations.Entity;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
@@ -32,10 +35,14 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("executionInputInstance")
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ExecutionInputInstance {
-  @Id @org.mongodb.morphia.annotations.Id String inputInstanceId;
+  public static final long TTL_MONTHS = 6;
+
+  @Id @dev.morphia.annotations.Id String inputInstanceId;
   @FdUniqueIndex String nodeExecutionId;
   @CreatedDate Long createdAt;
   @CreatedDate Long validUntil;
+  // TTL index
+  @Builder.Default @FdTtlIndex Date expireAt = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
   String template;
   String userInput;
   String fieldYaml;

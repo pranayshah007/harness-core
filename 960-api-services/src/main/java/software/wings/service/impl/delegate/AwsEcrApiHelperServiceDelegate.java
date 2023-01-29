@@ -13,7 +13,6 @@ import static java.util.Collections.singletonList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.aws.CloseableAmazonWebServiceClient;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.context.MdcGlobalContextData;
 import io.harness.exception.ExceptionUtils;
@@ -21,6 +20,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionMetadataKeys;
 import io.harness.globalcontex.ErrorHandlingGlobalContextData;
 import io.harness.manage.GlobalContextManager;
+
+import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;

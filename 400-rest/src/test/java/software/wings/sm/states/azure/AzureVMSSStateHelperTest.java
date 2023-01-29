@@ -17,7 +17,7 @@ import static io.harness.delegate.beans.azure.AzureMachineImageArtifactDTO.Image
 import static io.harness.delegate.beans.azure.AzureMachineImageArtifactDTO.OSType.LINUX;
 
 import static software.wings.beans.Environment.Builder.anEnvironment;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -73,7 +73,6 @@ import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.VMSSAuthType;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
@@ -85,6 +84,7 @@ import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.CommandUnitDetails;
 import software.wings.beans.command.ServiceCommand;
 import software.wings.beans.container.UserDataSpecification;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;

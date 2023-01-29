@@ -40,7 +40,6 @@ import io.harness.pcf.model.CfCliVersion;
 import io.harness.rule.Owner;
 
 import software.wings.api.DeploymentType;
-import software.wings.beans.AppContainer;
 import software.wings.beans.Application;
 import software.wings.beans.Application.Builder;
 import software.wings.beans.NameValuePair;
@@ -50,6 +49,7 @@ import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariableType;
 import software.wings.beans.yaml.ChangeContext;
 import software.wings.beans.yaml.GitFileChange;
+import software.wings.persistence.AppContainer;
 import software.wings.service.impl.yaml.handler.tag.HarnessTagYamlHelper;
 import software.wings.service.impl.yaml.service.YamlHelper;
 import software.wings.service.intfc.AppContainerService;

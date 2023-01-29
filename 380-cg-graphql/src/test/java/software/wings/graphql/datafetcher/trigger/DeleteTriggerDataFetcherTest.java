@@ -7,9 +7,14 @@
 
 package software.wings.graphql.datafetcher.trigger;
 
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.MILAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -17,6 +22,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import software.wings.beans.trigger.Trigger;
@@ -40,6 +47,7 @@ import org.mockito.Spy;
 public class DeleteTriggerDataFetcherTest extends CategoryTest {
   @Mock TriggerService triggerService;
   @Mock AppService appService;
+  @Mock FeatureFlagService featureFlagService;
 
   @InjectMocks
   @Spy
@@ -157,6 +165,35 @@ public class DeleteTriggerDataFetcherTest extends CategoryTest {
     Mockito.verify(triggerService, Mockito.times(1)).triggerActionExists(Matchers.any(Trigger.class));
     Mockito.verify(triggerService, Mockito.times(1)).authorize(Matchers.any(Trigger.class), Matchers.anyBoolean());
     Mockito.verify(triggerService, Mockito.times(1)).delete(Matchers.anyString(), Matchers.anyString());
+    Mockito.verify(appService, Mockito.times(1)).getAccountIdByAppId(Matchers.anyString());
+  }
+
+  @Test()
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void mutateAndFetchShouldThrowExceptionWhenNotAutorized() {
+    MutationContext mutationContext = MutationContext.builder().accountId("accountId").build();
+    QLDeleteTriggerInput qlDeleteTriggerInput = QLDeleteTriggerInput.builder()
+                                                    .triggerId("triggerId")
+                                                    .applicationId("appId")
+                                                    .clientMutationId("mutationId")
+                                                    .build();
+
+    Trigger trigger = Mockito.mock(Trigger.class);
+
+    when(appService.getAccountIdByAppId(qlDeleteTriggerInput.getApplicationId())).thenReturn("accountId");
+    when(triggerService.get(qlDeleteTriggerInput.getApplicationId(), qlDeleteTriggerInput.getTriggerId()))
+        .thenReturn(trigger, trigger);
+    when(triggerService.triggerActionExists(trigger)).thenReturn(true);
+    Mockito.doNothing().when(triggerService).authorize(trigger, true);
+    doReturn(true).when(featureFlagService).isEnabled(any(), any());
+    doThrow(new WingsException("")).when(triggerService).authorizeDeletion(any(Trigger.class));
+
+    assertThatThrownBy(() -> deleteTriggerDataFetcher.mutateAndFetch(qlDeleteTriggerInput, mutationContext))
+        .isInstanceOf(WingsException.class);
+
+    Mockito.verify(triggerService, Mockito.times(1)).triggerActionExists(Matchers.any(Trigger.class));
+    Mockito.verify(triggerService, Mockito.times(1)).authorize(Matchers.any(Trigger.class), Matchers.anyBoolean());
     Mockito.verify(appService, Mockito.times(1)).getAccountIdByAppId(Matchers.anyString());
   }
 }

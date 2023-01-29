@@ -36,6 +36,9 @@ public interface CfDeploymentManager {
   ApplicationDetail upsizeApplication(CfRequestConfig pcfRequestConfig, LogCallback executionLogCallback)
       throws PivotalClientApiException;
 
+  List<ApplicationSummary> getPreviousReleasesBasicAndCanaryNG(CfRequestConfig cfRequestConfig, String prefix)
+      throws PivotalClientApiException;
+
   void deleteApplication(CfRequestConfig cfRequestConfig) throws PivotalClientApiException;
 
   void renameApplication(CfRenameRequest cfRenameRequest, LogCallback logCallback) throws PivotalClientApiException;
@@ -72,6 +75,9 @@ public interface CfDeploymentManager {
   boolean checkIfAppHasAutoscalarAttached(CfAppAutoscalarRequestData appAutoscalarRequestData, LogCallback logCallback)
       throws PivotalClientApiException;
 
+  boolean checkIfAppHasAutoscalarEnabled(CfAppAutoscalarRequestData appAutoscalarRequestData, LogCallback logCallback)
+      throws PivotalClientApiException;
+
   ApplicationDetail upsizeApplicationWithSteadyStateCheck(CfRequestConfig cfRequestConfig, LogCallback logCallback)
       throws PivotalClientApiException;
 
@@ -80,12 +86,23 @@ public interface CfDeploymentManager {
 
   boolean isInActiveApplication(CfRequestConfig cfRequestConfig) throws PivotalClientApiException;
 
+  boolean isInActiveApplicationNG(CfRequestConfig cfRequestConfig) throws PivotalClientApiException;
+
   void setEnvironmentVariableForAppStatus(
       CfRequestConfig cfRequestConfig, boolean activeStatus, LogCallback logCallback) throws PivotalClientApiException;
+
+  void setEnvironmentVariableForAppStatusNG(CfRequestConfig cfRequestConfig, boolean activeStatus,
+      LogCallback executionLogCallback) throws PivotalClientApiException;
 
   void unsetEnvironmentVariableForAppStatus(CfRequestConfig cfRequestConfig, LogCallback logCallback)
       throws PivotalClientApiException;
 
   void runPcfPluginScript(CfRunPluginScriptRequestData requestData, LogCallback logCallback)
+      throws PivotalClientApiException;
+
+  ApplicationDetail createRollingApplicationWithSteadyStateCheck(CfCreateApplicationRequestData requestData,
+      LogCallback executionLogCallback) throws PivotalClientApiException, InterruptedException;
+
+  List<ApplicationSummary> getPreviousReleasesForRolling(CfRequestConfig cfRequestConfig, String prefix)
       throws PivotalClientApiException;
 }

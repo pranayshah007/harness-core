@@ -22,4 +22,5 @@ import lombok.experimental.FieldDefaults;
 public class GitFileCacheResponse {
   GitFileCacheObject gitFileCacheObject;
   CacheDetails cacheDetails;
+  GitFileCacheResponseMetadata gitFileCacheResponseMetadata;
 }

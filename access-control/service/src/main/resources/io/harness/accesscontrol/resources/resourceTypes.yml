@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 20
+version: 25
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -78,6 +78,8 @@ resourceTypes:
     permissionKey: issue
   - identifier: STO_SCAN
     permissionKey: scan
+  - identifier: TICKET
+    permissionKey: ticket
   - identifier: FILE
     permissionKey: file
   - identifier: VARIABLE
@@ -104,9 +106,21 @@ resourceTypes:
     permissionKey: autoStoppingRule
   - identifier: CCM_LOADBALANCER
     permissionKey: loadBalancer
+  - identifier: CCM_CURRENCYPREFERENCE
+    permissionKey: currencyPreference
+  - identifier: CCM_CLOUD_ASSET_GOVERNANCE_RULE
+    permissionKey: cloudAssetGovernanceRule
+  - identifier: CCM_CLOUD_ASSET_GOVERNANCE_RULE_SET
+    permissionKey: cloudAssetGovernanceRuleSet
+  - identifier: CCM_CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT
+    permissionKey: cloudAssetGovernanceEnforcement
   - identifier: SMTP
     permissionKey: smtp
   - identifier: SETTING
     permissionKey: setting
   - identifier: DEPLOYMENTFREEZE
     permissionKey: deploymentfreeze
+  - identifier: IAC_STACK
+    permissionKey: stack
+  - identifier: STREAMING_DESTINATION
+    permissionKey: streamingDestination

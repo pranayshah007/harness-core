@@ -24,6 +24,7 @@ import io.harness.rule.Owner;
 import io.harness.spec.server.accesscontrol.v1.model.CreateRoleRequest;
 import io.harness.spec.server.accesscontrol.v1.model.RolesResponse;
 import io.harness.spec.server.accesscontrol.v1.model.RolesResponse.AllowedScopeLevelsEnum;
+import io.harness.utils.ApiUtils;
 
 import java.util.Collections;
 import javax.validation.Validation;
@@ -36,7 +37,7 @@ import org.junit.experimental.categories.Category;
 public class RolesApiUtilsTest {
   private RolesApiUtils rolesApiUtils;
   private Validator validator;
-  String slug = randomAlphabetic(10);
+  String identifier = randomAlphabetic(10);
   String name = randomAlphabetic(10);
 
   @Before
@@ -51,12 +52,12 @@ public class RolesApiUtilsTest {
   @Category(UnitTests.class)
   public void testGetRoleAccDTO() {
     CreateRoleRequest request = new CreateRoleRequest();
-    request.setSlug(slug);
+    request.setIdentifier(identifier);
     request.setName(name);
     request.setPermissions(Collections.singletonList("core_role_view"));
 
     RoleDTO roleDTO = rolesApiUtils.getRoleAccDTO(request);
-    assertEquals(slug, roleDTO.getIdentifier());
+    assertEquals(identifier, roleDTO.getIdentifier());
     assertEquals(name, roleDTO.getName());
     assertTrue(roleDTO.getPermissions().contains("core_role_view"));
     assertTrue(roleDTO.getAllowedScopeLevels().contains("account"));
@@ -69,12 +70,12 @@ public class RolesApiUtilsTest {
   @Category(UnitTests.class)
   public void testGetRoleOrgDTO() {
     CreateRoleRequest request = new CreateRoleRequest();
-    request.setSlug(slug);
+    request.setIdentifier(identifier);
     request.setName(name);
     request.setPermissions(Collections.singletonList("core_role_view"));
 
     RoleDTO roleDTO = rolesApiUtils.getRoleOrgDTO(request);
-    assertEquals(slug, roleDTO.getIdentifier());
+    assertEquals(identifier, roleDTO.getIdentifier());
     assertEquals(name, roleDTO.getName());
     assertTrue(roleDTO.getPermissions().contains("core_role_view"));
     assertFalse(roleDTO.getAllowedScopeLevels().contains("account"));
@@ -87,12 +88,12 @@ public class RolesApiUtilsTest {
   @Category(UnitTests.class)
   public void testGetRoleProjectDTO() {
     CreateRoleRequest request = new CreateRoleRequest();
-    request.setSlug(slug);
+    request.setIdentifier(identifier);
     request.setName(name);
     request.setPermissions(Collections.singletonList("core_role_view"));
 
     RoleDTO roleDTO = rolesApiUtils.getRoleProjectDTO(request);
-    assertEquals(slug, roleDTO.getIdentifier());
+    assertEquals(identifier, roleDTO.getIdentifier());
     assertEquals(name, roleDTO.getName());
     assertTrue(roleDTO.getPermissions().contains("core_role_view"));
     assertFalse(roleDTO.getAllowedScopeLevels().contains("account"));
@@ -106,7 +107,7 @@ public class RolesApiUtilsTest {
   public void testGetRolesResponse() {
     RoleResponseDTO responseDTO = RoleResponseDTO.builder()
                                       .role(RoleDTO.builder()
-                                                .identifier(slug)
+                                                .identifier(identifier)
                                                 .name(name)
                                                 .permissions(Collections.singleton("core_role_view"))
                                                 .allowedScopeLevels(Collections.singleton("account"))
@@ -115,7 +116,7 @@ public class RolesApiUtilsTest {
                                       .build();
 
     RolesResponse rolesResponse = RolesApiUtils.getRolesResponse(responseDTO);
-    assertEquals(slug, rolesResponse.getSlug());
+    assertEquals(identifier, rolesResponse.getIdentifier());
     assertEquals(name, rolesResponse.getName());
     assertTrue(rolesResponse.getPermissions().get(0).equals("core_role_view"));
     assertEquals(AllowedScopeLevelsEnum.ACCOUNT, rolesResponse.getAllowedScopeLevels().get(0));
@@ -131,7 +132,7 @@ public class RolesApiUtilsTest {
     String sort = "name";
     String order = "desc";
 
-    PageRequest pageRequest = RolesApiUtils.getPageRequest(page, limit, sort, order);
+    PageRequest pageRequest = ApiUtils.getPageRequest(page, limit, sort, order);
     assertEquals(pageRequest.getPageIndex(), page);
     assertEquals(pageRequest.getPageSize(), limit);
     assertEquals(pageRequest.getSortOrders().get(0).getFieldName(), sort);

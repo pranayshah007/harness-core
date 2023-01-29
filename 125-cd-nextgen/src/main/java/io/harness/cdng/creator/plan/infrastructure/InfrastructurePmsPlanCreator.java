@@ -18,7 +18,7 @@ import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig;
-import io.harness.cdng.infra.steps.InfraSectionStepParameters;
+import io.harness.cdng.infra.InfraSectionStepParameters;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
 import io.harness.cdng.infra.steps.InfrastructureStep;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStep;
@@ -347,7 +347,7 @@ public class InfrastructurePmsPlanCreator {
     return actualInfraConfig.getInfrastructureDefinition().getProvisioner() != null;
   }
 
-  private PlanNode getProvisionerPlanNode(
+  public PlanNode getProvisionerPlanNode(
       YamlField provisionerYamlField, String childNodeId, String infraStepNodeId, KryoSerializer kryoSerializer) {
     StepParameters stepParameters =
         NGSectionStepParameters.builder().childNodeId(childNodeId).logMessage("Provisioner Section").build();

@@ -16,6 +16,7 @@ import static java.util.stream.Collectors.toList;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
@@ -38,10 +39,13 @@ import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptionConfig;
 
 import software.wings.helpers.ext.jenkins.JobDetails;
 
@@ -105,7 +109,8 @@ public class ArtifactDelegateRequestUtils {
   }
   public DockerArtifactDelegateRequest getDockerDelegateRequest(String imagePath, String tag, String tagRegex,
       List<String> tagsList, String connectorRef, DockerConnectorDTO dockerConnectorDTO,
-      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
+      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType,
+      Boolean shouldFetchDockerV2DigestSHA256) {
     return DockerArtifactDelegateRequest.builder()
         .imagePath(trim(imagePath))
         .tag(trim(tag))
@@ -115,6 +120,7 @@ public class ArtifactDelegateRequestUtils {
         .dockerConnectorDTO(dockerConnectorDTO)
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)
+        .shouldFetchDockerV2DigestSHA256(shouldFetchDockerV2DigestSHA256)
         .build();
   }
   public NexusArtifactDelegateRequest getNexusArtifactDelegateRequest(String repositoryName, String repositoryPort,
@@ -306,6 +312,30 @@ public class ArtifactDelegateRequestUtils {
         .build();
   }
 
+  public CustomArtifactDelegateRequest getCustomDelegateRequest(String artifactsArrayPath, String versionRegex,
+      String type, ArtifactSourceType sourceType, String versionPath, String script, Map<String, String> attributes,
+      Map<String, String> inputs, String version, String executionId, long timeout, String accountId,
+      Map<String, EncryptionConfig> encryptionConfigs, Map<String, SecretDetail> secretDetails, int expressionToken) {
+    return CustomArtifactDelegateRequest.builder()
+        .artifactsArrayPath(artifactsArrayPath)
+        .attributes(attributes)
+        .versionRegex(trim(versionRegex))
+        .sourceType(sourceType)
+        .type(type)
+        .versionPath(versionPath)
+        .script(script)
+        .timeout(timeout)
+        .inputs(inputs)
+        .version(version)
+        .executionId(executionId)
+        .workingDirectory("/tmp")
+        .accountId(accountId)
+        .encryptionConfigs(encryptionConfigs)
+        .secretDetails(secretDetails)
+        .expressionFunctorToken(expressionToken)
+        .build();
+  }
+
   private String trim(String str) {
     return str == null ? null : str.trim();
   }
@@ -346,6 +376,20 @@ public class ArtifactDelegateRequestUtils {
         .build();
   }
 
+  public static GoogleCloudSourceArtifactDelegateRequest getGoogleCloudSourceArtifactDelegateRequest(String repository,
+      String project, String sourceDirectory, GcpConnectorDTO gcpConnectorDTO, String connectorRef,
+      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
+    return GoogleCloudSourceArtifactDelegateRequest.builder()
+        .repository(repository)
+        .project(project)
+        .sourceDirectory(sourceDirectory)
+        .gcpConnectorDTO(gcpConnectorDTO)
+        .connectorRef(connectorRef)
+        .encryptedDataDetails(encryptedDataDetails)
+        .sourceType(sourceType)
+        .build();
+  }
+
   public static AMIArtifactDelegateRequest getAMIArtifactDelegateRequest(List<AMITag> tags, List<AMIFilter> filters,
       String region, String version, String versionRegex, String connectorRef, AwsConnectorDTO awsConnectorDTO,
       List<EncryptedDataDetail> encryptionDetails, ArtifactSourceType artifactSourceType) {
@@ -377,6 +421,20 @@ public class ArtifactDelegateRequestUtils {
         .tags(tagMap)
         .filters(filterMap)
         .sourceType(artifactSourceType)
+        .build();
+  }
+
+  public static GoogleCloudStorageArtifactDelegateRequest getGoogleCloudStorageArtifactDelegateRequest(String bucket,
+      String project, String artifactPath, GcpConnectorDTO gcpConnectorDTO, String connectorRef,
+      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
+    return GoogleCloudStorageArtifactDelegateRequest.builder()
+        .bucket(bucket)
+        .project(project)
+        .artifactPath(artifactPath)
+        .gcpConnectorDTO(gcpConnectorDTO)
+        .connectorRef(connectorRef)
+        .encryptedDataDetails(encryptedDataDetails)
+        .sourceType(sourceType)
         .build();
   }
 }

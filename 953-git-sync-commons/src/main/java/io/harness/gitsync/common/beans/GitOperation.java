@@ -18,7 +18,9 @@ public enum GitOperation {
   GET_FILE("get file"),
   GET_REPO_URL("get repo url"),
   GET_BRANCH_HEAD_COMMIT("get branch head commit"),
-  LIST_FILES("list files");
+  LIST_FILES("list files"),
+  BG_THREAD_GET_FILE("background thread get file"),
+  ;
 
   private String value;
 

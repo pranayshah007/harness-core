@@ -21,7 +21,7 @@ import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row11;
+import org.jooq.Row15;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -119,6 +119,30 @@ public class CeRecommendations extends TableImpl<CeRecommendationsRecord> {
           DSL.field("now()", SQLDataType.TIMESTAMPWITHTIMEZONE)),
       this, "");
 
+  /**
+   * The column <code>public.ce_recommendations.jiraconnectorref</code>.
+   */
+  public final TableField<CeRecommendationsRecord, String> JIRACONNECTORREF =
+      createField(DSL.name("jiraconnectorref"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.ce_recommendations.jiraissuekey</code>.
+   */
+  public final TableField<CeRecommendationsRecord, String> JIRAISSUEKEY =
+      createField(DSL.name("jiraissuekey"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.ce_recommendations.jirastatus</code>.
+   */
+  public final TableField<CeRecommendationsRecord, String> JIRASTATUS =
+      createField(DSL.name("jirastatus"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.ce_recommendations.recommendationstate</code>.
+   */
+  public final TableField<CeRecommendationsRecord, String> RECOMMENDATIONSTATE =
+      createField(DSL.name("recommendationstate"), SQLDataType.CLOB, this, "");
+
   private CeRecommendations(Name alias, Table<CeRecommendationsRecord> aliased) {
     this(alias, aliased, null);
   }
@@ -198,8 +222,9 @@ public class CeRecommendations extends TableImpl<CeRecommendationsRecord> {
   // -------------------------------------------------------------------------
 
   @Override
-  public Row11<String, String, String, Double, Double, String, String, String, Boolean, OffsetDateTime, OffsetDateTime>
+  public Row15<String, String, String, Double, Double, String, String, String, Boolean, OffsetDateTime, OffsetDateTime,
+      String, String, String, String>
   fieldsRow() {
-    return (Row11) super.fieldsRow();
+    return (Row15) super.fieldsRow();
   }
 }

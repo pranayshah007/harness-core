@@ -24,6 +24,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -61,7 +62,8 @@ public class PipelineVariableCreator extends ChildrenVariableCreator<PipelineInf
     return VariableCreationResponse.builder().yamlProperties(yamlPropertiesMap).build();
   }
 
-  private void addVariablesForPipeline(Map<String, YamlProperties> yamlPropertiesMap, YamlNode yamlNode) {
+  @VisibleForTesting
+  void addVariablesForPipeline(Map<String, YamlProperties> yamlPropertiesMap, YamlNode yamlNode) {
     YamlField nameField = yamlNode.getField(YAMLFieldNameConstants.NAME);
     if (nameField != null) {
       String nameFQN = YamlUtils.getFullyQualifiedName(nameField.getNode());
@@ -123,8 +125,8 @@ public class PipelineVariableCreator extends ChildrenVariableCreator<PipelineInf
     return PipelineInfoConfig.class;
   }
 
-  private void getStageYamlFields(
-      YamlField stagesYamlNode, LinkedHashMap<String, VariableCreationResponse> responseMap) {
+  @VisibleForTesting
+  void getStageYamlFields(YamlField stagesYamlNode, LinkedHashMap<String, VariableCreationResponse> responseMap) {
     List<YamlNode> yamlNodes = Optional.of(stagesYamlNode.getNode().asArray()).orElse(Collections.emptyList());
     List<YamlField> stageFields = new LinkedList<>();
 
@@ -184,7 +186,8 @@ public class PipelineVariableCreator extends ChildrenVariableCreator<PipelineInf
         .build();
   }
 
-  private YamlExtraProperties getPipelineExtraProperties(PipelineInfoConfig config) {
+  @VisibleForTesting
+  YamlExtraProperties getPipelineExtraProperties(PipelineInfoConfig config) {
     // Adding sequenceId expression (not part of the yaml, thus visible - false)
     YamlProperties sequenceIdProperty =
         YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".sequenceId").build();

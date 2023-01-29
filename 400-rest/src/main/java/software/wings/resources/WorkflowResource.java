@@ -98,7 +98,7 @@ import javax.ws.rs.QueryParam;
 @OwnedBy(HarnessTeam.CDC)
 public class WorkflowResource {
   @Inject private ArtifactStreamServiceBindingService artifactStreamServiceBindingService;
-  @Inject private AppService appService;
+  private AppService appService;
 
   private WorkflowService workflowService;
   private AuthService authService;
@@ -110,9 +110,10 @@ public class WorkflowResource {
    * @param authService the auth service
    */
   @Inject
-  public WorkflowResource(WorkflowService workflowService, AuthService authService) {
+  public WorkflowResource(WorkflowService workflowService, AuthService authService, AppService appService) {
     this.workflowService = workflowService;
     this.authService = authService;
+    this.appService = appService;
   }
 
   /**

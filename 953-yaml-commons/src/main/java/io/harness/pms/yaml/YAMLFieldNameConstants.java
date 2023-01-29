@@ -18,6 +18,7 @@ import lombok.experimental.UtilityClass;
 public class YAMLFieldNameConstants {
   public final String EXECUTION = "execution";
   public final String PIPELINE = "pipeline";
+  public final String POLICY_OUTPUT = "policyOutput";
   public final String CI_CODE_BASE = "codebase";
   public final String PROPERTIES = "properties";
   public final String CI = "ci";
@@ -58,6 +59,7 @@ public class YAMLFieldNameConstants {
   public final String CONNECTOR_REFS = "connectorRefs";
   public final String FILES = "files";
   public final String SECRET_FILES = "secretFiles";
+  public final String SECRET = "secret";
   public final String CODEBASE_CONNECTOR_REF = "ciCodebase.connectorRef";
   public final String USE_ROLLBACK_STRATEGY = "useRollbackStrategy";
   public final String FAILED_CHILDREN_OUTPUT = "failedChildrenOutput";
@@ -93,4 +95,13 @@ public class YAMLFieldNameConstants {
   public final String ENVIRONMENT_REF = "environmentRef";
   public final String GROUP = "group";
   public static final String OUTPUTS = "outputs";
+
+  public final String REPOSITORY = "repository";
+  public final String DEFAULT = "default";
+  public final String REFERENCE = "reference";
+  public final String REGISTRY = "registry";
+
+  public final String VALUES_PATHS = "valuesPaths";
+  public final String PARAMS_PATHS = "paramsPaths";
+  public final String PATCHES_PATHS = "patchesPaths";
 }

@@ -11,6 +11,7 @@ import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
@@ -34,6 +35,7 @@ import io.harness.persistence.HPersistence;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import dev.morphia.query.Sort;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -42,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineService {
@@ -258,7 +259,7 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
         verificationTaskId, "verificationTaskId is null when trying to query for executing state machine");
     return hPersistence.createQuery(AnalysisStateMachine.class)
         .filter(AnalysisStateMachineKeys.verificationTaskId, verificationTaskId)
-        .order(Sort.descending(AnalysisStateMachineKeys.createdAt))
+        .order(Sort.descending(VerificationTaskBaseKeys.createdAt))
         .get();
   }
 

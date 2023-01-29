@@ -9,6 +9,8 @@ package io.harness.serializer.kryo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.beans.entities.PluginMetadataConfig;
+import io.harness.app.beans.entities.PluginMetadataStatus;
 import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.beans.build.BuildUpdateType;
 import io.harness.beans.build.CIPipelineDetails;
@@ -34,7 +36,6 @@ import io.harness.beans.execution.WebhookGitUser;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.inputset.WebhookTriggerExecutionInputSet;
 import io.harness.beans.outcomes.DependencyOutcome;
-import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.steps.stepinfo.BuildEnvSetupStepInfo;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
@@ -98,7 +99,6 @@ public class CIBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(ConnectorConversionInfo.class, 100085);
     kryo.register(PodCleanupDetails.class, 100087);
     kryo.register(CustomExecutionSource.class, 100088);
-    kryo.register(LiteEnginePodDetailsOutcome.class, 100089);
     kryo.register(ContainerPortDetails.class, 100090);
     kryo.register(StageDetails.class, 100094);
     kryo.register(VmBuildJobInfo.class, 100095);
@@ -110,5 +110,7 @@ public class CIBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(EncryptedDataDetails.class, 110111);
     kryo.register(BuildUpdateType.class, 390003);
     kryo.register(BuildStatusUpdateParameter.class, 390004);
+    kryo.register(PluginMetadataConfig.class, 110143);
+    kryo.register(PluginMetadataStatus.class, 110144);
   }
 }

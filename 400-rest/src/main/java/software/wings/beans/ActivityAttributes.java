@@ -8,8 +8,8 @@
 package software.wings.beans;
 
 import software.wings.beans.Activity.Type;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.command.CommandUnit;
+import software.wings.persistence.artifact.Artifact;
 
 import java.util.List;
 import lombok.Builder;

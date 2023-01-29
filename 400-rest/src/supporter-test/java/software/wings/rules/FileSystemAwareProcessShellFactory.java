@@ -7,13 +7,14 @@
 
 package software.wings.rules;
 
-import static java.util.Arrays.asList;
-
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.apache.sshd.common.util.GenericUtils;
-import org.apache.sshd.server.Command;
+import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.shell.InvertedShell;
+import org.apache.sshd.server.shell.ProcessShell;
 import org.apache.sshd.server.shell.ProcessShellFactory;
 
 /**
@@ -23,8 +24,15 @@ public class FileSystemAwareProcessShellFactory extends ProcessShellFactory {
   /**
    * Instantiates a new File system aware process shell factory.
    */
-  public FileSystemAwareProcessShellFactory() {
-    this(Collections.<String>emptyList());
+  public FileSystemAwareProcessShellFactory() {}
+
+  /**
+   * Instantiates a new File system aware process shell factory.
+   *
+   * @param command the command
+   */
+  public FileSystemAwareProcessShellFactory(String command, String... elements) {
+    this(command, GenericUtils.isEmpty(elements) ? Collections.emptyList() : Arrays.asList(elements));
   }
 
   /**
@@ -32,26 +40,17 @@ public class FileSystemAwareProcessShellFactory extends ProcessShellFactory {
    *
    * @param command the command
    */
-  public FileSystemAwareProcessShellFactory(String... command) {
-    this(GenericUtils.isEmpty(command) ? Collections.<String>emptyList() : asList(command));
-  }
-
-  /**
-   * Instantiates a new File system aware process shell factory.
-   *
-   * @param command the command
-   */
-  public FileSystemAwareProcessShellFactory(List<String> command) {
-    super(command);
+  public FileSystemAwareProcessShellFactory(String command, List<String> elements) {
+    super(command, elements);
   }
 
   @Override
-  public Command create() {
-    return new FileSystemAwareInvertedShellWrapper(createInvertedShell());
+  public Command createShell(ChannelSession channel) {
+    return new FileSystemAwareInvertedShellWrapper(createInvertedShell(channel));
   }
 
   @Override
-  protected InvertedShell createInvertedShell() {
-    return new FileSystemAwareProcessShell(resolveEffectiveCommand(getCommand()));
+  protected InvertedShell createInvertedShell(ChannelSession channel) {
+    return new ProcessShell(this.resolveEffectiveCommand(channel, this.getCommand(), this.getElements()));
   }
 }

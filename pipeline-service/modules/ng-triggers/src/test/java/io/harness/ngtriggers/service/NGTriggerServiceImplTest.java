@@ -9,12 +9,15 @@ package io.harness.ngtriggers.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.ngtriggers.beans.source.YamlFields.PIPELINE_BRANCH_NAME;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.MATT;
+import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
+import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.USE_NATIVE_TYPE_ID;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,18 +47,20 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatus;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogType;
-import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCategory;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookInfo;
+import io.harness.ngtriggers.beans.source.GitMoveOperationType;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
+import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
@@ -70,6 +75,9 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.rbac.PipelineRbacPermissions;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.polling.client.PollingResourceClient;
 import io.harness.polling.contracts.GitPollingPayload;
 import io.harness.polling.contracts.PollingItem;
@@ -80,13 +88,19 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.io.Resources;
 import com.mongodb.client.result.DeleteResult;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -429,22 +443,23 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetTriggerCatalog() {
     when(triggerCatalogHelper.getTriggerTypeToCategoryMapping(ACCOUNT_ID))
-        .thenReturn(Arrays.asList(TriggerCatalogItem.builder()
-                                      .category(TriggerCategory.ARTIFACT)
-                                      .triggerCatalogType(new HashSet<>(Collections.singleton(TriggerCatalogType.ACR)))
-                                      .build(),
-            TriggerCatalogItem.builder()
-                .category(TriggerCategory.WEBHOOK)
-                .triggerCatalogType(new HashSet<>(Collections.singleton(TriggerCatalogType.GITHUB)))
-                .build(),
-            TriggerCatalogItem.builder()
-                .category(TriggerCategory.SCHEDULED)
-                .triggerCatalogType(new HashSet<>(Collections.singleton(TriggerCatalogType.CRON)))
-                .build(),
-            TriggerCatalogItem.builder()
-                .category(TriggerCategory.MANIFEST)
-                .triggerCatalogType(new HashSet<>(Collections.singleton(TriggerCatalogType.HELM_CHART)))
-                .build()));
+        .thenReturn(
+            Arrays.asList(TriggerCatalogItem.builder()
+                              .category(NGTriggerType.ARTIFACT)
+                              .triggerCatalogType(new ArrayList<>(Collections.singleton(TriggerCatalogType.ACR)))
+                              .build(),
+                TriggerCatalogItem.builder()
+                    .category(NGTriggerType.WEBHOOK)
+                    .triggerCatalogType(new ArrayList<>(Collections.singleton(TriggerCatalogType.GITHUB)))
+                    .build(),
+                TriggerCatalogItem.builder()
+                    .category(NGTriggerType.SCHEDULED)
+                    .triggerCatalogType(new ArrayList<>(Collections.singleton(TriggerCatalogType.CRON)))
+                    .build(),
+                TriggerCatalogItem.builder()
+                    .category(NGTriggerType.MANIFEST)
+                    .triggerCatalogType(new ArrayList<>(Collections.singleton(TriggerCatalogType.HELM_CHART)))
+                    .build()));
     List<TriggerCatalogItem> lst = ngTriggerServiceImpl.getTriggerCatalog(ACCOUNT_ID);
     assertThat(lst).isNotNull();
     assertThat(lst.size()).isEqualTo(4);
@@ -480,5 +495,143 @@ public class NGTriggerServiceImplTest extends CategoryTest {
                            -> ngTriggerServiceImpl.checkAuthorization(
                                ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, IDENTIFIER, headerConfigs))
         .isInstanceOf(AccessDeniedException.class);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetTriggerYamlDiffTriggerWithExtraInput() throws IOException {
+    checkTriggerYamlDiff("trigger-yaml-diff-pipeline-with-input.yaml", "trigger-yaml-diff-trigger-extra-input.yaml",
+        "trigger-yaml-diff-expected-new-trigger-with-input.yaml", true);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetTriggerYamlDiffTriggerWithMissingInput() throws IOException {
+    checkTriggerYamlDiff("trigger-yaml-diff-pipeline-with-input.yaml", "trigger-yaml-diff-trigger-missing-input.yaml",
+        "trigger-yaml-diff-expected-new-trigger-with-input.yaml", true);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetTriggerYamlDiffTriggerWithNoInput() throws IOException {
+    checkTriggerYamlDiff("trigger-yaml-diff-pipeline-with-input.yaml", "trigger-yaml-diff-trigger-no-input.yaml",
+        "trigger-yaml-diff-expected-new-trigger-with-input.yaml", true);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetTriggerYamlDiffTriggerWithRightInput() throws IOException {
+    checkTriggerYamlDiff("trigger-yaml-diff-pipeline-with-input.yaml", "trigger-yaml-diff-trigger-right-input.yaml",
+        "trigger-yaml-diff-expected-new-trigger-with-input.yaml", true);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetTriggerYamlDiffTriggerWithWrongInputFormat() throws IOException {
+    checkTriggerYamlDiff("trigger-yaml-diff-pipeline-with-input.yaml",
+        "trigger-yaml-diff-trigger-wrong-input-format.yaml", "trigger-yaml-diff-expected-new-trigger-with-input.yaml",
+        true);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetTriggerYamlDiffWhenPipelineHasNoInput() throws IOException {
+    checkTriggerYamlDiff("trigger-yaml-diff-pipeline-no-input.yaml", "trigger-yaml-diff-trigger-extra-input.yaml",
+        "trigger-yaml-diff-expected-new-trigger-no-input.yaml", true);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetTriggerYamlDiffWhenTriggerForRemotePipeline() throws IOException {
+    checkTriggerYamlDiff("trigger-yaml-diff-pipeline-with-input.yaml", "trigger-yaml-diff-trigger-with-input-set.yaml",
+        "trigger-yaml-diff-trigger-with-input-set.yaml", false);
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testUpdateBranchName() throws IOException {
+    String pipelineBranchName = "pipelineBranchName";
+    TriggerUpdateCount triggerUpdateCount = TriggerUpdateCount.builder().failureCount(0).successCount(1).build();
+    String filenamePipelineBranchName = "ng-trigger-pipeline-branch-name.yaml";
+    NGTriggerEntity ngTrigger =
+        NGTriggerEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .identifier(IDENTIFIER)
+            .projectIdentifier(PROJ_IDENTIFIER)
+            .targetIdentifier(PIPELINE_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .type(NGTriggerType.WEBHOOK)
+            .yaml(Resources.toString(
+                Objects.requireNonNull(classLoader.getResource(filenamePipelineBranchName)), StandardCharsets.UTF_8))
+            .build();
+    Optional<List<NGTriggerEntity>> optionalNGTriggerList = Optional.of(Collections.singletonList(ngTrigger));
+
+    when(ngTriggerRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndDeletedNot(
+             eq(ACCOUNT_ID), eq(ORG_IDENTIFIER), eq(PROJ_IDENTIFIER), eq(PIPELINE_IDENTIFIER), eq(true)))
+        .thenReturn(optionalNGTriggerList);
+
+    when(ngTriggerRepository.updateTriggerYaml(any())).thenReturn(triggerUpdateCount);
+
+    ngTriggerServiceImpl.updateBranchName(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
+        GitMoveOperationType.REMOTE_TO_INLINE, pipelineBranchName);
+
+    YamlField yamlField = YamlUtils.readTree(ngTrigger.getYaml());
+    YamlNode triggerNode = yamlField.getNode().getField("trigger").getNode();
+    assertThat(((ObjectNode) triggerNode.getCurrJsonNode().get(PIPELINE_BRANCH_NAME))).isNull();
+
+    ngTriggerServiceImpl.updateBranchName(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
+        GitMoveOperationType.INLINE_TO_REMOTE, pipelineBranchName);
+
+    YamlField yamlField1 = YamlUtils.readTree(ngTrigger.getYaml());
+    YamlNode triggerNode1 = yamlField1.getNode().getField("trigger").getNode();
+    assertThat((triggerNode1.getCurrJsonNode().get(PIPELINE_BRANCH_NAME))).isEqualTo(new TextNode(pipelineBranchName));
+  }
+
+  private void checkTriggerYamlDiff(String filenamePipeline, String filenameTrigger, String filenameNewTrigger,
+      Boolean useNullPipelineBranchName) throws IOException {
+    String newTriggerYaml =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(filenameNewTrigger)), StandardCharsets.UTF_8);
+    String triggerYaml =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(filenameTrigger)), StandardCharsets.UTF_8);
+    NGTriggerEntity ngTriggerEntity = NGTriggerEntity.builder()
+                                          .accountId(ACCOUNT_ID)
+                                          .orgIdentifier(ORG_IDENTIFIER)
+                                          .projectIdentifier(PROJ_IDENTIFIER)
+                                          .targetIdentifier(PIPELINE_IDENTIFIER)
+                                          .identifier(IDENTIFIER)
+                                          .name(NAME)
+                                          .targetType(TargetType.PIPELINE)
+                                          .type(NGTriggerType.WEBHOOK)
+                                          .metadata(ngTriggerMetadata)
+                                          .yaml(triggerYaml)
+                                          .version(0L)
+                                          .build();
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerEntity(ngTriggerEntity)
+            .ngTriggerConfigV2(NGTriggerConfigV2.builder()
+                                   .inputSetRefs(Collections.emptyList())
+                                   .pipelineBranchName(useNullPipelineBranchName ? null : "pipelineBranchName")
+                                   .build())
+            .build();
+    String pipelineYaml =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(filenamePipeline)), StandardCharsets.UTF_8);
+    when(validationHelper.fetchPipelineForTrigger(any())).thenReturn(Optional.ofNullable(pipelineYaml));
+    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()
+                                                     .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+                                                     .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
+                                                     .disable(USE_NATIVE_TYPE_ID));
+    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    when(ngTriggerElementMapper.getObjectMapper()).thenReturn(objectMapper);
+    TriggerYamlDiffDTO yamlDiffResponse = ngTriggerServiceImpl.getTriggerYamlDiff(triggerDetails);
+    assertThat(yamlDiffResponse.getNewYAML().replace("<+input>", "1")).isEqualTo(newTriggerYaml);
   }
 }

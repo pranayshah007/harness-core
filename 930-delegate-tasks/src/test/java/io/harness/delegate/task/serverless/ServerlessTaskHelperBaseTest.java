@@ -177,7 +177,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
                                                                      .build();
 
     doNothing().when(serverlessGitFetchTaskHelper).decryptGitStoreConfig(gitStoreDelegateConfig);
-    doNothing().when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback);
+    doReturn(null).when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback);
     doReturn("fileLog")
         .when(serverlessTaskHelperBase)
         .getManifestFileNamesInLogFormat(serverlessDelegateTaskParams.getWorkingDirectory());
@@ -214,7 +214,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
                                                                      .build();
 
     doNothing().when(serverlessGitFetchTaskHelper).decryptGitStoreConfig(gitStoreDelegateConfig);
-    doNothing().when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback);
+    doReturn(null).when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback);
     doReturn("fileLog")
         .when(serverlessTaskHelperBase)
         .getManifestFileNamesInLogFormat(serverlessDelegateTaskParams.getWorkingDirectory());
@@ -249,7 +249,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
                                                                      .build();
 
     doNothing().when(serverlessGitFetchTaskHelper).decryptGitStoreConfig(gitStoreDelegateConfig);
-    doNothing().when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback);
+    doReturn(null).when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback);
     doReturn("fileLog")
         .when(serverlessTaskHelperBase)
         .getManifestFileNamesInLogFormat(serverlessDelegateTaskParams.getWorkingDirectory());

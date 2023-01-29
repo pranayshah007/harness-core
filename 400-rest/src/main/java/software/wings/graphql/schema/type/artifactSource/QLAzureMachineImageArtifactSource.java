@@ -17,20 +17,17 @@ import software.wings.graphql.schema.type.QLAzureImageDefinition;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.Scope;
 
-import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.SuperBuilder;
 
 @OwnedBy(CDC)
 @Value
-@Builder
+@SuperBuilder
 @FieldNameConstants(innerTypeName = "QLAzureMachineImageArtifactSourceKeys")
 @Scope(PermissionAttribute.ResourceType.SERVICE)
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
-public class QLAzureMachineImageArtifactSource implements QLArtifactSource {
-  String name;
-  String id;
-  Long createdAt;
+public class QLAzureMachineImageArtifactSource extends QLArtifactSourceBase {
   String azureCloudProviderId;
   String imageType;
   String subscriptionId;

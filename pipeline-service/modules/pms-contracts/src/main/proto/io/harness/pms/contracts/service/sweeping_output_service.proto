@@ -18,6 +18,7 @@ service SweepingOutputService {
   rpc consume(SweepingOutputConsumeBlobRequest) returns (SweepingOutputConsumeBlobResponse);
   rpc listOutputsUsingNodeIds(SweepingOutputListRequest) returns (SweepingOutputListResponse);
   rpc listOutputsUsingExecutionIds(SweepingOutputListRequest) returns (SweepingOutputListResponse);
+  rpc consumeOptional(SweepingOutputConsumeBlobRequest) returns (SweepingOutputConsumeBlobResponse);
 }
 
 message SweepingOutputResolveBlobRequest {

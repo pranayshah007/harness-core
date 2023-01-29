@@ -25,12 +25,11 @@ import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters.OnFailRollbackParametersBuilder;
-import io.harness.advisers.rollback.ProceedWithDefaultValueAdviser;
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
-import io.harness.cdng.pipeline.CdAbstractStepNode;
+import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
+import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
@@ -47,13 +46,14 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
-import io.harness.pms.sdk.core.adviser.ProceedWithDefaultAdviserParameters;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviserParameters;
 import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviser;
 import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviserParameters;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviser;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameters;
+import io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultAdviserParameters;
+import io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultValueAdviser;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -222,7 +222,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
   protected StepParameters getStepParameters(PlanCreationContext ctx, T stepElement) {
     if (stepElement.getStepSpecType() instanceof WithStepElementParameters) {
       stepElement.setTimeout(TimeoutUtils.getTimeout(stepElement.getTimeout()));
-      return ((CDStepInfo) stepElement.getStepSpecType())
+      return ((CDAbstractStepInfo) stepElement.getStepSpecType())
           .getStepParameters(stepElement,
               getRollbackParameters(ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN), ctx);
     }
@@ -502,7 +502,11 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
   private String getFqnFromStepNode(YamlNode stepsNode, String stepNodeType) {
     YamlNode stepNode = stepsNode.getField(STEP).getNode();
     if (stepNodeType.equals(stepNode.getType())) {
-      return YamlUtils.getFullyQualifiedName(stepNode, true);
+      // We are getting the fqn till stage rather than pipeline because with matrix and multi-service/infra, one stage
+      // spawns into multiple stages.
+      List<String> qualifiedNameList = YamlUtils.getQualifiedNameList(stepNode, STAGE, true);
+      qualifiedNameList.set(0, STAGE);
+      return qualifiedNameList.stream().collect(Collectors.joining("."));
     }
 
     return null;

@@ -21,7 +21,7 @@ import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.gcp.request.GcpRequest;
 import io.harness.delegate.task.gcp.request.GcpTaskParameters;
 import io.harness.delegate.task.gcp.response.GcpValidationTaskResponse;
-import io.harness.delegate.task.gcp.taskHandlers.TaskHandler;
+import io.harness.delegate.task.gcp.taskhandlers.TaskHandler;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 
@@ -60,6 +60,8 @@ public class GcpTask extends AbstractDelegateRunnableTask {
         return GcpValidationTaskResponse.builder().connectorValidationResult(connectorValidationResult).build();
       case LIST_CLUSTERS:
       case LIST_BUCKETS:
+      case LIST_PROJECTS:
+      case LIST_GCS_BUCKETS_PER_PROJECT:
         TaskHandler taskHandler = gcpTaskTypeToTaskHandlerMap.get(gcpTaskParameters.getGcpTaskType());
         return taskHandler.executeRequest(gcpRequest);
 

@@ -18,13 +18,14 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.ngtriggers.WebhookSecretData;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
-@Value
+@Data
 @Builder
 @OwnedBy(HarnessTeam.DX)
 public class ScmGitWebhookTaskParams implements TaskParameters, ExecutionCapabilityDemander {
@@ -32,6 +33,7 @@ public class ScmGitWebhookTaskParams implements TaskParameters, ExecutionCapabil
   ScmConnector scmConnector;
   GitWebhookDetails gitWebhookDetails;
   List<EncryptedDataDetail> encryptedDataDetails;
+  WebhookSecretData webhookSecretData;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

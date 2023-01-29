@@ -54,7 +54,7 @@ public class PausedStepStatusUpdateTest extends OrchestrationTestBase {
   public void setUp() throws Exception {
     NodeExecutionServiceImpl nodeExecutionService =
         (NodeExecutionServiceImpl) injector.getInstance(NodeExecutionService.class);
-    nodeExecutionService.getStepStatusUpdateSubject().register(injector.getInstance(PlanExecutionService.class));
+    nodeExecutionService.getNodeStatusUpdateSubject().register(injector.getInstance(PlanExecutionService.class));
   }
 
   /**

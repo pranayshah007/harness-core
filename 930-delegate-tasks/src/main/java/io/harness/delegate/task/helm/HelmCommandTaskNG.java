@@ -34,6 +34,7 @@ import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
+import io.harness.exception.DataException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
@@ -146,9 +147,6 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
       }
     } catch (Exception ex) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
-      String errorMsg = sanitizedException.getMessage();
-      helmCommandRequestNG.getLogCallback().saveExecutionLog(
-          errorMsg + "\n Overall deployment Failed", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       log.error(format("Exception in processing helm task [%s]", helmCommandRequestNG.toString()), sanitizedException);
       closeOpenCommandUnits(
           helmCommandRequestNG.getCommandUnitsProgress(), getLogStreamingTaskClient(), sanitizedException);
@@ -270,7 +268,8 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
       return throwable;
     }
 
-    if (!(throwable instanceof HintException || throwable instanceof ExplanationException)) {
+    if (!(throwable instanceof HintException || throwable instanceof ExplanationException
+            || throwable instanceof DataException)) {
       return throwable;
     }
 

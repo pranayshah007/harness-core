@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.config.AwsConfig;
 import io.harness.ccm.commons.beans.config.AwsGovCloudConfig;
 import io.harness.ccm.commons.beans.config.GcpConfig;
+import io.harness.ccm.config.CurrencyPreferencesConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.configuration.DeployMode;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
@@ -138,6 +139,7 @@ public class CENextGenConfiguration extends Configuration {
   @JsonProperty(value = "enableLightwingAutoCUDDC") private boolean enableLightwingAutoCUDDC;
 
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
+  @JsonProperty(value = "currencyPreferences") private CurrencyPreferencesConfig currencyPreferencesConfig;
 
   public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
     SwaggerBundleConfiguration defaultSwaggerConf = new SwaggerBundleConfiguration();

@@ -20,6 +20,7 @@ import io.harness.pms.contracts.service.SweepingOutputListResponse;
 import io.harness.pms.contracts.service.SweepingOutputResolveBlobRequest;
 import io.harness.pms.contracts.service.SweepingOutputResolveBlobResponse;
 import io.harness.pms.contracts.service.SweepingOutputServiceGrpc.SweepingOutputServiceImplBase;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
@@ -109,6 +110,22 @@ public class SweepingOutputServiceImpl extends SweepingOutputServiceImplBase {
       SweepingOutputConsumeBlobRequest request, StreamObserver<SweepingOutputConsumeBlobResponse> responseObserver) {
     String response = pmsSweepingOutputService.consume(
         request.getAmbiance(), request.getName(), request.getValue(), request.getGroupName());
+    responseObserver.onNext(SweepingOutputConsumeBlobResponse.newBuilder().setResponse(response).build());
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void consumeOptional(
+      SweepingOutputConsumeBlobRequest request, StreamObserver<SweepingOutputConsumeBlobResponse> responseObserver) {
+    RawOptionalSweepingOutput resolve = pmsSweepingOutputService.resolveOptional(
+        request.getAmbiance(), RefObjectUtils.getSweepingOutputRefObject(request.getName()));
+    String response;
+    if (!resolve.isFound()) {
+      response = pmsSweepingOutputService.consume(
+          request.getAmbiance(), request.getName(), request.getValue(), request.getGroupName());
+    } else {
+      response = resolve.getOutput();
+    }
     responseObserver.onNext(SweepingOutputConsumeBlobResponse.newBuilder().setResponse(response).build());
     responseObserver.onCompleted();
   }

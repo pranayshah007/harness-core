@@ -46,4 +46,6 @@ public class DeploymentSummaryDTO {
   long deployedAt;
   long createdAt;
   long lastModifiedAt;
+
+  private String envGroupRef;
 }

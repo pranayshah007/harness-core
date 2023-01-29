@@ -14,13 +14,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 
+import software.wings.service.intfc.ownership.OwnedByAccount;
+
 import javax.annotation.Nullable;
 
 /**
  * An abstraction of a service that allows managing agent mTLS endpoints.
  */
 @OwnedBy(HarnessTeam.DEL)
-public interface AgentMtlsEndpointService {
+public interface AgentMtlsEndpointService extends OwnedByAccount {
   /**
    * Creates the mTLS endpoint for an account.
    *

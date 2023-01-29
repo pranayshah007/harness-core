@@ -49,6 +49,12 @@ public class DockerArtifactOutcome implements ArtifactOutcome {
   String imagePullSecret;
   /** tag label.*/
   Map<String, String> label;
+  /** display Name*/
+  String displayName;
+  /** display Name*/
+  String digest;
+  /** Custom Artifact metadata */
+  Map<String, String> metadata;
 
   @Override
   public ArtifactSummary getArtifactSummary() {

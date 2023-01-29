@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.connector.utils.TemplateDetails;
 import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsConnectorDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -55,6 +56,7 @@ import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
+import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -110,7 +112,8 @@ import java.util.List;
       @JsonSubTypes.Type(value = ELKConnectorDTO.class, name = "ElasticSearch"),
       @JsonSubTypes.Type(value = GcpSecretManagerConnectorDTO.class, name = "GcpSecretManager"),
       @JsonSubTypes.Type(value = AzureArtifactsConnectorDTO.class, name = "AzureArtifacts"),
-      @JsonSubTypes.Type(value = TasConnectorDTO.class, name = "Tas")
+      @JsonSubTypes.Type(value = TasConnectorDTO.class, name = "Tas"),
+      @JsonSubTypes.Type(value = TerraformCloudConnectorDTO.class, name = "TerraformCloud"),
 })
 @OwnedBy(DX)
 @Schema(name = "ConnectorConfig", description = "This is the view of the ConnectorConfig entity defined in Harness")
@@ -118,6 +121,11 @@ import java.util.List;
     use = JsonTypeInfo.Id.NAME, property = "connectorType", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
 public abstract class ConnectorConfigDTO implements DecryptableEntity {
   @JsonIgnore public abstract List<DecryptableEntity> getDecryptableEntities();
+
+  @JsonIgnore
+  public List<TemplateDetails> getTemplateDetails() {
+    return null;
+  }
 
   public void validate() {
     // no op implementation which base classes can override

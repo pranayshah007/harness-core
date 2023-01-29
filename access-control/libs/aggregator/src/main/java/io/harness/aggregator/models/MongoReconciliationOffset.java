@@ -16,10 +16,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdIndex;
 import io.harness.persistence.PersistentEntity;
 
+import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
@@ -37,7 +37,7 @@ public class MongoReconciliationOffset implements PersistentEntity {
   public static final String PRIMARY_COLLECTION = "mongoReconciliationOffset";
   public static final String SECONDARY_COLLECTION = "mongoReconciliationOffset_secondary";
 
-  @Id @org.mongodb.morphia.annotations.Id private String id;
+  @Id @dev.morphia.annotations.Id private String id;
   private byte[] key;
   private byte[] value;
   @FdIndex @CreatedDate private long createdAt;

@@ -9,6 +9,7 @@ package io.harness.ng.overview.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.models.InstanceDetailGroupedByPipelineExecutionList;
 import io.harness.models.InstanceDetailsByBuildId;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeAndServiceId;
 import io.harness.ng.core.activityhistory.dto.TimeGroupType;
@@ -16,17 +17,24 @@ import io.harness.ng.core.dashboard.DashboardExecutionStatusInfo;
 import io.harness.ng.core.dashboard.DeploymentsInfo;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.overview.dto.ActiveServiceInstanceSummary;
+import io.harness.ng.overview.dto.ActiveServiceInstanceSummaryV2;
 import io.harness.ng.overview.dto.DashboardWorkloadDeployment;
+import io.harness.ng.overview.dto.DashboardWorkloadDeploymentV2;
 import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList;
 import io.harness.ng.overview.dto.EnvIdCountPair;
+import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
 import io.harness.ng.overview.dto.ExecutionDeploymentInfo;
 import io.harness.ng.overview.dto.HealthDeploymentDashboard;
-import io.harness.ng.overview.dto.InstanceGroupedByArtifactList;
+import io.harness.ng.overview.dto.HealthDeploymentDashboardV2;
+import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
 import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
+import io.harness.ng.overview.dto.ServiceDeploymentInfoDTOV2;
 import io.harness.ng.overview.dto.ServiceDeploymentListInfo;
+import io.harness.ng.overview.dto.ServiceDeploymentListInfoV2;
 import io.harness.ng.overview.dto.ServiceDetailsInfoDTO;
+import io.harness.ng.overview.dto.ServiceDetailsInfoDTOV2;
 import io.harness.ng.overview.dto.ServiceHeaderInfo;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
 import io.harness.ng.overview.dto.TimeValuePairListDTO;
@@ -40,6 +48,9 @@ public interface CDOverviewDashboardService {
   HealthDeploymentDashboard getHealthDeploymentDashboard(String accountId, String orgId, String projectId,
       long startInterval, long endInterval, long previousStartInterval);
 
+  HealthDeploymentDashboardV2 getHealthDeploymentDashboardV2(String accountId, String orgId, String projectId,
+      long startInterval, long endInterval, long previousStartInterval);
+
   ExecutionDeploymentInfo getExecutionDeploymentDashboard(
       String accountId, String orgId, String projectId, long startInterval, long endInterval);
 
@@ -50,15 +61,29 @@ public interface CDOverviewDashboardService {
       String projectIdentifier, long startInterval, long endInterval, long previousStartInterval,
       EnvironmentType envType);
 
+  DashboardWorkloadDeploymentV2 getDashboardWorkloadDeploymentV2(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, long startInterval, long endInterval, long previousStartInterval,
+      EnvironmentType envType);
+
   ServiceDeploymentListInfo getServiceDeploymentsInfo(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, long startTime, long endTime, String serviceIdentifier, long bucketSizeInDays)
+      throws Exception;
+
+  ServiceDeploymentListInfoV2 getServiceDeploymentsInfoV2(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, long startTime, long endTime, String serviceIdentifier, long bucketSizeInDays)
       throws Exception;
 
   ServiceDeploymentInfoDTO getServiceDeployments(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, long startTime, long endTime, String serviceIdentifier, long bucketSizeInDays);
 
+  ServiceDeploymentInfoDTOV2 getServiceDeploymentsV2(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, long startTime, long endTime, String serviceIdentifier, long bucketSizeInDays);
+
   ServiceDetailsInfoDTO getServiceDetailsList(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       long startTime, long endTime, List<String> sort) throws Exception;
+
+  ServiceDetailsInfoDTOV2 getServiceDetailsListV2(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, long startTime, long endTime, List<String> sort) throws Exception;
 
   io.harness.ng.overview.dto.TimeValuePairListDTO<Integer> getServicesGrowthTrend(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, long startTimeInMs, long endTimeInMs,
@@ -69,11 +94,16 @@ public interface CDOverviewDashboardService {
 
   ActiveServiceInstanceSummary getActiveServiceInstanceSummary(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
+  ActiveServiceInstanceSummaryV2 getActiveServiceInstanceSummaryV2(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
 
   EnvBuildIdAndInstanceCountInfoList getEnvBuildInstanceCountByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
-  InstanceGroupedByArtifactList getInstanceGroupedByArtifactList(
+  InstanceGroupedByEnvironmentList getInstanceGroupedByEnvironmentList(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, String environmentId);
+
+  InstanceGroupedByServiceList.InstanceGroupedByService getInstanceGroupedByArtifactList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
   InstanceGroupedByServiceList getInstanceGroupedByServiceList(String accountIdentifier, String orgIdentifier,
@@ -82,16 +112,23 @@ public interface CDOverviewDashboardService {
   io.harness.ng.overview.dto.EnvironmentDeploymentInfo getEnvironmentDeploymentDetailsByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
-  InstanceGroupedByArtifactList getActiveServiceDeploymentsList(
+  InstanceGroupedByServiceList.InstanceGroupedByService getActiveServiceDeploymentsList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+
+  EnvironmentInstanceDetails getEnvironmentInstanceDetails(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
 
   InstancesByBuildIdList getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, List<String> buildIds, String infraId, String clusterId,
-      String pipelineExecutionId, long lastDeployedAt);
+      String pipelineExecutionId);
 
   InstanceDetailsByBuildId getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceIdentifier, String envIdentifier, String infraIdentifier,
       String clusterIdentifier, String pipelineExecutionId, String buildId);
+
+  InstanceDetailGroupedByPipelineExecutionList getInstanceDetailGroupedByPipelineExecution(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String serviceIdentifier, String envIdentifier,
+      EnvironmentType environmentType, String infraIdentifier, String clusterIdentifier, String displayName);
 
   io.harness.ng.overview.dto.TimeValuePairListDTO<Integer> getInstanceGrowthTrend(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, long startTimeInMs, long endTimeInMs);

@@ -68,14 +68,15 @@ public class CIDelegateTaskExecutor {
     // Make a call to the log service and get back the token
 
     return Failsafe.with(retryPolicy).get(() -> {
-      return delegateServiceGrpcClient.submitAsyncTask(
-          delegateTaskRequest, delegateCallbackTokenSupplier.get(), Duration.ZERO);
+      return delegateServiceGrpcClient.submitAsyncTaskV2(
+          delegateTaskRequest, delegateCallbackTokenSupplier.get(), Duration.ZERO, false);
     });
   }
 
   public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<String> taskSelectors,
       List<String> eligibleToExecuteDelegateIds, boolean executeOnHarnessHostedDelegates, boolean emitEvent,
-      LinkedHashMap<String, String> logStreamingAbstractions, long expressionFunctorToken) {
+      String stageExecutionId, LinkedHashMap<String, String> logStreamingAbstractions, long expressionFunctorToken,
+      Boolean selectionTrackingLogEnabled) {
     String accountId = task.getAccountId();
     TaskData taskData = task.getData();
     final DelegateTaskRequest delegateTaskRequest =
@@ -93,6 +94,7 @@ public class CIDelegateTaskExecutor {
             .taskSetupAbstractions(setupAbstractions)
             .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
             .emitEvent(emitEvent)
+            .stageId(stageExecutionId)
             .build();
     RetryPolicy<Object> retryPolicy =
         getRetryPolicy(format("[Retrying failed call to submit delegate task attempt: {}"),
@@ -100,8 +102,8 @@ public class CIDelegateTaskExecutor {
     // Make a call to the log service and get back the token
 
     return Failsafe.with(retryPolicy).get(() -> {
-      return delegateServiceGrpcClient.submitAsyncTask(
-          delegateTaskRequest, delegateCallbackTokenSupplier.get(), Duration.ZERO);
+      return delegateServiceGrpcClient.submitAsyncTaskV2(
+          delegateTaskRequest, delegateCallbackTokenSupplier.get(), Duration.ZERO, selectionTrackingLogEnabled);
     });
   }
 

@@ -98,12 +98,15 @@ public enum QLTaskGroup implements QLEnum {
   COMMAND_TASK_NG,
   AZURE_NG_ARM_BLUEPRINT,
   ECS,
+  ASG,
   SHELL_SCRIPT_PROVISION_NG,
   CUSTOM_DEPLOYMENT_NG,
   ELASTIGROUP,
   TAS,
   GITOPS,
-  CONTAINER_PMS;
+  CONTAINER_PMS,
+  TERRAFORM_CLOUD,
+  GOOGLE_FUNCTION;
 
   @Override
   public String getStringValue() {

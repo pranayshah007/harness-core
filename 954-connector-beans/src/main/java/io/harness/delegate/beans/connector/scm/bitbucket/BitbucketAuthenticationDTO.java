@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.SourceCodeManagerAuthentication;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.bitbucket.outcome.BitbucketAuthenticationOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -46,5 +47,9 @@ public class BitbucketAuthenticationDTO implements SourceCodeManagerAuthenticati
   public BitbucketAuthenticationDTO(GitAuthType authType, BitbucketCredentialsDTO credentials) {
     this.authType = authType;
     this.credentials = credentials;
+  }
+
+  public BitbucketAuthenticationOutcomeDTO toOutcome() {
+    return BitbucketAuthenticationOutcomeDTO.builder().type(this.authType).spec(this.credentials.toOutcome()).build();
   }
 }

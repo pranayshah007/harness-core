@@ -10,6 +10,7 @@ package io.harness.cvng.core.entities;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.cvng.CVConstants;
+import io.harness.cvng.analysis.entities.VerificationTaskBase;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -17,13 +18,14 @@ import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -36,8 +38,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
@@ -48,7 +48,7 @@ import org.mongodb.morphia.annotations.Id;
 @Entity(value = "timeSeriesRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public final class TimeSeriesRecord
-    implements CreatedAtAware, AccountAccess, PersistentEntity, Comparable<TimeSeriesRecord> {
+    extends VerificationTaskBase implements AccountAccess, PersistentEntity, Comparable<TimeSeriesRecord> {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -70,7 +70,6 @@ public final class TimeSeriesRecord
   private Instant bucketStartTime;
   private TimeSeriesMetricType metricType;
 
-  @FdIndex private long createdAt;
   @Default private Set<TimeSeriesGroupValue> timeSeriesGroupValues = new HashSet<>();
 
   @JsonIgnore

@@ -55,7 +55,6 @@ import io.harness.rule.Owner;
 import io.harness.service.impl.DelegateSetupServiceImpl;
 import io.harness.service.intfc.DelegateCache;
 
-import software.wings.beans.DelegateConnection;
 import software.wings.beans.SelectorType;
 
 import com.google.common.collect.ImmutableList;
@@ -172,6 +171,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                              .ng(true)
                              .delegateName("grp2")
                              .hostName("kube-2")
+                             .lastHeartBeat(System.currentTimeMillis() - 600000)
                              .sizeDetails(DelegateSizeDetails.builder().replicas(1).build())
                              .delegateGroupId(delegateGroup2.getUuid())
                              .lastHeartBeat(System.currentTimeMillis() - 600000)
@@ -186,15 +186,6 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                                .build();
 
     persistence.save(Arrays.asList(orgDelegate, deletedDelegate, delegate1, delegate2, delegate3));
-
-    DelegateConnection delegateConnection3 = DelegateConnection.builder()
-                                                 .accountId(accountId)
-                                                 .delegateId(delegate3.getUuid())
-                                                 .lastHeartbeat(System.currentTimeMillis() - 600000)
-                                                 .disconnected(false)
-                                                 .version(VERSION)
-                                                 .build();
-    persistence.save(delegateConnection3);
 
     DelegateGroupListing delegateGroupListing = delegateSetupService.listDelegateGroupDetails(accountId, null, null);
 
@@ -625,6 +616,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                              .accountId(accountId)
                              .owner(owner)
                              .ng(true)
+                             .lastHeartBeat(System.currentTimeMillis())
                              .delegateType(KUBERNETES)
                              .delegateName("grp1")
                              .description("description")
@@ -640,6 +632,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                              .owner(owner)
                              .delegateType(KUBERNETES)
                              .delegateName("grp1")
+                             .lastHeartBeat(System.currentTimeMillis())
                              .description("description")
                              .hostName("kube-1")
                              .sizeDetails(grp1SizeDetails)
@@ -649,23 +642,6 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                              .build();
 
     persistence.save(Arrays.asList(delegate1, delegate2));
-
-    DelegateConnection delegateConnection1 = DelegateConnection.builder()
-                                                 .accountId(accountId)
-                                                 .delegateId(delegate1.getUuid())
-                                                 .lastHeartbeat(System.currentTimeMillis())
-                                                 .disconnected(false)
-                                                 .version(VERSION)
-                                                 .build();
-    DelegateConnection delegateConnection2 = DelegateConnection.builder()
-                                                 .accountId(accountId)
-                                                 .delegateId(delegate2.getUuid())
-                                                 .lastHeartbeat(System.currentTimeMillis())
-                                                 .disconnected(false)
-                                                 .version(VERSION)
-                                                 .build();
-    persistence.save(delegateConnection1);
-    persistence.save(delegateConnection2);
 
     DelegateGroupDetails delegateGroupDetails =
         delegateSetupService.getDelegateGroupDetailsV2(accountId, "orgId", "projectId", delegateGroup1.getIdentifier());

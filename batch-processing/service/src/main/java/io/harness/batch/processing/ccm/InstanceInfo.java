@@ -14,15 +14,12 @@ import io.harness.ccm.commons.beans.InstanceState;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.beans.StorageResource;
-import io.harness.data.structure.MongoMapSanitizer;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
-import org.mongodb.morphia.annotations.PostLoad;
-import org.mongodb.morphia.annotations.PrePersist;
 
 @Data
 @Builder
@@ -51,16 +48,4 @@ public class InstanceInfo {
   List<String> pvcClaimNames;
   HarnessServiceInfo harnessServiceInfo;
   HarnessServiceInfoNG harnessServiceInfoNg;
-
-  private static final MongoMapSanitizer SANITIZER = new MongoMapSanitizer('~');
-
-  @PrePersist
-  void prePersist() {
-    metadataAnnotations = SANITIZER.encodeDotsInKey(metadataAnnotations);
-  }
-
-  @PostLoad
-  void postLoad() {
-    metadataAnnotations = SANITIZER.decodeDotsInKey(metadataAnnotations);
-  }
 }

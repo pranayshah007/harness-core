@@ -7,26 +7,48 @@
 
 package io.harness.ng.core.service;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
+
+import static com.google.common.base.Preconditions.checkArgument;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import java.util.Optional;
+import javax.validation.constraints.NotEmpty;
 import javax.ws.rs.NotFoundException;
-import org.hibernate.validator.constraints.NotEmpty;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceEntityValidationHelper {
   @Inject private ServiceEntityService serviceEntityService;
 
-  public void checkThatServiceExists(@NotEmpty String accountIdentifier, @NotEmpty String orgIdentifier,
-      @NotEmpty String projectIdentifier, @NotEmpty String serviceIdentifier) {
-    Optional<ServiceEntity> service =
-        serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, false);
-    if (!service.isPresent()) {
-      throw new NotFoundException(String.format("service [%s] not found.", serviceIdentifier));
+  public void checkThatServiceExists(
+      @NotEmpty String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotEmpty String serviceRef) {
+    checkArgument(isNotEmpty(accountIdentifier), "accountId must be present");
+
+    Optional<ServiceEntity> service;
+    String[] serviceRefSplit = StringUtils.split(serviceRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    // project level entity or org/account level entity with identifier
+    if (serviceRefSplit == null || serviceRefSplit.length == 1) {
+      service = serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, false);
+    } else {
+      // org/account level
+      IdentifierRef serviceIdentifierRef = IdentifierRefHelper.getIdentifierRefOrThrowException(
+          serviceRef, accountIdentifier, orgIdentifier, projectIdentifier, YAMLFieldNameConstants.SERVICE);
+      service =
+          serviceEntityService.get(serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
+              serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), false);
+    }
+    if (service.isEmpty()) {
+      throw new NotFoundException(String.format("Service with ref [%s] not found", serviceRef));
     }
   }
 }

@@ -19,8 +19,8 @@ import software.wings.scheduler.LimitVicinityCheckerJob;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.morphia.query.Query;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 public class AddLimitVicinityCheckJobToAllAccounts implements Migration {

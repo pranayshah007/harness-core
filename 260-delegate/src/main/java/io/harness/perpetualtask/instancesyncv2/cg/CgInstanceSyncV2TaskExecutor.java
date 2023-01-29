@@ -42,9 +42,6 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
   private final DelegateAgentManagerClient delegateAgentManagerClient;
   private final InstanceDetailsFetcherFactory instanceDetailsFetcherFactory;
 
-  private static final int INSTANCE_COUNT_LIMIT = 500;
-  private static final int RELEASE_COUNT_LIMIT = 15;
-
   @SneakyThrows
   @Override
   public PerpetualTaskResponse runOnce(
@@ -88,10 +85,11 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
 
       InstanceSyncData instanceData = instanceFetcher.fetchRunningInstanceDetails(taskId.getId(), trackedDeployment);
       responseBuilder.addInstanceData(instanceData);
-      batchInstanceCount.addAndGet(instanceData.getInstanceDataCount());
+      batchInstanceCount.addAndGet(instanceData.getInstanceCount());
       batchReleaseDetailsCount.incrementAndGet();
 
-      if (batchInstanceCount.get() > INSTANCE_COUNT_LIMIT || batchReleaseDetailsCount.get() > RELEASE_COUNT_LIMIT) {
+      if (batchInstanceCount.get() > trackedDeploymentDetails.getResponseBatchConfig().getInstanceCount()
+          || batchReleaseDetailsCount.get() > trackedDeploymentDetails.getResponseBatchConfig().getReleaseCount()) {
         publishInstanceSyncResult(trackedDeploymentDetails.getAccountId(), taskId.getId(), responseBuilder.build());
         responseBuilder.clearInstanceData();
         batchInstanceCount.set(0);

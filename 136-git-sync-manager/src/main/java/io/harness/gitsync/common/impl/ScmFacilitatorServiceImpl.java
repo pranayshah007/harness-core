@@ -28,9 +28,12 @@ import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.git.GitClientHelper;
+import io.harness.gitsync.GitSyncModule;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.caching.beans.CacheDetails;
+import io.harness.gitsync.caching.beans.GitFileCacheDeleteResult;
 import io.harness.gitsync.caching.beans.GitFileCacheKey;
 import io.harness.gitsync.caching.beans.GitFileCacheObject;
 import io.harness.gitsync.caching.beans.GitFileCacheResponse;
@@ -52,19 +55,24 @@ import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByCommitIdRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
+import io.harness.gitsync.common.dtos.ScmGetFileUrlRequestDTO;
+import io.harness.gitsync.common.dtos.ScmGetFileUrlResponseDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.UserRepoResponse;
 import io.harness.gitsync.common.helper.GitClientEnabledHelper;
+import io.harness.gitsync.common.helper.GitFilePathHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.helper.GitSyncUtils;
+import io.harness.gitsync.common.helper.ScmExceptionUtils;
 import io.harness.gitsync.common.mappers.ScmCacheDetailsMapper;
 import io.harness.gitsync.common.scmerrorhandling.ScmApiErrorHandlingHelper;
 import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
+import io.harness.gitsync.core.beans.GitFileFetchRunnableParams;
 import io.harness.gitsync.utils.GitProviderUtils;
 import io.harness.ng.beans.PageRequest;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
@@ -90,6 +98,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -99,23 +108,29 @@ import net.jodah.failsafe.RetryPolicy;
 @OwnedBy(HarnessTeam.PL)
 public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   GitSyncConnectorHelper gitSyncConnectorHelper;
-  @Named("connectorDecoratorService") ConnectorService connectorService;
+  ConnectorService connectorService;
   ScmOrchestratorService scmOrchestratorService;
   NGFeatureFlagHelperService ngFeatureFlagHelperService;
   GitClientEnabledHelper gitClientEnabledHelper;
   GitFileCacheService gitFileCacheService;
+  ExecutorService executor;
+  GitFilePathHelper gitFilePathHelper;
 
   @Inject
   public ScmFacilitatorServiceImpl(GitSyncConnectorHelper gitSyncConnectorHelper,
       @Named("connectorDecoratorService") ConnectorService connectorService,
       ScmOrchestratorService scmOrchestratorService, NGFeatureFlagHelperService ngFeatureFlagHelperService,
-      GitClientEnabledHelper gitClientEnabledHelper, GitFileCacheService gitFileCacheService) {
+      GitClientEnabledHelper gitClientEnabledHelper, GitFileCacheService gitFileCacheService,
+      @Named(GitSyncModule.GITX_BACKGROUND_CACHE_UPDATE_EXECUTOR_NAME) ExecutorService executor,
+      GitFilePathHelper gitFilePathHelper) {
     this.gitSyncConnectorHelper = gitSyncConnectorHelper;
     this.connectorService = connectorService;
     this.scmOrchestratorService = scmOrchestratorService;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.gitClientEnabledHelper = gitClientEnabledHelper;
     this.gitFileCacheService = gitFileCacheService;
+    this.executor = executor;
+    this.gitFilePathHelper = gitFilePathHelper;
   }
 
   @Override
@@ -254,14 +269,22 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     ApiResponseDTO response = getGetFileAPIResponse(scmConnector, fileContent, getLatestCommitOnFileResponse);
 
     if (ScmApiErrorHandlingHelper.isFailureResponse(response.getStatusCode(), scmConnector.getConnectorType())) {
-      ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.GET_FILE, scmConnector.getConnectorType(),
-          scmConnector.getUrl(), response.getStatusCode(), response.getError(),
-          ErrorMetadata.builder()
-              .connectorRef(scmGetFileByBranchRequestDTO.getConnectorRef())
-              .repoName(scmGetFileByBranchRequestDTO.getRepoName())
-              .filepath(scmGetFileByBranchRequestDTO.getFilePath())
-              .branchName(branchName)
-              .build());
+      try {
+        ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.GET_FILE, scmConnector.getConnectorType(),
+            scmConnector.getUrl(), response.getStatusCode(), response.getError(),
+            ErrorMetadata.builder()
+                .connectorRef(scmGetFileByBranchRequestDTO.getConnectorRef())
+                .repoName(scmGetFileByBranchRequestDTO.getRepoName())
+                .filepath(scmGetFileByBranchRequestDTO.getFilePath())
+                .branchName(branchName)
+                .build());
+      } catch (WingsException wingsException) {
+        if (ScmExceptionUtils.isNestedScmBadRequestException(wingsException)) {
+          invalidateGitFileCache(scope.getAccountIdentifier(), scmGetFileByBranchRequestDTO.getFilePath(), scmConnector,
+              scmGetFileByBranchRequestDTO.getRepoName(), branchName);
+        }
+        throw wingsException;
+      }
     }
 
     if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.PIE_NG_GITX_CACHING)) {
@@ -312,14 +335,22 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
             scmConnector);
 
     if (ScmApiErrorHandlingHelper.isFailureResponse(gitFileResponse.getStatusCode(), scmConnector.getConnectorType())) {
-      ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.GET_FILE, scmConnector.getConnectorType(),
-          scmConnector.getUrl(), gitFileResponse.getStatusCode(), gitFileResponse.getError(),
-          ErrorMetadata.builder()
-              .connectorRef(scmGetFileByBranchRequestDTO.getConnectorRef())
-              .repoName(scmGetFileByBranchRequestDTO.getRepoName())
-              .filepath(scmGetFileByBranchRequestDTO.getFilePath())
-              .branchName(gitFileResponse.getBranch())
-              .build());
+      try {
+        ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.GET_FILE, scmConnector.getConnectorType(),
+            scmConnector.getUrl(), gitFileResponse.getStatusCode(), gitFileResponse.getError(),
+            ErrorMetadata.builder()
+                .connectorRef(scmGetFileByBranchRequestDTO.getConnectorRef())
+                .repoName(scmGetFileByBranchRequestDTO.getRepoName())
+                .filepath(scmGetFileByBranchRequestDTO.getFilePath())
+                .branchName(gitFileResponse.getBranch())
+                .build());
+      } catch (WingsException wingsException) {
+        if (ScmExceptionUtils.isNestedScmBadRequestException(wingsException)) {
+          invalidateGitFileCache(scope.getAccountIdentifier(), scmGetFileByBranchRequestDTO.getFilePath(), scmConnector,
+              scmGetFileByBranchRequestDTO.getRepoName(), gitFileResponse.getBranch());
+        }
+        throw wingsException;
+      }
     }
 
     if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.PIE_NG_GITX_CACHING)) {
@@ -410,6 +441,16 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     return ScmListFilesResponseDTO.builder()
         .fileGitDetailsDTOList(
             ScmFileGitDetailsDTO.toScmFileGitDetailsDTOList(listFilesInCommitResponse.getFileGitDetailsList()))
+        .build();
+  }
+
+  @Override
+  public ScmGetFileUrlResponseDTO getFileUrl(ScmGetFileUrlRequestDTO scmGetFileUrlRequestDTO) {
+    GitRepositoryDTO gitRepositoryDTO = GitRepositoryDTO.builder().name(scmGetFileUrlRequestDTO.getRepoName()).build();
+    return ScmGetFileUrlResponseDTO.builder()
+        .fileURL(gitFilePathHelper.getFileUrl(scmGetFileUrlRequestDTO.getScope(),
+            scmGetFileUrlRequestDTO.getConnectorRef(), scmGetFileUrlRequestDTO.getBranch(),
+            scmGetFileUrlRequestDTO.getFilePath(), scmGetFileUrlRequestDTO.getCommitId(), gitRepositoryDTO))
         .build();
   }
 
@@ -735,18 +776,6 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         .build();
   }
 
-  private GitFileCacheKey getCacheKey(
-      ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO, ScmConnector scmConnector, String branchName) {
-    return GitFileCacheKey.builder()
-        .accountIdentifier(scmGetFileByBranchRequestDTO.getScope().getAccountIdentifier())
-        .completeFilePath(scmGetFileByBranchRequestDTO.getFilePath())
-        .repoName(scmGetFileByBranchRequestDTO.getRepoName())
-        .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
-        .ref(branchName)
-        .isDefaultBranch(isEmpty(branchName))
-        .build();
-  }
-
   private ScmGetFileResponseDTO prepareScmGetFileCacheResponse(
       String fileContent, String branchName, String commitId, String objectId, CacheDetails cacheDetails) {
     return ScmGetFileResponseDTO.builder()
@@ -761,14 +790,43 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   private Optional<ScmGetFileResponseDTO> getFileCacheResponseIfApplicable(
       ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO, ScmConnector scmConnector) {
     if (scmGetFileByBranchRequestDTO.isUseCache()) {
-      GitFileCacheResponse gitFileCacheResponse =
-          getFileFromCache(getCacheKey(scmGetFileByBranchRequestDTO, scmConnector));
+      GitFileCacheKey cacheKey = getCacheKey(scmGetFileByBranchRequestDTO, scmConnector);
+      GitFileCacheResponse gitFileCacheResponse = getFileFromCache(cacheKey);
       if (gitFileCacheResponse != null) {
+        log.info("CACHE HIT for cacheKey : {}", cacheKey);
         return Optional.of(prepareScmGetFileCacheResponse(gitFileCacheResponse.getGitFileCacheObject().getFileContent(),
-            scmGetFileByBranchRequestDTO.getBranchName(), gitFileCacheResponse.getGitFileCacheObject().getCommitId(),
+            gitFileCacheResponse.getGitFileCacheResponseMetadata().getRef(),
+            gitFileCacheResponse.getGitFileCacheObject().getCommitId(),
             gitFileCacheResponse.getGitFileCacheObject().getObjectId(), gitFileCacheResponse.getCacheDetails()));
       }
     }
     return Optional.empty();
+  }
+
+  private GitFileFetchRunnableParams getGitFileFetchRunnableParams(
+      ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO) {
+    return GitFileFetchRunnableParams.builder()
+        .filePath(scmGetFileByBranchRequestDTO.getFilePath())
+        .branchName(scmGetFileByBranchRequestDTO.getBranchName())
+        .connectorRef(scmGetFileByBranchRequestDTO.getConnectorRef())
+        .repoName(scmGetFileByBranchRequestDTO.getRepoName())
+        .scope(scmGetFileByBranchRequestDTO.getScope())
+        .scmFacilitatorService(this)
+        .build();
+  }
+
+  private void invalidateGitFileCache(
+      String accountIdentifier, String filePath, ScmConnector scmConnector, String repoName, String branchName) {
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PIE_NG_GITX_CACHING)) {
+      GitFileCacheKey cacheKey = GitFileCacheKey.builder()
+                                     .accountIdentifier(accountIdentifier)
+                                     .completeFilePath(filePath)
+                                     .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
+                                     .repoName(repoName)
+                                     .ref(branchName)
+                                     .build();
+      GitFileCacheDeleteResult gitFileCacheDeleteResult = gitFileCacheService.invalidateCache(cacheKey);
+      log.info("Invalidated cache for key: {} , result: {}", cacheKey, gitFileCacheDeleteResult);
+    }
   }
 }

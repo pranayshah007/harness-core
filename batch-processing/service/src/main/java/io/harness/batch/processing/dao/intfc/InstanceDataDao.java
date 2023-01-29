@@ -22,12 +22,12 @@ public interface InstanceDataDao {
 
   InstanceData fetchInstanceData(String instanceId);
 
-  List<InstanceData> fetchInstanceData(Set<String> instanceIds);
+  List<InstanceData> fetchInstanceData(String accountId, Set<String> instanceIds);
 
   InstanceData fetchActiveInstanceData(
       String accountId, String clusterId, String instanceId, List<InstanceState> instanceState);
 
-  List<InstanceData> fetchActivePVList(String accountId, Instant startTime, Instant endTime);
+  List<InstanceData> fetchActivePVList(String accountId, Set<String> clusterIds, Instant startTime, Instant endTime);
 
   void updateInstanceActiveIterationTime(InstanceData instanceData);
 
@@ -54,4 +54,7 @@ public interface InstanceDataDao {
 
   List<InstanceData> getInstanceDataListsOfTypes(
       String accountId, int batchSize, Instant startTime, Instant endTime, List<InstanceType> instanceTypes);
+
+  List<InstanceData> getInstanceDataListsOfTypesAndClusterId(String accountId, int batchSize, Instant startTime,
+      Instant endTime, List<InstanceType> instanceTypes, String clusterId);
 }

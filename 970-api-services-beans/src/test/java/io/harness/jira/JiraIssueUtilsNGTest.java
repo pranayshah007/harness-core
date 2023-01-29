@@ -140,6 +140,19 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
 
     assertThat(((JiraTimeTrackingFieldNG) currFields.get("timetracking")).getOriginalEstimate()).isEqualTo("3d");
     assertThat(((JiraTimeTrackingFieldNG) currFields.get("timetracking")).getRemainingEstimate()).isEqualTo("2d");
+
+    JiraIssueTypeNG subTaskIssueType = createMetadata.getProjects().get("JEL").getIssueTypes().get("Sub-task");
+    assertThat(subTaskIssueType.getFields().size()).isEqualTo(23);
+
+    subTaskIssueType.removeField(JiraConstantsNG.STATUS_NAME);
+    assertThat(subTaskIssueType.getFields().size()).isEqualTo(22);
+
+    Map<String, Object> currFieldsTmp1 = new HashMap<>();
+    JiraIssueUtilsNG.updateFieldValues(currFieldsTmp1, subTaskIssueType.getFields(),
+        ImmutableMap.of("Parent", "DummyParentKey"), false, JiraDeploymentType.CLOUD);
+    assertThat(currFieldsTmp1.get("parent") instanceof HashMap).isTrue();
+    Map<String, Object> parentFieldFinalValue = (Map<String, Object>) currFieldsTmp1.get("parent");
+    assertThat(parentFieldFinalValue.get("key")).isEqualTo("DummyParentKey");
   }
 
   @Test

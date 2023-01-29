@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -15,6 +17,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.network.Http;
+import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.InputDefaults;
@@ -32,6 +35,7 @@ import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.core.variables.StringNGVariable;
 
+import software.wings.beans.GitFileConfig;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariableType;
 import software.wings.ngmigration.CgEntityId;
@@ -40,12 +44,16 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import com.google.common.collect.ImmutableMap;
 import io.serializer.HObjectMapper;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
@@ -57,20 +65,29 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Slf4j
 public class MigratorUtility {
   public static final ParameterField<String> RUNTIME_INPUT = ParameterField.createValueField("<+input>");
+  public static final Pattern cgPattern = Pattern.compile("\\$\\{[\\w-.\"()]+}");
+  public static final Pattern ngPattern = Pattern.compile("<\\+[\\w-.\"()]+>");
 
   private static final int APPLICATION = 0;
   private static final int SECRET_MANAGER = 1;
   private static final int SECRET = 5;
   private static final int TEMPLATE = 7;
   private static final int CONNECTOR = 10;
+  private static final int CONTAINER_TASK = 13;
+  private static final int ECS_SERVICE_SPEC = 14;
   private static final int MANIFEST = 15;
   private static final int CONFIG_FILE = 16;
+  private static final int AMI_STARTUP_SCRIPT = 17;
+  private static final int ELASTIGROUP_CONFIGURATION = 18;
   private static final int SERVICE = 20;
+  private static final int INFRA_PROVISIONER = 23;
   private static final int ENVIRONMENT = 25;
   private static final int INFRA = 35;
   private static final int SERVICE_VARIABLE = 40;
   private static final int WORKFLOW = 70;
   private static final int PIPELINE = 100;
+
+  private static final int TRIGGER = 150;
 
   private static final Map<NGMigrationEntityType, Integer> MIGRATION_ORDER =
       ImmutableMap.<NGMigrationEntityType, Integer>builder()
@@ -78,14 +95,20 @@ public class MigratorUtility {
           .put(NGMigrationEntityType.SECRET_MANAGER, SECRET_MANAGER)
           .put(NGMigrationEntityType.TEMPLATE, TEMPLATE)
           .put(NGMigrationEntityType.CONNECTOR, CONNECTOR)
+          .put(NGMigrationEntityType.CONTAINER_TASK, CONTAINER_TASK)
+          .put(NGMigrationEntityType.ECS_SERVICE_SPEC, ECS_SERVICE_SPEC)
+          .put(NGMigrationEntityType.AMI_STARTUP_SCRIPT, AMI_STARTUP_SCRIPT)
+          .put(NGMigrationEntityType.ELASTIGROUP_CONFIGURATION, ELASTIGROUP_CONFIGURATION)
           .put(NGMigrationEntityType.MANIFEST, MANIFEST)
           .put(NGMigrationEntityType.CONFIG_FILE, CONFIG_FILE)
           .put(NGMigrationEntityType.SERVICE, SERVICE)
+          .put(NGMigrationEntityType.INFRA_PROVISIONER, INFRA_PROVISIONER)
           .put(NGMigrationEntityType.ENVIRONMENT, ENVIRONMENT)
           .put(NGMigrationEntityType.INFRA, INFRA)
           .put(NGMigrationEntityType.SERVICE_VARIABLE, SERVICE_VARIABLE)
           .put(NGMigrationEntityType.WORKFLOW, WORKFLOW)
           .put(NGMigrationEntityType.PIPELINE, PIPELINE)
+          .put(NGMigrationEntityType.TRIGGER, TRIGGER)
           .build();
 
   private MigratorUtility() {}
@@ -184,6 +207,17 @@ public class MigratorUtility {
     return Scope.ORG;
   }
 
+  public static SecretRefData getSecretRefDefaultNull(Map<CgEntityId, NGYamlFile> migratedEntities, String secretId) {
+    if (StringUtils.isBlank(secretId)) {
+      return null;
+    }
+    CgEntityId secretEntityId = CgEntityId.builder().id(secretId).type(NGMigrationEntityType.SECRET).build();
+    if (!migratedEntities.containsKey(secretEntityId)) {
+      return null;
+    }
+    return getSecretRef(migratedEntities, secretId);
+  }
+
   public static SecretRefData getSecretRef(Map<CgEntityId, NGYamlFile> migratedEntities, String secretId) {
     return getSecretRef(migratedEntities, secretId, NGMigrationEntityType.SECRET);
   }
@@ -202,6 +236,15 @@ public class MigratorUtility {
         .identifier(migratedSecret.getIdentifier())
         .scope(MigratorUtility.getScope(migratedSecret))
         .build();
+  }
+
+  public static String getIdentifierWithScopeDefaults(
+      Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
+    NGYamlFile detail = migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build());
+    if (detail == null) {
+      return "__PLEASE_FIX_ME__";
+    }
+    return getIdentifierWithScope(detail.getNgEntityDetail());
   }
 
   public static String getIdentifierWithScope(
@@ -245,7 +288,8 @@ public class MigratorUtility {
     } else {
       String value = "";
       if (EmptyPredicate.isNotEmpty(serviceVariable.getValue())) {
-        value = (String) MigratorExpressionUtils.render(String.valueOf(serviceVariable.getValue()), new HashMap<>());
+        value =
+            String.valueOf(MigratorExpressionUtils.render(String.valueOf(serviceVariable.getValue()), new HashMap<>()));
       }
       return StringNGVariable.builder()
           .type(NGVariableType.STRING)
@@ -274,7 +318,7 @@ public class MigratorUtility {
   public static String generateName(
       Map<CgEntityId, BaseProvidedInput> inputs, CgEntityId entityId, String defaultName) {
     if (inputs == null || !inputs.containsKey(entityId) || StringUtils.isBlank(inputs.get(entityId).getName())) {
-      return defaultName;
+      return generateName(defaultName);
     }
     return inputs.get(entityId).getName();
   }
@@ -317,5 +361,78 @@ public class MigratorUtility {
     }
     return ParameterField.createValueField(
         files.stream().map(file -> "/" + ((FileYamlDTO) file.getYaml()).getName()).collect(Collectors.toList()));
+  }
+
+  public static ParameterField<List<String>> splitWithComma(String str) {
+    return ParameterField.createValueField(
+        Arrays.stream(str.split(",")).map(String::trim).filter(StringUtils::isNotBlank).collect(Collectors.toList()));
+  }
+
+  public static ParameterField<String> getIdentifierWithScopeDefaultsRuntime(
+      Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
+    NGYamlFile ngYamlFile = migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build());
+    if (ngYamlFile == null) {
+      return RUNTIME_INPUT;
+    }
+    NgEntityDetail detail = ngYamlFile.getNgEntityDetail();
+    return ParameterField.createValueField(getIdentifierWithScope(detail));
+  }
+
+  public static String generateName(String str) {
+    if (StringUtils.isBlank(str)) {
+      return str;
+    }
+    Pattern p = Pattern.compile("[^-0-9a-zA-Z_\\s]", Pattern.CASE_INSENSITIVE);
+    Matcher m = p.matcher(str);
+    String generated = m.replaceAll("_");
+    return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
+  }
+
+  @Nullable
+  public static NGYamlFile getYamlConfigFile(MigrationInputDTO inputDTO, byte[] content, String identifier) {
+    if (isEmpty(content)) {
+      return null;
+    }
+    String fileUsage = FileUsage.CONFIG.name();
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
+
+    return NGYamlFile.builder()
+        .type(NGMigrationEntityType.CONFIG_FILE)
+        .yaml(FileYamlDTO.builder()
+                  .identifier(identifier)
+                  .fileUsage(fileUsage)
+                  .name(identifier)
+                  .content(new String(content))
+                  .orgIdentifier(orgIdentifier)
+                  .projectIdentifier(projectIdentifier)
+                  .build())
+        .ngEntityDetail(NgEntityDetail.builder()
+                            .identifier(identifier)
+                            .orgIdentifier(orgIdentifier)
+                            .projectIdentifier(projectIdentifier)
+                            .build())
+        .cgBasicInfo(null)
+        .build();
+  }
+
+  public static boolean containsExpressions(String str) {
+    return ngPattern.matcher(str).find() || cgPattern.matcher(str).find();
+  }
+
+  public static NgEntityDetail getGitConnector(
+      Map<CgEntityId, NGYamlFile> migratedEntities, GitFileConfig gitFileConfig) {
+    CgEntityId cgEntityId =
+        CgEntityId.builder().id(gitFileConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build();
+    if (!migratedEntities.containsKey(cgEntityId)) {
+      log.error(String.format("Could not find GitConnector %s", gitFileConfig.getConnectorId()));
+      return null;
+    }
+    return migratedEntities.get(cgEntityId).getNgEntityDetail();
+  }
+
+  public static String generateFileIdentifier(String fileName) {
+    String prefix = fileName + ' ';
+    return MigratorUtility.generateManifestIdentifier(prefix);
   }
 }

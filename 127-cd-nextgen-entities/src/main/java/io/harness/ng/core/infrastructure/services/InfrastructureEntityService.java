@@ -9,6 +9,7 @@ package io.harness.ng.core.infrastructure.services;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.infrastructure.dto.InfrastructureInputsMergedResponseDto;
 import io.harness.ng.core.infrastructure.dto.InfrastructureYamlMetadata;
 import io.harness.ng.core.infrastructure.dto.NoInputMergeInputAction;
@@ -52,16 +53,27 @@ public interface InfrastructureEntityService {
   boolean forceDeleteAllInProject(
       @NotEmpty String accountId, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier);
 
+  /**
+   * Deletes all infrastructures linked to a particular environment at org level.
+   * @param accountId  the account id
+   * @param orgIdentifier the organization identifier
+   * @return boolean to indicate if deletion was successful
+   */
+  boolean forceDeleteAllInOrg(@NotEmpty String accountId, @NotEmpty String orgIdentifier);
+
   Page<InfrastructureEntity> bulkCreate(
       @NotEmpty String accountId, @NotNull List<InfrastructureEntity> infrastructureEntities);
 
   List<InfrastructureEntity> getAllInfrastructureFromIdentifierList(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String value, List<String> infraIdentifier);
+      String projectIdentifier, String envIdentifier, List<String> infraIdentifier);
 
-  List<InfrastructureEntity> getAllInfrastructureFromEnvIdentifier(
+  List<InfrastructureEntity> getAllInfrastructureFromEnvRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier);
 
-  List<InfrastructureEntity> getAllInfrastructureFromProjectIdentifier(
+  List<InfrastructureEntity> getAllInfrastructureFromEnvRefAndDeploymentType(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, ServiceDefinitionType deploymentType);
+
+  List<InfrastructureEntity> getInfrastructures(
       String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
   String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,

@@ -11,7 +11,7 @@ import static io.harness.migration.MigrationJobInstance.Status.BASELINE;
 import static io.harness.migration.MigrationJobInstance.Status.PENDING;
 
 import io.harness.persistence.HPersistence;
-import io.harness.persistence.Store;
+import io.harness.persistence.store.Store;
 import io.harness.threading.Poller;
 
 import com.google.inject.Inject;

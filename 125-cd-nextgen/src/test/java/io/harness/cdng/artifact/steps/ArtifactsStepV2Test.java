@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.steps;
 
 import static io.harness.cdng.artifact.steps.ArtifactsStepV2.ARTIFACTS_STEP_V_2;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER;
 
@@ -15,18 +16,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anySet;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.anySet;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -43,8 +44,14 @@ import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptInfo;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptSourceWrapper;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScripts;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
+import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
@@ -62,19 +69,25 @@ import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
@@ -85,6 +98,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -97,6 +111,7 @@ import io.harness.rule.OwnerRule;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.template.remote.TemplateResourceClient;
 
 import software.wings.beans.SerializationFormat;
@@ -107,6 +122,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -138,11 +154,18 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
   @Mock private CDExpressionResolver expressionResolver;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private TemplateResourceClient templateResourceClient;
-
+  @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Mock private PipelineRbacHelper pipelineRbacHelper;
   @InjectMocks private ArtifactsStepV2 step = new ArtifactsStepV2();
   private final ArtifactStepHelper stepHelper = new ArtifactStepHelper();
   @Mock private ConnectorService connectorService;
   @Mock private SecretManagerClientService secretManagerClientService;
+
+  @Mock private DelegateMetricsService delegateMetricsService;
+
+  @Mock private SecretManagerClientService ngSecretService;
+  @Mock ExceptionManager exceptionManager;
 
   private final EmptyStepParameters stepParameters = new EmptyStepParameters();
   private final StepInputPackage inputPackage = StepInputPackage.builder().build();
@@ -187,7 +210,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     // mock delegateGrpcClientWrapper
     doAnswer(invocationOnMock -> UUIDGenerator.generateUuid())
         .when(delegateGrpcClientWrapper)
-        .submitAsyncTask(any(DelegateTaskRequest.class), any(Duration.class));
+        .submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));
 
     doCallRealMethod().when(cdStepHelper).mapTaskRequestToDelegateTaskRequest(any(), any(), anySet());
 
@@ -221,6 +244,19 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
         ArgumentCaptor.forClass(DelegateTaskRequest.class);
 
+    List<EntityDetail> listEntityDetail = new ArrayList<>();
+
+    listEntityDetail.add(EntityDetail.builder().name("docker").build());
+    listEntityDetail.add(EntityDetail.builder().name("googleArtifactRegistry").build());
+
+    Set<EntityDetailProtoDTO> setEntityDetail = new HashSet<>();
+
+    doReturn(setEntityDetail).when(entityReferenceExtractorUtils).extractReferredEntities(any(), any());
+
+    doReturn(listEntityDetail)
+        .when(entityDetailProtoToRestMapper)
+        .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
+
     doReturn(getServiceYaml(ArtifactListConfig.builder()
                                 .primary(PrimaryArtifact.builder()
                                              .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
@@ -239,7 +275,9 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
     verify(delegateGrpcClientWrapper, times(1))
-        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+
+    verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(ambiance, listEntityDetail, true);
 
     ArtifactsStepV2SweepingOutput output = captor.getValue();
 
@@ -270,7 +308,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
-    verify(delegateGrpcClientWrapper, never()).submitAsyncTask(any(DelegateTaskRequest.class), any(Duration.class));
+    verify(delegateGrpcClientWrapper, never()).submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));
 
     ArtifactsStepV2SweepingOutput output = captor.getValue();
 
@@ -379,7 +417,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
     verify(delegateGrpcClientWrapper, times(3))
-        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -492,7 +530,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
     verify(delegateGrpcClientWrapper, times(3))
-        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -555,7 +593,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
     verify(delegateGrpcClientWrapper, times(2))
-        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -587,7 +625,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
-    verify(delegateGrpcClientWrapper, never()).submitAsyncTask(any(DelegateTaskRequest.class), any(Duration.class));
+    verify(delegateGrpcClientWrapper, never()).submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -845,7 +883,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
     // 1 primary and 1 sidecar
     verify(delegateGrpcClientWrapper, times(2))
-        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -962,16 +1000,79 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                 .projectIdentifier("projectId")
                                 .build();
 
-    Map<String, String> abstractions = ArtifactStepHelper.getTaskSetupAbstractions(ngAccess);
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
     assertThat(abstractions).hasSize(4);
     assertThat(abstractions.get(SetupAbstractionKeys.projectIdentifier)).isNotNull();
     assertThat(abstractions.get(SetupAbstractionKeys.owner)).isEqualTo("orgId/projectId");
 
     ngAccess = BaseNGAccess.builder().accountIdentifier(ACCOUNT_ID).orgIdentifier("orgId").build();
 
-    abstractions = ArtifactStepHelper.getTaskSetupAbstractions(ngAccess);
+    abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
     assertThat(abstractions).hasSize(3);
     assertThat(abstractions.get(SetupAbstractionKeys.projectIdentifier)).isNull();
     assertThat(abstractions.get(SetupAbstractionKeys.owner)).isEqualTo("orgId");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SHIVAM)
+  @Category(UnitTests.class)
+  public void testForCustomDelegateRequest() {
+    CustomArtifactConfig customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .version(ParameterField.createValueField("v1"))
+            .versionRegex(ParameterField.createValueField("regex"))
+            .scripts(CustomArtifactScripts.builder()
+                         .fetchAllArtifacts(
+                             FetchAllArtifacts.builder()
+                                 .artifactsArrayPath(ParameterField.createValueField("results"))
+                                 .versionPath(ParameterField.createValueField("version"))
+                                 .shellScriptBaseStepInfo(
+                                     CustomArtifactScriptInfo.builder()
+                                         .source(CustomArtifactScriptSourceWrapper.builder()
+                                                     .type("Inline")
+                                                     .spec(CustomScriptInlineSource.builder()
+                                                               .script(ParameterField.createValueField("echo test"))
+                                                               .build())
+                                                     .build())
+                                         .build())
+                                 .build())
+                         .build())
+            .build();
+    CustomArtifactDelegateRequest artifactSourceDelegateRequest =
+        (CustomArtifactDelegateRequest) stepHelper.toSourceDelegateRequest(
+            customArtifactConfig, Ambiance.newBuilder().build());
+    assertThat(artifactSourceDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.CUSTOM_ARTIFACT);
+    assertThat(artifactSourceDelegateRequest.getExpressionFunctorToken()).isEqualTo(0);
+
+    customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .isFromTrigger(true)
+            .version(ParameterField.createValueField(null))
+            .versionRegex(ParameterField.createValueField("regex"))
+            .scripts(CustomArtifactScripts.builder()
+                         .fetchAllArtifacts(
+                             FetchAllArtifacts.builder()
+                                 .artifactsArrayPath(ParameterField.createValueField("results"))
+                                 .versionPath(ParameterField.createValueField("version"))
+                                 .shellScriptBaseStepInfo(
+                                     CustomArtifactScriptInfo.builder()
+                                         .source(CustomArtifactScriptSourceWrapper.builder()
+                                                     .type("Inline")
+                                                     .spec(CustomScriptInlineSource.builder()
+                                                               .script(ParameterField.createValueField("echo test"))
+                                                               .build())
+                                                     .build())
+                                         .build())
+                                 .build())
+                         .build())
+            .build();
+    artifactSourceDelegateRequest = (CustomArtifactDelegateRequest) stepHelper.toSourceDelegateRequest(
+        customArtifactConfig, Ambiance.newBuilder().build());
+    assertThat(artifactSourceDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.CUSTOM_ARTIFACT);
+    assertThat(artifactSourceDelegateRequest.getExpressionFunctorToken()).isNotEqualTo(0);
   }
 }

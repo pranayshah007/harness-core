@@ -23,7 +23,7 @@ import io.harness.delegate.beans.FileMetadata;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.BaseFile;
+import software.wings.persistence.BaseFile;
 import software.wings.rules.Integration;
 import software.wings.service.intfc.FileService;
 

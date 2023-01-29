@@ -29,9 +29,7 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 import io.harness.pms.contracts.execution.ExecutionErrorInfo;
 import io.harness.pms.contracts.execution.Status;
@@ -44,6 +42,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
+import dev.morphia.annotations.Entity;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -61,7 +60,6 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -87,13 +85,13 @@ import org.springframework.data.mongodb.core.mapping.Document;
     handler = "PipelineExecutionSummaryEntityServiceAndInfra")
 @ChangeDataCapture(table = "stage_execution_summary_ci", dataStore = "pms-harness", fields = {},
     handler = "PipelineExecutionSummaryEntityCIStage")
-public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {
+public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAware {
   public static final Duration TTL = ofDays(183);
   public static final long TTL_MONTHS = 6;
 
-  @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Setter @NonFinal @Id @dev.morphia.annotations.Id String uuid;
 
-  @NotEmpty int runSequence;
+  @NotEmpty @Builder.Default Integer runSequence = 0;
   @NotEmpty String accountId;
   @NotEmpty String orgIdentifier;
   @Trimmed @NotEmpty String projectIdentifier;
@@ -164,8 +162,8 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
   PipelineStageInfo parentStageInfo;
   Boolean isLatestExecution;
   // Required Index for PipelineTelemetryPublisher
-  @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate long createdAt;
-  @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
+  @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate @Builder.Default Long createdAt = 0L;
+  @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate @Builder.Default Long lastUpdatedAt = 0L;
   @Setter @NonFinal @Version Long version;
 
   public ExecutionStatus getStatus() {
@@ -220,7 +218,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         // Sort queries are added for list page
         // New Index having all filters index without repo and branch
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_startTs_repo_branch_pipelineIds_status_modules_range_idx")
+                 .name("accountId_orgId_projectId_startTs_repo_branch_pipelineIds_status_modules_parent_info_range_idx")
                  .field(PlanExecutionSummaryKeys.accountId)
                  .field(PlanExecutionSummaryKeys.orgIdentifier)
                  .field(PlanExecutionSummaryKeys.projectIdentifier)
@@ -231,26 +229,30 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                  .ascRangeField(PlanExecutionSummaryKeys.pipelineIdentifier)
                  .ascRangeField(PlanExecutionSummaryKeys.status)
                  .ascRangeField(PlanExecutionSummaryKeys.modules)
+                 .ascRangeField(PlanExecutionSummaryKeys.isChildPipeline)
                  .build())
         // Sort queries are added for list page
-        .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_name_startTs_repo_branch_pipelineIds_status_modules_range_idx")
-                 .field(PlanExecutionSummaryKeys.accountId)
-                 .field(PlanExecutionSummaryKeys.orgIdentifier)
-                 .field(PlanExecutionSummaryKeys.projectIdentifier)
-                 .descSortField(PlanExecutionSummaryKeys.name)
-                 // For range in startTs
-                 .ascRangeField(PlanExecutionSummaryKeys.startTs)
-                 // In pipeline Identifier list
-                 .ascRangeField(PlanExecutionSummaryKeys.entityGitDetailsRepoName)
-                 .ascRangeField(PlanExecutionSummaryKeys.entityGitDetailsBranch)
-                 .ascRangeField(PlanExecutionSummaryKeys.pipelineIdentifier)
-                 .ascRangeField(PlanExecutionSummaryKeys.status)
-                 .ascRangeField(PlanExecutionSummaryKeys.modules)
-                 .build())
+        .add(
+            SortCompoundMongoIndex.builder()
+                .name(
+                    "accountId_orgId_projectId_name_startTs_repo_branch_pipelineIds_status_modules_parent_info_range_idx")
+                .field(PlanExecutionSummaryKeys.accountId)
+                .field(PlanExecutionSummaryKeys.orgIdentifier)
+                .field(PlanExecutionSummaryKeys.projectIdentifier)
+                .descSortField(PlanExecutionSummaryKeys.name)
+                // For range in startTs
+                .ascRangeField(PlanExecutionSummaryKeys.startTs)
+                // In pipeline Identifier list
+                .ascRangeField(PlanExecutionSummaryKeys.entityGitDetailsRepoName)
+                .ascRangeField(PlanExecutionSummaryKeys.entityGitDetailsBranch)
+                .ascRangeField(PlanExecutionSummaryKeys.pipelineIdentifier)
+                .ascRangeField(PlanExecutionSummaryKeys.status)
+                .ascRangeField(PlanExecutionSummaryKeys.modules)
+                .ascRangeField(PlanExecutionSummaryKeys.isChildPipeline)
+                .build())
         // Sort queries are added for list page
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_status_startTs_repo_branch_pipelineIds_modules_range_idx")
+                 .name("accountId_orgId_projectId_status_startTs_repo_branch_pipelineIds_modules_parent_info_range_idx")
                  .field(PlanExecutionSummaryKeys.accountId)
                  .field(PlanExecutionSummaryKeys.orgIdentifier)
                  .field(PlanExecutionSummaryKeys.projectIdentifier)
@@ -262,6 +264,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                  .ascRangeField(PlanExecutionSummaryKeys.entityGitDetailsBranch)
                  .ascRangeField(PlanExecutionSummaryKeys.pipelineIdentifier)
                  .ascRangeField(PlanExecutionSummaryKeys.modules)
+                 .ascRangeField(PlanExecutionSummaryKeys.isChildPipeline)
                  .build())
         .build();
   }
@@ -286,6 +289,8 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         + "key";
     public String tagsValue = PlanExecutionSummaryKeys.tags + "."
         + "value";
+    public String isChildPipeline = PlanExecutionSummaryKeys.parentStageInfo + "."
+        + "hasParentPipeline";
   }
 
   public boolean isStagesExecutionAllowed() {

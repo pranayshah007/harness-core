@@ -87,7 +87,12 @@ public class GitOpsTaskHelper {
       ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
           GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
           gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
-      gitFetchFilesResult = scmFetchFilesHelper.fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePathsToFetch);
+      if (gitFetchFilesConfig.isSucceedIfFileNotFound()) {
+        gitFetchFilesResult =
+            scmFetchFilesHelper.fetchAnyFilesFromRepoWithScm(gitStoreDelegateConfig, filePathsToFetch);
+      } else {
+        gitFetchFilesResult = scmFetchFilesHelper.fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePathsToFetch);
+      }
     } else {
       GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
       gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());

@@ -9,7 +9,6 @@ package io.harness.artifacts.azureartifacts.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 
@@ -20,12 +19,12 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsInternalConfig;
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsProtocolType;
+import io.harness.azure.utility.AzureUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.network.Http;
 
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
@@ -52,24 +51,17 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.jackson.JacksonConverterFactory;
 
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
 public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistryService {
-  public static final int CONNECT_TIMEOUT = 5;
-  public static final int READ_TIMEOUT = 10;
-
   @Inject private AzureArtifactsDownloadHelper azureArtifactsDownloadHelper;
 
   @Override
@@ -185,6 +177,10 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
       }
     }
 
+    if (feedId == null) {
+      throw new InvalidRequestException("Invalid feed. Please input a valid feed.");
+    }
+
     List<AzureArtifactsPackage> packages = listPackages(azureArtifactsInternalConfig, project, feed, packageType);
 
     String packageId = null;
@@ -198,6 +194,10 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
     }
 
     Response<AzureArtifactsPackageVersions> packageVersionsList;
+
+    if (packageId == null) {
+      throw new InvalidRequestException("Please input a valid packageName for the given feed and packageType.");
+    }
 
     try {
       packageVersionsList =
@@ -325,6 +325,10 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
 
     AzureDevopsProjects ngAzureArtifactsProjects = projectResponse.body();
 
+    if (ngAzureArtifactsProjects == null) {
+      return new ArrayList<>();
+    }
+
     return ngAzureArtifactsProjects.getValue();
   }
 
@@ -385,6 +389,10 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
     }
 
     AzureArtifactsFeeds azureArtifactsFeeds = feedsResponse.body();
+
+    if (azureArtifactsFeeds == null) {
+      return new ArrayList<>();
+    }
 
     return azureArtifactsFeeds.getValue();
   }
@@ -488,6 +496,9 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
 
   private void constructBuildDetails(
       List<BuildDetails> buildDetails, AzureArtifactsPackageVersion azureArtifactsPackageVersion) {
+    if (azureArtifactsPackageVersion == null) {
+      throw new InvalidRequestException("Artifact package version not found.");
+    }
     Map<String, String> metadata = new HashMap<>();
 
     metadata.put(ArtifactMetadataKeys.version, azureArtifactsPackageVersion.getVersion());
@@ -507,19 +518,7 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
   }
 
   public static AzureDevopsRestClient getAzureDevopsRestClient(String azureDevopsUrl) {
-    String url = ensureTrailingSlash(azureDevopsUrl);
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
-                                    .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
-                                    .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
-                                    .proxy(Http.checkAndGetNonProxyIfApplicable(url))
-                                    .retryOnConnectionFailure(true)
-                                    .build();
-    Retrofit retrofit = new Retrofit.Builder()
-                            .client(okHttpClient)
-                            .baseUrl(url)
-                            .addConverterFactory(JacksonConverterFactory.create())
-                            .build();
-    return retrofit.create(AzureDevopsRestClient.class);
+    return AzureUtils.getAzureRestClient(ensureTrailingSlash(azureDevopsUrl), AzureDevopsRestClient.class);
   }
 
   public static AzureArtifactsRestClient getAzureArtifactsRestClient(String azureDevopsUrl, String project) {
@@ -527,18 +526,7 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
     if (isNotBlank(project)) {
       url += project + "/";
     }
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
-                                    .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
-                                    .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
-                                    .proxy(Http.checkAndGetNonProxyIfApplicable(url))
-                                    .retryOnConnectionFailure(true)
-                                    .build();
-    Retrofit retrofit = new Retrofit.Builder()
-                            .client(okHttpClient)
-                            .baseUrl(url)
-                            .addConverterFactory(JacksonConverterFactory.create())
-                            .build();
-    return retrofit.create(AzureArtifactsRestClient.class);
+    return AzureUtils.getAzureRestClient(url, AzureArtifactsRestClient.class);
   }
 
   private static String ensureTrailingSlash(String azureDevopsUrl) {

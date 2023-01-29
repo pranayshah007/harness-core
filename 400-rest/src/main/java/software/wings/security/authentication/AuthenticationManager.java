@@ -25,7 +25,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
-import static software.wings.beans.Account.AccountKeys;
+import static software.wings.beans.User.Builder;
 
 import static org.apache.cxf.common.util.UrlUtils.urlDecode;
 
@@ -78,7 +78,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 
@@ -274,9 +273,6 @@ public class AuthenticationManager {
    */
   public User loginUserForIdentityService(String email) {
     User user = userService.getUserByEmail(email);
-    if (user != null && user.getSupportAccounts() == null) {
-      userService.loadSupportAccounts(user, Set.of(AccountKeys.uuid));
-    }
     // Null check just in case identity service might accidentally forwarded wrong user to this cluster.
     if (user == null) {
       log.info("User {} doesn't exist in this manager cluster", email);
@@ -301,7 +297,6 @@ public class AuthenticationManager {
         userService.update(user);
       }
     }
-
     return user;
   }
 
@@ -309,18 +304,20 @@ public class AuthenticationManager {
     HashMap<String, String> claimMap = new HashMap<>();
     claimMap.put(EMAIL, user.getEmail());
     String jwtToken = userService.generateJWTToken(user, claimMap, JWT_CATEGORY.MULTIFACTOR_AUTH, false);
-    return User.Builder.anUser()
-        .uuid(user.getUuid())
-        .email(user.getEmail())
-        .name(user.getName())
-        .twoFactorAuthenticationMechanism(user.getTwoFactorAuthenticationMechanism())
-        .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
-        .twoFactorJwtToken(jwtToken)
-        .accounts(user.getAccounts())
-        .supportAccounts(user.getSupportAccounts())
-        .defaultAccountId(user.getDefaultAccountId())
-        .emailVerified(user.isEmailVerified())
-        .build();
+    Builder userBuilder = User.Builder.anUser()
+                              .uuid(user.getUuid())
+                              .email(user.getEmail())
+                              .name(user.getName())
+                              .twoFactorAuthenticationMechanism(user.getTwoFactorAuthenticationMechanism())
+                              .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
+                              .twoFactorJwtToken(jwtToken)
+                              .accounts(user.getAccounts())
+                              .defaultAccountId(user.getDefaultAccountId())
+                              .emailVerified(user.isEmailVerified());
+    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      userBuilder.supportAccounts(user.getSupportAccounts());
+    }
+    return userBuilder.build();
   }
 
   public String[] decryptBasicToken(String basicToken) {
@@ -479,7 +476,7 @@ public class AuthenticationManager {
   }
 
   public Response samlLogin(String... credentials) throws URISyntaxException {
-    String accountId;
+    String accountId = null;
     User user = null;
     try {
       user = samlBasedAuthHandler.authenticate(credentials).getUser();
@@ -507,6 +504,11 @@ public class AuthenticationManager {
         }
         URI redirectUrl = new URI(baseUrl + LOGIN_ERROR_CODE_SAMLTESTSUCCESS);
         return Response.seeOther(redirectUrl).build();
+      } else if (e.getCode() == ErrorCode.DOMAIN_WHITELIST_FILTER_CHECK_FAILED) {
+        String userEmail = user != null ? user.getEmail() : null;
+        log.error("SAML: user with email {} does not match the domain whitelist filter for Account: {}", userEmail,
+            accountId, e);
+        throw new WingsException(DOMAIN_WHITELIST_FILTER_CHECK_FAILED, USER);
       } else {
         return generateInvalidSSOResponse(e);
       }

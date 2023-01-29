@@ -32,11 +32,13 @@ import lombok.Value;
 public class GitopsClustersOutcome implements Outcome, ExecutionSweepingOutput {
   @NotNull List<ClusterData> clustersData;
 
-  public GitopsClustersOutcome appendCluster(@NotNull Metadata env, @NotNull Metadata cluster) {
+  public GitopsClustersOutcome appendCluster(
+      @NotNull Metadata env, @NotNull Metadata cluster, @NotNull String envType) {
     ScopeAndRef scopedAndRefForCluster = ClusterEntityMapper.getScopeFromClusterRef(cluster.getIdentifier());
     clustersData.add(ClusterData.builder()
                          .envId(env.getIdentifier())
                          .envName(env.getName())
+                         .envType(envType)
                          .clusterName(cluster.getName())
                          .clusterId(scopedAndRefForCluster.getRef())
                          .variables(Collections.emptyMap())
@@ -45,34 +47,38 @@ public class GitopsClustersOutcome implements Outcome, ExecutionSweepingOutput {
     return this;
   }
 
-  public GitopsClustersOutcome appendCluster(
-      @NotNull Metadata envGroup, @NotNull Metadata env, @NotNull Metadata cluster) {
+  public GitopsClustersOutcome appendCluster(@NotNull Metadata envGroup, @NotNull Metadata env, @NotNull String envType,
+      @NotNull Metadata cluster, String agentId) {
     ScopeAndRef scopedAndRefForCluster = ClusterEntityMapper.getScopeFromClusterRef(cluster.getIdentifier());
     clustersData.add(ClusterData.builder()
                          .envGroupId(envGroup.getIdentifier())
                          .envGroupName(envGroup.getName())
                          .envId(env.getIdentifier())
                          .envName(env.getName())
+                         .envType(envType)
                          .clusterId(scopedAndRefForCluster.getRef())
                          .scope(scopedAndRefForCluster.getScope().toString())
                          .clusterName(cluster.getName())
                          .variables(Collections.emptyMap())
+                         .agentId(agentId)
                          .build());
     return this;
   }
 
-  public GitopsClustersOutcome appendCluster(
-      @NotNull Metadata envGroup, @NotNull Metadata env, @NotNull Metadata cluster, Map<String, Object> variables) {
+  public GitopsClustersOutcome appendCluster(@NotNull Metadata envGroup, @NotNull Metadata env, @NotNull String envType,
+      @NotNull Metadata cluster, Map<String, Object> variables, String agentId) {
     ScopeAndRef scopedAndRefForCluster = ClusterEntityMapper.getScopeFromClusterRef(cluster.getIdentifier());
     clustersData.add(ClusterData.builder()
                          .envGroupId(envGroup.getIdentifier())
                          .envGroupName(envGroup.getName())
                          .envId(env.getIdentifier())
                          .envName(env.getName())
+                         .envType(envType)
                          .clusterId(scopedAndRefForCluster.getRef())
                          .scope(scopedAndRefForCluster.getScope().toString())
                          .clusterName(cluster.getName())
                          .variables(variables)
+                         .agentId(agentId)
                          .build());
     return this;
   }
@@ -86,9 +92,12 @@ public class GitopsClustersOutcome implements Outcome, ExecutionSweepingOutput {
     String envGroupName;
     String envId;
     String envName;
+
+    String envType;
     String clusterId;
     String clusterName;
     String scope;
+    String agentId;
     Map<String, Object> variables;
   }
 }

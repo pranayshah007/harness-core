@@ -23,6 +23,7 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceType.AZURE_ARTIFA
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.JENKINS;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.rule.OwnerRule.VLAD;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static java.util.Collections.emptyList;
@@ -58,6 +59,8 @@ import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
 import io.harness.cdng.azure.config.ConnectionStringsOutcome;
 import io.harness.cdng.azure.config.StartupCommandOutcome;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
+import io.harness.cdng.azure.webapp.steps.NgAppSettingsSweepingOutput;
+import io.harness.cdng.azure.webapp.steps.NgConnectionStringsSweepingOutput;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails;
@@ -71,7 +74,9 @@ import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
@@ -185,6 +190,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
   @Mock private NGEncryptedDataService ngEncryptedDataService;
   @Mock private StageExecutionInfoService stageExecutionInfoService;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Mock private ExecutionSweepingOutputService sweepingOutputService;
 
   @InjectMocks private AzureWebAppStepHelper stepHelper;
 
@@ -305,6 +311,9 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
     doReturn(OptionalOutcome.builder().outcome(connectionStringsOutcome).found(true).build())
         .when(outcomeService)
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(CONNECTION_STRINGS));
+    doReturn(OptionalSweepingOutput.builder().found(false).build())
+        .when(sweepingOutputService)
+        .resolveOptional(eq(ambiance), any());
 
     final Map<String, StoreConfig> webAppConfigs = stepHelper.fetchWebAppConfig(ambiance);
 
@@ -327,10 +336,59 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
     doReturn(OptionalOutcome.builder().found(false).build())
         .when(outcomeService)
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(CONNECTION_STRINGS));
+    doReturn(OptionalSweepingOutput.builder().found(false).build())
+        .when(sweepingOutputService)
+        .resolveOptional(eq(ambiance), any());
 
     final Map<String, StoreConfig> webAppConfigs = stepHelper.fetchWebAppConfig(ambiance);
 
     assertThat(webAppConfigs).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void testFetchWebAppConfigWithOverrides() {
+    final StartupCommandOutcome startupCommandOutcome =
+        StartupCommandOutcome.builder().store(createTestGitStore()).build();
+    final ApplicationSettingsOutcome applicationSettingsOutcome =
+        ApplicationSettingsOutcome.builder().store(createTestHarnessStore()).build();
+    final ConnectionStringsOutcome connectionStringsOutcome =
+        ConnectionStringsOutcome.builder().store(createTestGitStore()).build();
+
+    doReturn(OptionalOutcome.builder().outcome(startupCommandOutcome).found(true).build())
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STARTUP_COMMAND));
+    doReturn(OptionalOutcome.builder().outcome(applicationSettingsOutcome).found(true).build())
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(APPLICATION_SETTINGS));
+    doReturn(OptionalOutcome.builder().outcome(connectionStringsOutcome).found(true).build())
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(CONNECTION_STRINGS));
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgAppSettingsSweepingOutput.builder().store(StoreConfigWrapper.builder().build()).build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(
+            eq(ambiance), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_APP_SETTINGS_SWEEPING_OUTPUT)));
+
+    doReturn(
+        OptionalSweepingOutput.builder()
+            .found(true)
+            .output(NgConnectionStringsSweepingOutput.builder().store(StoreConfigWrapper.builder().build()).build())
+            .build())
+        .when(sweepingOutputService)
+        .resolveOptional(eq(ambiance),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT)));
+
+    final Map<String, StoreConfig> webAppConfigs = stepHelper.fetchWebAppConfig(ambiance);
+
+    assertThat(webAppConfigs).containsKeys(STARTUP_COMMAND, APPLICATION_SETTINGS, CONNECTION_STRINGS);
+    assertThat(webAppConfigs.get(STARTUP_COMMAND).getKind()).isEqualTo(ManifestStoreType.GIT);
+    assertThat(webAppConfigs.get(APPLICATION_SETTINGS).getKind()).isEqualTo(HARNESS_STORE_TYPE);
+    assertThat(webAppConfigs.get(CONNECTION_STRINGS).getKind()).isEqualTo(ManifestStoreType.GIT);
   }
 
   @Test

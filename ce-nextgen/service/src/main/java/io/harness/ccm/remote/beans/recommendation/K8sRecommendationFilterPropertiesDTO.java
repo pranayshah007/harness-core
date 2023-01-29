@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -48,4 +49,8 @@ public class K8sRecommendationFilterPropertiesDTO {
   @Schema(
       name = "resourceTypes", description = "List of resourceTypes which will be applied as filter for Recommendations")
   List<ResourceType> resourceTypes;
+
+  @Schema(name = "recommendationStates",
+      description = "List of recommendationStates which will be applied as filter for Recommendations")
+  List<RecommendationState> recommendationStates;
 }

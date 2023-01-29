@@ -46,6 +46,16 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.ECS_RUN_TASK, StepSpecTypeConstants.CHAOS_STEP, StepSpecTypeConstants.ELASTIGROUP_DEPLOY,
         StepSpecTypeConstants.ELASTIGROUP_ROLLBACK, StepSpecTypeConstants.ELASTIGROUP_SETUP,
         StepSpecTypeConstants.TERRAGRUNT_PLAN, StepSpecTypeConstants.TERRAGRUNT_APPLY,
-        StepSpecTypeConstants.TERRAGRUNT_DESTROY, StepSpecTypeConstants.TERRAGRUNT_ROLLBACK);
+        StepSpecTypeConstants.TERRAGRUNT_DESTROY, StepSpecTypeConstants.TERRAGRUNT_ROLLBACK,
+        StepSpecTypeConstants.ASG_CANARY_DEPLOY, StepSpecTypeConstants.ASG_CANARY_DELETE,
+        StepSpecTypeConstants.TAS_CANARY_APP_SETUP, StepSpecTypeConstants.TAS_BG_APP_SETUP,
+        StepSpecTypeConstants.TAS_BASIC_APP_SETUP, StepSpecTypeConstants.TANZU_COMMAND,
+        StepSpecTypeConstants.TAS_APP_RESIZE, StepSpecTypeConstants.TAS_SWAP_ROUTES, StepSpecTypeConstants.TAS_ROLLBACK,
+        StepSpecTypeConstants.SWAP_ROLLBACK, StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP,
+        StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE, StepSpecTypeConstants.ASG_ROLLING_DEPLOY,
+        StepSpecTypeConstants.ASG_ROLLING_ROLLBACK, StepSpecTypeConstants.TAS_ROLLING_DEPLOY,
+        StepSpecTypeConstants.TAS_ROLLING_ROLLBACK, StepSpecTypeConstants.K8S_DRY_RUN_MANIFEST,
+        StepSpecTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE, StepSpecTypeConstants.ASG_BLUE_GREEN_DEPLOY,
+        StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK);
   }
 }

@@ -21,6 +21,7 @@ import io.harness.data.validator.EntityName;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -42,6 +43,8 @@ import software.wings.service.intfc.customdeployment.CustomDeploymentTypeAware;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -49,8 +52,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
@@ -76,6 +77,11 @@ public class InfrastructureDefinition
         .add(CompoundMongoIndex.builder()
                  .name("infrastructure_cloudProviderId")
                  .field(InfrastructureDefinitionKeys.infrastructure + ".cloudProviderId")
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountIdCreatedAt")
+                 .field(InfrastructureDefinitionKeys.accountId)
+                 .descSortField(InfrastructureDefinitionKeys.createdAt)
                  .build())
         .build();
   }

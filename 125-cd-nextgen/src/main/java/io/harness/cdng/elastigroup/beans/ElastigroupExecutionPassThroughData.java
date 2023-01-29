@@ -13,18 +13,47 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.pcf.ResizeStrategy;
+import io.harness.delegate.task.elastigroup.request.ConnectedCloudProvider;
+import io.harness.delegate.task.elastigroup.request.LoadBalancerConfig;
+import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
+import io.harness.spotinst.model.ElastiGroup;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 import org.springframework.data.annotation.TypeAlias;
 
-@Value
+@Data
 @Builder
 @OwnedBy(CDP)
 @TypeAlias("elastigroupExecutionPassThroughData")
 @RecasterAlias("io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData")
 public class ElastigroupExecutionPassThroughData implements PassThroughData {
-  InfrastructureOutcome infrastructure;
-  UnitProgressData lastActiveUnitProgressData;
+  private boolean blueGreen;
+
+  // Available in Startup Script
+  private String base64EncodedStartupScript;
+  private InfrastructureOutcome infrastructure;
+
+  // Available in Elastigroup configuration
+  private String elastigroupConfiguration;
+
+  // Available in Artifact Task
+  private String image;
+  private UnitProgressData lastActiveUnitProgressData;
+
+  // Available in Pre Fetch Task
+  private String elastigroupNamePrefix;
+  private SpotInstConfig spotInstConfig;
+
+  // Available before executing Setup Task
+  private ResizeStrategy resizeStrategy;
+
+  //  //Available in Setup Task
+  private ElastiGroup generatedElastigroupConfig;
+  //
+  //  //Available only in BG Step
+  private ConnectedCloudProvider connectedCloudProvider;
+  private LoadBalancerConfig loadBalancerConfig;
 }

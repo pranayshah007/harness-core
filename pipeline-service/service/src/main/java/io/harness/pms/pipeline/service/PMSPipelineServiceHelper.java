@@ -33,6 +33,7 @@ import io.harness.filter.service.FilterService;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -47,11 +48,13 @@ import io.harness.pms.filter.utils.ModuleInfoFilterUtils;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.instrumentaion.PipelineInstrumentationConstants;
 import io.harness.pms.instrumentaion.PipelineInstrumentationUtils;
+import io.harness.pms.pipeline.MoveConfigOperationDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineEntityUtils;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
+import io.harness.pms.pipeline.PipelineMetadataV2;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
@@ -83,6 +86,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
@@ -184,9 +188,9 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  public void resolveTemplatesAndValidatePipelineEntity(PipelineEntity pipelineEntity) {
+  public void resolveTemplatesAndValidatePipelineEntity(PipelineEntity pipelineEntity, boolean loadFromCache) {
     long start = System.currentTimeMillis();
-    GovernanceMetadata governanceMetadata = resolveTemplatesAndValidatePipeline(pipelineEntity);
+    GovernanceMetadata governanceMetadata = resolveTemplatesAndValidatePipeline(pipelineEntity, false, loadFromCache);
     log.info("[PMS_PipelineService] validating pipeline took {}ms for projectId {}, orgId {}, accountId {}",
         System.currentTimeMillis() - start, pipelineEntity.getProjectIdentifier(), pipelineEntity.getOrgIdentifier(),
         pipelineEntity.getAccountIdentifier());
@@ -252,12 +256,12 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  public GovernanceMetadata resolveTemplatesAndValidatePipeline(PipelineEntity pipelineEntity) {
-    return resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true);
+  public GovernanceMetadata resolveTemplatesAndValidatePipeline(PipelineEntity pipelineEntity, boolean loadFromCache) {
+    return resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true, loadFromCache);
   }
 
   public GovernanceMetadata resolveTemplatesAndValidatePipeline(
-      PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceRulesFails) {
+      PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceRulesFails, boolean loadFromCache) {
     try {
       GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
       if (gitEntityInfo != null && gitEntityInfo.isNewBranch()) {
@@ -265,14 +269,18 @@ public class PMSPipelineServiceHelper {
             GitSyncBranchContext.builder()
                 .gitBranchInfo(GitEntityInfo.builder()
                                    .branch(gitEntityInfo.getBaseBranch())
+                                   .connectorRef(gitEntityInfo.getConnectorRef())
+                                   .repoName(gitEntityInfo.getRepoName())
                                    .yamlGitConfigId(gitEntityInfo.getYamlGitConfigId())
                                    .build())
                 .build();
         try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
-          return resolveTemplatesAndValidatePipelineYaml(pipelineEntity, throwExceptionIfGovernanceRulesFails);
+          return resolveTemplatesAndValidatePipelineYaml(
+              pipelineEntity, throwExceptionIfGovernanceRulesFails, loadFromCache);
         }
       } else {
-        return resolveTemplatesAndValidatePipelineYaml(pipelineEntity, throwExceptionIfGovernanceRulesFails);
+        return resolveTemplatesAndValidatePipelineYaml(
+            pipelineEntity, throwExceptionIfGovernanceRulesFails, loadFromCache);
       }
     } catch (io.harness.yaml.validator.InvalidYamlException ex) {
       ex.setYaml(pipelineEntity.getData());
@@ -327,7 +335,7 @@ public class PMSPipelineServiceHelper {
   }
 
   GovernanceMetadata resolveTemplatesAndValidatePipelineYaml(
-      PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceRulesFails) {
+      PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceRulesFails, boolean loadFromCache) {
     switch (pipelineEntity.getHarnessVersion()) {
       case PipelineVersion.V1:
         return GovernanceMetadata.newBuilder().setDeny(false).build();
@@ -336,7 +344,7 @@ public class PMSPipelineServiceHelper {
             pmsFeatureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE);
         // Apply all the templateRefs(if any) then check for schema validation.
         TemplateMergeResponseDTO templateMergeResponseDTO = pipelineTemplateHelper.resolveTemplateRefsInPipeline(
-            pipelineEntity, getMergedTemplateWithTemplateReferences);
+            pipelineEntity, getMergedTemplateWithTemplateReferences, loadFromCache);
         // Add Template Module Info temporarily to Pipeline Entity
         pipelineEntity.setTemplateModules(pipelineTemplateHelper.getTemplatesModuleInfo(templateMergeResponseDTO));
         return validateYaml(pipelineEntity, templateMergeResponseDTO, throwExceptionIfGovernanceRulesFails)
@@ -450,9 +458,7 @@ public class PMSPipelineServiceHelper {
             .schemaErrors(
                 Collections.singletonList(YamlSchemaErrorDTO.builder().message(errorMessage).fqn("$.pipeline").build()))
             .build();
-    InvalidYamlException invalidYamlException = new InvalidYamlException(errorMessage, errorWrapperDTO);
-    invalidYamlException.setYaml(pipelineYaml);
-    return invalidYamlException;
+    return new InvalidYamlException(errorMessage, errorWrapperDTO, pipelineYaml);
   }
 
   public String importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier) {
@@ -529,5 +535,37 @@ public class PMSPipelineServiceHelper {
       log.error("Unable to parse the Filter value", e);
     }
     return newEntity;
+  }
+
+  public Criteria getPipelineMetadataV2Criteria(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    return Criteria.where(PipelineMetadataV2.PipelineMetadataV2Keys.accountIdentifier)
+        .is(accountIdentifier)
+        .and(PipelineMetadataV2.PipelineMetadataV2Keys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(PipelineMetadataV2.PipelineMetadataV2Keys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(PipelineMetadataV2.PipelineMetadataV2Keys.identifier)
+        .is(pipelineIdentifier);
+  }
+  public Update getPipelineUpdateForInlineToRemote(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, MoveConfigOperationDTO moveConfigDTO) {
+    Update update = new Update();
+    update.set(PipelineEntityKeys.repo, moveConfigDTO.getRepoName());
+    update.set(PipelineEntityKeys.storeType, StoreType.REMOTE);
+    update.set(PipelineEntityKeys.filePath, moveConfigDTO.getFilePath());
+    update.set(PipelineEntityKeys.connectorRef, moveConfigDTO.getConnectorRef());
+    update.set(PipelineEntityKeys.repoURL,
+        gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier));
+    return update;
+  }
+  public Update getPipelineUpdateForRemoteToInline() {
+    Update update = new Update();
+    update.unset(PipelineEntityKeys.repo);
+    update.unset(PipelineEntityKeys.filePath);
+    update.unset(PipelineEntityKeys.connectorRef);
+    update.unset(PipelineEntityKeys.repoURL);
+    update.set(PipelineEntityKeys.storeType, StoreType.INLINE);
+    return update;
   }
 }

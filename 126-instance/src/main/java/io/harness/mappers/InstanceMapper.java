@@ -27,6 +27,7 @@ public class InstanceMapper {
         .envIdentifier(instance.getEnvIdentifier())
         .envName(instance.getEnvName())
         .envType(instance.getEnvType())
+        .envGroupRef(instance.getEnvGroupRef())
         .infrastructureKind(instance.getInfrastructureKind())
         .infrastructureMappingId(instance.getInfrastructureMappingId())
         .instanceType(instance.getInstanceType())
@@ -49,6 +50,7 @@ public class InstanceMapper {
         .instanceKey(instance.getInstanceKey())
         .infraIdentifier(instance.getInfraIdentifier())
         .infraName(instance.getInfraName())
+        .podCreatedAt(instance.getPodCreatedAt())
         .build();
   }
 
@@ -64,6 +66,7 @@ public class InstanceMapper {
         .accountIdentifier(instanceDTO.getAccountIdentifier())
         .envIdentifier(instanceDTO.getEnvIdentifier())
         .envName(instanceDTO.getEnvName())
+        .envGroupRef(instanceDTO.getEnvGroupRef())
         .envType(instanceDTO.getEnvType())
         .infrastructureKind(instanceDTO.getInfrastructureKind())
         .infrastructureMappingId(instanceDTO.getInfrastructureMappingId())
@@ -87,6 +90,7 @@ public class InstanceMapper {
         .instanceKey(instanceDTO.getInstanceKey())
         .infraIdentifier(instanceDTO.getInfraIdentifier())
         .infraName(instanceDTO.getInfraName())
+        .podCreatedAt(instanceDTO.getPodCreatedAt())
         .build();
   }
 }

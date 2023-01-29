@@ -30,7 +30,6 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.app.MainConfiguration;
-import software.wings.beans.DelegateConnection;
 import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.DelegatesDownAlert;
 import software.wings.helpers.ext.mail.SmtpConfig;
@@ -58,6 +57,7 @@ public class AlertCheckJobTest extends WingsBaseTest {
   @Mock private EmailHelperUtils emailHelperUtils;
   @Mock private MainConfiguration mainConfiguration;
   @InjectMocks @Inject AlertCheckJob alertCheckJob;
+  @InjectMocks @Inject DelegateDisconnectAlertHelper delegateDisconnectAlertHelper;
   @Inject private HPersistence persistence;
 
   @Before
@@ -75,7 +75,7 @@ public class AlertCheckJobTest extends WingsBaseTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testExecuteInternal_noAlert() {
-    final Delegate delegate = saveDelegate("host1", 2, true);
+    final Delegate delegate = saveDelegate("host1", 2);
     doReturn(Arrays.asList(delegate)).when(delegateService).getNonDeletedDelegatesForAccount(any());
     doNothing().when(alertService).closeAlert(any(), any(), any(), any());
     alertCheckJob.executeInternal(ACCOUNT_ID);
@@ -89,8 +89,8 @@ public class AlertCheckJobTest extends WingsBaseTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testExecuteInternal_delegatesDownAlert() {
-    final Delegate delegate1 = saveDelegate("host1", 2, true);
-    final Delegate delegate2 = saveDelegate("host2", 10, false);
+    final Delegate delegate1 = saveDelegate("host1", 2);
+    final Delegate delegate2 = saveDelegate("host2", 10);
     doReturn(Arrays.asList(delegate1, delegate2)).when(delegateService).getNonDeletedDelegatesForAccount(any());
 
     doNothing().when(alertService).closeAlert(any(), any(), any(), any());
@@ -99,19 +99,10 @@ public class AlertCheckJobTest extends WingsBaseTest {
     verify(alertService, times(1)).closeAlert(any(), any(), any(), any());
   }
 
-  private Delegate saveDelegate(String host, int timeAfterLastHB, boolean createConnection) {
+  private Delegate saveDelegate(String host, int timeAfterLastHB) {
     long lastHeartbeat = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(timeAfterLastHB);
     Delegate delegate = Delegate.builder().accountId(ACCOUNT_ID).hostName(host).lastHeartBeat(lastHeartbeat).build();
     persistence.save(delegate);
-
-    if (createConnection) {
-      DelegateConnection connection = DelegateConnection.builder()
-                                          .accountId(ACCOUNT_ID)
-                                          .delegateId(delegate.getUuid())
-                                          .lastHeartbeat(lastHeartbeat)
-                                          .build();
-      persistence.save(connection);
-    }
     return delegate;
   }
 
@@ -157,7 +148,7 @@ public class AlertCheckJobTest extends WingsBaseTest {
 
     List<Delegate> delegates = Arrays.asList(delegate1, delegate2);
 
-    alertCheckJob.processDelegateWhichBelongsToGroup(ACCOUNT_ID, delegates);
+    delegateDisconnectAlertHelper.processDelegateWhichBelongsToGroup(ACCOUNT_ID, delegates);
 
     verify(alertService, times(1))
         .openAlert(eq(ACCOUNT_ID), eq(GLOBAL_APP_ID), eq(AlertType.DelegatesDown),
@@ -178,7 +169,7 @@ public class AlertCheckJobTest extends WingsBaseTest {
                             .build();
     persistence.save(delegate);
     List<Delegate> delegates = Collections.singletonList(delegate);
-    alertCheckJob.processDelegateWhichBelongsToGroup(ACCOUNT_ID, delegates);
+    delegateDisconnectAlertHelper.checkIfAnyDelegatesAreDown(ACCOUNT_ID, delegates);
     verify(alertService, times(1))
         .closeAlert(eq(ACCOUNT_ID), eq(GLOBAL_APP_ID), eq(AlertType.DelegatesDown),
             eq(DelegatesDownAlert.builder().accountId(ACCOUNT_ID).delegateGroupName(delegateGroupName).build()));

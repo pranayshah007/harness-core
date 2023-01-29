@@ -27,7 +27,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.ngtriggers.TriggerConfiguration;
 import io.harness.notification.NotificationClientConfiguration;
 import io.harness.opaclient.OpaServiceConfiguration;
-import io.harness.pms.event.overviewLandingPage.DebeziumConsumerConfig;
+import io.harness.pms.event.overviewLandingPage.DebeziumConsumersConfig;
 import io.harness.pms.sdk.core.PipelineSdkRedisEventsConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
@@ -52,6 +52,7 @@ import io.dropwizard.request.logging.RequestLogFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.server.ServerFactory;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import io.grpc.netty.shaded.io.grpc.netty.NegotiationType;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import io.swagger.v3.oas.integration.api.OpenAPIConfiguration;
@@ -98,7 +99,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("pipelineExecutionPoolConfig") private ThreadPoolConfig pipelineExecutionPoolConfig;
   @JsonProperty("pmsSdkExecutionPoolConfig") private ThreadPoolConfig pmsSdkExecutionPoolConfig;
   @JsonProperty("pmsSdkOrchestrationEventPoolConfig") private ThreadPoolConfig pmsSdkOrchestrationEventPoolConfig;
-  @JsonProperty("debeziumConsumerConfigs") List<DebeziumConsumerConfig> debeziumConsumerConfigs;
+  @JsonProperty("debeziumConsumersConfigs") DebeziumConsumersConfig debeziumConsumersConfigs;
   @JsonProperty("orchestrationPoolConfig") private ThreadPoolConfig orchestrationPoolConfig;
   @JsonProperty("grpcServerConfig") private GrpcServerConfig grpcServerConfig;
   @JsonProperty("grpcClientConfigs") private Map<String, GrpcClientConfig> grpcClientConfigs;
@@ -115,6 +116,8 @@ public class PipelineServiceConfiguration extends Configuration {
   @Builder.Default @JsonProperty("allowedOrigins") private List<String> allowedOrigins = new ArrayList<>();
   @JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
   @JsonProperty("eventsFramework") private EventsFrameworkConfiguration eventsFrameworkConfiguration;
+  @JsonProperty("eventsFrameworkSnapshotDebezium")
+  private EventsFrameworkConfiguration eventsFrameworkSnapshotConfiguration;
   @JsonProperty("pipelineServiceBaseUrl") private String pipelineServiceBaseUrl;
   @JsonProperty("pmsApiBaseUrl") private String pmsApiBaseUrl;
   @JsonProperty("yamlSchemaClientConfig") private YamlSchemaClientConfig yamlSchemaClientConfig;
@@ -125,6 +128,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
   @JsonProperty(value = "enableAudit") private boolean enableAudit;
   @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
+  @JsonProperty("shouldUseEventsFrameworkSnapshotDebezium") private boolean shouldUseEventsFrameworkSnapshotDebezium;
   @JsonProperty("hostname") String hostname = "localhost";
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty("segmentConfiguration") private SegmentConfiguration segmentConfiguration;
@@ -146,6 +150,11 @@ public class PipelineServiceConfiguration extends Configuration {
   OrchestrationRestrictionConfiguration orchestrationRestrictionConfiguration;
   @JsonProperty("yamlSchemaExecutorServiceConfig") private ThreadPoolConfig yamlSchemaExecutorServiceConfig;
   @JsonProperty(value = "containerStepConfig") ContainerExecutionConfig containerExecutionConfig;
+  @JsonProperty(value = "grpcNegotiationType") NegotiationType grpcNegotiationType;
+  // If flag is enabled, only one thread does Notify response cleanup.
+  @JsonProperty(value = "lockNotifyResponseCleanup") private boolean lockNotifyResponseCleanup;
+  @JsonProperty("queueServiceClientConfig") private ServiceHttpClientConfig queueServiceClientConfig;
+  @JsonProperty("queueServiceSecret") private String queueServiceSecret;
 
   private String managerServiceSecret;
   private String managerTarget;

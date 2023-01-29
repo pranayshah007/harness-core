@@ -9,6 +9,7 @@ package io.harness.engine.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.eraro.ErrorCode.TIMEOUT_ENGINE_EXCEPTION;
+import static io.harness.springdata.SpringDataMongoUtils.setUnset;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.OrchestrationEngine;
@@ -16,12 +17,14 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.eraro.Level;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultValueAdviser;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.OldNotifyCallback;
 import io.harness.waiter.WaitNotifyEngine;
@@ -43,7 +46,6 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private OrchestrationEngine engine;
-  @Inject private NodeAdviseHelper nodeAdviseHelper;
 
   @Inject @Named("EngineExecutorService") private ExecutorService executorService;
   @Inject NodeAdviseHelper adviseHelper;
@@ -63,24 +65,35 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
   public void notifyTimeout(Map<String, ResponseData> responseMap) {
     NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
     PlanNode node = nodeExecution.getNode();
-    FailureInfo failureInfo = FailureInfo.newBuilder()
-                                  .setErrorMessage("ExecutionInputExpired")
-                                  .addFailureTypes(FailureType.INPUT_TIMEOUT_FAILURE)
-                                  .addFailureData(FailureData.newBuilder()
-                                                      .addFailureTypes(FailureType.INPUT_TIMEOUT_FAILURE)
-                                                      .setLevel(Level.ERROR.name())
-                                                      .setCode(TIMEOUT_ENGINE_EXCEPTION.name())
-                                                      .setMessage("ExecutionInputExpired")
-                                                      .build())
-                                  .build();
+    FailureInfo failureInfo =
+        FailureInfo.newBuilder()
+            .setErrorMessage("ExecutionInputExpired")
+            .addFailureTypes(FailureType.INPUT_TIMEOUT_FAILURE)
+            .addFailureData(
+                FailureData.newBuilder()
+                    .addFailureTypes(FailureType.INPUT_TIMEOUT_FAILURE)
+                    .setLevel(Level.ERROR.name())
+                    .setCode(TIMEOUT_ENGINE_EXCEPTION.name())
+                    .setMessage(
+                        "Pipeline has passed the time limit to take the user input. Please check the timeout configuration")
+                    .build())
+            .build();
+
+    // ProceedWithDefault FailureStrategy is not configured, then expire the nodeExecution.
+    if (node.getAdviserObtainments().stream().noneMatch(
+            o -> o.getType().getType().equals(ProceedWithDefaultValueAdviser.ADVISER_TYPE.getType()))) {
+      log.debug("Execution input timed out for nodeExecutionId {}", nodeExecutionId);
+      nodeExecution = nodeExecutionService.updateStatusWithOps(nodeExecutionId, Status.EXPIRED,
+          ops -> setUnset(ops, NodeExecutionKeys.failureInfo, failureInfo), EnumSet.noneOf(Status.class));
+    }
+
+    // End nodeExecution if advisers are empty.
     if (CollectionUtils.isEmpty(node.getAdviserObtainments())) {
-      nodeExecutionService.updateStatusWithOps(nodeExecutionId, Status.EXPIRED, null, EnumSet.noneOf(Status.class));
       engine.endNodeExecution(nodeExecution.getAmbiance());
       return;
     }
-    // End nodeExecution if advisers are empty.
-    adviseHelper.queueAdvisingEvent(nodeExecution, failureInfo, node, Status.INPUT_WAITING);
-    log.warn("Execution input timed out for nodeExecutionId {}", nodeExecutionId);
+    // Queue advising event so that failure-strategies will be honored.
+    adviseHelper.queueAdvisingEvent(nodeExecution, failureInfo, node, Status.EXPIRED);
   }
 
   @Override

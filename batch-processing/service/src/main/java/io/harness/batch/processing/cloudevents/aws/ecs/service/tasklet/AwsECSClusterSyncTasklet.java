@@ -74,6 +74,7 @@ public class AwsECSClusterSyncTasklet implements Tasklet {
           ceCloudAccountDao.getByMasterAccountId(accountId, ceConnector.getUuid(), ceAwsConfig.getAwsMasterAccountId());
       ceCloudAccounts.forEach(ceCloudAccount -> awsECSClusterService.syncCEClusters(ceCloudAccount));
     });
+    syncLinkedAccountsForNgConnectors(accountId);
     syncNGClusters(accountId);
     return null;
   }
@@ -87,7 +88,6 @@ public class AwsECSClusterSyncTasklet implements Tasklet {
       ConnectorInfoDTO connectorInfo = connector.getConnector();
       CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfo.getConnectorConfig();
       if (ceAwsConnectorDTO != null && ceAwsConnectorDTO.getCrossAccountAccess() != null) {
-        syncNGConnectorLinkedAccounts(accountId, connectorInfo.getIdentifier(), ceAwsConnectorDTO);
         AwsCrossAccountAttributes crossAccountAttributes =
             AwsCrossAccountAttributes.builder()
                 .crossAccountRoleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())
@@ -101,6 +101,20 @@ public class AwsECSClusterSyncTasklet implements Tasklet {
                                           .awsCrossAccountAttributes(crossAccountAttributes)
                                           .build();
         awsECSClusterService.syncCEClusters(cloudAccount);
+      }
+    }
+  }
+
+  private void syncLinkedAccountsForNgConnectors(String accountId) {
+    List<ConnectorResponseDTO> nextGenBillingConnectors =
+        ngConnectorHelper.getNextGenConnectors(accountId, Arrays.asList(ConnectorType.CE_AWS),
+            Arrays.asList(CEFeatures.BILLING), Arrays.asList(ConnectivityStatus.SUCCESS));
+    log.info("Next gen billing connector list size {}", nextGenBillingConnectors.size());
+    for (ConnectorResponseDTO connector : nextGenBillingConnectors) {
+      ConnectorInfoDTO connectorInfo = connector.getConnector();
+      CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfo.getConnectorConfig();
+      if (ceAwsConnectorDTO != null && ceAwsConnectorDTO.getCrossAccountAccess() != null) {
+        syncNGConnectorLinkedAccounts(accountId, connectorInfo.getIdentifier(), ceAwsConnectorDTO);
       }
     }
   }

@@ -20,8 +20,8 @@ import com.google.inject.Inject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
+import dev.morphia.query.UpdateOperations;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * @author rktummala on 08/23/19

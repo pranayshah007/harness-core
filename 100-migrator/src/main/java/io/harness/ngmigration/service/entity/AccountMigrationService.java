@@ -8,9 +8,8 @@
 package io.harness.ngmigration.service.entity;
 
 import io.harness.beans.EncryptedData;
+import io.harness.beans.EncryptedData.EncryptedDataKeys;
 import io.harness.beans.MigratedEntityMapping;
-import io.harness.beans.PageRequest.PageRequestBuilder;
-import io.harness.beans.SearchFilter.Operator;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -28,7 +27,6 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.SettingsService;
@@ -87,15 +85,10 @@ public class AccountMigrationService extends NgMigrationService {
     }
 
     try {
-      List<EncryptedData> encryptedDataList =
-          secretManager
-              .listSecrets(accountId,
-                  PageRequestBuilder.aPageRequest()
-                      .addFilter(EncryptedData.ACCOUNT_ID_KEY, Operator.EQ, accountId)
-                      .withLimit("UNLIMITED")
-                      .build(),
-                  null, null, true, false)
-              .getResponse();
+      List<EncryptedData> encryptedDataList = hPersistence.createQuery(EncryptedData.class)
+                                                  .project(EncryptedDataKeys.uuid, true)
+                                                  .filter(EncryptedDataKeys.accountId, accountId)
+                                                  .asList();
       if (EmptyPredicate.isNotEmpty(encryptedDataList)) {
         children.addAll(
             encryptedDataList.stream()
@@ -120,11 +113,6 @@ public class AccountMigrationService extends NgMigrationService {
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
     return discover(accountService.get(entityId));
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    return NGMigrationStatus.builder().status(true).build();
   }
 
   @Override

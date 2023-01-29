@@ -36,10 +36,10 @@ import io.harness.execution.PlanExecution;
 import io.harness.generator.OrchestrationAdjacencyListGenerator;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.plan.NodeType;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.StatusUtils;
-import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogRepository;
@@ -55,12 +55,14 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -184,28 +186,13 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
           }
           nodeExecutionIds.add(nodeExecutionId);
           NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
-          pmsExecutionSummaryService.addStageNodeInGraphForPipelineRollback(
-              planExecutionId, nodeExecution, executionSummaryUpdate);
-          updateRequired = pmsExecutionSummaryService.addStageNodeInGraphIfUnderStrategy(
+          if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY) {
+            log.info("Status" + nodeExecution.getStatus());
+          }
+
+          updateRequired = pmsExecutionSummaryService.handleNodeExecutionUpdateFromGraphUpdate(
                                planExecutionId, nodeExecution, executionSummaryUpdate)
               || updateRequired;
-          updateRequired =
-              pmsExecutionSummaryService.updateStrategyNode(planExecutionId, nodeExecution, executionSummaryUpdate)
-              || updateRequired;
-
-          if (OrchestrationUtils.isStageOrParallelStageNode(nodeExecution)
-              && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE
-              && StatusUtils.isFinalStatus(nodeExecution.getStatus())) {
-            updateRequired =
-                pmsExecutionSummaryService.updateStageOfIdentityType(planExecutionId, executionSummaryUpdate)
-                || updateRequired;
-          } else {
-            updateRequired =
-                ExecutionSummaryUpdateUtils.addPipelineUpdateCriteria(executionSummaryUpdate, nodeExecution)
-                || updateRequired;
-            updateRequired = ExecutionSummaryUpdateUtils.addStageUpdateCriteria(executionSummaryUpdate, nodeExecution)
-                || updateRequired;
-          }
           orchestrationGraph =
               graphStatusUpdateHelper.handleEventV2(planExecutionId, nodeExecution, orchestrationGraph);
       }
@@ -270,16 +257,31 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
 
   @Override
   public void sendUpdateEventIfAny(PipelineExecutionSummaryEntity executionSummaryEntity) {
-    if (!StatusUtils.isFinalStatus(executionSummaryEntity.getStatus().getEngineStatus())) {
-      orchestrationLogPublisher.sendLogEvent(executionSummaryEntity.getPlanExecutionId());
+    sendUpdateEventIfAny(executionSummaryEntity.getStatus().getEngineStatus(),
+        executionSummaryEntity.getPlanExecutionId(), executionSummaryEntity.getLastUpdatedAt());
+  }
+
+  @Override
+  public void deleteAllGraphMetadataForGivenExecutionIds(Set<String> planExecutionIds) {
+    // Delete all related orchestration logs
+    orchestrationEventLogRepository.deleteAllOrchestrationLogEvents(planExecutionIds);
+    // Delete related cache entities
+    List<OrchestrationGraph> cacheEntities = new LinkedList<>();
+    for (String planExecutionId : planExecutionIds) {
+      OrchestrationGraph graph = OrchestrationGraph.builder().cacheKey(planExecutionId).cacheParams(null).build();
+      cacheEntities.add(graph);
     }
+    mongoStore.delete(cacheEntities);
   }
 
   private void sendUpdateEventIfAny(OrchestrationGraph orchestrationGraph) {
-    String planExecutionId = orchestrationGraph.getPlanExecutionId();
-    if (!StatusUtils.isFinalStatus(orchestrationGraph.getStatus())
-        || orchestrationEventLogRepository.checkIfAnyUnprocessedEvents(
-            orchestrationGraph.getPlanExecutionId(), orchestrationGraph.getLastUpdatedAt())) {
+    sendUpdateEventIfAny(
+        orchestrationGraph.getStatus(), orchestrationGraph.getPlanExecutionId(), orchestrationGraph.getLastUpdatedAt());
+  }
+
+  private void sendUpdateEventIfAny(Status planExecutionStatus, String planExecutionId, long lastUpdatedAt) {
+    if (!StatusUtils.isFinalStatus(planExecutionStatus)
+        || orchestrationEventLogRepository.checkIfAnyUnprocessedEvents(planExecutionId, lastUpdatedAt)) {
       orchestrationLogPublisher.sendLogEvent(planExecutionId);
     }
   }
@@ -294,7 +296,13 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
           "Try to open an execution which is not 6 months old. If issue persists, please contact harness support",
           new InvalidRequestException("Graph could not be generated for planExecutionId [" + planExecutionId + "]."));
     }
-    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodeExecutionsWithoutOldRetries(planExecutionId);
+    List<NodeExecution> nodeExecutions = new LinkedList<>();
+    try (CloseableIterator<NodeExecution> iterator =
+             nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(planExecutionId)) {
+      while (iterator.hasNext()) {
+        nodeExecutions.add(iterator.next());
+      }
+    }
     log.warn(String.format(
         "[GRAPH_ERROR]: Trying to build orchestration graph from scratch for planExecutionId [%s] with nodeExecutionsCount [%d]",
         planExecutionId, nodeExecutions.size()));

@@ -69,14 +69,14 @@ In order to best balance predictability and readiblity across all Harness respou
 ### Project Scoped
 
 ```
-/orgs/{org}/projects/{project}/{resource-collection}/{resource-slug}
+/orgs/{org}/projects/{project}/{resource-collection}/{resource-identifier}
 /orgs/north-america/projects/billing/secrets/passwords
 ```
 
 ### Organization Scoped
 
 ```
-/orgs/{org}/{resource-collection}/{resource-slug}
+/orgs/{org}/{resource-collection}/{resource-identifier}
 /orgs/north-america/secrets/passwords
 ```
 

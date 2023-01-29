@@ -34,9 +34,10 @@ public class OrgServicesApiImpl extends AbstractServicesApiImpl implements OrgSe
   @Inject
   public OrgServicesApiImpl(ServiceEntityService serviceEntityService, AccessControlClient accessControlClient,
       ServiceEntityManagementService serviceEntityManagementService,
-      OrgAndProjectValidationHelper orgAndProjectValidationHelper, ServiceResourceApiUtils serviceResourceApiUtils) {
+      OrgAndProjectValidationHelper orgAndProjectValidationHelper, ServiceResourceApiUtils serviceResourceApiUtils,
+      ServiceEntityYamlSchemaHelper serviceSchemaHelper) {
     super(serviceEntityService, accessControlClient, serviceEntityManagementService, orgAndProjectValidationHelper,
-        serviceResourceApiUtils);
+        serviceResourceApiUtils, serviceSchemaHelper);
   }
 
   @Override
@@ -46,9 +47,9 @@ public class OrgServicesApiImpl extends AbstractServicesApiImpl implements OrgSe
 
   @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_delete")
   @Override
-  public Response deleteOrgScopedService(
-      @OrgIdentifier String org, @ResourceIdentifier String service, @AccountIdentifier String account) {
-    return super.deleteServiceEntity(org, null, service, account);
+  public Response deleteOrgScopedService(@OrgIdentifier String org, @ResourceIdentifier String service,
+      @AccountIdentifier String account, Boolean forceDelete) {
+    return super.deleteServiceEntity(org, null, service, account, Boolean.TRUE == forceDelete);
   }
 
   @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_view")

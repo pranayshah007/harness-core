@@ -9,6 +9,7 @@ package io.harness.delegate.task.artifacts.mappers;
 
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -57,10 +58,22 @@ public class DockerRequestResponseMapper {
         .build();
   }
 
-  public DockerArtifactDelegateResponse toDockerResponse(
-      BuildDetailsInternal buildDetailsInternal, DockerArtifactDelegateRequest request, Map<String, String> label) {
+  public DockerArtifactDelegateResponse toDockerResponse(BuildDetailsInternal buildDetailsInternal,
+      DockerArtifactDelegateRequest request, Map<String, String> label, ArtifactMetaInfo artifactMetaInfo) {
+    String sha = null;
+    String shaV2 = null;
+    if (artifactMetaInfo != null && artifactMetaInfo.getLabels() != null) {
+      label.putAll(artifactMetaInfo.getLabels());
+    }
+    if (artifactMetaInfo != null && artifactMetaInfo.getSha() != null) {
+      sha = artifactMetaInfo.getSha();
+    }
+    if (artifactMetaInfo != null && artifactMetaInfo.getShaV2() != null) {
+      shaV2 = artifactMetaInfo.getShaV2();
+    }
+
     return DockerArtifactDelegateResponse.builder()
-        .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal))
+        .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal, sha, shaV2))
         .imagePath(request.getImagePath())
         .tag(buildDetailsInternal.getNumber())
         .label(label)

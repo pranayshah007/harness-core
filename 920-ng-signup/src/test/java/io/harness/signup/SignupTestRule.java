@@ -53,7 +53,10 @@ import com.google.inject.name.Named;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoClients;
 import com.mongodb.lang.Nullable;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.Morphia;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,8 +65,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.Morphia;
 
 @OwnedBy(HarnessTeam.GTM)
 @Slf4j
@@ -80,6 +81,8 @@ public class SignupTestRule implements InjectorRuleMixin, MethodRule, MongoRuleM
     String dbName = clientUri.getDatabase();
 
     MongoClient mongoClient = new MongoClient(new MongoClientURI("mongodb://localhost:7457"));
+
+    com.mongodb.client.MongoClient newMongoClient = MongoClients.create("mongodb://localhost:7457");
 
     modules.add(new SignupModule(ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build(),
         "test_secret", "Service", SignupNotificationConfiguration.builder().build(),
@@ -104,6 +107,13 @@ public class SignupTestRule implements InjectorRuleMixin, MethodRule, MongoRuleM
       @Singleton
       MongoClient mongoClient() {
         return mongoClient;
+      }
+
+      @Provides
+      @Named("primaryMongoClient")
+      @Singleton
+      com.mongodb.client.MongoClient newMongoClient() {
+        return newMongoClient;
       }
 
       @Provides

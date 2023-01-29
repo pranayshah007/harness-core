@@ -323,7 +323,7 @@ public class NGLdapServiceImpl implements NGLdapService {
     final DelegateResponseData delegateResponseData;
     String delegateDownErrorMessage = "Delegates are not available for performing operation.";
     try {
-      delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+      delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
       log.error("NGLDAP: Error occurred while executing delegate task.", ex);
       throw buildDelegateNotAvailableHintException(delegateDownErrorMessage);

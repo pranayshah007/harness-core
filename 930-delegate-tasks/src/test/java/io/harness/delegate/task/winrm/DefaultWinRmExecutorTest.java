@@ -131,7 +131,7 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
     // command is over 6KB, but when we encode, it will be double the amount because we are using UTF-16LE
     List<String> result3 = WinRmExecutorHelper.splitCommandForCopyingToRemoteFile(
         commandOver6KB, "tempPSScript.ps1", DefaultWinRmExecutor.POWERSHELL, null);
-    assertThat(result3.size()).isEqualTo(4);
+    assertThat(result3.size()).isEqualTo(2);
     verify(config, times(1)).isUseNoProfile();
     assertThat(config.getCommandParameters()).isEmpty();
   }
@@ -142,10 +142,8 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
   public void testCharacterEscaping() {
     String command = "a!a@a#a$a%a^a&a*a(a)a_a+a-a=a[a]a{a}a;a'a\\a:a\"a|a,a.a/a<a>a?a\r\na";
     String scriptExecutionCommand =
-        "Powershell  Invoke-Command  -command {[IO.File]::AppendAllText(\\\"tempPSScript.ps1\\\","
-        + " \\\"JABFAHIAcgBvAHIAQQBjAHQAaQBvAG4AUAByAGUAZgBlAHIAZQBuAGMAZQA9ACcAUwB0AG8AcAAnAAoAYQAhAGEAQABhACMAY"
-        + "QAkAGEAJQBhAF4AYQAmAGEAKgBhACgAYQApAGEAXwBhACsAYQAtAGEAPQBhAFsAYQBdAGEAewBhAH0AYQA7AGEAJwBhAFwAYQA6AGE"
-        + "AIgBhAHwAYQAsAGEALgBhAC8AYQA8AGEAPgBhAD8AYQANAAoAYQA=\\\" ) }";
+        "Powershell  Invoke-Command  -command {[IO.File]::AppendAllText(\\\"tempPSScript.ps1\\\", "
+        + "\\\"JEVycm9yQWN0aW9uUHJlZmVyZW5jZT0nU3RvcCcKYSFhQGEjYSRhJWFeYSZhKmEoYSlhX2ErYS1hPWFbYV1he2F9YTthJ2FcYTphImF8YSxhLmEvYTxhPmE/YQ0KYQ==\\\" ) }";
     List<String> result1 = WinRmExecutorHelper.splitCommandForCopyingToRemoteFile(
         command, "tempPSScript.ps1", DefaultWinRmExecutor.POWERSHELL, null);
     assertThat(result1.get(0)).contains(scriptExecutionCommand);

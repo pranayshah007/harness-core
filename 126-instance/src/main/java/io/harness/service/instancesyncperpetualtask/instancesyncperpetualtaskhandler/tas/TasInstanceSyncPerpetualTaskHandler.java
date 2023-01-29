@@ -114,7 +114,7 @@ public class TasInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
 
   private List<ExecutionCapability> getExecutionCapabilities(List<TasDeploymentReleaseData> deploymentReleaseDataList) {
     Optional<TasDeploymentReleaseData> deploymentReleaseSample = deploymentReleaseDataList.stream().findFirst();
-    if (!deploymentReleaseSample.isPresent()) {
+    if (deploymentReleaseSample.isEmpty()) {
       return Collections.emptyList();
     }
     return toTasInstanceSyncRequest(deploymentReleaseSample.get()).fetchRequiredExecutionCapabilities(null);

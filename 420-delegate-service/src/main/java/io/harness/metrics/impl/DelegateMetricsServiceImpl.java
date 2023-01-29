@@ -14,7 +14,6 @@ import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.metrics.AutoMetricContext;
 import io.harness.metrics.beans.DelegateAccountMetricContext;
-import io.harness.metrics.beans.DelegateTaskMetricContext;
 import io.harness.metrics.beans.DelegateTaskTypeMetricContext;
 import io.harness.metrics.beans.PerpetualTaskMetricContext;
 import io.harness.metrics.intfc.DelegateMetricsService;
@@ -40,7 +39,6 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String DELEGATE_TASK_REBROADCAST = "delegate_task_rebroadcast";
   public static final String DELEGATE_TASK_VALIDATION = "delegate_task_validation";
   public static final String DELEGATE_TASK_NO_FIRST_WHITELISTED = "delegate_task_no_first_whitelisted";
-
   public static final String DELEGATE_REGISTRATION_FAILED = "delegate_registration_failed";
   public static final String DELEGATE_RESTARTED = "delegate_restarted";
   public static final String DELEGATE_DISCONNECTED = "delegate_disconnected";
@@ -79,7 +77,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
 
   @Override
   public void recordDelegateTaskMetrics(DelegateTask task, String metricName) {
-    try (AutoMetricContext ignore = new DelegateTaskMetricContext(task.getAccountId())) {
+    try (DelegateAccountMetricContext ignore = new DelegateAccountMetricContext(task.getAccountId())) {
       metricService.incCounter(metricName);
     }
     String taskType = task.getTaskDataV2() != null ? task.getTaskDataV2().getTaskType() : task.getData().getTaskType();
@@ -90,7 +88,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
 
   @Override
   public void recordDelegateTaskMetrics(String accountId, String metricName) {
-    try (DelegateTaskMetricContext ignore = new DelegateTaskMetricContext(accountId)) {
+    try (DelegateAccountMetricContext ignore = new DelegateAccountMetricContext(accountId)) {
       metricService.incCounter(metricName);
     }
   }
@@ -98,7 +96,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   @Override
   public void recordDelegateTaskResponseMetrics(
       DelegateTask delegateTask, DelegateTaskResponse response, String metricName) {
-    try (DelegateTaskMetricContext ignore = new DelegateTaskMetricContext(delegateTask.getAccountId())) {
+    try (DelegateAccountMetricContext ignore = new DelegateAccountMetricContext(delegateTask.getAccountId())) {
       metricService.incCounter(metricName);
     }
   }

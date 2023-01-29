@@ -11,15 +11,16 @@ import static software.wings.yaml.YamlVersion.Builder.aYamlVersion;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
+import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 
 import software.wings.beans.Base;
 
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.base.MoreObjects;
+import dev.morphia.annotations.Entity;
 import java.util.Objects;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 
 /**
  * Created by bsollish on 8/30/17
@@ -37,7 +38,7 @@ public class YamlVersion extends Base implements YamlHistory {
   private long inEffectEnd;
   private String yaml;
 
-  @SchemaIgnore private String accountId;
+  @FdIndex @SchemaIgnore private String accountId;
 
   public YamlVersion() {}
 

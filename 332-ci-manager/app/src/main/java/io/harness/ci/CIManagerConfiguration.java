@@ -14,6 +14,7 @@ import static java.util.stream.Collectors.toSet;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.ScmConnectionConfig;
+import io.harness.beans.entities.IACMServiceConfig;
 import io.harness.cache.CacheConfig;
 import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
@@ -107,6 +108,7 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   private LogServiceConfig logServiceConfig;
   private TIServiceConfig tiServiceConfig;
   private STOServiceConfig stoServiceConfig;
+  private IACMServiceConfig iacmServiceConfig;
 
   private String managerServiceSecret;
   private String jwtAuthSecret;

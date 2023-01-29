@@ -62,6 +62,7 @@ import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactD
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
+import io.harness.exception.ArtifactServerException;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.utils.RepositoryFormat;
@@ -181,7 +182,7 @@ public class ArtifactResponseToOutcomeMapper {
         AMIArtifactConfig amiArtifactConfig = (AMIArtifactConfig) artifactConfig;
         AMIArtifactDelegateResponse amiArtifactDelegateResponse =
             (AMIArtifactDelegateResponse) artifactDelegateResponse;
-        return getAMIArtifactOutcome(amiArtifactConfig, amiArtifactDelegateResponse);
+        return getAMIArtifactOutcome(amiArtifactConfig, amiArtifactDelegateResponse, useDelegateResponse);
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -207,16 +208,12 @@ public class ArtifactResponseToOutcomeMapper {
         .build();
   }
 
-  private static AMIArtifactOutcome getAMIArtifactOutcome(
-      AMIArtifactConfig amiArtifactConfig, AMIArtifactDelegateResponse amiArtifactDelegateResponse) {
-    if (amiArtifactDelegateResponse == null) {
-      return null;
-    }
-
+  private static AMIArtifactOutcome getAMIArtifactOutcome(AMIArtifactConfig amiArtifactConfig,
+      AMIArtifactDelegateResponse amiArtifactDelegateResponse, boolean useDelegateResponse) {
     return AMIArtifactOutcome.builder()
-        .amiId(amiArtifactDelegateResponse.getAmiId())
-        .metadata(amiArtifactDelegateResponse.getMetadata())
-        .version(amiArtifactDelegateResponse.getVersion())
+        .amiId(useDelegateResponse ? amiArtifactDelegateResponse.getAmiId() : "")
+        .metadata(useDelegateResponse ? amiArtifactDelegateResponse.getMetadata() : null)
+        .version(useDelegateResponse ? amiArtifactDelegateResponse.getVersion() : "")
         .connectorRef(amiArtifactConfig.getConnectorRef().getValue())
         .type(ArtifactSourceType.AMI.getDisplayName())
         .identifier(amiArtifactConfig.getIdentifier())
@@ -238,6 +235,7 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(githubPackagesArtifactConfig.getIdentifier())
         .primaryArtifact(githubPackagesArtifactConfig.isPrimaryArtifact())
         .versionRegex(githubPackagesArtifactConfig.getVersionRegex().getValue())
+        .packageType(githubPackagesArtifactConfig.getPackageType().getValue())
         .build();
   }
 
@@ -258,6 +256,27 @@ public class ArtifactResponseToOutcomeMapper {
 
   private DockerArtifactOutcome getDockerArtifactOutcome(DockerHubArtifactConfig dockerConfig,
       DockerArtifactDelegateResponse dockerDelegateResponse, boolean useDelegateResponse) {
+    Map<String, String> metadata = null;
+    String displayName = null;
+    if (useDelegateResponse && dockerDelegateResponse != null && dockerDelegateResponse.getBuildDetails() != null
+        && dockerDelegateResponse.getBuildDetails().getMetadata() != null) {
+      metadata = dockerDelegateResponse.getBuildDetails().getMetadata();
+      if (dockerConfig.getDigest() != null && isNotEmpty(dockerConfig.getDigest().getValue())) {
+        // If user explicitly passes a digest for the image, we validate it against available image's SHA256 digests.
+        String digest = dockerConfig.getDigest().getValue();
+        String sha256V1 = metadata.get(ArtifactMetadataKeys.SHA);
+        String sha256V2 = metadata.get(ArtifactMetadataKeys.SHAV2);
+        if (!digest.equals(sha256V1) && !digest.equals(sha256V2)) {
+          throw new ArtifactServerException(
+              "Artifact image SHA256 validation failed: image sha256 digest mismatch.\n Requested digest: " + digest
+              + "\nAvailable digests:\n" + sha256V1 + " (V1)\n" + sha256V2 + " (V2)");
+        }
+      }
+    }
+    if (useDelegateResponse && dockerDelegateResponse != null && dockerDelegateResponse.getBuildDetails() != null
+        && dockerDelegateResponse.getBuildDetails().getUiDisplayName() != null) {
+      displayName = dockerDelegateResponse.getBuildDetails().getUiDisplayName();
+    }
     return DockerArtifactOutcome.builder()
         .image(getImageValue(dockerDelegateResponse))
         .connectorRef(dockerConfig.getConnectorRef().getValue())
@@ -270,8 +289,11 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(dockerConfig.getIdentifier())
         .type(ArtifactSourceType.DOCKER_REGISTRY.getDisplayName())
         .primaryArtifact(dockerConfig.isPrimaryArtifact())
+        .displayName(displayName)
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(dockerConfig)))
         .label(getLabels(dockerDelegateResponse))
+        .digest(dockerConfig.getDigest() != null ? dockerConfig.getDigest().getValue() : null)
+        .metadata(metadata)
         .build();
   }
 
@@ -312,6 +334,7 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(googleArtifactRegistryConfig.isPrimaryArtifact())
         .image(getImageValue(garDelegateResponse))
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(googleArtifactRegistryConfig)))
+        .repositoryType(googleArtifactRegistryConfig.getGoogleArtifactRegistryType().getValue())
         .build();
   }
 

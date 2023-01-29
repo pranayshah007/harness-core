@@ -29,4 +29,5 @@ public class VmImageConfig {
   String artifactoryUpload;
   String cacheGCS;
   String cacheS3;
+  String iacmTerraform;
 }

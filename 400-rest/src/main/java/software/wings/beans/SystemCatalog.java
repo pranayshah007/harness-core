@@ -13,12 +13,13 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.delegate.beans.ChecksumType;
 import io.harness.ng.DbAliases;
 
+import software.wings.persistence.BaseFile;
 import software.wings.utils.ContainerFamily;
 import software.wings.utils.FileType;
 
 import com.google.common.base.MoreObjects;
+import dev.morphia.annotations.Entity;
 import java.util.Objects;
-import org.mongodb.morphia.annotations.Entity;
 
 /**
  * Created by sgurubelli on 5/23/17.

@@ -38,7 +38,6 @@ import io.harness.repositories.NGTemplateRepository;
 import io.harness.rule.Owner;
 import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.entity.TemplateEntity;
-import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 
 import java.io.IOException;
 import org.junit.Before;
@@ -55,8 +54,6 @@ public class TemplateGitXServiceImplTest {
   @Mock SCMGitSyncHelper scmGitSyncHelper;
 
   @Mock GitSyncSdkService gitSyncSdkService;
-
-  @Mock NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
 
   @Mock NGTemplateRepository templateRepository;
 
@@ -99,8 +96,8 @@ public class TemplateGitXServiceImplTest {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    templateGitXService = new TemplateGitXServiceImpl(scmGitSyncHelper, ngTemplateFeatureFlagHelperService,
-        gitSyncSdkService, templateRepository, gitAwareEntityHelper);
+    templateGitXService =
+        new TemplateGitXServiceImpl(scmGitSyncHelper, gitSyncSdkService, templateRepository, gitAwareEntityHelper);
   }
 
   @Test
@@ -170,7 +167,6 @@ public class TemplateGitXServiceImplTest {
                                    .branch(BranchName)
                                    .filePath(ENTITY_REPO_URL)
                                    .build();
-    when(ngTemplateFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     when(gitSyncSdkService.isGitSimplificationEnabled(any(), any(), any())).thenReturn(true);
     boolean isNewGitXEnabled = templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToSave, branchInfo);
     assertTrue(isNewGitXEnabled);
@@ -194,8 +190,6 @@ public class TemplateGitXServiceImplTest {
                                    .branch(BranchName)
                                    .filePath(ENTITY_REPO_URL)
                                    .build();
-
-    when(ngTemplateFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
 
     boolean isNewGitXEnabled = templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToSave, branchInfo);
     assertTrue(isNewGitXEnabled);

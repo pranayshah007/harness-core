@@ -52,7 +52,6 @@ import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.SyncTaskContext.SyncTaskContextBuilder;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.command.GcbTaskParams;
@@ -65,6 +64,7 @@ import software.wings.helpers.ext.azure.devops.AzureDevopsProject;
 import software.wings.helpers.ext.gcs.GcsService;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.ArtifactStreamHelper;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.ArtifactCollectionService;
@@ -492,7 +492,7 @@ public class BuildSourceServiceImpl implements BuildSourceService {
     SyncTaskContext syncTaskContext = areDelegateSelectorsRequired(settingAttribute)
         ? appendDelegateSelector(settingAttribute, syncTaskContextBuilder)
         : syncTaskContextBuilder.build();
-    return delegateProxyFactory.get(buildServiceMap.get(settingAttribute.getValue().getClass()), syncTaskContext);
+    return delegateProxyFactory.getV2(buildServiceMap.get(settingAttribute.getValue().getClass()), syncTaskContext);
   }
 
   @Override
@@ -525,7 +525,7 @@ public class BuildSourceServiceImpl implements BuildSourceService {
     SyncTaskContext syncTaskContext = areDelegateSelectorsRequired(settingAttribute)
         ? appendDelegateSelector(settingAttribute, syncTaskContextBuilder)
         : syncTaskContextBuilder.build();
-    return delegateProxyFactory.get(buildServiceClass, syncTaskContext);
+    return delegateProxyFactory.getV2(buildServiceClass, syncTaskContext);
   }
 
   private List<EncryptedDataDetail> getEncryptedDataDetails(EncryptableSetting settingValue) {
@@ -576,7 +576,7 @@ public class BuildSourceServiceImpl implements BuildSourceService {
     SyncTaskContext syncTaskContext = areDelegateSelectorsRequired(settingAttribute)
         ? appendDelegateSelector(settingAttribute, syncTaskContextBuilder)
         : syncTaskContextBuilder.build();
-    return delegateProxyFactory.get(buildServiceMap.get(settingAttribute.getValue().getClass()), syncTaskContext);
+    return delegateProxyFactory.getV2(buildServiceMap.get(settingAttribute.getValue().getClass()), syncTaskContext);
   }
 
   private BuildService getBuildService(String artifactStreamType, SettingAttribute settingAttribute) {
@@ -589,7 +589,7 @@ public class BuildSourceServiceImpl implements BuildSourceService {
     SyncTaskContext syncTaskContext = areDelegateSelectorsRequired(settingAttribute)
         ? appendDelegateSelector(settingAttribute, syncTaskContextBuilder)
         : syncTaskContextBuilder.build();
-    return delegateProxyFactory.get(buildServiceClass, syncTaskContext);
+    return delegateProxyFactory.getV2(buildServiceClass, syncTaskContext);
   }
 
   @Override
@@ -787,7 +787,7 @@ public class BuildSourceServiceImpl implements BuildSourceService {
     GcpConfig gcpConfig = (GcpConfig) settingValue;
     GcbDelegateResponse delegateResponseData = null;
     try {
-      delegateResponseData = delegateService.executeTask(
+      delegateResponseData = delegateService.executeTaskV2(
           DelegateTask.builder()
               .accountId(gcpConfig.getAccountId())
               .data(TaskData.builder()

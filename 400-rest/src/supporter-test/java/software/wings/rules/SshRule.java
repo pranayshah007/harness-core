@@ -14,12 +14,14 @@ import io.harness.annotations.dev.OwnedBy;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.security.GeneralSecurityException;
 import java.security.Security;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sshd.common.file.virtualfs.VirtualFileSystemFactory;
 import org.apache.sshd.common.util.security.SecurityUtils;
+import org.apache.sshd.scp.server.ScpCommandFactory;
 import org.apache.sshd.server.SshServer;
-import org.apache.sshd.server.scp.ScpCommandFactory;
+import org.apache.sshd.server.keyprovider.AbstractGeneratorHostKeyProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.rules.MethodRule;
 import org.junit.rules.TemporaryFolder;
@@ -118,7 +120,7 @@ public class SshRule implements MethodRule {
     return keyPath;
   }
 
-  private void before() throws IOException {
+  private void before() throws IOException, GeneralSecurityException {
     this.keyPath = new File(temporaryFolder.getRoot(), "key.pem").toPath();
 
     if (!SecurityUtils.isBouncyCastleRegistered()) {
@@ -126,8 +128,10 @@ public class SshRule implements MethodRule {
     }
     sshd = SshServer.setUpDefaultServer();
     sshd.setPort(0);
-    sshd.setKeyPairProvider(SecurityUtils.createGeneratorHostKeyProvider(keyPath));
-    sshd.getKeyPairProvider().loadKeys();
+    AbstractGeneratorHostKeyProvider generatorHostKeyProvider = SecurityUtils.createGeneratorHostKeyProvider(keyPath);
+    generatorHostKeyProvider.setAlgorithm("RSA");
+    sshd.setKeyPairProvider(generatorHostKeyProvider);
+
     sshd.setPasswordAuthenticator(
         (username, password,
             session) -> StringUtils.equals(this.username, username) && StringUtils.equals(this.password, password));
@@ -135,8 +139,9 @@ public class SshRule implements MethodRule {
     sshd.setPublickeyAuthenticator((username, key, session) -> StringUtils.equals("ssh_user", username));
     sshd.setCommandFactory(
         new ScpCommandFactory.Builder()
-            .withDelegate(command -> new FileSystemAwareProcessShellFactory(command.split(" ")).create())
+            .withDelegate((session, command) -> new FileSystemAwareProcessShellFactory(command).createShell(session))
             .build());
+
     sshd.start();
   }
 

@@ -1,10 +1,10 @@
 {
   "@type": "MessageCard",
-  "themeColor": "${THEME_COLOR}",
-  "summary": "Deployment Freeze Window is Enabled",
+  "themeColor": "#FFFFFF",
+  "summary": "Deployment Freeze Window ${BLACKOUT_WINDOW_NAME} Activation",
   "sections": [
     {
-      "activityTitle": "This is a test notification from Harness"
+      "activityTitle": "A deployment freeze ${BLACKOUT_WINDOW_NAME} has been activated on ${START_TIME}. The freeze will end on ${END_TIME}."
     }
   ]
 }

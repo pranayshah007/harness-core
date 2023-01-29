@@ -43,11 +43,10 @@ public class CIExecutionConstants extends ContainerExecutionConstants {
   public static final String LOCALHOST_IP = "127.0.0.1";
   public static final Integer DEFAULT_CONTAINER_CPU_POV = 1000;
   public static final Integer MAXIMUM_EXPANSION_LIMIT = 5000;
-  public static final Integer MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT = 100;
+  public static final Integer MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT = 5;
 
   // entry point constants
   public static final String TMP_PATH_ARG_PREFIX = "--tmppath";
-  public static final String TMP_PATH = "/addon/tmp/";
   public static final String SERVICE_ARG_COMMAND = "service";
   public static final String IMAGE_PREFIX = "--image";
   public static final String ID_PREFIX = "--id";
@@ -90,4 +89,11 @@ public class CIExecutionConstants extends ContainerExecutionConstants {
   public static final Double DEFAULT_BUILD_MULTIPLIER = 1.0;
   public static final String MEMORY = "MEMORY";
   public static final String CPU = "CPU";
+
+  public static final String NULL_STR = "null";
+
+  public static final String BASE_AZURE_HOSTNAME = "azurecr.io";
+  public static final String BASE_GCR_HOSTNAME = "gcr.io";
+  public static final String BASE_ECR_HOSTNAME = "amazonaws.com";
+  public static final String HTTPS_URL = "https://";
 }

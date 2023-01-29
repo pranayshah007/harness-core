@@ -18,6 +18,7 @@ delegateToken: 2f6b0988b6fb3370073c3d0505baee59
 managerUrl: https://localhost:9090/api/
 verificationServiceUrl: https://localhost:7070/verification/
 cvNextGenUrl: https://localhost:6060/cv/api/
+logStreamingServiceBaseUrl: http://localhost:8079
 heartbeatIntervalMs: 50000
 localDiskPath: /tmp
 doUpgrade: false
@@ -28,7 +29,6 @@ managerAuthority: localhost
 queueFilePath: ../eventQueue
 grpcServiceEnabled: true
 grpcServiceConnectorPort: 8080
-logStreamingServiceBaseUrl: http://localhost:8079
 clientToolsDownloadDisabled: true
 installClientToolsInBackground: true
 

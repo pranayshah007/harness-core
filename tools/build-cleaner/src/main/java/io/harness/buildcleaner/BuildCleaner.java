@@ -32,21 +32,21 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@Slf4j
 public class BuildCleaner {
   private static final String DEFAULT_VISIBILITY = "//visibility:public";
   private static final String BUILD_CLEANER_INDEX_FILE_NAME = ".build-cleaner-index";
   private static final String DEFAULT_JAVA_LIBRARY_NAME = "module";
 
-  private static final Logger logger = LoggerFactory.getLogger(BuildCleaner.class);
   private CommandLine options;
   private MavenManifest mavenManifest;
   private MavenManifest mavenManifestOverride;
@@ -73,14 +73,11 @@ public class BuildCleaner {
   }
 
   public void run() throws IOException, ClassNotFoundException {
-    logger.info("Workspace: " + workspace());
+    log.info("Workspace: " + workspace());
 
     // Create harness code index or load from an existing index.
     SymbolDependencyMap harnessSymbolMap = buildHarnessSymbolMap();
-    logger.debug("Total Java classes found: " + harnessSymbolMap.getCacheSize());
-
-    harnessSymbolMap.serializeToFile(indexFilePath().toString());
-    logger.info("Index creation complete.");
+    log.debug("Total Java classes found: " + harnessSymbolMap.getCacheSize());
 
     // If recursive option is set, generate build file for each folder inside.
     Files
@@ -90,8 +87,8 @@ public class BuildCleaner {
           try {
             Path modulePath = workspace().relativize(path);
             Optional<BuildFile> buildFile = generateBuildForModule(modulePath, harnessSymbolMap);
-            if (!buildFile.isPresent()) {
-              logger.error("Could not generate build file for {}", modulePath);
+            if (buildFile.isEmpty()) {
+              log.error("Could not generate build file for {}", modulePath);
               return;
             }
 
@@ -99,12 +96,12 @@ public class BuildCleaner {
             Path buildFilePath = Paths.get(packagePath.toString(), "/BUILD.bazel");
 
             if (!Files.exists(buildFilePath) || options.hasOption("overwriteExistingBuildFiles")) {
-              logger.info("Writing Build file for Module: {}", path);
+              log.info("Writing Build file for Module: {}", path);
               buildFile.get().writeToPackage(workspace().resolve(path));
               return;
             }
 
-            logger.info("Updating dependencies for the existing buildFile at: {}", buildFilePath);
+            log.info("Updating dependencies for the existing buildFile at: {}", buildFilePath);
             // Need to update the existing file with new content, after replacing the dependencies.
             // Assumptions:
             // - The BUILD file has at most one java_library rule
@@ -125,27 +122,51 @@ public class BuildCleaner {
    */
   @VisibleForTesting
   protected SymbolDependencyMap buildHarnessSymbolMap() throws IOException, ClassNotFoundException {
-    if (indexFileExists() && !options.hasOption("overrideIndex")) {
-      logger.info("Loading the already existing index file: " + indexFilePath().toString());
-      return SymbolDependencyMap.deserializeFromFile(indexFilePath().toString());
+    final var harnessSymbolMap = initDependencyMap();
+
+    // if symbol map exists and no options specified then don't update it
+    if (!harnessSymbolMap.getSymbolToTargetMap().isEmpty() && !options.hasOption("indexSourceGlob")) {
+      return harnessSymbolMap;
     }
-    logger.info("Creating index using sources matching: " + indexSourceGlob());
+
+    log.info("Creating index using sources matching: {}", indexSourceGlob());
 
     // Parse proto and BUILD files to construct Proto specific java symbols to proto target map.
-    ProtoBuildMapper protoBuildMapper = new ProtoBuildMapper(workspace());
-    SymbolDependencyMap harnessSymbolMap = protoBuildMapper.protoToBuildTargetDependencyMap(indexSourceGlob());
+    final ProtoBuildMapper protoBuildMapper = new ProtoBuildMapper(workspace());
+    protoBuildMapper.protoToBuildTargetDependencyMap(indexSourceGlob(), harnessSymbolMap);
 
     // Parse java classes.
-    ClasspathParser classpathParser = packageParser.getClassPathParser();
+    final ClasspathParser classpathParser = packageParser.getClassPathParser();
     classpathParser.parseClasses(indexSourceGlob(), assumedPackagePrefixesWithBuildFile());
 
     // Update symbol dependency map with the parsed java code.
-    Set<ClassMetadata> fullyQualifiedClassNames = classpathParser.getFullyQualifiedClassNames();
+    final Set<ClassMetadata> fullyQualifiedClassNames = classpathParser.getFullyQualifiedClassNames();
     for (ClassMetadata metadata : fullyQualifiedClassNames) {
       harnessSymbolMap.addSymbolTarget(metadata.getFullyQualifiedClassName(), metadata.getBuildModulePath());
     }
 
+    harnessSymbolMap.serializeToFile(indexFilePath().toString());
+    log.info("Index creation complete.");
+
     return harnessSymbolMap;
+  }
+
+  /**
+   * If user wants to override index partially to make the scan faster (e.g. changed just couple of modules)
+   * they can include <b>indexSourcesGlob</b> option to specify just certain packages to be scanned
+   * <pre>--indexSourceGlob {260-delegate-service,980-commons}/src&#47;**&#47;*"}</pre>
+   * @return
+   * @throws IOException
+   * @throws ClassNotFoundException
+   */
+  @NonNull
+  private SymbolDependencyMap initDependencyMap() throws IOException, ClassNotFoundException {
+    if (indexFileExists() && !options.hasOption("overrideIndex")) {
+      log.info("Loading the existing index file {} to init dependency map", indexFilePath());
+      return SymbolDependencyMap.deserializeFromFile(indexFilePath().toString());
+    } else {
+      return new SymbolDependencyMap();
+    }
   }
 
   /**
@@ -161,12 +182,19 @@ public class BuildCleaner {
   @VisibleForTesting
   protected Optional<BuildFile> generateBuildForModule(Path path, SymbolDependencyMap harnessSymbolMap)
       throws IOException, FileNotFoundException {
+    // Create build for the package.
+    Set<String> sourceFiles = getSourceFiles(workspace().resolve(path));
+    if (sourceFiles.isEmpty()) {
+      log.warn("No sources found for {}", path);
+      return Optional.empty();
+    }
+
     // Setup classpath parser to get imports for java files for the module in context and try
     // resolving each of the imports.
     // Set "findBuildInParent" to false, as we only need import statements for the files in this folder
     // and don't care about the BUILD file paths.
     ClasspathParser classpathParser = this.packageParser.getClassPathParser();
-    String parseClassPattern = path.toString().isEmpty() ? srcsGlob() : path.toString() + "/" + srcsGlob();
+    String parseClassPattern = path.toString().isEmpty() ? srcsGlob() : path + "/" + srcsGlob();
     classpathParser.parseClasses(parseClassPattern, new HashSet<>());
 
     Set<String> dependencies = new TreeSet<>();
@@ -184,27 +212,25 @@ public class BuildCleaner {
         continue;
       }
 
+      resolvedSymbol.ifPresent(symbol -> log.debug("Adding dependency to {} for import {}", symbol, importStatement));
       resolvedSymbol.ifPresent(dependencies::add);
-      if (!resolvedSymbol.isPresent()) {
-        logger.info("No build dependency found for " + importStatement);
+      if (resolvedSymbol.isEmpty()) {
+        log.error("No build dependency found for {}", importStatement);
       }
     }
 
-    // Create build for the package.
-    Set<String> sourceFiles = getSourceFiles(workspace().resolve(path));
-    if (sourceFiles.isEmpty()) {
-      return Optional.empty();
-    }
-
-    BuildFile buildFile = new BuildFile();
+    final BuildFile buildFile = new BuildFile();
+    // We run analysis even for test only targets, but it will skip PMD & sonar. Will run only checkstyle
     buildFile.enableAnalysisPerModule();
 
-    JavaLibrary javaLibrary = new JavaLibrary(DEFAULT_JAVA_LIBRARY_NAME, DEFAULT_VISIBILITY, srcsGlob(), dependencies);
+    final JavaLibrary javaLibrary =
+        new JavaLibrary(DEFAULT_JAVA_LIBRARY_NAME, DEFAULT_VISIBILITY, srcsGlob(), dependencies);
     buildFile.addJavaLibrary(javaLibrary);
+    // TODO: For root level targets add additional test library
 
     // Find main files in the folder and create java binary targets.
-    for (String className : classpathParser.getMainClasses()) {
-      JavaBinary javaBinary = new JavaBinary(className, DEFAULT_VISIBILITY,
+    for (final String className : classpathParser.getMainClasses()) {
+      final JavaBinary javaBinary = new JavaBinary(className, DEFAULT_VISIBILITY,
           getPackageName(classpathParser) + "." + className, /*runTimeDeps=*/Collections.singleton(":module"),
           /*deps=*/Collections.emptySet());
       buildFile.addJavaBinary(javaBinary);
@@ -230,6 +256,16 @@ public class BuildCleaner {
       }
     }
 
+    // Look up symbol in the harness symbol map.
+    resolvedSymbol = harnessSymbolMap.getTarget(importStatement);
+    if (resolvedSymbol.isPresent()) {
+      // For Java targets, we don't have java_library name in the Symbol dependency map.
+      if (!resolvedSymbol.get().contains(":")) {
+        return Optional.of(String.format("//%s:%s", resolvedSymbol.get(), DEFAULT_JAVA_LIBRARY_NAME));
+      }
+      return resolvedSymbol;
+    }
+
     // Look up symbol in the maven manifest.
     if (mavenManifest != null) {
       resolvedSymbol = mavenManifest.getTarget(importStatement);
@@ -237,19 +273,7 @@ public class BuildCleaner {
         return resolvedSymbol;
       }
     }
-
-    // Look up symbol in the harness symbol map.
-    resolvedSymbol = harnessSymbolMap.getTarget(importStatement);
-    if (!resolvedSymbol.isPresent()) {
-      return Optional.empty();
-    }
-
-    // For Java targets, we don't have java_library name in the Symbol dependency map.
-    if (!resolvedSymbol.get().contains(":")) {
-      return Optional.of(String.format("//%s:%s", resolvedSymbol.get(), DEFAULT_JAVA_LIBRARY_NAME));
-    }
-
-    return Optional.of(resolvedSymbol.get());
+    return Optional.empty();
   }
 
   /**
@@ -259,10 +283,11 @@ public class BuildCleaner {
    * @throws IOException
    */
   private Set<String> getSourceFiles(Path directory) throws IOException {
-    PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:" + directory + "/" + srcsGlob());
+    final var syntaxAndPattern = "glob:" + directory + "/" + srcsGlob();
+    log.info("Scanning for files using pattern {}", syntaxAndPattern);
+    PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(syntaxAndPattern);
     Set<String> sourceFileNames = new HashSet<>();
-    try (Stream<Path> paths =
-             Files.find(directory, Integer.MAX_VALUE, (path, f) -> { return pathMatcher.matches(path); })) {
+    try (Stream<Path> paths = Files.find(directory, Integer.MAX_VALUE, (path, f) -> pathMatcher.matches(path))) {
       paths.forEach(path -> sourceFileNames.add(path.getFileName().toString()));
     }
     return sourceFileNames;
@@ -271,12 +296,12 @@ public class BuildCleaner {
   private String getPackageName(ClasspathParser classpathParser) {
     Set<String> packageNames = classpathParser.getPackages();
     if (packageNames.size() == 0) {
-      logger.error("No package name found for module: " + module());
+      log.error("No package name found for module: " + module());
       return "";
     }
 
     if (packageNames.size() > 1) {
-      logger.error(
+      log.error(
           "Package name not consistent across files in the module: " + module() + ". Found packages: " + packageNames);
     }
 
@@ -354,7 +379,7 @@ public class BuildCleaner {
     try {
       commandLineOptions = parser.parse(options, args);
     } catch (ParseException e) {
-      logger.error("Command line parsing failed. {}", e.getMessage());
+      log.error("Command line parsing failed. {}", e.getMessage());
       System.exit(3);
     }
     return commandLineOptions;

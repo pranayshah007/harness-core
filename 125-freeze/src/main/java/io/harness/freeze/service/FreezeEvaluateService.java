@@ -20,6 +20,9 @@ public interface FreezeEvaluateService {
   List<FreezeSummaryResponseDTO> getActiveFreezeEntities(
       String accountId, String orgIdentifier, String projectIdentifier);
 
+  List<FreezeSummaryResponseDTO> getActiveManualFreezeEntities(
+      String accountId, String orgIdentifier, String projectIdentifier, Map<FreezeEntityType, List<String>> entityMap);
+
   List<FreezeSummaryResponseDTO> anyGlobalFreezeActive(
       String accountId, String orgIdentifier, String projectIdentifier);
 }

@@ -65,6 +65,8 @@ import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -110,7 +112,7 @@ public class ServiceNowCreateUpdateStateTest extends CategoryTest {
     when(secretManager.getEncryptionDetails(
              ServiceNowConfig.builder().password(PASSWORD).build(), APP_ID, WORKFLOW_EXECUTION_ID))
         .thenReturn(Collections.emptyList());
-    when(delegateService.queueTask(any(DelegateTask.class))).thenReturn(UUID);
+    when(delegateService.queueTaskV2(any(DelegateTask.class))).thenReturn(UUID);
     when(featureFlagService.isEnabled(eq(FeatureName.HONOR_DELEGATE_SCOPING), anyString())).thenReturn(true);
   }
 
@@ -122,7 +124,7 @@ public class ServiceNowCreateUpdateStateTest extends CategoryTest {
     ExecutionResponse executionResponse = serviceNowCreateUpdateState.execute(context);
 
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     assertThat(delegateTaskArgumentCaptor.getValue())
         .isNotNull()
         .hasFieldOrPropertyWithValue("data.taskType", SERVICENOW_ASYNC.name());
@@ -218,7 +220,7 @@ public class ServiceNowCreateUpdateStateTest extends CategoryTest {
     params.setTicketType(INCIDENT.name());
     params.setUpdateMultiple(true);
     params.setFields(Collections.singletonMap(ServiceNowFields.DESCRIPTION, DESCRIPTION_VALUE));
-    params.setAdditionalFields(Collections.singletonMap("key", "value"));
+    params.setAdditionalFields(new HashMap<>(Map.of("key", "value")));
     params.setImportSetTableName(VARIABLE_NAME);
     params.setJsonBody("{\"key\": \"value\"}");
     return params;
@@ -233,7 +235,7 @@ public class ServiceNowCreateUpdateStateTest extends CategoryTest {
     ExecutionResponse executionResponse = serviceNowCreateUpdateState.execute(context);
 
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     assertThat(delegateTaskArgumentCaptor.getValue())
         .isNotNull()
         .hasFieldOrPropertyWithValue("setupAbstractions.envType", "PROD");

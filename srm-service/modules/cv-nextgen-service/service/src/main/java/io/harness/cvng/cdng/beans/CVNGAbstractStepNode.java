@@ -28,7 +28,7 @@ public abstract class CVNGAbstractStepNode extends AbstractStepNode {
   // check if this field is needed or not
   @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN)
+  @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN_WITHOUT_EXECUTION_INPUT)
   @VariableExpression(skipInnerObjectTraversal = true)
   ParameterField<Timeout> timeout;
 }

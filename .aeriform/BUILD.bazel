@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("//:tools/bazel/aeriform.bzl", "aeriform")
 
 aeriform("//001-microservice-intfc-tool:module")
@@ -82,8 +87,6 @@ aeriform("//300-cv-nextgen:tests")
 
 aeriform("//310-iacm-manager:module")
 
-aeriform("//311-iacm-utilities:module")
-
 aeriform("//315-sto-manager/app:module")
 
 aeriform("//315-sto-manager/app:tests")
@@ -107,6 +110,8 @@ aeriform("//332-ci-manager/service:tests")
 aeriform("//332-ci-manager/contracts:module")
 
 aeriform("//332-ci-manager/contracts:tests")
+
+aeriform("//332-iacm-common:module")
 
 aeriform("//ce-nextgen:module")
 
@@ -152,9 +157,9 @@ aeriform("//425-verification-commons:module")
 
 aeriform("//425-verification-commons:tests")
 
-aeriform("//430-cv-nextgen-commons:module")
+aeriform("//srm-service/modules/cv-nextgen-service/contracts/commons:module")
 
-aeriform("//430-cv-nextgen-commons:tests")
+aeriform("//srm-service/modules/cv-nextgen-service/contracts/commons:tests")
 
 aeriform("//440-connector-nextgen:module")
 
@@ -296,7 +301,7 @@ aeriform("//clients/access-control/sdk:module")
 
 aeriform("//clients/access-control/sdk:tests")
 
-aeriform("//948-cv-nextgen-beans:module")
+aeriform("//srm-service/modules/cv-nextgen-service/contracts/delegate:module")
 
 aeriform("//950-command-library-common:module")
 

@@ -1421,7 +1421,8 @@
               "Timeout",
               "Authorization",
               "Verification",
-              "DelegateProvisioning"
+              "DelegateProvisioning",
+              "DelegateRestart"
             ]
           }
         }

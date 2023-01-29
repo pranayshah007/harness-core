@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.AuditSettings;
 import io.harness.audit.entities.YamlDiffRecord;
+import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
+import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 
@@ -25,6 +27,8 @@ public class NGAuditServiceMorphiaRegistrar implements MorphiaRegistrar {
     set.add(AuditEvent.class);
     set.add(AuditSettings.class);
     set.add(YamlDiffRecord.class);
+    set.add(StreamingDestination.class);
+    set.add(AwsS3StreamingDestination.class);
   }
 
   @Override

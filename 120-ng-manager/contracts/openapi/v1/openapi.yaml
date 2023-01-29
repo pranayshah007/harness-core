@@ -1,30 +1,35 @@
 openapi: 3.0.3
 info:
   title: Harness NextGen Software Delivery Platform API Reference
-  version: '1.0'
-  description: This is the Open Api Spec 3 for the NextGen Manager. This is under active development. Beware of the breaking change with respect to the generated code stub
+  version: '1'
+  description: This is the Open Api Spec 3 for NextGen Manager. This is under active development. Beware of the breaking change with respect to the generated code stub
   contact:
     email: contact@harness.io
 servers:
-  - url: 'http://api.harness.io'
-    description: Harness host url
+  - url: 'https://api.harness.io'
+    description: Harness host URL.
 tags:
   - name: Organization
-    description: Everything about organization
+    description: This contains APIs for Organizations.
   - name: Org Project
-    description: Everything about org scoped project
+    description: This contains APIs for Projects.
+    x-displayName: Project
   - name: Account Secret
-    description: Everything about account scoped secret
+    description: This contains APIs for Account-scoped Secrets.
+    x-displayName: Account Secrets
   - name: Org Secret
-    description: Everything about org scoped secret
+    description: This contains APIs for Organization-scoped Secrets.
+    x-displayName: Organization Secrets
   - name: Project Secret
-    description: Everything about project scoped secret
-  - name: Project Services
-    description: This contains APIs for performing CRUD operations on Services.
-  - name: Org Services
-    description: This contains APIs for performing CRUD operations on org scoped Services.
+    description: This contains APIs for Project-scoped Secrets.
+    x-displayName: Project Secrets
   - name: Account Services
-    description: This contains APIs for performing CRUD operations on account scoped Services.
+    description: This contains APIs for Account-scoped Services.
+  - name: Org Services
+    description: This contains APIs for Organization-scoped Services.
+    x-displayName: Organization Services
+  - name: Project Services
+    description: This contains APIs for Project-scoped Services.
 paths:
   '/v1/orgs/{org}/projects/{project}/services/{service}':
     get:
@@ -67,6 +72,7 @@ paths:
           $ref: '#/components/responses/ServiceResponse'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ForceDelete'
       description: Deletes the requested service
       security:
         - x-api-key: []
@@ -89,7 +95,7 @@ paths:
             type: boolean
           in: query
           name: is_access_list
-          description: Specify whether list an access list or not. Access List refers to list of services that current user has permission to use in the pipeline.
+          description: Specifies whether the list is an access list. An access list is a list of services that you are permitted to use in a pipeline.
         - schema:
             type: string
             enum:
@@ -106,12 +112,12 @@ paths:
             type: boolean
           name: git_ops_enabled
           in: query
-          description: Enables use of this service in Harness GitOps PR Pipelines
+          description: Enables you to use the service in Harness GitOps PR pipelines.
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Order'
       security:
         - x-api-key: []
-      description: Returns all services that the current user has view permissions for given project.
+      description: Returns a list of the services for which you have view permissions in the given project.
       tags:
         - Project Services
     post:
@@ -172,6 +178,7 @@ paths:
           $ref: '#/components/responses/ServiceResponse'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ForceDelete'
       description: Deletes the requested service
       security:
         - x-api-key: [ ]
@@ -194,7 +201,7 @@ paths:
             type: boolean
           in: query
           name: is_access_list
-          description: Specify whether list an access list or not. Access List refers to list of services that current user has permission to use in the pipeline.
+          description: Specifies whether the list is an access list. An access list is a list of services that you are permitted to use in a pipeline.
         - schema:
             type: string
             enum:
@@ -211,12 +218,12 @@ paths:
             type: boolean
           name: git_ops_enabled
           in: query
-          description: Enables use of this service in Harness GitOps PR Pipelines
+          description: Enables you to use the service in Harness GitOps PR pipelines.
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Order'
       security:
         - x-api-key: [ ]
-      description: Returns all services that the current user has view permissions for given project.
+      description: Returns a list of the services for which you have view permissions in the given project.
       tags:
         - Org Services
     post:
@@ -275,6 +282,7 @@ paths:
           $ref: '#/components/responses/ServiceResponse'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ForceDelete'
       description: Deletes the requested service
       security:
         - x-api-key: [ ]
@@ -297,7 +305,7 @@ paths:
             type: boolean
           in: query
           name: is_access_list
-          description: Specify whether list an access list or not. Access List refers to list of services that current user has permission to use in the pipeline.
+          description: Specifies whether the list is an access list. An access list is a list of services that you are permitted to use in a pipeline.
         - schema:
             type: string
             enum:
@@ -314,12 +322,12 @@ paths:
             type: boolean
           name: git_ops_enabled
           in: query
-          description: Enables use of this service in Harness GitOps PR Pipelines
+          description: Enables you to use the service in Harness GitOps PR pipelines.
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Order'
       security:
         - x-api-key: [ ]
-      description: Returns all services that the current user has view permissions for given project.
+      description: Returns a list of the services for which you have view permissions in the given project.
       tags:
         - Account Services
     post:
@@ -381,14 +389,14 @@ paths:
         name: org
         in: path
         required: true
-        description: Organization slug
+        description: Organization identifier
     get:
       summary: Retrieve an organization
       responses:
         '200':
           $ref: '#/components/responses/OrganizationResponse'
       operationId: get-organization
-      description: Retrieves the information of the organization with the matching organization slug.
+      description: Retrieves the information of the organization with the matching organization identifier.
       security:
         - x-api-key: []
       tags:
@@ -401,7 +409,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/OrganizationResponse'
-      description: Updates the information of the organization with the matching organization slug.
+      description: Updates the information of the organization with the matching organization identifier.
       security:
         - x-api-key: []
       tags:
@@ -416,7 +424,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/OrganizationResponse'
-      description: Deletes the information of the organization with the matching organization slug.
+      description: Deletes the information of the organization with the matching organization identifier.
       security:
         - x-api-key: []
       tags:
@@ -478,7 +486,7 @@ paths:
         '200':
           $ref: '#/components/responses/ProjectResponse'
       operationId: get-org-scoped-project
-      description: Retrieves the information of the project with the matching project slug.
+      description: Retrieves the information of the project with the matching project identifier.
       security:
         - x-api-key: []
       parameters:
@@ -491,7 +499,7 @@ paths:
         '200':
           $ref: '#/components/responses/ProjectResponse'
       operationId: update-org-scoped-project
-      description: Updates the information of the project with the matching project slug.
+      description: Updates the information of the project with the matching project identifier.
       security:
         - x-api-key: []
       requestBody:
@@ -506,7 +514,7 @@ paths:
         '200':
           $ref: '#/components/responses/ProjectResponse'
       operationId: delete-org-scoped-project
-      description: Deletes the information of the project with the matching project slug.
+      description: Deletes the information of the project with the matching project identifier.
       security:
         - x-api-key: []
       parameters:
@@ -547,7 +555,7 @@ paths:
               type: string
           in: query
           name: secret
-          description: Slug field of secrets
+          description: Identifier field of secrets
         - schema:
             type: array
             items:
@@ -613,7 +621,7 @@ paths:
               type: string
           in: query
           name: secret
-          description: Slug field of secrets
+          description: Identifier field of secrets
         - schema:
             type: array
             items:
@@ -680,7 +688,7 @@ paths:
               type: string
           in: query
           name: secret
-          description: Slug field of secrets
+          description: Identifier field of secrets
         - schema:
             type: array
             items:
@@ -720,7 +728,7 @@ paths:
         name: secret
         in: path
         required: true
-        description: Slug field of the secret
+        description: Identifier field of the secret
     get:
       summary: Retrieve a secret
       responses:
@@ -742,7 +750,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/SecretResponse'
-      description: Deletes the information of the secret with the matching secret slug.
+      description: Deletes the information of the secret with the matching secret identifier.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
@@ -753,7 +761,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/SecretResponse'
-      description: Updates the information of the secret with the matching secret slug.
+      description: Updates the information of the secret with the matching secret identifier.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
@@ -770,7 +778,7 @@ paths:
         name: secret
         in: path
         required: true
-        description: Slug field of the secret
+        description: Identifier field of the secret
     get:
       summary: Retrieve a secret
       tags:
@@ -792,7 +800,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/SecretResponse'
-      description: Deletes the information of the secret with the matching secret slug.
+      description: Deletes the information of the secret with the matching secret identifier.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
@@ -803,7 +811,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/SecretResponse'
-      description: Updates the information of the secret with the matching secret slug.
+      description: Updates the information of the secret with the matching secret identifier.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
@@ -821,7 +829,7 @@ paths:
         name: secret
         in: path
         required: true
-        description: Slug field of the secret
+        description: Identifier field of the secret
     get:
       summary: Retrieve a secret
       tags:
@@ -843,7 +851,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/SecretResponse'
-      description: Deletes the information of the secret with the matching secret slug.
+      description: Deletes the information of the secret with the matching secret identifier.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
@@ -854,7 +862,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/SecretResponse'
-      description: Updates the information of the secret with the matching secret slug.
+      description: Updates the information of the secret with the matching secret identifier.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
@@ -863,6 +871,22 @@ paths:
         - Project Secret
       security:
         - x-api-key: []
+  /v1/module-versions:
+    get:
+      summary: List Module Versions
+      tags:
+        - Module Versions
+      responses:
+        '200':
+          $ref: '#/components/responses/ModuleVersionsListResponse'
+      operationId: list-module-versions
+      description: Lists Versions of different Modules.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      x-internal: true
 components:
   schemas:
     Service:
@@ -870,7 +894,7 @@ components:
       x-examples:
         example-1:
           account: sample_account
-          slug: example_service
+          identifier: example_service
           org: sample_organization
           project: sample_project
           name: Example_service
@@ -889,10 +913,10 @@ components:
         account:
           type: string
           description: Account Identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,63}$'
           minLength: 1
           maxLength: 64
-        slug:
+        identifier:
           type: string
           description: Identifier of the Service Request.
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
@@ -913,7 +937,7 @@ components:
         name:
           type: string
           description: Name of the Service Request.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
         description:
@@ -930,7 +954,7 @@ components:
           type: string
           description: Yaml related to service
       required:
-        - slug
+        - identifier
         - name
     ServiceResponse:
       type: object
@@ -938,7 +962,7 @@ components:
         example-1:
           service:
             account: sample_account
-            slug: example_service
+            identifier: example_service
             org: sample_organization
             project: sample_project
             name: Example_service
@@ -970,7 +994,7 @@ components:
       type: object
       x-examples:
         example-1:
-          slug: example_service
+          identifier: example_service
           name: Example_service
           description: This is a example service
           tags:
@@ -984,7 +1008,7 @@ components:
       title: ServiceRequest
       description: 'Service Request Body '
       properties:
-        slug:
+        identifier:
           type: string
           description: Identifier of the Service
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
@@ -993,7 +1017,7 @@ components:
         name:
           type: string
           description: Name of the Service
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
         description:
@@ -1010,7 +1034,7 @@ components:
           type: string
           description: YAML for the Service Request
       required:
-        - slug
+        - identifier
         - name
     CreateOrganizationRequest:
       type: object
@@ -1023,11 +1047,11 @@ components:
       description: Organization model
       type: object
       properties:
-        slug:
+        identifier:
           type: string
           minLength: 1
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
-          description: Organization slug
+          description: Organization identifier
           maxLength: 64
         name:
           type: string
@@ -1046,7 +1070,7 @@ components:
           maxProperties: 128
           description: Organization tags
       required:
-        - slug
+        - identifier
         - name
     ModuleType:
       type: string
@@ -1076,7 +1100,7 @@ components:
       type: object
       x-examples:
         example-1:
-          slug: example_project_slug
+          identifier: example_project_identifier
           name: example-project-name
           color: '#0063F7'
           modules:
@@ -1086,11 +1110,11 @@ components:
             property1: value1
             property2: value2
       properties:
-        slug:
+        identifier:
           type: string
           minLength: 1
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
-          description: Project slug
+          description: Project identifier
           maxLength: 64
         name:
           type: string
@@ -1100,7 +1124,7 @@ components:
           maxLength: 64
         org:
           type: string
-          description: Organization slug for the project
+          description: Organization identifier for the project
         color:
           type: string
           description: Project color
@@ -1121,7 +1145,7 @@ components:
           maxProperties: 128
           description: Project tags
       required:
-        - slug
+        - identifier
         - name
     ProjectResponse:
       description: Project response model
@@ -1144,7 +1168,7 @@ components:
       x-examples:
         example-1:
           org:
-            slug: example_organization
+            identifier: example_organization
             name: Example Organization
             description: This is an Example Organization
             tags:
@@ -1372,12 +1396,12 @@ components:
               enum:
                 - SecretFile
               description: This specifies the type of secret
-            secret_manager_slug:
+            secret_manager_identifier:
               type: string
-              description: Slug of the secret manager used to manage the secret
+              description: Identifier of the secret manager used to manage the secret
           required:
             - type
-            - secret_manager_slug
+            - secret_manager_identifier
     SecretTextSpec:
       title: SecretText
       x-discriminator-value: SecretText
@@ -1391,9 +1415,9 @@ components:
               enum:
                 - SecretText
               description: This specifies the type of secret
-            secret_manager_slug:
+            secret_manager_identifier:
               type: string
-              description: Slug of the secret manager used to manage the secret
+              description: Identifier of the secret manager used to manage the secret
             value_type:
               type: string
               enum:
@@ -1405,7 +1429,7 @@ components:
               description: Value of the Secret
           required:
             - type
-            - secret_manager_slug
+            - secret_manager_identifier
             - value_type
     WinRmTGTKeyTabFileSpec:
       title: WinRmTGTKeyTabFile
@@ -1544,19 +1568,19 @@ components:
           type: string
           description: Secret name
           pattern: '^[0-9a-zA-Z-_ ]{0,63}$'
-        slug:
+        identifier:
           type: string
           minLength: 1
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
-          description: Secret slug
+          description: Secret identifier
           maxLength: 64
         org:
           type: string
-          description: Organization slug for secret
+          description: Organization identifier for secret
           pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
         project:
           type: string
-          description: Project slug for secret
+          description: Project identifier for secret
           pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
         tags:
           type: object
@@ -1570,7 +1594,7 @@ components:
           $ref: '#/components/schemas/SecretSpec'
       required:
         - name
-        - slug
+        - identifier
         - spec
     SecretResponse:
       title: SecretResponse
@@ -1592,6 +1616,49 @@ components:
           type: object
           description: Governance metadata information
       description: Secret response model
+    ModuleVersionsResponse:
+      title: Module Versions Response Body
+      type: object
+      description: Module Versions Response Body
+      properties:
+        name:
+          type: string
+          description: Module name
+        version:
+          type: string
+          description: Module version
+        display_name:
+          type: string
+          description: Module display name
+        updated:
+          type: string
+          description: Module updated at
+        version_url:
+          type: string
+          description: Module version URL
+        release_notes_link:
+          type: string
+          description: Module Release Notes link
+        microservices_version_info:
+          type: array
+          items:
+            $ref: '#/components/schemas/MicroserviceVersionInfo'
+    MicroserviceVersionInfo:
+      title: Microservice Version Info
+      x-stoplight:
+        id: 949355wt5fcyx
+      type: object
+      properties:
+        name:
+          type: string
+          description: Microservices name
+        version:
+          type: string
+          description: Microservices version URL
+        version_url:
+          type: string
+          description: Microservices version
+      description: Microservice Version Info
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -1611,7 +1678,7 @@ components:
               value:
                 - service:
                     account: sample_account
-                    slug: example_service
+                    identifier: example_service
                     org: sample_organization
                     project: sample_project
                     name: Example_service
@@ -1636,7 +1703,7 @@ components:
               value: |
                 - service:
                     account: sample_account
-                    slug: example_service
+                    identifier: example_service
                     org: sample_organization
                     project: sample_project
                     name: Example_service
@@ -1667,7 +1734,7 @@ components:
               value:
                 service:
                   account: sample_account
-                  slug: example_service
+                  identifier: example_service
                   org: sample_organization
                   project: sample_project
                   name: Example_service
@@ -1690,7 +1757,7 @@ components:
               value: |
                 service:
                   account: sample_account
-                  slug: example_service
+                  identifier: example_service
                   org: sample_organization
                   project: sample_project
                   name: Example_service
@@ -1715,7 +1782,7 @@ components:
             example-organization-response-json:
               value:
                 org:
-                  slug: example_organization
+                  identifier: example_organization
                   name: Example Organization
                   description: This is an example organization
                   tags:
@@ -1731,7 +1798,7 @@ components:
             example-organization-response-yaml:
               value: |
                 org:
-                  slug: example_organization
+                  identifier: example_organization
                   name: Example Organization
                   description: This is an example organization
                   tags:
@@ -1750,8 +1817,8 @@ components:
             example-project-response-json:
               value:
                 project:
-                  org: example_org_slug
-                  slug: example_project_slug
+                  org: example_org_identifier
+                  identifier: example_project_identifier
                   name: example-project-name
                   color: '#0063F7'
                   modules:
@@ -1769,8 +1836,8 @@ components:
             example-project-response-yaml:
               value: |
                 project:
-                  org: example_org_slug
-                  slug: example_project_slug
+                  org: example_org_identifier
+                  identifier: example_project_identifier
                   name: example-project-name
                   color: '#0063F7'
                   modules:
@@ -1793,8 +1860,8 @@ components:
             example-project-list-response-json:
               value:
                 - project:
-                    org: example_org_slug
-                    slug: example_project_slug
+                    org: example_org_identifier
+                    identifier: example_project_identifier
                     name: example-project-name
                     color: '#0063F7'
                     modules:
@@ -1814,8 +1881,8 @@ components:
             example-project-list-response-yaml:
               value: |
                 - project:
-                    org: example_org_slug
-                    slug: example_project_slug
+                    org: example_org_identifier
+                    identifier: example_project_identifier
                     name: example-project-name
                     color: '#0063F7'
                     modules:
@@ -1846,7 +1913,7 @@ components:
             example-organizations-list-response-json:
               value:
                 - org:
-                    slug: example_organization
+                    identifier: example_organization
                     name: Example Organization
                     description: This is an example organization
                     tags:
@@ -1864,7 +1931,7 @@ components:
             example-organizations-list-response-yaml:
               value: |
                 - org:
-                    slug: example_organization
+                    identifier: example_organization
                     name: Example Organization
                     description: This is an example organization
                     tags:
@@ -1892,7 +1959,7 @@ components:
               value:
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -1915,7 +1982,7 @@ components:
               value: |
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -1943,7 +2010,7 @@ components:
               value:
                 - secret:
                     name: example_secret
-                    slug: example_secret
+                    identifier: example_secret
                     org: default
                     project: example_project
                     tags:
@@ -1968,7 +2035,7 @@ components:
               value: |
                 - secret:
                     name: example_secret
-                    slug: example_secret
+                    identifier: example_secret
                     org: default
                     project: example_project
                     tags:
@@ -1991,6 +2058,23 @@ components:
           examples:
             sample:
               value: '<{url}?page=2&limit=1>; rel="next", <{url}?page=1&limit=1>; rel="self", <{url}?page=0&limit=1>; rel="previous", '
+    ModuleVersionsListResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ModuleVersionsResponse'
+          examples: {}
+      headers:
+        Link:
+          schema:
+            type: string
+          description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.'
+          examples:
+            sample:
+              value: '<{url}?page=2&limit=1>; rel="next", <{url}?page=1&limit=1>; rel="self", <{url}?page=0&limit=1>; rel="previous", '
   requestBodies:
     ServiceRequest:
       content:
@@ -2000,7 +2084,7 @@ components:
           examples:
             example-1:
               value:
-                slug: example_service
+                identifier: example_service
                 name: Example_service
                 description: This is a example service
                 tags:
@@ -2017,7 +2101,7 @@ components:
           examples:
             example-1:
               value: |
-                slug: example_service
+                identifier: example_service
                 name: Example_service
                 description: This is a example service
                 tags:
@@ -2039,7 +2123,7 @@ components:
             example-project-update-request-json:
               value:
                 project:
-                  slug: example_project_slug
+                  identifier: example_project_identifier
                   name: example-project-name
                   color: '#0063F7'
                   modules:
@@ -2055,7 +2139,7 @@ components:
             example-project-update-request-yaml:
               value: |
                 project:
-                  slug: example_project_slug
+                  identifier: example_project_identifier
                   name: example-project-name
                   color: '#0063F7'
                   modules:
@@ -2075,7 +2159,7 @@ components:
             example-create-organization-request-json:
               value:
                 org:
-                  slug: example_organization
+                  identifier: example_organization
                   name: Example Organization
                   description: This is an Example organization
                   tags:
@@ -2088,7 +2172,7 @@ components:
             example-create-organization-request-yaml:
               value: |
                 org:
-                  slug: example_organization
+                  identifier: example_organization
                   name: Example Organization
                   description: This is an Example organization
                   tags:
@@ -2105,7 +2189,7 @@ components:
             example-organization-update-request-json:
               value:
                 org:
-                  slug: example_organization
+                  identifier: example_organization
                   name: Example Organization
                   description: This is an example organization
                   tags:
@@ -2118,7 +2202,7 @@ components:
             example-organization-update-request-json:
               value: |
                 org:
-                  slug: example_organization
+                  identifier: example_organization
                   name: Example Organization
                   description: This is an example organization
                   tags:
@@ -2135,7 +2219,7 @@ components:
             example-create-project-request-json:
               value:
                 project:
-                  slug: example_project_slug
+                  identifier: example_project_identifier
                   name: example-project-name
                   color: '#0063F7'
                   modules:
@@ -2151,7 +2235,7 @@ components:
             example-create-project-request-yaml:
               value: |
                 project:
-                  slug: example_project_slug
+                  identifier: example_project_identifier
                   name: example-project-name
                   color: '#0063F7'
                   modules:
@@ -2172,7 +2256,7 @@ components:
               value:
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2188,7 +2272,7 @@ components:
               value:
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2204,7 +2288,7 @@ components:
               value:
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2212,12 +2296,12 @@ components:
                   description: example_secret
                   spec:
                     type: SecretFile
-                    secret_manager_slug: example_secret_manager_slug
+                    secret_manager_identifier: example_secret_manager_identifier
             example-secret-text-secret-request-json:
               value:
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2225,14 +2309,14 @@ components:
                   description: example_secret
                   spec:
                     type: SecretText
-                    secret_manager_slug: example_secret_manager_slug
+                    secret_manager_identifier: example_secret_manager_identifier
                     value_type: Inline
                     value: example_secret_text_value
             example-ssh-key-path-file-secret-request-json:
               value:
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2248,7 +2332,7 @@ components:
               value:
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2264,7 +2348,7 @@ components:
               value:
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2279,7 +2363,7 @@ components:
               value:
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2298,7 +2382,7 @@ components:
               value:
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2317,7 +2401,7 @@ components:
               value:
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2340,7 +2424,7 @@ components:
               value: |
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2356,7 +2440,7 @@ components:
               value: |
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2372,7 +2456,7 @@ components:
               value: |
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2380,12 +2464,12 @@ components:
                   description: example_secret
                   spec:
                     type: SecretFile
-                    secret_manager_slug: example_secret_manager_slug
+                    secret_manager_identifier: example_secret_manager_identifier
             example-secret-text-secret-request-yaml:
               value: |
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2393,14 +2477,14 @@ components:
                   description: example_secret
                   spec:
                     type: SecretText
-                    secret_manager_slug: example_secret_manager_slug
+                    secret_manager_identifier: example_secret_manager_identifier
                     value_type: Inline
                     value: example_secret_text_value
             example-ssh-key-path-file-secret-request-yaml:
               value: |
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2416,7 +2500,7 @@ components:
               value: |
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2432,7 +2516,7 @@ components:
               value: |
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2447,7 +2531,7 @@ components:
               value: |
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2466,7 +2550,7 @@ components:
               value: |
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2485,7 +2569,7 @@ components:
               value: |
                 secret:
                   name: example_secret
-                  slug: example_secret
+                  identifier: example_secret
                   org: default
                   project: example_project
                   tags:
@@ -2542,7 +2626,14 @@ components:
       required: false
       schema:
         type: string
-      description: 'Slug field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+      description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+    ForceDelete:
+      name: forceDelete
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Enable this field to force delete a template
     OrgsQueryParam:
       name: org
       in: query
@@ -2551,7 +2642,7 @@ components:
         type: array
         items:
           type: string
-      description: Slug field of the organizations the resource is scoped to
+      description: Identifier field of the organizations the resource is scoped to
     ProjectsQueryParam:
       name: project
       in: query
@@ -2560,14 +2651,14 @@ components:
         type: array
         items:
           type: string
-      description: Slug field of the projects the resource is scoped to
+      description: Identifier field of the projects the resource is scoped to
     OrgPathParam:
       name: org
       in: path
       required: true
       schema:
         type: string
-      description: Slug field of the organization the resource is scoped to
+      description: Identifier field of the organization the resource is scoped to
     PrivateSecret:
       name: private_secret
       in: query
@@ -2581,14 +2672,14 @@ components:
       required: true
       schema:
         type: string
-      description: Slug field of the project the resource is scoped to
+      description: Identifier field of the project the resource is scoped to
     ServicePathParam:
       name: service
       in: path
       required: true
       schema:
         type: string
-      description: Slug field of the service the resource is scoped to
+      description: Identifier field of the service the resource is scoped to
     ServiceIdentifiers:
       name: service_ids
       in: query
@@ -2607,7 +2698,7 @@ components:
         type: string
         enum:
           - name
-          - slug
+          - identifier
           - created
           - updated
       description: Parameter on the basis of which sorting is done.

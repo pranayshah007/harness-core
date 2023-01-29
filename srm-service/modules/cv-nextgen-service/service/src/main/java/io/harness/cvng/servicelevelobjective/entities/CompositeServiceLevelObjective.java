@@ -10,6 +10,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsR
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.constraints.Size;
@@ -18,7 +19,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @JsonTypeName("Composite")
 @Data
@@ -31,7 +31,8 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
   }
   private int version;
 
-  @Size(min = 2, max = 20) List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails;
+  @Size(min = 2, max = 20, message = "A minimum of 2 simple SLO's and a maximum of 20 simple SLO's can be referenced.")
+  List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails;
 
   @Data
   @Builder

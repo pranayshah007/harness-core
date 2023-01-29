@@ -15,5 +15,5 @@ import lombok.Value;
 @Value
 @Builder
 public class MetricRecordsResponse {
-  List<TimeSeries> timeSeriesData = new ArrayList<>();
+  @Builder.Default List<TimeSeries> timeSeriesData = new ArrayList<>();
 }

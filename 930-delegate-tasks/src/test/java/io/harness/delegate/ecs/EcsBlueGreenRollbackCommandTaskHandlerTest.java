@@ -20,6 +20,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.ecs.EcsCommandTaskNGHelper;
+import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsInfraType;
 import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
@@ -95,14 +96,16 @@ public class EcsBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void executeTaskInternalTargetShiftStartedFalseIsFirstDeploymentFalseTest() throws Exception {
-    EcsBlueGreenRollbackRequest ecsBlueGreenRollbackRequest = EcsBlueGreenRollbackRequest.builder()
-                                                                  .commandUnitsProgress(commandUnitsProgress)
-                                                                  .ecsInfraConfig(ecsInfraConfig)
-                                                                  .timeoutIntervalInMin(10)
-                                                                  .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
-                                                                  .isTargetShiftStarted(false)
-                                                                  .isFirstDeployment(false)
-                                                                  .build();
+    EcsBlueGreenRollbackRequest ecsBlueGreenRollbackRequest =
+        EcsBlueGreenRollbackRequest.builder()
+            .commandUnitsProgress(commandUnitsProgress)
+            .ecsInfraConfig(ecsInfraConfig)
+            .timeoutIntervalInMin(10)
+            .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
+            .isTargetShiftStarted(false)
+            .isFirstDeployment(false)
+            .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_ROLLBACK)
+            .build();
 
     doReturn(rollbackCallback)
         .when(ecsTaskHelperBase)
@@ -150,14 +153,16 @@ public class EcsBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void executeTaskInternalTargetShiftStartedTrueIsFirstDeploymentTrueTest() throws Exception {
-    EcsBlueGreenRollbackRequest ecsBlueGreenRollbackRequest = EcsBlueGreenRollbackRequest.builder()
-                                                                  .commandUnitsProgress(commandUnitsProgress)
-                                                                  .ecsInfraConfig(ecsInfraConfig)
-                                                                  .timeoutIntervalInMin(10)
-                                                                  .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
-                                                                  .isTargetShiftStarted(true)
-                                                                  .isFirstDeployment(true)
-                                                                  .build();
+    EcsBlueGreenRollbackRequest ecsBlueGreenRollbackRequest =
+        EcsBlueGreenRollbackRequest.builder()
+            .commandUnitsProgress(commandUnitsProgress)
+            .ecsInfraConfig(ecsInfraConfig)
+            .timeoutIntervalInMin(10)
+            .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
+            .isTargetShiftStarted(true)
+            .isFirstDeployment(true)
+            .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_ROLLBACK)
+            .build();
 
     doReturn(rollbackCallback)
         .when(ecsTaskHelperBase)
@@ -205,14 +210,16 @@ public class EcsBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void executeTaskInternalTargetShiftStartedTrueIsFirstDeploymentFalseTest() throws Exception {
-    EcsBlueGreenRollbackRequest ecsBlueGreenRollbackRequest = EcsBlueGreenRollbackRequest.builder()
-                                                                  .commandUnitsProgress(commandUnitsProgress)
-                                                                  .ecsInfraConfig(ecsInfraConfig)
-                                                                  .timeoutIntervalInMin(10)
-                                                                  .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
-                                                                  .isTargetShiftStarted(true)
-                                                                  .isFirstDeployment(false)
-                                                                  .build();
+    EcsBlueGreenRollbackRequest ecsBlueGreenRollbackRequest =
+        EcsBlueGreenRollbackRequest.builder()
+            .commandUnitsProgress(commandUnitsProgress)
+            .ecsInfraConfig(ecsInfraConfig)
+            .timeoutIntervalInMin(10)
+            .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
+            .isTargetShiftStarted(true)
+            .isFirstDeployment(false)
+            .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_ROLLBACK)
+            .build();
 
     doReturn(rollbackCallback)
         .when(ecsTaskHelperBase)
@@ -261,14 +268,16 @@ public class EcsBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void executeTaskInternalTargetShiftStartedFalseIsFirstDeploymentTrueTest() throws Exception {
-    EcsBlueGreenRollbackRequest ecsBlueGreenRollbackRequest = EcsBlueGreenRollbackRequest.builder()
-                                                                  .commandUnitsProgress(commandUnitsProgress)
-                                                                  .ecsInfraConfig(ecsInfraConfig)
-                                                                  .timeoutIntervalInMin(10)
-                                                                  .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
-                                                                  .isTargetShiftStarted(false)
-                                                                  .isFirstDeployment(true)
-                                                                  .build();
+    EcsBlueGreenRollbackRequest ecsBlueGreenRollbackRequest =
+        EcsBlueGreenRollbackRequest.builder()
+            .commandUnitsProgress(commandUnitsProgress)
+            .ecsInfraConfig(ecsInfraConfig)
+            .timeoutIntervalInMin(10)
+            .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
+            .isTargetShiftStarted(false)
+            .isFirstDeployment(true)
+            .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_ROLLBACK)
+            .build();
 
     doReturn(rollbackCallback)
         .when(ecsTaskHelperBase)

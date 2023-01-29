@@ -8,6 +8,7 @@
 package io.harness.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +18,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidIdentifierRefException;
+import io.harness.exception.InvalidRequestException;
 
 import java.util.Map;
 import lombok.experimental.UtilityClass;
@@ -25,6 +27,9 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class IdentifierRefHelper {
   public final String IDENTIFIER_REF_DELIMITER = "\\."; // check if this is the correct delimiter
+  public static final int MAX_RESULT_THRESHOLD_FOR_SPLIT = 2;
+  private static final String GENERIC_IDENTIFIER_REFERENCE_HELP =
+      "Valid references must be one of the following formats { id, org.id, account.id }  for scope { project, organisation, account } respectively";
 
   public IdentifierRef createIdentifierRefWithUnknownScope(String accountId, String orgIdentifier,
       String projectIdentifier, String unknownIdentifier, Map<String, String> metadata) {
@@ -36,6 +41,89 @@ public class IdentifierRefHelper {
         .projectIdentifier(projectIdentifier)
         .identifier(unknownIdentifier)
         .build();
+  }
+
+  /**
+   * parentEntityScope :- Scope of Parent entity which is referencing entityIdentifier.
+   * -1 -> Invalid Scope
+   * 0 -> AccLevelParentEntity
+   * 1 -> OrgLevelParentEntity
+   * 2 -> ProjectLevelParentEntity
+   * entityIdentifier :- Identifier for the child entity.
+   * Account Scope -> account.Identifier
+   * Org Scope -> org.Identifier
+   * Project Scope -> Identifer
+   * Invalid Scope -> xyz.Identifer
+   */
+  public void validateEntityScopes(
+      String accountId, String orgIdentifier, String projectIdentifier, String entityIdentifierRef, String fieldName) {
+    int parentEntityScope;
+    int childEntityScope;
+    String parentScope;
+    if (isNotEmpty(projectIdentifier) && isNotEmpty(orgIdentifier) && isNotEmpty(accountId)) {
+      // project level parent entity.
+      parentEntityScope = 2;
+      parentScope = "project";
+    } else if (isNotEmpty(orgIdentifier) && isNotEmpty(accountId) && isEmpty(projectIdentifier)) {
+      // org level parent entity.
+      parentEntityScope = 1;
+      parentScope = "org";
+    } else if (isNotEmpty(accountId) && isEmpty(projectIdentifier) && isEmpty(orgIdentifier)) {
+      // account level parent entity.
+      parentEntityScope = 0;
+      parentScope = "account";
+    } else {
+      // Invalid parent scope.
+      parentEntityScope = -1;
+      parentScope = "invalid";
+    }
+
+    if (isEmpty(entityIdentifierRef)) {
+      throw new InvalidRequestException(String.format("Empty identifier ref cannot be used for %s", fieldName));
+    }
+
+    String[] entityIdentifierRefStringSplit = entityIdentifierRef.split(IDENTIFIER_REF_DELIMITER);
+    String childScope;
+    if (entityIdentifierRefStringSplit.length == 1) {
+      // project level child entity.
+      childEntityScope = 2;
+      childScope = "project";
+    } else if (entityIdentifierRefStringSplit.length == 2) {
+      childScope = entityIdentifierRefStringSplit[0];
+      if ("account".equals(childScope)) {
+        // account level child entity.
+        childEntityScope = 0;
+      } else if ("org".equals(childScope)) {
+        // org level child entity.
+        childEntityScope = 1;
+      } else {
+        // invalid scope
+        childEntityScope = -1;
+        childScope = "invalid";
+      }
+    } else {
+      // invalid scope
+      childEntityScope = -1;
+      childScope = "invalid";
+    }
+
+    if (childEntityScope == -1 || parentEntityScope == -1) {
+      throw new InvalidRequestException(String.format("Invalid Identifier Reference used for %s", fieldName));
+    }
+
+    // As child entity can exist in lower scopes but not the vica versa.
+    if (parentEntityScope < childEntityScope) {
+      throw new InvalidRequestException(String.format("The %s level %s cannot be used at %s level. Ref: [%s]",
+          childScope, fieldName, parentScope, entityIdentifierRef));
+    }
+  }
+
+  public IdentifierRef getConnectorIdentifierRef(
+      String scopedConnectorIdentifierRef, String accountId, String orgIdentifier, String projectIdentifier) {
+    if (isEmpty(scopedConnectorIdentifierRef)) {
+      throw new InvalidIdentifierRefException("Unable to resolve empty connector identifier reference");
+    }
+    return getIdentifierRef(scopedConnectorIdentifierRef, accountId, orgIdentifier, projectIdentifier);
   }
 
   public IdentifierRef getIdentifierRef(
@@ -54,8 +142,9 @@ public class IdentifierRefHelper {
     }
 
     if (isEmpty(scopedIdentifierConfig)) {
-      throw new InvalidIdentifierRefException("Empty identifier ref cannot be given");
+      throw new InvalidIdentifierRefException("Empty identifier values are not supported");
     }
+
     String[] identifierConfigStringSplit = scopedIdentifierConfig.split(IDENTIFIER_REF_DELIMITER);
 
     if (identifierConfigStringSplit.length == 1) {
@@ -72,7 +161,8 @@ public class IdentifierRefHelper {
       scope = getScope(identifierConfigStringSplit[0]);
       identifierRefBuilder = identifierRefBuilder.identifier(identifier).scope(scope);
       if (scope == Scope.PROJECT || scope == null) {
-        throw new InvalidIdentifierRefException("Invalid Identifier Reference, Scope.PROJECT invalid.");
+        throw new InvalidIdentifierRefException(String.format(
+            "Invalid Identifier Reference %s. " + GENERIC_IDENTIFIER_REFERENCE_HELP, scopedIdentifierConfig));
       } else if (scope == Scope.ORG) {
         verifyFieldExistence(scope, accountId, orgIdentifier);
         return identifierRefBuilder.orgIdentifier(orgIdentifier).build();
@@ -80,7 +170,8 @@ public class IdentifierRefHelper {
       verifyFieldExistence(scope, accountId);
       return identifierRefBuilder.build();
     } else {
-      throw new InvalidIdentifierRefException("Invalid Identifier Reference.");
+      throw new InvalidIdentifierRefException(String.format(
+          "Invalid Identifier Reference %s. " + GENERIC_IDENTIFIER_REFERENCE_HELP, scopedIdentifierConfig));
     }
   }
 
@@ -104,8 +195,21 @@ public class IdentifierRefHelper {
       verifyFieldExistence(scope, accountId, orgIdentifier, projectIdentifier);
       return identifierRefBuilder.orgIdentifier(orgIdentifier).projectIdentifier(projectIdentifier).build();
     } else {
-      throw new InvalidIdentifierRefException("Invalid Identifier Reference.");
+      throw new InvalidIdentifierRefException(
+          String.format("Invalid Identifier Reference %s. " + GENERIC_IDENTIFIER_REFERENCE_HELP, identifier));
     }
+  }
+
+  public IdentifierRef getIdentifierRefOrThrowException(String scopedIdentifierConfig, String accountId,
+      String orgIdentifier, String projectIdentifier, String fieldName) {
+    return getIdentifierRefOrThrowException(
+        scopedIdentifierConfig, accountId, orgIdentifier, projectIdentifier, null, fieldName);
+  }
+
+  public IdentifierRef getIdentifierRefOrThrowException(String scopedIdentifierConfig, String accountId,
+      String orgIdentifier, String projectIdentifier, Map<String, String> metadata, String fieldName) {
+    validateEntityScopes(accountId, orgIdentifier, projectIdentifier, scopedIdentifierConfig, fieldName);
+    return getIdentifierRef(scopedIdentifierConfig, accountId, orgIdentifier, projectIdentifier, metadata);
   }
 
   public IdentifierRef getIdentifierRefFromEntityIdentifiers(
@@ -147,10 +251,12 @@ public class IdentifierRefHelper {
       identifier = identifierConfigStringSplit[1];
       Scope scope = getScope(identifierConfigStringSplit[0]);
       if (scope == Scope.PROJECT || scope == null) {
-        throw new InvalidIdentifierRefException("Invalid Identifier Reference, Scope.PROJECT invalid.");
+        throw new InvalidIdentifierRefException(
+            "Invalid Identifier Reference, Scope.PROJECT invalid." + GENERIC_IDENTIFIER_REFERENCE_HELP);
       }
     } else {
-      throw new InvalidIdentifierRefException("Invalid Identifier Reference.");
+      throw new InvalidIdentifierRefException(String.format(
+          "Invalid Identifier Reference %s. " + GENERIC_IDENTIFIER_REFERENCE_HELP, scopedIdentifierConfig));
     }
     return identifier;
   }

@@ -118,11 +118,12 @@ public class EC2MetricHelper {
       });
     }
 
-    log.debug("metricDataResultMap = {}", metricDataResultMap);
+    log.info("metricDataResultMap: {}", metricDataResultMap);
     List<Ec2UtilzationData> utilizationMetrics = new ArrayList<>();
     for (AWSEC2Details instance : uniqueInstances) {
       utilizationMetrics.add(extractMetricResult(metricDataResultMap, instance.getInstanceId()));
     }
+    log.info("utilizationMetrics: {}", utilizationMetrics);
     return utilizationMetrics;
   }
 

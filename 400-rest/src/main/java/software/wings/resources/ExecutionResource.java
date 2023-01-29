@@ -8,6 +8,7 @@
 package software.wings.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.SPG_WFE_PROJECTIONS_DEPLOYMENTS_PAGE;
 import static io.harness.beans.SearchFilter.Operator.GE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -58,7 +59,6 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.approval.ApproveAndRejectPreviousDeploymentsBody;
 import software.wings.beans.approval.PreviousApprovalDetails;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.baseline.WorkflowExecutionBaseline;
 import software.wings.beans.concurrency.ConcurrentExecutionResponse;
 import software.wings.beans.deployment.DeploymentMetadata;
@@ -66,6 +66,7 @@ import software.wings.beans.deployment.WorkflowVariablesMetadata;
 import software.wings.beans.execution.WorkflowExecutionInfo;
 import software.wings.features.DeploymentHistoryFeature;
 import software.wings.features.api.RestrictedFeature;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.UserThreadLocal;
@@ -86,6 +87,7 @@ import software.wings.sm.states.ApprovalState.ApprovalStateType;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
@@ -124,6 +126,10 @@ public class ExecutionResource {
   @Inject private WorkflowExecutionTimeFilterHelper workflowExecutionTimeFilterHelper;
   @Inject private WorkflowExecutionOptimizationHelper workflowExecutionOptimizationHelper;
   private static final String EXECUTION_DOES_NOT_EXIST = "No workflow execution exists for id: ";
+  public static List<String> nonRequiredFields = ImmutableList.of(WorkflowExecutionKeys.awsLambdaExecutionSummaries,
+      WorkflowExecutionKeys.buildExecutionSummaries, WorkflowExecutionKeys.deployedCloudProviders,
+      WorkflowExecutionKeys.helmExecutionSummary, WorkflowExecutionKeys.keywords, WorkflowExecutionKeys.isBaseline,
+      WorkflowExecutionKeys.message, WorkflowExecutionKeys.cdPageCandidate);
 
   /**
    * List.
@@ -196,6 +202,10 @@ public class ExecutionResource {
     pageRequest.setOptions(options);
     // We will ask for one more than limit, and if its not exactly one more, we know we are at the end of the list.
     pageRequest.setLimit(Integer.toString(Integer.parseInt(pageRequest.getLimit()) + 1));
+
+    if (featureFlagService.isEnabled(SPG_WFE_PROJECTIONS_DEPLOYMENTS_PAGE, accountId)) {
+      pageRequest.setFieldsExcluded(nonRequiredFields);
+    }
 
     PageResponse<WorkflowExecution> workflowExecutions =
         workflowExecutionService.listExecutions(pageRequest, includeGraph, true, true, false, true, true);

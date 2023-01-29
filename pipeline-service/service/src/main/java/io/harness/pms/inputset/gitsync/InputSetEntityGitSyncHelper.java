@@ -13,8 +13,8 @@ import static java.lang.String.format;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EntityReference;
 import io.harness.beans.InputSetReference;
-import io.harness.common.EntityReference;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
 import io.harness.exception.InvalidRequestException;
@@ -24,8 +24,6 @@ import io.harness.gitsync.FullSyncChangeSet;
 import io.harness.gitsync.ScopeDetails;
 import io.harness.gitsync.entityInfo.AbstractGitSdkEntityHandler;
 import io.harness.gitsync.entityInfo.GitSdkEntityHandlerInterface;
-import io.harness.gitsync.helpers.GitContextHelper;
-import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.grpc.utils.StringValueUtils;
@@ -82,18 +80,14 @@ public class InputSetEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Inp
   @Override
   public InputSetYamlDTO save(String accountIdentifier, String yaml) {
     InputSetEntity initEntity = PMSInputSetElementMapper.toInputSetEntity(accountIdentifier, yaml);
-    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-    InputSetEntity savedEntity =
-        pmsInputSetService.create(initEntity, gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId());
+    InputSetEntity savedEntity = pmsInputSetService.create(initEntity, false);
     return InputSetYamlDTOMapper.toDTO(savedEntity);
   }
 
   @Override
   public InputSetYamlDTO update(String accountIdentifier, String yaml, ChangeType changeType) {
     InputSetEntity inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(accountIdentifier, yaml);
-    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-    InputSetEntity updatedEntity = pmsInputSetService.update(
-        inputSetEntity, changeType, gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId());
+    InputSetEntity updatedEntity = pmsInputSetService.update(changeType, inputSetEntity, false);
     return InputSetYamlDTOMapper.toDTO(updatedEntity);
   }
 

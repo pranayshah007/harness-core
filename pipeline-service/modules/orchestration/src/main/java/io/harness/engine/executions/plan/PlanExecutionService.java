@@ -15,16 +15,20 @@ import io.harness.execution.PlanExecution;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import lombok.NonNull;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PIPELINE)
 public interface PlanExecutionService extends NodeStatusUpdateObserver {
+  PlanExecution updateStatusForceful(@NonNull String planExecutionId, @NonNull Status status, Consumer<Update> ops,
+      boolean forced, EnumSet<Status> allowedStartStatuses);
   PlanExecution updateStatus(@NonNull String planExecutionId, @NonNull Status status);
-
+  PlanExecution markPlanExecutionErrored(String planExecutionId);
   PlanExecution updateStatus(@NonNull String planExecutionId, @NonNull Status status, Consumer<Update> ops);
 
   PlanExecution updateStatusForceful(
@@ -58,11 +62,19 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
 
   List<PlanExecution> findByStatusWithProjections(Set<Status> statuses, Set<String> fieldNames);
 
+  /**
+   * Fetches all planExecutions entries with given status with fieldsToBeIncluded as projections from analytics node
+   * Uses - status_idx index
+   * @param statuses
+   * @param fieldNames
+   * @return
+   */
+  CloseableIterator<PlanExecution> fetchPlanExecutionsByStatus(Set<Status> statuses, Set<String> fieldNames);
+
   List<PlanExecution> findAllByAccountIdAndOrgIdAndProjectIdAndLastUpdatedAtInBetweenTimestamps(
       String accountId, String orgId, String projectId, long startTS, long endTS);
 
-  long countRunningExecutionsForGivenPipeline(
-      String accountId, String orgId, String projectId, String pipelineIdentifier);
+  long countRunningExecutionsForGivenPipelineInAccount(String accountId, String pipelineIdentifier);
 
-  PlanExecution findNextExecutionToRun(String accountId, String orgId, String projectId, String pipelineIdentifier);
+  PlanExecution findNextExecutionToRunInAccount(String accountId);
 }

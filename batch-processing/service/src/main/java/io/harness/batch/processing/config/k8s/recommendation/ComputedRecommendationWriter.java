@@ -31,6 +31,7 @@ import io.harness.ccm.commons.dao.recommendation.RecommendationCrudService;
 import io.harness.ccm.commons.entities.k8s.K8sWorkload;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendation;
 import io.harness.ccm.commons.entities.k8s.recommendation.PartialRecommendationHistogram;
+import io.harness.ccm.graphql.core.recommendation.RecommendationsIgnoreListService;
 import io.harness.histogram.Histogram;
 
 import software.wings.graphql.datafetcher.ce.recommendation.entity.ContainerRecommendation;
@@ -75,19 +76,21 @@ class ComputedRecommendationWriter implements ItemWriter<K8sWorkloadRecommendati
   private final K8sLabelServiceInfoFetcher k8sLabelServiceInfoFetcher;
   private final RecommendationCrudService recommendationCrudService;
   private final ClusterHelper clusterHelper;
+  private final RecommendationsIgnoreListService ignoreListService;
 
   private final Instant jobStartDate;
 
   ComputedRecommendationWriter(WorkloadRecommendationDao workloadRecommendationDao,
       WorkloadCostService workloadCostService, WorkloadRepository workloadRepository,
       K8sLabelServiceInfoFetcher k8sLabelServiceInfoFetcher, RecommendationCrudService recommendationCrudService,
-      ClusterHelper clusterHelper, Instant jobStartDate) {
+      ClusterHelper clusterHelper, RecommendationsIgnoreListService ignoreListService, Instant jobStartDate) {
     this.workloadRecommendationDao = workloadRecommendationDao;
     this.workloadCostService = workloadCostService;
     this.workloadRepository = workloadRepository;
     this.k8sLabelServiceInfoFetcher = k8sLabelServiceInfoFetcher;
     this.recommendationCrudService = recommendationCrudService;
     this.clusterHelper = clusterHelper;
+    this.ignoreListService = ignoreListService;
     this.jobStartDate = jobStartDate;
   }
 
@@ -235,6 +238,9 @@ class ComputedRecommendationWriter implements ItemWriter<K8sWorkloadRecommendati
 
       final String clusterName = clusterHelper.fetchClusterName(workloadId.getClusterId());
       recommendationCrudService.upsertWorkloadRecommendation(uuid, workloadId, clusterName, recommendation);
+
+      ignoreListService.updateWorkloadRecommendationState(uuid, recommendation.getAccountId(), clusterName,
+          recommendation.getNamespace(), recommendation.getWorkloadName());
     }
   }
 

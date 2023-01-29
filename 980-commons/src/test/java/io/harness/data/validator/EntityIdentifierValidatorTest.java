@@ -9,6 +9,7 @@ package io.harness.data.validator;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.validator.EntityIdentifierValidator.NOT_ALLOWED_WORDS;
+import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 import static io.harness.rule.OwnerRule.SHREYAS;
 import static io.harness.rule.OwnerRule.VIKAS;
@@ -22,7 +23,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
+import java.lang.annotation.Annotation;
 import java.util.Random;
+import java.util.regex.Pattern;
+import javax.validation.Payload;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
@@ -44,6 +48,11 @@ public class EntityIdentifierValidatorTest extends CategoryTest {
   @Builder
   static class EntityScopedIdentifierValidatorTestStructure {
     @EntityIdentifier(allowScoped = true) String identifier;
+  }
+
+  @Builder
+  static class CustomLengthEntityIdentifierValidator {
+    @EntityIdentifier(maxLength = 128) String identifier;
   }
 
   @Before
@@ -85,8 +94,9 @@ public class EntityIdentifierValidatorTest extends CategoryTest {
         validator.validate(EntityIdentifierValidatorTestStructure.builder().build()).size());
 
     EntityIdentifierValidator entityIdentifierValidator = new EntityIdentifierValidator();
+    entityIdentifierValidator.identifierPattern = Pattern.compile("^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$");
     for (int i = 0; i < 5000; i++) {
-      String identifier = generateRandomAsciiString();
+      String identifier = generateRandomAsciiString(100);
       int violationsCount =
           validator.validate(EntityIdentifierValidatorTestStructure.builder().identifier(identifier).build()).size();
       if (isValidEntityIdentifier(identifier, entityIdentifierValidator)) {
@@ -114,9 +124,74 @@ public class EntityIdentifierValidatorTest extends CategoryTest {
             .size());
   }
 
-  private static String generateRandomAsciiString() {
-    String random = RandomStringUtils.randomAscii(100);
-    return random.substring(0, new Random().nextInt(100));
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void testEntityIdentifierValidatorWithCustomMaxLength() {
+    assertEquals("Null identifier should not be allowed", 1,
+        validator.validate(CustomLengthEntityIdentifierValidator.builder().build()).size());
+
+    EntityIdentifierValidator entityIdentifierValidator = new EntityIdentifierValidator();
+    CustomEntityIdentifier customEntityIdentifier = new CustomEntityIdentifier(128);
+    entityIdentifierValidator.initialize(customEntityIdentifier);
+    for (int i = 0; i < 5000; i++) {
+      String identifier = generateRandomAsciiString(200);
+      int violationsCount =
+          validator.validate(CustomLengthEntityIdentifierValidator.builder().identifier(identifier).build()).size();
+      if (isValidEntityIdentifier(identifier, entityIdentifierValidator)) {
+        assertEquals("identifier : " + identifier, 0, violationsCount);
+      } else {
+        assertTrue("identifier : " + identifier, violationsCount > 0);
+      }
+    }
+  }
+
+  class CustomEntityIdentifier implements EntityIdentifier {
+    int maxLength;
+
+    CustomEntityIdentifier(int maxLength) {
+      this.maxLength = maxLength;
+    }
+
+    @Override
+    public String message() {
+      return null;
+    }
+
+    @Override
+    public Class<?>[] groups() {
+      return new Class[0];
+    }
+
+    @Override
+    public Class<? extends Payload>[] payload() {
+      return new Class[0];
+    }
+
+    @Override
+    public boolean allowBlank() {
+      return false;
+    }
+
+    @Override
+    public boolean allowScoped() {
+      return false;
+    }
+
+    @Override
+    public int maxLength() {
+      return this.maxLength;
+    }
+
+    @Override
+    public Class<? extends Annotation> annotationType() {
+      return EntityIdentifier.class;
+    }
+  }
+
+  private static String generateRandomAsciiString(int maxLength) {
+    String random = RandomStringUtils.randomAscii(maxLength);
+    return random.substring(0, new Random().nextInt(maxLength));
   }
 
   private static boolean isValidEntityIdentifier(

@@ -23,6 +23,7 @@ import (
 	"github.com/harness/harness-core/product/log-service/stream"
 	"github.com/harness/harness-core/product/log-service/stream/memory"
 	"github.com/harness/harness-core/product/log-service/stream/redis"
+	"github.com/harness/harness-core/product/platform/client"
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -94,19 +95,20 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 	// create the stream server.
 	var stream stream.Stream
 	if config.Redis.Endpoint != "" {
-		stream = redis.New(config.Redis.Endpoint, config.Redis.Password, config.Redis.SSLEnabled, config.Redis.CertPath)
+		stream = redis.New(config.Redis.Endpoint, config.Redis.Password, config.Redis.SSLEnabled, config.Redis.DisableExpiryWatcher, config.Redis.CertPath)
 		logrus.Infof("configuring log stream to use Redis: %s", config.Redis.Endpoint)
 	} else {
 		// create the in-memory stream
 		stream = memory.New()
 		logrus.Infoln("configuring log stream to use in-memory stream")
 	}
+	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
 
 	// create the http server.
 	server := server.Server{
 		Acme:    config.Server.Acme,
 		Addr:    config.Server.Bind,
-		Handler: handler.Handler(stream, store, config),
+		Handler: handler.Handler(stream, store, config, ngClient),
 	}
 
 	// trap the os signal to gracefully shutdown the

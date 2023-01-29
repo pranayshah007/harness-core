@@ -19,14 +19,11 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import java.util.Set;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeExecutionMonitorServiceImpl implements NodeExecutionMonitorService {
@@ -35,25 +32,14 @@ public class NodeExecutionMonitorServiceImpl implements NodeExecutionMonitorServ
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private MetricService metricService;
 
-  private static int MAX_NODES_BATCH_SIZE = 1000;
-
   @Override
   public void registerActiveExecutionMetrics() {
-    int currentPage = 0;
-    int totalPages = 0;
-
     Map<PipelineExecutionMetric, Integer> metricMap = new HashMap<>();
-    do {
-      List<NodeExecution> allExecutions = new LinkedList<>();
-      Page<NodeExecution> paginatedNodeExecutions =
-          nodeExecutionService.fetchAllNodeExecutionsByStatus(StatusUtils.activeStatuses(),
-              ImmutableSet.of(NodeExecutionKeys.ambiance), PageRequest.of(currentPage, MAX_NODES_BATCH_SIZE));
-      if (paginatedNodeExecutions == null || paginatedNodeExecutions.getTotalElements() == 0) {
-        break;
-      }
-
-      allExecutions.addAll(new LinkedList<>(paginatedNodeExecutions.getContent()));
-      for (NodeExecution nodeExecution : allExecutions) {
+    try (CloseableIterator<NodeExecution> iterator =
+             nodeExecutionService.fetchAllNodeExecutionsByStatusIteratorFromAnalytics(
+                 StatusUtils.activeStatuses(), Set.of(NodeExecutionKeys.ambiance))) {
+      while (iterator.hasNext()) {
+        NodeExecution nodeExecution = iterator.next();
         PipelineExecutionMetric pipelineExecutionMetric =
             PipelineExecutionMetric.builder()
                 .accountId(nodeExecution.getAmbiance().getSetupAbstractionsMap().get(SetupAbstractionKeys.accountId))
@@ -61,9 +47,7 @@ public class NodeExecutionMonitorServiceImpl implements NodeExecutionMonitorServ
 
         metricMap.put(pipelineExecutionMetric, metricMap.getOrDefault(pipelineExecutionMetric, 0) + 1);
       }
-      totalPages = paginatedNodeExecutions.getTotalPages();
-      currentPage++;
-    } while (currentPage < totalPages);
+    }
 
     for (Map.Entry<PipelineExecutionMetric, Integer> entry : metricMap.entrySet()) {
       Map<String, String> metricContextMap =

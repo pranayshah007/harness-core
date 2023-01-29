@@ -18,18 +18,24 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.CategoryTest;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.gitops.steps.GitOpsEnvOutCome;
-import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.helpers.NgExpressionHelper;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
+import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.UUIDGenerator;
@@ -38,12 +44,12 @@ import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
-import io.harness.freeze.beans.PermissionTypes;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.yaml.FreezeConfig;
 import io.harness.freeze.beans.yaml.FreezeInfoConfig;
 import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
+import io.harness.freeze.notifications.NotificationHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -58,6 +64,9 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
@@ -83,6 +92,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -92,7 +102,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class ServiceStepV3Test {
+public class ServiceStepV3Test extends CategoryTest {
   @Mock private ServiceEntityService serviceEntityService;
   @Mock private EnvironmentService environmentService;
   @Mock private ServiceStepsHelper serviceStepsHelper;
@@ -103,6 +113,9 @@ public class ServiceStepV3Test {
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private FreezeEvaluateService freezeEvaluateService;
   @Mock private AccessControlClient accessControlClient;
+  @Mock private NotificationHelper notificationHelper;
+  @Mock private EngineExpressionService engineExpressionService;
+  @Mock private NgExpressionHelper ngExpressionHelper;
 
   private static final String ACCOUNT_ID = "accountId";
   private static final String PROJECT_ID = "projectId";
@@ -124,6 +137,10 @@ public class ServiceStepV3Test {
     doReturn(OptionalSweepingOutput.builder().found(false).build())
         .when(sweepingOutputService)
         .resolveOptional(any(Ambiance.class), any());
+
+    doReturn(AccessCheckResponseDTO.builder().accessControlList(List.of()).build())
+        .when(accessControlClient)
+        .checkForAccess(any(Principal.class), anyList());
   }
   @After
   public void tearDown() throws Exception {
@@ -285,6 +302,11 @@ public class ServiceStepV3Test {
     String inputYaml = "  serviceDefinition:\n"
         + "    type: \"Kubernetes\"\n"
         + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          spec:\n"
+        + "            tag: develop-1\n"
+        + "          type: DockerRegistry\n"
         + "      manifests:\n"
         + "      - manifest:\n"
         + "          identifier: \"m1\"\n"
@@ -306,7 +328,8 @@ public class ServiceStepV3Test {
             .build(),
         null);
 
-    verify(serviceStepsHelper).validateResources(any(Ambiance.class), any(NGServiceConfig.class));
+    verify(serviceStepsHelper)
+        .checkForVariablesAccessOrThrow(any(Ambiance.class), any(NGServiceConfig.class), anyString());
 
     ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
@@ -326,18 +349,82 @@ public class ServiceStepV3Test {
     NGServiceV2InfoConfig serviceConfig =
         YamlUtils.read(serviceSweepingOutput.getFinalServiceYaml(), NGServiceConfig.class).getNgServiceV2InfoConfig();
 
-    assertThat(((K8sManifest) serviceConfig.getServiceDefinition()
-                       .getServiceSpec()
-                       .getManifests()
-                       .get(0)
-                       .getManifest()
-                       .getSpec())
-                   .getValuesPaths()
-                   .getValue())
+    KubernetesServiceSpec spec = (KubernetesServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec();
+    assertThat(((K8sManifest) spec.getManifests().get(0).getManifest().getSpec()).getValuesPaths().getValue())
         .containsExactly("v1.yaml", "v2.yaml");
+    assertThat(((DockerHubArtifactConfig) spec.getArtifacts().getPrimary().getSpec()).getTag().getValue())
+        .isEqualTo("develop-1");
     assertThat(serviceSweepingOutput.getFinalServiceYaml().contains("<+input>")).isFalse();
   }
 
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void testMergeServiceInputsInputValidation() {
+    final ServiceEntity serviceEntity = testServiceEntityWithInputs();
+    final Environment environment = testEnvEntity();
+    String inputYaml = "  serviceDefinition:\n"
+        + "    type: \"Kubernetes\"\n"
+        + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          spec:\n"
+        + "            tag: xyz-1\n"
+        + "          type: DockerRegistry\n"
+        + "      manifests:\n"
+        + "      - manifest:\n"
+        + "          identifier: \"m1\"\n"
+        + "          type: \"K8sManifest\"\n"
+        + "          spec:\n"
+        + "            valuesPaths:\n"
+        + "               - v1.yaml\n"
+        + "               - v2.yaml";
+
+    mockService(serviceEntity);
+    mockEnv(environment);
+
+    Assertions.assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(()
+                        -> step.obtainChildren(buildAmbiance(),
+                            ServiceStepV3Parameters.builder()
+                                .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
+                                .envRef(ParameterField.createValueField(environment.getIdentifier()))
+                                .inputs(ParameterField.createValueField(YamlUtils.read(inputYaml, Map.class)))
+                                .childrenNodeIds(new ArrayList<>())
+                                .build(),
+                            null))
+        .withMessageContaining("The value provided xyz-1 does not match the required regex pattern");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void testMergeEnvInputsValidation() {
+    final ServiceEntity serviceEntity = testServiceEntity();
+    final Environment environment = testEnvEntityWithInputs();
+
+    String inputYaml = " identifier: envId\n"
+        + " type: Production\n"
+        + " variables:\n"
+        + "   - name: numbervar\n"
+        + "     type: Number\n"
+        + "     value: 7";
+
+    mockService(serviceEntity);
+    mockEnv(environment);
+
+    Assertions.assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(()
+                        -> step.obtainChildren(buildAmbiance(),
+                            ServiceStepV3Parameters.builder()
+                                .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
+                                .envRef(ParameterField.createValueField(environment.getIdentifier()))
+                                .envInputs(ParameterField.createValueField(YamlUtils.read(inputYaml, Map.class)))
+                                .childrenNodeIds(new ArrayList<>())
+                                .build(),
+                            null))
+        .withMessageContaining("The value provided 7 does not match any of the allowed values [5,6]");
+  }
   @Test
   @Owner(developers = OwnerRule.ROHITKARELIA)
   @Category(UnitTests.class)
@@ -544,8 +631,8 @@ public class ServiceStepV3Test {
     doReturn(freezeSummaryResponseDTOList)
         .when(freezeEvaluateService)
         .anyGlobalFreezeActive(anyString(), anyString(), anyString());
-    when(accessControlClient.hasAccess(ResourceScope.of(anyString(), anyString(), anyString()),
-             Resource.of("DEPLOYMENTFREEZE", null), PermissionTypes.DEPLOYMENT_FREEZE_MANAGE_PERMISSION))
+    when(
+        accessControlClient.hasAccess(any(Principal.class), any(ResourceScope.class), any(Resource.class), anyString()))
         .thenReturn(false);
     Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
 
@@ -575,8 +662,8 @@ public class ServiceStepV3Test {
     doReturn(freezeSummaryResponseDTOList)
         .when(freezeEvaluateService)
         .anyGlobalFreezeActive(anyString(), anyString(), anyString());
-    when(accessControlClient.hasAccess(ResourceScope.of(anyString(), anyString(), anyString()),
-             Resource.of("DEPLOYMENTFREEZE", null), PermissionTypes.DEPLOYMENT_FREEZE_MANAGE_PERMISSION))
+    when(
+        accessControlClient.hasAccess(any(Principal.class), any(ResourceScope.class), any(Resource.class), anyString()))
         .thenReturn(false);
     Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
 
@@ -592,13 +679,15 @@ public class ServiceStepV3Test {
   @Test
   @Owner(developers = OwnerRule.ABHINAV_MITTAL)
   @Category(UnitTests.class)
-  public void testExecuteFreezePartIfOverrideFreezE() {
+  public void testExecuteFreezePartIfOverrideFreeze() {
     doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
     List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = Lists.newArrayList(createGlobalFreezeResponse());
     doReturn(freezeSummaryResponseDTOList)
         .when(freezeEvaluateService)
         .anyGlobalFreezeActive(anyString(), anyString(), anyString());
-    when(accessControlClient.hasAccess(any(ResourceScope.class), any(Resource.class), anyString())).thenReturn(true);
+    when(
+        accessControlClient.hasAccess(any(Principal.class), any(ResourceScope.class), any(Resource.class), anyString()))
+        .thenReturn(true);
     Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
 
     ChildrenExecutableResponse childrenExecutableResponse = step.executeFreezePart(buildAmbiance(), entityMap);
@@ -657,18 +746,25 @@ public class ServiceStepV3Test {
 
   private ServiceEntity testServiceEntityWithInputs() {
     String serviceYaml = "service:\n"
-        + "  name: \"service-name\"\n"
-        + "  identifier: \"service-id\"\n"
+        + "  name: service-name\n"
+        + "  identifier: service-id\n"
         + "  serviceDefinition:\n"
-        + "    type: \"Kubernetes\"\n"
+        + "    type: Kubernetes\n"
         + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          spec:\n"
+        + "            connectorRef: account.docker\n"
+        + "            imagePath: library/nginx\n"
+        + "            tag: <+input>.regex(develop.*)\n"
+        + "          type: DockerRegistry\n"
         + "      manifests:\n"
         + "      - manifest:\n"
-        + "          identifier: \"m1\"\n"
-        + "          type: \"K8sManifest\"\n"
+        + "          identifier: m1\n"
+        + "          type: K8sManifest\n"
         + "          spec:\n"
         + "            store: {}\n"
-        + "            valuesPaths: \"<+input>\"";
+        + "            valuesPaths: <+input>";
     return ServiceEntity.builder()
         .accountId("accountId")
         .orgIdentifier("orgId")
@@ -694,6 +790,31 @@ public class ServiceStepV3Test {
         + "    - name: numbervar\n"
         + "      type: Number\n"
         + "      value: 5";
+    return Environment.builder()
+        .accountId("accountId")
+        .orgIdentifier("orgId")
+        .projectIdentifier("projectId")
+        .identifier("envId")
+        .name("developmentEnv")
+        .type(EnvironmentType.Production)
+        .yaml(yaml)
+        .build();
+  }
+
+  private Environment testEnvEntityWithInputs() {
+    String yaml = "environment:\n"
+        + "  name: developmentEnv\n"
+        + "  identifier: envId\n"
+        + "  type: Production\n"
+        + "  orgIdentifier: orgId\n"
+        + "  projectIdentifier: projectId\n"
+        + "  variables:\n"
+        + "    - name: stringvar\n"
+        + "      type: String\n"
+        + "      value: envvalue\n"
+        + "    - name: numbervar\n"
+        + "      type: Number\n"
+        + "      value: <+input>.allowedValues(5,6)";
     return Environment.builder()
         .accountId("accountId")
         .orgIdentifier("orgId")
@@ -758,6 +879,12 @@ public class ServiceStepV3Test {
             Map.of("accountId", "ACCOUNT_ID", "projectIdentifier", "PROJECT_ID", "orgIdentifier", "ORG_ID"))
         .addAllLevels(levels)
         .setExpressionFunctorToken(1234L)
+        .setMetadata(ExecutionMetadata.newBuilder()
+                         .setPrincipalInfo(ExecutionPrincipalInfo.newBuilder()
+                                               .setPrincipal("prinicipal")
+                                               .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)
+                                               .build())
+                         .build())
         .build();
   }
 

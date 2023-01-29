@@ -61,6 +61,8 @@ import software.wings.service.intfc.UserService;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.morphia.Morphia;
+import dev.morphia.annotations.Entity;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -71,8 +73,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.annotations.Entity;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 

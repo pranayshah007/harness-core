@@ -45,8 +45,10 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -57,6 +59,7 @@ public class ScmFetchFilesHelperNG {
   @Inject private ScmDelegateClient scmDelegateClient;
   @Inject private ScmServiceClient scmServiceClient;
   private static final List<String> ROOT_DIRECTORY_PATHS = Arrays.asList(".", "/");
+  private static final Pattern regexStartSlash = Pattern.compile("^/+");
 
   public FetchFilesResult fetchFilesFromRepoWithScm(
       GitStoreDelegateConfig gitStoreDelegateConfig, List<String> filePathList) {
@@ -70,12 +73,31 @@ public class ScmFetchFilesHelperNG {
         .build();
   }
 
-  public void downloadFilesUsingScm(
+  public FetchFilesResult fetchAnyFilesFromRepoWithScm(
+      GitStoreDelegateConfig gitStoreDelegateConfig, List<String> filePathList) {
+    boolean useBranch = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH;
+    List<GitFile> gitFiles = fetchAnyFilesFromRepo(useBranch, gitStoreDelegateConfig.getBranch(),
+        gitStoreDelegateConfig.getCommitId(), filePathList, gitStoreDelegateConfig.getGitConfigDTO());
+    return FetchFilesResult.builder()
+        .files(gitFiles)
+        .commitResult(
+            CommitResult.builder().commitId(useBranch ? "latest" : gitStoreDelegateConfig.getCommitId()).build())
+        .build();
+  }
+
+  public String downloadFilesUsingScm(
       String manifestFilesDirectory, GitStoreDelegateConfig gitStoreDelegateConfig, LogCallback executionLogCallback) {
     String directoryPath = Paths.get(manifestFilesDirectory).toString();
+    Set<String> commitIds = new HashSet<>();
     gitStoreDelegateConfig.getPaths().forEach(filePath
-        -> downloadFilesForFilePath(
-            gitStoreDelegateConfig, filePath.replaceAll("^/+", ""), executionLogCallback, directoryPath));
+        -> commitIds.add(downloadFilesForFilePath(gitStoreDelegateConfig,
+            filePath.replaceAll(regexStartSlash.pattern(), ""), executionLogCallback, directoryPath)));
+
+    if (commitIds.size() > 1) {
+      log.warn("Found multiple commit ids: {}, expected only one", commitIds);
+    }
+
+    return commitIds.isEmpty() ? null : commitIds.iterator().next();
   }
 
   private List<GitFile> fetchFilesFromRepo(
@@ -105,6 +127,26 @@ public class ScmFetchFilesHelperNG {
     return gitFiles;
   }
 
+  private List<GitFile> fetchAnyFilesFromRepo(
+      boolean useBranch, String branch, String commitId, List<String> filePathList, ScmConnector scmConnector) {
+    FileContentBatchResponse fileBatchContentResponse =
+        fetchFilesByFilePaths(useBranch, branch, commitId, filePathList, scmConnector);
+
+    List<GitFile> gitFiles =
+        fileBatchContentResponse.getFileBatchContentResponse()
+            .getFileContentsList()
+            .stream()
+            .filter(fileContent -> fileContent.getStatus() == 200)
+            .map(fileContent
+                -> GitFile.builder().fileContent(fileContent.getContent()).filePath(fileContent.getPath()).build())
+            .collect(Collectors.toList());
+
+    if (isNotEmpty(gitFiles)) {
+      gitFiles.forEach(gitFile -> log.info("File fetched : " + gitFile.getFilePath()));
+    }
+    return gitFiles;
+  }
+
   private FileContentBatchResponse fetchFilesByFilePaths(
       boolean useBranch, String branch, String commitId, List<String> filePathList, ScmConnector scmConnector) {
     FileContentBatchResponse fileBatchContentResponse;
@@ -118,7 +160,7 @@ public class ScmFetchFilesHelperNG {
     return fileBatchContentResponse;
   }
 
-  private void downloadFilesForFilePath(GitStoreDelegateConfig gitStoreDelegateConfig, String filePath,
+  private String downloadFilesForFilePath(GitStoreDelegateConfig gitStoreDelegateConfig, String filePath,
       LogCallback executionLogCallback, String directoryPath) {
     FileContentBatchResponse fileBatchContentResponse = getFileContentBatchResponseByFolder(
         gitStoreDelegateConfig, Collections.singleton(filePath), gitStoreDelegateConfig.getGitConfigDTO());
@@ -158,6 +200,8 @@ public class ScmFetchFilesHelperNG {
     } catch (Exception ex) {
       executionLogCallback.saveExecutionLog(ExceptionUtils.getMessage(ex), ERROR, CommandExecutionStatus.FAILURE);
     }
+
+    return fileBatchContentResponse.getCommitId();
   }
 
   private void throwFailedToFetchFileException(

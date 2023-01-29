@@ -15,13 +15,13 @@ import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.Key;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * Migration script to set the field isDeleted as false for all active instances.

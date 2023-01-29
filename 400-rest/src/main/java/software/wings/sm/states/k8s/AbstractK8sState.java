@@ -10,6 +10,7 @@ package software.wings.sm.states.k8s;
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.BIND_CUSTOM_VALUE_AND_MANIFEST_FETCH_TASK;
+import static io.harness.beans.FeatureName.CDP_SKIP_DEFAULT_VALUES_YAML_CG;
 import static io.harness.beans.FeatureName.KUSTOMIZE_PATCHES_CG;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
 import static io.harness.beans.FeatureName.OVERRIDE_VALUES_YAML_FROM_HELM_CHART;
@@ -84,6 +85,8 @@ import software.wings.api.k8s.K8sApplicationManifestSourceInfo;
 import software.wings.api.k8s.K8sCanaryDeleteServiceElement;
 import software.wings.api.k8s.K8sElement;
 import software.wings.api.k8s.K8sGitConfigMapInfo;
+import software.wings.api.k8s.K8sGitFetchInfo;
+import software.wings.api.k8s.K8sGitInfo;
 import software.wings.api.k8s.K8sHelmDeploymentElement;
 import software.wings.api.k8s.K8sStateExecutionData;
 import software.wings.beans.Activity;
@@ -104,7 +107,6 @@ import software.wings.beans.TaskType;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.CommandUnitDetails.CommandUnitType;
 import software.wings.beans.infrastructure.instance.Instance;
@@ -126,6 +128,7 @@ import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
 import software.wings.helpers.ext.kustomize.KustomizeConfig;
 import software.wings.helpers.ext.kustomize.KustomizeHelper;
 import software.wings.helpers.ext.openshift.OpenShiftManagerService;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.ContainerServiceParams;
 import software.wings.service.impl.GitConfigHelperService;
 import software.wings.service.impl.GitFileConfigHelperService;
@@ -275,6 +278,8 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
       case Remote:
       case HelmSourceRepo:
         prepareRemoteDelegateManifestConfig(context, appManifest, manifestConfigBuilder);
+        manifestConfigBuilder.skipApplyHelmDefaultValues(
+            featureFlagService.isEnabled(CDP_SKIP_DEFAULT_VALUES_YAML_CG, context.getAccountId()));
         break;
 
       case HelmChartRepo:
@@ -284,6 +289,8 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
             appManifestWithChartRepoOverrideApplied == null ? appManifest : appManifestWithChartRepoOverrideApplied;
         manifestConfigBuilder.helmChartConfigParams(
             helmChartConfigHelperService.getHelmChartConfigTaskParams(context, appManifest));
+        manifestConfigBuilder.skipApplyHelmDefaultValues(
+            featureFlagService.isEnabled(CDP_SKIP_DEFAULT_VALUES_YAML_CG, context.getAccountId()));
         break;
 
       case CUSTOM:
@@ -428,6 +435,12 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
             .name(K8sGitConfigMapInfo.SWEEPING_OUTPUT_NAME_PREFIX + "-" + serviceId)
             .build();
     return (K8sGitConfigMapInfo) sweepingOutputService.findSweepingOutput(sweepingOutputInquiry);
+  }
+
+  private K8sGitFetchInfo fetchK8sGitCommitInfo(ExecutionContext context) {
+    SweepingOutputInquiry sweepingOutputInquiry =
+        context.prepareSweepingOutputInquiryBuilder().name(K8sGitFetchInfo.SWEEPING_OUTPUT_NAME_PREFIX).build();
+    return sweepingOutputService.findSweepingOutput(sweepingOutputInquiry);
   }
 
   protected K8sApplicationManifestSourceInfo fetchK8sApplicationManifestInfo(
@@ -940,6 +953,10 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
         applicationManifestUtils.getValuesFilesFromGitFetchFilesResponse(appManifestMap, executionResponse);
     k8sStateExecutionData.getValuesFiles().putAll(valuesFiles);
 
+    if (featureFlagService.isEnabled(FeatureName.CG_K8S_MANIFEST_COMMIT_VAR, context.getAccountId())) {
+      saveK8sGitCommitInfo(context, executionResponse.getFetchedCommitIdsMap());
+    }
+
     if (shouldSaveManifest(context)) {
       GitFetchFilesFromMultipleRepoResult gitCommandResult =
           (GitFetchFilesFromMultipleRepoResult) executionResponse.getGitCommandResult();
@@ -981,6 +998,24 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
                                                 .gitFetchFilesConfigMap(gitFetchFilesConfigMap)
                                                 .serviceId(serviceId)
                                                 .build())
+                                     .build());
+    }
+  }
+
+  private void saveK8sGitCommitInfo(ExecutionContext context, Map<String, String> gitFetchFilesConfigMap) {
+    if (isEmpty(gitFetchFilesConfigMap)) {
+      return;
+    }
+    Map<String, K8sGitInfo> variables = new HashMap<>();
+    K8sGitFetchInfo k8sGitFetchInfoOld = fetchK8sGitCommitInfo(context);
+    if (k8sGitFetchInfoOld == null) {
+      gitFetchFilesConfigMap.forEach(
+          (String keys, String values) -> { variables.put(keys, K8sGitInfo.builder().commitId(values).build()); });
+      K8sGitFetchInfo k8sGitFetchInfo = K8sGitFetchInfo.builder().build();
+      k8sGitFetchInfo.putAll(variables);
+      sweepingOutputService.save(context.prepareSweepingOutputBuilder(Scope.WORKFLOW)
+                                     .name(K8sGitFetchInfo.SWEEPING_OUTPUT_NAME_PREFIX)
+                                     .value(k8sGitFetchInfo)
                                      .build());
     }
   }

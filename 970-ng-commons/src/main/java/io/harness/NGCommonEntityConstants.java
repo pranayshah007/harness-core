@@ -49,6 +49,7 @@ public class NGCommonEntityConstants {
   public static final String LAST_DEPLOYED_AT = "lastDeployedAt";
   public static final String INPUT_SET_IDENTIFIER_KEY = "inputSetIdentifier";
   public static final String ENVIRONMENT_IDENTIFIER_KEY = "environmentIdentifier";
+  public static final String ENVIRONMENT_TYPE_KEY = "environmentType";
   public static final String STATUS = "status";
   public static final String MONGODB_ID = "_id";
   public static final String CONNECTOR_IDENTIFIER_KEY = "connectorIdentifier";
@@ -81,6 +82,8 @@ public class NGCommonEntityConstants {
   public static final String FILE_IDENTIFIER_KEY = "fileIdentifier";
   public static final Integer MAX_PAGE_SIZE = 10000;
   public static final String EXPIRY_TIME = "expiryTime";
+  public static final String SORT = "sort";
+  public static final String FILE_PATH_KEY = "path";
 
   // TODO(UTSAV): Move to ce-nextgen
   public static final String IS_EVENTS_ENABLED = "eventsEnabled";
@@ -110,6 +113,7 @@ public class NGCommonEntityConstants {
   public static final String FILE_TAGS_MESSAGE = "The File or Folder tags";
   public static final String FILE_CONTENT_MESSAGE = "The content of the File as InputStream";
   public static final String FILE_FILTER_PROPERTIES_MESSAGE = "Details of the File filter properties to be applied";
+  public static final String FILE_PATH_PARAM_MESSAGE = "The file path";
   public static final String FILTER_IDENTIFIER_MESSAGE = "Filter identifier";
   public static final String ENTITY_TYPE_MESSAGE = "Entity type";
   public static final String FOLDER_DETAILS_MESSAGE = "Folder details";
@@ -148,15 +152,14 @@ public class NGCommonEntityConstants {
   public static final String INFRA_IDENTIFIER = "infraIdentifier";
 
   public static final String CLUSTER_IDENTIFIER = "clusterIdentifier";
-
   public static final String INFRA = "infra";
   public static final String OVERRIDES_ONLY = "overridesOnly";
   public static final String RUNTIME_INPUTS_TEMPLATE = "Runtime inputs template YAML";
   public static final String ACCOUNT_SCOPED_REQUEST_NON_NULL_ORG_PROJECT =
       "Account scoped request is having non null org or project";
   public static final String ORG_SCOPED_REQUEST_NON_NULL_PROJECT = "Org scoped request is having non null project";
-  public static final String DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM =
-      "Request is having different slug in payload and param";
+  public static final String DIFFERENT_IDENTIFIER_IN_PAYLOAD_AND_PARAM =
+      "Request is having different identifier in payload and param";
   public static final String DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM =
       "Request is having different org in payload and param";
   public static final String DIFFERENT_PROJECT_IN_PAYLOAD_AND_PARAM =
@@ -164,7 +167,9 @@ public class NGCommonEntityConstants {
   public static final String JOB_NAME = "jobName";
   public static final String FQN_PATH = "fqnPath";
   public static final String ARTIFACT_PATH = "artifactPath";
+  public static final String ARTIFACT = "artifact";
   public static final String PARENT_JOB_NAME = "parentJobName";
   public static final String HARNESS_IMAGE = "harnessImage";
   public static final String METHOD_NAME = "methodName";
+  public static final String AGENT_KEY = "agentIdentifier";
 }

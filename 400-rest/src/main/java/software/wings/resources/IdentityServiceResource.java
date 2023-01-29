@@ -45,6 +45,7 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -141,12 +142,16 @@ public class IdentityServiceResource {
   @Path("/user")
   @Timed
   @ExceptionMetered
-  public RestResponse<User> getUser() {
+  public RestResponse<User> getUser(
+      @QueryParam("includeSupportAccounts") @DefaultValue("true") boolean includeSupportAccounts) {
     User user = UserThreadLocal.get();
     if (user == null) {
       throw new WingsException(USER_DOES_NOT_EXIST, USER);
     } else {
-      return new RestResponse<>(user.getPublicUser());
+      if (includeSupportAccounts) {
+        userService.loadSupportAccounts(user);
+      }
+      return new RestResponse<>(user.getPublicUser(includeSupportAccounts));
     }
   }
 
@@ -157,7 +162,10 @@ public class IdentityServiceResource {
   public RestResponse<User> signupOAuthUser(
       @NotNull OauthUserInfo oauthUserInfo, @QueryParam("provider") String oauthProviderName) {
     User user = userService.signUpUserUsingOauth(oauthUserInfo, oauthProviderName);
-    return new RestResponse<>(user.getPublicUser());
+    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      return new RestResponse<>(user.getPublicUser(true));
+    }
+    return new RestResponse<>(user.getPublicUser(false));
   }
 
   @GET

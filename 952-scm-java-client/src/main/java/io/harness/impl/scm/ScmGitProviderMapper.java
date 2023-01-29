@@ -232,7 +232,7 @@ public class ScmGitProviderMapper {
                                         .githubUrl(GitClientHelper.getGithubApiURL(githubConnector.getUrl()))
                                         .build());
     } catch (Exception ex) {
-      throw new InvalidArgumentsException("Failed to generate token for github connector via git hub app ");
+      throw new InvalidArgumentsException(ex.getMessage());
     }
   }
 

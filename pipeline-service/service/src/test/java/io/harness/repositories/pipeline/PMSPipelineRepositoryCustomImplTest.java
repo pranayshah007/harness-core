@@ -8,12 +8,15 @@
 package io.harness.repositories.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
+import static io.harness.pms.pipeline.MoveConfigOperationType.REMOTE_TO_INLINE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,6 +33,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmConflictException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -571,6 +575,45 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
+  public void
+  testFetchRemoteEntityWithRetryWhenDefaultFailsAndCreatedBranchNameIsDifferentDefaultBrancAndGitContextIsSet() {
+    // when fetch from the default branch fails and branch present in metadata are different from fetched branch
+    PipelineEntity remotePipelineFromDB = PipelineEntity.builder()
+                                              .accountId(accountIdentifier)
+                                              .orgIdentifier(orgIdentifier)
+                                              .projectIdentifier(projectIdentifier)
+                                              .identifier(pipelineId)
+                                              .storeType(StoreType.REMOTE)
+                                              .connectorRef(connectorRef)
+                                              .repo(repoName)
+                                              .filePath(filePath)
+                                              .build();
+    PipelineEntity remotePipelineWithYAML = remotePipelineFromDB.withYaml(pipelineYaml);
+
+    String fallBackBranch = "main-patch1";
+    PipelineMetadataV2 pipelineMetadataV2 =
+        PipelineMetadataV2.builder()
+            .entityGitDetails(EntityGitDetails.builder().branch(fallBackBranch).build())
+            .build();
+    Optional<PipelineMetadataV2> pipelineMetadataV2Mock = Optional.of(pipelineMetadataV2);
+    doReturn(pipelineMetadataV2Mock).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
+
+    PipelineEntity pipelineEntity = PipelineEntity.builder().build();
+    doThrow(new ScmBadRequestException(scmBadRequest))
+        .doReturn(remotePipelineWithYAML)
+        .when(gitAwareEntityHelper)
+        .fetchEntityFromRemote(any(), any(), any(), any());
+
+    pipelineRepository.fetchRemoteEntityWithFallBackBranch(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineEntity, branch, false);
+
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    verify(gitAwareEntityHelper, times(2)).fetchEntityFromRemote(any(), any(), any(), any());
+    assertEquals(fallBackBranch, gitEntityInfo.getBranch());
+  }
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
   public void testFetchRemoteEntityWithRetryWhenDefaultFailsAndNonDefaultFails() {
     // when fetch from default fails and branch present in metadata also fails
     PipelineEntity pipelineEntity = PipelineEntity.builder().build();
@@ -604,5 +647,75 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
 
     assertFalse(
         pipelineRepository.shouldRetryWithFallBackBranch(new ScmConflictException(scmBadRequest), branch, branch));
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineOperationsInlineToRemote() {
+    Criteria pipelineCriteria = new Criteria();
+    Update pipelineUpdate = new Update();
+    Criteria metadataCriteria = new Criteria();
+    Update metadataUpdate = new Update();
+
+    GitEntityInfo branchInfo = GitEntityInfo.builder()
+                                   .storeType(StoreType.REMOTE)
+                                   .connectorRef(connectorRef)
+                                   .repoName(repoName)
+                                   .branch(branch)
+                                   .filePath(filePath)
+                                   .build();
+    setupGitContext(branchInfo);
+    PipelineEntity pipelineToSave = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(pipelineId)
+                                        .yaml(pipelineYaml)
+                                        .build();
+
+    PipelineEntity pipelineToSaveWithStoreTypeWithExtraFields =
+        pipelineToSave.withStoreType(StoreType.INLINE).withVersion(0L);
+    doReturn(pipelineToSaveWithStoreTypeWithExtraFields)
+        .when(mongoTemplate)
+        .findAndModify(any(), any(), any(), any(Class.class));
+
+    PipelineEntity movedPipeline = pipelineRepository.moveConfigOperations(
+        pipelineToSave, pipelineUpdate, pipelineCriteria, metadataUpdate, metadataCriteria, INLINE_TO_REMOTE);
+    verify(gitAwareEntityHelper, times(1)).createEntityOnGit(pipelineToSave, pipelineYaml, scope);
+
+    verify(mongoTemplate, times(1)).findAndModify(any(), any(), any(), any(Class.class));
+    verify(pipelineMetadataService, times(1)).update(any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineOperationsRemoteToInline() {
+    Criteria pipelineCriteria = new Criteria();
+    Update pipelineUpdate = new Update();
+    Criteria metadataCriteria = new Criteria();
+    Update metadataUpdate = new Update();
+
+    PipelineEntity pipelineToSave = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(pipelineId)
+                                        .yaml(pipelineYaml)
+                                        .build();
+
+    PipelineEntity pipelineToSaveWithStoreTypeWithExtraFields =
+        pipelineToSave.withStoreType(StoreType.INLINE).withVersion(0L);
+    doReturn(pipelineToSaveWithStoreTypeWithExtraFields)
+        .when(mongoTemplate)
+        .findAndModify(any(), any(), any(), any(Class.class));
+
+    PipelineEntity movedPipeline = pipelineRepository.moveConfigOperations(
+        pipelineToSave, pipelineUpdate, pipelineCriteria, metadataUpdate, metadataCriteria, REMOTE_TO_INLINE);
+    verify(gitAwareEntityHelper, times(0)).createEntityOnGit(pipelineToSave, pipelineYaml, scope);
+
+    verify(mongoTemplate, times(1)).findAndModify(any(), any(), any(), any(Class.class));
+    verify(pipelineMetadataService, times(1)).update(any(), any());
   }
 }

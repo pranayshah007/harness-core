@@ -10,14 +10,22 @@ package io.harness.ngmigration.service.manifest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.NgEntityDetail;
 
+import software.wings.beans.GitFileConfig;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.StoreType;
+import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.google.inject.Inject;
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class NgManifestFactory {
   @Inject K8sManifestRemoteStoreService k8sManifestRemoteStoreService;
   @Inject K8sManifestHelmSourceRepoStoreService k8sManifestHelmSourceRepoStoreService;
@@ -79,5 +87,19 @@ public class NgManifestFactory {
         throw new InvalidRequestException(
             String.format("%s appManifestKind is currently not supported", appManifestKind));
     }
+  }
+
+  public static NgEntityDetail getGitConnector(
+      Map<CgEntityId, NGYamlFile> migratedEntities, ApplicationManifest applicationManifest) {
+    GitFileConfig gitFileConfig = applicationManifest.getGitFileConfig();
+    CgEntityId connectorId =
+        CgEntityId.builder().id(gitFileConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build();
+    if (!migratedEntities.containsKey(connectorId)) {
+      log.error(
+          String.format("We could not migrate the following manifest %s as we could not find the git connector %s",
+              applicationManifest.getUuid(), gitFileConfig.getConnectorId()));
+      return null;
+    }
+    return migratedEntities.get(connectorId).getNgEntityDetail();
   }
 }

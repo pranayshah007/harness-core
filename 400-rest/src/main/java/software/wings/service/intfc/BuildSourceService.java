@@ -19,7 +19,6 @@ import software.wings.beans.AzureImageDefinition;
 import software.wings.beans.AzureImageGallery;
 import software.wings.beans.AzureResourceGroup;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
@@ -27,6 +26,7 @@ import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
 import software.wings.helpers.ext.azure.devops.AzureDevopsProject;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.utils.RepositoryFormat;
 import software.wings.utils.RepositoryType;
 

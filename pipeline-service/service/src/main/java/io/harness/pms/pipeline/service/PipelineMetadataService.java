@@ -31,4 +31,16 @@ public interface PipelineMetadataService {
 
   Map<String, PipelineMetadataV2> getMetadataForGivenPipelineIds(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> identifiers);
+
+  /**
+   * Hard Deletes the pipeline metadata for given params for both PipelineMetadata and PipelineMetadataV2
+   * Ignores throwing the exception and only log it
+   * Uses - account_org_project_pipeline idx
+   * @param accountId
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param identifier
+   * @return
+   */
+  boolean deletePipelineMetadata(String accountId, String orgIdentifier, String projectIdentifier, String identifier);
 }

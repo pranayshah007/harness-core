@@ -10,8 +10,10 @@ package io.harness.delegate.beans.connector.scm.awscodecommit;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.awscodecommit.outcome.AwsCodeCommitConnectorOutcomeDTO;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 
@@ -85,12 +87,22 @@ public class AwsCodeCommitConnectorDTO extends ConnectorConfigDTO implements Scm
   }
 
   @Override
-  public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
+  public String getFileUrl(String branchName, String filePath, String commitId, GitRepositoryDTO gitRepositoryDTO) {
     return "";
   }
 
   @Override
   public void validate() {
     GitClientHelper.validateURL(url);
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return AwsCodeCommitConnectorOutcomeDTO.builder()
+        .type(this.urlType)
+        .url(this.url)
+        .authentication(this.authentication.toOutcome())
+        .delegateSelectors(this.delegateSelectors)
+        .build();
   }
 }

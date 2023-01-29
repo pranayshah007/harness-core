@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
+import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.utils.IdentifierRefHelper.IDENTIFIER_REF_DELIMITER;
 
 import static java.util.Objects.isNull;
@@ -25,6 +26,8 @@ import io.harness.logging.AutoLogContext;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.dto.OrganizationResponse;
+import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO.UserGroupFilterDTOBuilder;
@@ -33,10 +36,12 @@ import io.harness.ng.core.notification.SlackConfigDTO;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.Team;
 import io.harness.notification.channeldetails.EmailChannel;
+import io.harness.notification.channeldetails.MSTeamChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.channeldetails.SlackChannel;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.templates.PredefinedTemplate;
+import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.approval.notification.ApprovalSummary.ApprovalSummaryBuilder;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
@@ -47,6 +52,7 @@ import io.harness.pms.notification.NotificationHelper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
+import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
@@ -84,16 +90,21 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
   private final NotificationHelper notificationHelper;
   private final PMSExecutionService pmsExecutionService;
   private final LogStreamingStepClientFactory logStreamingStepClientFactory;
+  private final ProjectClient projectClient;
+  private final OrganizationClient organizationClient;
 
   @Inject
   public ApprovalNotificationHandlerImpl(@Named("PRIVILEGED") UserGroupClient userGroupClient,
       NotificationClient notificationClient, NotificationHelper notificationHelper,
-      PMSExecutionService pmsExecutionService, LogStreamingStepClientFactory logStreamingStepClientFactory) {
+      PMSExecutionService pmsExecutionService, LogStreamingStepClientFactory logStreamingStepClientFactory,
+      @Named("PRIVILEGED") OrganizationClient organizationClient, @Named("PRIVILEGED") ProjectClient projectClient) {
     this.userGroupClient = userGroupClient;
     this.notificationClient = notificationClient;
     this.notificationHelper = notificationHelper;
     this.pmsExecutionService = pmsExecutionService;
     this.logStreamingStepClientFactory = logStreamingStepClientFactory;
+    this.organizationClient = organizationClient;
+    this.projectClient = projectClient;
   }
 
   @Override
@@ -123,9 +134,14 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
       ApprovalSummaryBuilder approvalSummaryBuilder = ApprovalSummary.builder();
 
       ApprovalSummary approvalSummary =
-          approvalSummaryBuilder.pipelineName(pipelineExecutionSummaryEntity.getPipelineIdentifier())
-              .orgIdentifier(pipelineExecutionSummaryEntity.getOrgIdentifier())
-              .projectIdentifier(pipelineExecutionSummaryEntity.getProjectIdentifier())
+          approvalSummaryBuilder
+              .pipelineName(StringUtils.isEmpty(pipelineExecutionSummaryEntity.getName())
+                      ? pipelineExecutionSummaryEntity.getPipelineIdentifier()
+                      : pipelineExecutionSummaryEntity.getName())
+              .orgName(getOrganizationNameElseIdentifier(
+                  pipelineExecutionSummaryEntity.getOrgIdentifier(), pipelineExecutionSummaryEntity.getAccountId()))
+              .projectName(getProjectNameElseIdentifier(pipelineExecutionSummaryEntity.getProjectIdentifier(),
+                  pipelineExecutionSummaryEntity.getOrgIdentifier(), pipelineExecutionSummaryEntity.getAccountId()))
               .approvalMessage(approvalInstance.getApprovalMessage())
               .startedAt(formatTime(approvalInstance.getCreatedAt()))
               .expiresAt(formatTime(approvalInstance.getDeadline()))
@@ -223,6 +239,18 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
   private NotificationChannel getNotificationChannel(HarnessApprovalInstance instance,
       NotificationSettingConfigDTO notificationSettingConfig, UserGroupDTO userGroup,
       Map<String, String> templateData) {
+    if (isNull(userGroup)) {
+      return null;
+    }
+    NotificationRequest.UserGroup.Builder notifyUserGroupBuilder = NotificationRequest.UserGroup.newBuilder();
+    notifyUserGroupBuilder.setIdentifier(userGroup.getIdentifier());
+    if (isNotEmpty(userGroup.getOrgIdentifier())) {
+      notifyUserGroupBuilder.setOrgIdentifier(userGroup.getOrgIdentifier());
+    }
+    if (isNotEmpty(userGroup.getProjectIdentifier())) {
+      notifyUserGroupBuilder.setProjectIdentifier(userGroup.getProjectIdentifier());
+    }
+
     switch (notificationSettingConfig.getType()) {
       case SLACK:
         String slackTemplateId = instance.isIncludePipelineExecutionHistory()
@@ -240,16 +268,6 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
         String emailTemplateId = instance.isIncludePipelineExecutionHistory()
             ? PredefinedTemplate.HARNESS_APPROVAL_EXECUTION_NOTIFICATION_EMAIL.getIdentifier()
             : PredefinedTemplate.HARNESS_APPROVAL_NOTIFICATION_EMAIL.getIdentifier();
-        NotificationRequest.UserGroup.Builder notifyUserGroupBuilder = NotificationRequest.UserGroup.newBuilder();
-        if (userGroup != null) {
-          notifyUserGroupBuilder.setIdentifier(userGroup.getIdentifier());
-          if (isNotEmpty(userGroup.getOrgIdentifier())) {
-            notifyUserGroupBuilder.setOrgIdentifier(userGroup.getOrgIdentifier());
-          }
-          if (isNotEmpty(userGroup.getProjectIdentifier())) {
-            notifyUserGroupBuilder.setProjectIdentifier(userGroup.getProjectIdentifier());
-          }
-        }
 
         return EmailChannel.builder()
             .accountId(userGroup.getAccountIdentifier())
@@ -260,6 +278,20 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
             .recipients(Collections.emptyList())
             .build();
 
+      case MSTEAMS:
+        String msTeamsTemplateId = instance.isIncludePipelineExecutionHistory()
+            ? PredefinedTemplate.HARNESS_APPROVAL_EXECUTION_NOTIFICATION_MSTEAMS.getIdentifier()
+            : PredefinedTemplate.HARNESS_APPROVAL_NOTIFICATION_MSTEAMS.getIdentifier();
+
+        return MSTeamChannel.builder()
+            .msTeamKeys(Collections.emptyList())
+            .accountId(userGroup.getAccountIdentifier())
+            .team(Team.PIPELINE)
+            .templateData(templateData)
+            .templateId(msTeamsTemplateId)
+            .userGroups(new ArrayList<>(Collections.singleton(notifyUserGroupBuilder.build())))
+            .build();
+
       default:
         return null;
     }
@@ -267,18 +299,19 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
 
   private String getUser(Ambiance ambiance) {
     ExecutionTriggerInfo triggerInfo = ambiance.getMetadata().getTriggerInfo();
-    String triggeredBy = triggerInfo.getTriggeredBy().getIdentifier();
-    if (EmptyPredicate.isEmpty(triggeredBy)) {
-      triggeredBy = "Unknown";
+    String triggeredByUserId = triggerInfo.getTriggeredBy().getIdentifier();
+    String triggeredByUserEmail = triggerInfo.getTriggeredBy().getExtraInfoOrDefault("email", triggeredByUserId);
+    if (EmptyPredicate.isEmpty(triggeredByUserEmail)) {
+      triggeredByUserEmail = "Unknown";
     }
     switch (triggerInfo.getTriggerType()) {
       case WEBHOOK:
       case WEBHOOK_CUSTOM:
-        return triggeredBy + " (Webhook trigger)";
+        return triggeredByUserEmail + " (Webhook trigger)";
       case SCHEDULER_CRON:
-        return triggeredBy + " (Scheduled trigger)";
+        return triggeredByUserEmail + " (Scheduled trigger)";
       default:
-        return triggeredBy;
+        return triggeredByUserEmail;
     }
   }
 
@@ -355,6 +388,25 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
 
     return pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecutionId, false);
+  }
+
+  private String getOrganizationNameElseIdentifier(String orgIdentifier, String accountIdentifier) {
+    Optional<OrganizationResponse> orgResponse =
+        getResponse(organizationClient.getOrganization(orgIdentifier, accountIdentifier));
+    if (orgResponse.isPresent() && !StringUtils.isEmpty(orgResponse.get().getOrganization().getName())) {
+      return orgResponse.get().getOrganization().getName();
+    }
+    return orgIdentifier;
+  }
+
+  private String getProjectNameElseIdentifier(
+      String projectIdentifier, String orgIdentifier, String accountIdentifier) {
+    Optional<ProjectResponse> projectResponse =
+        getResponse(projectClient.getProject(projectIdentifier, accountIdentifier, orgIdentifier));
+    if (projectResponse.isPresent() && !StringUtils.isEmpty(projectResponse.get().getProject().getName())) {
+      return projectResponse.get().getProject().getName();
+    }
+    return projectIdentifier;
   }
 
   private static String formatTime(long epochMillis) {

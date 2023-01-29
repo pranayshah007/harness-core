@@ -1,3 +1,15 @@
+/*
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 # bucket for cloudfunctions zip storage
 resource "google_storage_bucket" "bucket1" {
   name = "ce-functions-deploy-${var.deployment}"
@@ -719,6 +731,90 @@ data "archive_file" "ce-azure-vm-inventory-metric-data" {
   }
 }
 
+data "archive_file" "ce-aws-historical-currency-update-bq" {
+  type        = "zip"
+  output_path = "${path.module}/files/ce-aws-historical-currency-update-bq.zip"
+  source {
+    content  = "${file("${path.module}/src/python/aws_currency_preference_historical_update.py")}"
+    filename = "main.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/util.py")}"
+    filename = "util.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/bq_schema.py")}"
+    filename = "bq_schema.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/requirements.txt")}"
+    filename = "requirements.txt"
+  }
+}
+
+data "archive_file" "ce-gcp-historical-currency-update-bq" {
+  type        = "zip"
+  output_path = "${path.module}/files/ce-gcp-historical-currency-update-bq.zip"
+  source {
+    content  = "${file("${path.module}/src/python/gcp_currency_preference_historical_update.py")}"
+    filename = "main.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/util.py")}"
+    filename = "util.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/bq_schema.py")}"
+    filename = "bq_schema.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/requirements.txt")}"
+    filename = "requirements.txt"
+  }
+}
+
+data "archive_file" "ce-azure-historical-currency-update-bq" {
+  type        = "zip"
+  output_path = "${path.module}/files/ce-azure-historical-currency-update-bq.zip"
+  source {
+    content  = "${file("${path.module}/src/python/azure_currency_preference_historical_update.py")}"
+    filename = "main.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/util.py")}"
+    filename = "util.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/bq_schema.py")}"
+    filename = "bq_schema.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/requirements.txt")}"
+    filename = "requirements.txt"
+  }
+}
+
+resource "google_storage_bucket_object" "ce-aws-historical-currency-update-bq-archive" {
+  name = "ce-aws-billing-bq.${data.archive_file.ce-aws-historical-currency-update-bq.output_md5}.zip"
+  bucket = "${google_storage_bucket.bucket1.name}"
+  source = "${path.module}/files/ce-aws-historical-currency-update-bq.zip"
+  depends_on = ["data.archive_file.ce-aws-historical-currency-update-bq"]
+}
+
+resource "google_storage_bucket_object" "ce-gcp-historical-currency-update-bq-archive" {
+  name = "ce-aws-billing-bq.${data.archive_file.ce-gcp-historical-currency-update-bq.output_md5}.zip"
+  bucket = "${google_storage_bucket.bucket1.name}"
+  source = "${path.module}/files/ce-gcp-historical-currency-update-bq.zip"
+  depends_on = ["data.archive_file.ce-gcp-historical-currency-update-bq"]
+}
+
+resource "google_storage_bucket_object" "ce-azure-historical-currency-update-bq-archive" {
+  name = "ce-azure-billing.${data.archive_file.ce-azure-historical-currency-update-bq.output_md5}.zip"
+  bucket = "${google_storage_bucket.bucket1.name}"
+  source = "${path.module}/files/ce-azure-historical-currency-update-bq.zip"
+  depends_on = ["data.archive_file.ce-azure-historical-currency-update-bq"]
+}
+
 resource "google_storage_bucket_object" "ce-clusterdata-archive" {
   name   = "ce-clusterdata.${data.archive_file.ce-clusterdata.output_md5}.zip"
   bucket = "${google_storage_bucket.bucket1.name}"
@@ -911,7 +1007,9 @@ resource "google_cloudfunctions_function" "ce-clusterdata-function" {
     region                    = "${var.region}"
     source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
     source_archive_object     = "${google_storage_bucket_object.ce-clusterdata-archive.name}"
-    environment_variables = {
+    max_instances             = 3000
+
+  environment_variables = {
       disabled = "false"
       disable_for_accounts = ""
       GCP_PROJECT = "${var.projectId}"
@@ -937,6 +1035,8 @@ resource "google_cloudfunctions_function" "ce-gcp-billing-bq-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-gcp-billing-bq-archive.name}"
+  max_instances             = 3000
+
   #labels = {
   #  deployment_name           = "test"
   #}
@@ -966,6 +1066,8 @@ resource "google_cloudfunctions_function" "ce-aws-billing-bq-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-aws-billing-bq-archive.name}"
+  max_instances             = 3000
+
   #labels = {
   #  deployment_name           = "test"
   #}
@@ -994,6 +1096,7 @@ resource "google_cloudfunctions_function" "ce-aws-billing-gcs-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-aws-billing-gcs-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1021,6 +1124,7 @@ resource "google_cloudfunctions_function" "ce-azure-billing-bq-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-azure-billing-bq-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1049,6 +1153,7 @@ resource "google_cloudfunctions_function" "ce-azure-billing-cost-bq-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-azure-billing-cost-bq-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1075,6 +1180,7 @@ resource "google_cloudfunctions_function" "ce-azure-billing-gcs-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-azure-billing-gcs-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1103,6 +1209,7 @@ resource "google_cloudfunctions_function" "ce-azure-billing-schema-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-azure-billing-schema-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1129,6 +1236,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ec2-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-awsdata-ec2-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1156,6 +1264,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ec2-load-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-awsdata-ec2-load-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1183,6 +1292,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ec2-metric-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-awsdata-ec2-metric-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1210,6 +1320,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ebs-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-awsdata-ebs-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1237,6 +1348,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ebs-load-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-awsdata-ebs-load-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1264,6 +1376,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ebs-metrics-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-awsdata-ebs-metrics-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1291,6 +1404,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-rds-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-awsdata-rds-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1318,6 +1432,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-rds-load-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-awsdata-rds-load-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1345,6 +1460,7 @@ resource "google_cloudfunctions_function" "ce-aws-inventory-init-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-aws-inventory-init-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1372,6 +1488,7 @@ resource "google_cloudfunctions_function" "ce-gcp-inventory-init-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-gcp-inventory-init-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1399,6 +1516,7 @@ resource "google_cloudfunctions_function" "ce-azure-inventory-init-function" {
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-azure-inventory-init-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1426,6 +1544,7 @@ resource "google_cloudfunctions_function" "ce-gcp-instance-inventory-data-functi
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-gcp-instance-inventory-data-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1453,6 +1572,7 @@ resource "google_cloudfunctions_function" "ce-gcp-instance-inventory-data-load-f
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-gcp-instance-inventory-data-load-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1480,6 +1600,7 @@ resource "google_cloudfunctions_function" "ce-gcp-disk-inventory-data-function" 
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-gcp-disk-inventory-data-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1507,6 +1628,7 @@ resource "google_cloudfunctions_function" "ce-gcp-disk-inventory-data-load-funct
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-gcp-disk-inventory-data-load-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"
@@ -1524,6 +1646,96 @@ resource "google_cloudfunctions_function" "ce-gcp-disk-inventory-data-load-funct
 }
 
 data "google_app_engine_default_service_account" "default" {
+}
+
+resource "google_cloudfunctions2_function" "ce-aws-historical-currency-update-bq-function" {
+  provider = google-beta
+  name = "ce-aws-historical-currency-update-bq-terraform"
+  location = "${var.region}"
+  project = "${var.projectId}"
+  description = "This cloudfunction gets triggered with an http request to function URI"
+
+  build_config {
+    runtime = "python38"
+    entry_point = "main"
+    source {
+      storage_source {
+        bucket = "${google_storage_bucket.bucket1.name}"
+        object = "${google_storage_bucket_object.ce-aws-historical-currency-update-bq-archive.name}"
+      }
+    }
+  }
+  service_config {
+    max_instance_count = 1000
+    available_memory   = "4Gi"
+    timeout_seconds    = 3600
+    environment_variables = {
+        disabled = "false"
+        enable_for_accounts = ""
+        GCP_PROJECT = "${var.projectId}"
+    }
+    service_account_email = data.google_app_engine_default_service_account.default.email
+  }
+}
+
+resource "google_cloudfunctions2_function" "ce-azure-historical-currency-update-bq-function" {
+  provider = google-beta
+  name = "ce-azure-historical-currency-update-bq-terraform"
+  location = "${var.region}"
+  project = "${var.projectId}"
+  description = "This cloudfunction gets triggered with an http request to function URI"
+
+  build_config {
+    runtime = "python38"
+    entry_point = "main"
+    source {
+      storage_source {
+        bucket = "${google_storage_bucket.bucket1.name}"
+        object = "${google_storage_bucket_object.ce-azure-historical-currency-update-bq-archive.name}"
+      }
+    }
+  }
+  service_config {
+    max_instance_count = 1000
+    available_memory   = "4Gi"
+    timeout_seconds    = 3600
+    environment_variables = {
+        disabled = "false"
+        enable_for_accounts = ""
+        GCP_PROJECT = "${var.projectId}"
+    }
+    service_account_email = data.google_app_engine_default_service_account.default.email
+  }
+}
+
+resource "google_cloudfunctions2_function" "ce-gcp-historical-currency-update-bq-function" {
+  provider = google-beta
+  name = "ce-gcp-historical-currency-update-bq-terraform"
+  location = "${var.region}"
+  project = "${var.projectId}"
+  description = "This cloudfunction gets triggered with an http request to function URI"
+
+  build_config {
+    runtime = "python38"
+    entry_point = "main"
+    source {
+      storage_source {
+        bucket = "${google_storage_bucket.bucket1.name}"
+        object = "${google_storage_bucket_object.ce-gcp-historical-currency-update-bq-archive.name}"
+      }
+    }
+  }
+  service_config {
+    max_instance_count = 1000
+    available_memory   = "4Gi"
+    timeout_seconds    = 3600
+    environment_variables = {
+        disabled = "false"
+        enable_for_accounts = ""
+        GCP_PROJECT = "${var.projectId}"
+    }
+    service_account_email = data.google_app_engine_default_service_account.default.email
+  }
 }
 
 resource "google_cloudfunctions2_function" "ce-azure-vm-inventory-data-function" {
@@ -1568,7 +1780,7 @@ resource "google_cloudfunctions_function" "ce-azure-vm-inventory-data-load-funct
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-azure-vm-inventory-data-load-archive.name}"
-
+  max_instances             = 3000
   environment_variables = {
     disabled = "false"
     enable_for_accounts = ""
@@ -1595,6 +1807,7 @@ resource "google_cloudfunctions_function" "ce-azure-vm-inventory-metric-data-fun
   region                    = "${var.region}"
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-azure-vm-inventory-metric-data-archive.name}"
+  max_instances             = 3000
 
   environment_variables = {
     disabled = "false"

@@ -41,7 +41,7 @@ public class ServiceNowTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
     ServiceNowTaskNGParameters taskParameters = (ServiceNowTaskNGParameters) parameters;
-    return serviceNowTaskNgHelper.getServiceNowResponse(taskParameters);
+    return serviceNowTaskNgHelper.getServiceNowResponse(taskParameters, getLogStreamingTaskClient());
   }
 
   @Override

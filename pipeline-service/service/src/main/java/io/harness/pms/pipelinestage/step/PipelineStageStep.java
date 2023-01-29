@@ -106,7 +106,7 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
     responseDto = pipelineExecutor.runPipelineAsChildPipeline(ambiance.getSetupAbstractions().get("accountId"),
         stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
         ambiance.getMetadata().getModuleType(), stepParameters.getPipelineInputs(), false, false,
-        stepParameters.getInputSetReferences(), info);
+        stepParameters.getInputSetReferences(), info, ambiance.getMetadata().getIsDebug());
 
     if (responseDto == null) {
       throw new InvalidRequestException(
@@ -158,7 +158,7 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutputExpressionConstants.OUTPUT)
                          .outcome(pipelineStageHelper.resolveOutputVariables(
-                             stepParameters.getOutputs().getValue(), nodeExecution))
+                             stepParameters.getOutputs().getValue(), nodeExecution.getAmbiance()))
                          .build())
         .build();
   }

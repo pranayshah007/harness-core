@@ -43,7 +43,7 @@ import io.harness.beans.sweepingoutputs.StepLogKeyDetails;
 import io.harness.beans.sweepingoutputs.StepTaskDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYamlSpec;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
@@ -224,7 +224,7 @@ public class RunStepTest extends CIExecutionTestBase {
     when(ciExecutionServiceConfig.isLocal()).thenReturn(false);
     when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false))).thenReturn(callbackId);
     when(runStepProtobufSerializer.serializeStepWithStepParameters(
-             any(), any(), any(), any(), any(), any(), any(), any()))
+             any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(UnitStep.newBuilder().build());
 
     AsyncExecutableResponse asyncExecutableResponse =
@@ -405,7 +405,7 @@ public class RunStepTest extends CIExecutionTestBase {
                         .output(VmStageInfraDetails.builder().infraInfo(vmInfraInfo).build())
                         .build());
 
-    when(vmStepSerializer.serialize(any(), any(), any(), any(), any())).thenReturn(VmRunStep.builder().build());
+    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any())).thenReturn(VmRunStep.builder().build());
     when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false))).thenReturn(callbackId);
 
     AsyncExecutableResponse asyncExecutableResponse =
@@ -452,7 +452,7 @@ public class RunStepTest extends CIExecutionTestBase {
                         .output(VmStageInfraDetails.builder().infraInfo(vmInfraInfo).build())
                         .build());
 
-    when(vmStepSerializer.serialize(any(), any(), any(), any(), any())).thenReturn(VmRunStep.builder().build());
+    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any())).thenReturn(VmRunStep.builder().build());
     when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false))).thenReturn(callbackId);
 
     AsyncExecutableResponse asyncExecutableResponse =
@@ -498,7 +498,7 @@ public class RunStepTest extends CIExecutionTestBase {
                         .output(VmStageInfraDetails.builder().infraInfo(vmInfraInfo).build())
                         .build());
 
-    when(vmStepSerializer.serialize(any(), any(), any(), any(), any())).thenReturn(VmRunStep.builder().build());
+    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any())).thenReturn(VmRunStep.builder().build());
     when(vmStepSerializer.getStepSecrets(any(), any())).thenReturn(new HashSet<>());
     when(vmExecuteStepUtils.convertStep(any())).thenReturn(ExecuteStepRequest.builder());
     when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false))).thenReturn(callbackId);

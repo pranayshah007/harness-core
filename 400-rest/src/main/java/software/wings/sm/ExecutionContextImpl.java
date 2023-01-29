@@ -109,7 +109,6 @@ import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.Variable;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.customdeployment.CustomDeploymentTypeDTO;
 import software.wings.common.InfrastructureConstants;
@@ -124,6 +123,7 @@ import software.wings.expression.SubstitutionFunctor;
 import software.wings.expression.SweepingOutputFunctor;
 import software.wings.expression.SweepingOutputSecretManagerFunctor;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.AppLogContext;
 import software.wings.service.impl.PipelineWorkflowExecutionLogContext;
 import software.wings.service.impl.StateExecutionInstanceLogContext;
@@ -162,6 +162,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import dev.morphia.Key;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -184,7 +185,6 @@ import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.Key;
 
 @OwnedBy(CDC)
 @Slf4j

@@ -32,9 +32,4 @@ import lombok.NoArgsConstructor;
 @RecasterAlias("io.harness.cdng.provision.terragrunt.RemoteTerragruntBackendConfigSpec")
 public class RemoteTerragruntBackendConfigSpec implements TerragruntBackendConfigSpec {
   @NotNull StoreConfigWrapper store;
-
-  @Override
-  public String getType() {
-    return TerragruntBackendFileTypes.Remote;
-  }
 }

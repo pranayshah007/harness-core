@@ -152,6 +152,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.query.Query;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -175,8 +177,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.query.Query;
 
 /**
  * Created by rsingh on 9/29/17.
@@ -2955,7 +2955,7 @@ public class KmsTest extends WingsBaseTest {
   private Thread startTransitionListener() throws IllegalAccessException {
     transitionEventListener = new SecretMigrationEventListener(kmsTransitionConsumer);
     FieldUtils.writeField(transitionEventListener, "timer", new TimerScheduledExecutorService(), true);
-    FieldUtils.writeField(transitionEventListener, "queueController", new ConfigurationController(1), true);
+    FieldUtils.writeField(transitionEventListener, "queueController", new ConfigurationController(), true);
     FieldUtils.writeField(transitionEventListener, "queueConsumer", transitionKmsQueue, true);
     FieldUtils.writeField(transitionEventListener, "secretService", secretService, true);
 

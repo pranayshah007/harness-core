@@ -36,6 +36,7 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
+import io.harness.pms.pipeline.service.PipelineGetResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
@@ -48,6 +49,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
+import io.harness.utils.ApiUtils;
 import io.harness.utils.PageUtils;
 import io.harness.yaml.validator.InvalidYamlException;
 
@@ -98,7 +100,7 @@ public class PipelinesApiImpl implements PipelinesApi {
           "Policy Evaluation Failure", governanceMetadata, createdEntity.getYaml());
     }
     PipelineCreateResponseBody responseBody = new PipelineCreateResponseBody();
-    responseBody.setSlug(createdEntity.getIdentifier());
+    responseBody.setIdentifier(createdEntity.getIdentifier());
     return Response.status(201).entity(responseBody).build();
   }
 
@@ -116,17 +118,24 @@ public class PipelinesApiImpl implements PipelinesApi {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public Response getPipeline(@OrgIdentifier String org, @ProjectIdentifier String project,
       @ResourceIdentifier String pipeline, @AccountIdentifier String account, String branch, Boolean templatesApplied,
-      String connectorRef, String repoName, String loadFromCache, Boolean loadFromFallbackBranch) {
+      String connectorRef, String repoName, String loadFromCache, Boolean loadFromFallbackBranch,
+      Boolean validateAsync) {
     GitAwareContextHelper.populateGitDetails(
         GitEntityInfo.builder().branch(branch).connectorRef(connectorRef).repoName(repoName).build());
     log.info(String.format(
         "Retrieving Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
     Optional<PipelineEntity> pipelineEntity;
     PipelineGetResponseBody pipelineGetResponseBody = new PipelineGetResponseBody();
+    // if validateAsync is true, then this ID wil be of the event started for the async validation process, which can be
+    // queried on using another API to get the result of the async validation. If validateAsync is false, then this ID
+    // is not needed and will be null
+    String validationUUID;
     try {
-      pipelineEntity = pmsPipelineService.getAndValidatePipeline(account, org, project, pipeline, false,
-          Boolean.TRUE.equals(loadFromFallbackBranch),
-          PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
+      PipelineGetResult pipelineGetResult = pmsPipelineService.getAndValidatePipeline(account, org, project, pipeline,
+          false, false, Boolean.TRUE.equals(loadFromFallbackBranch),
+          PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), validateAsync);
+      pipelineEntity = pipelineGetResult.getPipelineEntity();
+      validationUUID = pipelineGetResult.getAsyncValidationUUID();
     } catch (PolicyEvaluationFailureException pe) {
       pipelineGetResponseBody.setPipelineYaml(pe.getYaml());
       pipelineGetResponseBody.setGitDetails(
@@ -149,6 +158,7 @@ public class PipelinesApiImpl implements PipelinesApi {
       pipelineGetResponseBody.setValid(false);
       return Response.status(200).entity(pipelineGetResponseBody).build();
     }
+
     pipelineGetResponseBody = PipelinesApiUtils.getGetResponseBody(pipelineEntity.orElseThrow(
         ()
             -> new EntityNotFoundException(
@@ -163,6 +173,9 @@ public class PipelinesApiImpl implements PipelinesApi {
       } catch (Exception e) {
         log.info("Cannot get resolved templates pipeline YAML");
       }
+    }
+    if (validateAsync) {
+      pipelineGetResponseBody.setValidationUuid(validationUUID);
     }
     return Response.ok().entity(pipelineGetResponseBody).build();
   }
@@ -227,7 +240,7 @@ public class PipelinesApiImpl implements PipelinesApi {
         pipelineEntities.map(e -> PMSPipelineDtoMapper.preparePipelineSummaryForListView(e, pipelineMetadataMap));
 
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = PipelinesApiUtils.addLinksHeader(responseBuilder,
+    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
         String.format("/v1/orgs/%s/projects/%s/pipelines", org, project), pipelines.getContent().size(), page, limit);
     return responseBuilderWithLinks
         .entity(pipelines.getContent()
@@ -244,9 +257,10 @@ public class PipelinesApiImpl implements PipelinesApi {
     if (requestBody == null) {
       throw new InvalidRequestException("Pipeline Update request body must not be null.");
     }
-    if (!Objects.equals(pipeline, requestBody.getSlug())) {
-      throw new InvalidRequestException(String.format(
-          "Expected Pipeline identifier in Request Body to be [%s], but was [%s]", pipeline, requestBody.getSlug()));
+    if (!Objects.equals(pipeline, requestBody.getIdentifier())) {
+      throw new InvalidRequestException(
+          String.format("Expected Pipeline identifier in Request Body to be [%s], but was [%s]", pipeline,
+              requestBody.getIdentifier()));
     }
     GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitUpdateDetails(requestBody.getGitDetails()));
     log.info(String.format(
@@ -262,7 +276,7 @@ public class PipelinesApiImpl implements PipelinesApi {
           "Policy Evaluation Failure", governanceMetadata, updatedEntity.getYaml());
     }
     PipelineCreateResponseBody responseBody = new PipelineCreateResponseBody();
-    responseBody.setSlug(updatedEntity.getIdentifier());
+    responseBody.setIdentifier(updatedEntity.getIdentifier());
     return Response.ok().entity(responseBody).build();
   }
 }

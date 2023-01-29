@@ -39,8 +39,9 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import java.time.Duration;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -55,6 +56,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 @Slf4j
 public class TimeoutEngine extends IteratorLoopModeHandler implements Handler<TimeoutInstance> {
   private static final Duration MAX_CALLBACK_PROCESSING_TIME = Duration.ofMinutes(1);
+  private static final Integer MAX_BATCH_SIZE = 500;
 
   @Inject private TimeoutInstanceRepository timeoutInstanceRepository;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
@@ -91,12 +93,23 @@ public class TimeoutEngine extends IteratorLoopModeHandler implements Handler<Ti
 
   public void deleteTimeouts(List<String> timeoutInstanceIds) {
     if (EmptyPredicate.isNotEmpty(timeoutInstanceIds)) {
-      timeoutInstanceRepository.deleteByUuidIn(timeoutInstanceIds);
+      Set<String> batchTimeInstanceIds = new HashSet<>();
+      for (String timeoutInstanceId : timeoutInstanceIds) {
+        batchTimeInstanceIds.add(timeoutInstanceId);
+        if (batchTimeInstanceIds.size() >= MAX_BATCH_SIZE) {
+          timeoutInstanceRepository.deleteByUuidIn(batchTimeInstanceIds);
+          batchTimeInstanceIds.clear();
+        }
+      }
+      if (EmptyPredicate.isNotEmpty(batchTimeInstanceIds)) {
+        timeoutInstanceRepository.deleteByUuidIn(batchTimeInstanceIds);
+      }
     }
   }
 
   public void deleteTimeout(@NonNull String timeoutInstanceId) {
-    deleteTimeouts(Collections.singletonList(timeoutInstanceId));
+    // equal operator is better than in operator
+    timeoutInstanceRepository.deleteById(timeoutInstanceId);
   }
 
   public void onEvent(List<String> timeoutInstanceIds, TimeoutEvent event) {

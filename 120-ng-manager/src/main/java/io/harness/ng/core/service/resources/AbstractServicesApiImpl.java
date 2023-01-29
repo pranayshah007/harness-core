@@ -34,6 +34,7 @@ import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.spec.server.ng.v1.model.ServiceRequest;
 import io.harness.spec.server.ng.v1.model.ServiceResponse;
+import io.harness.utils.ApiUtils;
 import io.harness.utils.PageUtils;
 
 import software.wings.beans.Service.ServiceKeys;
@@ -61,6 +62,7 @@ public abstract class AbstractServicesApiImpl {
   @Inject private final ServiceEntityManagementService serviceEntityManagementService;
   @Inject private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
   @Inject private final ServiceResourceApiUtils serviceResourceApiUtils;
+  @Inject private final ServiceEntityYamlSchemaHelper serviceSchemaHelper;
 
   private static final String projectScopedServiceUri = "/v1/orgs/%s/projects/%s/services)";
   private static final String orgScopedServiceUri = "/v1/orgs/%s/services)";
@@ -70,7 +72,11 @@ public abstract class AbstractServicesApiImpl {
     throwExceptionForNoRequestDTO(serviceRequest);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(account, org, project), Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
+    serviceSchemaHelper.validateSchema(account, serviceRequest.getYaml());
     ServiceEntity serviceEntity = serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account);
+    if (isEmpty(serviceRequest.getYaml())) {
+      serviceSchemaHelper.validateSchema(account, serviceEntity.getYaml());
+    }
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
     ServiceEntity createdService = serviceEntityService.create(serviceEntity);
@@ -78,12 +84,13 @@ public abstract class AbstractServicesApiImpl {
     return Response.status(Response.Status.CREATED).entity(serviceResponse).build();
   }
 
-  public Response deleteServiceEntity(String org, String project, String service, String account) {
+  public Response deleteServiceEntity(String org, String project, String service, String account, boolean forceDelete) {
     Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.get(account, org, project, service, false);
     if (serviceEntityOptional.isEmpty()) {
       throw new NotFoundException(String.format("Service with identifier [%s] not found", service));
     }
-    boolean deleted = serviceEntityManagementService.deleteService(account, org, project, service, "ifMatch");
+    boolean deleted =
+        serviceEntityManagementService.deleteService(account, org, project, service, "ifMatch", forceDelete);
     if (!deleted) {
       throw new InvalidRequestException(String.format("Service with identifier [%s] could not be deleted", service));
     }
@@ -111,7 +118,7 @@ public abstract class AbstractServicesApiImpl {
         Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
     ServiceDefinitionType optionalType = ServiceDefinitionType.getServiceDefinitionType(type);
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        account, org, project, false, searchTerm, optionalType, gitOpsEnabled);
+        account, org, project, false, searchTerm, optionalType, gitOpsEnabled, false);
     Pageable pageRequest;
     if (isNotEmpty(services)) {
       criteria.and(ServiceEntityKeys.identifier).in(services);
@@ -136,8 +143,8 @@ public abstract class AbstractServicesApiImpl {
       List<ServiceResponse> filterserviceList = filterByPermissionAndId(accessControlList, serviceList);
       ResponseBuilder responseBuilder = Response.ok();
 
-      ResponseBuilder responseBuilderWithLinks = serviceResourceApiUtils.addLinksHeader(
-          responseBuilder, getScopedUri(org, project), filterserviceList.size(), page, limit);
+      ResponseBuilder responseBuilderWithLinks =
+          ApiUtils.addLinksHeader(responseBuilder, getScopedUri(org, project), filterserviceList.size(), page, limit);
       return responseBuilderWithLinks.entity(filterserviceList).build();
     } else {
       Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
@@ -152,8 +159,8 @@ public abstract class AbstractServicesApiImpl {
 
       ResponseBuilder responseBuilder = Response.ok();
 
-      ResponseBuilder responseBuilderWithLinks = serviceResourceApiUtils.addLinksHeader(
-          responseBuilder, getScopedUri(org, project), serviceList.size(), page, limit);
+      ResponseBuilder responseBuilderWithLinks =
+          ApiUtils.addLinksHeader(responseBuilder, getScopedUri(org, project), serviceList.size(), page, limit);
 
       return responseBuilderWithLinks.entity(serviceList).build();
     }
@@ -174,14 +181,18 @@ public abstract class AbstractServicesApiImpl {
   public Response updateServiceEntity(
       ServiceRequest serviceRequest, String org, String project, String service, String account) {
     throwExceptionForNoRequestDTO(serviceRequest);
-    if (!service.equals(serviceRequest.getSlug())) {
+    if (!service.equals(serviceRequest.getIdentifier())) {
       throw new InvalidRequestException(
           String.format("Identifier passed in request body: [%s] does not match resource identifier: [%s]",
-              serviceRequest.getSlug(), service));
+              serviceRequest.getIdentifier(), service));
     }
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
-        Resource.of(NGResourceType.SERVICE, serviceRequest.getSlug()), SERVICE_UPDATE_PERMISSION);
+        Resource.of(NGResourceType.SERVICE, serviceRequest.getIdentifier()), SERVICE_UPDATE_PERMISSION);
+    serviceSchemaHelper.validateSchema(account, serviceRequest.getYaml());
     ServiceEntity requestService = serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account);
+    if (isEmpty(serviceRequest.getYaml())) {
+      serviceSchemaHelper.validateSchema(account, requestService.getYaml());
+    }
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         requestService.getOrgIdentifier(), requestService.getProjectIdentifier(), requestService.getAccountId());
     ServiceEntity updateService = serviceEntityService.update(requestService);
@@ -203,7 +214,7 @@ public abstract class AbstractServicesApiImpl {
       AccessControlDTO accessControlDTO = accessControlList.get(i);
       ServiceResponse serviceResponse = serviceList.get(i);
       if (accessControlDTO.isPermitted()
-          && serviceResponse.getService().getSlug().equals(accessControlDTO.getResourceIdentifier())) {
+          && serviceResponse.getService().getIdentifier().equals(accessControlDTO.getResourceIdentifier())) {
         filteredAccessControlDtoList.add(serviceResponse);
       }
     }

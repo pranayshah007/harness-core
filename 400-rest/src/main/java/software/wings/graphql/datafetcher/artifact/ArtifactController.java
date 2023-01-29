@@ -13,8 +13,8 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
-import software.wings.beans.artifact.Artifact;
 import software.wings.graphql.schema.type.artifact.QLArtifact.QLArtifactBuilder;
+import software.wings.persistence.artifact.Artifact;
 
 import lombok.experimental.UtilityClass;
 

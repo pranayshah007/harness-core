@@ -106,15 +106,12 @@ func (r *runTask) Run(ctx context.Context) (map[string]string, int32, error) {
 	for i := int32(1); i <= r.numRetries; i++ {
 		if o, err = r.execute(ctx, i); err == nil {
 			st := time.Now()
-			err = collectTestReports(ctx, r.reports, r.id, r.log)
+			err = collectTestReports(ctx, r.reports, r.id, r.log, st)
 			if err != nil {
 				// If there's an error in collecting reports, we won't retry but
 				// the step will be marked as an error
 				r.log.Errorw("unable to collect test reports", zap.Error(err))
 				return nil, r.numRetries, err
-			}
-			if len(r.reports) > 0 {
-				r.log.Infow(fmt.Sprintf("collected test reports in %s time", time.Since(st)))
 			}
 			return o, i, nil
 		}
@@ -122,7 +119,7 @@ func (r *runTask) Run(ctx context.Context) (map[string]string, int32, error) {
 	if err != nil {
 		// Run step did not execute successfully
 		// Try and collect reports, ignore any errors during report collection itself
-		errc := collectTestReports(ctx, r.reports, r.id, r.log)
+		errc := collectTestReports(ctx, r.reports, r.id, r.log, time.Now())
 		if errc != nil {
 			r.log.Errorw("error while collecting test reports", zap.Error(errc))
 		}
@@ -151,7 +148,7 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if len(r.command) > 0 {
 		r.log.Infof("%sExecuting the following command(s):\n%s", string(boldYellowColor), r.command)
 	}

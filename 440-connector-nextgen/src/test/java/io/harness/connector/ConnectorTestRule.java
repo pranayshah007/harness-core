@@ -83,6 +83,7 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import dev.morphia.converters.TypeConverter;
 import io.dropwizard.jackson.Jackson;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
@@ -94,7 +95,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -148,6 +148,7 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
         bind(NGHostValidationService.class).toInstance(mock(NGHostValidationService.class));
         bind(FeatureFlagService.class).toInstance(mock(FeatureFlagService.class));
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(AccountClient.class).annotatedWith(Names.named("PRIVILEGED")).toInstance(mock(AccountClient.class));
         bind(NGSettingsClient.class).toInstance(mock(NGSettingsClient.class));
         bind(EntitySetupUsageService.class).toInstance(mock(EntitySetupUsageService.class));
       }

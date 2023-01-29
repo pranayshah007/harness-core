@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
+import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.host.AllHostsFilter;
 import io.harness.cdng.infra.beans.host.HostFilter;
@@ -25,6 +26,7 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.InfrastructureType;
+import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.service.MigratorUtility;
@@ -97,8 +99,8 @@ public class SshInfraDefMapper implements InfraDefMapper {
   }
 
   @Override
-  public Infrastructure getSpec(
-      InfrastructureDefinition infrastructureDefinition, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public Infrastructure getSpec(MigrationInputDTO inputDTO, InfrastructureDefinition infrastructureDefinition,
+      Map<CgEntityId, NGYamlFile> migratedEntities, List<ElastigroupConfiguration> elastigroupConfiguration) {
     switch (infrastructureDefinition.getCloudProviderType()) {
       case AWS:
         return getAwsSshInfra(migratedEntities, infrastructureDefinition.getInfrastructure());

@@ -8,6 +8,7 @@
 package io.harness.serializer;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -61,5 +62,9 @@ public class YamlUtils {
   public <T> T read(String yaml, TypeReference<T> typeReference)
       throws JsonParseException, JsonMappingException, IOException {
     return mapper.readValue(yaml, typeReference);
+  }
+
+  public String dump(final Object obj) throws JsonProcessingException {
+    return mapper.writeValueAsString(obj);
   }
 }

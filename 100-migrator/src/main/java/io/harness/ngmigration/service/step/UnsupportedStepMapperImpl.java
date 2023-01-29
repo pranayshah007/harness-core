@@ -7,31 +7,39 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.exception.InvalidRequestException;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.plancreator.steps.AbstractStepNode;
 
+import software.wings.beans.GraphNode;
 import software.wings.sm.State;
-import software.wings.yaml.workflow.StepYaml;
 
-import org.apache.commons.lang3.NotImplementedException;
-
-public class UnsupportedStepMapperImpl implements StepMapper {
+public class UnsupportedStepMapperImpl extends StepMapper {
   @Override
-  public String getStepType(StepYaml stepYaml) {
-    throw new NotImplementedException("Unsupported step");
+  public String getStepType(GraphNode stepYaml) {
+    throw new InvalidRequestException(
+        String.format("Unsupported step - %s of type %s", stepYaml.getName(), stepYaml.getType()));
   }
 
   @Override
-  public State getState(StepYaml stepYaml) {
+  public State getState(GraphNode stepYaml) {
     return null;
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
-    throw new NotImplementedException("Unsupported step");
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+    throw new InvalidRequestException(
+        String.format("Unsupported step - %s of type %s", graphNode.getName(), graphNode.getType()));
   }
 
   @Override
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     return false;
+  }
+
+  @Override
+  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
+    return WorkflowStepSupportStatus.UNSUPPORTED;
   }
 }

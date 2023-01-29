@@ -28,6 +28,7 @@ public class DebeziumControllerStarter {
   @Inject CfClient cfClient;
   @Inject @Named("DebeziumExecutorService") private ExecutorService debeziumExecutorService;
   @Inject private ChangeConsumerFactory consumerFactory;
+  @Inject private DebeziumService debeziumService;
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   public void startDebeziumController(DebeziumConfig debeziumConfig, ChangeConsumerConfig changeConsumerConfig,
@@ -36,11 +37,10 @@ public class DebeziumControllerStarter {
     for (String monitoredCollection : collections) {
       try {
         MongoCollectionChangeConsumer changeConsumer =
-            consumerFactory.get(debeziumConfig.getSleepInterval(), monitoredCollection, changeConsumerConfig,
-                debeziumConfig.getProducingCountPerBatch(), debeziumConfig.getRedisStreamSize(), cfClient);
+            consumerFactory.get(changeConsumerConfig, cfClient, monitoredCollection);
         DebeziumController debeziumController = new DebeziumController(
             DebeziumConfiguration.getDebeziumProperties(debeziumConfig, redisLockConfig, monitoredCollection),
-            changeConsumer, locker, debeziumExecutorService);
+            changeConsumer, locker, debeziumExecutorService, debeziumService);
         debeziumExecutorService.submit(debeziumController);
         log.info("Starting Debezium Controller for Collection {} ...", monitoredCollection);
       } catch (Exception e) {

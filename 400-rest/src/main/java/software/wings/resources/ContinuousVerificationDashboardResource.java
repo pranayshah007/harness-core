@@ -9,6 +9,7 @@ package software.wings.resources;
 
 import static software.wings.security.PermissionAttribute.ResourceType.SERVICE;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.ff.FeatureFlagService;
@@ -33,6 +34,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import io.swagger.annotations.Api;
 import java.text.ParseException;
 import java.util.LinkedHashMap;
@@ -47,7 +49,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import org.mongodb.morphia.annotations.Transient;
 
 @Api("cvdash")
 @Path("/cvdash")
@@ -68,8 +69,12 @@ public class ContinuousVerificationDashboardResource {
               LinkedHashMap<String, LinkedHashMap<String, List<ContinuousVerificationExecutionMetaData>>>>>>>
   getCVExecutionRecords(@QueryParam("accountId") String accountId, @QueryParam("beginEpochTs") long beginEpochTs,
       @QueryParam("endEpochTs") long endEpochTs) throws ParseException {
+    if (isRemoveLoadSupportAccountsFFDisabled()) {
+      return new RestResponse<>(continuousVerificationService.getCVExecutionMetaData(
+          accountId, beginEpochTs, endEpochTs, UserThreadLocal.get().getPublicUser(true)));
+    }
     return new RestResponse<>(continuousVerificationService.getCVExecutionMetaData(
-        accountId, beginEpochTs, endEpochTs, UserThreadLocal.get().getPublicUser()));
+        accountId, beginEpochTs, endEpochTs, UserThreadLocal.get().getPublicUser(false)));
   }
 
   @GET
@@ -138,8 +143,12 @@ public class ContinuousVerificationDashboardResource {
   public RestResponse<List<CVDeploymentData>> getCVExecutionDeploymentRecords(@QueryParam("accountId") String accountId,
       @QueryParam("startTime") long startTime, @QueryParam("endTime") long endTime,
       @QueryParam("serviceId") String serviceId) {
+    if (isRemoveLoadSupportAccountsFFDisabled()) {
+      return new RestResponse<>(continuousVerificationService.getCVDeploymentData(
+          accountId, startTime, endTime, UserThreadLocal.get().getPublicUser(true), serviceId));
+    }
     return new RestResponse<>(continuousVerificationService.getCVDeploymentData(
-        accountId, startTime, endTime, UserThreadLocal.get().getPublicUser(), serviceId));
+        accountId, startTime, endTime, UserThreadLocal.get().getPublicUser(false), serviceId));
   }
 
   @GET
@@ -149,8 +158,12 @@ public class ContinuousVerificationDashboardResource {
   public RestResponse<List<WorkflowExecution>> getAllDeploymentsForService(@QueryParam("accountId") String accountId,
       @QueryParam("startTime") long startTime, @QueryParam("endTime") long endTime,
       @QueryParam("serviceId") String serviceId) {
+    if (isRemoveLoadSupportAccountsFFDisabled()) {
+      return new RestResponse<>(continuousVerificationService.getDeploymentsForService(
+          accountId, startTime, endTime, UserThreadLocal.get().getPublicUser(true), serviceId));
+    }
     return new RestResponse<>(continuousVerificationService.getDeploymentsForService(
-        accountId, startTime, endTime, UserThreadLocal.get().getPublicUser(), serviceId));
+        accountId, startTime, endTime, UserThreadLocal.get().getPublicUser(false), serviceId));
   }
 
   @GET
@@ -249,5 +262,9 @@ public class ContinuousVerificationDashboardResource {
   @ExceptionMetered
   public RestResponse<Long> getCurrenAnalysistWindow(@QueryParam("cvConfigId") String cvConfigId) {
     return new RestResponse<>(cv24x7DashboardService.getCurrentAnalysisWindow(cvConfigId));
+  }
+
+  private boolean isRemoveLoadSupportAccountsFFDisabled() {
+    return !featureFlagService.isEnabledForAllAccounts(FeatureName.DO_NOT_LOAD_SUPPORT_ACCOUNTS_UNLESS_REQUIRED);
   }
 }

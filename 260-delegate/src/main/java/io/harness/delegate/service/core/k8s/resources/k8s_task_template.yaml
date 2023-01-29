@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 1000
+  ttlSecondsAfterFinished: 2000
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - image: alpine
+          name: delegate-task
+          imagePullPolicy: Always
+          resources:
+            limits:
+              memory: "512Mi"
+            requests:
+              cpu: "0.5"
+              memory: "512Mi"

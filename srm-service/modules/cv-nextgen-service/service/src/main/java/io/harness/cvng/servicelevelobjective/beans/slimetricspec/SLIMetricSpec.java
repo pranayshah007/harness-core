@@ -7,11 +7,14 @@
 
 package io.harness.cvng.servicelevelobjective.beans.slimetricspec;
 
+import static io.harness.cvng.CVConstants.SLI_METRIC_TYPE;
+
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -24,6 +27,7 @@ import lombok.experimental.SuperBuilder;
   @JsonSubTypes.Type(value = ThresholdSLIMetricSpec.class, name = "Threshold")
   , @JsonSubTypes.Type(value = RatioSLIMetricSpec.class, name = "Ratio"),
 })
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = SLI_METRIC_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
 public abstract class SLIMetricSpec {
   @JsonIgnore public abstract SLIMetricType getType();
   @JsonIgnore public abstract String getMetricName();

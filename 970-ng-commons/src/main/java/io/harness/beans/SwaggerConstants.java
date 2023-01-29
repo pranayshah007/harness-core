@@ -29,6 +29,9 @@ public interface SwaggerConstants {
 
   String ENVIRONMENT_YAML_LIST_CLASSPATH = "[Lio.harness.cdng.environment.yaml.EnvironmentYamlV2;";
 
+  String AMI_TAG_LIST_CLASSPATH = "[Lio.harness.delegate.task.artifacts.ami.AMITag;";
+  String AMI_FILTER_LIST_CLASSPATH = "[Lio.harness.delegate.task.artifacts.ami.AMIFilter;";
+
   String FILTER_YAML_LIST_CLASSPATH = "[Lio.harness.cdng.environment.filters.FilterYaml;";
   String JENKINS_PARAMETER_FIELD_CLASSPATH = "[Lio.harness.cdng.jenkins.jenkinsstep.JenkinsParameterField;";
   String INFRASTRUCTURE_DEFINITION_YAML_HOST_FILTER_CLASSPATH = "io.harness.cdng.infra.beans.host.HostFilter";
@@ -36,5 +39,10 @@ public interface SwaggerConstants {
       "io.harness.cdng.elastigroup.ElastigroupConfiguration";
   String INSTANCES_DEFINITION_YAML_ELASTIGROUP_CONFIGURATION_CLASSPATH =
       "io.harness.cdng.elastigroup.ElastigroupInstances";
+
   String FILTERS_MATCHTYPE_ENUM_CLASSPATH = "io.harness.cdng.environment.filters.MatchType";
+  String JENKINS_PARAMETER_FIELD_TYPE_ENUM_CLASSPATH = "io.harness.cdng.jenkins.jenkinsstep.JenkinsParameterFieldType";
+  String LOAD_BALANCER_CONFIGURATION_CLASSPATH = "[Lio.harness.cdng.elastigroup.LoadBalancer;";
+  String CLOUD_PROVIDER_CONFIGURATION_CLASSPATH = "io.harness.cdng.elastigroup.CloudProvider";
+  String TAS_COMMAND_SCRIPT_YAML_CONFIGURATION_CLASSPATH = "io.harness.cdng.tas.TasCommandScript";
 }

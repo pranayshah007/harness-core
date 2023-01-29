@@ -10,9 +10,9 @@ package software.wings.collect;
 import static io.harness.delegate.task.ListNotifyResponseData.Builder.aListNotifyResponseData;
 import static io.harness.rule.OwnerRule.GARVIT;
 
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
-import static software.wings.beans.artifact.Artifact.ContentStatus.DOWNLOADED;
-import static software.wings.beans.artifact.ArtifactFile.Builder.anArtifactFile;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
+import static software.wings.persistence.artifact.Artifact.ContentStatus.DOWNLOADED;
+import static software.wings.persistence.artifact.ArtifactFile.Builder.anArtifactFile;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_ID;
@@ -31,11 +31,11 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.Status;
-import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.JenkinsArtifactStream;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact.Status;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.NotificationService;
@@ -89,7 +89,8 @@ public class ArtifactCollectionCallbackTest extends WingsBaseTest {
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
   public void shouldNotify() {
-    artifactCollectionCallback.notify(Maps.newHashMap("", aListNotifyResponseData().addData(ARTIFACT_FILE).build()));
+    artifactCollectionCallback.notify(
+        Maps.newHashMap("", aListNotifyResponseData().addData(ARTIFACT_FILE.toDTO()).build()));
     verify(artifactService).updateStatus(ARTIFACT_ID, ACCOUNT_ID, Status.APPROVED, DOWNLOADED, "");
     verify(artifactService).addArtifactFile(ARTIFACT_ID, ACCOUNT_ID, Lists.newArrayList(ARTIFACT_FILE));
   }

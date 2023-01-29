@@ -1,20 +1,20 @@
 openapi: 3.0.0
 x-stoplight:
-  id: dlx56eyqljwug
+  id: uo2r4f4vt18on
 info:
   title: Harness NextGen Software Delivery Platform API Reference
-  version: '1.0'
+  version: '1'
   description: This is the Open Api Spec 3 for the Pipeline Service. This is under active development. Beware of the breaking change with respect to the generated code stub.
   contact:
     email: contact@harness.io
 servers:
-  - url: 'http://api.harness.io'
-    description: Harness host url
+  - url: 'https://api.harness.io'
+    description: Harness host URL.
 tags:
   - name: Pipelines
     description: This contains APIs for performing CRUD operations on Pipelines.
   - name: Input Sets
-    description: This contains APIs for performing CRUD operations on Input Sets.
+    description: This contains APIs for Input Sets.
 paths:
   '/v1/orgs/{org}/projects/{project}/pipelines':
     parameters:
@@ -173,6 +173,12 @@ paths:
           in: query
           name: load_from_fallback_branch
           description: Flag to load the pipeline from the created non default branch
+        - schema:
+            type: boolean
+            default: 'false'
+          in: query
+          name: validate_async
+          description: Flag to tell whether to start an asynchronous validation process or not
       tags:
         - Pipelines
       responses:
@@ -316,16 +322,6 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/PipelineInputSetParam'
-        - schema:
-            type: string
-          in: query
-          name: pipeline_branch
-          description: Git branch of the Pipeline for which the Input Set is to be created.
-        - schema:
-            type: string
-          in: query
-          name: pipeline_repo
-          description: Git repository identifier of the Pipeline for which the Input Set is to be created.
       requestBody:
         $ref: '#/components/requestBodies/InputSetCreateRequestBody'
     get:
@@ -366,17 +362,17 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/PipelineInputSetParam'
-        - schema:
-            type: string
-          in: query
-          name: pipeline_branch
-          description: Git branch of the Pipeline for which the Input Set is to be created.
-        - schema:
-            type: string
-          in: query
-          name: pipeline_repo
-          description: Git repository identifier of the Pipeline for which the Input Set is to be created.
         - $ref: '#/components/parameters/Branch'
+        - schema:
+            type: string
+          in: query
+          name: parent_entity_connector_ref
+          description: Connector reference for Parent Entity (Pipeline).
+        - schema:
+            type: string
+          in: query
+          name: parent_entity_repo_name
+          description: Repository name for Parent Entity (Pipeline).
     put:
       summary: Update an Input Set
       operationId: update-input-set
@@ -389,16 +385,6 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/PipelineInputSetParam'
-        - schema:
-            type: string
-          in: query
-          name: pipeline_branch
-          description: Git branch of the Pipeline for which the Input Set is to be created.
-        - schema:
-            type: string
-          in: query
-          name: pipeline_repo
-          description: Git repository identifier of the Pipeline for which the Input Set is to be created.
       tags:
         - Input Sets
       requestBody:
@@ -435,6 +421,40 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/PipelineInputSetParam'
+  '/v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/inputs':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/PipelineParam'
+    get:
+      summary: Get Pipeline Inputs
+      operationId: get-pipeline-inputs
+      responses:
+        '200':
+          $ref: '#/components/responses/InputsResponseBody'
+      description: Return Inputs for a Pipeline.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - schema:
+            type: string
+          in: query
+          name: branch_name
+          description: Name of the branch (for Git Experience).
+        - schema:
+            type: string
+          in: query
+          name: repo_name
+          description: Name of the repository (for Git Experience).
+        - schema:
+            type: string
+          in: query
+          name: connector_ref
+          description: Identifier of the Harness Connector used for CRUD operations on the Entity (for Git Experience).
+      tags:
+        - Inputs
+      x-internal: false
 components:
   schemas:
     GitDetails:
@@ -486,7 +506,7 @@ components:
         example-get:
           pipeline_yaml: example_yaml_text
           template_applied_pipeline_yaml: example_yaml_text_with_template
-          slug: example_pipeline
+          identifier: example_pipeline
           name: ExamplePipeline
           org: example_org
           project: example_project
@@ -509,12 +529,12 @@ components:
             message: something is incorrect
             message_fqn: something is incorrect at pipeline.name
             stage_info:
-              slug: example_stage
+              identifier: example_stage
               type: stage
               name: Example Stage
               fqn: pipeline.stages.stage
             step_info:
-              slug: example_step
+              identifier: example_step
               type: string
               name: string
               fqn: pipeline.steps.step
@@ -534,12 +554,12 @@ components:
         template_applied_pipeline_yaml:
           type: string
           description: Pipeline YAML after resolving Templates (returned as a String).
-        slug:
+        identifier:
           type: string
           description: Pipeline identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           description: Pipeline name
@@ -594,6 +614,9 @@ components:
           type: integer
           description: Last modification timestamp for Pipeline.
           format: int64
+        validation_uuid:
+          type: string
+          description: 'UUID of the asynchronous validation event started, if any'
     PipelineValidationResponseBody:
       title: Pipeline Validation Response Body
       description: Pipeline Validation Response Body
@@ -607,6 +630,17 @@ components:
         status:
           type: string
           description: Status of the Pipeline Validation Event
+        policy_eval:
+          type: object
+          description: Result of Policy Evaluations on the Pipeline
+        start_ts:
+          type: integer
+          format: int64
+          description: Start time of the Evaluation
+        end_ts:
+          type: integer
+          format: int64
+          description: End time of the Evaluation
       x-internal: true
     PipelineValidationUUIDResponseBody:
       title: Pipeline Validation UUID Response Body
@@ -629,7 +663,7 @@ components:
       description: Pipeline List response body
       x-examples:
         example-summary:
-          slug: example_pipeline
+          identifier: example_pipeline
           name: Example Pipeline
           description: This is an Example Pipeline
           tags:
@@ -643,7 +677,7 @@ components:
                 trigger_type: NOOP
                 username: harness_user
                 email: noreply@harness.io
-              execution_id: example_execution_slug
+              execution_id: example_execution_identifier
               execution_status: Running
               started: 1234567890
               ended: 1234567890
@@ -661,12 +695,12 @@ components:
             repo_url: www.repo.com
       type: object
       properties:
-        slug:
+        identifier:
           type: string
           description: Pipeline identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           description: Pipeline name
@@ -811,7 +845,7 @@ components:
                             - AllErrors
                           action:
                             type: StageRollback
-          slug: example_pipeline
+          identifier: example_pipeline
           name: ExamplePipeline
           description: Pipeline Description
           tags:
@@ -829,11 +863,11 @@ components:
         pipeline_yaml:
           type: string
           description: Pipeline YAML (to be passed as a String).
-        slug:
+        identifier:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Pipeline identifier
         name:
           type: string
@@ -855,7 +889,7 @@ components:
           $ref: '#/components/schemas/GitCreateDetails'
       required:
         - pipeline_yaml
-        - slug
+        - identifier
         - name
     PipelineCreateResponseBody:
       title: Pipeline Create Response Body
@@ -865,14 +899,14 @@ components:
       description: Pipeline response body
       x-examples:
         example-pipeline:
-          slug: example_pipeline
+          identifier: example_pipeline
       properties:
-        slug:
+        identifier:
           type: string
           description: Pipeline identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
     YAMLSchemaErrorWrapper:
       title: YAML Schema Error Wrapper
       x-stoplight:
@@ -903,12 +937,12 @@ components:
           message: something is incorrect
           message_fqn: something is incorrect at pipeline.name
           stage_info:
-            slug: example_stage
+            identifier: example_stage
             type: stage
             name: Example Stage
             fqn: pipeline.stages.stage
           step_info:
-            slug: example_step
+            identifier: example_step
             type: string
             name: string
             fqn: pipeline.steps.step
@@ -922,12 +956,12 @@ components:
       description: Entity details
       x-examples:
         example-node-info:
-          slug: example_stage
+          identifier: example_stage
           type: stage
           name: name
           fqn: pipeline.stages.stage1.name
       properties:
-        slug:
+        identifier:
           type: string
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
@@ -1010,7 +1044,7 @@ components:
             trigger_type: NOOP
             username: harness_user
             email: noreply@harness.io
-          execution_id: example_execution_slug
+          execution_id: example_execution_identifier
           execution_status: Running
           started: 1234567890
           ended: 1234567890
@@ -1221,7 +1255,7 @@ components:
                             - AllErrors
                           action:
                             type: StageRollback
-          slug: example_pipeline
+          identifier: example_pipeline
           name: ExamplePipeline
           description: Pipeline Description
           tags:
@@ -1240,11 +1274,11 @@ components:
         pipeline_yaml:
           type: string
           description: Pipeline YAML (to be passed as a String).
-        slug:
+        identifier:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Pipeline identifier
         name:
           type: string
@@ -1266,7 +1300,7 @@ components:
           $ref: '#/components/schemas/GitUpdateDetails'
       required:
         - pipeline_yaml
-        - slug
+        - identifier
         - name
     CacheResponseMetadataDTO:
       title: CacheResponseMetadataDTO
@@ -1339,7 +1373,7 @@ components:
                                           spec:
                                               connectorRef: account.harnessciplatform
                                               namespace: sample
-          slug: example_input_set
+          identifier: example_input_set
           name: ExampleInputSet
           description: Input Set Description
           tags:
@@ -1357,7 +1391,7 @@ components:
         input_set_yaml:
           type: string
           description: Input Set YAML (to be passed as a String).
-        slug:
+        identifier:
           type: string
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
@@ -1383,7 +1417,7 @@ components:
           $ref: '#/components/schemas/GitCreateDetails'
       required:
         - input_set_yaml
-        - slug
+        - identifier
         - name
     InputSetResponseBody:
       title: Input Set Response Body
@@ -1395,7 +1429,7 @@ components:
         input_set_yaml:
           type: string
           description: Input Set YAML (returned as a String).
-        slug:
+        identifier:
           type: string
           description: Input Set identifier
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
@@ -1444,7 +1478,7 @@ components:
       x-examples:
         example-input-set:
           input_set_yaml: example_input_set_yaml
-          slug: example_input_set
+          identifier: example_input_set
           name: Example Input Set
           org: example_org
           project: example_project
@@ -1607,7 +1641,7 @@ components:
                                           spec:
                                               connectorRef: account.harnessciplatform
                                               namespace: sample
-          slug: example_input_set
+          identifier: example_input_set
           name: ExampleInputSet
           description: Input Set Description
           tags:
@@ -1619,11 +1653,13 @@ components:
             last_object_id: abcdXYZ
             base_branch: old_branch
             last_commit_id: abcdXYZ
+            parent_entity_connector_ref: git_connector
+            parent_entity_repo_name: example_repository
       properties:
         input_set_yaml:
           type: string
           description: Input Set YAML (to be passed as a String).
-        slug:
+        identifier:
           type: string
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
@@ -1649,7 +1685,7 @@ components:
           $ref: '#/components/schemas/InputSetGitUpdateDetails'
       required:
         - input_set_yaml
-        - slug
+        - identifier
         - name
     InputSetGitUpdateDetails:
       title: InputSetGitUpdateDetails
@@ -1664,6 +1700,8 @@ components:
           last_object_id: abcdXYZ
           base_branch: old_branch
           last_commit_id: abcdXYZ
+          parent_entity_connector_ref: git_connector
+          parent_entity_repo_name: example_repository
       properties:
         branch_name:
           type: string
@@ -1680,6 +1718,71 @@ components:
         last_commit_id:
           type: string
           description: Last commit identifier.
+        parent_entity_connector_ref:
+          type: string
+          description: Connector reference for Parent Entity (Pipeline).
+        parent_entity_repo_name:
+          type: string
+          description: Repository name for Parent Entity (Pipeline).
+    InputsResponseBody:
+      title: Inputs Response Body
+      x-stoplight:
+        id: opv8b35dycaey
+      type: object
+      properties:
+        inputs:
+          type: object
+        repository:
+          type: object
+          properties:
+            reference:
+              type: object
+              properties:
+                type:
+                  type: object
+                value:
+                  type: object
+      x-examples:
+        example-inputs-response:
+          inputs:
+            key1:
+              prompt: false
+              required: false
+              default: golang
+              type: string
+              desc: sample desc
+            key2:
+              prompt: true
+              required: true
+              type: string
+              desc: sample desc
+            key3:
+              prompt: false
+              required: false
+              type: number
+            key4:
+              prompt: false
+              required: true
+              type: secret
+              desc: sample desc
+              enums:
+                - enum1
+                - enum2
+          repository:
+            reference:
+              type:
+                prompt: false
+                required: true
+                type: string
+                enums:
+                  - enum1
+                  - enum2
+                  - enum3
+              value:
+                prompt: false
+                required: true
+                type: string
+      description: Response Body for Pipeline Inputs
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -1731,7 +1834,7 @@ components:
       required: false
       schema:
         type: string
-      description: 'Slug field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+      description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
     Branch:
       name: branch_name
       in: query
@@ -1797,14 +1900,14 @@ components:
           examples:
             example-pipeline:
               value:
-                slug: example_pipeline
+                identifier: example_pipeline
         application/yaml:
           schema:
             $ref: '#/components/schemas/PipelineCreateResponseBody'
           examples:
             example-pipeline:
               value: |
-                slug: example_pipeline
+                identifier: example_pipeline
     PipelineValidationResponseBody:
       description: Pipeline Validation response body
       content:
@@ -1834,7 +1937,7 @@ components:
               value:
                 pipeline_yaml: example_yaml_text
                 template_applied_pipeline_yaml: example_yaml_text_with_template
-                slug: example_pipeline
+                identifier: example_pipeline
                 name: ExamplePipeline
                 org: example_org
                 project: example_project
@@ -1857,12 +1960,12 @@ components:
                   message: something is incorrect
                   message_fqn: something is incorrect at pipeline.name
                   stage_info:
-                    slug: example_stage
+                    identifier: example_stage
                     type: stage
                     name: Example Stage
                     fqn: pipeline.stages.stage
                   step_info:
-                    slug: example_step
+                    identifier: example_step
                     type: string
                     name: string
                     fqn: pipeline.steps.step
@@ -1882,7 +1985,7 @@ components:
               value: |
                 pipeline_yaml: example_yaml_text
                 template_applied_pipeline_yaml: example_yaml_text_with_template
-                slug: example_pipeline
+                identifier: example_pipeline
                 name: ExamplePipeline
                 org: example_org
                 project: example_project
@@ -1905,12 +2008,12 @@ components:
                   message: something is incorrect
                   message_fqn: something is incorrect at pipeline.name
                   stage_info:
-                    slug: example_stage
+                    identifier: example_stage
                     type: stage
                     name: Example Stage
                     fqn: pipeline.stages.stage
                   step_info:
-                    slug: example_step
+                    identifier: example_step
                     type: string
                     name: string
                     fqn: pipeline.steps.step
@@ -1934,7 +2037,7 @@ components:
           examples:
             example-list-response:
               value:
-                - slug: example_pipeline
+                - identifier: example_pipeline
                   name: Example Pipeline
                   description: This is an Example Pipeline
                   tags:
@@ -1949,7 +2052,7 @@ components:
                         trigger_type: NOOP
                         username: harness_user
                         email: noreply@harness.io
-                      execution_id: example_execution_slug
+                      execution_id: example_execution_identifier
                       execution_status: Running
                       started: 1234567890
                       ended: 1234567890
@@ -1974,7 +2077,7 @@ components:
           examples:
             example-list-response:
               value: |
-                - slug: example_pipeline
+                - identifier: example_pipeline
                   name: Example Pipeline
                   description: This is an Example Pipeline
                   tags:
@@ -1989,7 +2092,7 @@ components:
                         trigger_type: NOOP
                         username: harness_user
                         email: noreply@harness.io
-                      execution_id: example_execution_slug
+                      execution_id: example_execution_identifier
                       execution_status: Running
                       started: 1234567890
                       ended: 1234567890
@@ -2023,7 +2126,7 @@ components:
             example-input-set:
               value:
                 input_set_yaml: example_input_set_yaml
-                slug: example_input_set
+                identifier: example_input_set
                 name: Example Input Set
                 org: example_org
                 project: example_project
@@ -2062,7 +2165,7 @@ components:
             example-input-set:
               value: |
                 input_set_yaml: example_input_set_yaml
-                slug: example_input_set
+                identifier: example_input_set
                 name: Example Input Set
                 org: example_org
                 project: example_project
@@ -2106,7 +2209,7 @@ components:
             example-input-sets:
               value:
                 - input_set_yaml: example_input_set_yaml
-                  slug: example_input_set
+                  identifier: example_input_set
                   name: Example Input Set
                   org: example_org
                   project: example_project
@@ -2147,7 +2250,7 @@ components:
             example-input-sets:
               value: |
                 - input_set_yaml: example_input_set_yaml
-                  slug: example_input_set
+                  identifier: example_input_set
                   name: Example Input Set
                   org: example_org
                   project: example_project
@@ -2187,6 +2290,53 @@ components:
           examples:
             sample:
               value: '</v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/input-sets?page=2&limit=1>; rel="next", </v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/input-sets?page=1&limit=1>; rel="self", </v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/input-sets?page=0&limit=1>; rel="previous", '
+    InputsResponseBody:
+      description: Inputs Response Body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InputsResponseBody'
+          examples:
+            inputs-response-body:
+              value:
+                inputs:
+                  key1:
+                    prompt: false
+                    required: false
+                    default: golang
+                    type: string
+                    desc: sample desc
+                  key2:
+                    prompt: true
+                    required: true
+                    type: string
+                    desc: sample desc
+                  key3:
+                    prompt: false
+                    required: false
+                    type: number
+                  key4:
+                    prompt: false
+                    required: true
+                    type: secret
+                    desc: sample desc
+                    enums:
+                      - enum1
+                      - enum2
+                repository:
+                  reference:
+                    type:
+                      prompt: false
+                      required: true
+                      type: string
+                      enums:
+                        - enum1
+                        - enum2
+                        - enum3
+                    value:
+                      prompt: false
+                      required: true
+                      type: string
   requestBodies:
     PipelineCreateRequestBody:
       content:
@@ -2283,7 +2433,7 @@ components:
                                   - AllErrors
                                 action:
                                   type: StageRollback
-                slug: example_pipeline
+                identifier: example_pipeline
                 name: ExamplePipeline
                 description: Pipeline Description
                 tags:
@@ -2304,7 +2454,7 @@ components:
             example-pipeline:
               value: |
                 pipeline_yaml: 'pipeline: allowStageExecutions: false stages: - stage: name: Example Build Stage identifier: example_build_stage description: '''' type: Approval spec: execution: steps: - step: name: Approval Step identifier: Approval_Step type: HarnessApproval timeout: 1d spec: approvalMessage: |- Please review the following information and approve the pipeline progression includePipelineExecutionHistory: true approvers: minimumCount: 1 disallowPipelineExecutor: false userGroups: <+input> approverInputs: [] - step: type: ShellScript name: ShellScript Step identifier: ShellScript_Step spec: shell: Bash onDelegate: true source: type: Inline spec: script: <+input> environmentVariables: [] outputVariables: [] executionTarget: {} timeout: 10m tags: {} - stage: name: Example Deploy Stage identifier: example_deploy_stage description: '''' type: Deployment spec: serviceConfig: serviceRef: <+input> serviceDefinition: spec: variables: [] type: Kubernetes infrastructure: environmentRef: <+input> infrastructureDefinition: type: KubernetesDirect spec: connectorRef: <+input> namespace: <+input> releaseName: release-<+INFRA_KEY> allowSimultaneousDeployments: false execution: steps: - step: name: Rollout Deployment identifier: rolloutDeployment type: K8sRollingDeploy timeout: 10m spec: skipDryRun: false rollbackSteps: - step: name: Rollback Rollout Deployment identifier: rollbackRolloutDeployment type: K8sRollingRollback timeout: 10m spec: {} tags: {} failureStrategies: - onFailure: errors: - AllErrors action: type: StageRollback'
-                slug: example_pipeline
+                identifier: example_pipeline
                 name: ExamplePipeline
                 description: Pipeline Description
                 tags: 
@@ -2415,7 +2565,7 @@ components:
                                   - AllErrors
                                 action:
                                   type: StageRollback
-                slug: example_pipeline
+                identifier: example_pipeline
                 name: ExamplePipeline
                 description: Pipeline Description
                 tags:
@@ -2437,7 +2587,7 @@ components:
             example-pipeline:
               value: |
                 pipeline_yaml: 'pipeline: allowStageExecutions: false stages: - stage: name: Example Build Stage identifier: example_build_stage description: '''' type: Approval spec: execution: steps: - step: name: Approval Step identifier: Approval_Step type: HarnessApproval timeout: 1d spec: approvalMessage: |- Please review the following information and approve the pipeline progression includePipelineExecutionHistory: true approvers: minimumCount: 1 disallowPipelineExecutor: false userGroups: <+input> approverInputs: [] - step: type: ShellScript name: ShellScript Step identifier: ShellScript_Step spec: shell: Bash onDelegate: true source: type: Inline spec: script: <+input> environmentVariables: [] outputVariables: [] executionTarget: {} timeout: 10m tags: {} - stage: name: Example Deploy Stage identifier: example_deploy_stage description: '''' type: Deployment spec: serviceConfig: serviceRef: <+input> serviceDefinition: spec: variables: [] type: Kubernetes infrastructure: environmentRef: <+input> infrastructureDefinition: type: KubernetesDirect spec: connectorRef: <+input> namespace: <+input> releaseName: release-<+INFRA_KEY> allowSimultaneousDeployments: false execution: steps: - step: name: Rollout Deployment identifier: rolloutDeployment type: K8sRollingDeploy timeout: 10m spec: skipDryRun: false rollbackSteps: - step: name: Rollback Rollout Deployment identifier: rollbackRolloutDeployment type: K8sRollingRollback timeout: 10m spec: {} tags: {} failureStrategies: - onFailure: errors: - AllErrors action: type: StageRollback'
-                slug: example_pipeline
+                identifier: example_pipeline
                 name: ExamplePipeline
                 description: Pipeline Description
                 tags: 
@@ -2496,7 +2646,7 @@ components:
                                                 spec:
                                                     connectorRef: account.harnessciplatform
                                                     namespace: sample
-                slug: example_input_set
+                identifier: example_input_set
                 name: ExampleInputSet
                 description: Input Set Description
                 tags:
@@ -2553,7 +2703,7 @@ components:
                                                 spec:
                                                     connectorRef: account.harnessciplatform
                                                     namespace: sample
-                slug: example_input_set
+                identifier: example_input_set
                 name: ExampleInputSet
                 description: Input Set Description
                 tags:
@@ -2614,7 +2764,7 @@ components:
                                                 spec:
                                                     connectorRef: account.harnessciplatform
                                                     namespace: sample
-                slug: example_input_set
+                identifier: example_input_set
                 name: ExampleInputSet
                 description: Input Set Description
                 tags:
@@ -2626,6 +2776,8 @@ components:
                   last_object_id: abcdXYZ
                   base_branch: old_branch
                   last_commit_id: abcdXYZ
+                  parent_entity_connector_ref: git_connector
+                  parent_entity_repo_name: example_repository
         application/yaml:
           schema:
             $ref: '#/components/schemas/InputSetUpdateRequestBody'
@@ -2669,7 +2821,7 @@ components:
                                                 spec:
                                                     connectorRef: account.harnessciplatform
                                                     namespace: sample
-                slug: example_input_set
+                identifier: example_input_set
                 name: ExampleInputSet
                 description: Input Set Description
                 tags:
@@ -2681,5 +2833,7 @@ components:
                   last_object_id: abcdXYZ
                   base_branch: old_branch
                   last_commit_id: abcdXYZ
+                  parent_entity_connector_ref: git_connector
+                  parent_entity_repo_name: example_repository
       description: Input Set update request body
       required: true

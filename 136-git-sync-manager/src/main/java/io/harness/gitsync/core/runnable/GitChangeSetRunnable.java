@@ -32,7 +32,7 @@ import io.harness.gitsync.core.service.YamlChangeSetService;
 import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.mongo.ProcessTimeLogContext;
+import io.harness.logging.ProcessTimeLogContext;
 import io.harness.queue.QueueController;
 
 import com.google.common.annotations.VisibleForTesting;

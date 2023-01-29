@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -55,6 +56,33 @@ public class InputSetMergeUtility {
         YamlPipelineUtils.writeYamlString(oldInputJsonNode), YamlPipelineUtils.writeYamlString(newInputJsonNode));
 
     return refreshedJsonNode == null ? null : YamlPipelineUtils.writeYamlString(refreshedJsonNode.get(DUMMY_NODE));
+  }
+
+  /**
+   *
+   * @param oldInputsYaml original yaml
+   * @param newInputsYaml input set yaml
+   * @return merged yaml by adding dummy node to the yamls. This can be used for YAML where a single root node does not
+   *     exist. E.g. Array Node, Artifact node
+   * @throws IOException
+   */
+  public String mergeRuntimeInputValuesIntoOriginalYamlForArrayNode(String oldInputsYaml, String newInputsYaml)
+      throws IOException {
+    if (isEmpty(newInputsYaml)) {
+      return oldInputsYaml;
+    }
+    if (isEmpty(oldInputsYaml)) {
+      return newInputsYaml;
+    }
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode oldInputJsonNode = addDummyRootToJsonNode(readTree(oldInputsYaml), mapper);
+    JsonNode newInputJsonNode = addDummyRootToJsonNode(readTree(newInputsYaml), mapper);
+
+    String mergedYaml =
+        MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(YamlPipelineUtils.writeYamlString(oldInputJsonNode),
+            YamlPipelineUtils.writeYamlString(newInputJsonNode), false);
+    JsonNode mergedYamlNode = readTree(mergedYaml);
+    return mergedYamlNode == null ? null : YamlPipelineUtils.writeYamlString(mergedYamlNode.get(DUMMY_NODE));
   }
 
   private JsonNode addDummyRootToJsonNode(JsonNode node, ObjectMapper mapper) {

@@ -96,6 +96,8 @@ import io.harness.serializer.spring.converters.orchestrationMap.OrchestrationMap
 import io.harness.serializer.spring.converters.orchestrationMap.OrchestrationMapWriteConverter;
 import io.harness.serializer.spring.converters.outcomes.PmsOutcomeReadConverter;
 import io.harness.serializer.spring.converters.outcomes.PmsOutcomeWriteConverter;
+import io.harness.serializer.spring.converters.pipelinechaining.PipelineStageInfoReadConverter;
+import io.harness.serializer.spring.converters.pipelinechaining.PipelineStageInfoWriteConverter;
 import io.harness.serializer.spring.converters.plannode.PlanNodeProtoReadConverter;
 import io.harness.serializer.spring.converters.plannode.PlanNodeProtoWriteConverter;
 import io.harness.serializer.spring.converters.principal.ExecutionPrincipalInfoReadConverter;
@@ -131,9 +133,9 @@ import io.harness.serializer.spring.converters.triggers.TriggeredByWriteConverte
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import dev.morphia.converters.TypeConverter;
 import java.util.List;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 
 @UtilityClass
@@ -229,7 +231,8 @@ public class OrchestrationRegistrars {
       PolicySetMetadataReadConverter.class, PolicySetMetadataWriteConverter.class,
       GovernanceMetadataReadConverter.class, GovernanceMetadataWriteConverter.class,
       JsonExpansionInfoReadConverter.class, JsonExpansionInfoWriteConverter.class, StrategyMetadataReadConverter.class,
-      MatrixMetadataReadConverter.class, StrategyMetadataWriteConverter.class, MatrixMetadataWriteConverter.class);
+      MatrixMetadataReadConverter.class, StrategyMetadataWriteConverter.class, MatrixMetadataWriteConverter.class,
+      PipelineStageInfoReadConverter.class, PipelineStageInfoWriteConverter.class);
 
   public static final List<Class<? extends Converter<?, ?>>> springConverters =
       ImmutableList.<Class<? extends Converter<?, ?>>>builder()

@@ -27,15 +27,16 @@ import software.wings.beans.GitFileConfig;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
-import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class KustomizeSourceRepoStoreService implements NgManifestService {
   @Inject ManifestMigrationService manifestMigrationService;
 
@@ -44,10 +45,10 @@ public class KustomizeSourceRepoStoreService implements NgManifestService {
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
     GitFileConfig gitFileConfig = applicationManifest.getGitFileConfig();
-    NgEntityDetail connector =
-        migratedEntities
-            .get(CgEntityId.builder().id(gitFileConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build())
-            .getNgEntityDetail();
+    NgEntityDetail connector = NgManifestFactory.getGitConnector(migratedEntities, applicationManifest);
+    if (connector == null) {
+      return Collections.emptyList();
+    }
 
     GitStore storeConfig = manifestMigrationService.getGitStore(gitFileConfig, entitySpec, connector);
     String dirPath = StringUtils.isBlank(applicationManifest.getKustomizeConfig().getKustomizeDirPath())
@@ -57,8 +58,8 @@ public class KustomizeSourceRepoStoreService implements NgManifestService {
     KustomizeManifest kustomizeManifest =
         KustomizeManifest.builder()
             .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-            .skipResourceVersioning(
-                ParameterField.createValueField(applicationManifest.getSkipVersioningForAllK8sObjects()))
+            .skipResourceVersioning(ParameterField.createValueField(
+                Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
             .store(ParameterField.createValueField(
                 StoreConfigWrapper.builder().type(StoreConfigType.GIT).spec(storeConfig).build()))
             .pluginPath(ParameterField.createValueField(applicationManifest.getKustomizeConfig().getPluginRootDir()))

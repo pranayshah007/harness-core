@@ -10,14 +10,15 @@ package software.wings.sm.states.customdeployment;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
+import static io.harness.utils.Utils.isInstanceOf;
 
 import static software.wings.api.InstanceElement.Builder.anInstanceElement;
 import static software.wings.api.ServiceTemplateElement.Builder.aServiceTemplateElement;
-import static software.wings.beans.Log.Builder.aLog;
 import static software.wings.beans.LogColor.Red;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogHelper.doneColoring;
 import static software.wings.beans.command.CommandUnitDetails.CommandUnitType.CUSTOM_DEPLOYMENT_FETCH_INSTANCES;
+import static software.wings.beans.dto.Log.Builder.aLog;
 import static software.wings.sm.InstanceStatusSummary.InstanceStatusSummaryBuilder.anInstanceStatusSummary;
 import static software.wings.sm.states.customdeploymentng.InstanceMapperUtils.getHostnameFieldName;
 
@@ -59,16 +60,16 @@ import software.wings.api.shellscript.provision.ShellScriptProvisionExecutionDat
 import software.wings.beans.Activity;
 import software.wings.beans.CustomInfrastructureMapping;
 import software.wings.beans.InfrastructureMapping;
-import software.wings.beans.Log.Builder;
 import software.wings.beans.LogColor;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.TaskType;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.FetchInstancesCommandUnit;
+import software.wings.beans.dto.Log.Builder;
 import software.wings.beans.shellscript.provisioner.ShellScriptProvisionParameters;
 import software.wings.beans.template.deploymenttype.CustomDeploymentTypeTemplate;
 import software.wings.expression.ManagerPreviewExpressionEvaluator;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.ActivityHelperService;
 import software.wings.service.impl.servicetemplates.ServiceTemplateHelper;
 import software.wings.service.intfc.DelegateService;
@@ -95,6 +96,7 @@ import software.wings.stencils.DefaultValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import com.jayway.jsonpath.InvalidJsonException;
+import dev.morphia.Key;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -109,7 +111,6 @@ import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.Key;
 
 @FieldNameConstants(innerTypeName = "InstanceFetchStateKeys")
 @Slf4j
@@ -179,11 +180,15 @@ public class InstanceFetchState extends State {
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
     String envId = workflowStandardParams.getEnvId();
 
-    final CustomDeploymentTypeTemplate deploymentTypeTemplate = customDeploymentTypeService.fetchDeploymentTemplate(
-        accountId, infrastructureMapping.getCustomDeploymentTemplateId(),
-        ((CustomInfrastructureMapping) infrastructureMapping).getDeploymentTypeTemplateVersion());
-
+    final CustomDeploymentTypeTemplate deploymentTypeTemplate;
     try {
+      checkArgument(isInstanceOf(CustomInfrastructureMapping.class, infrastructureMapping),
+          format("Infrastructure definition %s is not supported on fetch instance",
+              infrastructureMapping.getDisplayName()));
+
+      deploymentTypeTemplate = customDeploymentTypeService.fetchDeploymentTemplate(accountId,
+          infrastructureMapping.getCustomDeploymentTemplateId(),
+          ((CustomInfrastructureMapping) infrastructureMapping).getDeploymentTypeTemplateVersion());
       validatePrerequisites(deploymentTypeTemplate);
     } catch (IllegalArgumentException e) {
       return handleException(e, "Prerequisites not met.");

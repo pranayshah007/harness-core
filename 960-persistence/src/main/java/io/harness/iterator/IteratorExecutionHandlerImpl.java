@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.iterator;
 
 import static io.harness.threading.Morpheus.sleep;
@@ -16,6 +23,8 @@ public class IteratorExecutionHandlerImpl implements IteratorExecutionHandler {
   private final IteratorConfigWatcher iteratorConfigWatcher;
   private final HashMap<String, IteratorBaseHandler> iteratorHandlerMap;
   @Getter private final HashMap<String, IteratorState> iteratorState;
+
+  public static final String REDIS_BATCH = "REDIS_BATCH";
 
   /**
    * Enum represents the different states that an iterator can be at -
@@ -161,13 +170,13 @@ public class IteratorExecutionHandlerImpl implements IteratorExecutionHandler {
     IteratorStateValues iteratorStateValue;
     if (configOption.isEnabled()) {
       log.info("Iterator {} is enabled - starting it up", configOption.getName());
-      iteratorHandlerMap.get(configOption.getName())
-          .createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
-                                      .name(configOption.getName())
-                                      .poolSize(configOption.getThreadPoolSize())
-                                      .interval(getIntervalDuration(configOption.getThreadPoolIntervalInSeconds()))
-                                      .build(),
-              getNextIterationInterval(configOption));
+
+      if (REDIS_BATCH.equals(configOption.getIteratorMode())) {
+        createAndStartRedisBatchModeIterator(configOption);
+      } else {
+        createAndStartPumpLoopModeIterator(configOption);
+      }
+
       iteratorStateValue = IteratorStateValues.RUNNING;
     } else {
       log.info("Iterator {} is not enabled - not starting it", configOption.getName());
@@ -207,5 +216,35 @@ public class IteratorExecutionHandlerImpl implements IteratorExecutionHandler {
         // Either of the above 2 iteration mode should be set, else its invalid configuration
         return Duration.ofMinutes(0);
     }
+  }
+
+  /**
+   * Helper method to create and start Redis Batch mode iterator.
+   *
+   * @param config provides the necessary configuration for the iterator.
+   */
+  private void createAndStartRedisBatchModeIterator(DynamicIteratorConfig config) {
+    iteratorHandlerMap.get(config.getName())
+        .createAndStartRedisBatchIterator(PersistenceIteratorFactory.RedisBatchExecutorOptions.builder()
+                                              .name(config.getName())
+                                              .poolSize(config.getThreadPoolSize())
+                                              .interval(getIntervalDuration(config.getTargetIntervalInSeconds()))
+                                              .build(),
+            getNextIterationInterval(config));
+  }
+
+  /**
+   * Helper method to create and start Pump or Loop mode iterator.
+   *
+   * @param config provides the necessary configuration for the iterator.
+   */
+  private void createAndStartPumpLoopModeIterator(DynamicIteratorConfig config) {
+    iteratorHandlerMap.get(config.getName())
+        .createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
+                                    .name(config.getName())
+                                    .poolSize(config.getThreadPoolSize())
+                                    .interval(getIntervalDuration(config.getThreadPoolIntervalInSeconds()))
+                                    .build(),
+            getNextIterationInterval(config));
   }
 }

@@ -8,6 +8,7 @@
 package io.harness.steps.container.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.ConnectorType.DOCKER;
 
 import static java.lang.String.format;
 import static org.springframework.util.StringUtils.trimLeadingCharacter;
@@ -16,6 +17,8 @@ import static org.springframework.util.StringUtils.trimTrailingCharacter;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.yaml.ParameterField;
@@ -67,5 +70,20 @@ public class ContainerStepImageUtils {
 
     String prefixRegistryPath = registryHostName + url.getPath();
     return trimTrailingCharacter(prefixRegistryPath, '/') + '/' + trimLeadingCharacter(imageName, '/');
+  }
+
+  public String getFullyQualifiedImageName(String imageName, ConnectorDetails connectorDetails) {
+    if (connectorDetails == null) {
+      return imageName;
+    }
+
+    ConnectorType connectorType = connectorDetails.getConnectorType();
+    if (connectorType != DOCKER) {
+      return imageName;
+    }
+
+    DockerConnectorDTO dockerConnectorDTO = (DockerConnectorDTO) connectorDetails.getConnectorConfig();
+    String dockerRegistryUrl = dockerConnectorDTO.getDockerRegistryUrl();
+    return getImageWithRegistryPath(imageName, dockerRegistryUrl, connectorDetails.getIdentifier());
   }
 }

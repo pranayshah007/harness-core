@@ -8,6 +8,7 @@
 package io.harness.connector.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.security.encryption.EncryptionType.VAULT;
@@ -68,6 +69,7 @@ import io.harness.secretmanagerclient.dto.LocalConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerMetadataDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerMetadataRequestDTO;
+import io.harness.secretmanagerclient.dto.VaultAuthTokenCredentialDTO;
 import io.harness.secretmanagerclient.dto.VaultAwsIamRoleCredentialDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigDTO;
 import io.harness.secretmanagerclient.dto.VaultMetadataRequestSpecDTO;
@@ -163,7 +165,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
 
     when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(vaultConfigDTO);
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(NGVaultFetchEngineTaskResponse.builder().secretEngineSummaryList(new ArrayList<>()).build());
     Call<RestResponse<Boolean>> request = mock(Call.class);
     doReturn(request).when(accountClient).isFeatureFlagEnabled(any(), any());
@@ -171,7 +173,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     doReturn(Response.success(mockResponse)).when(request).execute();
     SecretManagerMetadataDTO metadataDTO = ngVaultService.getListOfEngines(ACCOUNT_IDENTIFIER, requestDTO);
     ArgumentCaptor<DelegateTaskRequest> taskRequestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateService, times(1)).executeSyncTask(taskRequestArgumentCaptor.capture());
+    verify(delegateService, times(1)).executeSyncTaskV2(taskRequestArgumentCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = taskRequestArgumentCaptor.getValue();
     assertEquals(NG_VAULT_FETCHING_TASK.toString(), delegateTaskRequest.getTaskType());
     assertNotNull(delegateTaskRequest.getTaskParameters());
@@ -184,6 +186,31 @@ public class NGVaultServiceImplTest extends CategoryTest {
     assertThat(secretRefData.getDecryptedValue())
         .isEqualTo(taskParameters.getEncryptionConfig().getXVaultAwsIamServerId().toCharArray());
     assertEquals(vaultAwsIamRole, taskParameters.getEncryptionConfig().getVaultAwsIamRole());
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void test_ListSecretEngines_withANonExistingSecret_authToken() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    SecretRefData secretRefData =
+        SecretRefData.builder().identifier("authtoken").decryptedValue(randomAlphabetic(10).toCharArray()).build();
+    SecretManagerMetadataRequestDTO requestDTO =
+        SecretManagerMetadataRequestDTO.builder()
+            .encryptionType(VAULT)
+            .identifier(secretManagerIdentifier)
+            .spec(VaultMetadataRequestSpecDTO.builder()
+                      .url(HTTP_VAULT_URL)
+                      .accessType(AccessType.TOKEN)
+                      .spec(VaultAuthTokenCredentialDTO.builder().authToken(secretRefData).build())
+                      .build())
+            .build();
+    when(ngConnectorSecretManagerService.getUsingIdentifier(ACCOUNT_IDENTIFIER, null, null, "authtoken", false))
+        .thenReturn(LocalConfigDTO.builder().build());
+    when(ngEncryptedDataService.get(any(), any(), any(), any())).thenReturn(null);
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage("Secret [authtoken] not found or has been deleted.");
+    ngVaultService.getListOfEngines(ACCOUNT_IDENTIFIER, requestDTO);
   }
 
   @Test
@@ -209,7 +236,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
 
     // Assert.
-    verify(delegateService, times(0)).executeSyncTask(any());
+    verify(delegateService, times(0)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -229,7 +256,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
 
     // Assert.
-    verify(delegateService, times(0)).executeSyncTask(any());
+    verify(delegateService, times(0)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -255,7 +282,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
 
     // Assert.
-    verify(delegateService, times(0)).executeSyncTask(any());
+    verify(delegateService, times(0)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -275,7 +302,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
                                                          .build())
                                       .build();
     setUpCommonMocks();
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(NGVaultTokenLookupTaskResponse.builder()
                         .vaultTokenLookupResult(VaultTokenLookupResult.builder()
                                                     .expiryTime(randomAlphabetic(10))
@@ -291,7 +318,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
 
     // Assert.
     ArgumentCaptor<DelegateTaskRequest> argumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateService, times(1)).executeSyncTask(argumentCaptor.capture());
+    verify(delegateService, times(1)).executeSyncTaskV2(argumentCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = argumentCaptor.getValue();
     assertEquals(NG_VAULT_TOKEN_LOOKUP.toString(), delegateTaskRequest.getTaskType());
   }
@@ -314,7 +341,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
                                                          .build())
                                       .build();
     setUpCommonMocks();
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(NGVaultTokenLookupTaskResponse.builder()
                         .vaultTokenLookupResult(VaultTokenLookupResult.builder()
                                                     .expiryTime(null)
@@ -332,7 +359,35 @@ public class NGVaultServiceImplTest extends CategoryTest {
     ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
 
     // Assert.
-    verify(delegateService, times(1)).executeSyncTask(any());
+    verify(delegateService, times(1)).executeSyncTaskV2(any());
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void processTokenLookup_vaultConnectorWithTokenBasedAuth_nonExistentSecret() {
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(VaultConnector.builder()
+                                                                                  .accessType(AccessType.TOKEN)
+                                                                                  .authTokenRef("authToken")
+                                                                                  .renewalIntervalMinutes(10L)
+                                                                                  .build());
+    ConnectorDTO inputConnector = ConnectorDTO.builder()
+                                      .connectorInfo(ConnectorInfoDTO.builder()
+                                                         .name(CONNECTOR_NAME)
+                                                         .identifier(CONNECTOR_ID)
+                                                         .orgIdentifier(ORG_IDENTIFIER)
+                                                         .projectIdentifier(PROJECT_IDENTIFIER)
+                                                         .connectorType(ConnectorType.VAULT)
+                                                         .connectorConfig(vaultConnectorDTO)
+                                                         .build())
+                                      .build();
+    when(delegateService.isTaskTypeSupported(any(), any())).thenReturn(true);
+    when(ngEncryptedDataService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "authToken"))
+        .thenReturn(null);
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage("Secret [authToken] not found or has been deleted.");
+
+    ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
   }
 
   @Test
@@ -354,7 +409,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
                                                          .build())
                                       .build();
     setUpCommonMocks();
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(NGVaultTokenLookupTaskResponse.builder()
                         .vaultTokenLookupResult(VaultTokenLookupResult.builder()
                                                     .expiryTime(randomAlphabetic(10))
@@ -371,7 +426,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
 
     // Assert.
-    verify(delegateService, times(1)).executeSyncTask(any());
+    verify(delegateService, times(1)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -392,7 +447,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     ngVaultService.processAppRole(inputConnector, null, ACCOUNT_IDENTIFIER, false);
 
     // Assert.
-    verify(delegateService, times(0)).executeSyncTask(any());
+    verify(delegateService, times(0)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -418,7 +473,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     ngVaultService.processAppRole(inputConnector, null, ACCOUNT_IDENTIFIER, false);
 
     // Assert.
-    verify(delegateService, times(0)).executeSyncTask(any());
+    verify(delegateService, times(0)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -439,7 +494,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
                                       .build();
     setUpCommonMocks();
 
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(NGVaultRenewalAppRoleTaskResponse.builder()
                         .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken("clientToken").build())
                         .build());
@@ -449,7 +504,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
 
     // Assert.
     ArgumentCaptor<DelegateTaskRequest> taskRequestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateService, times(1)).executeSyncTask(taskRequestArgumentCaptor.capture());
+    verify(delegateService, times(1)).executeSyncTaskV2(taskRequestArgumentCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = taskRequestArgumentCaptor.getValue();
 
     assertEquals(delegateTaskRequest.getTaskSetupAbstractions().get(NG_DELEGATE_OWNER_CONSTANT),
@@ -473,7 +528,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
                                                          .build())
                                       .build();
     setUpCommonMocks();
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(
             NGVaultRenewalAppRoleTaskResponse.builder()
                 .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken(randomAlphabetic(10)).build())
@@ -485,6 +540,28 @@ public class NGVaultServiceImplTest extends CategoryTest {
     SecretDTOV2 secretDTOV2 = argumentCaptor.getValue();
     assertNotNull(secretDTOV2);
     assertThat(secretDTOV2.getIdentifier()).isEqualTo(CONNECTOR_ID + "_" + VaultConnectorKeys.authTokenRef);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void processAppRole_withNonExistentAppRoleSecret() {
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(buildAppRoleVaultConnector());
+    vaultConnectorDTO.setRenewAppRoleToken(true);
+    ConnectorDTO inputConnector = ConnectorDTO.builder()
+                                      .connectorInfo(ConnectorInfoDTO.builder()
+                                                         .name(CONNECTOR_NAME)
+                                                         .identifier(CONNECTOR_ID)
+                                                         .orgIdentifier(ORG_IDENTIFIER)
+                                                         .projectIdentifier(PROJECT_IDENTIFIER)
+                                                         .connectorType(ConnectorType.VAULT)
+                                                         .connectorConfig(vaultConnectorDTO)
+                                                         .build())
+                                      .build();
+    when(ngEncryptedDataService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "test")).thenReturn(null);
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage("Secret [test] not found or has been deleted.");
+    ngVaultService.processAppRole(inputConnector, null, ACCOUNT_IDENTIFIER, true);
   }
 
   @Test
@@ -504,7 +581,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
                                                          .build())
                                       .build();
     setUpCommonMocks();
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(
             NGVaultRenewalAppRoleTaskResponse.builder()
                 .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken(randomAlphabetic(10)).build())
@@ -529,14 +606,14 @@ public class NGVaultServiceImplTest extends CategoryTest {
                                                          .build())
                                       .build();
     setUpCommonMocks();
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(
             NGVaultRenewalAppRoleTaskResponse.builder()
                 .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken(randomAlphabetic(10)).build())
                 .build());
     ngVaultService.processAppRole(inputConnector, null, ACCOUNT_IDENTIFIER, false);
     ArgumentCaptor<DelegateTaskRequest> taskRequestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateService, times(1)).executeSyncTask(taskRequestArgumentCaptor.capture());
+    verify(delegateService, times(1)).executeSyncTaskV2(taskRequestArgumentCaptor.capture());
     BaseVaultConfig capturedConfig =
         ((NGVaultRenewalTaskParameters) taskRequestArgumentCaptor.getValue().getTaskParameters()).getEncryptionConfig();
     assertThat(capturedConfig.getNamespace()).isEqualTo(vaultConnectorDTO.getNamespace());
@@ -559,7 +636,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     when(request.execute()).thenReturn(Response.success(new RestResponse<>(false)));
     when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(vaultConfigDTO);
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(
             NGVaultRenewalAppRoleTaskResponse.builder()
                 .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken(randomAlphabetic(10)).build())
@@ -587,7 +664,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     when(request.execute()).thenReturn(Response.success(new RestResponse<>(false)));
     when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(vaultConfigDTO);
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(NGVaultRenewalTaskResponse.builder()
                         .isSuccessful(true)
                         .delegateMetaInfo(DelegateMetaInfo.builder().hostName("hostName").id("id").build())

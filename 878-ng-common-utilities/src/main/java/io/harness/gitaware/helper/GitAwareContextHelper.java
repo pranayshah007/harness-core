@@ -121,4 +121,18 @@ public class GitAwareContextHelper {
     }
     GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(gitEntityInfo).build());
   }
+
+  public void updateGitEntityContextWithBranch(String branch) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    gitEntityInfo.setBranch(branch);
+    updateGitEntityContext(gitEntityInfo);
+  }
+
+  public String getBranchInSCMGitMetadata() {
+    ScmGitMetaData scmGitMetaData = getScmGitMetaData();
+    if (scmGitMetaData == null) {
+      return null;
+    }
+    return scmGitMetaData.getBranchName();
+  }
 }

@@ -8,72 +8,149 @@
 package io.harness.beans.steps.stepinfo;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.script.ScriptInfo;
-import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
-import io.harness.data.validator.EntityIdentifier;
+import io.harness.beans.steps.stepinfo.V1.CIAbstractStepInfo;
+import io.harness.beans.yaml.extended.TILanguage;
+import io.harness.beans.yaml.extended.beans.BuildTool;
+import io.harness.beans.yaml.extended.beans.PullPolicy;
+import io.harness.beans.yaml.extended.beans.Shell;
+import io.harness.beans.yaml.extended.beans.Splitting;
+import io.harness.beans.yaml.extended.reports.V1.Report;
+import io.harness.beans.yaml.extended.volumes.V1.Volume;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.core.VariableExpression;
+import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.ApiModelProperty;
 import java.beans.ConstructorProperties;
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import java.util.Map;
 import lombok.Builder;
-import lombok.Data;
-import org.hibernate.validator.constraints.NotEmpty;
-import org.springframework.data.annotation.TypeAlias;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 
-@Data
+@Value
+@EqualsAndHashCode(callSuper = true)
+@JsonTypeName("test")
 @JsonIgnoreProperties(ignoreUnknown = true)
-@TypeAlias("testStepInfo")
 @OwnedBy(CI)
 @RecasterAlias("io.harness.beans.steps.stepinfo.TestStepInfo")
-public class TestStepInfo implements CIStepInfo {
-  public static final int DEFAULT_RETRY = 0;
-  public static final int DEFAULT_TIMEOUT = 1200;
-
+@Slf4j
+public class TestStepInfo extends CIAbstractStepInfo {
+  @JsonIgnore private static final TypeInfo typeInfo = TypeInfo.builder().stepInfoType(CIStepInfoType.TEST).build();
   @JsonIgnore
-  public static final TypeInfo typeInfo =
-      TypeInfo.builder()
-          .stepInfoType(CIStepInfoType.TEST)
-          .stepType(StepType.newBuilder().setType(CIStepInfoType.TEST.name()).build())
-          .build();
-  @JsonIgnore
-  public static final StepType STEP_TYPE =
-      StepType.newBuilder().setType(CIStepInfoType.TEST.name()).setStepCategory(StepCategory.STEP).build();
+  private static final StepType STEP_TYPE =
+      StepType.newBuilder().setType(CIStepInfoType.TEST.getDisplayName()).setStepCategory(StepCategory.STEP).build();
 
-  @NotNull @EntityIdentifier private String identifier;
-  private String name;
-  @Min(MIN_RETRY) @Max(MAX_RETRY) private int retry;
+  // Keeping the timeout to a day as it's a test step and might take lot' of time.
+  @VariableExpression(skipVariableExpression = true) private static final int DAY = 60 * 60 * 24; // 24 hour;
 
-  @NotEmpty private String numParallel;
-  private List<ScriptInfo> scriptInfos;
-  @ApiModelProperty(dataType = INTEGER_CLASSPATH) private ParameterField<Integer> runAsUser;
+  @VariableExpression(skipVariableExpression = true) @YamlSchemaTypes(value = {runtime}) Map<String, JsonNode> with;
+  public Map<String, JsonNode> getWith() {
+    if (this.with == null) {
+      return Collections.emptyMap();
+    }
+    return this.with;
+  }
+
+  @YamlSchemaTypes(value = {runtime}) @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> image;
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.BuildTool")
+  BuildTool uses;
+
+  @YamlSchemaTypes(value = {string})
+  @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
+  ParameterField<Map<String, String>> envs;
+  public ParameterField<Map<String, String>> getEnvs() {
+    if (ParameterField.isNull(this.envs)) {
+      this.envs.setValue(Collections.emptyMap());
+    }
+    return this.envs;
+  }
+
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.reports.V1.Report", hidden = true)
+  ParameterField<List<Report>> reports;
+  public ParameterField<List<Report>> getReports() {
+    if (ParameterField.isNull(this.reports)) {
+      this.reports.setValue(Collections.emptyList());
+    }
+    return this.reports;
+  }
+
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
+  @VariableExpression(skipVariableExpression = true)
+  ParameterField<List<String>> outputs;
+  public ParameterField<List<String>> getOutputs() {
+    if (ParameterField.isNull(this.outputs)) {
+      this.outputs.setValue(Collections.emptyList());
+    }
+    return this.outputs;
+  }
+
+  @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) ParameterField<Integer> user;
+  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) ParameterField<Boolean> privileged;
+  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.Shell") Shell shell;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.PullPolicy")
+  PullPolicy pull;
+
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.Splitting") Splitting splitting;
+  public Splitting getSplitting() {
+    if (splitting == null) {
+      return Splitting.builder().build();
+    }
+    return splitting;
+  }
 
   @Builder
-  @ConstructorProperties({"identifier", "name", "retry", "numParallel", "scriptInfos", "runAsUser"})
-  public TestStepInfo(String identifier, String name, Integer retry, String numParallel, List<ScriptInfo> scriptInfos,
-      ParameterField<Integer> runAsUser) {
-    this.identifier = identifier;
-    this.name = name;
-    this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
+  @ConstructorProperties({"uuid", "image", "uses", "with", "resources", "envs", "outputs", "reports", "privileged",
+      "user", "pull", "shell", "volumes", "splitting"})
+  public TestStepInfo(String uuid, ParameterField<String> image, BuildTool uses, Map<String, JsonNode> with,
+      ContainerResource resources, ParameterField<Map<String, String>> envs, ParameterField<List<String>> outputs,
+      ParameterField<List<Report>> reports, ParameterField<Boolean> privileged, ParameterField<Integer> user,
+      PullPolicy pull, Shell shell, ParameterField<List<Volume>> volumes, Splitting splitting) {
+    this.uuid = uuid;
+    this.image = image;
+    this.uses = uses;
+    this.with = with;
+    this.resources = resources;
+    this.envs = envs;
+    this.outputs = outputs;
+    this.reports = reports;
+    this.privileged = privileged;
+    this.user = user;
+    this.pull = pull;
+    this.shell = shell;
+    this.volumes = volumes;
+    this.splitting = splitting;
+  }
 
-    this.numParallel = numParallel;
-    this.scriptInfos = scriptInfos;
-    this.runAsUser = runAsUser;
+  @Override
+  public long getDefaultTimeout() {
+    return DAY;
   }
 
   @Override
@@ -89,5 +166,13 @@ public class TestStepInfo implements CIStepInfo {
   @Override
   public String getFacilitatorType() {
     return OrchestrationFacilitatorType.ASYNC;
+  }
+
+  public ParameterField<TILanguage> getLanguage() {
+    JsonNode language = this.getWith().get("language");
+    if (language != null && language.isTextual()) {
+      return ParameterField.createValueField(TILanguage.fromString(language.asText()));
+    }
+    return ParameterField.ofNull();
   }
 }

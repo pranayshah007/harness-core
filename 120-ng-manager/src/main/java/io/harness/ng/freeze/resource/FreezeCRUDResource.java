@@ -20,6 +20,7 @@ import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.account.services.AccountService;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.beans.PermissionTypes;
@@ -38,6 +39,7 @@ import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.notifications.NotificationHelper;
 import io.harness.freeze.service.FreezeCRUDService;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -119,6 +121,7 @@ public class FreezeCRUDResource {
   private final FreezeConfigRepository freezeConfigRepository;
   private final NotificationHelper notificationHelper;
   private static final String DEPLOYMENTFREEZE = "DEPLOYMENTFREEZE";
+  @Inject private AccountService accountService;
 
   @POST
   @ApiOperation(value = "Creates a Freeze", nickname = "createFreeze")
@@ -130,7 +133,6 @@ public class FreezeCRUDResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created Freeze Config")
       })
-  @Hidden
   public ResponseDTO<FreezeResponseDTO>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -154,7 +156,6 @@ public class FreezeCRUDResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created Global Freeze Config")
       })
-  @Hidden
   public ResponseDTO<FreezeResponseDTO>
   manageGlobalFreeze(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -178,7 +179,6 @@ public class FreezeCRUDResource {
         ApiResponse(responseCode = "default", description = "Returns the updated Freeze Config")
       })
 
-  @Hidden
   public ResponseDTO<FreezeResponseDTO>
   update(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -201,7 +201,6 @@ public class FreezeCRUDResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created Freeze Config")
       })
-  @Hidden
   public ResponseDTO<FreezeResponseWrapperDTO>
   updateFreezeStatus(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -230,7 +229,6 @@ public class FreezeCRUDResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created Freeze Config")
       })
-  @Hidden
   public void
   delete(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -252,7 +250,6 @@ public class FreezeCRUDResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created Freeze Config")
       })
-  @Hidden
   public ResponseDTO<FreezeResponseWrapperDTO>
   deleteMany(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -279,7 +276,6 @@ public class FreezeCRUDResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created Freeze Config")
       })
-  @Hidden
   public ResponseDTO<FreezeDetailedResponseDTO>
   get(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -319,7 +315,7 @@ public class FreezeCRUDResource {
     if (freezeConfigEntityOptional.isPresent()) {
       freezeConfigEntity = freezeConfigEntityOptional.get();
     }
-    notificationHelper.sendNotification(freezeConfigEntity);
+    notificationHelper.sendNotification(freezeConfigEntity.getYaml(), true, true, null, accountId, "", "", false);
     return true;
   }
 
@@ -332,7 +328,6 @@ public class FreezeCRUDResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Get Global Freeze Yaml")
       })
-  @Hidden
   public ResponseDTO<FreezeDetailedResponseDTO>
   getGlobalFreeze(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -373,6 +368,11 @@ public class FreezeCRUDResource {
         activeOrUpcomingGlobalFreezes.stream()
             .filter(activeOrUpcomingParentGlobalFreeze -> activeOrUpcomingParentGlobalFreeze.getWindow() != null)
             .collect(Collectors.toList());
+    AccountDTO accountDTO = accountService.getAccount(accountId);
+    if (accountDTO != null && accountDTO.getName() != null && activeOrUpcomingGlobalFreezes.size() > 0) {
+      activeOrUpcomingGlobalFreezes.forEach(
+          freezeBannerDetails -> freezeBannerDetails.setAccountName(accountDTO.getName()));
+    }
     GlobalFreezeBannerDetailsResponseDTO globalFreezeBannerDetailsResponseDTO =
         GlobalFreezeBannerDetailsResponseDTO.builder()
             .activeOrUpcomingGlobalFreezes(activeOrUpcomingGlobalFreezes)
@@ -388,7 +388,6 @@ public class FreezeCRUDResource {
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the list of Freeze for a Project")
       })
-  @Hidden
   public ResponseDTO<PageResponse<FreezeSummaryResponseDTO>>
   getFreezeList(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                     NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,

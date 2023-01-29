@@ -21,7 +21,7 @@ Use below command to run using bazel
 
 # TL;DR: How to run queue service locally
 ```
-export LOG_SERVICE_DISABLE_AUTH=true
+export HSQS_DISABLE_AUTH=true
 bazelisk run //queue-service/hsqs:hsqs-service server
 
 OR
@@ -30,7 +30,7 @@ cd queue-service/hsqs
 ./hsqs server
 
 Replace bazelisk -> bazel if needed
-Log service will start up on port 9091
+Queue service will start up on port 9091
 ```
 
 
@@ -81,7 +81,7 @@ you can use json unmarshaller to convert it into response objects
 Initialize service client config for queue Service in config.yaml
 
 ```
-pipelineServiceClientConfig:
+queueServiceClientConfig:
   baseUrl: http://localhost:9091/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15

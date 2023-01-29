@@ -11,6 +11,9 @@
       "description": {
         "type": "string"
       },
+      "enforce": {
+        "$ref":"#/definitions/cvng/PolicyConfig"
+      },
       "failureStrategies": {
         "type": "array",
         "items": {
@@ -30,7 +33,7 @@
       },
       "timeout": {
         "type": "string",
-        "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$"
+        "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
       },
       "type": {
         "type": "string",
@@ -229,6 +232,9 @@
             "description": {
               "type": "string"
             },
+            "enforce": {
+              "$ref":"#/definitions/cvng/PolicyConfig"
+            },
             "failureStrategies": {
               "type": "array",
               "items": {
@@ -248,7 +254,7 @@
             },
             "timeout": {
               "type": "string",
-              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$"
+              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
             },
             "type": {
               "type": "string",
@@ -498,6 +504,22 @@
           ],
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
+        "InputSetValidator": {
+          "type": "object",
+          "properties": {
+            "parameters": {
+              "type": "string"
+            },
+            "validatorType": {
+              "type": "string",
+              "enum": [
+                "ALLOWED_VALUES",
+                "REGEX"
+              ]
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
         "JsonNode": {
           "type": "object",
           "$schema": "http://json-schema.org/draft-07/schema#"
@@ -681,7 +703,8 @@
                   "DelegateProvisioning",
                   "PolicyEvaluationFailure",
                   "InputTimeoutError",
-                  "ApprovalRejection"
+                  "ApprovalRejection",
+                  "DelegateRestart"
                 ]
               }
             }
@@ -762,6 +785,72 @@
           },
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
+        "ParameterField": {
+          "type": "object",
+          "properties": {
+            "defaultValue": {
+              "type": "object"
+            },
+            "executionInput": {
+              "type": "boolean"
+            },
+            "expression": {
+              "type": "boolean"
+            },
+            "expressionValue": {
+              "type": "string"
+            },
+            "inputSetValidator": {
+              "$ref": "#/definitions/cvng/InputSetValidator"
+            },
+            "jsonResponseField": {
+              "type": "boolean"
+            },
+            "responseField": {
+              "type": "string"
+            },
+            "typeString": {
+              "type": "boolean"
+            },
+            "value": {
+              "type": "object"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "ParameterFieldMatrixConfigInterface": {
+          "type": "object",
+          "properties": {
+            "defaultValue": {
+              "$ref": "#/definitions/cvng/MatrixConfigInterface"
+            },
+            "executionInput": {
+              "type": "boolean"
+            },
+            "expression": {
+              "type": "boolean"
+            },
+            "expressionValue": {
+              "type": "string"
+            },
+            "inputSetValidator": {
+              "$ref": "#/definitions/cvng/InputSetValidator"
+            },
+            "jsonResponseField": {
+              "type": "boolean"
+            },
+            "responseField": {
+              "type": "string"
+            },
+            "typeString": {
+              "type": "boolean"
+            },
+            "value": {
+              "$ref": "#/definitions/cvng/MatrixConfigInterface"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
         "PipelineRollbackFailureActionConfig": {
           "allOf": [
             {
@@ -784,6 +873,27 @@
           ],
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
+        "PolicyConfig": {
+          "type": "object",
+          "required": ["policySets"],
+          "properties": {
+            "policySets": {
+              "oneOf": [
+                {
+                  "type":"array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern":"^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength":1
+                }
+              ]
+            }
+          },
+          "$schema":"http://json-schema.org/draft-07/schema#"},
         "ProceedWithDefaultValuesFailureActionConfig": {
           "allOf": [
             {
@@ -910,7 +1020,8 @@
           ],
           "properties": {
             "condition": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^(?!<\\+input>.*\\.executionInput\\(\\)(.*)$)"
             },
             "stageStatus": {
               "type": "string",
@@ -927,7 +1038,16 @@
           "type": "object",
           "properties": {
             "matrix": {
-              "$ref": "#/definitions/cvng/MatrixConfigInterface"
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/cvng/ParameterFieldMatrixConfigInterface"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "parallelism": {
               "oneOf": [

@@ -130,6 +130,13 @@ public class GitCommitServiceImpl implements GitCommitService {
     return mongoTemplate.upsert(new Query(criteria), update, GitCommit.class);
   }
 
+  @Override
+  public void deleteByAccount(String accountId) {
+    Criteria criteria = new Criteria();
+    criteria.and(GitCommitKeys.accountIdentifier).is(accountId);
+    gitCommitRepository.deleteAll(gitCommitRepository.findAllByAccountIdentifier(accountId));
+  }
+
   // -------------------------- PRIVATE METHODS -------------------------------
 
   private GitCommit prepareGitCommit(GitCommitDTO gitCommitDTO) {

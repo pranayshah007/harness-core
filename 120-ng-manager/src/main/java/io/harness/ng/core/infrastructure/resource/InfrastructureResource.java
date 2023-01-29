@@ -34,6 +34,7 @@ import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.mapper.InfrastructureMapper;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.ssh.SshEntityHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ng.beans.PageResponse;
@@ -145,7 +146,9 @@ public class InfrastructureResource {
   @Inject private final AccessControlClient accessControlClient;
   @Inject CustomDeploymentYamlHelper customDeploymentYamlHelper;
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
+  @Inject private final SshEntityHelper sshEntityHelper;
   private final NGFeatureFlagHelperService featureFlagHelperService;
+  private InfrastructureYamlSchemaHelper infrastructureYamlSchemaHelper;
 
   public static final String INFRA_PARAM_MESSAGE = "Infrastructure Identifier for the entity";
 
@@ -212,16 +215,10 @@ public class InfrastructureResource {
     checkForAccessOrThrow(accountId, infrastructureRequestDTO.getOrgIdentifier(),
         infrastructureRequestDTO.getProjectIdentifier(), infrastructureRequestDTO.getEnvironmentRef(),
         ENVIRONMENT_UPDATE_PERMISSION, "create");
-
+    infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
     InfrastructureEntity infrastructureEntity =
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
-    if (infrastructureEntity.getDeploymentType() == ServiceDefinitionType.CUSTOM_DEPLOYMENT
-        && infrastructureEntity.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
-      if (customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(infrastructureEntity)) {
-        throw new InvalidRequestException(
-            "Infrastructure yaml is not valid, template variables and infra variables doesn't match");
-      }
-    }
+    validateInfrastructureYaml(infrastructureEntity);
     InfrastructureEntity createdInfrastructure = infrastructureEntityService.create(infrastructureEntity);
     return ResponseDTO.newResponse(InfrastructureMapper.toResponseWrapper(createdInfrastructure));
   }
@@ -253,6 +250,8 @@ public class InfrastructureResource {
     });
 
     checkForAccessBatch(accountId, infrastructureRequestDTOS, ENVIRONMENT_UPDATE_PERMISSION);
+    infrastructureRequestDTOS.forEach(infrastructureRequestDTO
+        -> infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml()));
     List<InfrastructureEntity> infrastructureEntities =
         infrastructureRequestDTOS.stream()
             .map(infrastructureRequestDTO
@@ -315,16 +314,10 @@ public class InfrastructureResource {
     checkForAccessOrThrow(accountId, infrastructureRequestDTO.getOrgIdentifier(),
         infrastructureRequestDTO.getProjectIdentifier(), infrastructureRequestDTO.getEnvironmentRef(),
         ENVIRONMENT_UPDATE_PERMISSION, "update");
-
+    infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
     InfrastructureEntity requestInfrastructure =
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
-    if (requestInfrastructure.getDeploymentType() == ServiceDefinitionType.CUSTOM_DEPLOYMENT
-        && requestInfrastructure.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
-      if (customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(requestInfrastructure)) {
-        throw new InvalidRequestException(
-            "Infrastructure yaml is not valid, template variables and infra variables doesn't match");
-      }
-    }
+    validateInfrastructureYaml(requestInfrastructure);
     InfrastructureEntity updatedInfra = infrastructureEntityService.update(requestInfrastructure);
     return ResponseDTO.newResponse(InfrastructureMapper.toResponseWrapper(updatedInfra));
   }
@@ -352,16 +345,10 @@ public class InfrastructureResource {
     checkForAccessOrThrow(accountId, infrastructureRequestDTO.getOrgIdentifier(),
         infrastructureRequestDTO.getProjectIdentifier(), infrastructureRequestDTO.getEnvironmentRef(),
         ENVIRONMENT_UPDATE_PERMISSION, "upsert");
-
+    infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
     InfrastructureEntity requestInfra =
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
-    if (requestInfra.getDeploymentType() == ServiceDefinitionType.CUSTOM_DEPLOYMENT
-        && requestInfra.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
-      if (customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(requestInfra)) {
-        throw new InvalidRequestException(
-            "Infrastructure yaml is not valid, template variables and infra variables doesn't match");
-      }
-    }
+    validateInfrastructureYaml(requestInfra);
     InfrastructureEntity upsertInfra = infrastructureEntityService.upsert(requestInfra, UpsertOptions.DEFAULT);
     return ResponseDTO.newResponse(InfrastructureMapper.toResponseWrapper(upsertInfra));
   }
@@ -438,9 +425,9 @@ public class InfrastructureResource {
   public ResponseDTO<NGEntityTemplateResponseDTO> getInfrastructureInputs(
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
-      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = ENVIRONMENT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @ResourceIdentifier String environmentIdentifier,
@@ -540,6 +527,21 @@ public class InfrastructureResource {
       String oldInfrastructureInputsYaml) {
     return ResponseDTO.newResponse(infrastructureEntityService.mergeInfraStructureInputs(
         accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier, oldInfrastructureInputsYaml));
+  }
+
+  private void validateInfrastructureYaml(InfrastructureEntity infrastructureEntity) {
+    ServiceDefinitionType deploymentType = infrastructureEntity.getDeploymentType();
+    if (deploymentType == ServiceDefinitionType.CUSTOM_DEPLOYMENT
+        && infrastructureEntity.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
+      if (customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(infrastructureEntity)) {
+        throw new InvalidRequestException(
+            "Infrastructure yaml is not valid, template variables and infra variables doesn't match");
+      }
+    }
+
+    if (deploymentType == ServiceDefinitionType.SSH || deploymentType == ServiceDefinitionType.WINRM) {
+      sshEntityHelper.validateInfrastructureYaml(infrastructureEntity);
+    }
   }
 
   private void validateProjectLevelInfraScope(InfrastructureRequestDTO requestDTO, String accountId) {

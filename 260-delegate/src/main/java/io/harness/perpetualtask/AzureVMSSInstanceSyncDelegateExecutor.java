@@ -41,7 +41,9 @@ public class AzureVMSSInstanceSyncDelegateExecutor implements PerpetualTaskExecu
   @Override
   public PerpetualTaskResponse runOnce(
       PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime) {
-    log.info("Running the InstanceSync perpetual task executor for task id: {}", taskId);
+    if (log.isDebugEnabled()) {
+      log.debug("Running the InstanceSync perpetual task executor for task id: {}", taskId);
+    }
     AzureVmssInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AzureVmssInstanceSyncPerpetualTaskParams.class);
     software.wings.beans.AzureConfig azureConfig =

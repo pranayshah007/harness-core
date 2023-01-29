@@ -111,7 +111,25 @@ public class ExceptionUtils {
     } else if (t instanceof HashiCorpVaultRuntimeException) {
       return "After 3 tries, encryption for vault secret failed with the error " + t.getMessage();
     } else {
-      return t.getClass().getSimpleName() + (t.getMessage() == null ? "" : ": " + t.getMessage());
+      StringBuilder result = new StringBuilder();
+      result.append(t.getClass().getSimpleName());
+
+      if (t.getMessage() != null) {
+        result.append(": ");
+        result.append(t.getMessage());
+      }
+
+      Throwable cause = t.getCause();
+      while (cause != null) {
+        if (t.getCause().getMessage() != null) {
+          result.append("; Cause: ");
+          result.append(cause.getClass().getSimpleName());
+          result.append(": ");
+          result.append(t.getCause().getMessage());
+        }
+        cause = cause.getCause();
+      }
+      return result.toString();
     }
   }
 

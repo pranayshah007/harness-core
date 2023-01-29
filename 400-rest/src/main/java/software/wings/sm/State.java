@@ -51,7 +51,7 @@ public abstract class State {
     builder.commandType(state.getStateType());
   }
 
-  protected static final Integer INFINITE_TIMEOUT = -1;
+  public static final Integer INFINITE_TIMEOUT = -1;
 
   @Inject private StateExecutionService stateExecutionService;
 

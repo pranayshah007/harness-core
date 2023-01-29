@@ -12,6 +12,7 @@ import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.delegate.Capability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -22,8 +23,8 @@ import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.polling.ArtifactCollectionTaskParamsNg;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.polling.bean.ArtifactInfo;
 import io.harness.polling.bean.PollingDocument;
-import io.harness.polling.bean.artifact.ArtifactInfo;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
@@ -62,8 +63,13 @@ public class ArtifactPerpetualTaskHelperNg {
     ArtifactInfo artifactInfo = (ArtifactInfo) pollingDocument.getPollingInfo();
     ArtifactConfig artifactConfig = artifactInfo.toArtifactConfig();
 
+    if (artifactConfig instanceof CustomArtifactConfig) {
+      ((CustomArtifactConfig) artifactConfig).setFromTrigger(true);
+    }
+
     ArtifactSourceDelegateRequest artifactSourceDelegateRequest =
         artifactStepHelper.toSourceDelegateRequest(artifactConfig, ambiance);
+
     ArtifactTaskParameters taskParameters = ArtifactTaskParameters.builder()
                                                 .accountId(pollingDocument.getAccountId())
                                                 .artifactTaskType(ArtifactTaskType.GET_BUILDS)

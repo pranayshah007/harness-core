@@ -44,7 +44,6 @@ import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -120,7 +119,12 @@ public class DiscoveryService {
       // TODO: check if child already discovered, if yes, no need to rediscover. Just create a link in parent.
       for (CgEntityId child : chilldren) {
         NgMigrationService ngMigrationService = migrationFactory.getMethod(child.getType());
-        DiscoveryNode node = ngMigrationService.discover(accountId, appId, child.getId());
+        DiscoveryNode node = null;
+        try {
+          node = ngMigrationService.discover(accountId, appId, child.getId());
+        } catch (Exception e) {
+          log.error("error when fetching entity", e);
+        }
         travel(accountId, appId, entities, graph, currentNode.getEntityId(), node);
       }
     }
@@ -217,23 +221,6 @@ public class DiscoveryService {
       exportImg(entities, graph, filePath);
     }
     return DiscoveryResult.builder().entities(entities).links(graph).root(node.getEntityNode().getEntityId()).build();
-  }
-
-  public NGMigrationStatus getMigrationStatus(DiscoveryResult discoveryResult) {
-    if (EmptyPredicate.isEmpty(discoveryResult.getEntities())) {
-      return NGMigrationStatus.builder().status(true).build();
-    }
-    boolean possible = true;
-    List<String> errors = new ArrayList<>();
-    for (CgEntityNode node : discoveryResult.getEntities().values()) {
-      NgMigrationService ngMigration = migrationFactory.getMethod(node.getType());
-      NGMigrationStatus migrationStatus = ngMigration.canMigrate(node.getEntity());
-      if (!migrationStatus.isStatus()) {
-        possible = false;
-        errors.addAll(migrationStatus.getReasons());
-      }
-    }
-    return NGMigrationStatus.builder().status(possible).reasons(errors).build();
   }
 
   private void exportImg(
@@ -392,6 +379,16 @@ public class DiscoveryService {
       return new ArrayList<>();
     }
     List<NGYamlFile> files = new ArrayList<>();
+
+    // Load all migrated entities for the CG entities before actual migration
+    for (CgEntityId cgEntityId : entities.keySet()) {
+      NGYamlFile yamlFile =
+          migrationFactory.getMethod(cgEntityId.getType()).getExistingYaml(inputDTO, entities, cgEntityId);
+      if (yamlFile != null) {
+        migratedEntities.put(cgEntityId, yamlFile);
+        files.add(yamlFile);
+      }
+    }
 
     // Note: Special case: Migrate environments
     // We are doing this because when we migrate infra we need to reference environment

@@ -19,8 +19,8 @@ import static software.wings.service.impl.aws.model.AwsConstants.DEFAULT_BACKOFF
 import static org.apache.commons.lang3.StringUtils.defaultString;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import io.harness.aws.AwsCallTracker;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.util.AwsCallTracker;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 
@@ -63,7 +63,7 @@ public class AwsEcrApiHelperServiceDelegateBase {
     AWSCredentialsProvider credentialsProvider;
 
     if (awsConfig.isUseEc2IamCredentials()) {
-      log.info("Instantiating EC2ContainerCredentialsProviderWrapper");
+      log.debug("Instantiating EC2ContainerCredentialsProviderWrapper");
       credentialsProvider = new EC2ContainerCredentialsProviderWrapper();
     } else if (awsConfig.isUseIRSA()) {
       WebIdentityTokenCredentialsProvider.Builder providerBuilder = WebIdentityTokenCredentialsProvider.builder();

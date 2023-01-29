@@ -17,13 +17,16 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.filters.FilterCreatorHelper;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
 import io.harness.pms.filter.creation.FilterCreationResponse;
+import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.pipeline.service.PMSPipelineServiceImpl;
 import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
+import io.harness.pms.security.PmsSecurityContextGuardUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.pipelinestage.PipelineStageConfig;
 import io.harness.steps.pipelinestage.PipelineStageNode;
@@ -38,6 +41,7 @@ import java.util.Set;
 public class PipelineStageFilterCreator extends GenericStageFilterJsonCreatorV2<PipelineStageNode> {
   @Inject private PMSPipelineServiceImpl pmsPipelineService;
   @Inject private PipelineStageHelper pipelineStageHelper;
+  @Inject private TriggeredByHelper triggeredByHelper;
   @Override
   public Set<String> getSupportedStageTypes() {
     return Collections.singleton(StepSpecTypeConstants.PIPELINE_STAGE);
@@ -69,6 +73,10 @@ public class PipelineStageFilterCreator extends GenericStageFilterJsonCreatorV2<
       throw new InvalidRequestException("Pipeline Inputs and Pipeline Input Set references are not allowed together");
     }
 
+    SourcePrincipalContextBuilder.setSourcePrincipal(
+        PmsSecurityContextGuardUtils.getPrincipal(filterCreationContext.getSetupMetadata().getAccountId(),
+            filterCreationContext.getSetupMetadata().getPrincipalInfo(),
+            filterCreationContext.getSetupMetadata().getTriggeredInfo()));
     Optional<PipelineEntity> childPipelineEntity = pmsPipelineService.getPipeline(
         filterCreationContext.getSetupMetadata().getAccountId(), pipelineStageConfig.getOrg(),
         pipelineStageConfig.getProject(), pipelineStageConfig.getPipeline(), false, false);
@@ -79,6 +87,7 @@ public class PipelineStageFilterCreator extends GenericStageFilterJsonCreatorV2<
     }
     pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get());
 
+    pipelineStageHelper.validateFailureStrategy(stageNode.getFailureStrategies());
     EntityDetailProtoDTO entityDetailProtoDTO =
         getEntityDetailOfChildPipeline(filterCreationContext.getSetupMetadata().getAccountId(), pipelineStageConfig);
     return FilterCreationResponse.builder().referredEntities(Collections.singletonList(entityDetailProtoDTO)).build();

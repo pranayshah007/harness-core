@@ -38,6 +38,7 @@ public class SamlUserGroupSync {
         "SAML: Syncing saml user groups for user: {}, for accountId {}", samlUserAuthorization.getEmail(), accountId);
 
     List<UserGroup> userGroupsToSync = userGroupService.getUserGroupsBySsoId(accountId, ssoId);
+    log.info("[SAML_SYNC]: User groups to sync: {}", userGroupsToSync);
     updateUserGroups(userGroupsToSync, samlUserAuthorization, accountId);
   }
 

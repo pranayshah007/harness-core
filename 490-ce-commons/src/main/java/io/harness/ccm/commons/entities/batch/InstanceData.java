@@ -28,6 +28,8 @@ import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -37,8 +39,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
@@ -97,6 +97,28 @@ public final class InstanceData implements PersistentEntity, UuidAware, CreatedA
                  .field(InstanceDataKeys.usageStartTime)
                  .field(InstanceDataKeys.instanceType)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_instanceId")
+                 .field(InstanceDataKeys.accountId)
+                 .field(InstanceDataKeys.instanceId)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_clusterId_activeInstanceIterator_instanceType_usageStartTime")
+                 .field(InstanceDataKeys.accountId)
+                 .field(InstanceDataKeys.clusterId)
+                 .field(InstanceDataKeys.activeInstanceIterator)
+                 .field(InstanceDataKeys.instanceType)
+                 .field(InstanceDataKeys.usageStartTime)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_clusterId_instanceState_usageStartTime_instanceId_usageStopTime")
+                 .field(InstanceDataKeys.accountId)
+                 .field(InstanceDataKeys.clusterId)
+                 .field(InstanceDataKeys.instanceState)
+                 .field(InstanceDataKeys.usageStartTime)
+                 .field(InstanceDataKeys.instanceId)
+                 .field(InstanceDataKeys.usageStopTime)
+                 .build())
         .build();
   }
 
@@ -120,6 +142,7 @@ public final class InstanceData implements PersistentEntity, UuidAware, CreatedA
   Map<String, String> namespaceLabels;
   Map<String, String> metaData;
   Map<String, String> topOwnerLabels;
+  Map<String, String> metadataAnnotations;
   Instant usageStartTime;
   Instant usageStopTime;
   Instant activeInstanceIterator;

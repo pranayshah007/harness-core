@@ -7,6 +7,12 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.ngmigration.beans.StepOutput;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.expressions.step.ShellScripStepFunctor;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -18,40 +24,81 @@ import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellScriptStepInfo;
 import io.harness.steps.shellscript.ShellScriptStepNode;
 import io.harness.steps.shellscript.ShellType;
+import io.harness.steps.template.TemplateStepNode;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.StringNGVariable;
 
+import software.wings.beans.GraphNode;
+import software.wings.beans.PhaseStep;
+import software.wings.beans.WorkflowPhase;
+import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.ShellScriptState;
-import software.wings.yaml.workflow.StepYaml;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
-public class ShellScriptStepMapperImpl implements StepMapper {
+public class ShellScriptStepMapperImpl extends StepMapper {
   @Override
-  public String getStepType(StepYaml stepYaml) {
+  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
+    return WorkflowStepSupportStatus.SUPPORTED;
+  }
+
+  @Override
+  public Set<String> getExpressions(GraphNode graphNode) {
+    ShellScriptState state = (ShellScriptState) getState(graphNode);
+    if (StringUtils.isBlank(state.getScriptString())) {
+      return Collections.emptySet();
+    }
+    return MigratorExpressionUtils.extractAll(state.getScriptString());
+  }
+
+  @Override
+  public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
+    String templateId = graphNode.getTemplateUuid();
+    if (StringUtils.isNotBlank(templateId)) {
+      return Collections.singletonList(
+          CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
+    }
+    return Collections.emptyList();
+  }
+
+  @Override
+  public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.SHELL_SCRIPT;
   }
 
   @Override
-  public State getState(StepYaml stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+  public State getState(GraphNode stepYaml) {
+    Map<String, Object> properties = getProperties(stepYaml);
     ShellScriptState state = new ShellScriptState(stepYaml.getName());
     state.parseProperties(properties);
     return state;
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
-    ShellScriptState state = (ShellScriptState) getState(stepYaml);
+  public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+    return defaultTemplateSpecMapper(context, graphNode);
+  }
+
+  @Override
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+    ShellScriptState state = (ShellScriptState) getState(graphNode);
     ShellScriptStepNode shellScriptStepNode = new ShellScriptStepNode();
-    baseSetup(stepYaml, shellScriptStepNode);
+    baseSetup(graphNode, shellScriptStepNode);
+
+    if (StringUtils.isNotBlank(graphNode.getTemplateUuid())) {
+      throw new IllegalStateException("Trying to map template step to actual step");
+    }
 
     ExecutionTarget executionTarget = null;
 
@@ -65,7 +112,7 @@ public class ShellScriptStepMapperImpl implements StepMapper {
 
     List<NGVariable> outputVars = new ArrayList<>();
     if (StringUtils.isNotBlank(state.getOutputVars())) {
-      outputVars.addAll(Arrays.stream(state.getSecretOutputVars().split("\\s*,\\s*"))
+      outputVars.addAll(Arrays.stream(state.getOutputVars().split("\\s*,\\s*"))
                             .filter(StringUtils::isNotBlank)
                             .map(str
                                 -> StringNGVariable.builder()
@@ -106,7 +153,7 @@ public class ShellScriptStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     ShellScriptState state1 = (ShellScriptState) getState(stepYaml1);
     ShellScriptState state2 = (ShellScriptState) getState(stepYaml2);
     if (!state1.getScriptType().equals(state2.getScriptType())) {
@@ -121,5 +168,29 @@ public class ShellScriptStepMapperImpl implements StepMapper {
     // No going to compare output vars. Because more output does not impact execution of step.
     // Customers can compare multi similar outputs & they can combine the output.
     return true;
+  }
+
+  @Override
+  public List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
+    ShellScriptState state = (ShellScriptState) getState(graphNode);
+
+    if (StringUtils.isBlank(state.getSweepingOutputName())) {
+      return Collections.emptyList();
+    }
+
+    return Lists
+        .newArrayList(String.format("context.%s", state.getSweepingOutputName()),
+            String.format("%s", state.getSweepingOutputName()))
+        .stream()
+        .map(exp
+            -> StepOutput.builder()
+                   .stageIdentifier(MigratorUtility.generateIdentifier(phase.getName()))
+                   .stepIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()))
+                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
+                   .expression(exp)
+                   .build())
+        .map(ShellScripStepFunctor::new)
+        .collect(Collectors.toList());
   }
 }

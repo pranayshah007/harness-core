@@ -10,7 +10,7 @@ package io.harness.cdng.visitor.helpers.cdstepinfo;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo;
+import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 

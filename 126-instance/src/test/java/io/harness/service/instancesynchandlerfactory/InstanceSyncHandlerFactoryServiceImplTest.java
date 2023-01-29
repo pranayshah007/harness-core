@@ -27,6 +27,7 @@ import io.harness.service.instancesynchandler.K8sInstanceSyncHandler;
 import io.harness.service.instancesynchandler.NativeHelmInstanceSyncHandler;
 import io.harness.service.instancesynchandler.PdcInstanceSyncHandler;
 import io.harness.service.instancesynchandler.ServerlessAwsLambdaInstanceSyncHandler;
+import io.harness.service.instancesynchandler.SpotInstanceSyncHandler;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,6 +42,7 @@ public class InstanceSyncHandlerFactoryServiceImplTest extends InstancesTestBase
   @Mock AzureSshWinrmInstanceSyncHandler azureSshWinrmInstanceSyncHandler;
   @Mock AwsSshWinrmInstanceSyncHandler awsSshWinrmInstanceSyncHandler;
   @Mock AzureWebAppInstanceSyncHandler azureWebAppInstanceSyncHandler;
+  @Mock SpotInstanceSyncHandler spotInstanceSyncHandler;
   @InjectMocks InstanceSyncHandlerFactoryServiceImpl instanceSyncHandlerFactoryService;
 
   @Test
@@ -114,5 +116,14 @@ public class InstanceSyncHandlerFactoryServiceImplTest extends InstancesTestBase
     assertThat(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
                    ServiceSpecType.WINRM, InfrastructureKind.SSH_WINRM_AWS))
         .isEqualTo(awsSshWinrmInstanceSyncHandler);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getInstanceSyncHandlerTestWhenDeploymentTypeIsElasticgroup() {
+    assertThat(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+                   ServiceSpecType.ELASTIGROUP, InfrastructureKind.ELASTIGROUP))
+        .isEqualTo(spotInstanceSyncHandler);
   }
 }

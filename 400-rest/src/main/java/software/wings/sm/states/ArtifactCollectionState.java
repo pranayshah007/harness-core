@@ -60,7 +60,6 @@ import software.wings.beans.TaskType;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -74,6 +73,7 @@ import software.wings.delegatetasks.buildsource.BuildSourceResponse;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.response.HelmCollectChartResponse;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.ArtifactStreamHelper;
 import software.wings.service.impl.ShellScriptUtils;
 import software.wings.service.impl.WorkflowExecutionLogContext;
@@ -96,6 +96,7 @@ import software.wings.utils.MappingUtils;
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -105,7 +106,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @Slf4j
@@ -311,6 +311,14 @@ public class ArtifactCollectionState extends State {
       }
     }
 
+    if (!artifactStream.isArtifactStreamParameterized()
+        && featureFlagService.isEnabled(FeatureName.SPG_FETCH_ARTIFACT_FROM_DB, context.getAccountId())) {
+      Artifact lastCollectedArtifact = fetchCollectedArtifact(artifactStream, evaluatedBuildNo);
+      if (lastCollectedArtifact != null) {
+        return prepareResponseForLastCollectedArtifact(context, artifactStream, lastCollectedArtifact);
+      }
+    }
+
     Integer timeout = getTimeoutMillis();
     DelegateTaskBuilder delegateTaskBuilder;
 
@@ -374,7 +382,7 @@ public class ArtifactCollectionState extends State {
                                           .build());
     }
 
-    String delegateTaskId = delegateService.queueTask(delegateTaskBuilder.build());
+    String delegateTaskId = delegateService.queueTaskV2(delegateTaskBuilder.build());
 
     ArtifactCollectionExecutionData artifactCollectionExecutionData =
         ArtifactCollectionExecutionData.builder()
@@ -515,7 +523,7 @@ public class ArtifactCollectionState extends State {
                       .timeout(timeout)
                       .build());
 
-    String delegateTaskId = delegateService.queueTask(delegateTaskBuilder.build());
+    String delegateTaskId = delegateService.queueTaskV2(delegateTaskBuilder.build());
 
     AppManifestCollectionExecutionData appManifestCollectionExecutionData =
         AppManifestCollectionExecutionData.builder()
@@ -561,6 +569,18 @@ public class ArtifactCollectionState extends State {
       resolveArtifactStreamId(context);
     }
     ArtifactStream artifactStream = artifactStreamService.get(artifactStreamId);
+    if (artifactStream == null) {
+      artifactStream = artifactStreamService.fetchByArtifactSourceVariableValue(context.getAppId(), artifactStreamId);
+      if (artifactStream != null && artifactStream.isArtifactStreamParameterized()
+          && isNotEmpty(getTemplateExpressions())) {
+        log.info("Artifact Stream {} is Parameterized", artifactStreamId);
+        return ExecutionResponse.builder()
+            .executionStatus(ExecutionStatus.FAILED)
+            .errorMessage("Parameterized Artifact Source " + artifactStream.getName()
+                + " cannot be used as a value for templatized artifact variable")
+            .build();
+      }
+    }
     notNullCheck("ArtifactStream was deleted", artifactStream);
 
     String evaluatedBuildNo = getEvaluatedBuildNo(context);

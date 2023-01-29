@@ -33,12 +33,17 @@ public class NGTriggerSourceV2 {
   NGTriggerType type;
 
   @Pattern(regexp = POLLING_INTERVAL_PATTERN) String pollInterval;
+
+  // WebhookId is created during auto-registration process but in some cases where customer cannot reach harness, user
+  // will manually input it
+  String webhookId;
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true) NGTriggerSpecV2 spec;
 
   @Builder
-  public NGTriggerSourceV2(NGTriggerType type, NGTriggerSpecV2 spec, String pollInterval) {
+  public NGTriggerSourceV2(NGTriggerType type, NGTriggerSpecV2 spec, String pollInterval, String webhookId) {
     this.type = type;
     this.spec = spec;
     this.pollInterval = pollInterval;
+    this.webhookId = webhookId;
   }
 }

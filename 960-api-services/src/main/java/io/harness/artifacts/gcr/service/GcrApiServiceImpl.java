@@ -22,6 +22,7 @@ import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
+import io.harness.artifacts.gcr.GcrImageTagResponse;
 import io.harness.artifacts.gcr.GcrRestClient;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
 import io.harness.context.MdcGlobalContextData;
@@ -29,6 +30,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GcpServerException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
@@ -42,7 +44,11 @@ import io.harness.manage.GlobalContextManager;
 import io.harness.network.Http;
 import io.harness.serializer.JsonUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
+import io.github.resilience4j.core.IntervalFunction;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -59,6 +65,16 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Slf4j
 public class GcrApiServiceImpl implements GcrApiService {
   private static final int CONNECT_TIMEOUT = 5; // TODO:: read from config
+  String ERROR_MESSAGE = "There was an error reaching the Google container registry";
+  String CONNECTION_ERROR_MESSAGE = "The connector or the artifact source may not be setup correctly.";
+
+  private final Retry retry;
+
+  public GcrApiServiceImpl() {
+    final RetryConfig config =
+        RetryConfig.custom().maxAttempts(5).intervalFunction(IntervalFunction.ofExponentialBackoff()).build();
+    this.retry = Retry.of("GCRRegistry", config);
+  }
 
   private GcrRestClient getGcrRestClient(String registryHostName) {
     String url = getUrl(registryHostName);
@@ -81,9 +97,8 @@ public class GcrApiServiceImpl implements GcrApiService {
   @Override
   public List<BuildDetailsInternal> getBuilds(GcrInternalConfig gcpConfig, String imageName, int maxNumberOfBuilds) {
     try {
-      Response<GcrImageTagResponse> response = getGcrRestClient(gcpConfig.getRegistryHostname())
-                                                   .listImageTags(gcpConfig.getBasicAuthHeader(), imageName)
-                                                   .execute();
+      Response<GcrImageTagResponse> response =
+          listImageTag(getGcrRestClient(gcpConfig.getRegistryHostname()), gcpConfig.getBasicAuthHeader(), imageName);
       checkValidImage(imageName, response);
       return processBuildResponse(gcpConfig.getRegistryHostname(), imageName, response.body());
     } catch (GcrImageNotFoundRuntimeException ex) {
@@ -95,21 +110,24 @@ public class GcrApiServiceImpl implements GcrApiService {
       throw ex;
     } catch (IOException e) {
       throw handleIOException(gcpConfig, e);
+    } catch (InvalidRequestException e) {
+      throw new HintException(ExceptionUtils.getMessage(e));
+    } catch (Exception e) {
+      throw new HintException(ExceptionUtils.getMessage(e));
     }
   }
 
   private void checkValidImage(String imageName, Response<GcrImageTagResponse> response) throws IOException {
     if (response.code() >= 400) {
       if (response.code() == 404) {
+        ErrorHandlingGlobalContextData globalContextData =
+            GlobalContextManager.get(ErrorHandlingGlobalContextData.IS_SUPPORTED_ERROR_FRAMEWORK);
         if (response.body() == null) {
           throw new InvalidRequestException(
               "Image name [" + imageName + "] does not exist in Google Container Registry.");
         }
-
-        ErrorHandlingGlobalContextData globalContextData =
-            GlobalContextManager.get(ErrorHandlingGlobalContextData.IS_SUPPORTED_ERROR_FRAMEWORK);
         if (globalContextData != null && globalContextData.isSupportedErrorFramework()
-            && response.body().tags.size() == 0) {
+            && response.body().getTags().size() == 0) {
           throw new GcrImageNotFoundRuntimeException(
               "Image name [" + imageName + "] does not exist in Google Container Registry.");
         }
@@ -171,13 +189,13 @@ public class GcrApiServiceImpl implements GcrApiService {
   public boolean validateCredentials(GcrInternalConfig gcpConfig, String imageName) {
     try {
       GcrRestClient registryRestClient = getGcrRestClient(gcpConfig.getRegistryHostname());
-      Response response = registryRestClient.listImageTags(gcpConfig.getBasicAuthHeader(), imageName).execute();
-      return isSuccessful(response);
+      return isSuccessful(listImageTag(registryRestClient, gcpConfig.getBasicAuthHeader(), imageName));
     } catch (IOException e) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          "There was an error reaching the Google container registry",
-          "The connector or the artifact source may not be setup correctly.",
-          new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
+          ERROR_MESSAGE, CONNECTION_ERROR_MESSAGE, new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          ERROR_MESSAGE, CONNECTION_ERROR_MESSAGE, new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
   }
 
@@ -200,9 +218,8 @@ public class GcrApiServiceImpl implements GcrApiService {
   public BuildDetailsInternal verifyBuildNumber(GcrInternalConfig gcrInternalConfig, String imageName, String tag) {
     try {
       Response<DockerImageManifestResponse> response =
-          getGcrRestClient(gcrInternalConfig.getRegistryHostname())
-              .getImageManifest(gcrInternalConfig.getBasicAuthHeader(), imageName, tag)
-              .execute();
+          fetchImage(getGcrRestClient(gcrInternalConfig.getRegistryHostname()), gcrInternalConfig.getBasicAuthHeader(),
+              imageName, tag);
 
       if (!isSuccessful(response)) {
         throw new InvalidRequestException("Please provide a valid ImageName or Tag.");
@@ -211,7 +228,25 @@ public class GcrApiServiceImpl implements GcrApiService {
       return getBuildDetailsInternal(gcrInternalConfig.getRegistryHostname(), imageName, tag);
     } catch (IOException e) {
       throw handleIOException(gcrInternalConfig, e);
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          ERROR_MESSAGE, CONNECTION_ERROR_MESSAGE, new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
+  }
+
+  @VisibleForTesting
+  public Response<DockerImageManifestResponse> fetchImage(
+      GcrRestClient gcrRestClient, String basicAuthHeader, String imageName, String tag) throws Exception {
+    return Retry
+        .decorateCallable(retry, () -> gcrRestClient.getImageManifest(basicAuthHeader, imageName, tag).execute())
+        .call();
+  }
+
+  @VisibleForTesting
+  public Response<GcrImageTagResponse> listImageTag(
+      GcrRestClient gcrRestClient, String basicAuthHeader, String imageName) throws Exception {
+    return Retry.decorateCallable(retry, () -> gcrRestClient.listImageTags(basicAuthHeader, imageName).execute())
+        .call();
   }
 
   private WingsException handleIOException(GcrInternalConfig gcrInternalConfig, IOException e) {
@@ -224,9 +259,8 @@ public class GcrApiServiceImpl implements GcrApiService {
       GlobalContextManager.upsertGlobalContextRecord(mdcGlobalContextData);
       throw new GcrConnectRuntimeException(e.getMessage(), e.getCause());
     }
-    throw NestedExceptionUtils.hintWithExplanationException("There was an error reaching the Google container registry",
-        "The connector or the artifact source may not be setup correctly.",
-        new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
+    throw NestedExceptionUtils.hintWithExplanationException(
+        ERROR_MESSAGE, CONNECTION_ERROR_MESSAGE, new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
   }
 
   private boolean isSuccessful(Response<?> response) {
@@ -248,67 +282,5 @@ public class GcrApiServiceImpl implements GcrApiService {
         unhandled(code);
     }
     return true;
-  }
-
-  /**
-   * The type GCR image tag response.
-   */
-  public static class GcrImageTagResponse {
-    private List<String> child;
-    private String name;
-    private List<String> tags;
-    private Map manifest;
-
-    public Map getManifest() {
-      return manifest;
-    }
-
-    public void setManifest(Map manifest) {
-      this.manifest = manifest;
-    }
-
-    public List<String> getChild() {
-      return child;
-    }
-
-    public void setChild(List<String> child) {
-      this.child = child;
-    }
-
-    /**
-     * Gets name.
-     *
-     * @return the name
-     */
-    public String getName() {
-      return name;
-    }
-
-    /**
-     * Sets name.
-     *
-     * @param name the name
-     */
-    public void setName(String name) {
-      this.name = name;
-    }
-
-    /**
-     * Gets tags.
-     *
-     * @return the tags
-     */
-    public List<String> getTags() {
-      return tags;
-    }
-
-    /**
-     * Sets tags.
-     *
-     * @param tags the tags
-     */
-    public void setTags(List<String> tags) {
-      this.tags = tags;
-    }
   }
 }

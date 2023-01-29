@@ -20,6 +20,7 @@ import io.harness.batch.processing.anomalydetection.alerts.SlackMessageGenerator
 import io.harness.batch.processing.anomalydetection.alerts.service.itfc.AnomalyAlertsService;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.shard.AccountShardService;
+import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelper;
 import io.harness.ccm.anomaly.entities.AnomalyEntity;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
 import io.harness.ccm.anomaly.url.HarnessNgUrl;
@@ -31,6 +32,7 @@ import io.harness.ccm.commons.entities.notifications.CCMNotificationSetting;
 import io.harness.ccm.commons.entities.notifications.CCMPerspectiveNotificationChannelsDTO;
 import io.harness.ccm.communication.CESlackWebhookService;
 import io.harness.ccm.communication.entities.CESlackWebhook;
+import io.harness.ccm.currency.Currency;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.PerspectiveAnomalyService;
 import io.harness.notification.NotificationChannelType;
@@ -77,6 +79,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
   @Autowired private CCMNotificationsDao notificationSettingsDao;
   @Autowired private NotificationResourceClient notificationResourceClient;
   @Autowired private BatchMainConfig mainConfiguration;
+  @Autowired private CurrencyPreferenceHelper currencyPreferenceHelper;
 
   int MAX_RETRY = 3;
 
@@ -103,19 +106,19 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
       return;
     }
     try {
-      sendDailyReportViaSlack(slackWebhook, date);
+      sendDailyReportViaSlack(slackWebhook, date, currencyPreferenceHelper.getDestinationCurrency(accountId));
     } catch (IOException | SlackApiException e) {
       log.error("Unable to send slack daily notification  for account : [{}] Exception : [{}]", accountId, e);
     }
   }
 
-  private void sendDailyReportViaSlack(CESlackWebhook slackWebhook, Instant date)
+  private void sendDailyReportViaSlack(CESlackWebhook slackWebhook, Instant date, Currency currency)
       throws IOException, SlackApiException {
     String accountId = slackWebhook.getAccountId();
     List<AnomalyEntity> anomalies = anomalyService.list(accountId, date);
     List<LayoutBlock> layoutBlocks;
     if (!anomalies.isEmpty()) {
-      layoutBlocks = slackMessageGenerator.generateDailyReport(anomalies);
+      layoutBlocks = slackMessageGenerator.generateDailyReport(anomalies, currency);
       int count = 0;
       while (count < MAX_RETRY) {
         try {
@@ -204,12 +207,14 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     String perspectiveUrl = HarnessNgUrl.getPerspectiveUrl(accountId, perspectiveNotificationSetting.getPerspectiveId(),
         perspectiveNotificationSetting.getPerspectiveName(), mainConfiguration.getBaseUrl());
 
+    Currency currency = currencyPreferenceHelper.getDestinationCurrency(accountId);
+
     Map<String, String> templateData = new HashMap<>();
     templateData.put("perspective_name", perspectiveNotificationSetting.getPerspectiveName());
     templateData.put("anomaly_count", String.valueOf(perspectiveAnomalies.size()));
     templateData.put("anomalies",
         emailMessageGenerator.getAnomalyDetailsString(accountId, perspectiveNotificationSetting.getPerspectiveId(),
-            perspectiveNotificationSetting.getPerspectiveName(), perspectiveAnomalies));
+            perspectiveNotificationSetting.getPerspectiveName(), perspectiveAnomalies, currency));
     templateData.put("perspective_url", perspectiveUrl);
 
     // Sending email alerts
@@ -234,7 +239,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     for (AnomalyData perspectiveAnomaly : perspectiveAnomalies) {
       anomaliesDetails.append(slackMessageGenerator.getAnomalyDetailsTemplateString(accountId,
           perspectiveNotificationSetting.getPerspectiveId(), perspectiveNotificationSetting.getPerspectiveName(),
-          perspectiveAnomaly));
+          perspectiveAnomaly, currency));
     }
     slackTemplateData.put("anomalies_details", anomaliesDetails.toString());
 

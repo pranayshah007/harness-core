@@ -51,7 +51,7 @@ public class InstanceDetailsMapperTest extends InstancesTestBase {
     InstanceDTO instanceDTO = createInstanceDTO(artifactDetails);
 
     List<InstanceDetailsDTO> instanceDetailsDTOList =
-        instanceDetailsMapper.toInstanceDetailsDTOList(Collections.singletonList(instanceDTO));
+        instanceDetailsMapper.toInstanceDetailsDTOList(Collections.singletonList(instanceDTO), false);
 
     assertEquals(1, instanceDetailsDTOList.size());
     assertEquals(DISPLAY_NAME, instanceDetailsDTOList.get(0).getArtifactName());
@@ -65,7 +65,7 @@ public class InstanceDetailsMapperTest extends InstancesTestBase {
     InstanceDTO instanceDTO = createInstanceDTO(artifactDetails);
 
     List<InstanceDetailsDTO> instanceDetailsDTOList =
-        instanceDetailsMapper.toInstanceDetailsDTOList(Collections.singletonList(instanceDTO));
+        instanceDetailsMapper.toInstanceDetailsDTOList(Collections.singletonList(instanceDTO), false);
 
     assertEquals(1, instanceDetailsDTOList.size());
     assertEquals(BUILD_ID, instanceDetailsDTOList.get(0).getArtifactName());

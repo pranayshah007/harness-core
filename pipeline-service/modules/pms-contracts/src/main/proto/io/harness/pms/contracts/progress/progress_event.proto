@@ -17,4 +17,5 @@ message ProgressEvent {
   io.harness.pms.contracts.execution.ExecutionMode executionMode = 2;
   bytes stepParameters = 3;
   bytes progressBytes = 4;
+  bool usingKryoWithoutReference = 5;
 }

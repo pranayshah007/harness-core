@@ -78,6 +78,8 @@ public class GcpSyncTasklet implements Tasklet {
   public static final String ACCOUNT_ID = "accountId";
   public static final String GCP_BILLING_EXPORT_V_1 = "gcp_billing_export_v1";
   public static final String TABLE_NAME = "sourceGcpTableName";
+  public static final String TRIGGER_HISTORICAL_COST_UPDATE_IN_PREFERRED_CURRENCY =
+      "triggerHistoricalCostUpdateInPreferredCurrency";
   @Autowired private BatchMainConfig mainConfig;
   @Autowired private ConnectorResourceClient connectorResourceClient;
   @Autowired protected CloudToHarnessMappingService cloudToHarnessMappingService;
@@ -132,6 +134,9 @@ public class GcpSyncTasklet implements Tasklet {
           log.error("Exception processing NG GCP Connector: {}", connectorInfo.getIdentifier(), e);
         }
       }
+      ServiceAccountCredentials sourceCredentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
+      publishMessage(sourceCredentials, billingDataPipelineConfig.getGcpProjectId(),
+          billingDataPipelineConfig.getGcpSyncPubSubTopic(), "", "", "", "", accountId, "", "", "True");
 
       List<GcpBillingAccount> gcpBillingAccounts =
           cloudToHarnessMappingService.listGcpBillingAccountUpdatedInDuration(accountId);
@@ -179,7 +184,7 @@ public class GcpSyncTasklet implements Tasklet {
                 key
                 -> publishMessage(sourceCredentials, billingDataPipelineConfig.getGcpProjectId(),
                     billingDataPipelineConfig.getGcpSyncPubSubTopic(), dataset.getLocation(), serviceAccountEmail,
-                    datasetId, projectId, accountId, connectorId, table.getTableId().getTable()));
+                    datasetId, projectId, accountId, connectorId, table.getTableId().getTable(), "False"));
             return;
           }
         }
@@ -197,7 +202,7 @@ public class GcpSyncTasklet implements Tasklet {
             key
             -> publishMessage(sourceCredentials, billingDataPipelineConfig.getGcpProjectId(),
                 billingDataPipelineConfig.getGcpSyncPubSubTopic(), dataset.getLocation(), serviceAccountEmail,
-                datasetId, projectId, accountId, connectorId, tableGranularData.getTableId().getTable()));
+                datasetId, projectId, accountId, connectorId, tableGranularData.getTableId().getTable(), "False"));
       }
     }
   }
@@ -237,7 +242,7 @@ public class GcpSyncTasklet implements Tasklet {
 
   public static boolean publishMessage(ServiceAccountCredentials sourceCredentials, String harnessProjectId,
       String topicId, String location, String serviceAccountEmail, String datasetId, String projectId, String accountId,
-      String connectorId, String tableName) {
+      String connectorId, String tableName, String isHistoricalCostUpdateTriggerRequired) {
     TopicName topicName = TopicName.of(harnessProjectId, topicId);
     Publisher publisher = null;
 
@@ -246,15 +251,17 @@ public class GcpSyncTasklet implements Tasklet {
       publisher = Publisher.newBuilder(topicName)
                       .setCredentialsProvider(FixedCredentialsProvider.create(sourceCredentials))
                       .build();
-      ImmutableMap<String, String> customAttributes = ImmutableMap.<String, String>builder()
-                                                          .put(SERVICE_ACCOUNT, serviceAccountEmail)
-                                                          .put(SOURCE_DATA_SET_ID, datasetId)
-                                                          .put(SOURCE_GCP_PROJECT_ID, projectId)
-                                                          .put(SOURCE_DATA_SET_REGION, location)
-                                                          .put(ACCOUNT_ID, accountId)
-                                                          .put(CONNECTOR_ID, connectorId)
-                                                          .put(TABLE_NAME, tableName)
-                                                          .build();
+      ImmutableMap<String, String> customAttributes =
+          ImmutableMap.<String, String>builder()
+              .put(SERVICE_ACCOUNT, serviceAccountEmail)
+              .put(SOURCE_DATA_SET_ID, datasetId)
+              .put(SOURCE_GCP_PROJECT_ID, projectId)
+              .put(SOURCE_DATA_SET_REGION, location)
+              .put(ACCOUNT_ID, accountId)
+              .put(CONNECTOR_ID, connectorId)
+              .put(TABLE_NAME, tableName)
+              .put(TRIGGER_HISTORICAL_COST_UPDATE_IN_PREFERRED_CURRENCY, isHistoricalCostUpdateTriggerRequired)
+              .build();
       ObjectMapper objectMapper = new ObjectMapper();
       String message = objectMapper.writeValueAsString(customAttributes);
       log.info("Sending GCP Sync Pub Sub Event with data: {}", message);

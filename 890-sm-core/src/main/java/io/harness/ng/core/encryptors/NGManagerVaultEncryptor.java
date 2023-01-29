@@ -101,7 +101,7 @@ public class NGManagerVaultEncryptor implements VaultEncryptor {
             .accountId(accountId)
             .taskSetupAbstractions(managerEncryptorHelper.buildAbstractions(parameters.getEncryptionConfig()))
             .build();
-    DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+    DelegateResponseData delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
     DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
     if (!(delegateResponseData instanceof UpsertSecretTaskResponse)) {
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
@@ -122,7 +122,7 @@ public class NGManagerVaultEncryptor implements VaultEncryptor {
             .accountId(accountId)
             .taskSetupAbstractions(managerEncryptorHelper.buildAbstractions(parameters.getEncryptionConfig()))
             .build();
-    DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+    DelegateResponseData delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
     DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
     if (!(delegateResponseData instanceof DeleteSecretTaskResponse)) {
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);

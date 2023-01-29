@@ -44,10 +44,10 @@ func ParseWebhook(ctx context.Context, in *pb.ParseWebhookRequest,
 	start := time.Now()
 	webhook, err := parseWebhookRequest(in)
 	if err != nil {
-	    message := "Failed to parse input webhook payload"
-	    if errors.Is(err, scm.ErrUnknownEvent) {
-	        message = "Unsupported webhook event"
-	    }
+		message := "Failed to parse input webhook payload"
+		if errors.Is(err, scm.ErrUnknownEvent) {
+			message = "Unsupported webhook event"
+		}
 		log.Errorw(
 			message,
 			"input", in.String(),
@@ -101,6 +101,18 @@ func ParseWebhook(ctx context.Context, in *pb.ParseWebhookRequest,
 		return &pb.ParseWebhookResponse{
 			Hook: &pb.ParseWebhookResponse_Branch{
 				Branch: branch,
+			},
+		}, nil
+
+	case *scm.ReleaseHook:
+		release, releaseHookErr := converter.ConvertReleaseHook(event)
+		if releaseHookErr != nil {
+			return nil, releaseHookErr
+		}
+		log.Infow("Successfully parsed release webhook", "elapsed_time_ms", utils.TimeSince(start))
+		return &pb.ParseWebhookResponse{
+			Hook: &pb.ParseWebhookResponse_Release{
+				Release: release,
 			},
 		}, nil
 

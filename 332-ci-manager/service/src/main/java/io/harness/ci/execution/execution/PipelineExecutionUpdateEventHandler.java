@@ -9,7 +9,7 @@ package io.harness.ci.execution;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.PmsCommonConstants.AUTO_ABORT_PIPELINE_THROUGH_TRIGGER;
-import static io.harness.pms.contracts.execution.Status.QUEUED;
+import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.execution.utils.StatusUtils.isFinalStatus;
 import static io.harness.steps.StepUtils.buildAbstractions;
 
@@ -93,11 +93,6 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     Status status = event.getStatus();
     ciRatelimitHandlerExecutor.submit(() -> { updateDailyBuildCount(level, status, serviceName, accountId); });
     executorService.submit(() -> {
-      try {
-        queueExecutionUtils.addActiveExecutionBuild(event, accountId, level.getRuntimeId());
-      } catch (Exception ex) {
-        log.error("Failed to add Execution record for {}", level.getRuntimeId(), ex);
-      }
       sendGitStatus(level, ambiance, status, event, accountId);
       sendCleanupRequest(level, ambiance, status, accountId);
     });
@@ -110,6 +105,8 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
 
       Failsafe.with(retryPolicy).run(() -> {
         if (level.getStepType().getStepCategory() == StepCategory.STAGE && isFinalStatus(status)) {
+          // TODO: Once Robust Cleanup implementation is done shift this after response from delegate is received.
+          queueExecutionUtils.deleteActiveExecutionRecord(ambiance.getStageExecutionId());
           CICleanupTaskParams ciCleanupTaskParams = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
 
           log.info("Received event with status {} to clean planExecutionId {}, stage {}", status,
@@ -118,7 +115,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           DelegateTaskRequest delegateTaskRequest =
               getDelegateCleanupTaskRequest(ambiance, ciCleanupTaskParams, accountId);
 
-          String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+          String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
           log.info("Submitted cleanup request with taskId {} for planExecutionId {}, stage {}", taskId,
               ambiance.getPlanExecutionId(), level.getIdentifier());
 
@@ -134,8 +131,6 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           // like in k8s node pressure evictions) - then this is where we move all of them to blob storage.
           ciLogServiceUtils.closeLogStream(AmbianceUtils.getAccountId(ambiance), logKey, true, true);
           // Now Delete the build from db while cleanup is happening. \
-          // TODO: Once Robust Cleanup implementation is done shift this after response from delegate is received.
-          queueExecutionUtils.deleteActiveExecutionRecord(level.getRuntimeId());
         }
       });
     } catch (Exception ex) {
@@ -181,6 +176,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     String taskType = "CI_CLEANUP";
     SerializationFormat serializationFormat = SerializationFormat.KRYO;
     boolean executeOnHarnessHostedDelegates = false;
+    String stageId = ambiance.getStageExecutionId();
     List<String> eligibleToExecuteDelegateIds = new ArrayList<>();
 
     CICleanupTaskParams.Type type = ciCleanupTaskParams.getType();
@@ -188,7 +184,6 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       taskType = TaskType.DLITE_CI_VM_CLEANUP_TASK.getDisplayName();
       executeOnHarnessHostedDelegates = true;
       serializationFormat = SerializationFormat.JSON;
-      String stageId = ambiance.getStageExecutionId();
       String delegateId = fetchDelegateId(ambiance);
       if (Strings.isNotBlank(delegateId)) {
         eligibleToExecuteDelegateIds.add(delegateId);
@@ -216,6 +211,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     return DelegateTaskRequest.builder()
         .accountId(accountId)
         .executeOnHarnessHostedDelegates(executeOnHarnessHostedDelegates)
+        .stageId(stageId)
         .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
         .taskSelectors(taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()))
         .taskSetupAbstractions(abstractions)
@@ -280,7 +276,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
       if (level != null && serviceName.equalsIgnoreCase(SERVICE_NAME_CI)
-          && level.getStepType().getStepCategory() == StepCategory.STAGE && (status == QUEUED)) {
+          && level.getStepType().getStepCategory() == StepCategory.STAGE && (status == RUNNING)) {
         ciAccountExecutionMetadataRepository.updateCIDailyBuilds(accountId, level.getStartTs());
       }
     }

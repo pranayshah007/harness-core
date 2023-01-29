@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("@rules_java//java:defs.bzl", "java_binary")
 load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
@@ -14,9 +19,13 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//930-delegate-tasks/src/main/java/io/harness/beans:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/exceptionhandler/core:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/expression:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/artifacts/gcr/exceptions:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/common:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/gcp/helpers:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/gcp/taskhandlers:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/tasklogging:module",
         "//930-delegate-tasks/src/main/java/software/wings/beans/bash:module",
         "//930-delegate-tasks/src/main/java/software/wings/beans/configfile:module",
@@ -24,10 +33,17 @@ java_library(
         "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/bash:module",
         "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/validation/core:module",
         "//930-delegate-tasks/src/main/proto/io/harness:930_delegate_tasks_java_proto",
+        "//931-delegate-annotations/src/java/software/wings/delegatetasks:module",
+        "//931-encryption-service/src/java/io/harness/encryptors/clients:module",
+        "//931-encryption-service/src/java/software/wings/service/intfc/security:module",
+        "//931-secret-providers/src/java/io/harness/mappers:module",
+        "//931-secret-providers/src/java/io/harness/serializer/kryo:module",
+        "//931-secret-providers/src/java/io/harness/serializer/morphia:module",
+        "//931-secret-providers/src/java/software/wings/beans:module",
+        "//931-vault-beans/src/java/io/harness/helpers/ext/vault:module",
         "//932-connector-task:module",
         "//933-ci-commons:module",
         "//940-secret-manager-client:module",
-        "//948-cv-nextgen-beans:module",
         "//950-delegate-tasks-beans:module",
         "//952-scm-java-client:module",
         "//953-events-api:module",
@@ -36,6 +52,7 @@ java_library(
         "//957-cg-beans:module",
         "//959-file-service-commons:module",
         "//960-api-services:module",
+        "//960-api-services/src/main/java/io/harness/terraformcloud:module",
         "//970-api-services-beans:module",
         "//970-api-services-beans/src/main/proto:970_api_services_beans_java_proto",
         "//970-grpc:module",
@@ -44,6 +61,7 @@ java_library(
         "//999-annotations:module",
         "//product/ci/engine/proto:ciengine_java_proto",
         "//product/ci/scm/proto:ciscm_java_proto",
+        "//srm-service/modules/cv-nextgen-service/contracts/delegate:module",
         "@maven//:com_amazonaws_aws_java_sdk_applicationautoscaling",
         "@maven//:com_amazonaws_aws_java_sdk_cloudwatch",
         "@maven//:com_amazonaws_aws_java_sdk_elasticloadbalancing",

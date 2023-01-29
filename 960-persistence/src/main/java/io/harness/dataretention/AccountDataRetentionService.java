@@ -19,12 +19,12 @@ import com.google.inject.Singleton;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import java.util.Date;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @OwnedBy(HarnessTeam.PL)
 @Singleton
@@ -39,6 +39,8 @@ public class AccountDataRetentionService {
       Class<? extends AccountDataRetentionEntity> clz, Map<String, Long> accounts, long now, long assureTo) {
     log.info("Account data Retention for {} from {} assuredTo {}", clz.getName(), now, assureTo);
     Query<T> query = persistence.createQuery((Class<T>) clz, excludeAuthority);
+    query.or(query.criteria(AccountDataRetentionEntity.VALID_UNTIL_KEY).equal(null),
+        query.criteria(AccountDataRetentionEntity.VALID_UNTIL_KEY).lessThan(new Date(assureTo)));
     query.order(Sort.ascending(AccountDataRetentionEntity.VALID_UNTIL_KEY));
 
     query.project(AccountDataRetentionEntity.ACCOUNT_ID_KEY, true);

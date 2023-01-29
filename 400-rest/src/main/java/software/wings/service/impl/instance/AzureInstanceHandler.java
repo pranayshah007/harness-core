@@ -26,7 +26,6 @@ import software.wings.beans.AzureInfrastructureMapping;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.Host;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.info.AzureVMSSInstanceInfo;
@@ -34,6 +33,7 @@ import software.wings.beans.infrastructure.instance.info.HostInstanceInfo;
 import software.wings.beans.infrastructure.instance.info.InstanceInfo;
 import software.wings.beans.infrastructure.instance.key.deployment.DeploymentKey;
 import software.wings.helpers.ext.azure.AzureHelperService;
+import software.wings.persistence.artifact.Artifact;
 
 import com.google.inject.Inject;
 import java.util.HashMap;

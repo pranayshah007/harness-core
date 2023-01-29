@@ -51,8 +51,12 @@ public enum PredefinedTemplate {
   CVNG_SLO_MSTEAMS("cvng_notification_templates/cvng_slo_msteams.txt", "cvng_slo_msteams"),
   CVNG_MONITOREDSERVICE_SLACK(
       "cvng_notification_templates/cvng_monitoredservice_slack.txt", "cvng_monitoredservice_slack"),
+  CVNG_MONITOREDSERVICE_ET_SLACK(
+      "cvng_notification_templates/cvng_monitoredservice_et_slack.txt", "cvng_monitoredservice_et_slack"),
   CVNG_MONITOREDSERVICE_EMAIL(
       "cvng_notification_templates/cvng_monitoredservice_email.txt", "cvng_monitoredservice_email"),
+  CVNG_MONITOREDSERVICE_ET_EMAIL(
+      "cvng_notification_templates/cvng_monitoredservice_et_email.txt", "cvng_monitoredservice_et_email"),
   CVNG_MONITOREDSERVICE_PAGERDUTY(
       "cvng_notification_templates/cvng_monitoredservice_pagerduty.txt", "cvng_monitoredservice_pagerduty"),
   CVNG_MONITOREDSERVICE_MSTEAMS(
@@ -66,8 +70,19 @@ public enum PredefinedTemplate {
   FREEZE_SLACK_ALERT("notification_templates/slack_test.txt", "freeze_slack_alert"),
   FREEZE_PD_ALERT("notification_templates/pd_test.txt", "freeze_pagerduty_alert"),
   FREEZE_MSTEAMS_ALERT("notification_templates/msteams_test.txt", "freeze_msteams_alert"),
-  EMAIL_SMP_LICENSE_ALERT("templates/email_smp_license_alert.txt", "email_smp_license_alert");
-
+  EMAIL_SMP_LICENSE_ALERT("templates/email_smp_license_alert.txt", "email_smp_license_alert"),
+  PIPELINE_REJECTED_EMAIL_ALERT(
+      "notification_templates/pipeline_rejected_email_test.txt", "pipeline_rejected_email_alert"),
+  PIPELINE_REJECTED_SLACK_ALERT(
+      "notification_templates/pipeline_rejected_slack_test.txt", "pipeline_rejected_slack_alert"),
+  PIPELINE_REJECTED_PD_ALERT(
+      "notification_templates/pipeline_rejected_pd_test.txt", "pipeline_rejected_pagerduty_alert"),
+  PIPELINE_REJECTED_MSTEAMS_ALERT(
+      "notification_templates/pipeline_rejected_msteams_test.txt", "pipeline_rejected_msteams_alert"),
+  HARNESS_APPROVAL_NOTIFICATION_MSTEAMS(
+      "notification_templates/approval/msteams/plain_text.txt", "harness_approval_msteams"),
+  HARNESS_APPROVAL_EXECUTION_NOTIFICATION_MSTEAMS(
+      "notification_templates/approval/msteams/plain_text_execution.txt", "harness_approval_execution_msteams");
   private String path;
   private String identifier;
 

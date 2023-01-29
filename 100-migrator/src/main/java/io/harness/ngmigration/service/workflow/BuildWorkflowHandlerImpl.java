@@ -7,34 +7,23 @@
 
 package io.harness.ngmigration.service.workflow;
 
-import io.harness.ngmigration.service.step.StepMapperFactory;
+import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 
 import software.wings.beans.BuildWorkflow;
 import software.wings.beans.GraphNode;
 import software.wings.beans.Workflow;
-import software.wings.beans.WorkflowPhase.Yaml;
+import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.service.impl.yaml.handler.workflow.BuildWorkflowYamlHandler;
-import software.wings.yaml.workflow.BuildWorkflowYaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Map;
 
 public class BuildWorkflowHandlerImpl extends WorkflowHandler {
   @Inject BuildWorkflowYamlHandler buildWorkflowYamlHandler;
-  @Inject private StepMapperFactory stepMapperFactory;
-
-  @Override
-  public List<Yaml> getRollbackPhases(Workflow workflow) {
-    BuildWorkflowYaml buildWorkflowYaml = buildWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    return buildWorkflowYaml.getRollbackPhases();
-  }
-
-  @Override
-  public List<Yaml> getPhases(Workflow workflow) {
-    BuildWorkflowYaml buildWorkflowYaml = buildWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    return buildWorkflowYaml.getPhases();
-  }
 
   @Override
   public List<GraphNode> getSteps(Workflow workflow) {
@@ -44,12 +33,8 @@ public class BuildWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
-  public boolean areSimilar(Workflow workflow1, Workflow workflow2) {
-    return areSimilar(stepMapperFactory, workflow1, workflow2);
-  }
-
-  @Override
-  public JsonNode getTemplateSpec(Workflow workflow) {
-    return getCustomStageTemplateSpec(workflow, stepMapperFactory);
+  public JsonNode getTemplateSpec(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
+    return getCustomStageTemplateSpec(WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow));
   }
 }

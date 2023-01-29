@@ -10,26 +10,30 @@ package io.harness.ngmigration.service.workflow;
 import static io.harness.beans.OrchestrationWorkflowType.BASIC;
 import static io.harness.beans.OrchestrationWorkflowType.BLUE_GREEN;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
+import static io.harness.beans.OrchestrationWorkflowType.MULTI_SERVICE;
 import static io.harness.beans.OrchestrationWorkflowType.ROLLING;
 import static io.harness.ng.core.template.TemplateEntityType.PIPELINE_TEMPLATE;
 import static io.harness.ng.core.template.TemplateEntityType.STAGE_TEMPLATE;
 
 import io.harness.beans.OrchestrationWorkflowType;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.template.TemplateEntityType;
-import io.harness.ngmigration.service.step.StepMapperFactory;
+import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
-import software.wings.beans.WorkflowPhase.Yaml;
+import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.service.impl.yaml.handler.workflow.CanaryWorkflowYamlHandler;
-import software.wings.yaml.workflow.CanaryWorkflowYaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
@@ -37,13 +41,6 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
       Sets.newHashSet(BASIC, BLUE_GREEN, ROLLING);
 
   @Inject CanaryWorkflowYamlHandler canaryWorkflowYamlHandler;
-  @Inject private StepMapperFactory stepMapperFactory;
-
-  @Override
-  public List<Yaml> getPhases(Workflow workflow) {
-    CanaryWorkflowYaml canaryWorkflowYaml = canaryWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    return canaryWorkflowYaml.getPhases();
-  }
 
   @Override
   public List<GraphNode> getSteps(Workflow workflow) {
@@ -56,52 +53,45 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
   @Override
   public TemplateEntityType getTemplateType(Workflow workflow) {
     OrchestrationWorkflowType workflowType = workflow.getOrchestration().getOrchestrationWorkflowType();
-    if (ROLLING_WORKFLOW_TYPES.contains(workflowType) || BUILD == workflowType) {
+    if (workflowType != OrchestrationWorkflowType.MULTI_SERVICE) {
       return STAGE_TEMPLATE;
     }
     return PIPELINE_TEMPLATE;
   }
 
-  @Override
-  public boolean areSimilar(Workflow workflow1, Workflow workflow2) {
-    return areSimilar(stepMapperFactory, workflow1, workflow2);
+  PhaseStep getPreDeploymentPhase(Workflow workflow) {
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    return orchestrationWorkflow.getPreDeploymentSteps();
   }
 
-  PhaseStep.Yaml getPreDeploymentPhase(Workflow workflow) {
-    CanaryWorkflowYaml canaryWorkflowYaml = canaryWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    CanaryOrchestrationWorkflow orchestrationWorkflow = (CanaryOrchestrationWorkflow) workflow.getOrchestration();
-    return PhaseStep.Yaml.builder()
-        .stepSkipStrategies(canaryWorkflowYaml.getPreDeploymentStepSkipStrategy())
-        .stepsInParallel(orchestrationWorkflow.getPreDeploymentSteps().isStepsInParallel())
-        .steps(canaryWorkflowYaml.getPreDeploymentSteps())
-        .build();
-  }
-
-  PhaseStep.Yaml getPostDeploymentPhase(Workflow workflow) {
-    CanaryWorkflowYaml canaryWorkflowYaml = canaryWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    CanaryOrchestrationWorkflow orchestrationWorkflow = (CanaryOrchestrationWorkflow) workflow.getOrchestration();
-    return PhaseStep.Yaml.builder()
-        .stepSkipStrategies(canaryWorkflowYaml.getPostDeploymentStepSkipStrategy())
-        .stepsInParallel(orchestrationWorkflow.getPostDeploymentSteps().isStepsInParallel())
-        .steps(canaryWorkflowYaml.getPostDeploymentSteps())
-        .build();
+  PhaseStep getPostDeploymentPhase(Workflow workflow) {
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    return orchestrationWorkflow.getPostDeploymentSteps();
   }
 
   @Override
-  public JsonNode getTemplateSpec(Workflow workflow) {
+  public JsonNode getTemplateSpec(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
     OrchestrationWorkflowType workflowType = workflow.getOrchestration().getOrchestrationWorkflowType();
+    WorkflowMigrationContext context = WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow);
     if (ROLLING_WORKFLOW_TYPES.contains(workflowType)) {
-      return getDeploymentStageTemplateSpec(workflow, stepMapperFactory);
+      return getDeploymentStageTemplateSpec(context);
     }
     if (workflowType == BUILD) {
-      return getCustomStageTemplateSpec(workflow, stepMapperFactory);
+      return getCustomStageTemplateSpec(context);
     }
-    return buildMultiStagePipelineTemplate(stepMapperFactory, workflow);
+    if (workflowType == MULTI_SERVICE) {
+      return buildMultiStagePipelineTemplate(context);
+    }
+    return buildCanaryStageTemplate(context);
   }
 
   @Override
-  List<Yaml> getRollbackPhases(Workflow workflow) {
-    CanaryWorkflowYaml canaryWorkflowYaml = canaryWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    return canaryWorkflowYaml.getRollbackPhases();
+  public ServiceDefinitionType inferServiceDefinitionType(Workflow workflow) {
+    // We can infer the type based on the service, infra & sometimes based on the steps used.
+    // TODO: Deepak Puthraya
+    return ServiceDefinitionType.KUBERNETES;
   }
 }

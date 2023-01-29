@@ -61,7 +61,7 @@ def load_into_main_table(jsonData):
                 ON T.InstanceId = S.InstanceId and T.linkedAccountIdPartition = s.linkedAccountIdPartition
                 WHEN MATCHED THEN
                   UPDATE SET publicIpAddress = s.publicIpAddress, state = s.state, lastUpdatedAt = '%s', 
-                    stateTransitionReason = s.stateTransitionReason, volumeIds = s.volumeIds
+                    stateTransitionReason = s.stateTransitionReason, volumeIds = s.volumeIds, labels = s.labels
                 WHEN NOT MATCHED THEN
                   INSERT (linkedAccountId, instanceId, instanceType, 
                     region, availabilityZone, tenancy, publicIpAddress, state, labels,

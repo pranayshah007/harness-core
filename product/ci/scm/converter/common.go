@@ -36,6 +36,14 @@ func convertAction(a scm.Action) pb.Action {
 		return pb.Action_SYNC
 	case scm.ActionMerge:
 		return pb.Action_MERGE
+	case scm.ActionPublish:
+		return pb.Action_PUBLISH
+	case scm.ActionUnpublish:
+		return pb.Action_UNPUBLISH
+	case scm.ActionPrerelease:
+		return pb.Action_PRERELEASE
+	case scm.ActionRelease:
+		return pb.Action_RELEASE
 	case scm.ActionUnknown:
 		return pb.Action_UNKNOWN
 	default:

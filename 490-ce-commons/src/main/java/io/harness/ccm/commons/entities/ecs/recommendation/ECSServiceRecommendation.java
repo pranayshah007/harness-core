@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;
+import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
 import io.harness.data.structure.MongoMapSanitizer;
 import io.harness.histogram.HistogramCheckpoint;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -29,6 +30,8 @@ import software.wings.graphql.datafetcher.ce.recommendation.entity.Cost;
 
 import com.amazonaws.services.ecs.model.LaunchType;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -40,8 +43,6 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
@@ -120,6 +121,8 @@ public final class ECSServiceRecommendation
   int numDays;
 
   HarnessServiceInfo harnessServiceInfo;
+
+  CCMJiraDetails jiraDetails;
 
   // decision whether to show the recommendation in the Recommendation Overview List page or not.
   public boolean shouldShowRecommendation() {

@@ -135,6 +135,18 @@ if [[ "" != "$CACHE_SERVICE_KEY" ]]; then
   export CACHE_SERVICE_KEY; yq -i '.ciExecutionServiceConfig.cacheIntelligenceConfig.serviceKey=env(CACHE_SERVICE_KEY)' $CONFIG_FILE
 fi
 
+if [[ "" != "$HOSTED_VM_SPLIT_LINUX_AMD64_POOL" ]]; then
+  export HOSTED_VM_SPLIT_LINUX_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxAmd64Pool=env(HOSTED_VM_SPLIT_LINUX_AMD64_POOL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$HOSTED_VM_SPLIT_LINUX_ARM64_POOL" ]]; then
+  export HOSTED_VM_SPLIT_LINUX_ARM64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxArm64Pool=env(HOSTED_VM_SPLIT_LINUX_ARM64_POOL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL" ]]; then
+  export HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxAmd64Pool=env(HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL)' $CONFIG_FILE
+fi
+
 if [[ "" != "$VM_ARTIFACTORY_UPLOAD_IMAGE" ]]; then
   export VM_ARTIFACTORY_UPLOAD_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.artifactoryUpload=env(VM_ARTIFACTORY_UPLOAD_IMAGE)' $CONFIG_FILE
 fi
@@ -162,7 +174,15 @@ fi
 if [[ "" != "$DELEGATE_SERVICE_ENDPOINT_VARIABLE_VALUE" ]]; then
   export DELEGATE_SERVICE_ENDPOINT_VARIABLE_VALUE; yq -i '.ciExecutionServiceConfig.delegateServiceEndpointVariableValue=env(DELEGATE_SERVICE_ENDPOINT_VARIABLE_VALUE)' $CONFIG_FILE
 fi
-
+if [[ "" != "$MINING_GCS_PROJECT_ID" ]]; then
+  export MINING_GCS_PROJECT_ID; yq -i '.ciExecutionServiceConfig.miningPatternConfig.projectId=env(MINING_GCS_PROJECT_ID)' $CONFIG_FILE
+fi
+if [[ "" != "$MINING_GCS_BUCKET_NAME" ]]; then
+  export MINING_GCS_BUCKET_NAME; yq -i '.ciExecutionServiceConfig.miningPatternConfig.bucketName=env(MINING_GCS_BUCKET_NAME)' $CONFIG_FILE
+fi
+if [[ "" != "$MINING_GCS_CREDS" ]]; then
+  export MINING_GCS_CREDS; yq -i '.ciExecutionServiceConfig.miningPatternConfig.gcsCreds=env(MINING_GCS_CREDS)' $CONFIG_FILE
+fi
 if [[ "" != "$SERVER_MAX_THREADS" ]]; then
   export SERVER_MAX_THREADS; yq -i '.server.maxThreads=env(SERVER_MAX_THREADS)' $CONFIG_FILE
 fi
@@ -216,6 +236,10 @@ if [[ "" != "$STO_SERVICE_ENDPOINT" ]]; then
   export STO_SERVICE_ENDPOINT; yq -i '.stoServiceConfig.baseUrl=env(STO_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$IACM_SERVICE_ENDPOINT" ]]; then
+  export $IACM_SERVICE_ENDPOINT; yq -i '.iacmServiceConfig.baseUrl=env(IACM_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$API_URL" ]]; then
   export API_URL; yq -i '.apiUrl=env(API_URL)' $CONFIG_FILE
 fi
@@ -246,6 +270,10 @@ fi
 
 if [[ "" != "$STO_SERVICE_GLOBAL_TOKEN" ]]; then
   export STO_SERVICE_GLOBAL_TOKEN; yq -i '.stoServiceConfig.globalToken=env(STO_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
+fi
+
+if [[ "" != "$IACM_SERVICE_GLOBAL_TOKEN" ]]; then
+  export IACM_SERVICE_GLOBAL_TOKEN; yq -i '.iacmServiceConfig.globalToken=env(IACM_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
@@ -446,6 +474,17 @@ if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
   done
 fi
 
+if [[ "" != "$HSQS_BASE_URL" ]]; then
+  export HSQS_BASE_URL; yq -i '.ciExecutionServiceConfig.queueServiceClient.queueServiceConfig.baseUrl=env(HSQS_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$HSQS_AUTH_TOKEN" ]]; then
+  export HSQS_AUTH_TOKEN; yq -i '.ciExecutionServiceConfig.queueServiceClient.authToken=env(HSQS_AUTH_TOKEN)' $CONFIG_FILE
+fi
+
+if [[ "" != "$OVERRIDE_EXEC_LIMIT_FOR_ACCOUNT" ]]; then
+  export OVERRIDE_EXEC_LIMIT_FOR_ACCOUNT; yq -i '.ciExecutionServiceConfig.executionLimits.overrideConfig[0]=env(OVERRIDE_EXEC_LIMIT_FOR_ACCOUNT)' $CONFIG_FILE
+fi
 
 replace_key_value redisLockConfig.redisUrl "$LOCK_CONFIG_REDIS_URL"
 replace_key_value redisLockConfig.envNamespace "$LOCK_CONFIG_ENV_NAMESPACE"

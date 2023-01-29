@@ -54,6 +54,10 @@ public class ExplanationException extends WingsException {
       "One or more of Client Id, Subscription, Tenant ID and Secret key is/are invalid.";
   public static String INVALID_PARAMETER = "The credentials provided are incorrect.";
   public static String AZURE_INVALID = "There was an issue with Azure.";
+  public static final String AZURE_ARTIFACT_NOT_FOUND_FOR_PACKAGE =
+      "Artifact file not found for downloading the package.";
+  public static final String AZURE_ARTIFACT_DOWNLOAD_FAILED = "Artifact download failed.";
+  public static String SECRET_DECRYPTED_VALUE_INVALID = "Decrypted value was empty.";
 
   // GIT
   public static String INVALID_GIT_REPO = "Provided repo url is invalid.";
@@ -75,7 +79,7 @@ public class ExplanationException extends WingsException {
   public static String URL_NOT_FOUND = "Provided URL path does not exist.";
   public static String AUTHORIZATION_FAILURE = "Provided credentials are unauthorized.";
   public static String DELEGATE_TO_HOST_SOCKET_CONNECTION_FAILED =
-      "Delegate(s) is(are) not able to establish socket connection to host(s)";
+      "Delegate(s) is(are) not able to establish socket connection to host(s). If the port is not specified with the host, it will default to 22.";
   public static String EXPLANATION_FILE_CREATION_ERROR = "Unable to create a new file";
 
   // LDAP

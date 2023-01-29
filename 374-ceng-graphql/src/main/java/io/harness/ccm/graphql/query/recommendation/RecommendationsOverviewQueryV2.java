@@ -16,18 +16,13 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.CLOUD_SERVICE_
 import static io.harness.ccm.commons.constants.ViewFieldConstants.CLUSTER_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.INSTANCE_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.THRESHOLD_DAYS;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
 import static io.harness.ccm.commons.utils.TimeUtils.offsetDateTimeNow;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
 import static io.harness.ccm.views.graphql.ViewsQueryHelper.getPerspectiveIdFromMetadataFilter;
-import static io.harness.ccm.views.service.impl.ViewsBillingServiceImpl.constructQLCEViewFilterFromViewIdCondition;
-import static io.harness.ccm.views.service.impl.ViewsBillingServiceImpl.convertIdFilterToViewCondition;
-import static io.harness.ccm.views.service.impl.ViewsBillingServiceImpl.convertQLCEViewRuleToViewRule;
-import static io.harness.ccm.views.service.impl.ViewsBillingServiceImpl.getIdFilters;
-import static io.harness.ccm.views.service.impl.ViewsBillingServiceImpl.getRuleFilters;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_HOURLY_AGGREGRATED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
@@ -38,6 +33,7 @@ import static java.util.Collections.emptyList;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.beans.recommendation.RecommendationOverviewStats;
+import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.recommendation.RecommendationService;
@@ -62,6 +58,7 @@ import io.harness.ccm.views.graphql.QLCEViewRule;
 import io.harness.ccm.views.graphql.QLCEViewTimeFilter;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;
+import io.harness.ccm.views.helper.ViewParametersHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.queryconverter.SQLConverter;
@@ -117,6 +114,7 @@ public class RecommendationsOverviewQueryV2 {
   @Inject private ViewsQueryBuilder viewsQueryBuilder;
   @Inject private BigQueryService bigQueryService;
   @Inject private BigQueryHelper bigQueryHelper;
+  @Inject private ViewParametersHelper viewParametersHelper;
   private static final Set<String> RECOMMENDATION_RESOURCE_TYPE_COLUMNS =
       ImmutableSet.of(WORKLOAD_NAME_FIELD_ID, INSTANCE_NAME_FIELD_ID, CLOUD_SERVICE_NAME_FIELD_ID);
   private static final Set<String> RECOMMENDATION_FILTER_COLUMNS = ImmutableSet.of(CLUSTER_NAME_FIELD_ID,
@@ -150,6 +148,10 @@ public class RecommendationsOverviewQueryV2 {
                               .recommendationDetails(getRecommendationDetails(item, env))
                               .monthlyCost(item.getMonthlyCost())
                               .monthlySaving(item.getMonthlySaving())
+                              .recommendationState(item.getRecommendationState())
+                              .jiraConnectorRef(item.getJiraConnectorRef())
+                              .jiraIssueKey(item.getJiraIssueKey())
+                              .jiraStatus(item.getJiraStatus())
                               .build())
                 .collect(Collectors.toList());
     return RecommendationsDTO.builder().items(items).offset(filter.getOffset()).limit(filter.getLimit()).build();
@@ -177,6 +179,11 @@ public class RecommendationsOverviewQueryV2 {
   @GraphQLQuery(name = "count", description = "generic count query RecommendationsDTO context")
   public int count(@GraphQLContext RecommendationsDTO xyz, @GraphQLEnvironment final ResolutionEnvironment env) {
     return genericCountQuery(env);
+  }
+
+  @GraphQLQuery(name = "markRecommendationAsApplied", description = "Mark a recommendation as applied")
+  public void markRecommendationAsApplied(@GraphQLArgument(name = "recommendationId") String recommendationId) {
+    recommendationService.updateRecommendationState(recommendationId, RecommendationState.APPLIED);
   }
 
   private int genericCountQuery(@NotNull final ResolutionEnvironment env) {
@@ -217,6 +224,10 @@ public class RecommendationsOverviewQueryV2 {
       if (!isEmpty(filter.getResourceTypes())) {
         condition = condition.and(CE_RECOMMENDATIONS.RESOURCETYPE.in(enumToString(filter.getResourceTypes())));
       }
+      if (!isEmpty(filter.getRecommendationStates())) {
+        condition =
+            condition.and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.in(enumToString(filter.getRecommendationStates())));
+      }
 
       condition = condition.and(constructInCondition(CE_RECOMMENDATIONS.CLUSTERNAME, filter.getClusterNames()));
       condition = condition.and(constructInCondition(CE_RECOMMENDATIONS.NAMESPACE, filter.getNamespaces()));
@@ -237,14 +248,16 @@ public class RecommendationsOverviewQueryV2 {
     final BigQuery bigQuery = bigQueryService.get();
     final List<QLCEViewTimeFilter> qlCEViewTimeFilters = viewsQueryHelper.getTimeFilters(perspectiveFilters);
 
-    final List<QLCEViewRule> qlCeViewRules = getRuleFilters(perspectiveFilters);
-    final List<ViewRule> combinedViewRuleList = convertQLCEViewRuleToViewRule(qlCeViewRules);
+    final List<QLCEViewRule> qlCeViewRules = viewParametersHelper.getRuleFilters(perspectiveFilters);
+    final List<ViewRule> combinedViewRuleList =
+        viewParametersHelper.convertQLCEViewRuleListToViewRuleList(qlCeViewRules);
     combinedViewRuleList.addAll(getPerspectiveRuleList(perspectiveFilters));
 
     Condition ORConditions =
         constructViewRuleFilterCondition(bigQuery, combinedViewRuleList, accountId, qlCEViewTimeFilters);
 
-    final List<ViewCondition> viewIdConditions = convertIdFilterToViewCondition(getIdFilters(perspectiveFilters));
+    final List<ViewCondition> viewIdConditions =
+        viewParametersHelper.convertIdFilterToViewCondition(viewParametersHelper.getIdFilters(perspectiveFilters));
 
     Condition ANDConditions = constructViewFilterCondition(bigQuery, viewIdConditions, accountId, qlCEViewTimeFilters);
 
@@ -385,7 +398,7 @@ public class RecommendationsOverviewQueryV2 {
   private TableResult getWorkloadAndCloudServiceNamesTableResult(final BigQuery bigQuery, final String accountId,
       final List<QLCEViewTimeFilter> qlCEViewTimeFilters, final ViewIdCondition idCondition) {
     final List<QLCEViewFilter> qlCEViewFilters =
-        Collections.singletonList(constructQLCEViewFilterFromViewIdCondition(idCondition));
+        Collections.singletonList(viewParametersHelper.constructQLCEViewFilterFromViewIdCondition(idCondition));
     final String cloudProviderTableName =
         bigQueryHelper.getCloudProviderTableName(accountId, CLUSTER_TABLE_HOURLY_AGGREGRATED);
     final SelectQuery query = viewsQueryBuilder.getWorkloadAndCloudServiceNamesForLabels(
@@ -521,12 +534,12 @@ public class RecommendationsOverviewQueryV2 {
     return DSL.noCondition();
   }
 
-  private static Condition getValidRecommendationFilter() {
+  public static Condition getValidRecommendationFilter() {
     return CE_RECOMMENDATIONS.ISVALID
         .eq(true)
         // based on current-gen workload recommendation dataFetcher
         .and(CE_RECOMMENDATIONS.LASTPROCESSEDAT.greaterOrEqual(
-            offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(THRESHOLD_DAYS)))
+            offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION)))
         .and(nonDelegate());
   }
 

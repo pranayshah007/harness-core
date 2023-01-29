@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import io.harness.batch.processing.pricing.banzai.BanzaiRecommenderClient;
 import io.harness.batch.processing.pricing.vmpricing.VMPricingService;
 import io.harness.batch.processing.tasklet.util.ClusterHelper;
+import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelper;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.commons.beans.billing.InstanceCategory;
 import io.harness.ccm.commons.beans.recommendation.K8sServiceProvider;
@@ -34,6 +35,9 @@ import io.harness.ccm.commons.beans.recommendation.models.RecommendationResponse
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.RecommendationCrudService;
+import io.harness.ccm.currency.Currency;
+import io.harness.ccm.graphql.core.recommendation.RecommendationsIgnoreListService;
+import io.harness.ccm.graphql.dto.common.CloudServiceProvider;
 import io.harness.pricing.dto.cloudinfo.ProductDetails;
 import io.harness.pricing.dto.cloudinfo.ZonePrice;
 import io.harness.rule.Owner;
@@ -66,7 +70,9 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
   @Mock private VMPricingService vmPricingService;
   @Mock private RecommendationCrudService recommendationCrudService;
   @Mock private ClusterHelper clusterHelper;
+  @Mock private RecommendationsIgnoreListService ignoreListService;
   @Mock(answer = Answers.RETURNS_DEEP_STUBS) private BanzaiRecommenderClient banzaiRecommenderClient;
+  @Mock private CurrencyPreferenceHelper currencyPreferenceHelper;
   @InjectMocks private K8sNodeRecommendationTasklet tasklet;
 
   private static final String NODE_POOL_NAME = "nodePoolName";
@@ -132,6 +138,12 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
     doNothing()
         .when(recommendationCrudService)
         .upsertNodeRecommendation(eq(entityUuid), any(), eq(nodePoolId), eq(CLUSTER_NAME), any());
+    when(currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
+             anyString(), any(CloudServiceProvider.class), any(Currency.class)))
+        .thenReturn(1.0);
+    doNothing()
+        .when(ignoreListService)
+        .updateNodeRecommendationState(eq(entityUuid), eq(ACCOUNT_ID), eq(CLUSTER_NAME), eq(NODE_POOL_NAME));
   }
 
   @Test

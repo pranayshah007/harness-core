@@ -55,6 +55,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -204,6 +208,58 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     return applicationDetail;
   }
 
+  @Override
+  public ApplicationDetail createRollingApplicationWithSteadyStateCheck(CfCreateApplicationRequestData requestData,
+      LogCallback executionLogCallback) throws PivotalClientApiException, InterruptedException {
+    boolean steadyStateReached = false;
+    CfRequestConfig cfRequestConfig = requestData.getCfRequestConfig();
+    long timeout = cfRequestConfig.getTimeOutIntervalInMins() <= 0 ? 10 : cfRequestConfig.getTimeOutIntervalInMins();
+    long expiryTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(timeout);
+
+    executionLogCallback.saveExecutionLog(color("\n# Streaming Logs From PCF -", White, Bold));
+    StartedProcess startedProcess = startTailingLogsIfNeeded(cfRequestConfig, executionLogCallback, null);
+
+    ApplicationDetail applicationDetail = null;
+    ExecutorService executorService = Executors.newFixedThreadPool(1);
+    Future<ApplicationDetail> future =
+        executorService.submit(new CreateApplicationTask(cfCliClient, cfSdkClient, requestData, executionLogCallback));
+    executorService.shutdown();
+
+    while (!steadyStateReached && System.currentTimeMillis() < expiryTime) {
+      try {
+        startedProcess = startTailingLogsIfNeeded(cfRequestConfig, executionLogCallback, startedProcess);
+        applicationDetail = cfSdkClient.getApplicationByName(cfRequestConfig);
+        if (future.isDone() || future.isCancelled()) {
+          steadyStateReached = true;
+          if (!future.isCancelled()) {
+            applicationDetail = future.get();
+          }
+          destroyProcess(startedProcess);
+        } else {
+          Thread.sleep(THREAD_SLEEP_INTERVAL_FOR_STEADY_STATE_CHECK);
+        }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt(); // restore the flag
+        throw new PivotalClientApiException("Thread Was Interrupted, stopping execution");
+      } catch (ExecutionException executionException) {
+        throw new PivotalClientApiException(
+            PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(executionException), executionException);
+      } catch (Exception e) {
+        executionLogCallback.saveExecutionLog(
+            "Error while waiting for steadyStateCheck." + e.getMessage() + ", Continuing with steadyStateCheck");
+      }
+    }
+
+    if (!steadyStateReached) {
+      future.cancel(true);
+      executionLogCallback.saveExecutionLog(color("# Steady State Check Failed", White, Bold));
+      destroyProcess(startedProcess);
+      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + "Failed to reach steady state");
+    }
+
+    return applicationDetail;
+  }
+
   @VisibleForTesting
   void destroyProcess(StartedProcess startedProcess) {
     if (startedProcess != null && startedProcess.getProcess() != null) {
@@ -312,6 +368,24 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
   }
 
   @Override
+  public List<ApplicationSummary> getPreviousReleasesForRolling(CfRequestConfig cfRequestConfig, String prefix)
+      throws PivotalClientApiException {
+    try {
+      List<ApplicationSummary> applicationSummaries = cfSdkClient.getApplications(cfRequestConfig);
+      if (CollectionUtils.isEmpty(applicationSummaries)) {
+        return Collections.emptyList();
+      }
+
+      return applicationSummaries.stream()
+          .filter(applicationSummary -> applicationSummary.getName().toLowerCase().equals(prefix))
+          .collect(toList());
+
+    } catch (Exception e) {
+      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
+    }
+  }
+
+  @Override
   public List<ApplicationSummary> getPreviousReleases(CfRequestConfig cfRequestConfig, String prefix)
       throws PivotalClientApiException {
     try {
@@ -344,6 +418,47 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     } catch (Exception e) {
       throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
     }
+  }
+
+  @Override
+  public List<ApplicationSummary> getPreviousReleasesBasicAndCanaryNG(CfRequestConfig cfRequestConfig, String prefix)
+      throws PivotalClientApiException {
+    try {
+      List<ApplicationSummary> applicationSummaries = cfSdkClient.getApplications(cfRequestConfig);
+      if (CollectionUtils.isEmpty(applicationSummaries)) {
+        return Collections.emptyList();
+      }
+
+      return applicationSummaries.stream()
+          .filter(applicationSummary -> matchesPrefixBasicAndCanaryNG(prefix, applicationSummary.getName()))
+          .sorted(Comparator.comparing(ApplicationSummary::getName,
+              (name1, name2) -> {
+                String suffix1 = getLowerCaseSuffix(name1, prefix);
+                String suffix2 = getLowerCaseSuffix(name2, prefix);
+                return getIntegerSafe(suffix1).compareTo(getIntegerSafe(suffix2));
+              }))
+          .collect(toList());
+
+    } catch (Exception e) {
+      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
+    }
+  }
+  private boolean matchesPrefixBasicAndCanaryNG(String prefix, String name) {
+    boolean prefixMatches = name.toLowerCase().startsWith(prefix.toLowerCase());
+    if (prefixMatches) {
+      String suffix = name.substring(prefix.length());
+      prefixMatches = isValidRevisionSuffixBasicAndCanaryNG(suffix);
+    }
+    return prefixMatches;
+  }
+  boolean isValidRevisionSuffixBasicAndCanaryNG(String suffix) {
+    boolean result = suffix.length() == 0;
+
+    if (!result && suffix.startsWith(DELIMITER)) {
+      suffix = suffix.substring(DELIMITER.length());
+      result = getIntegerSafe(suffix) != -1;
+    }
+    return result;
   }
 
   /**
@@ -477,6 +592,13 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
   }
 
   @Override
+  public boolean checkIfAppHasAutoscalarEnabled(CfAppAutoscalarRequestData appAutoscalarRequestData,
+      LogCallback executionLogCallback) throws PivotalClientApiException {
+    appAutoscalarRequestData.setExpectedEnabled(true);
+    return cfCliClient.checkIfAppHasAutoscalerWithExpectedState(appAutoscalarRequestData, executionLogCallback);
+  }
+
+  @Override
   public void performConfigureAutoscalar(CfAppAutoscalarRequestData appAutoscalarRequestData,
       LogCallback executionLogCallback) throws PivotalClientApiException {
     boolean autoscalarAttached =
@@ -557,6 +679,24 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
   }
 
   @Override
+  public boolean isInActiveApplicationNG(CfRequestConfig cfRequestConfig) throws PivotalClientApiException {
+    if (PcfConstants.isInterimApp(cfRequestConfig.getApplicationName())) {
+      return false;
+    }
+    ApplicationEnvironments applicationEnvironments = cfSdkClient.getApplicationEnvironmentsByName(cfRequestConfig);
+    if (applicationEnvironments != null && EmptyPredicate.isNotEmpty(applicationEnvironments.getUserProvided())) {
+      for (String statusKey : STATUS_ENV_VARIABLES) {
+        if (applicationEnvironments.getUserProvided().containsKey(statusKey)
+            && (HARNESS__INACTIVE__IDENTIFIER.equals(applicationEnvironments.getUserProvided().get(statusKey))
+                || HARNESS__STAGE__IDENTIFIER.equals(applicationEnvironments.getUserProvided().get(statusKey)))) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  @Override
   public void setEnvironmentVariableForAppStatus(CfRequestConfig cfRequestConfig, boolean activeStatus,
       LogCallback executionLogCallback) throws PivotalClientApiException {
     // If we want to enable it, its expected to be disabled and vice versa
@@ -564,6 +704,17 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     cfCliClient.setEnvVariablesForApplication(
         Collections.singletonMap(
             HARNESS__STATUS__IDENTIFIER, activeStatus ? HARNESS__ACTIVE__IDENTIFIER : HARNESS__STAGE__IDENTIFIER),
+        cfRequestConfig, executionLogCallback);
+  }
+
+  @Override
+  public void setEnvironmentVariableForAppStatusNG(CfRequestConfig cfRequestConfig, boolean activeStatus,
+      LogCallback executionLogCallback) throws PivotalClientApiException {
+    // If we want to enable it, its expected to be disabled and vice versa
+    removeOldStatusVariableIfExist(cfRequestConfig, executionLogCallback);
+    cfCliClient.setEnvVariablesForApplication(
+        Collections.singletonMap(
+            HARNESS__STATUS__IDENTIFIER, activeStatus ? HARNESS__ACTIVE__IDENTIFIER : HARNESS__INACTIVE__IDENTIFIER),
         cfRequestConfig, executionLogCallback);
   }
 

@@ -40,6 +40,7 @@ public interface NameService {
   String pipelineExecution = "PipelineExecution";
   String user = "User";
   String tag = "Tag";
+  String rejectedByFreezeWindow = "RejectedByFreezeWindow";
 
   String infrastructureDefinition = "InfrastructureDefinition";
   String deploymentType = "DeploymentType";

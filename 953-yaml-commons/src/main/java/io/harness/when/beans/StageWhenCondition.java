@@ -15,10 +15,12 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.core.VariableExpression;
+import io.harness.yaml.schema.beans.SchemaConstants;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Value;
@@ -33,5 +35,7 @@ public class StageWhenCondition {
   @ApiModelProperty(hidden = true)
   String uuid;
   @NotNull @VariableExpression WhenConditionStatus pipelineStatus;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> condition;
+  @Pattern(regexp = SchemaConstants.STRING_BUT_NOT_EXECUTION_INPUT_PATTERN)
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  ParameterField<String> condition;
 }

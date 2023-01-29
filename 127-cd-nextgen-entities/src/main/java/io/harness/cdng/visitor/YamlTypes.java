@@ -58,6 +58,15 @@ public interface YamlTypes {
   String ELASTIGROUP_DEPLOY = StepSpecTypeConstants.ELASTIGROUP_DEPLOY;
   String ELASTIGROUP_ROLLBACK = StepSpecTypeConstants.ELASTIGROUP_ROLLBACK;
 
+  String TAS_CANARY_APP_SETUP = StepSpecTypeConstants.TAS_CANARY_APP_SETUP;
+  String TAS_BG_APP_SETUP = StepSpecTypeConstants.TAS_BG_APP_SETUP;
+  String TAS_BASIC_APP_SETUP = StepSpecTypeConstants.TAS_BASIC_APP_SETUP;
+  String TAS_APP_RESIZE = StepSpecTypeConstants.TAS_APP_RESIZE;
+  String TAS_SWAP_ROUTES = StepSpecTypeConstants.TAS_SWAP_ROUTES;
+  String TAS_ROLLBACK = StepSpecTypeConstants.TAS_ROLLBACK;
+  String SWAP_ROLLBACK = StepSpecTypeConstants.SWAP_ROLLBACK;
+  String TANZU_COMMAND = StepSpecTypeConstants.TANZU_COMMAND;
+
   String ECS_ROLLING_DEPLOY = StepSpecTypeConstants.ECS_ROLLING_DEPLOY;
   String ECS_ROLLING_ROLLBACK = StepSpecTypeConstants.ECS_ROLLING_ROLLBACK;
   String ECS_CANARY_DEPLOY = StepSpecTypeConstants.ECS_CANARY_DEPLOY;
@@ -72,6 +81,14 @@ public interface YamlTypes {
   String AZURE_SWAP_SLOT = StepSpecTypeConstants.AZURE_SWAP_SLOT;
   String AZURE_WEBAPP_ROLLBACK = StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK;
   String FETCH_INSTANCE_SCRIPT = StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT;
+
+  String ASG_CANARY_DEPLOY = StepSpecTypeConstants.ASG_CANARY_DEPLOY;
+  String ASG_CANARY_DELETE = StepSpecTypeConstants.ASG_CANARY_DELETE;
+  String ASG_ROLLING_DEPLOY = StepSpecTypeConstants.ASG_ROLLING_DEPLOY;
+  String ASG_ROLLING_ROLLBACK = StepSpecTypeConstants.ASG_ROLLING_ROLLBACK;
+  String ASG_BLUE_GREEN_DEPLOY = StepSpecTypeConstants.ASG_BLUE_GREEN_DEPLOY;
+  String ASG_BLUE_GREEN_ROLLBACK = StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK;
+  String ASG_BLUE_GREEN_SWAP_SERVICE = StepSpecTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE;
 
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";
@@ -170,4 +187,12 @@ public interface YamlTypes {
 
   String ORG = "organization";
   String SPACE = "space";
+
+  String ELASTIGROUP_BG_STAGE_SETUP = StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP;
+  String ELASTIGROUP_SWAP_ROUTE = StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE;
+
+  String TAS_ROLLING_DEPLOY = StepSpecTypeConstants.TAS_ROLLING_DEPLOY;
+  String TAS_ROLLING_ROLLBACK = StepSpecTypeConstants.TAS_ROLLING_ROLLBACK;
+
+  String K8S_DRY_RUN_MANIFEST = StepSpecTypeConstants.K8S_DRY_RUN_MANIFEST;
 }

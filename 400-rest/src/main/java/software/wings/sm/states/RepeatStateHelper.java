@@ -16,7 +16,7 @@ import io.harness.context.ContextElementType;
 import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.sm.ContextElement;

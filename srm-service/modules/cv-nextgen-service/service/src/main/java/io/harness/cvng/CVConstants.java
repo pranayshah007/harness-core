@@ -46,6 +46,7 @@ public interface CVConstants {
 
   String DATA_SOURCE_TYPE = "type";
   String SLO_SPEC = "type";
+  String DOWNTIME_SPEC_TYPE = "type";
   String SLO_TARGET_TYPE = "type";
   String SLI_METRIC_TYPE = "type";
   String METRIC_THRESHOLD_METRIC_TYPE = "type";
@@ -57,6 +58,8 @@ public interface CVConstants {
   String TAG_ACCOUNT_ID = "accountId";
   String TAG_ONBOARDING = "onboarding";
   String STATEMACHINE_PUBLISHER = "srm_statemachine_publisher";
+
+  String CUSTOM_CHANGE_PUBLISHER = "srm_custom_change_publisher";
   String SET_KEY = "$set";
   int BULK_OPERATION_THRESHOLD = 1000;
 

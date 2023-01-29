@@ -82,33 +82,27 @@ public class EcsMapper {
         .build();
   }
 
-  public String createCreateServiceRequestFromService(Service service) throws JsonProcessingException {
-    CreateServiceRequest.Builder createServiceRequestBuilder =
-        CreateServiceRequest.builder()
-            .serviceName(service.serviceName())
-            .taskDefinition(service.taskDefinition())
-            .capacityProviderStrategy(service.capacityProviderStrategy())
-            .serviceRegistries(service.serviceRegistries())
-            .deploymentConfiguration(service.deploymentConfiguration())
-            .deploymentController(service.deploymentController())
-            .desiredCount(service.desiredCount())
-            .enableECSManagedTags(service.enableECSManagedTags())
-            .enableExecuteCommand(service.enableExecuteCommand())
-            .healthCheckGracePeriodSeconds(service.healthCheckGracePeriodSeconds())
-            .launchType(service.launchType())
-            .networkConfiguration(service.networkConfiguration())
-            .loadBalancers(service.loadBalancers())
-            .placementConstraints(service.placementConstraints())
-            .placementStrategy(service.placementStrategy())
-            .platformVersion(service.platformVersion())
-            .propagateTags(service.propagateTags())
-            .role(service.roleArn())
-            .tags(service.tags());
-
-    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-    return objectMapper.writeValueAsString(createServiceRequestBuilder);
+  public CreateServiceRequest.Builder createCreateServiceRequestBuilderFromService(Service service) {
+    return CreateServiceRequest.builder()
+        .serviceName(service.serviceName())
+        .taskDefinition(service.taskDefinition())
+        .capacityProviderStrategy(service.capacityProviderStrategy())
+        .serviceRegistries(service.serviceRegistries())
+        .deploymentConfiguration(service.deploymentConfiguration())
+        .deploymentController(service.deploymentController())
+        .desiredCount(service.desiredCount())
+        .enableECSManagedTags(service.enableECSManagedTags())
+        .enableExecuteCommand(service.enableExecuteCommand())
+        .healthCheckGracePeriodSeconds(service.healthCheckGracePeriodSeconds())
+        .launchType(service.launchType())
+        .networkConfiguration(service.networkConfiguration())
+        .loadBalancers(service.loadBalancers())
+        .placementConstraints(service.placementConstraints())
+        .placementStrategy(service.placementStrategy())
+        .platformVersion(service.platformVersion())
+        .propagateTags(service.propagateTags())
+        .role(service.roleArn())
+        .tags(service.tags());
   }
 
   public String createRegisterScalableTargetRequestFromScalableTarget(ScalableTarget scalableTarget)

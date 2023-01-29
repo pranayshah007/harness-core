@@ -31,7 +31,9 @@ public class MaintenanceController implements Managed {
   private static final String SHUTDOWN_FILENAME = "shutdown";
 
   private static Boolean forceMaintenance;
-  private static final AtomicBoolean maintenance = new AtomicBoolean(true);
+
+  // true: in maintenance, false: not in maintenance
+  private static final AtomicBoolean currentMaintenanceState = new AtomicBoolean(false);
   private static final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public static void forceMaintenance(boolean force) {
@@ -39,6 +41,7 @@ public class MaintenanceController implements Managed {
       if (forceMaintenance == null || forceMaintenance != force) {
         log.info("Setting forced maintenance {}", force);
         forceMaintenance = force;
+        setCurrentMaintenanceState(force);
       }
     }
   }
@@ -47,15 +50,16 @@ public class MaintenanceController implements Managed {
     synchronized (log) {
       log.info("Un-setting forced maintenance");
       forceMaintenance = null;
+      setCurrentMaintenanceState(false);
     }
   }
 
   public static boolean getMaintenanceFlag() {
-    return forceMaintenance != null ? forceMaintenance : maintenance.get();
+    return currentMaintenanceState.get();
   }
 
   private final AtomicBoolean running = new AtomicBoolean(false);
-  private final Subject<MaintenanceListener> maintenanceListenerSubject = new Subject<>();
+  private static final Subject<MaintenanceListener> maintenanceListenerSubject = new Subject<>();
   private ScheduledFuture scheduledFuture;
 
   public void register(MaintenanceListener listener) {
@@ -81,6 +85,10 @@ public class MaintenanceController implements Managed {
 
   private void checkForMaintenance() {
     boolean isShutdown = new File(SHUTDOWN_FILENAME).exists();
+    boolean isMaintenance = isShutdown || currentMaintenanceState.get() || new File(MAINTENANCE_FILENAME).exists();
+
+    setCurrentMaintenanceState(isMaintenance);
+
     if (shutdown.getAndSet(isShutdown) != isShutdown) {
       // We don't expect to ever leave shutdown mode, but log either way
       log.info("{} shutdown mode", isShutdown ? "Entering" : "Leaving");
@@ -88,12 +96,13 @@ public class MaintenanceController implements Managed {
         maintenanceListenerSubject.fireInform(MaintenanceListener::onShutdown);
       }
     }
-    boolean isMaintenance =
-        forceMaintenance != null ? forceMaintenance : new File(MAINTENANCE_FILENAME).exists() || isShutdown;
-    if (maintenance.getAndSet(isMaintenance) != isMaintenance) {
-      log.info("{} maintenance mode", isMaintenance ? "Entering" : "Leaving");
+  }
+
+  private static void setCurrentMaintenanceState(boolean maintenanceState) {
+    if (currentMaintenanceState.getAndSet(maintenanceState) != maintenanceState) {
+      log.info("{} maintenance mode", maintenanceState ? "Entering" : "Leaving");
       maintenanceListenerSubject.fireInform(
-          isMaintenance ? MaintenanceListener::onEnterMaintenance : MaintenanceListener::onLeaveMaintenance);
+          maintenanceState ? MaintenanceListener::onEnterMaintenance : MaintenanceListener::onLeaveMaintenance);
     }
   }
 

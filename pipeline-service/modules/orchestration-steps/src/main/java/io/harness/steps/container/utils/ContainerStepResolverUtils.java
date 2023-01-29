@@ -7,6 +7,7 @@
 
 package io.harness.steps.container.utils;
 
+import io.harness.beans.yaml.extended.CIShellType;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.pms.yaml.ParameterField;
@@ -30,6 +31,14 @@ public class ContainerStepResolverUtils {
       return null;
     } else {
       return ImagePullPolicy.fromString(pullPolicy.fetchFinalValue().toString()).getYamlName();
+    }
+  }
+
+  public static CIShellType resolveShellType(ParameterField<CIShellType> shellType) {
+    if (shellType == null || shellType.isExpression() || shellType.getValue() == null) {
+      return CIShellType.SH;
+    } else {
+      return CIShellType.fromString(shellType.fetchFinalValue().toString());
     }
   }
 }

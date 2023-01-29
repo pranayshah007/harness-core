@@ -109,7 +109,7 @@ public class SettingsMapperTest extends CategoryTest {
                                                     .valueType(valueType)
                                                     .groupIdentifier(groupIdentifier)
                                                     .build();
-    SettingDTO settingDTO = settingsMapper.writeSettingDTO(settingConfiguration, true);
+    SettingDTO settingDTO = settingsMapper.writeSettingDTO(settingConfiguration, true, defaultValue);
     assertSettingDTOPropertiesAndValue(identifier, name, null, null, category, defaultValue, defaultValue, valueType,
         allowedValues, true, SettingSource.DEFAULT, true, settingDTO, settingConfiguration.getAllowedScopes());
   }
@@ -138,8 +138,9 @@ public class SettingsMapperTest extends CategoryTest {
     String identifier = randomAlphabetic(10);
     SettingConfiguration settingConfiguration = SettingConfiguration.builder().identifier(identifier).build();
     SettingDTO settingDTO = SettingDTO.builder().identifier(identifier).build();
-    when(settingsMapper.writeSettingDTO(settingConfiguration, true)).thenReturn(settingDTO);
-    SettingResponseDTO settingResponseDTO = settingsMapper.writeSettingResponseDTO(settingConfiguration, true);
+    when(settingsMapper.writeSettingDTO(settingConfiguration, true, defaultValue)).thenReturn(settingDTO);
+    SettingResponseDTO settingResponseDTO =
+        settingsMapper.writeSettingResponseDTO(settingConfiguration, true, defaultValue);
     assertThat(settingResponseDTO)
         .hasFieldOrPropertyWithValue("setting", settingDTO)
         .hasFieldOrPropertyWithValue("lastModifiedAt", null);
@@ -187,7 +188,8 @@ public class SettingsMapperTest extends CategoryTest {
                                               .value(newValue)
                                               .updateType(SettingUpdateType.UPDATE)
                                               .build();
-    SettingDTO newSettingDTO = settingsMapper.writeNewDTO(setting, settingRequestDTO, settingConfiguration, true);
+    SettingDTO newSettingDTO =
+        settingsMapper.writeNewDTO(setting, settingRequestDTO, settingConfiguration, true, defaultValue);
     assertSettingDTOPropertiesAndValue(identifier, name, orgIdentifier, projectIdentifier, category, newValue,
         defaultValue, valueType, allowedValues, false, SettingSource.PROJECT, true, newSettingDTO,
         settingConfiguration.getAllowedScopes());
@@ -222,8 +224,8 @@ public class SettingsMapperTest extends CategoryTest {
                                               .value(newValue)
                                               .updateType(SettingUpdateType.UPDATE)
                                               .build();
-    SettingDTO newSettingDTO =
-        settingsMapper.writeNewDTO(orgIdentifier, projectIdentifier, settingRequestDTO, settingConfiguration, true);
+    SettingDTO newSettingDTO = settingsMapper.writeNewDTO(
+        orgIdentifier, projectIdentifier, settingRequestDTO, settingConfiguration, true, defaultValue);
     assertSettingDTOPropertiesAndValue(identifier, name, orgIdentifier, projectIdentifier, category, newValue,
         defaultValue, valueType, allowedValues, false, SettingSource.PROJECT, true, newSettingDTO,
         settingConfiguration.getAllowedScopes());

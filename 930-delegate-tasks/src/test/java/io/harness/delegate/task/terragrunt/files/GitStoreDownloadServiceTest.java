@@ -118,9 +118,9 @@ public class GitStoreDownloadServiceTest extends CategoryTest {
                                                            .optimizedFilesFetch(true)
                                                            .build();
 
-    List<String> resultFiles = downloadService.fetchFiles(storeDelegateConfig, ACCOUNT_ID, OUTPUT_DIR, logCallback);
+    FetchFilesResult result = downloadService.fetchFiles(storeDelegateConfig, ACCOUNT_ID, OUTPUT_DIR, logCallback);
     verify(scmFetchFilesHelper).downloadFilesUsingScm(OUTPUT_DIR, storeDelegateConfig, logCallback);
-    assertThat(resultFiles)
+    assertThat(result.getFiles())
         .containsAll(files.stream()
                          .map(file -> Paths.get(OUTPUT_DIR, file).toAbsolutePath().toString())
                          .collect(Collectors.toList()));
@@ -172,7 +172,7 @@ public class GitStoreDownloadServiceTest extends CategoryTest {
       doReturn(sshSessionConfig).when(sshSessionConfigMapper).getSSHSessionConfig(sshKeySpec, encryptedDataDetailList);
     }
 
-    List<String> files = downloadService.fetchFiles(storeDelegateConfig, ACCOUNT_ID, OUTPUT_DIR, logCallback);
+    FetchFilesResult result = downloadService.fetchFiles(storeDelegateConfig, ACCOUNT_ID, OUTPUT_DIR, logCallback);
 
     if (sshKeySpec != null) {
       verify(sshSessionConfigMapper).getSSHSessionConfig(sshKeySpec, encryptedDataDetailList);
@@ -186,8 +186,9 @@ public class GitStoreDownloadServiceTest extends CategoryTest {
     assertThat(request.getFilePaths()).containsAll(paths);
     assertThat(request.getCommitId()).isEqualTo(COMMIT_ID);
 
-    assertThat(files).containsAll(paths.stream()
-                                      .map(file -> Paths.get(OUTPUT_DIR, file).toAbsolutePath().toString())
-                                      .collect(Collectors.toList()));
+    assertThat(result.getFiles())
+        .containsAll(paths.stream()
+                         .map(file -> Paths.get(OUTPUT_DIR, file).toAbsolutePath().toString())
+                         .collect(Collectors.toList()));
   }
 }

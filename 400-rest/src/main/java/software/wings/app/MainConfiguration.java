@@ -40,6 +40,7 @@ import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfig;
 import io.harness.mongo.MongoConfig;
+import io.harness.queueservice.config.DelegateQueueServiceConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -135,6 +136,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty(defaultValue = "50") private int jenkinsBuildQuerySize = 50;
   @JsonProperty("iteratorsConfig") private IteratorsConfig iteratorsConfig;
   @JsonProperty("executorsConfig") private ExecutorsConfig executorsConfig;
+  @JsonProperty("dataReconciliation") private DataReconciliationConfig dataReconciliationConfig;
   @JsonProperty private io.harness.delegate.beans.FileUploadLimit fileUploadLimits = new FileUploadLimit();
   @JsonProperty("backgroundScheduler") private SchedulerConfig backgroundSchedulerConfig = new SchedulerConfig();
   @JsonProperty("serviceScheduler") private SchedulerConfig serviceSchedulerConfig = new SchedulerConfig();
@@ -234,7 +236,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty(value = "cdTsDbRetentionPeriodMonths") private String cdTsDbRetentionPeriodMonths;
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty(value = "disableInstanceSyncIterator") private Boolean disableInstanceSyncIterator;
-
+  @JsonProperty("delegateQueueServiceConfig") private DelegateQueueServiceConfig queueServiceConfig;
   // If this flag is enabled event framework is utilized for wait engine notification mechanism
   @JsonProperty(value = "redisNotifyEvent") private boolean redisNotifyEvent;
 

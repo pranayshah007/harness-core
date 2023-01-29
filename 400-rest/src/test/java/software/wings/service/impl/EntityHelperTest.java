@@ -39,11 +39,11 @@ import software.wings.dl.WingsPersistence;
 import software.wings.service.impl.yaml.service.YamlHelper;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.Query;
 
 public class EntityHelperTest extends WingsBaseTest {
   @Mock private WingsPersistence mockWingsPersistence;

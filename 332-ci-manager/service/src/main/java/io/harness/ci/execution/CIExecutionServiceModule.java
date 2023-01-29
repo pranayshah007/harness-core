@@ -35,6 +35,7 @@ import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.config.ExecutionLimits;
 import io.harness.ci.serializer.PluginCompatibleStepSerializer;
 import io.harness.ci.serializer.PluginStepProtobufSerializer;
 import io.harness.ci.serializer.ProtobufStepSerializer;
@@ -49,6 +50,7 @@ import io.harness.waiter.WaiterConfiguration;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
+import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Names;
@@ -92,9 +94,17 @@ public class CIExecutionServiceModule extends AbstractModule {
     this.withPMS = withPMS;
   }
 
+  @Provides
+  public ExecutionLimits ExecutionLimits(CIExecutionServiceConfig ciExecutionServiceConfig) {
+    return ciExecutionServiceConfig.getExecutionLimits();
+  }
+
   @Override
   protected void configure() {
     install(CIBeansModule.getInstance());
+    install(new io.harness.hsqs.client.HsqsServiceClientModule(
+        ciExecutionServiceConfig.getQueueServiceClient().getQueueServiceConfig(),
+        ciExecutionServiceConfig.getQueueServiceClient().getAuthToken(), "Bearer"));
     bind(ExecutorService.class)
         .annotatedWith(Names.named("ciRatelimitHandlerExecutor"))
         .toInstance(ThreadPool.create(
@@ -105,7 +115,7 @@ public class CIExecutionServiceModule extends AbstractModule {
             20, 300, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("Event-Handler-%d").build()));
     bind(ExecutorService.class)
         .annotatedWith(Names.named("ciBackgroundTaskExecutor"))
-        .toInstance(ThreadPool.create(10, 30, 5, TimeUnit.SECONDS,
+        .toInstance(ThreadPool.create(20, 50, 5, TimeUnit.SECONDS,
             new ThreadFactoryBuilder().setNameFormat("Background-Task-Handler-%d").build()));
     this.bind(CIExecutionServiceConfig.class).toInstance(this.ciExecutionServiceConfig);
     bind(new TypeLiteral<ProtobufStepSerializer<RunStepInfo>>() {}).toInstance(new RunStepProtobufSerializer());

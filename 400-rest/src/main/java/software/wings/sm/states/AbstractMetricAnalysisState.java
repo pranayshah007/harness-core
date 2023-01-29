@@ -62,6 +62,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -77,7 +78,6 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.intellij.lang.annotations.Language;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by rsingh on 9/25/17.

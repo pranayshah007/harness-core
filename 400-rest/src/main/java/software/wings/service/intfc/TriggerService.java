@@ -22,7 +22,6 @@ import software.wings.beans.WebHookToken;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.ManifestSummary;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.instance.dashboard.ArtifactSummary;
 import software.wings.beans.trigger.Trigger;
 import software.wings.beans.trigger.TriggerExecution;
@@ -30,6 +29,7 @@ import software.wings.beans.trigger.WebhookEventType;
 import software.wings.beans.trigger.WebhookParameters;
 import software.wings.beans.trigger.WebhookSource;
 import software.wings.helpers.ext.trigger.response.TriggerResponse;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.ownership.OwnedByApplication;
 import software.wings.service.intfc.ownership.OwnedByApplicationManifest;
 import software.wings.service.intfc.ownership.OwnedByArtifactStream;
@@ -221,6 +221,10 @@ public interface TriggerService
       @NotEmpty String appId, @NotEmpty String triggerExecutionId, TriggerResponse triggerResponse);
 
   void authorize(Trigger trigger, boolean existing);
+  void authorizeDeletion(Trigger trigger);
+  void authorizeUpdate(Trigger trigger);
+  void authorizeSave(Trigger trigger);
+  void authorizeRead(Trigger trigger);
 
   void authorizeAppAccess(List<String> appIds);
 

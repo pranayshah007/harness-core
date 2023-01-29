@@ -7,9 +7,10 @@
 
 package io.harness.cdng.manifest.steps;
 
-import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.ENVIRONMENT_GLOBAL_OVERRIDES;
-import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.SERVICE;
-import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.SERVICE_OVERRIDES;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENVIRONMENT_GLOBAL_OVERRIDES;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_OVERRIDES;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,27 +26,33 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.ManifestConfigType;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput;
 import io.harness.cdng.manifest.yaml.GitStore;
+import io.harness.cdng.manifest.yaml.HttpStoreConfig;
+import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
+import io.harness.cdng.manifest.yaml.kinds.HelmRepoOverrideManifest;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
-import io.harness.cdng.service.beans.KubernetesServiceSpec;
-import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityValidityDetails;
-import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -53,14 +60,17 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.steps.EntityReferenceExtractorUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,6 +85,9 @@ public class ManifestsStepV2Test {
   @Mock private ConnectorService connectorService;
   @Mock private CDStepHelper cdStepHelper;
   @Mock private CDExpressionResolver expressionResolver;
+  @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Mock private PipelineRbacHelper pipelineRbacHelper;
   @InjectMocks private ManifestsStepV2 step = new ManifestsStepV2();
   private AutoCloseable mocks;
 
@@ -123,6 +136,18 @@ public class ManifestsStepV2Test {
         .when(sweepingOutputService)
         .resolveOptional(any(Ambiance.class),
             eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+    List<EntityDetail> listEntityDetail = new ArrayList<>();
+
+    listEntityDetail.add(EntityDetail.builder().name("ManifestSecret1").build());
+    listEntityDetail.add(EntityDetail.builder().name("ManifestSecret2").build());
+
+    Set<EntityDetailProtoDTO> setEntityDetail = new HashSet<>();
+
+    doReturn(setEntityDetail).when(entityReferenceExtractorUtils).extractReferredEntities(any(), any());
+
+    doReturn(listEntityDetail)
+        .when(entityDetailProtoToRestMapper)
+        .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
 
     StepResponse stepResponse = step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
 
@@ -137,6 +162,7 @@ public class ManifestsStepV2Test {
     assertThat(outcome.keySet()).containsExactlyInAnyOrder("file1", "file2", "file3");
     assertThat(outcome.get("file2").getOrder()).isEqualTo(1);
     assertThat(outcome.get("file3").getOrder()).isEqualTo(2);
+    verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(any(), any(List.class), any(Boolean.class));
   }
 
   @Test
@@ -250,18 +276,109 @@ public class ManifestsStepV2Test {
     fail("expected to raise an exception");
   }
 
-  private Optional<NGServiceV2InfoConfig> getServiceConfig(List<ManifestConfigWrapper> manifestConfigWrappers) {
-    NGServiceV2InfoConfig config =
-        NGServiceV2InfoConfig.builder()
-            .identifier("service-id")
-            .name("service-name")
-            .serviceDefinition(
-                ServiceDefinition.builder()
-                    .type(ServiceDefinitionType.KUBERNETES)
-                    .serviceSpec(KubernetesServiceSpec.builder().manifests(manifestConfigWrappers).build())
-                    .build())
-            .build();
-    return Optional.of(config);
+  @Test
+  @Owner(developers = OwnerRule.ABHINAV2)
+  @Category(UnitTests.class)
+  public void envLevelGlobalOverride() {
+    ManifestConfigWrapper helmchart = sampleManifestHttpHelm("helm1", ManifestConfigType.HELM_CHART);
+    ManifestConfigWrapper envLevelOverride = sampleHelmRepoOverride("helmoverride1", "overriddenconnector");
+
+    final Map<String, List<ManifestConfigWrapper>> finalManifests = new HashMap<>();
+    finalManifests.put(SERVICE, Collections.singletonList(helmchart));
+    finalManifests.put(ENVIRONMENT_GLOBAL_OVERRIDES, Collections.singletonList(envLevelOverride));
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .finalSvcManifestsMap(finalManifests)
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .serviceDefinitionType(ServiceDefinitionType.NATIVE_HELM)
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+
+    ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
+    step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
+
+    verify(expressionResolver).updateExpressions(any(), listArgumentCaptor.capture());
+
+    List<ManifestAttributes> manifestAttributes = listArgumentCaptor.getValue();
+    assertThat(manifestAttributes.size()).isEqualTo(1);
+    assertThat(manifestAttributes.get(0).getStoreConfig().getConnectorReference().getValue())
+        .isEqualTo("overriddenconnector");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHINAV2)
+  @Category(UnitTests.class)
+  public void svcLevelOverride() {
+    ManifestConfigWrapper helmchart = sampleManifestHttpHelm("helm1", ManifestConfigType.HELM_CHART);
+    ManifestConfigWrapper svcOverride = sampleHelmRepoOverride("helmoverride1", "svcoverride");
+
+    final Map<String, List<ManifestConfigWrapper>> finalManifests = new HashMap<>();
+    finalManifests.put(SERVICE, Collections.singletonList(helmchart));
+    finalManifests.put(SERVICE_OVERRIDES, Collections.singletonList(svcOverride));
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .finalSvcManifestsMap(finalManifests)
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .serviceDefinitionType(ServiceDefinitionType.NATIVE_HELM)
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+
+    ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
+    step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
+
+    verify(expressionResolver).updateExpressions(any(), listArgumentCaptor.capture());
+
+    List<ManifestAttributes> manifestAttributes = listArgumentCaptor.getValue();
+    assertThat(manifestAttributes.size()).isEqualTo(1);
+    assertThat(manifestAttributes.get(0).getStoreConfig().getConnectorReference().getValue()).isEqualTo("svcoverride");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHINAV2)
+  @Category(UnitTests.class)
+  public void svcAndEnvLevelOverrides() {
+    ManifestConfigWrapper helmchart = sampleManifestHttpHelm("helm1", ManifestConfigType.HELM_CHART);
+    ManifestConfigWrapper svcOverride = sampleHelmRepoOverride("helmoverride1", "svcoverride");
+    ManifestConfigWrapper envOverride = sampleHelmRepoOverride("helmoverride2", "envoverride");
+
+    final Map<String, List<ManifestConfigWrapper>> finalManifests = new HashMap<>();
+    finalManifests.put(SERVICE, Collections.singletonList(helmchart));
+    finalManifests.put(SERVICE_OVERRIDES, Collections.singletonList(svcOverride));
+    finalManifests.put(ENVIRONMENT_GLOBAL_OVERRIDES, Collections.singletonList(envOverride));
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .finalSvcManifestsMap(finalManifests)
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .serviceDefinitionType(ServiceDefinitionType.NATIVE_HELM)
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+
+    ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
+    step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
+
+    verify(expressionResolver).updateExpressions(any(), listArgumentCaptor.capture());
+
+    List<ManifestAttributes> manifestAttributes = listArgumentCaptor.getValue();
+    assertThat(manifestAttributes.size()).isEqualTo(1);
+    assertThat(manifestAttributes.get(0).getStoreConfig().getConnectorReference().getValue()).isEqualTo("svcoverride");
   }
 
   private ManifestConfigWrapper sampleManifestFile(String identifier, ManifestConfigType type) {
@@ -286,6 +403,25 @@ public class ManifestsStepV2Test {
         .build();
   }
 
+  private ManifestConfigWrapper sampleManifestHttpHelm(String identifier, ManifestConfigType type) {
+    return ManifestConfigWrapper.builder()
+        .manifest(ManifestConfig.builder()
+                      .identifier(identifier)
+                      .type(type)
+                      .spec(HelmChartManifest.builder()
+                                .identifier(identifier)
+                                .store(ParameterField.createValueField(
+                                    StoreConfigWrapper.builder()
+                                        .type(StoreConfigType.HTTP)
+                                        .spec(HttpStoreConfig.builder()
+                                                  .connectorRef(ParameterField.createValueField("helmconnector"))
+                                                  .build())
+                                        .build()))
+                                .build())
+                      .build())
+        .build();
+  }
+
   private ManifestConfigWrapper sampleHelmChartManifestFile(String identifier, ManifestConfigType type) {
     return ManifestConfigWrapper.builder()
         .manifest(ManifestConfig.builder()
@@ -303,6 +439,20 @@ public class ManifestsStepV2Test {
                                                   .paths(ParameterField.createValueField(List.of("path1", "path2")))
                                                   .build())
                                         .build()))
+                                .build())
+                      .build())
+        .build();
+  }
+
+  private ManifestConfigWrapper sampleHelmRepoOverride(String identifier, String connectorRef) {
+    return ManifestConfigWrapper.builder()
+        .manifest(ManifestConfig.builder()
+                      .identifier(identifier)
+                      .type(ManifestConfigType.HELM_REPO_OVERRIDE)
+                      .spec(HelmRepoOverrideManifest.builder()
+                                .identifier(identifier)
+                                .connectorRef(ParameterField.createValueField(connectorRef))
+                                .type("Http")
                                 .build())
                       .build())
         .build();

@@ -32,6 +32,4 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
   @JsonSubTypes.Type(value = InlineTerragruntBackendConfigSpec.class, name = TerragruntBackendFileTypes.Inline)
   , @JsonSubTypes.Type(value = RemoteTerragruntBackendConfigSpec.class, name = TerragruntBackendFileTypes.Remote),
 })
-public interface TerragruntBackendConfigSpec {
-  String getType();
-}
+public interface TerragruntBackendConfigSpec {}

@@ -22,6 +22,8 @@ import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
 import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.config.HostedVmConfig;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
@@ -57,6 +59,7 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
   @Mock CodebaseUtils codebaseUtils;
   @Mock ConnectorUtils connectorUtils;
   @Mock CIVmSecretEvaluator ciVmSecretEvaluator;
+  @Mock CIExecutionServiceConfig ciExecutionServiceConfig;
   @Mock HostedVmSecretResolver hostedVmSecretResolver;
   @Mock private CIFeatureFlagService featureFlagService;
 
@@ -158,6 +161,8 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     when(stoServiceUtils.getStoServiceConfig()).thenReturn(STOServiceConfig.builder().baseUrl("1.1.1.3").build());
     when(stoServiceUtils.getSTOServiceToken(any())).thenReturn("test");
     when(featureFlagService.isEnabled(any(), any())).thenReturn(false);
+    when(ciExecutionServiceConfig.getHostedVmConfig())
+        .thenReturn(HostedVmConfig.builder().splitLinuxAmd64Pool(false).build());
     doNothing().when(hostedVmSecretResolver).resolve(any(), any());
 
     DliteVmInitializeTaskParams response =

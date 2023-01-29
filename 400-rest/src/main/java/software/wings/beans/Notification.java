@@ -20,12 +20,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.base.MoreObjects;
+import dev.morphia.annotations.Entity;
 import java.util.HashMap;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.mongodb.morphia.annotations.Entity;
 
 /**
  * Created by anubhaw on 7/22/16.

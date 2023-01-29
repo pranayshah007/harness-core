@@ -22,6 +22,7 @@ import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.analysis.beans.TimeSeriesTestDataDTO;
 import io.harness.cvng.analysis.beans.TimeSeriesTestDataDTO.MetricData;
 import io.harness.cvng.analysis.entities.TimeSeriesRiskSummary;
+import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.analysis.services.api.TimeSeriesAnalysisService;
 import io.harness.cvng.beans.HostRecordDTO;
 import io.harness.cvng.beans.ThresholdConfigType;
@@ -56,6 +57,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import dev.morphia.UpdateOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -76,9 +80,6 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.UpdateOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 import org.reflections.Reflections;
 import org.reflections.scanners.ResourcesScanner;
 
@@ -128,7 +129,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
       UpdateOperations<TimeSeriesRecord> updateOperations =
           hPersistence.createUpdateOperations(TimeSeriesRecord.class)
               .setOnInsert(TimeSeriesRecordKeys.uuid, generateUuid())
-              .setOnInsert(TimeSeriesRecordKeys.createdAt, Instant.now().toEpochMilli())
+              .setOnInsert(VerificationTaskBaseKeys.createdAt, Instant.now().toEpochMilli())
               .setOnInsert(TimeSeriesRecordKeys.validUntil, TimeSeriesRecord.builder().build().getValidUntil())
               .set(TimeSeriesRecordKeys.accountId, timeSeriesRecord.getAccountId())
               .addToSet(TimeSeriesRecordKeys.timeSeriesGroupValues,
@@ -387,6 +388,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
 
     metricPackThresholds.forEach(timeSeriesThreshold
         -> timeSeriesMetricDefinitions.add(TimeSeriesMetricDefinition.builder()
+                                               .id(timeSeriesThreshold.getUuid())
                                                .metricName(timeSeriesThreshold.getMetricName())
                                                .metricIdentifier(timeSeriesThreshold.getMetricIdentifier())
                                                .metricType(timeSeriesThreshold.getMetricType())
@@ -412,6 +414,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
               if (!ThresholdConfigType.USER_DEFINED.equals(timeSeriesThreshold.getThresholdConfigType())) {
                 timeSeriesMetricDefinitions.add(
                     TimeSeriesMetricDefinition.builder()
+                        .id(timeSeriesThreshold.getUuid())
                         .metricName(metricDefinition.getName())
                         .metricIdentifier(metricDefinition.getIdentifier())
                         .metricType(metricDefinition.getType())

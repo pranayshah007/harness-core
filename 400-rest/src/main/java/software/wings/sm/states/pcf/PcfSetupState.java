@@ -83,7 +83,6 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -95,6 +94,8 @@ import software.wings.beans.yaml.GitCommandExecutionResponse.GitCommandStatus;
 import software.wings.beans.yaml.GitFetchFilesFromMultipleRepoResult;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
 import software.wings.helpers.ext.pcf.request.CfCommandSetupRequest;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ArtifactStreamService;
@@ -333,7 +334,7 @@ public class PcfSetupState extends State {
             .artifactStreamAttributes(artifactStreamAttributes)
             .manifestYaml(applicationManifestYmlContent)
             .workflowExecutionId(context.getWorkflowExecutionId())
-            .artifactFiles(artifact.getArtifactFiles())
+            .artifactFiles(artifact.getArtifactFiles().stream().map(ArtifactFile::toDTO).collect(toList()))
             .routeMaps(isOriginalRoute ? routeMaps : tempRouteMaps)
             .serviceVariables(serviceVariables)
             .timeoutIntervalInMin(timeoutIntervalInMinutes == null ? Integer.valueOf(5) : timeoutIntervalInMinutes)

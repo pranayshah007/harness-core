@@ -7,6 +7,8 @@
 
 package io.harness.delegate.events;
 
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_UNREGISTER_EVENT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
@@ -29,7 +31,6 @@ import lombok.experimental.SuperBuilder;
 public class DelegateUnregisterEvent extends AbstractDelegateConfigurationEvent {
   private String delegateId;
   private DelegateSetupDetails delegateSetupDetails;
-  public static final String DELEGATE_UNREGISTER_EVENT = "DelegateUnRegisterEvent";
 
   @Override
   public Resource getResource() {

@@ -32,6 +32,7 @@ import static io.harness.beans.ExecutionStatus.brokeStatuses;
 import static io.harness.beans.ExecutionStatus.isBrokeStatus;
 import static io.harness.beans.ExecutionStatus.isFinalStatus;
 import static io.harness.beans.ExecutionStatus.isPositiveStatus;
+import static io.harness.beans.FeatureName.SPG_FIX_APPROVAL_WAITING_FOR_INPUTS;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -61,6 +62,7 @@ import static software.wings.sm.StateType.ENV_STATE;
 import static software.wings.sm.StateType.FORK;
 import static software.wings.sm.StateType.PHASE;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
@@ -69,7 +71,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.alert.AlertData;
 import io.harness.annotations.dev.BreakDependencyOn;
@@ -163,6 +164,11 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -182,11 +188,6 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
 
 /**
  * Class responsible for executing state machine.
@@ -717,7 +718,13 @@ public class StateMachineExecutor implements StateInspectionListener {
     log.info("startStateExecution for State {} of type {}", currentState.getName(), currentState.getStateType());
 
     if (stateExecutionInstance.getStateParams() != null) {
-      MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
+      try {
+        MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
+      } catch (org.modelmapper.MappingException e) {
+        log.error(String.format("Got model mapping exception during mapping the stateParams %s [currentState=%s]",
+                      stateExecutionInstance.getStateParams(), currentState),
+            e);
+      }
     }
     injector.injectMembers(currentState);
     return currentState;
@@ -1717,7 +1724,7 @@ public class StateMachineExecutor implements StateInspectionListener {
         notNullCheck("context.getApp()", context.getApp());
         if (finalStatus == ABORTED) {
           try {
-            delegateService.abortTask(context.getApp().getAccountId(), delegateTaskId);
+            delegateService.abortTaskV2(context.getApp().getAccountId(), delegateTaskId);
           } catch (Exception e) {
             log.error(
                 "[AbortInstance] Error in ABORTING WorkflowExecution {}. Error in aborting delegate task : {}. Reason : {}",
@@ -1725,7 +1732,7 @@ public class StateMachineExecutor implements StateInspectionListener {
           }
         } else {
           try {
-            String errorMsg = delegateService.expireTask(context.getApp().getAccountId(), delegateTaskId);
+            String errorMsg = delegateService.expireTaskV2(context.getApp().getAccountId(), delegateTaskId);
             if (isNotBlank(errorMsg)) {
               errorMsgBuilder.append(errorMsg);
             }
@@ -1750,7 +1757,7 @@ public class StateMachineExecutor implements StateInspectionListener {
           MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
         }
       } catch (org.modelmapper.MappingException e) {
-        log.error("Got model mapping exception during mapping the stateparams {}",
+        log.error("Got model mapping exception during mapping the stateParams {}",
             stateExecutionInstance.getStateParams(), e);
       }
 
@@ -1860,6 +1867,11 @@ public class StateMachineExecutor implements StateInspectionListener {
    */
   private StateExecutionInstance clone(StateExecutionInstance stateExecutionInstance, State nextState) {
     StateExecutionInstance cloned = kryoSerializer.clone(stateExecutionInstance);
+    if (featureFlagService.isEnabled(SPG_FIX_APPROVAL_WAITING_FOR_INPUTS, stateExecutionInstance.getAccountId())) {
+      cloned.setWaitingForInputs(false);
+      cloned.setActionOnTimeout(null);
+    }
+
     cloned.setContinued(false);
     cloned.setInterruptHistory(null);
     cloned.setStateExecutionDataHistory(null);

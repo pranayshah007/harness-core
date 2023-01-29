@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.resource;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.Long.parseLong;
@@ -31,6 +32,7 @@ import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
 import io.harness.ngtriggers.beans.dto.ValidatePipelineInputsResponseDTO;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
@@ -196,9 +198,6 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
     }
 
     return ResponseDTO.newResponse(getNGPageResponse(ngTriggerService.list(criteria, pageRequest).map(triggerEntity -> {
-      TriggerDetails triggerDetails =
-          ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier,
-              triggerEntity.getIdentifier(), triggerEntity.getYaml(), triggerEntity.getWithServiceV2());
       NGTriggerDetailsResponseDTO responseDTO =
           ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(triggerEntity, true, false, false);
       return responseDTO;
@@ -220,9 +219,20 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
     TriggerDetails triggerDetails = ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier,
         projectIdentifier, targetIdentifier, ngTriggerEntity.get().getIdentifier(), ngTriggerEntity.get().getYaml(),
         ngTriggerEntity.get().getWithServiceV2());
+    boolean isPipelineInputOutdated = false;
+    if (triggerDetails.getNgTriggerConfigV2() != null
+        && isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
+        && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
+      // Only validate pipeline inputs if trigger is not for remote pipeline and not using input sets
+      Map<String, Map<String, String>> errorMap = ngTriggerService.validatePipelineRef(triggerDetails);
+      if (!CollectionUtils.isEmpty(errorMap)) {
+        isPipelineInputOutdated = true;
+      }
+    }
 
     return ResponseDTO.newResponse(ngTriggerEntity.get().getVersion().toString(),
-        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity.get(), true, true, false));
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(
+            ngTriggerEntity.get(), true, true, isPipelineInputOutdated));
   }
 
   @Timed
@@ -288,5 +298,21 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
         eventHistory -> NGTriggerEventHistoryMapper.toTriggerEventHistoryDto(eventHistory, ngTriggerEntity.get()));
 
     return ResponseDTO.newResponse(ngTriggerEventHistoryDTOS);
+  }
+
+  @Override
+  public ResponseDTO<TriggerYamlDiffDTO> getTriggerReconciliationYamlDiff(
+      @NotNull @AccountIdentifier String accountIdentifier, @NotNull @OrgIdentifier String orgIdentifier,
+      @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String targetIdentifier,
+      String triggerIdentifier) {
+    Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
+        accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
+    if (!ngTriggerEntity.isPresent()) {
+      throw new InvalidRequestException(String.format("Trigger %s doesn't not exists", triggerIdentifier));
+    }
+    TriggerDetails triggerDetails =
+        ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier,
+            triggerIdentifier, ngTriggerEntity.get().getYaml(), ngTriggerEntity.get().getWithServiceV2());
+    return ResponseDTO.newResponse(ngTriggerService.getTriggerYamlDiff(triggerDetails));
   }
 }

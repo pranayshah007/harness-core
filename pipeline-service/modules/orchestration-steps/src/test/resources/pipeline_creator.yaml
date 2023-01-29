@@ -2,6 +2,21 @@
   "pipeline": {
     "identifier": "p1",
     "name": "pipeline1",
+    "variables": [
+      {
+        "name": "var1",
+        "type": "String",
+        "description": "",
+        "value": "var",
+        "__uuid": "sKSDu1TwQqmM4xuIqh8GSw"
+      }
+    ],
+    "description": "this is test pipeline",
+    "tags":
+      {
+        "tag1": "this is test tag 1",
+        "tag2": "this is test tag 2",
+      },
     "stages": [
       {
         "parallel": [

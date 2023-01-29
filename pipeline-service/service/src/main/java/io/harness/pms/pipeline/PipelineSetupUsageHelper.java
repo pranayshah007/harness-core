@@ -87,11 +87,12 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
    * @param orgIdentifier -  orgIdentifier of the pipeline
    * @param projectIdentifier - projectIdentifier of the pipeline
    * @param pipelineId - pipelineIdentifier
-   * @param pipelineYaml - merged pipeline yaml.
+   * @param pipelineYamlWithUnresolvedTemplates - merged pipeline yaml with no templates resolved, because the
+   *     references are saved based on unresolved yaml.
    * @param entityType - returns response of given entity type referred in the pipeline.
    */
   public List<EntityDetail> getReferencesOfPipeline(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String pipelineId, String pipelineYaml, EntityType entityType) {
+      String projectIdentifier, String pipelineId, String pipelineYamlWithUnresolvedTemplates, EntityType entityType) {
     List<EntitySetupUsageDTO> allReferredUsages =
         NGRestUtils.getResponse(entitySetupUsageClient.listAllReferredUsages(PAGE, SIZE, accountIdentifier,
                                     FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
@@ -99,7 +100,7 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
                                     entityType, null),
             "Could not extract setup usage of pipeline with id " + pipelineId + " after {} attempts.");
     List<EntityDetail> entityDetails = PipelineSetupUsageUtils.extractInputReferredEntityFromYaml(
-        accountIdentifier, orgIdentifier, projectIdentifier, pipelineYaml, allReferredUsages);
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineYamlWithUnresolvedTemplates, allReferredUsages);
     entityDetails.addAll(internalReferredEntityExtractor.extractInternalEntities(accountIdentifier, entityDetails));
     return entityDetails;
   }

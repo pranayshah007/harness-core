@@ -20,7 +20,7 @@ import com.google.protobuf.StringValue;
 @OwnedBy(HarnessTeam.CDC)
 public class InfraDefinitionRefProtoDTOHelper {
   public static InfraDefinitionReferenceProtoDTO createInfraDefinitionReferenceProtoDTO(String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, String envIdentifier, String identifier) {
+      String orgIdentifier, String projectIdentifier, String envIdentifier, String identifier, String envName) {
     InfraDefinitionReferenceProtoDTO.Builder identifierRefBuilder =
         InfraDefinitionReferenceProtoDTO.newBuilder()
             .setIdentifier(StringValue.of(identifier))
@@ -34,7 +34,9 @@ public class InfraDefinitionRefProtoDTOHelper {
     if (isNotBlank(envIdentifier)) {
       identifierRefBuilder.setEnvIdentifier(StringValue.of(envIdentifier));
     }
-
+    if (isNotBlank(envName)) {
+      identifierRefBuilder.setEnvName(StringValue.of(envName));
+    }
     return identifierRefBuilder.build();
   }
 }

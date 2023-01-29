@@ -8,16 +8,18 @@ package handler
 import (
 	"net/http"
 
+	"github.com/harness/harness-core/queue-service/hsqs/instrumentation"
 	"github.com/harness/harness-core/queue-service/hsqs/store"
 	"github.com/labstack/echo/v4"
 )
 
 type Handler struct {
 	s store.Store
+	m instrumentation.MetricsHandler
 }
 
-func NewHandler(s store.Store) *Handler {
-	return &Handler{s: s}
+func NewHandler(s store.Store, m instrumentation.MetricsHandler) *Handler {
+	return &Handler{s: s, m: m}
 }
 
 func (h *Handler) Register(g *echo.Group) {
@@ -40,18 +42,19 @@ func (h *Handler) Register(g *echo.Group) {
 // @Router      /v1/queue [POST]
 func (h *Handler) handleEnqueue() echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		// bind request body to enqueue request
 		p := &store.EnqueueRequest{}
 
 		if err := c.Bind(p); err != nil {
-			return c.JSON(http.StatusBadRequest, err)
+			return c.JSON(http.StatusBadRequest, &store.EnqueueErrorResponse{ErrorMessage: err.Error()})
 		}
 
 		enqueue, err := h.s.Enqueue(c.Request().Context(), *p)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, err)
+			h.m.CountMetric(c.Request().Context(), false, "queue", p.Topic, p.SubTopic)
+			return c.JSON(http.StatusInternalServerError, &store.EnqueueErrorResponse{ErrorMessage: err.Error()})
 		}
+		h.m.CountMetric(c.Request().Context(), true, "queue", p.Topic, p.SubTopic)
 		return c.JSON(http.StatusOK, enqueue)
 	}
 }
@@ -71,13 +74,15 @@ func (h *Handler) handleDequeue() echo.HandlerFunc {
 		p := &store.DequeueRequest{}
 
 		if err := c.Bind(p); err != nil {
-			return c.JSON(http.StatusBadRequest, err)
+			return c.JSON(http.StatusBadRequest, &store.DequeueErrorResponse{ErrorMessage: err.Error()})
 		}
 
 		dequeue, err := h.s.Dequeue(c.Request().Context(), *p)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, err)
+			h.m.CountMetric(c.Request().Context(), false, "dequeue", p.Topic)
+			return c.JSON(http.StatusInternalServerError, &store.DequeueErrorResponse{ErrorMessage: err.Error()})
 		}
+		h.m.CountMetric(c.Request().Context(), true, "dequeue", p.Topic)
 		return c.JSON(http.StatusOK, dequeue)
 	}
 }
@@ -97,12 +102,12 @@ func (h *Handler) ack() echo.HandlerFunc {
 		p := &store.AckRequest{}
 
 		if err := c.Bind(p); err != nil {
-			return c.JSON(http.StatusBadRequest, err)
+			return c.JSON(http.StatusBadRequest, &store.AckErrorResponse{ErrorMessage: err.Error()})
 		}
 
 		ack, err := h.s.Ack(c.Request().Context(), *p)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, err)
+			return c.JSON(http.StatusInternalServerError, &store.AckErrorResponse{ErrorMessage: err.Error()})
 		}
 		return c.JSON(http.StatusOK, ack)
 	}
@@ -123,12 +128,12 @@ func (h *Handler) unAck() echo.HandlerFunc {
 		p := &store.UnAckRequest{}
 
 		if err := c.Bind(p); err != nil {
-			return c.JSON(http.StatusBadRequest, err)
+			return c.JSON(http.StatusBadRequest, &store.UnAckErrorResponse{ErrorMessage: err.Error()})
 		}
 
 		unAck, err := h.s.UnAck(c.Request().Context(), *p)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, err)
+			return c.JSON(http.StatusInternalServerError, &store.UnAckErrorResponse{ErrorMessage: err.Error()})
 		}
 		return c.JSON(http.StatusOK, unAck)
 	}
@@ -162,12 +167,12 @@ func (h *Handler) register() echo.HandlerFunc {
 		p := &store.RegisterTopicMetadata{}
 
 		if err := c.Bind(p); err != nil {
-			return c.JSON(http.StatusBadRequest, err)
+			return c.JSON(http.StatusBadRequest, &store.UnAckErrorResponse{ErrorMessage: err.Error()})
 		}
 
 		err := h.s.Register(c.Request().Context(), *p)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, err)
+			return c.JSON(http.StatusInternalServerError, &store.UnAckErrorResponse{ErrorMessage: err.Error()})
 		}
 		return c.JSON(http.StatusOK, "Registration completed successfully")
 	}

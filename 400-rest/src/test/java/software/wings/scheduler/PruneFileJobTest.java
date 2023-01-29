@@ -9,7 +9,7 @@ package software.wings.scheduler;
 
 import static io.harness.rule.OwnerRule.GEORGE;
 
-import static software.wings.beans.AppContainer.Builder.anAppContainer;
+import static software.wings.persistence.AppContainer.Builder.anAppContainer;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.matches;
@@ -27,10 +27,10 @@ import io.harness.rule.Owner;
 import io.harness.scheduler.PersistentScheduler;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.AppContainer;
 import software.wings.beans.Base;
-import software.wings.beans.artifact.Artifact;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.AppContainer;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.FileService;
 
 import com.google.inject.Inject;

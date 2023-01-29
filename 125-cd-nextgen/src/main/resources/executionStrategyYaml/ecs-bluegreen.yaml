@@ -16,12 +16,7 @@ spec:
                 identifier: EcsBlueGreenCreateService
                 type: EcsBlueGreenCreateService
                 timeout: 10m
-                spec:
-                  loadBalancer: loadBalancer
-                  prodListener: prodListener
-                  prodListenerRuleArn: prodListenerRuleArn
-                  stageListener: stageListener
-                  stageListenerRuleArn: stageListenerRuleArn
+                spec: {}
             - step:
                 name: ECS Blue Green Swap Target Groups
                 identifier: EcsBlueGreenSwapTargetGroups

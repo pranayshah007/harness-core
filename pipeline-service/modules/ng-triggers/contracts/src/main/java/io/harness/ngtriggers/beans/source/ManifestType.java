@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.beans.source;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.ngtriggers.Constants.HELM_CHART;
 
 import io.harness.annotations.dev.OwnedBy;
 
@@ -15,7 +16,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @OwnedBy(PIPELINE)
 public enum ManifestType {
-  @JsonProperty("HelmChart") HELM_MANIFEST("HelmChart");
+  @JsonProperty(HELM_CHART) HELM_MANIFEST(HELM_CHART);
 
   private String value;
 

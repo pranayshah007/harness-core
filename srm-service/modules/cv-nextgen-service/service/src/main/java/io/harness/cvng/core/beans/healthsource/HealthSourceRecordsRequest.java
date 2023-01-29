@@ -21,6 +21,6 @@ public class HealthSourceRecordsRequest {
   @NotNull Long startTime;
   @NotNull Long endTime;
   @NotNull DataSourceType providerType;
-  HealthSourceQueryParams healthSourceQueryParams;
-  HealthSourceParams healthSourceParams;
+  QueryParamsDTO healthSourceQueryParams = QueryParamsDTO.builder().build();
+  HealthSourceParamsDTO healthSourceParams = HealthSourceParamsDTO.builder().build();
 }

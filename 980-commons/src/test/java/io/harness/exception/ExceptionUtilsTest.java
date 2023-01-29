@@ -9,6 +9,7 @@ package io.harness.exception;
 
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.BHAVYA;
+import static io.harness.rule.OwnerRule.GAURAV_NANDA;
 import static io.harness.rule.OwnerRule.GEORGE;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,5 +53,29 @@ public class ExceptionUtilsTest extends CategoryTest {
     final InvalidRequestException invalidRequestException =
         new InvalidRequestException("abcd", new InvalidTagException("xyz", null));
     assertThat(ExceptionUtils.cause(InvalidRequestException.class, invalidRequestException)).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = GAURAV_NANDA)
+  @Category(UnitTests.class)
+  public void test_getMessage_noCause_returnsExceptionMessage() {
+    String exceptionMessage = "Invalid request exception.";
+    final Exception exception = new Exception(exceptionMessage, null);
+
+    assertThat(ExceptionUtils.getMessage(exception)).isEqualTo("Exception: " + exceptionMessage);
+  }
+
+  @Test
+  @Owner(developers = GAURAV_NANDA)
+  @Category(UnitTests.class)
+  public void test_getMessage_oneLevelCause_returnsMessageWithCauseMessage() {
+    String causeMessage = "Cause is unknown";
+    Throwable cause = new Exception(causeMessage);
+
+    String exceptionMessage = "Invalid request exception.";
+    final Exception exception = new Exception(exceptionMessage, cause);
+
+    assertThat(ExceptionUtils.getMessage(exception))
+        .isEqualTo("Exception: " + exceptionMessage + "; Cause: Exception: " + causeMessage);
   }
 }

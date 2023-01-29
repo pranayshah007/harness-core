@@ -77,6 +77,7 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -85,7 +86,6 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @Slf4j
@@ -329,7 +329,7 @@ public class JenkinsState extends State implements SweepingOutputStateMixin {
       jenkinsTaskParams.setTimeout(getTimeoutMillis());
       jenkinsTaskParams.setStartTs(System.currentTimeMillis());
     }
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
 
     JenkinsExecutionData jenkinsExecutionData = JenkinsExecutionData.builder()
                                                     .jobName(context.renderExpressionSecured(jobName))
@@ -438,7 +438,7 @@ public class JenkinsState extends State implements SweepingOutputStateMixin {
       jenkinsTaskParams.setTimeout(getTimeoutMillis() - jenkinsExecutionResponse.getTimeElapsed() + 120000);
     }
 
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
     JenkinsExecutionData jenkinsExecutionData = (JenkinsExecutionData) context.getStateExecutionData();
     jenkinsExecutionData.setActivityId(jenkinsExecutionResponse.getActivityId());
     jenkinsExecutionData.setJobStatus(jenkinsExecutionResponse.getJenkinsResult());

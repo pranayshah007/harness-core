@@ -9,7 +9,6 @@ package io.harness.engine.executions.node;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.PmsCommonConstants.AUTO_ABORT_PIPELINE_THROUGH_TRIGGER;
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
@@ -26,6 +25,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.retry.RetryStageInfo;
+import io.harness.engine.observers.NodeExecutionDeleteObserver;
 import io.harness.engine.observers.NodeExecutionStartObserver;
 import io.harness.engine.observers.NodeStartInfo;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
@@ -57,15 +57,16 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.springdata.TransactionHelper;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -77,14 +78,13 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -102,22 +102,58 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Inject private OrchestrationLogConfiguration orchestrationLogConfiguration;
   @Inject private NodeExecutionReadHelper nodeExecutionReadHelper;
 
-  @Getter private final Subject<NodeStatusUpdateObserver> stepStatusUpdateSubject = new Subject<>();
+  @Getter private final Subject<NodeStatusUpdateObserver> nodeStatusUpdateSubject = new Subject<>();
   @Getter private final Subject<NodeExecutionStartObserver> nodeExecutionStartSubject = new Subject<>();
   @Getter private final Subject<NodeUpdateObserver> nodeUpdateObserverSubject = new Subject<>();
+  @Getter private final Subject<NodeExecutionDeleteObserver> nodeDeleteObserverSubject = new Subject<>();
 
-  /**
-   * This is deprecated, use function
-   * @param nodeExecutionId
-   * @return
-   */
   @Override
-  @Deprecated
   public NodeExecution get(String nodeExecutionId) {
     Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
+    Optional<NodeExecution> nodeExecutionOptional = nodeExecutionReadHelper.getOneWithoutProjections(query);
+    if (nodeExecutionOptional.isEmpty()) {
+      throw new InvalidRequestException("Node Execution is null for id: " + nodeExecutionId);
+    }
+    return nodeExecutionOptional.get();
+  }
+
+  @Override
+  public NodeExecution getWithFieldsIncluded(String nodeExecutionId, Set<String> fieldsToInclude) {
+    // Uses - id index
+    Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
+    for (String field : fieldsToInclude) {
+      query.fields().include(field);
+    }
+    Optional<NodeExecution> nodeExecutionOptional = nodeExecutionReadHelper.getOne(query);
+    if (nodeExecutionOptional.isEmpty()) {
+      throw new InvalidRequestException("Node Execution is null for id: " + nodeExecutionId);
+    }
+    return nodeExecutionOptional.get();
+  }
+
+  @Override
+  public Optional<NodeExecution> getPipelineNodeExecutionWithProjections(
+      @NonNull String planExecutionId, Set<String> fields) {
+    // Uses - planExecutionId_stepCategory_identifier_idx
+    // Sort is not part of index, as node selection is always one node thus it will not impact much
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.stepCategory).is(StepCategory.PIPELINE))
+                      .with(Sort.by(Direction.ASC, NodeExecutionKeys.createdAt));
+    for (String fieldName : fields) {
+      query.fields().include(fieldName);
+    }
+    return Optional.ofNullable(mongoTemplate.findOne(query, NodeExecution.class));
+  }
+
+  // TODO (alexi) : Handle the case where multiple instances are returned
+  @Override
+  public NodeExecution getByPlanNodeUuid(String planNodeUuid, String planExecutionId) {
+    // Uses - planExecutionId_nodeId_idx
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.nodeId).is(planNodeUuid));
     NodeExecution nodeExecution = mongoTemplate.findOne(query, NodeExecution.class);
     if (nodeExecution == null) {
-      throw new InvalidRequestException("Node Execution is null for id: " + nodeExecutionId);
+      throw new InvalidRequestException("Node Execution is null for planNodeUuid: " + planNodeUuid);
     }
     return nodeExecution;
   }
@@ -133,279 +169,190 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
           String.format("requested %d records more than threshold of %d. consider pagination", nodeExecutionIds.size(),
               MAX_BATCH_SIZE));
     }
+    // Uses - id index
     Query query = query(where(NodeExecutionKeys.uuid).in(nodeExecutionIds));
-    return mongoTemplate.find(query, NodeExecution.class);
+    return nodeExecutionReadHelper.fetchNodeExecutionsWithoutProjections(query);
   }
 
   @Override
-  public NodeExecution getWithFieldsIncluded(String nodeExecutionId, Set<String> fieldsToInclude) {
-    Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
-    for (String field : fieldsToInclude) {
-      query.fields().include(field);
-    }
-    NodeExecution nodeExecution = mongoTemplate.findOne(query, NodeExecution.class);
-    if (nodeExecution == null) {
-      throw new InvalidRequestException("Node Execution is null for id: " + nodeExecutionId);
-    }
-    return nodeExecution;
-  }
-
-  // TODO (alexi) : Handle the case where multiple instances are returned
-  @Override
-  public NodeExecution getByPlanNodeUuid(String planNodeUuid, String planExecutionId) {
-    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.nodeId).is(planNodeUuid));
-    NodeExecution nodeExecution = mongoTemplate.findOne(query, NodeExecution.class);
-    if (nodeExecution == null) {
-      throw new InvalidRequestException("Node Execution is null for planNodeUuid: " + planNodeUuid);
-    }
-    return nodeExecution;
-  }
-
-  @Override
-  public Optional<NodeExecution> getByNodeIdentifier(@NotNull String nodeIdentifier, @NotNull String planExecutionId) {
-    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.identifier).in(nodeIdentifier));
-    return Optional.ofNullable(mongoTemplate.findOne(query, NodeExecution.class));
-  }
-
-  @Override
-  public Optional<NodeExecution> getPipelineNodeExecution(@NonNull String planExecutionId) {
-    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.stepCategory).is(StepCategory.PIPELINE))
-                      .with(Sort.by(Direction.ASC, NodeExecutionKeys.createdAt));
-    return Optional.ofNullable(mongoTemplate.findOne(query, NodeExecution.class));
-  }
-
-  @Override
-  public Optional<NodeExecution> getPipelineNodeExecutionWithProjections(
-      @NonNull String planExecutionId, Set<String> fields) {
-    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.stepCategory).is(StepCategory.PIPELINE))
-                      .with(Sort.by(Direction.ASC, NodeExecutionKeys.createdAt));
-    for (String fieldName : fields) {
-      query.fields().include(fieldName);
-    }
-    return Optional.ofNullable(mongoTemplate.findOne(query, NodeExecution.class));
-  }
-
-  @Override
-  public long findCountByParentIdAndStatusIn(String parentId, Set<Status> flowingStatuses) {
-    return nodeExecutionReadHelper.findCountByParentIdAndStatusIn(parentId, flowingStatuses);
-  }
-
-  @Override
-  public Page<NodeExecution> fetchAllStepNodeExecutions(
-      String planExecutionId, Set<String> fieldsToInclude, Pageable pageable) {
-    validateQueryFieldsForNodeExecution(fieldsToInclude);
+  public CloseableIterator<NodeExecution> fetchAllStepNodeExecutions(
+      String planExecutionId, Set<String> fieldsToInclude) {
+    // Uses - planExecutionId_stepCategory_identifier_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.stepCategory).is(StepCategory.STEP));
     for (String fieldName : fieldsToInclude) {
       query.fields().include(fieldName);
     }
-    return nodeExecutionReadHelper.fetchNodeExecutions(query, pageable);
+    return nodeExecutionReadHelper.fetchNodeExecutions(query);
   }
 
   @Override
-  public List<Status> fetchNodeExecutionsWithoutOldRetriesOnlyStatus(String planExecutionId) {
+  public List<Status> fetchNodeExecutionsStatusesWithoutOldRetries(String planExecutionId) {
+    // Uses - planExecutionId_status_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
+    // Exclude so that it can use Projection simplified from index without scanning documents.
     query.fields().exclude(NodeExecutionKeys.id).include(NodeExecutionKeys.status);
-    List<NodeExecution> nodeExecutions = mongoTemplate.find(query, NodeExecution.class);
+    List<NodeExecution> nodeExecutions = new LinkedList<>();
+    try (CloseableIterator<NodeExecution> iterator = nodeExecutionReadHelper.fetchNodeExecutions(query)) {
+      while (iterator.hasNext()) {
+        nodeExecutions.add(iterator.next());
+      }
+    }
     return nodeExecutions.stream().map(NodeExecution::getStatus).collect(Collectors.toList());
   }
 
-  // Important : This should be used in graph regeneration no where else
-  // Please check with prashant if you need any such methods
   @Override
-  public List<NodeExecution> fetchNodeExecutionsWithoutOldRetries(String planExecutionId) {
-    return fetchNodeExecutionsWithoutOldRetriesAndStatusIn(
-        planExecutionId, EnumSet.noneOf(Status.class), false, new HashSet<>());
-  }
-
-  @Override
-  public List<NodeExecution> fetchWithoutRetriesAndStatusIn(String planExecutionId, EnumSet<Status> statuses) {
-    return fetchNodeExecutionsWithoutOldRetriesAndStatusIn(planExecutionId, statuses, false, Collections.emptySet());
-  }
-
-  @Override
-  public List<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusIn(
-      String planExecutionId, EnumSet<Status> statuses, boolean shouldUseProjections, Set<String> fieldsToBeIncluded) {
-    return fetchNodeExecutionsWithoutOldRetriesAndStatusIn(
-        planExecutionId, statuses, shouldUseProjections, fieldsToBeIncluded, Collections.emptySet());
-  }
-
-  @Override
-  public Page<NodeExecution> fetchWithoutRetriesAndStatusIn(
-      String planExecutionId, EnumSet<Status> statuses, Set<String> fieldsToInclude, Pageable pageable) {
-    return fetchNodeExecutionsWithoutOldRetriesAndStatusIn(
-        planExecutionId, statuses, fieldsToInclude, Collections.emptySet(), pageable);
-  }
-
-  @Override
-  public Page<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusIn(
-      String planExecutionId, EnumSet<Status> statuses, Set<String> fieldsToBeIncluded, Pageable pageable) {
-    return fetchNodeExecutionsWithoutOldRetriesAndStatusIn(
-        planExecutionId, statuses, fieldsToBeIncluded, Collections.emptySet(), pageable);
-  }
-
-  @Override
-  public Page<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusIn(String planExecutionId,
-      EnumSet<Status> statuses, Set<String> fieldsToBeIncluded, Set<String> fieldsToBeExcluded, Pageable pageable) {
-    validateQueryFieldsForNodeExecution(fieldsToBeIncluded);
+  public CloseableIterator<NodeExecution> fetchNodeExecutionsWithoutOldRetriesIterator(String planExecutionId) {
+    // Uses - planExecutionId_status_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
-    for (String field : fieldsToBeIncluded) {
+    // Can't use fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator as it uses projections
+    return nodeExecutionReadHelper.fetchNodeExecutionsIteratorWithoutProjections(query);
+  }
+
+  @Override
+  public CloseableIterator<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(
+      String planExecutionId, EnumSet<Status> statuses, @NotNull Set<String> fieldsToInclude) {
+    // Uses - planExecutionId_status_idx
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
+    for (String field : fieldsToInclude) {
       query.fields().include(field);
     }
-    for (String field : fieldsToBeExcluded) {
-      query.fields().exclude(field);
-    }
-    if (isNotEmpty(statuses)) {
+    if (EmptyPredicate.isNotEmpty(statuses)) {
       query.addCriteria(where(NodeExecutionKeys.status).in(statuses));
     }
-    return nodeExecutionReadHelper.fetchNodeExecutions(query, pageable);
+    return nodeExecutionReadHelper.fetchNodeExecutions(query);
   }
 
   @Override
-  public List<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusIn(String planExecutionId,
-      EnumSet<Status> statuses, boolean shouldUseProjections, Set<String> fieldsToBeIncluded,
-      Set<String> fieldsToBeExcluded) {
-    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
-    if (shouldUseProjections) {
-      for (String field : fieldsToBeIncluded) {
-        query.fields().include(field);
-      }
-      for (String field : fieldsToBeExcluded) {
-        query.fields().exclude(field);
-      }
-    }
-    if (isNotEmpty(statuses)) {
-      query.addCriteria(where(NodeExecutionKeys.status).in(statuses));
-    }
-    return mongoTemplate.find(query, NodeExecution.class);
+  public CloseableIterator<NodeExecution> fetchNodeExecutionsWithoutOldRetriesIterator(
+      String planExecutionId, @NotNull Set<String> fieldsToInclude) {
+    return fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(
+        planExecutionId, EnumSet.noneOf(Status.class), fieldsToInclude);
   }
 
   @Override
-  public List<NodeExecution> fetchChildrenNodeExecutions(
+  public CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(
       String planExecutionId, String parentId, Set<String> fieldsToBeIncluded) {
-    validateQueryFieldsForNodeExecution(fieldsToBeIncluded);
+    // Uses planExecutionId_parentId_createdAt_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.parentId).is(parentId))
                       .with(Sort.by(Direction.DESC, NodeExecutionKeys.createdAt));
     for (String field : fieldsToBeIncluded) {
       query.fields().include(field);
     }
-    return mongoTemplate.find(query, NodeExecution.class);
+    return nodeExecutionReadHelper.fetchNodeExecutions(query);
   }
 
   @Override
-  public List<NodeExecution> fetchNodeExecutionsByStatus(String planExecutionId, Status status) {
+  public CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(
+      String planExecutionId, String parentId, Direction sortOrderOfCreatedAt, Set<String> fieldsToBeIncluded) {
+    // Uses planExecutionId_parentId_createdAt_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.status).is(status));
-    return mongoTemplate.find(query, NodeExecution.class);
-  }
-
-  @Override
-  public Page<NodeExecution> fetchNodeExecutionsByStatus(
-      String planExecutionId, Status status, Set<String> fieldsToBeIncluded, Pageable pageable) {
-    validateQueryFieldsForNodeExecution(fieldsToBeIncluded);
-    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.status).is(status));
+                      .addCriteria(where(NodeExecutionKeys.parentId).is(parentId))
+                      .with(Sort.by(sortOrderOfCreatedAt, NodeExecutionKeys.createdAt));
     for (String field : fieldsToBeIncluded) {
       query.fields().include(field);
     }
-    return nodeExecutionReadHelper.fetchNodeExecutions(query, pageable);
+    return nodeExecutionReadHelper.fetchNodeExecutions(query);
   }
 
   @Override
-  public Page<NodeExecution> fetchAllNodeExecutionsByStatus(
-      EnumSet<Status> statuses, Set<String> fieldNames, Pageable pageable) {
-    Query query = query(where(NodeExecutionKeys.status).in(statuses));
+  public CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(
+      String parentId, Set<String> fieldsToBeIncluded) {
+    // Uses planExecutionId_parentId_createdAt_idx
+    Query query = query(where(NodeExecutionKeys.parentId).is(parentId));
+    for (String field : fieldsToBeIncluded) {
+      query.fields().include(field);
+    }
+    return nodeExecutionReadHelper.fetchNodeExecutions(query);
+  }
 
-    for (String fieldName : fieldNames) {
+  @Override
+  public CloseableIterator<NodeExecution> fetchAllNodeExecutionsByStatusIteratorFromAnalytics(
+      EnumSet<Status> statuses, Set<String> fieldsToBeIncluded) {
+    // Uses status_idx index
+    Query query = query(where(NodeExecutionKeys.status).in(statuses));
+    for (String fieldName : fieldsToBeIncluded) {
       query.fields().include(fieldName);
     }
-    return nodeExecutionReadHelper.fetchNodeExecutions(query, pageable);
+    return nodeExecutionReadHelper.fetchNodeExecutionsFromAnalytics(query);
   }
 
-  /**
-   * This is deprecated, use below update to get only required fields
-   */
   @Override
-  public NodeExecution update(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops) {
-    Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
-    Update updateOps = new Update().set(NodeExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
-    ops.accept(updateOps);
-    boolean shouldLog = shouldLog(updateOps);
-    NodeExecution updatedNodeExecution = transactionHelper.performTransaction(() -> {
-      NodeExecution updated = mongoTemplate.findAndModify(query, updateOps, returnNewOptions, NodeExecution.class);
-      if (updated == null) {
-        throw new NodeExecutionUpdateFailedException(
-            "Node Execution Cannot be updated with provided operations" + nodeExecutionId);
+  public long findCountByParentIdAndStatusIn(String parentId, Set<Status> flowingStatuses) {
+    // Uses - parentId_status_idx index
+    Query query =
+        query(where(NodeExecutionKeys.parentId).is(parentId)).addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
+
+    if (EmptyPredicate.isNotEmpty(flowingStatuses)) {
+      query.addCriteria(where(NodeExecutionKeys.status).in(flowingStatuses));
+    }
+    return nodeExecutionReadHelper.findCount(query);
+  }
+
+  @Override
+  public List<NodeExecution> extractChildExecutions(String parentId, boolean includeParent,
+      List<NodeExecution> finalList, List<NodeExecution> allExecutions, boolean includeChildrenOfStrategy) {
+    Map<String, List<NodeExecution>> parentChildrenMap = new HashMap<>();
+    for (NodeExecution execution : allExecutions) {
+      if (execution.getParentId() == null) {
+        parentChildrenMap.put(execution.getUuid(), new ArrayList<>());
+      } else if (parentChildrenMap.containsKey(execution.getParentId())) {
+        parentChildrenMap.get(execution.getParentId()).add(execution);
+      } else {
+        List<NodeExecution> cList = new ArrayList<>();
+        cList.add(execution);
+        parentChildrenMap.put(execution.getParentId(), cList);
       }
-      if (shouldLog) {
-        orchestrationLogPublisher.onNodeUpdate(NodeUpdateInfo.builder().nodeExecution(updated).build());
+    }
+    extractChildList(parentChildrenMap, parentId, finalList, includeChildrenOfStrategy);
+    if (includeParent) {
+      finalList.add(allExecutions.stream()
+                        .filter(ne -> ne.getUuid().equals(parentId))
+                        .findFirst()
+                        .orElseThrow(() -> new UnexpectedException("Expected parent to be in list")));
+    }
+    return finalList;
+  }
+
+  // Extracts child list recursively from parentChildrenMap into finalList
+  private void extractChildList(Map<String, List<NodeExecution>> parentChildrenMap, String parentId,
+      List<NodeExecution> finalList, boolean includeChildrenOfStrategy) {
+    List<NodeExecution> children = parentChildrenMap.get(parentId);
+    if (isEmpty(children)) {
+      return;
+    }
+    finalList.addAll(children);
+    children.forEach(child -> {
+      // NOTE: We are ignoring the status of steps inside strategy because of max concurrency defined.
+      // We need to run all the steps inside strategy once
+      if (includeChildrenOfStrategy || child.getStepType().getStepCategory() != StepCategory.STRATEGY) {
+        extractChildList(parentChildrenMap, child.getUuid(), finalList, includeChildrenOfStrategy);
       }
-      return updated;
     });
-    nodeUpdateObserverSubject.fireInform(
-        NodeUpdateObserver::onNodeUpdate, NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).build());
-    return updatedNodeExecution;
   }
 
   @Override
-  public NodeExecution update(
-      @NonNull String nodeExecutionId, @NonNull Consumer<Update> ops, Set<String> fieldsToBeIncluded) {
-    Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
-    fieldsToBeIncluded.addAll(NodeProjectionUtils.fieldsForNodeUpdateObserver);
-    for (String field : fieldsToBeIncluded) {
-      query.fields().include(field);
+  public List<NodeExecution> findAllChildrenWithStatusInAndWithoutOldRetries(String planExecutionId, String parentId,
+      EnumSet<Status> flowingStatuses, boolean includeParent, Set<String> fieldsToBeIncluded,
+      boolean includeChildrenOfStrategy) {
+    List<NodeExecution> finalList = new ArrayList<>();
+    Set<String> finalFieldsToBeIncluded = new HashSet<>(NodeProjectionUtils.fieldsForAllChildrenExtractor);
+    if (EmptyPredicate.isNotEmpty(fieldsToBeIncluded)) {
+      finalFieldsToBeIncluded.addAll(fieldsToBeIncluded);
     }
-    Update updateOps = new Update().set(NodeExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
-    ops.accept(updateOps);
-    boolean shouldLog = shouldLog(updateOps);
-    NodeExecution updatedNodeExecution = transactionHelper.performTransaction(() -> {
-      NodeExecution updated = mongoTemplate.findAndModify(query, updateOps, returnNewOptions, NodeExecution.class);
-      if (updated == null) {
-        throw new NodeExecutionUpdateFailedException(
-            "Node Execution Cannot be updated with provided operations" + nodeExecutionId);
+    List<NodeExecution> allExecutions = new LinkedList<>();
+
+    try (CloseableIterator<NodeExecution> iterator = fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(
+             planExecutionId, flowingStatuses, finalFieldsToBeIncluded)) {
+      while (iterator.hasNext()) {
+        allExecutions.add(iterator.next());
       }
-      if (shouldLog) {
-        orchestrationLogPublisher.onNodeUpdate(NodeUpdateInfo.builder().nodeExecution(updated).build());
-      }
-      return updated;
-    });
-    nodeUpdateObserverSubject.fireInform(
-        NodeUpdateObserver::onNodeUpdate, NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).build());
-    return updatedNodeExecution;
-  }
-
-  @VisibleForTesting
-  @Override
-  public boolean shouldLog(Update updateOps) {
-    Set<String> fieldsUpdated = new HashSet<>();
-    if (updateOps.getUpdateObject().containsKey("$set")) {
-      fieldsUpdated.addAll(((Document) updateOps.getUpdateObject().get("$set")).keySet());
     }
-    if (updateOps.getUpdateObject().containsKey("$addToSet")) {
-      fieldsUpdated.addAll(((Document) updateOps.getUpdateObject().get("$addToSet")).keySet());
-    }
-    return fieldsUpdated.stream().anyMatch(GRAPH_FIELDS::contains);
-  }
-
-  @Override
-  public void updateV2(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops) {
-    update(nodeExecutionId, ops, NodeProjectionUtils.fieldsForNodeUpdateObserver);
-  }
-
-  // Save a collection nodeExecutions.
-  // This does not send any orchestration event. So if you want to do graph update operations on NodeExecution save,
-  // then use the below save() method.
-  @Override
-  public List<NodeExecution> saveAll(Collection<NodeExecution> nodeExecutions) {
-    return new ArrayList<>(mongoTemplate.insertAll(nodeExecutions));
+    return extractChildExecutions(parentId, includeParent, finalList, allExecutions, includeChildrenOfStrategy);
   }
 
   @Override
@@ -444,11 +391,76 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     }
   }
 
+  // Save a collection nodeExecutions.
+  // This does not send any orchestration event. So if you want to do graph update operations on NodeExecution save,
+  // then use the below save() method.
+  @Override
+  public List<NodeExecution> saveAll(Collection<NodeExecution> nodeExecutions) {
+    return new ArrayList<>(mongoTemplate.insertAll(nodeExecutions));
+  }
+
+  @Override
+  public NodeExecution update(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops) {
+    return updateNodeExecutionInternal(nodeExecutionId, ops, new HashSet<>(), false);
+  }
+
+  @Override
+  public NodeExecution update(
+      @NonNull String nodeExecutionId, @NonNull Consumer<Update> ops, @NonNull Set<String> fieldsToBeIncluded) {
+    return updateNodeExecutionInternal(nodeExecutionId, ops, fieldsToBeIncluded, true);
+  }
+
+  private NodeExecution updateNodeExecutionInternal(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops,
+      @NonNull Set<String> fieldsToBeIncluded, boolean validateProjection) {
+    Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
+    if (validateProjection) {
+      validateNodeExecutionProjection(fieldsToBeIncluded);
+      fieldsToBeIncluded.addAll(NodeProjectionUtils.fieldsForNodeUpdateObserver);
+      for (String field : fieldsToBeIncluded) {
+        query.fields().include(field);
+      }
+    }
+    Update updateOps = new Update().set(NodeExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
+    ops.accept(updateOps);
+    boolean shouldLog = shouldLog(updateOps);
+    NodeExecution updatedNodeExecution = transactionHelper.performTransaction(() -> {
+      NodeExecution updated = mongoTemplate.findAndModify(query, updateOps, returnNewOptions, NodeExecution.class);
+      if (updated == null) {
+        throw new NodeExecutionUpdateFailedException(
+            "Node Execution Cannot be updated with provided operations" + nodeExecutionId);
+      }
+      if (shouldLog) {
+        orchestrationLogPublisher.onNodeUpdate(NodeUpdateInfo.builder().nodeExecution(updated).build());
+      }
+      return updated;
+    });
+    nodeUpdateObserverSubject.fireInform(
+        NodeUpdateObserver::onNodeUpdate, NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).build());
+    return updatedNodeExecution;
+  }
+
+  @VisibleForTesting
+  boolean shouldLog(Update updateOps) {
+    Set<String> fieldsUpdated = new HashSet<>();
+    if (updateOps.getUpdateObject().containsKey("$set")) {
+      fieldsUpdated.addAll(((Document) updateOps.getUpdateObject().get("$set")).keySet());
+    }
+    if (updateOps.getUpdateObject().containsKey("$addToSet")) {
+      fieldsUpdated.addAll(((Document) updateOps.getUpdateObject().get("$addToSet")).keySet());
+    }
+    return fieldsUpdated.stream().anyMatch(GRAPH_FIELDS::contains);
+  }
+
+  @Override
+  public void updateV2(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops) {
+    updateNodeExecutionInternal(nodeExecutionId, ops, Sets.newHashSet(NodeExecutionKeys.uuid), true);
+  }
+
   /**
-   * Always use this method while updating statuses. This guarantees we a hopping from correct statuses.
-   * As we don't have transactions it is possible that you node execution state is manipulated by some other thread and
+   * Always use this method while updating statuses. This guarantees we are hopping from correct statuses.
+   * As we don't have transactions it is possible that your node execution state is manipulated by some other thread and
    * your transition is no longer valid.
-   *
+   * <p>
    * Like your workflow is aborted but some other thread try to set it to running. Same logic applied to plan execution
    * status as well
    */
@@ -463,34 +475,12 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return updateStatusWithUpdate(nodeExecutionId, status, updateOps, overrideStatusSet);
   }
 
-  @Override
-  public NodeExecution updateStatusWithOpsV2(@NonNull String nodeExecutionId, @NonNull Status status,
-      Consumer<Update> ops, EnumSet<Status> overrideStatusSet, Set<String> fieldsToBeIncluded) {
-    Update updateOps = new Update();
-    if (ops != null) {
-      ops.accept(updateOps);
-    }
-    return updateStatusWithUpdate(nodeExecutionId, status, updateOps, overrideStatusSet, fieldsToBeIncluded, true);
-  }
-
-  @Override
-  public NodeExecution updateStatusWithUpdate(
+  private NodeExecution updateStatusWithUpdate(
       @NotNull String nodeExecutionId, @NotNull Status status, Update ops, EnumSet<Status> overrideStatusSet) {
-    return updateStatusWithUpdate(nodeExecutionId, status, ops, overrideStatusSet, new HashSet<>(), false);
-  }
-
-  @Override
-  public NodeExecution updateStatusWithUpdate(@NotNull String nodeExecutionId, @NotNull Status status, Update ops,
-      EnumSet<Status> overrideStatusSet, Set<String> includedFields, boolean shouldUseProjections) {
     EnumSet<Status> allowedStartStatuses =
         isEmpty(overrideStatusSet) ? StatusUtils.nodeAllowedStartSet(status) : overrideStatusSet;
     Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId))
                       .addCriteria(where(NodeExecutionKeys.status).in(allowedStartStatuses));
-    if (shouldUseProjections) {
-      for (String field : includedFields) {
-        query.fields().include(field);
-      }
-    }
     Update updateOps =
         ops.set(NodeExecutionKeys.status, status).set(NodeExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
     NodeExecution updatedNodeExecution = transactionHelper.performTransaction(() -> {
@@ -506,21 +496,21 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       return updated;
     });
     if (updatedNodeExecution != null) {
-      stepStatusUpdateSubject.fireInform(NodeStatusUpdateObserver::onNodeStatusUpdate,
+      nodeStatusUpdateSubject.fireInform(NodeStatusUpdateObserver::onNodeStatusUpdate,
           NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).build());
     }
     return updatedNodeExecution;
   }
 
   @Override
-  public long markLeavesDiscontinuing(String planExecutionId, List<String> leafInstanceIds) {
+  public long markLeavesDiscontinuing(List<String> leafInstanceIds) {
     Update ops = new Update();
     ops.set(NodeExecutionKeys.status, DISCONTINUING);
-    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.uuid).in(leafInstanceIds));
+    // Use Id index
+    Query query = query(where(NodeExecutionKeys.uuid).in(leafInstanceIds));
     UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);
     if (!updateResult.wasAcknowledged()) {
-      log.warn("No NodeExecutions could be marked as DISCONTINUING -  planExecutionId: {}", planExecutionId);
+      log.warn("No NodeExecutions could be marked as DISCONTINUING for given nodeExecutionIds");
       return -1;
     }
     return updateResult.getModifiedCount();
@@ -537,6 +527,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
                                     .and(NodeExecutionKeys.oldRetry)
                                     .is(false);
     Criteria queuedNodeCriteria = where(NodeExecutionKeys.status).in(Status.QUEUED, Status.INPUT_WAITING);
+    // Uses - planExecutionId_status_idx
     Query query = query(
         where(NodeExecutionKeys.planExecutionId).is(planExecutionId).orOperator(leafNodeCriteria, queuedNodeCriteria));
     UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);
@@ -547,20 +538,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return updateResult.getModifiedCount();
   }
 
-  @Override
-  public List<NodeExecution> findAllNodeExecutionsTrimmed(String planExecutionId) {
-    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
-    query.fields()
-        .include(NodeExecutionKeys.uuid)
-        .include(NodeExecutionKeys.status)
-        .include(NodeExecutionKeys.mode)
-        .include(NodeExecutionKeys.parentId)
-        .include(NodeExecutionKeys.ambiance)
-        .include(NodeExecutionKeys.oldRetry);
-    return mongoTemplate.find(query, NodeExecution.class);
-  }
-
   /**
    * Update the old execution -> set oldRetry flag set to true
    *
@@ -569,6 +546,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Override
   public boolean markRetried(String nodeExecutionId) {
     Update ops = new Update().set(NodeExecutionKeys.oldRetry, Boolean.TRUE);
+    // Uses - id index
     Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
     NodeExecution nodeExecution = mongoTemplate.findAndModify(query, ops, NodeExecution.class);
     if (nodeExecution == null) {
@@ -579,16 +557,45 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return true;
   }
 
+  @Override
+  public void deleteAllNodeExecutionAndMetadata(String planExecutionId) {
+    // Fetches all nodeExecutions from analytics for given planExecutionId
+    List<NodeExecution> batchNodeExecutionSet = new LinkedList<>();
+    try (CloseableIterator<NodeExecution> iterator =
+             fetchNodeExecutionsFromAnalytics(planExecutionId, NodeProjectionUtils.fieldsForNodeExecutionDelete)) {
+      while (iterator.hasNext()) {
+        batchNodeExecutionSet.add(iterator.next());
+        if (batchNodeExecutionSet.size() >= MAX_BATCH_SIZE) {
+          deleteNodeExecutionsAndMetadataInternal(batchNodeExecutionSet);
+          batchNodeExecutionSet.clear();
+        }
+      }
+    }
+    if (EmptyPredicate.isNotEmpty(batchNodeExecutionSet)) {
+      deleteNodeExecutionsAndMetadataInternal(batchNodeExecutionSet);
+    }
+  }
+
+  /**
+   * Deletes all nodeExecutions and its related metadata once we have the nodeExecutionToDelete data we collected
+   * @param nodeExecutionsToDelete
+   */
+  private void deleteNodeExecutionsAndMetadataInternal(List<NodeExecution> nodeExecutionsToDelete) {
+    // Delete example - WaitInstances, resourceRestraintInstances, timeoutInstanceIds, etc
+    nodeDeleteObserverSubject.fireInform(NodeExecutionDeleteObserver::onNodesDelete, nodeExecutionsToDelete);
+  }
+
   /**
    * Update Nodes for which the previousId was failed node execution and replace it with the
    * note execution which is being retried
    *
-   * @param nodeExecutionId Old nodeExecutionId
+   * @param nodeExecutionId    Old nodeExecutionId
    * @param newNodeExecutionId Id of new retry node execution
    */
   @Override
   public boolean updateRelationShipsForRetryNode(String nodeExecutionId, String newNodeExecutionId) {
     Update ops = new Update().set(NodeExecutionKeys.previousId, newNodeExecutionId);
+    // Uses - previous_id_idx
     Query query = query(where(NodeExecutionKeys.previousId).is(nodeExecutionId));
     UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);
     if (updateResult.wasAcknowledged()) {
@@ -599,53 +606,11 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public List<NodeExecution> fetchNodeExecutionsByParentId(String nodeExecutionId, boolean oldRetry) {
-    Query query = query(where(NodeExecutionKeys.parentId).is(nodeExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
-    query.fields()
-        .include(NodeExecutionKeys.uuid)
-        .include(NodeExecutionKeys.nodeId)
-        .include(NodeExecutionKeys.identifier)
-        .include(NodeExecutionKeys.status)
-        .include(NodeExecutionKeys.failureInfo)
-        .include(NodeExecutionKeys.adviserResponse)
-        .include(NodeExecutionKeys.oldRetry);
-    return mongoTemplate.find(query, NodeExecution.class);
-  }
-
-  @Override
-  public List<NodeExecution> fetchNodeExecutionsByParentIdWithAmbianceAndNode(
-      String nodeExecutionId, boolean oldRetry, boolean includeParent) {
-    Criteria criteria = new Criteria();
-    if (includeParent) {
-      criteria.orOperator(Criteria.where(NodeExecutionKeys.parentId).is(nodeExecutionId),
-          Criteria.where(NodeExecutionKeys.uuid).is(nodeExecutionId));
-    } else {
-      criteria = Criteria.where(NodeExecutionKeys.parentId).is(nodeExecutionId);
-    }
-    Query query = query(criteria).addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
-    query.fields()
-        .include(NodeExecutionKeys.uuid)
-        .include(NodeExecutionKeys.nodeId)
-        .include(NodeExecutionKeys.identifier)
-        .include(NodeExecutionKeys.name)
-        .include(NodeExecutionKeys.status)
-        .include(NodeExecutionKeys.failureInfo)
-        .include(NodeExecutionKeys.parentId)
-        .include(NodeExecutionKeys.ambiance)
-        .include(NodeExecutionKeys.executableResponses)
-        .include(NodeExecutionKeys.planNode)
-        .include(NodeExecutionKeys.adviserResponse)
-        .include(NodeExecutionKeys.createdAt)
-        .include(NodeExecutionKeys.oldRetry);
-    return mongoTemplate.find(query, NodeExecution.class);
-  }
-
-  @Override
   public boolean errorOutActiveNodes(String planExecutionId) {
     Update ops = new Update();
     ops.set(NodeExecutionKeys.status, ERRORED);
     ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis());
+    // Uses - planExecutionId_status_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.status).in(StatusUtils.activeStatuses()));
     UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);
@@ -656,74 +621,15 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return true;
   }
 
-  @Override
-  public List<NodeExecution> findAllChildrenWithStatusIn(String planExecutionId, String parentId,
-      EnumSet<Status> flowingStatuses, boolean includeParent, boolean shouldUseProjections,
-      Set<String> fieldsToBeIncluded, Set<String> fieldsToBeExcluded) {
-    if (shouldUseProjections) {
-      if (!fieldsToBeIncluded.contains(NodeExecutionKeys.parentId)
-          || !fieldsToBeIncluded.contains(NodeExecutionKeys.status)) {
-        throw new InvalidRequestException(
-            "ParentId or Status fields are not included in projectionFields, which are necessary");
-      }
-      if (fieldsToBeExcluded.contains(NodeExecutionKeys.id)) {
-        throw new InvalidRequestException("Excluding nodeExecutionId is not allowed, as its a required field");
-      }
+  @VisibleForTesting
+  CloseableIterator<NodeExecution> fetchNodeExecutionsFromAnalytics(
+      String planExecutionId, @NotNull Set<String> fieldsToInclude) {
+    // Uses - planExecutionId_status_idx
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId));
+    for (String field : fieldsToInclude) {
+      query.fields().include(field);
     }
-    List<NodeExecution> finalList = new ArrayList<>();
-    List<NodeExecution> allExecutions = fetchNodeExecutionsWithoutOldRetriesAndStatusIn(
-        planExecutionId, flowingStatuses, true, fieldsToBeIncluded, fieldsToBeExcluded);
-    return extractChildExecutions(parentId, includeParent, finalList, allExecutions);
-  }
-
-  @Override
-  public List<NodeExecution> findAllChildrenWithStatusIn(
-      String planExecutionId, String parentId, EnumSet<Status> flowingStatuses, boolean includeParent) {
-    List<NodeExecution> finalList = new ArrayList<>();
-    List<NodeExecution> allExecutions =
-        fetchNodeExecutionsWithoutOldRetriesAndStatusIn(planExecutionId, flowingStatuses, false, new HashSet<>());
-    return extractChildExecutions(parentId, includeParent, finalList, allExecutions);
-  }
-
-  @Override
-  public List<NodeExecution> extractChildExecutions(
-      String parentId, boolean includeParent, List<NodeExecution> finalList, List<NodeExecution> allExecutions) {
-    Map<String, List<NodeExecution>> parentChildrenMap = new HashMap<>();
-    for (NodeExecution execution : allExecutions) {
-      if (execution.getParentId() == null) {
-        parentChildrenMap.put(execution.getUuid(), new ArrayList<>());
-      } else if (parentChildrenMap.containsKey(execution.getParentId())) {
-        parentChildrenMap.get(execution.getParentId()).add(execution);
-      } else {
-        List<NodeExecution> cList = new ArrayList<>();
-        cList.add(execution);
-        parentChildrenMap.put(execution.getParentId(), cList);
-      }
-    }
-    extractChildList(parentChildrenMap, parentId, finalList);
-    if (includeParent) {
-      finalList.add(allExecutions.stream()
-                        .filter(ne -> ne.getUuid().equals(parentId))
-                        .findFirst()
-                        .orElseThrow(() -> new UnexpectedException("Expected parent to be in list")));
-    }
-    return finalList;
-  }
-
-  private void extractChildList(
-      Map<String, List<NodeExecution>> parentChildrenMap, String parentId, List<NodeExecution> finalList) {
-    List<NodeExecution> children = parentChildrenMap.get(parentId);
-    if (isEmpty(children)) {
-      return;
-    }
-    finalList.addAll(children);
-    children.forEach(child -> {
-      // NOTE: We are ignoring the status of steps inside strategy because of max concurrency defined.
-      // We need to run all the steps inside strategy once
-      if (child.getStepType().getStepCategory() != StepCategory.STRATEGY) {
-        extractChildList(parentChildrenMap, child.getUuid(), finalList);
-      }
-    });
+    return nodeExecutionReadHelper.fetchNodeExecutionsFromAnalytics(query);
   }
 
   @VisibleForTesting
@@ -765,15 +671,16 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       Level level = AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance());
       if (level != null && level.getStepType().getStepCategory() == StepCategory.STAGE
           && nodeExecution.getStatus() == ABORTED) {
-        List<NodeExecution> allChildrenWithStatusInAborted = findAllChildrenWithStatusIn(
-            nodeExecution.getAmbiance().getPlanExecutionId(), nodeExecution.getUuid(), EnumSet.of(ABORTED), false);
+        List<NodeExecution> allChildrenWithStatusInAborted = findAllChildrenWithStatusInAndWithoutOldRetries(
+            nodeExecution.getAmbiance().getPlanExecutionId(), nodeExecution.getUuid(), EnumSet.of(ABORTED), false,
+            Sets.newHashSet(NodeExecutionKeys.interruptHistories), false);
         if (isEmpty(allChildrenWithStatusInAborted)) {
           return;
         }
 
         List<NodeExecution> nodeExecutionsAbortedThroughTrigger =
             allChildrenWithStatusInAborted.stream().filter(this::isAbortedThroughTrigger).collect(Collectors.toList());
-        if (isNotEmpty(nodeExecutionsAbortedThroughTrigger)) {
+        if (EmptyPredicate.isNotEmpty(nodeExecutionsAbortedThroughTrigger)) {
           eventBuilder.addTags(AUTO_ABORT_PIPELINE_THROUGH_TRIGGER);
         }
       }
@@ -794,6 +701,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   public boolean removeTimeoutInstances(String nodeExecutionId) {
     Update ops = new Update();
     ops.set(NodeExecutionKeys.timeoutInstanceIds, new ArrayList<>());
+    // Uses - id index
     Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
     UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);
 
@@ -809,18 +717,12 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return fetchStageDetailFromNodeExecution(fetchStageExecutions(planExecutionId));
   }
 
-  @Override
-  public List<NodeExecution> fetchStageExecutions(String planExecutionId) {
+  private List<NodeExecution> fetchStageExecutions(String planExecutionId) {
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.status).ne(Status.SKIPPED))
                       .addCriteria(where(NodeExecutionKeys.stepCategory).in(StepCategory.STAGE, StepCategory.STRATEGY));
     query.with(by(NodeExecutionKeys.createdAt));
     return mongoTemplate.find(query, NodeExecution.class);
-  }
-
-  @Override
-  public NodeExecution update(@NonNull NodeExecution nodeExecution) {
-    return mongoTemplate.save(nodeExecution);
   }
 
   @Override
@@ -850,7 +752,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   // TODO optimize this to remove n+1 queries
-  public List<RetryStageInfo> fetchStageDetailFromNodeExecution(List<NodeExecution> nodeExecutionList) {
+  private List<RetryStageInfo> fetchStageDetailFromNodeExecution(List<NodeExecution> nodeExecutionList) {
     List<RetryStageInfo> stageDetails = new ArrayList<>();
 
     if (nodeExecutionList.size() == 0) {
@@ -866,14 +768,17 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
           String nextId = nodeExecution.getNextId();
           String parentId = nodeExecution.getParentId();
-          RetryStageInfo stageDetail = RetryStageInfo.builder()
-                                           .name(nodeExecution.getName())
-                                           .identifier(nodeExecution.getIdentifier())
-                                           .parentId(parentId)
-                                           .createdAt(nodeExecution.getCreatedAt())
-                                           .status(ExecutionStatus.getExecutionStatus(nodeExecution.getStatus()))
-                                           .nextId(nextId != null ? nextId : get(parentId).getNextId())
-                                           .build();
+          RetryStageInfo stageDetail =
+              RetryStageInfo.builder()
+                  .name(nodeExecution.getName())
+                  .identifier(nodeExecution.getIdentifier())
+                  .parentId(parentId)
+                  .createdAt(nodeExecution.getCreatedAt())
+                  .status(ExecutionStatus.getExecutionStatus(nodeExecution.getStatus()))
+                  .nextId(nextId != null
+                          ? nextId
+                          : getWithFieldsIncluded(parentId, Sets.newHashSet(NodeExecutionKeys.nextId)).getNextId())
+                  .build();
           stageDetails.add(stageDetail);
         }
       } else {
@@ -887,14 +792,17 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       if (strategyNodeExecutionIds.contains(parentId)) {
         continue;
       }
-      RetryStageInfo stageDetail = RetryStageInfo.builder()
-                                       .name(nodeExecution.getName())
-                                       .identifier(nodeExecution.getIdentifier())
-                                       .parentId(parentId)
-                                       .createdAt(nodeExecution.getCreatedAt())
-                                       .status(ExecutionStatus.getExecutionStatus(nodeExecution.getStatus()))
-                                       .nextId(nextId != null ? nextId : get(parentId).getNextId())
-                                       .build();
+      RetryStageInfo stageDetail =
+          RetryStageInfo.builder()
+              .name(nodeExecution.getName())
+              .identifier(nodeExecution.getIdentifier())
+              .parentId(parentId)
+              .createdAt(nodeExecution.getCreatedAt())
+              .status(ExecutionStatus.getExecutionStatus(nodeExecution.getStatus()))
+              .nextId(nextId != null
+                      ? nextId
+                      : getWithFieldsIncluded(parentId, Sets.newHashSet(NodeExecutionKeys.nextId)).getNextId())
+              .build();
       stageDetails.add(stageDetail);
     }
     return stageDetails;
@@ -962,9 +870,9 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return nodeExecutionMap;
   }
 
-  private void validateQueryFieldsForNodeExecution(Set<String> fieldsToInclude) {
+  private void validateNodeExecutionProjection(Set<String> fieldsToInclude) {
     if (EmptyPredicate.isEmpty(fieldsToInclude)) {
-      throw new InvalidRequestException("Projection fields for NodeExecution in fetchNodeExecutions is required");
+      throw new InvalidRequestException("Projection fields cannot be empty in NodeExecution query.");
     }
   }
 }

@@ -7,11 +7,6 @@
 
 package io.harness.accesscontrol.roleassignments.api;
 
-import static io.harness.NGCommonEntityConstants.NEXT_REL;
-import static io.harness.NGCommonEntityConstants.PAGE;
-import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
-import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
-import static io.harness.NGCommonEntityConstants.SELF_REL;
 import static io.harness.accesscontrol.AccessControlPermissions.EDIT_SERVICEACCOUNT_PERMISSION;
 import static io.harness.accesscontrol.AccessControlPermissions.MANAGE_USERGROUP_PERMISSION;
 import static io.harness.accesscontrol.AccessControlPermissions.MANAGE_USER_PERMISSION;
@@ -26,8 +21,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.SortOrder.Builder.aSortOrder;
 import static io.harness.beans.SortOrder.OrderType.DESC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
-import static javax.ws.rs.core.UriBuilder.fromPath;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.AccessControlPermissions;
 import io.harness.accesscontrol.AccessControlResourceTypes;
@@ -64,7 +58,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.dropwizard.jersey.validation.JerseyViolationException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -72,16 +65,12 @@ import java.util.stream.Collectors;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
 
 @OwnedBy(PL)
 @Singleton
 public class RoleAssignmentApiUtils {
-  public static final int FIRST_PAGE = 1;
-
   public static final String ROLE_ASSIGNMENT_DOES_NOT_EXISTS = "Role Assignment with given identifier doesn't exists";
 
   Validator validator;
@@ -122,7 +111,7 @@ public class RoleAssignmentApiUtils {
 
   public PrincipalDTO getPrincipalDto(Principal principal) {
     PrincipalDTO principalDTO = PrincipalDTO.builder()
-                                    .identifier(principal.getSlug())
+                                    .identifier(principal.getIdentifier())
                                     .scopeLevel(principal.getScopeLevel())
                                     .type(getPrincipalType(principal.getType()))
                                     .build();
@@ -141,7 +130,7 @@ public class RoleAssignmentApiUtils {
 
   public RoleAssignmentDTO getRoleAssignmentDto(RoleAssignment request) {
     RoleAssignmentDTO roleAssignmentDTO = RoleAssignmentDTO.builder()
-                                              .identifier(request.getSlug())
+                                              .identifier(request.getIdentifier())
                                               .resourceGroupIdentifier(request.getResourceGroup())
                                               .roleIdentifier(request.getRole())
                                               .principal(getPrincipalDto(request.getPrincipal()))
@@ -166,7 +155,7 @@ public class RoleAssignmentApiUtils {
 
   public RoleAssignmentResponse getRoleAssignmentResponse(RoleAssignmentResponseDTO responseDTO) {
     RoleAssignmentResponse roleAssignmentResponse = new RoleAssignmentResponse();
-    roleAssignmentResponse.setRoleassignment(getRoleAssignment(responseDTO.getRoleAssignment()));
+    roleAssignmentResponse.setRoleAssignment(getRoleAssignment(responseDTO.getRoleAssignment()));
     roleAssignmentResponse.setHarnessManaged(responseDTO.isHarnessManaged());
     roleAssignmentResponse.setCreated(responseDTO.getCreatedAt());
     roleAssignmentResponse.setUpdated(responseDTO.getLastModifiedAt());
@@ -176,7 +165,7 @@ public class RoleAssignmentApiUtils {
 
   private RoleAssignment getRoleAssignment(RoleAssignmentDTO roleAssignmentDto) {
     RoleAssignment roleAssignment = new RoleAssignment();
-    roleAssignment.setSlug(roleAssignmentDto.getIdentifier());
+    roleAssignment.setIdentifier(roleAssignmentDto.getIdentifier());
     roleAssignment.setResourceGroup(roleAssignmentDto.getResourceGroupIdentifier());
     roleAssignment.setRole(roleAssignmentDto.getRoleIdentifier());
     roleAssignment.setDisabled(roleAssignmentDto.isDisabled());
@@ -188,7 +177,7 @@ public class RoleAssignmentApiUtils {
 
   private Principal getPrincipal(PrincipalDTO principalDto) {
     Principal principal = new Principal();
-    principal.setSlug(principalDto.getIdentifier());
+    principal.setIdentifier(principalDto.getIdentifier());
     principal.setScopeLevel(principalDto.getScopeLevel());
     principal.setType(Principal.TypeEnum.valueOf(principalDto.getType().name()));
 
@@ -197,14 +186,22 @@ public class RoleAssignmentApiUtils {
 
   public io.harness.accesscontrol.roleassignments.RoleAssignment buildRoleAssignmentWithPrincipalScopeLevel(
       io.harness.accesscontrol.roleassignments.RoleAssignment roleAssignment, Scope scope) {
+    // For principalType USER, principalScopeLevel should be always null.
     String principalScopeLevel = null;
+
     if (USER_GROUP.equals(roleAssignment.getPrincipalType()) && !isEmpty(roleAssignment.getPrincipalScopeLevel())) {
       principalScopeLevel = roleAssignment.getPrincipalScopeLevel();
     }
     if (USER_GROUP.equals(roleAssignment.getPrincipalType()) && isEmpty(roleAssignment.getPrincipalScopeLevel())) {
       principalScopeLevel = roleAssignment.getScopeLevel();
     }
-    if (SERVICE_ACCOUNT.equals(roleAssignment.getPrincipalType()) && isEmpty(roleAssignment.getPrincipalScopeLevel())) {
+
+    if (SERVICE_ACCOUNT.equals(roleAssignment.getPrincipalType())) {
+      if (isNotEmpty(roleAssignment.getPrincipalScopeLevel())
+          && !roleAssignment.getPrincipalScopeLevel().equals(scope.getLevel().toString())) {
+        throw new InvalidRequestException(
+            "Cannot create role assignment for given Service Account. Principal should be of same scope as of role assignment.");
+      }
       principalScopeLevel = getServiceAccountScopeLevel(roleAssignment.getPrincipalIdentifier(), scope);
     }
     return io.harness.accesscontrol.roleassignments.RoleAssignment.builder()
@@ -353,26 +350,6 @@ public class RoleAssignmentApiUtils {
     }
   }
 
-  public ResponseBuilder addLinksHeader(
-      ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
-    ArrayList<Link> links = new ArrayList<>();
-
-    links.add(
-        Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
-
-    if (page >= FIRST_PAGE) {
-      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page - 1).queryParam(PAGE_SIZE, limit).build())
-                    .rel(PREVIOUS_REL)
-                    .build());
-    }
-    if (limit == currentResultCount) {
-      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page + 1).queryParam(PAGE_SIZE, limit).build())
-                    .rel(NEXT_REL)
-                    .build());
-    }
-    return responseBuilder.links(links.toArray(new Link[links.size()]));
-  }
-
   public PageRequest getPageRequest(int page, int limit, String sort, String order) {
     List<SortOrder> sortOrders;
     String mappedFieldName = getFieldName(sort);
@@ -391,7 +368,7 @@ public class RoleAssignmentApiUtils {
       sortField = SortFields.UNSUPPORTED;
     }
     switch (sortField) {
-      case SLUG:
+      case IDENTIFIER:
         return RoleAssignmentDBOKeys.identifier;
       case CREATED:
         return RoleAssignmentDBOKeys.createdAt;
@@ -404,7 +381,7 @@ public class RoleAssignmentApiUtils {
   }
 
   public enum SortFields {
-    SLUG("slug"),
+    IDENTIFIER("identifier"),
     CREATED("created"),
     UPDATED("updated"),
     UNSUPPORTED(null);

@@ -42,6 +42,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.spec.server.accesscontrol.v1.AccountRolesApi;
 import io.harness.spec.server.accesscontrol.v1.model.CreateRoleRequest;
 import io.harness.spec.server.accesscontrol.v1.model.RolesResponse;
+import io.harness.utils.ApiUtils;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -140,11 +141,11 @@ public class AccountRolesApiImpl implements AccountRolesApi {
     String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();
     RoleFilter roleFilter =
         RoleFilter.builder().searchTerm(searchTerm).scopeIdentifier(scopeIdentifier).managedFilter(NO_FILTER).build();
-    PageRequest pageRequest = RolesApiUtils.getPageRequest(page, limit, sort, order);
-    PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter);
+    PageRequest pageRequest = ApiUtils.getPageRequest(page, limit, sort, order);
+    PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter, true);
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks =
-        RolesApiUtils.addLinksHeader(responseBuilder, "/v1/roles", pageResponse.getContent().size(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, "/v1/roles", pageResponse.getContent().size(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getContent()
                     .stream()
@@ -158,7 +159,7 @@ public class AccountRolesApiImpl implements AccountRolesApi {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(account, null, null), Resource.of(ROLE, role), EDIT_ROLE_PERMISSION);
     HarnessScopeParams harnessScopeParams = HarnessScopeParams.builder().accountIdentifier(account).build();
-    if (!role.equals(body.getSlug())) {
+    if (!role.equals(body.getIdentifier())) {
       throw new InvalidRequestException("Role identifier in the request body and the URL do not match.");
     }
     String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();

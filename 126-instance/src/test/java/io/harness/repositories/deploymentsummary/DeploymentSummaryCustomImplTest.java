@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.entities.DeploymentSummary;
 import io.harness.entities.DeploymentSummary.DeploymentSummaryKeys;
@@ -63,13 +64,17 @@ public class DeploymentSummaryCustomImplTest extends InstancesTestBase {
     Criteria criteria = Criteria.where(DeploymentSummaryKeys.instanceSyncKey)
                             .is(INSTANCE_SYNC_KEY)
                             .and(DeploymentSummaryKeys.accountIdentifier)
-                            .is(infrastructureMappingDTO.getAccountIdentifier())
-                            .and(DeploymentSummaryKeys.orgIdentifier)
-                            .is(infrastructureMappingDTO.getOrgIdentifier())
-                            .and(DeploymentSummaryKeys.projectIdentifier)
-                            .is(infrastructureMappingDTO.getProjectIdentifier())
-                            .and(DeploymentSummaryKeys.infrastructureMappingId)
-                            .is(infrastructureMappingDTO.getId());
+                            .is(infrastructureMappingDTO.getAccountIdentifier());
+
+    if (EmptyPredicate.isNotEmpty(infrastructureMappingDTO.getOrgIdentifier())) {
+      criteria.and(DeploymentSummaryKeys.orgIdentifier).is(infrastructureMappingDTO.getOrgIdentifier());
+    }
+    if (EmptyPredicate.isNotEmpty(infrastructureMappingDTO.getProjectIdentifier())) {
+      criteria.and(DeploymentSummaryKeys.projectIdentifier).is(infrastructureMappingDTO.getProjectIdentifier());
+    }
+
+    criteria.and(DeploymentSummaryKeys.infrastructureMappingId).is(infrastructureMappingDTO.getId());
+
     Query query = new Query().addCriteria(criteria);
     query.with(Sort.by(Sort.Direction.DESC, DeploymentSummaryKeys.createdAt));
     query.skip((long) N - 1);

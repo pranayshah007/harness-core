@@ -7,9 +7,9 @@
 
 package io.harness.connector.apis.resource;
 
+import static io.harness.NGCommonEntityConstants.DIFFERENT_IDENTIFIER_IN_PAYLOAD_AND_PARAM;
 import static io.harness.NGCommonEntityConstants.DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM;
 import static io.harness.NGCommonEntityConstants.DIFFERENT_PROJECT_IN_PAYLOAD_AND_PARAM;
-import static io.harness.NGCommonEntityConstants.DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM;
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.DELETE_CONNECTOR_PERMISSION;
 import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.EDIT_CONNECTOR_PERMISSION;
@@ -41,6 +41,7 @@ import io.harness.spec.server.connector.v1.ProjectConnectorApi;
 import io.harness.spec.server.connector.v1.model.ConnectorRequest;
 import io.harness.spec.server.connector.v1.model.ConnectorResponse;
 import io.harness.spec.server.connector.v1.model.ConnectorTestConnectionResponse;
+import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -91,7 +92,8 @@ public class ProjectConnectorApiImpl implements ProjectConnectorApi {
     boolean deleted = connectorService.delete(account, org, project, connector, false);
 
     if (!deleted) {
-      throw new InvalidRequestException(String.format("Connector with slug [%s] could not be deleted", connector));
+      throw new InvalidRequestException(
+          String.format("Connector with identifier [%s] could not be deleted", connector));
     }
     ConnectorResponseDTO responseDTO = connectorResponseDTO.get();
     ConnectorResponse connectorResponse = connectorApiUtils.toConnectorResponse(responseDTO);
@@ -125,7 +127,7 @@ public class ProjectConnectorApiImpl implements ProjectConnectorApi {
     List<ConnectorResponse> connectorResponses = connectorApiUtils.toConnectorResponses(connectorResponseDTOS);
 
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = connectorApiUtils.addLinksHeader(responseBuilder,
+    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
         String.format("/v1/orgs/%s/projects/%s/connectors", org, project), connectorResponses.size(), page, limit);
 
     return responseBuilderWithLinks.entity(connectorResponses).build();
@@ -153,8 +155,8 @@ public class ProjectConnectorApiImpl implements ProjectConnectorApi {
   @Override
   public Response updateProjectScopedConnector(ConnectorRequest connectorRequest, @OrgIdentifier String org,
       @ProjectIdentifier String project, @ResourceIdentifier String connector, @AccountIdentifier String account) {
-    if (!Objects.equals(connectorRequest.getConnector().getSlug(), connector)) {
-      throw new InvalidRequestException(DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM, USER);
+    if (!Objects.equals(connectorRequest.getConnector().getIdentifier(), connector)) {
+      throw new InvalidRequestException(DIFFERENT_IDENTIFIER_IN_PAYLOAD_AND_PARAM, USER);
     }
     if (!Objects.equals(connectorRequest.getConnector().getOrg(), org)) {
       throw new InvalidRequestException(DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM, USER);
@@ -163,7 +165,7 @@ public class ProjectConnectorApiImpl implements ProjectConnectorApi {
       throw new InvalidRequestException(DIFFERENT_PROJECT_IN_PAYLOAD_AND_PARAM, USER);
     }
 
-    if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(connectorRequest.getConnector().getSlug())) {
+    if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(connectorRequest.getConnector().getIdentifier())) {
       throw new InvalidRequestException("Update operation not supported for Harness Secret Manager");
     }
     ConnectorDTO connectorDTO = connectorApiUtils.toConnectorDTO(connectorRequest);
@@ -180,7 +182,7 @@ public class ProjectConnectorApiImpl implements ProjectConnectorApi {
     if (!Objects.equals(request.getConnector().getProject(), project)) {
       throw new InvalidRequestException(DIFFERENT_PROJECT_IN_PAYLOAD_AND_PARAM, USER);
     }
-    if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(request.getConnector().getSlug())) {
+    if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(request.getConnector().getIdentifier())) {
       throw new InvalidRequestException(
           String.format("%s cannot be used as connector identifier", HARNESS_SECRET_MANAGER_IDENTIFIER), USER);
     }

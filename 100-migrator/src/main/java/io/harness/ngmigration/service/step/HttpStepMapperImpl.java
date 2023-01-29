@@ -10,6 +10,8 @@ package io.harness.ngmigration.service.step;
 import io.harness.beans.KeyValuePair;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.http.HttpHeaderConfig;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.http.HttpStepInfo;
@@ -17,12 +19,15 @@ import io.harness.plancreator.steps.http.HttpStepInfo.HttpStepInfoBuilder;
 import io.harness.plancreator.steps.http.HttpStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.template.TemplateStepNode;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.StringNGVariable;
 
+import software.wings.beans.GraphNode;
+import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.HttpState;
-import software.wings.yaml.workflow.StepYaml;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,25 +35,45 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
-public class HttpStepMapperImpl implements StepMapper {
+public class HttpStepMapperImpl extends StepMapper {
   @Override
-  public String getStepType(StepYaml stepYaml) {
+  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
+    return WorkflowStepSupportStatus.SUPPORTED;
+  }
+
+  @Override
+  public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
+    String templateId = graphNode.getTemplateUuid();
+    if (StringUtils.isNotBlank(templateId)) {
+      return Collections.singletonList(
+          CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
+    }
+    return Collections.emptyList();
+  }
+
+  @Override
+  public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+    return defaultTemplateSpecMapper(context, graphNode);
+  }
+
+  @Override
+  public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.HTTP;
   }
 
   @Override
-  public State getState(StepYaml stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+  public State getState(GraphNode stepYaml) {
+    Map<String, Object> properties = getProperties(stepYaml);
     HttpState state = new HttpState(stepYaml.getName());
     state.parseProperties(properties);
     return state;
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
-    HttpState state = (HttpState) getState(stepYaml);
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+    HttpState state = (HttpState) getState(graphNode);
     HttpStepNode httpStepNode = new HttpStepNode();
-    baseSetup(stepYaml, httpStepNode);
+    baseSetup(graphNode, httpStepNode);
     HttpStepInfoBuilder httpStepInfoBuilder =
         HttpStepInfo.infoBuilder()
             .url(ParameterField.createValueField(state.getUrl()))
@@ -88,7 +113,7 @@ public class HttpStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     // Check URL, Method, Body, Headers, Assertion condition
     HttpState state1 = (HttpState) getState(stepYaml1);
     HttpState state2 = (HttpState) getState(stepYaml2);

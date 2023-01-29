@@ -7,39 +7,46 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.email.EmailStepInfo;
 import io.harness.plancreator.steps.email.EmailStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
 
+import software.wings.beans.GraphNode;
 import software.wings.sm.State;
 import software.wings.sm.states.EmailState;
-import software.wings.yaml.workflow.StepYaml;
 
 import java.util.Collections;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
-public class EmailStepMapperImpl implements StepMapper {
+public class EmailStepMapperImpl extends StepMapper {
   @Override
-  public String getStepType(StepYaml stepYaml) {
+  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
+    return WorkflowStepSupportStatus.SUPPORTED;
+  }
+
+  @Override
+  public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.EMAIL;
   }
 
   @Override
-  public State getState(StepYaml stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+  public State getState(GraphNode stepYaml) {
+    Map<String, Object> properties = getProperties(stepYaml);
     EmailState state = new EmailState(stepYaml.getName());
     state.parseProperties(properties);
     return state;
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
-    EmailState state = (EmailState) getState(stepYaml);
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+    EmailState state = (EmailState) getState(graphNode);
     EmailStepNode emailStepNode = new EmailStepNode();
-    baseSetup(stepYaml, emailStepNode);
+    baseSetup(graphNode, emailStepNode);
     EmailStepInfo emailStepInfo = EmailStepInfo.infoBuilder()
                                       .to(ParameterField.createValueField(state.getToAddress()))
                                       .cc(ParameterField.createValueField(state.getCcAddress()))
@@ -52,7 +59,7 @@ public class EmailStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     // We are not comparing other fields because to, cc are not the most import parts to compare.
     // Subject & Body would be the major differentiators
     EmailState state1 = (EmailState) getState(stepYaml1);

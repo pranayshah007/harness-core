@@ -22,6 +22,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,11 +49,11 @@ public class ProgressUpdateService implements Runnable {
 
   @Override
   public void run() {
+    ProgressUpdate progressUpdate = null;
     while (true) {
       try {
         final long now = System.currentTimeMillis();
-        ProgressUpdate progressUpdate =
-            waitInstanceService.fetchForProcessingProgressUpdate(busyCorrelationIds.asMap().keySet(), now);
+        progressUpdate = waitInstanceService.fetchForProcessingProgressUpdate(busyCorrelationIds.asMap().keySet(), now);
         if (progressUpdate == null) {
           break;
         }
@@ -61,7 +62,9 @@ public class ProgressUpdateService implements Runnable {
           busyCorrelationIds.put(progressUpdate.getCorrelationId(), progressUpdate.getCorrelationId());
           continue;
         }
-        log.info("Starting to process progress response");
+        if (log.isDebugEnabled()) {
+          log.debug("Starting to process progress response");
+        }
 
         ProgressData progressData = progressUpdate.isUsingKryoWithoutReference()
             ? (ProgressData) referenceFalseKryoSerializer.asInflatedObject(progressUpdate.getProgressData())
@@ -70,13 +73,26 @@ public class ProgressUpdateService implements Runnable {
         List<WaitInstance> waitInstances = persistenceWrapper.fetchWaitInstances(progressUpdate.getCorrelationId());
         for (WaitInstance waitInstance : waitInstances) {
           ProgressCallback progressCallback = waitInstance.getProgressCallback();
-          injector.injectMembers(progressCallback);
-          progressCallback.notify(progressUpdate.getCorrelationId(), progressData);
+          if (progressCallback != null) {
+            injector.injectMembers(progressCallback);
+            progressCallback.notify(progressUpdate.getCorrelationId(), progressData);
+          } else {
+            log.warn(String.format("Found null callback for correlationId: [%s]", progressUpdate.getCorrelationId()));
+          }
         }
-        log.info("Processed progress response");
-        persistenceWrapper.delete(progressUpdate);
+        if (log.isDebugEnabled()) {
+          log.debug("Processed progress response for correlationId - " + progressUpdate.getCorrelationId()
+              + " and waitInstanceIds - "
+              + waitInstances.stream().map(WaitInstance::getUuid).collect(Collectors.toList()));
+        }
       } catch (Exception e) {
         log.error("Exception occurred while running progress service", e);
+      } finally {
+        if (progressUpdate != null) {
+          log.debug(String.format(
+              "Deleting progressUpdate record for correlationId: [%s]", progressUpdate.getCorrelationId()));
+          persistenceWrapper.delete(progressUpdate);
+        }
       }
     }
   }

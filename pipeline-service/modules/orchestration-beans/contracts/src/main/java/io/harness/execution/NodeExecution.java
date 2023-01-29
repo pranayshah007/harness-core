@@ -46,6 +46,7 @@ import io.harness.timeout.TimeoutDetails;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
+import dev.morphia.annotations.Entity;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -61,7 +62,6 @@ import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -81,7 +81,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   public static final long TTL_MONTHS = 6;
 
   // Immutable
-  @Wither @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Wither @Id @dev.morphia.annotations.Id String uuid;
   @NotNull Ambiance ambiance;
   @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) Node planNode;
   @NotNull ExecutionMode mode;
@@ -185,7 +185,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList
         .<MongoIndex>builder()
-        // used
+        // used by getByPlanNodeUuid
         .add(CompoundMongoIndex.builder()
                  .name("planExecutionId_nodeId_idx")
                  .field(NodeExecutionKeys.planExecutionId)
@@ -201,11 +201,13 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
                  .field(NodeExecutionKeys.planExecutionId)
                  .field(NodeExecutionKeys.oldRetry)
                  .build())
+        // Used by fetchNodeExecutionsStatusesWithoutOldRetries
         .add(CompoundMongoIndex.builder()
                  .name("planExecutionId_status_idx")
                  .field(NodeExecutionKeys.planExecutionId)
                  .field(NodeExecutionKeys.status)
                  .build())
+        // Used by findCountByParentIdAndStatusIn and fetchChildrenNodeExecutionsIterator
         .add(CompoundMongoIndex.builder()
                  .name("parentId_status_idx")
                  .field(NodeExecutionKeys.parentId)
@@ -219,6 +221,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
                  .field(NodeExecutionKeys.status)
                  .field(NodeExecutionKeys.oldRetry)
                  .build())
+        // Used by fetchAllStepNodeExecutions
         .add(CompoundMongoIndex.builder()
                  .name("planExecutionId_stepCategory_identifier_idx")
                  .field(NodeExecutionKeys.planExecutionId)
@@ -230,7 +233,9 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
                  .field(NodeExecutionKeys.planExecutionId)
                  .field(NodeExecutionKeys.stageFqn)
                  .build())
+        // updateRelationShipsForRetryNode
         .add(CompoundMongoIndex.builder().name("previous_id_idx").field(NodeExecutionKeys.previousId).build())
+        // fetchChildrenNodeExecutionsIterator
         .add(SortCompoundMongoIndex.builder()
                  .name("planExecutionId_parentId_createdAt_idx")
                  .field(NodeExecutionKeys.planExecutionId)

@@ -23,6 +23,9 @@ import io.harness.cvng.beans.TimeSeriesThresholdCriteria;
 import io.harness.cvng.beans.TimeSeriesThresholdType;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.TimeRange;
+import io.harness.cvng.core.beans.monitoredService.MetricThreshold;
+import io.harness.cvng.core.beans.monitoredService.MetricThreshold.MetricThresholdCriteria;
+import io.harness.cvng.core.beans.monitoredService.MetricThreshold.MetricThresholdCriteria.MetricThresholdCriteriaSpec;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdCriteriaType;
@@ -30,9 +33,11 @@ import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.transformer.metricThresholdSpec.MetricThresholdSpecDTOTransformer;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.models.VerificationType;
+import io.harness.data.structure.UUIDGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.gson.Gson;
+import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -49,7 +54,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Data
 @SuperBuilder
@@ -105,6 +109,7 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
               gson.fromJson(gson.toJson(threshold), TimeSeriesThresholdCriteria.class);
           criteria.setThresholdType(type);
           thresholds.add(TimeSeriesThreshold.builder()
+                             .uuid(UUIDGenerator.generateUuid())
                              .accountId(getAccountId())
                              .projectIdentifier(getProjectIdentifier())
                              .dataSourceType(getType())
@@ -136,8 +141,8 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
     return new ArrayList<>(thresholdTypes);
   }
 
-  public List<TimeSeriesMetricPackDTO.MetricThreshold> getMetricThresholdDTOs() {
-    List<TimeSeriesMetricPackDTO.MetricThreshold> metricThresholds = new ArrayList<>();
+  public List<MetricThreshold> getMetricThresholdDTOs() {
+    List<MetricThreshold> metricThresholds = new ArrayList<>();
     Map<String, List<TimeSeriesThreshold>> mapOfTimeSeriesThreshold = new HashMap<>();
     metricPack.getMetrics().forEach(metricDefinition -> {
       if (!isEmpty(metricDefinition.getThresholds())) {
@@ -190,20 +195,16 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
       }
       TimeSeriesThreshold baseMetricThreshold = customThresholds.get(0);
       metricThresholds.add(
-          TimeSeriesMetricPackDTO.MetricThreshold.builder()
+          MetricThreshold.builder()
               .metricName(baseMetricThreshold.getMetricName())
               .groupName(maybeGetGroupName().orElse(baseMetricThreshold.getMetricGroupName()))
               .metricIdentifier(baseMetricThreshold.getMetricIdentifier())
               .type(MetricThresholdActionType.getMetricThresholdActionType(customThresholds.get(0).getAction()))
               .spec(MetricThresholdSpecDTOTransformer.getDto(baseMetricThreshold))
               .criteria(
-                  TimeSeriesMetricPackDTO.MetricThreshold.MetricThresholdCriteria.builder()
+                  MetricThresholdCriteria.builder()
                       .type(thresholdCriteriaType)
-                      .spec(TimeSeriesMetricPackDTO.MetricThreshold.MetricThresholdCriteria.MetricThresholdCriteriaSpec
-                                .builder()
-                                .lessThan(lessThan)
-                                .greaterThan(greaterThan)
-                                .build())
+                      .spec(MetricThresholdCriteriaSpec.builder().lessThan(lessThan).greaterThan(greaterThan).build())
                       .build())
               .build());
     }
@@ -254,6 +255,7 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
                 String metricName = metricPackDTO.getMetricName();
                 TimeSeriesThreshold timeSeriesThreshold =
                     TimeSeriesThreshold.builder()
+                        .uuid(UUIDGenerator.generateUuid())
                         .accountId(getAccountId())
                         .projectIdentifier(getProjectIdentifier())
                         .dataSourceType(getType())

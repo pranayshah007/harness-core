@@ -36,8 +36,4 @@ import lombok.experimental.FieldDefaults;
 @RecasterAlias("io.harness.cdng.provision.terragrunt.InlineTerragruntBackendConfigSpec")
 public class InlineTerragruntBackendConfigSpec implements TerragruntBackendConfigSpec {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> content;
-  @Override
-  public String getType() {
-    return TerragruntBackendFileTypes.Inline;
-  }
 }

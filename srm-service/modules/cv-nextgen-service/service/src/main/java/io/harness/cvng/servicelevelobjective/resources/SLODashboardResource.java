@@ -148,7 +148,7 @@ public class SLODashboardResource {
   public ResponseDTO<SLODashboardDetail>
   getSloDashboardWidget(@Parameter(description = CVConstants.SLO_PARAM_MESSAGE) @ApiParam(
                             required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
-      @QueryParam("startTime") Long startTime, @QueryParam("endTime") Long endTime,
+      @Valid @QueryParam("startTime") Long startTime, @Valid @QueryParam("endTime") Long endTime,
       @Valid @BeanParam ProjectParams projectParams) {
     return ResponseDTO.newResponse(
         sloDashboardService.getSloDashboardDetail(projectParams, identifier, startTime, endTime));
@@ -168,7 +168,7 @@ public class SLODashboardResource {
   public ResponseDTO<PageResponse<SLOConsumptionBreakdown>>
   getSloConsumptionBreakdownView(@Parameter(description = CVConstants.SLO_PARAM_MESSAGE) @ApiParam(required = true)
                                  @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
-      @QueryParam("startTime") Long startTime, @QueryParam("endTime") Long endTime,
+      @NotNull @Valid @QueryParam("startTime") Long startTime, @NotNull @Valid @QueryParam("endTime") Long endTime,
       @Valid @BeanParam ProjectParams projectParams) {
     return ResponseDTO.newResponse(
         sloDashboardService.getSLOConsumptionBreakdownView(projectParams, identifier, startTime, endTime));

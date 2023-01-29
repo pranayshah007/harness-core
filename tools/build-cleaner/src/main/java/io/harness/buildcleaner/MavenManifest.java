@@ -46,7 +46,7 @@ public class MavenManifest {
     }
 
     if (validTargets.size() > 1) {
-      logger.error("Pkg: '" + pkg + "' has multiple targets: " + validTargets);
+      logger.warn("Pkg '{}' has multiple targets: {}", pkg, validTargets);
     }
     return Optional.of(validTargets.get(0));
   }

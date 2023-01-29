@@ -12,18 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.delegate.beans.ChecksumType;
-import io.harness.file.HarnessFile;
-import io.harness.mongo.index.FdIndex;
-import io.harness.persistence.CreatedAtAware;
-import io.harness.persistence.CreatedByAware;
-import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
-import io.harness.persistence.UpdatedByAware;
-import io.harness.persistence.UuidAware;
 import io.harness.validation.Create;
 import io.harness.validation.Update;
-
-import software.wings.beans.entityinterface.ApplicationAccess;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.reinert.jjschema.SchemaIgnore;
@@ -37,8 +27,6 @@ import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by anubhaw on 4/13/16.
@@ -49,8 +37,7 @@ import org.mongodb.morphia.annotations.Transient;
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "BaseFileKeys")
 @EqualsAndHashCode(callSuper = false)
-public class BaseFile implements HarnessFile, PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware,
-                                 UpdatedAtAware, UpdatedByAware, ApplicationAccess {
+public class BaseFile {
   @FormDataParam("name") private String name;
   private String fileUuid;
   @NotEmpty(groups = Create.class) private String fileName;
@@ -65,10 +52,10 @@ public class BaseFile implements HarnessFile, PersistentEntity, UuidAware, Creat
   @EqualsAndHashCode.Exclude @Deprecated public static final String ACCOUNT_ID_KEY2 = "accountId";
   @EqualsAndHashCode.Exclude @Deprecated public static final String LAST_UPDATED_AT_KEY2 = "lastUpdatedAt";
 
-  @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
-  @FdIndex @NotNull @SchemaIgnore protected String appId;
+  @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
+  @NotNull @SchemaIgnore protected String appId;
   @EqualsAndHashCode.Exclude @SchemaIgnore private EmbeddedUser createdBy;
-  @EqualsAndHashCode.Exclude @SchemaIgnore @FdIndex private long createdAt;
+  @EqualsAndHashCode.Exclude @SchemaIgnore private long createdAt;
 
   @EqualsAndHashCode.Exclude @SchemaIgnore private EmbeddedUser lastUpdatedBy;
   @EqualsAndHashCode.Exclude @SchemaIgnore @NotNull private long lastUpdatedAt;
@@ -77,10 +64,7 @@ public class BaseFile implements HarnessFile, PersistentEntity, UuidAware, Creat
    * TODO: Add isDeleted boolean field to enable soft delete. @swagat
    */
 
-  @JsonIgnore
-  @SchemaIgnore
-  @Transient
-  private transient String entityYamlPath; // TODO:: remove it with changeSet batching
+  @JsonIgnore @SchemaIgnore private transient String entityYamlPath; // TODO:: remove it with changeSet batching
 
   @JsonIgnore
   @SchemaIgnore

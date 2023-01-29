@@ -335,7 +335,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().get("Task").getId())
         .isEqualTo("10003");
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().get("Task").getFields().size())
-        .isEqualTo(7);
+        .isEqualTo(8);
   }
 
   @Test

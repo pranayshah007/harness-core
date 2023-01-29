@@ -33,9 +33,10 @@ public class ProjectServicesApiImpl extends AbstractServicesApiImpl implements P
   @Inject
   public ProjectServicesApiImpl(ServiceEntityService serviceEntityService, AccessControlClient accessControlClient,
       ServiceEntityManagementService serviceEntityManagementService,
-      OrgAndProjectValidationHelper orgAndProjectValidationHelper, ServiceResourceApiUtils serviceResourceApiUtils) {
+      OrgAndProjectValidationHelper orgAndProjectValidationHelper, ServiceResourceApiUtils serviceResourceApiUtils,
+      ServiceEntityYamlSchemaHelper serviceSchemaHelper) {
     super(serviceEntityService, accessControlClient, serviceEntityManagementService, orgAndProjectValidationHelper,
-        serviceResourceApiUtils);
+        serviceResourceApiUtils, serviceSchemaHelper);
   }
 
   @Override
@@ -46,8 +47,8 @@ public class ProjectServicesApiImpl extends AbstractServicesApiImpl implements P
   @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_delete")
   @Override
   public Response deleteService(@OrgIdentifier String org, @ProjectIdentifier String project,
-      @ResourceIdentifier String service, @AccountIdentifier String account) {
-    return super.deleteServiceEntity(org, project, service, account);
+      @ResourceIdentifier String service, @AccountIdentifier String account, Boolean forceDelete) {
+    return super.deleteServiceEntity(org, project, service, account, Boolean.TRUE == forceDelete);
   }
 
   @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_view")

@@ -20,9 +20,6 @@ import static io.harness.spec.server.ng.v1.model.SecretSpec.TypeEnum.WINRMTGTKEY
 import static io.harness.spec.server.ng.v1.model.SecretSpec.TypeEnum.WINRMTGTPASSWORD;
 import static io.harness.spec.server.ng.v1.model.SecretTextSpec.ValueTypeEnum.fromValue;
 
-import static javax.ws.rs.core.UriBuilder.fromPath;
-
-import io.harness.NGCommonEntityConstants;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
@@ -72,11 +69,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
-import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response.ResponseBuilder;
 
 public class SecretApiUtils {
-  public static final int PAGE = 1;
   private Validator validator;
 
   @Inject
@@ -86,7 +80,7 @@ public class SecretApiUtils {
 
   public SecretDTOV2 toSecretDto(Secret secret) {
     SecretDTOV2Builder secretDTOV2Builder = SecretDTOV2.builder()
-                                                .identifier(secret.getSlug())
+                                                .identifier(secret.getIdentifier())
                                                 .name(secret.getName())
                                                 .orgIdentifier(secret.getOrg())
                                                 .projectIdentifier(secret.getProject())
@@ -203,14 +197,14 @@ public class SecretApiUtils {
   private SecretSpecDTO fromSecretFileSpec(Secret secret) {
     SecretFileSpec secretFileSpec = (SecretFileSpec) secret.getSpec();
 
-    return SecretFileSpecDTO.builder().secretManagerIdentifier(secretFileSpec.getSecretManagerSlug()).build();
+    return SecretFileSpecDTO.builder().secretManagerIdentifier(secretFileSpec.getSecretManagerIdentifier()).build();
   }
 
   private SecretSpecDTO fromSecretText(Secret secret) {
     SecretTextSpec secretTextSpec = (SecretTextSpec) secret.getSpec();
 
     return SecretTextSpecDTO.builder()
-        .secretManagerIdentifier(secretTextSpec.getSecretManagerSlug())
+        .secretManagerIdentifier(secretTextSpec.getSecretManagerIdentifier())
         .valueType(ValueType.valueOf(secretTextSpec.getValueType().value()))
         .value(secretTextSpec.getValue())
         .build();
@@ -296,7 +290,7 @@ public class SecretApiUtils {
 
   public Secret toSecret(SecretDTOV2 secretDTOV2) {
     Secret secret = new Secret()
-                        .slug(secretDTOV2.getIdentifier())
+                        .identifier(secretDTOV2.getIdentifier())
                         .name(secretDTOV2.getName())
                         .org(secretDTOV2.getOrgIdentifier())
                         .project(secretDTOV2.getProjectIdentifier())
@@ -434,14 +428,14 @@ public class SecretApiUtils {
   private SecretFileSpec getSecretFileSpec(SecretFileSpecDTO secretFileSpecDTO) {
     SecretFileSpec secretFileSpec = new SecretFileSpec();
     secretFileSpec.setType(SECRETFILE);
-    secretFileSpec.setSecretManagerSlug(secretFileSpecDTO.getSecretManagerIdentifier());
+    secretFileSpec.setSecretManagerIdentifier(secretFileSpecDTO.getSecretManagerIdentifier());
     return secretFileSpec;
   }
 
   private SecretTextSpec getSecretTextSpec(SecretTextSpecDTO secretTextSpecDTO) {
     SecretTextSpec secretTextSpec = new SecretTextSpec();
     secretTextSpec.setType(SECRETTEXT);
-    secretTextSpec.secretManagerSlug(secretTextSpecDTO.getSecretManagerIdentifier());
+    secretTextSpec.secretManagerIdentifier(secretTextSpecDTO.getSecretManagerIdentifier());
     secretTextSpec.setValueType(fromValue(secretTextSpecDTO.getValueType().name()));
     secretTextSpec.setValue(secretTextSpecDTO.getValue());
     return secretTextSpec;
@@ -530,36 +524,5 @@ public class SecretApiUtils {
       default:
         return null;
     }
-  }
-
-  public ResponseBuilder addLinksHeader(
-      ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
-    ArrayList<Link> links = new ArrayList<>();
-
-    links.add(Link.fromUri(fromPath(path)
-                               .queryParam(NGCommonEntityConstants.PAGE, page)
-                               .queryParam(NGCommonEntityConstants.PAGE_SIZE, limit)
-                               .build())
-                  .rel(NGCommonEntityConstants.SELF_REL)
-                  .build());
-
-    if (page >= PAGE) {
-      links.add(Link.fromUri(fromPath(path)
-                                 .queryParam(NGCommonEntityConstants.PAGE, page - 1)
-                                 .queryParam(NGCommonEntityConstants.PAGE_SIZE, limit)
-                                 .build())
-                    .rel(NGCommonEntityConstants.PREVIOUS_REL)
-                    .build());
-    }
-    if (limit == currentResultCount) {
-      links.add(Link.fromUri(fromPath(path)
-                                 .queryParam(NGCommonEntityConstants.PAGE, page + 1)
-                                 .queryParam(NGCommonEntityConstants.PAGE_SIZE, limit)
-                                 .build())
-                    .rel(NGCommonEntityConstants.NEXT_REL)
-                    .build());
-    }
-
-    return responseBuilder.links(links.toArray(new Link[links.size()]));
   }
 }

@@ -136,6 +136,9 @@ public class PMSPipelineDtoMapper {
   public PipelineEntity toSimplifiedPipelineEntity(String accountId, String orgId, String projectId, String yaml) {
     try {
       PipelineYaml pipelineYaml = YamlUtils.read(yaml, PipelineYaml.class);
+      if (EmptyPredicate.isEmpty(pipelineYaml.getName())) {
+        throw new InvalidRequestException("Pipeline name cannot be empty");
+      }
       String pipelineIdentifier = IdentifierGeneratorUtils.getId(pipelineYaml.getName());
       if (NGExpressionUtils.matchesInputSetPattern(pipelineIdentifier)) {
         throw new InvalidRequestException("Pipeline identifier cannot be runtime input");
@@ -185,6 +188,16 @@ public class PMSPipelineDtoMapper {
       if (isNotEmpty(basicPipeline.getName()) && !basicPipeline.getName().equals(requestInfoDTO.getName())) {
         throw new InvalidRequestException(String.format("Expected Pipeline name in YAML to be [%s], but was [%s]",
             requestInfoDTO.getName(), basicPipeline.getName()));
+      }
+      if (isNotEmpty(basicPipeline.getOrgIdentifier()) && !basicPipeline.getOrgIdentifier().equals(orgId)) {
+        throw new InvalidRequestException(
+            String.format("Expected Pipeline Organization identifier in YAML to be [%s], but was [%s]", orgId,
+                basicPipeline.getOrgIdentifier()));
+      }
+      if (isNotEmpty(basicPipeline.getProjectIdentifier()) && !basicPipeline.getProjectIdentifier().equals(projectId)) {
+        throw new InvalidRequestException(
+            String.format("Expected Pipeline Project identifier in YAML to be [%s], but was [%s]", projectId,
+                basicPipeline.getProjectIdentifier()));
       }
       if (isNotEmpty(basicPipeline.getDescription()) && isNotEmpty(requestInfoDTO.getDescription())
           && !basicPipeline.getDescription().equals(requestInfoDTO.getDescription())) {
@@ -361,7 +374,7 @@ public class PMSPipelineDtoMapper {
   }
 
   private List<Integer> getNumberOfErrorsLast7Days(PipelineEntity pipeline) {
-    if (pipeline.getExecutionSummaryInfo() == null) {
+    if (pipeline.getExecutionSummaryInfo() == null || pipeline.getExecutionSummaryInfo().getNumOfErrors() == null) {
       return new ArrayList<>();
     }
     Calendar cal = Calendar.getInstance();
@@ -376,7 +389,7 @@ public class PMSPipelineDtoMapper {
   }
 
   private List<Integer> getNumberOfDeployments(PipelineEntity pipeline) {
-    if (pipeline.getExecutionSummaryInfo() == null) {
+    if (pipeline.getExecutionSummaryInfo() == null || pipeline.getExecutionSummaryInfo().getDeployments() == null) {
       return new ArrayList<>();
     }
     Calendar cal = Calendar.getInstance();

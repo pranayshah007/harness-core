@@ -51,12 +51,11 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.helpers.PrincipalInfoHelper;
 import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.merger.YamlConfig;
-import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.merger.helpers.MergeHelper;
-import io.harness.pms.ngpipeline.inputset.helpers.InputSetErrorsHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.api.PipelinesApiUtils;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.mappers.ExecutionGraphMapper;
 import io.harness.pms.pipeline.mappers.PipelineExecutionSummaryDtoMapper;
@@ -74,6 +73,7 @@ import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
+import io.harness.pms.plan.execution.helpers.InputSetMergeHelperV1;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.rbac.validator.PipelineRbacService;
@@ -98,7 +98,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -174,12 +173,23 @@ public class ExecutionHelper {
         .build();
   }
 
+  boolean validForDebug(PipelineEntity pipelineEntity) {
+    List<String> modules = PipelinesApiUtils.getModules(pipelineEntity);
+
+    return (modules != null) && (modules.contains("ci"));
+  }
   @SneakyThrows
   public ExecArgs buildExecutionArgs(PipelineEntity pipelineEntity, String moduleType, String mergedRuntimeInputYaml,
       List<String> stagesToRun, Map<String, String> expressionValues, ExecutionTriggerInfo triggerInfo,
-      String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser) {
+      String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser,
+      boolean isDebug) {
     long start = System.currentTimeMillis();
     final String executionId = generateUuid();
+
+    if (isDebug && !validForDebug(pipelineEntity)) {
+      throw new InvalidRequestException(
+          String.format("Debug executions are not allowed for pipeline [%s]", pipelineEntity.getIdentifier()));
+    }
     try (AutoLogContext ignore =
              PlanCreatorUtils.autoLogContext(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
                  pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(), executionId)) {
@@ -191,8 +201,9 @@ public class ExecutionHelper {
       switch (version) {
         case PipelineVersion.V1:
           allowedStageExecution = false;
-          pipelineYaml = pipelineEntity.getYaml();
-          pipelineYamlWithTemplateRef = pipelineEntity.getYaml();
+          pipelineYaml =
+              InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(mergedRuntimeInputYaml, pipelineEntity.getYaml());
+          pipelineYamlWithTemplateRef = pipelineYaml;
           break;
         case PipelineVersion.V0:
           TemplateMergeResponseDTO templateMergeResponseDTO =
@@ -242,7 +253,7 @@ public class ExecutionHelper {
       // RetryExecutionInfo
       RetryExecutionInfo retryExecutionInfo = buildRetryInfo(isRetry, originalExecutionId);
       ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,
-          triggerInfo, pipelineEntity, executionId, retryExecutionInfo, notificationRules);
+          triggerInfo, pipelineEntity, executionId, retryExecutionInfo, notificationRules, isDebug);
       return ExecArgs.builder().metadata(executionMetadata).planExecutionMetadata(planExecutionMetadata).build();
     } finally {
       log.info("[PMS_EXECUTE] Pipeline build execution args took time {}ms", System.currentTimeMillis() - start);
@@ -251,7 +262,7 @@ public class ExecutionHelper {
 
   private ExecutionMetadata buildExecutionMetadata(@NotNull String pipelineIdentifier, String moduleType,
       ExecutionTriggerInfo triggerInfo, PipelineEntity pipelineEntity, String executionId,
-      RetryExecutionInfo retryExecutionInfo, List<NotificationRules> notificationRules) {
+      RetryExecutionInfo retryExecutionInfo, List<NotificationRules> notificationRules, boolean isDebug) {
     ExecutionMetadata.Builder builder =
         ExecutionMetadata.newBuilder()
             .setExecutionUuid(executionId)
@@ -262,7 +273,8 @@ public class ExecutionHelper {
             .setRetryInfo(retryExecutionInfo)
             .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
             .setIsNotificationConfigured(isNotEmpty(notificationRules))
-            .setHarnessVersion(pipelineEntity.getHarnessVersion());
+            .setHarnessVersion(pipelineEntity.getHarnessVersion())
+            .setIsDebug(isDebug);
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
         pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo());
     if (gitSyncBranchContext != null) {
@@ -278,46 +290,32 @@ public class ExecutionHelper {
     return builder.build();
   }
 
-  @VisibleForTesting
-  TemplateMergeResponseDTO getPipelineYamlAndValidate(String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) {
-    YamlConfig pipelineYamlConfig;
-    YamlConfig pipelineYamlConfigForSchemaValidations;
-
-    long start = System.currentTimeMillis();
-    if (isEmpty(mergedRuntimeInputYaml)) {
-      pipelineYamlConfig = new YamlConfig(pipelineEntity.getYaml());
-      pipelineYamlConfigForSchemaValidations = pipelineYamlConfig;
-    } else {
-      YamlConfig pipelineEntityYamlConfig = new YamlConfig(pipelineEntity.getYaml());
-      YamlConfig runtimeInputYamlConfig = new YamlConfig(mergedRuntimeInputYaml);
-      Map<FQN, String> invalidFQNsInInputSet =
-          InputSetErrorsHelper.getInvalidFQNsInInputSet(pipelineEntityYamlConfig, runtimeInputYamlConfig);
-      if (isNotEmpty(invalidFQNsInInputSet)) {
-        throw new InvalidRequestException("Some fields are not valid: "
-            + invalidFQNsInInputSet.entrySet()
-                  .stream()
-                  .map(o -> o.getKey().getExpressionFqn() + ": " + o.getValue())
-                  .collect(Collectors.toList()));
-      }
-      pipelineYamlConfig =
-          MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(pipelineEntityYamlConfig, runtimeInputYamlConfig, true);
-
-      /*
+  /*
       For schema validations, we don't want input set validators to be appended. For example, if some timeout field in
       the pipeline is <+input>.allowedValues(12h, 1d), and the runtime input gives a value 12h, the value for this field
       in pipelineYamlConfig will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
       give an error in schema validation. That's why we need a value that doesn't have this validator appended.
        */
-      pipelineYamlConfigForSchemaValidations =
-          MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(pipelineEntityYamlConfig, runtimeInputYamlConfig, false);
+  @VisibleForTesting
+  TemplateMergeResponseDTO getPipelineYamlAndValidate(String mergedRuntimeInputYaml, PipelineEntity pipelineEntity)
+      throws IOException {
+    YamlConfig pipelineYamlConfig;
+
+    long start = System.currentTimeMillis();
+    if (isEmpty(mergedRuntimeInputYaml)) {
+      pipelineYamlConfig = new YamlConfig(pipelineEntity.getYaml());
+    } else {
+      YamlConfig pipelineEntityYamlConfig = new YamlConfig(pipelineEntity.getYaml());
+      YamlConfig runtimeInputYamlConfig = new YamlConfig(mergedRuntimeInputYaml);
+      pipelineYamlConfig = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+          pipelineEntityYamlConfig, runtimeInputYamlConfig, true, true);
     }
     pipelineYamlConfig = InputSetSanitizer.trimValues(pipelineYamlConfig);
-    pipelineYamlConfigForSchemaValidations = InputSetSanitizer.trimValues(pipelineYamlConfigForSchemaValidations);
 
     String pipelineYaml = pipelineYamlConfig.getYaml();
-    String pipelineYamlForSchemaValidations = pipelineYamlConfigForSchemaValidations.getYaml();
     log.info("[PMS_EXECUTE] Pipeline input set merge total time took {}ms", System.currentTimeMillis() - start);
 
+    String unresolvedPipelineYaml = pipelineYaml;
     String pipelineYamlWithTemplateRef = pipelineYaml;
     if (Boolean.TRUE.equals(TemplateRefHelper.hasTemplateRef(pipelineYamlConfig))) {
       TemplateMergeResponseDTO templateMergeResponseDTO =
@@ -331,15 +329,16 @@ public class ExecutionHelper {
           ? pipelineYaml
           : templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
     }
+    String yamlWithoutRuntimeInputs = YamlUtils.getYamlWithoutInputs(new YamlConfig(pipelineYaml));
     pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-        pipelineEntity.getProjectIdentifier(), pipelineYamlForSchemaValidations);
+        pipelineEntity.getProjectIdentifier(), yamlWithoutRuntimeInputs);
     if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType() == StoreType.INLINE) {
       // For REMOTE Pipelines, entity setup usage framework cannot be relied upon. That is because the setup usages can
       // be outdated wrt the YAML we find on Git during execution. This means the fail fast approach that we have for
       // RBAC checks can't be provided for remote pipelines
       pipelineRbacServiceImpl.extractAndValidateStaticallyReferredEntities(pipelineEntity.getAccountId(),
           pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
-          pipelineYaml);
+          unresolvedPipelineYaml);
     }
     return TemplateMergeResponseDTO.builder()
         .mergedPipelineYaml(pipelineYaml)
@@ -509,11 +508,13 @@ public class ExecutionHelper {
 
     // Checking if the stage is of type Pipeline Stage, then return the child graph along with top graph of parent
     // pipeline
-    if (pipelineStageHelper.validateGraphToGenerate(executionSummaryEntity.getLayoutNodeMap(), stageNodeId)) {
+    if (pipelineStageHelper.validateChildGraphToGenerate(executionSummaryEntity.getLayoutNodeMap(), stageNodeId)) {
       NodeExecution nodeExecution = getNodeExecution(stageNodeId, planExecutionId);
-      if (isNotEmpty(nodeExecution.getExecutableResponses())) {
+      if (nodeExecution != null && isNotEmpty(nodeExecution.getExecutableResponses())) {
+        // TODO: check with @sahilHindwani whether this update is required or not.
+        pmsExecutionService.sendGraphUpdateEvent(executionSummaryEntity);
         return pipelineStageHelper.getResponseDTOWithChildGraph(
-            accountId, childStageNodeId, executionSummaryEntity, entityGitDetails, nodeExecution);
+            accountId, childStageNodeId, executionSummaryEntity, entityGitDetails, nodeExecution, stageNodeExecutionId);
       }
     }
 

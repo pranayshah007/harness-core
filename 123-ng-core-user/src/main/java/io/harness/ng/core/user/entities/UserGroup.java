@@ -26,6 +26,7 @@ import io.harness.persistence.PersistentEntity;
 import software.wings.beans.sso.SSOType;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -34,7 +35,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Singular;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -67,10 +67,15 @@ public class UserGroup implements PersistentEntity, NGAccountAccess {
                  .field(UserGroupKeys.linkedSsoId)
                  .field(UserGroupKeys.isSsoLinked)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("user_groups_accountid_externallymanaged")
+                 .field(UserGroupKeys.accountIdentifier)
+                 .field(UserGroupKeys.externallyManaged)
+                 .build())
         .build();
   }
 
-  @Id @org.mongodb.morphia.annotations.Id String id;
+  @Id @dev.morphia.annotations.Id String id;
   @NotNull String accountIdentifier;
   @EntityIdentifier(allowBlank = true) String orgIdentifier;
   @EntityIdentifier(allowBlank = true) String projectIdentifier;
@@ -94,7 +99,7 @@ public class UserGroup implements PersistentEntity, NGAccountAccess {
 
   @CreatedDate long createdAt;
   @LastModifiedDate long lastModifiedAt;
-  @Version long version;
+  @Version Long version;
   boolean deleted;
 
   public boolean isExternallyManaged() {

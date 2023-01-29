@@ -30,6 +30,7 @@ import io.harness.security.SecurityContextBuilder;
 import io.harness.spec.server.ng.v1.AccountSecretApi;
 import io.harness.spec.server.ng.v1.model.SecretRequest;
 import io.harness.spec.server.ng.v1.model.SecretResponse;
+import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
 import java.io.InputStream;
@@ -96,9 +97,9 @@ public class AccountSecretApiImpl implements AccountSecretApi {
 
   @Override
   public Response updateAccountScopedSecret(SecretRequest secretRequest, String secret, String account) {
-    if (!Objects.equals(secretRequest.getSecret().getSlug(), secret)) {
+    if (!Objects.equals(secretRequest.getSecret().getIdentifier(), secret)) {
       throw new InvalidRequestException(
-          "Account scoped request is having different secret slug in payload and param", USER);
+          "Account scoped request is having different secret identifier in payload and param", USER);
     }
     if (nonNull(secretRequest.getSecret().getOrg()) || nonNull(secretRequest.getSecret().getProject())) {
       throw new InvalidRequestException("Account scoped request is having non null org or project", USER);
@@ -109,9 +110,9 @@ public class AccountSecretApiImpl implements AccountSecretApi {
   @Override
   public Response updateAccountScopedSecret(
       SecretRequest secretRequest, InputStream fileInputStream, String secret, String account) {
-    if (!Objects.equals(secretRequest.getSecret().getSlug(), secret)) {
+    if (!Objects.equals(secretRequest.getSecret().getIdentifier(), secret)) {
       throw new InvalidRequestException(
-          "Account scoped request is having different secret slug in payload and param", USER);
+          "Account scoped request is having different secret identifier in payload and param", USER);
     }
     if (nonNull(secretRequest.getSecret().getOrg()) || nonNull(secretRequest.getSecret().getProject())) {
       throw new InvalidRequestException("Account scoped request is having non null org or project", USER);
@@ -179,7 +180,7 @@ public class AccountSecretApiImpl implements AccountSecretApi {
 
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks =
-        secretApiUtils.addLinksHeader(responseBuilder, "/v1/secrets", secretResponse.size(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, "/v1/secrets", secretResponse.size(), page, limit);
 
     return responseBuilderWithLinks.entity(secretResponse).build();
   }

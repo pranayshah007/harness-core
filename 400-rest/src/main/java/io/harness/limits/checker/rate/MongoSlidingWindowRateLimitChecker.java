@@ -19,12 +19,12 @@ import io.harness.persistence.HPersistence;
 import software.wings.dl.WingsPersistence;
 
 import com.mongodb.BasicDBObject;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import javax.annotation.Nullable;
 import lombok.Getter;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * Mongo backed implementation for rate limits.

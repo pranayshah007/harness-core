@@ -8,7 +8,9 @@
 package io.harness.serializer.morphia;
 
 import io.harness.app.beans.dto.CITaskDetails;
-import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
+import io.harness.app.beans.entities.ExecutionQueueLimit;
+import io.harness.app.beans.entities.PluginMetadataConfig;
+import io.harness.app.beans.entities.PluginMetadataStatus;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
@@ -36,6 +38,7 @@ public class CIBeansMorphiaRegistrar implements MorphiaRegistrar {
     set.add(BuildNumberDetails.class);
     set.add(CIBuild.class);
     set.add(CIExecutionConfig.class);
+    set.add(ExecutionQueueLimit.class);
     set.add(CITaskDetails.class);
     set.add(K8PodDetails.class);
     set.add(StageDetails.class);
@@ -45,11 +48,12 @@ public class CIBeansMorphiaRegistrar implements MorphiaRegistrar {
     set.add(ContextElement.class);
     set.add(K8StageInfraDetails.class);
     set.add(VmStageInfraDetails.class);
-    set.add(LiteEnginePodDetailsOutcome.class);
     set.add(VmDetailsOutcome.class);
     set.add(CITelemetrySentStatus.class);
     set.add(DliteVmStageInfraDetails.class);
     set.add(CIExecutionMetadata.class);
+    set.add(PluginMetadataConfig.class);
+    set.add(PluginMetadataStatus.class);
   }
 
   @Override

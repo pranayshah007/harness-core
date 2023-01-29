@@ -47,7 +47,7 @@ class ChronicleEventAppender extends EventPublisher {
   protected final void publish(PublishMessage publishMessage) {
     Preconditions.checkState(!shutDown.get(), "Publisher shut-down. Cannot publish any more messages");
     if (!queueMonitor.isHealthy()) {
-      log.warn("Dropping message as queue is not healthy");
+      log.info("Dropping message as queue is not healthy");
       return;
     }
     byte[] bytes = publishMessage.toByteArray();

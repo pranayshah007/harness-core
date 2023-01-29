@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 37
+version: 43
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -114,6 +114,9 @@ roles:
         - sto_exemption_view
         - sto_exemption_create
         - sto_exemption_approve
+        - sto_ticket_view
+        - sto_ticket_edit
+        - sto_ticket_delete
         - core_file_view
         - core_file_edit
         - core_file_delete
@@ -180,6 +183,7 @@ roles:
         - sto_scan_view
         - sto_testtarget_view
         - sto_exemption_view
+        - sto_ticket_view
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
@@ -308,6 +312,9 @@ roles:
         - sto_exemption_view
         - sto_exemption_create
         - sto_exemption_approve
+        - sto_ticket_view
+        - sto_ticket_edit
+        - sto_ticket_delete
         - core_file_view
         - core_file_edit
         - core_file_delete
@@ -376,6 +383,7 @@ roles:
         - sto_scan_view
         - sto_testtarget_view
         - sto_exemption_view
+        - sto_ticket_view
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
@@ -425,6 +433,9 @@ roles:
         - core_environmentgroup_delete
         - core_environmentgroup_access
         - core_audit_view
+        - core_streamingDestination_view
+        - core_streamingDestination_edit
+        - core_streamingDestination_delete
         - core_usergroup_view
         - core_usergroup_manage
         - core_user_view
@@ -515,6 +526,9 @@ roles:
         - sto_exemption_view
         - sto_exemption_create
         - sto_exemption_approve
+        - sto_ticket_view
+        - sto_ticket_edit
+        - sto_ticket_delete
         - core_file_view
         - core_file_edit
         - core_file_delete
@@ -555,9 +569,20 @@ roles:
         - ccm_folder_view
         - ccm_folder_edit
         - ccm_folder_delete
+        - ccm_currencyPreference_view
+        - ccm_currencyPreference_edit
         - core_deploymentfreeze_manage
         - core_deploymentfreeze_override
         - core_deploymentfreeze_global
+        - ccm_cloudAssetGovernanceRule_edit
+        - ccm_cloudAssetGovernanceRule_view
+        - ccm_cloudAssetGovernanceRule_delete
+        - ccm_cloudAssetGovernanceRuleSet_edit
+        - ccm_cloudAssetGovernanceRuleSet_view
+        - ccm_cloudAssetGovernanceRuleSet_delete
+        - ccm_cloudAssetGovernanceEnforcement_edit
+        - ccm_cloudAssetGovernanceEnforcement_view
+        - ccm_cloudAssetGovernanceEnforcement_delete
       allowedScopeLevels:
         - account
       managed: true
@@ -574,6 +599,7 @@ roles:
         - core_environment_view
         - core_environmentgroup_view
         - core_audit_view
+        - core_streamingDestination_view
         - core_usergroup_view
         - core_user_view
         - core_role_view
@@ -606,6 +632,7 @@ roles:
         - sto_scan_view
         - sto_testtarget_view
         - sto_exemption_view
+        - sto_ticket_view
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
@@ -620,6 +647,10 @@ roles:
         - ccm_autoStoppingRule_view
         - ccm_loadBalancer_view
         - ccm_folder_view
+        - ccm_currencyPreference_view
+        - ccm_cloudAssetGovernanceEnforcement_view
+        - ccm_cloudAssetGovernanceRuleSet_view
+        - ccm_cloudAssetGovernanceRule_view
       allowedScopeLevels:
         - account
       managed: true
@@ -710,6 +741,8 @@ roles:
         - sto_testtarget_edit
         - sto_exemption_view
         - sto_exemption_create
+        - sto_ticket_view
+        - sto_ticket_edit
       managed: true
       allowedScopeLevels:
         - account
@@ -726,6 +759,9 @@ roles:
         - sto_exemption_view
         - sto_exemption_create
         - sto_exemption_approve
+        - sto_ticket_view
+        - sto_ticket_edit
+        - sto_ticket_delete
       managed: true
       allowedScopeLevels:
         - account
@@ -738,8 +774,27 @@ roles:
         - core_license_view
         - core_account_view
       managed: true
+      internal: true
       allowedScopeLevels:
         - account
+    - identifier: _organization_basic
+      name: Organization Basic
+      description: Organization Basic
+      permissions:
+        - core_organization_view
+      managed: true
+      internal: true
+      allowedScopeLevels:
+        - organization
+    - identifier: _project_basic
+      name: Project Basic
+      description: Project Basic
+      permissions:
+        - core_project_view
+      managed: true
+      internal: true
+      allowedScopeLevels:
+        - project
     - identifier: _billing_admin
       name: Billing Admin
       description: Billing Admin
@@ -772,6 +827,17 @@ roles:
         - ccm_loadBalancer_edit
         - ccm_loadBalancer_delete
         - ccm_overview_view
+        - ccm_currencyPreference_view
+        - ccm_currencyPreference_edit
+        - ccm_cloudAssetGovernanceRule_edit
+        - ccm_cloudAssetGovernanceRule_view
+        - ccm_cloudAssetGovernanceRule_delete
+        - ccm_cloudAssetGovernanceRuleSet_edit
+        - ccm_cloudAssetGovernanceRuleSet_view
+        - ccm_cloudAssetGovernanceRuleSet_delete
+        - ccm_cloudAssetGovernanceEnforcement_edit
+        - ccm_cloudAssetGovernanceEnforcement_view
+        - ccm_cloudAssetGovernanceEnforcement_delete
       managed: true
       allowedScopeLevels:
         - account
@@ -786,6 +852,10 @@ roles:
         - ccm_folder_view
         - ccm_loadBalancer_view
         - ccm_overview_view
+        - ccm_currencyPreference_view
+        - ccm_cloudAssetGovernanceEnforcement_view
+        - ccm_cloudAssetGovernanceRuleSet_view
+        - ccm_cloudAssetGovernanceRule_view
       managed: true
       allowedScopeLevels:
         - account

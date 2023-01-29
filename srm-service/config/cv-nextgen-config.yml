@@ -61,6 +61,9 @@ ngManagerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+webhookConfig:
+  webhookBaseUrl: http://localhost:6457/cv/api/
+
 enforcementClientConfiguration:
   enforcementCheckEnabled: true
 
@@ -170,6 +173,23 @@ accessControlClientConfig:
     readTimeOutSeconds: 15
   accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
+errorTrackingClientConfig:
+  errorTrackingServiceConfig:
+    baseUrl: http://localhost:9191/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  errorTrackingServiceSecret: LocalTestErrorTrackingServiceSecretLocalTestErrorTrackingServiceSecretLocalTestE
+
+enableDashboardTimescale: false
+
+timescaledb:
+  timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
+  timescaledbUsername: admin
+  timescaledbPassword: password
+  connectTimeout: 10
+  socketTimeout: 30
+  logUnclosedConnections: false
+  loggerLevel: OFF
 
 hostname: ${HOSTNAME:-localhost}
 

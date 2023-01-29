@@ -25,8 +25,8 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.artifact.ArtifactCollectionResponseHandler;
 import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateTaskEventsResponse;
-import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.beans.DelegateCapacity;
 import io.harness.delegate.beans.DelegateConfiguration;
 import io.harness.delegate.beans.DelegateConfiguration.Action;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
@@ -62,6 +62,7 @@ import io.harness.perpetualtask.connector.ConnectorHearbeatPublisher;
 import io.harness.perpetualtask.instancesync.InstanceSyncResponsePublisher;
 import io.harness.persistence.HPersistence;
 import io.harness.polling.client.PollingResourceClient;
+import io.harness.queueservice.infc.DelegateCapacityManagementService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth;
 import io.harness.serializer.KryoSerializer;
@@ -131,6 +132,7 @@ public class DelegateAgentResource {
   private InstanceSyncResponsePublisher instanceSyncResponsePublisher;
   private PollingResourceClient pollingResourceClient;
   private DelegatePollingHeartbeatService delegatePollingHeartbeatService;
+  private DelegateCapacityManagementService delegateCapacityManagementService;
 
   @Inject
   public DelegateAgentResource(DelegateService delegateService, AccountService accountService, HPersistence persistence,
@@ -141,7 +143,8 @@ public class DelegateAgentResource {
       ConfigurationController configurationController, FeatureFlagService featureFlagService,
       DelegateTaskServiceClassic delegateTaskServiceClassic, PollingResourceClient pollingResourceClient,
       InstanceSyncResponsePublisher instanceSyncResponsePublisher,
-      DelegatePollingHeartbeatService delegatePollingHeartbeatService) {
+      DelegatePollingHeartbeatService delegatePollingHeartbeatService,
+      DelegateCapacityManagementService delegateCapacityManagementService) {
     this.instanceHelper = instanceHelper;
     this.delegateService = delegateService;
     this.accountService = accountService;
@@ -158,6 +161,7 @@ public class DelegateAgentResource {
     this.pollingResourceClient = pollingResourceClient;
     this.instanceSyncResponsePublisher = instanceSyncResponsePublisher;
     this.delegatePollingHeartbeatService = delegatePollingHeartbeatService;
+    this.delegateCapacityManagementService = delegateCapacityManagementService;
   }
 
   @DelegateAuth
@@ -289,10 +293,7 @@ public class DelegateAgentResource {
   @ExceptionMetered
   public void connectionHeartbeat(@QueryParam("accountId") @NotEmpty String accountId,
       @PathParam("delegateId") String delegateId, DelegateConnectionHeartbeat connectionHeartbeat) {
-    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
-         AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-      delegateService.registerHeartbeat(accountId, delegateId, connectionHeartbeat, ConnectionMode.POLLING);
-    }
+    // do nothing : remove this 3 months after release, keeping for older version compatibility
   }
 
   @POST
@@ -580,6 +581,19 @@ public class DelegateAgentResource {
           RequestBody.create(MediaType.parse("application/octet-stream"), serializedExecutionResponse)));
     }
     return new RestResponse<>(Boolean.TRUE);
+  }
+
+  @DelegateAuth
+  @POST
+  @Path("register-delegate-capacity/{delegateId}")
+  @Timed
+  @ExceptionMetered
+  public void registerDelegateCapacity(@QueryParam("accountId") @NotEmpty String accountId,
+      @PathParam("delegateId") String delegateId, DelegateCapacity delegateCapacity) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
+      delegateCapacityManagementService.registerDelegateCapacity(accountId, delegateId, delegateCapacity);
+    }
   }
 
   private DelegateHeartbeatResponse buildDelegateHBResponse(Delegate delegate) {

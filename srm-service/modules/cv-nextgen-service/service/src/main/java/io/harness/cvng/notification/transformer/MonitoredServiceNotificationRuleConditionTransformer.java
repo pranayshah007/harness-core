@@ -10,6 +10,7 @@ package io.harness.cvng.notification.transformer;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.notification.beans.ChangeImpactConditionSpec;
 import io.harness.cvng.notification.beans.ChangeObservedConditionSpec;
+import io.harness.cvng.notification.beans.ErrorTrackingConditionSpec;
 import io.harness.cvng.notification.beans.HealthScoreConditionSpec;
 import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleConditionSpec;
@@ -19,6 +20,7 @@ import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeImpactCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeObservedCondition;
+import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceCodeErrorCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceHealthScoreCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceNotificationRuleCondition;
 import io.harness.cvng.notification.utils.NotificationRuleCommonUtils;
@@ -83,6 +85,12 @@ public class MonitoredServiceNotificationRuleConditionTransformer
         return MonitoredServiceChangeObservedCondition.builder()
             .changeEventTypes(changeObservedConditionSpec.getChangeEventTypes())
             .build();
+      case CODE_ERRORS:
+        ErrorTrackingConditionSpec errorTrackingConditionSpec = (ErrorTrackingConditionSpec) condition.getSpec();
+        return MonitoredServiceCodeErrorCondition.builder()
+            .errorTrackingEventTypes(errorTrackingConditionSpec.getErrorTrackingEventTypes())
+            .errorTrackingEventStatus(errorTrackingConditionSpec.getErrorTrackingEventStatus())
+            .build();
       default:
         throw new InvalidArgumentsException(
             "Invalid Monitored Service Notification Rule Condition Type: " + condition.getType());
@@ -109,6 +117,12 @@ public class MonitoredServiceNotificationRuleConditionTransformer
             (MonitoredServiceChangeObservedCondition) condition;
         return ChangeObservedConditionSpec.builder()
             .changeEventTypes(changeObservedCondition.getChangeEventTypes())
+            .build();
+      case CODE_ERRORS:
+        MonitoredServiceCodeErrorCondition codeErrorCondition = (MonitoredServiceCodeErrorCondition) condition;
+        return ErrorTrackingConditionSpec.builder()
+            .errorTrackingEventTypes(codeErrorCondition.getErrorTrackingEventTypes())
+            .errorTrackingEventStatus(codeErrorCondition.getErrorTrackingEventStatus())
             .build();
       default:
         throw new InvalidArgumentsException(

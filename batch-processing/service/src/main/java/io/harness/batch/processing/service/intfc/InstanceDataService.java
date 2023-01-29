@@ -37,5 +37,5 @@ public interface InstanceDataService {
 
   Set<String> fetchClusterActiveInstanceIds(String accountId, String clusterId, Instant startTime);
 
-  List<InstanceLifecycleInfo> fetchInstanceDataForGivenInstances(Set<String> instanceIds);
+  List<InstanceLifecycleInfo> fetchInstanceDataForGivenInstances(String accountId, Set<String> instanceIds);
 }

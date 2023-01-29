@@ -1070,7 +1070,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		collectCgFn = oldCollectCg
 	}()
-	collectCgFn = func(ctx context.Context, stepID, collectDataDir string, timeTakenMs int64, log *zap.SugaredLogger, cgSt time.Time) error {
+	collectCgFn = func(ctx context.Context, stepID, collectDataDir string, timeTakenMs int64, log *zap.SugaredLogger, start time.Time) error {
 		called += 1
 		return nil
 	}
@@ -1080,7 +1080,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		collectTestReportsFn = oldReports
 	}()
-	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger) error {
+	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger, start time.Time) error {
 		called += 1
 		return nil
 	}
@@ -1182,9 +1182,9 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		collectCgFn = oldCollectCg
 	}()
-	collectCgFn = func(ctx context.Context, stepID, collectDataDir string, timeTakenMs int64, log *zap.SugaredLogger, cgSt time.Time) error {
+	collectCgFn = func(ctx context.Context, stepID, collectDataDir string, timeTakenMs int64, log *zap.SugaredLogger, start time.Time) error {
 		called += 1
-		return nil
+		return errors.New("could not collect CG")
 	}
 
 	// Set isManual to false
@@ -1201,7 +1201,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		collectTestReportsFn = oldReports
 	}()
-	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger) error {
+	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger, start time.Time) error {
 		called += 1
 		return nil
 	}
@@ -1215,8 +1215,8 @@ instrPackages: p1, p2, p3`
 	}
 
 	_, _, err := r.Run(ctx)
-	assert.Equal(t, err, expErr)
-	assert.Equal(t, called, 2) // makes ure both functions are called even on failure
+	assert.Equal(t, err, expErr) // make sure error returned is of RunCmd and not collectRunTestData
+	assert.Equal(t, called, 2)   // make sure both functions are called even on failure
 }
 
 func TestRun_Execution_Cg_Failure(t *testing.T) {
@@ -1302,7 +1302,7 @@ instrPackages: p1, p2, p3`
 		collectCgFn = oldCollectCg
 	}()
 	errCg := errors.New("could not collect CG")
-	collectCgFn = func(ctx context.Context, stepID, collectDataDir string, timeTakenMs int64, log *zap.SugaredLogger, cgSt time.Time) error {
+	collectCgFn = func(ctx context.Context, stepID, collectDataDir string, timeTakenMs int64, log *zap.SugaredLogger, start time.Time) error {
 		return errCg
 	}
 
@@ -1320,7 +1320,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		collectTestReportsFn = oldReports
 	}()
-	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger) error {
+	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger, start time.Time) error {
 		return nil
 	}
 
@@ -1416,7 +1416,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		collectCgFn = oldCollectCg
 	}()
-	collectCgFn = func(ctx context.Context, stepID, collectcgDir string, timeTakenMs int64, log *zap.SugaredLogger, cgSt time.Time) error {
+	collectCgFn = func(ctx context.Context, stepID, collectcgDir string, timeTakenMs int64, log *zap.SugaredLogger, start time.Time) error {
 		return nil
 	}
 
@@ -1435,7 +1435,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		collectTestReportsFn = oldReports
 	}()
-	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger) error {
+	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger, start time.Time) error {
 		return errReport
 	}
 
@@ -1470,4 +1470,67 @@ func Test_FormatTests(t *testing.T) {
 	expectedTests := "package.class //bazel-rule:package.class, package.class, dotnetClass"
 	formattedTest := formatTests(tests)
 	assert.Equal(t, expectedTests, formattedTest)
+}
+
+func Test_CollectRunTestData(t *testing.T) {
+	ctx := context.Background()
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	r := runTestsTask{
+		id:                   "id",
+		runOnlySelectedTests: true,
+		preCommand:           "echo x",
+		args:                 "clean test",
+		postCommand:          "echo y",
+		buildTool:            "maven",
+		language:             "java",
+		logMetrics:           false,
+		numRetries:           1,
+		log:                  log.Sugar(),
+		addonLogger:          log.Sugar(),
+	}
+	cgDirPath := "cg/dir"
+
+	tests := []struct {
+		name          string
+		cgErr         error
+		crErr         error
+		collectionErr error
+	}{
+		{
+			name:          "NoError",
+			cgErr:         nil,
+			crErr:         nil,
+			collectionErr: nil,
+		},
+		{
+			name:          "CallgraphUploadError",
+			cgErr:         fmt.Errorf("callgraph upload error"),
+			crErr:         nil,
+			collectionErr: fmt.Errorf("callgraph upload error"),
+		},
+		{
+			name:          "TestReportsUploadError",
+			cgErr:         nil,
+			crErr:         fmt.Errorf("test reports upload error"),
+			collectionErr: fmt.Errorf("test reports upload error"),
+		},
+	}
+
+	oldCollectCgFn := collectCgFn
+	defer func() { collectCgFn = oldCollectCgFn }()
+	oldCollectTestReportsFn := collectTestReportsFn
+	defer func() { collectTestReportsFn = oldCollectTestReportsFn }()
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			collectCgFn = func(ctx context.Context, stepID, cgDir string, timeMs int64, log *zap.SugaredLogger, start time.Time) error {
+				return tc.cgErr
+			}
+			collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger, start time.Time) error {
+				return tc.crErr
+			}
+			err := r.collectRunTestData(ctx, cgDirPath, time.Now())
+			assert.Equal(t, tc.collectionErr, err)
+		})
+	}
 }

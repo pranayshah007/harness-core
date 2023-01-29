@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
+import javax.ws.rs.NotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -143,8 +144,9 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
     // case2: get function returns empty object
     Optional<EnvironmentGroupEntity> optional = Optional.empty();
     doReturn(optional).when(environmentGroupService).get(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID, false);
-    responseDTO = environmentGroupResource.get(ENV_GROUP_ID, ACC_ID, ORG_ID, PRO_ID, false, null);
-    assertThat(responseDTO).isNull();
+    assertThatThrownBy(() -> environmentGroupResource.get(ENV_GROUP_ID, ACC_ID, ORG_ID, PRO_ID, false, null))
+        .isInstanceOf(NotFoundException.class)
+        .hasMessage("Environment Group with identifier [newEnvGroup] in project [proId], org [orgId] not found");
   }
 
   @Test
@@ -183,9 +185,9 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDelete() {
     EnvironmentGroupEntity entity = getEntity();
-    doReturn(entity).when(environmentGroupService).delete(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID, null);
+    doReturn(entity).when(environmentGroupService).delete(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID, null, false);
     ResponseDTO<EnvironmentGroupDeleteResponse> deleteDTO =
-        environmentGroupResource.delete(null, ENV_GROUP_ID, ACC_ID, ORG_ID, PRO_ID, null);
+        environmentGroupResource.delete(null, ENV_GROUP_ID, ACC_ID, ORG_ID, PRO_ID, null, false);
     assertThat(deleteDTO).isNotNull();
     assertThat(deleteDTO.getData().getDeleted()).isEqualTo(entity.getDeleted());
     assertThat(deleteDTO.getData().getIdentifier()).isEqualTo(ENV_GROUP_ID);
@@ -208,13 +210,13 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
     // case1: without envGroupIds
     doReturn(criteria)
         .when(environmentGroupService)
-        .formCriteria(ACC_ID, ORG_ID, PRO_ID, false, searchTerm, filterIdentifier, null);
+        .formCriteria(ACC_ID, ORG_ID, PRO_ID, false, searchTerm, filterIdentifier, null, false);
     doReturn(new PageImpl<>(envGroupEntityList))
         .when(environmentGroupService)
         .list(criteria, pageRequest, PRO_ID, ORG_ID, ACC_ID);
     ResponseDTO<PageResponse<EnvironmentGroupResponse>> pageResponseResponseDTO =
         environmentGroupResource.listEnvironmentGroup(
-            ACC_ID, ORG_ID, PRO_ID, null, searchTerm, 0, 1, null, filterIdentifier, null, null);
+            ACC_ID, ORG_ID, PRO_ID, null, searchTerm, 0, 1, null, filterIdentifier, null, null, false);
     assertThat(pageResponseResponseDTO).isNotNull();
     assertThat(pageResponseResponseDTO.getData().getPageItemCount()).isEqualTo(1L);
 
@@ -223,9 +225,9 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
     criteria.and(EnvironmentGroupKeys.envIdentifiers).in(envGroupIds);
     doReturn(criteria)
         .when(environmentGroupService)
-        .formCriteria(ACC_ID, ORG_ID, PRO_ID, false, searchTerm, filterIdentifier, null);
+        .formCriteria(ACC_ID, ORG_ID, PRO_ID, false, searchTerm, filterIdentifier, null, false);
     pageResponseResponseDTO = environmentGroupResource.listEnvironmentGroup(
-        ACC_ID, ORG_ID, PRO_ID, null, searchTerm, 0, 1, null, filterIdentifier, null, null);
+        ACC_ID, ORG_ID, PRO_ID, null, searchTerm, 0, 1, null, filterIdentifier, null, null, false);
     assertThat(pageResponseResponseDTO).isNotNull();
     assertThat(pageResponseResponseDTO.getData().getPageItemCount()).isEqualTo(1L);
   }

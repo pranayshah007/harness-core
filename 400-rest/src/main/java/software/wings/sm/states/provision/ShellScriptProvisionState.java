@@ -76,6 +76,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -91,7 +92,6 @@ import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.annotations.Transient;
 
 @FieldNameConstants(onlyExplicitlyIncluded = true, innerTypeName = "ShellScriptProvisionStateKeys")
 @OwnedBy(CDP)

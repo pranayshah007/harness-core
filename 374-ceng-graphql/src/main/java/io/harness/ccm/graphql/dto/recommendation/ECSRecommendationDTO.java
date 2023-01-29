@@ -7,6 +7,8 @@
 
 package io.harness.ccm.graphql.dto.recommendation;
 
+import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+
 import software.wings.graphql.datafetcher.ce.recommendation.entity.Cost;
 
 import com.amazonaws.services.ecs.model.LaunchType;
@@ -29,14 +31,5 @@ public class ECSRecommendationDTO implements RecommendationDetailsDTO {
   ContainerHistogramDTO.HistogramExp cpuHistogram;
   ContainerHistogramDTO.HistogramExp memoryHistogram;
 
-  //  @Value
-  //  @Builder
-  //  public static class HistogramExp {
-  //    int numBuckets;
-  //    int minBucket;
-  //    int maxBucket;
-  //    double[] bucketWeights;
-  //    double totalWeight;
-  //    double[] precomputed;
-  //  }
+  CCMJiraDetails jiraDetails;
 }

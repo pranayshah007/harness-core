@@ -48,6 +48,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -58,8 +60,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._957_CG_BEANS)
@@ -118,7 +118,7 @@ public abstract class ArtifactStream
   @Transient private String artifactStreamId;
   private String artifactStreamType;
   private String sourceName;
-  private String settingId;
+  @FdIndex private String settingId;
   @Transient private String artifactServerName;
   @EntityName private String name;
   private boolean autoPopulate;

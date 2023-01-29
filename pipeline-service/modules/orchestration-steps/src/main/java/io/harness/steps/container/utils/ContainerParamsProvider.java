@@ -63,8 +63,7 @@ public class ContainerParamsProvider {
       Map<String, String> logEnvVars, Map<String, String> volumeToMountPath, String workDirPath,
       ContainerSecurityContext ctrSecurityContext, String logPrefix, Ambiance ambiance) {
     String imageName = containerExecutionConfig.getLiteEngineImage();
-    String fullyQualifiedImage = "asd";
-    //                IntegrationStageUtils.getFullyQualifiedImageName(imageName, harnessInternalImageConnector);
+
     return CIK8ContainerParams.builder()
         .name(LITE_ENGINE_CONTAINER_NAME)
         .containerResourceParams(getLiteEngineResourceParams(stageCpuRequest, stageMemoryRequest))
@@ -72,12 +71,10 @@ public class ContainerParamsProvider {
         .containerType(CIContainerType.LITE_ENGINE)
         .containerSecrets(
             ContainerSecrets.builder().plainTextSecretsByName(getLiteEngineSecretVars(logEnvVars)).build())
-        .imageDetailsWithConnector(
-            ImageDetailsWithConnector.builder()
-                .imageDetails(ImageDetails.builder().name(imageName).build())
-                //                        .imageDetails(IntegrationStageUtils.getImageInfo(fullyQualifiedImage))
-                .imageConnectorDetails(harnessInternalImageConnector)
-                .build())
+        .imageDetailsWithConnector(ImageDetailsWithConnector.builder()
+                                       .imageDetails(ImageDetails.builder().name(imageName).build())
+                                       .imageConnectorDetails(harnessInternalImageConnector)
+                                       .build())
         .volumeToMountPath(volumeToMountPath)
         .securityContext(ctrSecurityContext)
         .workingDir(workDirPath)
@@ -161,8 +158,6 @@ public class ContainerParamsProvider {
 
     // todo(abhinav): check if we want account id based pinning.
     String imageName = containerExecutionConfig.getAddonImage();
-    String fullyQualifiedImage = "sa";
-    //                IntegrationStageUtils.getFullyQualifiedImageName(imageName, harnessInternalImageConnector);
     List<String> commands = SH_COMMAND;
     List<String> args = Arrays.asList(UNIX_SETUP_ADDON_ARGS);
     if (os == OSType.Windows) {
@@ -173,12 +168,10 @@ public class ContainerParamsProvider {
         .name(SETUP_ADDON_CONTAINER_NAME)
         .envVars(envVars)
         .containerType(CIContainerType.ADD_ON)
-        .imageDetailsWithConnector(
-            ImageDetailsWithConnector.builder()
-                .imageDetails(ImageDetails.builder().name(imageName).build())
-                //                        .imageDetails(IntegrationStageUtils.getImageInfo(fullyQualifiedImage))
-                .imageConnectorDetails(harnessInternalImageConnector)
-                .build())
+        .imageDetailsWithConnector(ImageDetailsWithConnector.builder()
+                                       .imageDetails(ImageDetails.builder().name(imageName).build())
+                                       .imageConnectorDetails(harnessInternalImageConnector)
+                                       .build())
         .containerSecrets(ContainerSecrets.builder().build())
         .volumeToMountPath(volumeToMountPath)
         .commands(commands)

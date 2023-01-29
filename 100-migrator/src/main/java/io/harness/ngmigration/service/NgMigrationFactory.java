@@ -10,13 +10,18 @@ package io.harness.ngmigration.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngmigration.service.entity.AccountMigrationService;
+import io.harness.ngmigration.service.entity.AmiStartupScriptMigrationService;
 import io.harness.ngmigration.service.entity.AppMigrationService;
 import io.harness.ngmigration.service.entity.ArtifactStreamMigrationService;
 import io.harness.ngmigration.service.entity.ConfigFileMigrationService;
 import io.harness.ngmigration.service.entity.ConnectorMigrationService;
+import io.harness.ngmigration.service.entity.ContainerTaskMigrationService;
 import io.harness.ngmigration.service.entity.DummyMigrationService;
+import io.harness.ngmigration.service.entity.EcsServiceSpecMigrationService;
+import io.harness.ngmigration.service.entity.ElastigroupConfigurationMigrationService;
 import io.harness.ngmigration.service.entity.EnvironmentMigrationService;
 import io.harness.ngmigration.service.entity.InfraMigrationService;
+import io.harness.ngmigration.service.entity.InfraProvisionerMigrationService;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
 import io.harness.ngmigration.service.entity.PipelineMigrationService;
 import io.harness.ngmigration.service.entity.SecretManagerMigrationService;
@@ -24,6 +29,7 @@ import io.harness.ngmigration.service.entity.SecretMigrationService;
 import io.harness.ngmigration.service.entity.ServiceMigrationService;
 import io.harness.ngmigration.service.entity.ServiceVariableMigrationService;
 import io.harness.ngmigration.service.entity.TemplateMigrationService;
+import io.harness.ngmigration.service.entity.TriggerMigrationService;
 import io.harness.ngmigration.service.entity.WorkflowMigrationService;
 
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -48,6 +54,13 @@ public class NgMigrationFactory {
   @Inject TemplateMigrationService templateMigrationService;
   @Inject ServiceVariableMigrationService serviceVariableMigrationService;
   @Inject ConfigFileMigrationService configFileMigrationService;
+  @Inject EcsServiceSpecMigrationService ecsServiceSpecMigrationService;
+  @Inject AmiStartupScriptMigrationService amiServiceSpecMigrationService;
+  @Inject ElastigroupConfigurationMigrationService elastigroupConfigurationMigrationService;
+  @Inject ContainerTaskMigrationService containerTaskMigrationService;
+
+  @Inject InfraProvisionerMigrationService infraProvisionerMigrationService;
+  @Inject TriggerMigrationService triggerMigrationService;
 
   public NgMigrationService getMethod(NGMigrationEntityType type) {
     switch (type) {
@@ -83,6 +96,18 @@ public class NgMigrationFactory {
         return serviceVariableMigrationService;
       case CONFIG_FILE:
         return configFileMigrationService;
+      case ECS_SERVICE_SPEC:
+        return ecsServiceSpecMigrationService;
+      case AMI_STARTUP_SCRIPT:
+        return amiServiceSpecMigrationService;
+      case ELASTIGROUP_CONFIGURATION:
+        return elastigroupConfigurationMigrationService;
+      case CONTAINER_TASK:
+        return containerTaskMigrationService;
+      case INFRA_PROVISIONER:
+        return infraProvisionerMigrationService;
+      case TRIGGER:
+        return triggerMigrationService;
       default:
         throw new IllegalStateException();
     }

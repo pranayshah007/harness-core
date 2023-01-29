@@ -7,6 +7,8 @@
 
 package io.harness.ng.core.events;
 
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_CONFIGURATION_UPDATE_EVENT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
@@ -38,6 +40,6 @@ public class DelegateConfigurationUpdateEvent extends AbstractDelegateConfigurat
 
   @Override
   public String getEventType() {
-    return "DelegateProfileUpdated";
+    return DELEGATE_CONFIGURATION_UPDATE_EVENT;
   }
 }

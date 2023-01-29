@@ -57,15 +57,16 @@ public class SettingsMapper {
         .build();
   }
 
-  public SettingDTO writeSettingDTO(SettingConfiguration settingConfiguration, Boolean isSettingEditable) {
+  public SettingDTO writeSettingDTO(
+      SettingConfiguration settingConfiguration, Boolean isSettingEditable, String defaultValue) {
     return SettingDTO.builder()
         .identifier(settingConfiguration.getIdentifier())
         .name(settingConfiguration.getName())
         .category(settingConfiguration.getCategory())
         .groupIdentifier(settingConfiguration.getGroupIdentifier())
         .valueType(settingConfiguration.getValueType())
-        .defaultValue(settingConfiguration.getDefaultValue())
-        .value(settingConfiguration.getDefaultValue())
+        .defaultValue(defaultValue)
+        .value(defaultValue)
         .allowedValues(settingConfiguration.getAllowedValues())
         .allowOverrides(settingConfiguration.getAllowOverrides())
         .settingSource(SettingSource.DEFAULT)
@@ -91,12 +92,14 @@ public class SettingsMapper {
   }
 
   public SettingResponseDTO writeSettingResponseDTO(
-      SettingConfiguration settingConfiguration, Boolean isSettingEditable) {
-    return SettingResponseDTO.builder().setting(writeSettingDTO(settingConfiguration, isSettingEditable)).build();
+      SettingConfiguration settingConfiguration, Boolean isSettingEditable, String defaultValue) {
+    return SettingResponseDTO.builder()
+        .setting(writeSettingDTO(settingConfiguration, isSettingEditable, defaultValue))
+        .build();
   }
 
   public SettingDTO writeNewDTO(Setting setting, SettingRequestDTO settingRequestDTO,
-      SettingConfiguration settingConfiguration, Boolean isSettingEditable) {
+      SettingConfiguration settingConfiguration, Boolean isSettingEditable, String defaultValue) {
     return SettingDTO.builder()
         .identifier(setting.getIdentifier())
         .name(settingConfiguration.getName())
@@ -108,7 +111,7 @@ public class SettingsMapper {
         .groupIdentifier(settingConfiguration.getGroupIdentifier())
         .value(settingRequestDTO.getValue())
         .valueType(settingConfiguration.getValueType())
-        .defaultValue(settingConfiguration.getDefaultValue())
+        .defaultValue(defaultValue)
         .isSettingEditable(isSettingEditable)
         .settingSource(SettingUtils.getSettingSource(setting))
         .allowedScopes(settingConfiguration.getAllowedScopes())
@@ -116,7 +119,7 @@ public class SettingsMapper {
   }
 
   public SettingDTO writeNewDTO(String orgIdentifier, String projectIdentifier, SettingRequestDTO settingRequestDTO,
-      SettingConfiguration settingConfiguration, Boolean isSettingEditable) {
+      SettingConfiguration settingConfiguration, Boolean isSettingEditable, String defaultValue) {
     return SettingDTO.builder()
         .identifier(settingConfiguration.getIdentifier())
         .name(settingConfiguration.getName())
@@ -128,7 +131,7 @@ public class SettingsMapper {
         .groupIdentifier(settingConfiguration.getGroupIdentifier())
         .value(settingRequestDTO.getValue())
         .valueType(settingConfiguration.getValueType())
-        .defaultValue(settingConfiguration.getDefaultValue())
+        .defaultValue(defaultValue)
         .isSettingEditable(isSettingEditable)
         .settingSource(SettingUtils.getSettingSourceFromOrgAndProject(orgIdentifier, projectIdentifier))
         .allowedScopes(settingConfiguration.getAllowedScopes())

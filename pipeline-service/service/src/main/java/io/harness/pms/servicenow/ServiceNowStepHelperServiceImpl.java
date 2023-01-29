@@ -27,6 +27,7 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ServiceNowException;
@@ -42,7 +43,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.servicenow.ServiceNowStepHelperService;
 import io.harness.steps.servicenow.ServiceNowTicketOutcome;
 import io.harness.steps.servicenow.ServiceNowTicketOutcome.ServiceNowTicketOutcomeBuilder;
@@ -71,7 +72,8 @@ public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperServ
 
   @Inject
   public ServiceNowStepHelperServiceImpl(ConnectorResourceClient connectorResourceClient,
-      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService, KryoSerializer kryoSerializer) {
+      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService,
+      @Named("referenceFalseKryoSerializer") KryoSerializer kryoSerializer) {
     this.connectorResourceClient = connectorResourceClient;
     this.secretManagerClientService = secretManagerClientService;
     this.kryoSerializer = kryoSerializer;
@@ -114,8 +116,8 @@ public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperServ
                             .taskType(NGTaskType.SERVICENOW_TASK_NG.name())
                             .parameters(new Object[] {params})
                             .build();
-    return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
-        Collections.emptyList(), false, taskName,
+    return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
+        Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT), true, taskName,
         params.getDelegateSelectors()
             .stream()
             .map(s -> TaskSelector.newBuilder().setSelector(s).build())

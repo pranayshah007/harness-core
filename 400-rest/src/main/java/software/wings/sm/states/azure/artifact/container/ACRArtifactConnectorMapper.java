@@ -17,8 +17,8 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureContainerRegistryConnectorDTO;
 
 import software.wings.annotation.EncryptableSetting;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.sm.states.azure.artifact.ArtifactConnectorMapper;
 
 import java.util.Optional;

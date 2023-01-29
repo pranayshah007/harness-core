@@ -16,6 +16,7 @@ import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecordRepository;
 import io.harness.event.timeseries.processor.ExecutionInterruptProcessor;
 import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
+import io.harness.ff.FeatureFlagService;
 import io.harness.lock.PersistentLocker;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
@@ -34,6 +35,8 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -42,8 +45,6 @@ import java.time.Duration;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @Singleton
 @Slf4j
@@ -55,6 +56,7 @@ public class ExecutionInterruptReconServiceImpl implements DeploymentReconServic
   @Inject private DataFetcherUtils utils;
   @Inject private DeploymentReconRecordRepository deploymentReconRecordRepository;
   @Inject private ExecutionInterruptProcessor executionInterruptProcessor;
+  @Inject private FeatureFlagService featureFlagService;
 
   private static final String FIND_EXECUTION_INTERRUPT_IN_TSDB =
       "SELECT ID,CREATED_AT FROM EXECUTION_INTERRUPT WHERE ID=?";
@@ -63,7 +65,7 @@ public class ExecutionInterruptReconServiceImpl implements DeploymentReconServic
   public ReconciliationStatus performReconciliation(
       String accountId, long durationStartTs, long durationEndTs, ExecutionEntity executionEntity) {
     return performReconciliationHelper(accountId, durationStartTs, durationEndTs, timeScaleDBService,
-        deploymentReconRecordRepository, persistence, persistentLocker, utils, executionEntity);
+        deploymentReconRecordRepository, persistence, persistentLocker, utils, executionEntity, featureFlagService);
   }
 
   @Override
@@ -82,6 +84,12 @@ public class ExecutionInterruptReconServiceImpl implements DeploymentReconServic
 
   @Override
   public boolean isStatusMismatchedAndUpdated(Map<String, String> tsdbRunningWFs) {
+    return false;
+  }
+
+  @Override
+  public boolean isStatusMismatchedAndUpdatedV2(String accountId, long durationStartTs, long durationEndTs,
+      String sourceEntityClass, String completedExecutionsQuery, DataFetcherUtils utils) {
     return false;
   }
 

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.iterator;
 
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -31,11 +38,25 @@ public abstract class IteratorBaseHandler<T extends PersistentIterable, F extend
   protected abstract void registerIterator(IteratorExecutionHandler iteratorExecutionHandler);
 
   /**
-   * This method is to create and start the iterator.
+   * This method is to create and start the iterator in Pump or Loop mode.
    *
    * @param executorOptions provides the executor thread-pool options
+   *                        needed for pump or loop mode.
    * @param targetInterval the targetInterval for iteration
    */
   protected abstract void createAndStartIterator(
       PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval);
+
+  /**
+   * This method is to create and start the iterator in Redis Lock
+   * based Batch mode.
+   *
+   * @param executorOptions provides the executor thread-pool options
+   *                        needed for Redis mode.
+   * @param targetInterval the targetInterval for iterator
+   */
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    log.warn("createAndStartShardIterator should be overridden by the child class");
+  }
 }

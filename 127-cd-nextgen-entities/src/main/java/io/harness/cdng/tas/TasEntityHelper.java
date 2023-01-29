@@ -11,10 +11,9 @@ import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
-import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
-
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -40,10 +39,15 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.utils.IdentifierRefHelper;
+
+import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -117,11 +121,11 @@ public class TasEntityHelper {
         .projectIdentifier(projectIdentifier)
         .build();
   }
-  public DelegateResponseData executeSyncTask(TaskParameters params, BaseNGAccess ngAccess, String ifFailedMessage) {
-    return getResponseData(null, ngAccess, params, Optional.empty());
+  public DelegateResponseData executeSyncTask(TaskParameters params, BaseNGAccess ngAccess, TaskType taskType) {
+    return getResponseData(ngAccess, params, Optional.empty(), taskType);
   }
   public DelegateResponseData getResponseData(
-      Ambiance ambiance, BaseNGAccess ngAccess, TaskParameters params, Optional<Integer> customTimeoutInSec) {
+      BaseNGAccess ngAccess, TaskParameters params, Optional<Integer> customTimeoutInSec, TaskType taskType) {
     Set<String> taskSelectors =
         ((CfInfraMappingDataRequestNG) params).getTasInfraConfig().getTasConnectorDTO().getDelegateSelectors();
     DelegateTaskRequest delegateTaskRequest =
@@ -134,30 +138,39 @@ public class TasEntityHelper {
                 SetupAbstractionKeys.owner, ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
             .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
             .taskParameters(params)
-            .taskType(CF_COMMAND_TASK_NG.name())
+            .taskType(taskType.name())
             .taskSelectors(taskSelectors)
-            .logStreamingAbstractions(createLogStreamingAbstractions(ngAccess, ambiance))
+            .logStreamingAbstractions(createLogStreamingAbstractions(ngAccess))
             .build();
     try {
-      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      return delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }
   }
-  private LinkedHashMap<String, String> createLogStreamingAbstractions(BaseNGAccess ngAccess, Ambiance ambiance) {
+  private LinkedHashMap<String, String> createLogStreamingAbstractions(BaseNGAccess ngAccess) {
     LinkedHashMap<String, String> logStreamingAbstractions = new LinkedHashMap<>();
     logStreamingAbstractions.put(SetupAbstractionKeys.accountId, ngAccess.getAccountIdentifier());
     logStreamingAbstractions.put(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier());
     logStreamingAbstractions.put(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier());
-    if (ambiance != null) {
-      logStreamingAbstractions.put(SetupAbstractionKeys.pipelineId, ambiance.getMetadata().getPipelineIdentifier());
-      logStreamingAbstractions.put(
-          SetupAbstractionKeys.runSequence, String.valueOf(ambiance.getMetadata().getRunSequence()));
-
-      for (int i = 0; i < ambiance.getLevelsList().size(); i++) {
-        logStreamingAbstractions.put("level" + i, ambiance.getLevels(i).getIdentifier());
-      }
-    }
     return logStreamingAbstractions;
+  }
+  public OptionalSweepingOutput getSetupOutcome(Ambiance ambiance, String tasBGSetupFqn, String tasBasicSetupFqn,
+      String tasCanarySetupFqn, String tasAppSetupOutcomeName,
+      ExecutionSweepingOutputService executionSweepingOutputService) {
+    OptionalSweepingOutput optionalSweepingSetupOutput = OptionalSweepingOutput.builder().found(false).build();
+    if (!isNull(tasBGSetupFqn)) {
+      optionalSweepingSetupOutput = executionSweepingOutputService.resolveOptional(
+          ambiance, RefObjectUtils.getSweepingOutputRefObject(tasBGSetupFqn + "." + tasAppSetupOutcomeName));
+    }
+    if (!isNull(tasBasicSetupFqn) && !optionalSweepingSetupOutput.isFound()) {
+      optionalSweepingSetupOutput = executionSweepingOutputService.resolveOptional(
+          ambiance, RefObjectUtils.getSweepingOutputRefObject(tasBasicSetupFqn + "." + tasAppSetupOutcomeName));
+    }
+    if (!isNull(tasCanarySetupFqn) && !optionalSweepingSetupOutput.isFound()) {
+      optionalSweepingSetupOutput = executionSweepingOutputService.resolveOptional(
+          ambiance, RefObjectUtils.getSweepingOutputRefObject(tasCanarySetupFqn + "." + tasAppSetupOutcomeName));
+    }
+    return optionalSweepingSetupOutput;
   }
 }

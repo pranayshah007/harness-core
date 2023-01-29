@@ -24,9 +24,11 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.aws.AwsCallTracker;
-import io.harness.aws.CloseableAmazonWebServiceClient;
+import io.harness.audit.streaming.dtos.AuditBatchDTO;
+import io.harness.audit.streaming.dtos.AuditRecordDTO;
+import io.harness.audit.streaming.dtos.PutObjectResultResponse;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.util.AwsCallTracker;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.eraro.ErrorCode;
@@ -37,11 +39,13 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.serializer.JsonUtils;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -84,6 +88,8 @@ import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
@@ -92,6 +98,14 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.protobuf.ByteString;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectOutputStream;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -105,7 +119,10 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class AwsApiHelperService {
+  private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
   @Inject private AwsCallTracker tracker;
+  @Inject private KryoSerializer kryoSerializer;
 
   private static final int FETCH_FILE_COUNT_IN_BUCKET = 500;
 
@@ -212,6 +229,69 @@ public class AwsApiHelperService {
     return emptyList();
   }
 
+  public PutObjectResultResponse putAuditBatchToBucket(
+      AwsInternalConfig awsInternalConfig, String region, String bucketName, AuditBatchDTO auditBatch) {
+    try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
+             new CloseableAmazonWebServiceClient(getAmazonS3Client(awsInternalConfig, region))) {
+      tracker.trackS3Call("Put Audit Batch to S3 Bucket");
+      String key = getKey(auditBatch.getStartTime(), auditBatch.getEndTime());
+      InputStream inputStream = getInputStream(auditBatch.getAuditRecords());
+      ObjectMetadata objectMetadata = getObjectMetadata(inputStream);
+
+      return convertToPutObjectResultResponse(closeableAmazonS3Client.getClient().putObject(
+          new PutObjectRequest(bucketName, key, inputStream, objectMetadata)));
+    } catch (AmazonServiceException amazonServiceException) {
+      if (amazonServiceException.getStatusCode() == 403) {
+        throw new InvalidRequestException("Please provide the correct region corresponding to the AWS access key.");
+      }
+
+      handleAmazonServiceException(amazonServiceException);
+    } catch (AmazonClientException amazonClientException) {
+      handleAmazonClientException(amazonClientException);
+    } catch (Exception e) {
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception while writing to S3 bucket", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
+    }
+    return PutObjectResultResponse.builder().build();
+  }
+
+  private PutObjectResultResponse convertToPutObjectResultResponse(PutObjectResult putObjectResult) {
+    return PutObjectResultResponse.builder()
+        .versionId(putObjectResult.getVersionId())
+        .eTag(putObjectResult.getETag())
+        .expirationTime(putObjectResult.getExpirationTime())
+        .expirationTimeRuleId(putObjectResult.getExpirationTimeRuleId())
+        .contentMd5(putObjectResult.getContentMd5())
+        .isRequesterCharged(putObjectResult.isRequesterCharged())
+        .build();
+  }
+
+  private String getKey(Long startTime, Long endTime) {
+    SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
+
+    return "audits from " + sdf.format(new Timestamp(startTime)) + " to " + sdf.format(new Timestamp(endTime));
+  }
+
+  private InputStream getInputStream(List<AuditRecordDTO> auditRecords) throws IOException {
+    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(auditRecords));
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+    objectOutputStream.writeObject(bytes);
+
+    objectOutputStream.flush();
+    objectOutputStream.close();
+
+    return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+  }
+
+  private ObjectMetadata getObjectMetadata(InputStream inputStream) {
+    ObjectMetadata objectMetadata = new ObjectMetadata();
+    objectMetadata.setContentLength(inputStream.toString().length());
+
+    return objectMetadata;
+  }
+
   public List<BuildDetails> listBuilds(
       AwsInternalConfig awsInternalConfig, String region, String bucketName, String filePathRegex) {
     List<BuildDetails> buildDetailsList = Lists.newArrayList();
@@ -261,7 +341,6 @@ public class AwsApiHelperService {
       return buildDetailsList;
 
     } catch (WingsException e) {
-      e.excludeReportTarget(AWS_ACCESS_DENIED, EVERYBODY);
       throw new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER);
     } catch (RuntimeException e) {
       throw new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER);
@@ -487,7 +566,7 @@ public class AwsApiHelperService {
   public AWSCredentialsProvider getAwsCredentialsProvider(AwsInternalConfig awsConfig) {
     AWSCredentialsProvider credentialsProvider;
     if (awsConfig.isUseEc2IamCredentials()) {
-      log.info("Instantiating EC2ContainerCredentialsProviderWrapper");
+      log.debug("Instantiating EC2ContainerCredentialsProviderWrapper");
       credentialsProvider = new EC2ContainerCredentialsProviderWrapper();
     } else if (awsConfig.isUseIRSA()) {
       WebIdentityTokenCredentialsProvider.Builder providerBuilder = WebIdentityTokenCredentialsProvider.builder();

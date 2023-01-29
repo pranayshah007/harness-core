@@ -14,6 +14,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
+import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
@@ -37,6 +38,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -60,8 +63,6 @@ import lombok.Value;
 import lombok.experimental.Accessors;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder(buildMethodName = "unsafeBuild")
@@ -121,6 +122,7 @@ public final class VerificationJobInstance
 
   private VerificationJob resolvedJob;
   private Map<String, CVConfig> cvConfigMap;
+  private Map<String, AppliedDeploymentAnalysisType> appliedDeploymentAnalysisTypeMap;
 
   @Builder.Default
   @FdTtlIndex

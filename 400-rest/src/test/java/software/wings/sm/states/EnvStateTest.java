@@ -21,7 +21,7 @@ import static io.harness.rule.OwnerRule.YUVRAJ;
 import static software.wings.api.EnvStateExecutionData.Builder.anEnvStateExecutionData;
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.alert.AlertType.DEPLOYMENT_FREEZE_EVENT;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.sm.WorkflowStandardParams.Builder.aWorkflowStandardParams;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -80,8 +80,8 @@ import software.wings.beans.ExecutionArgs;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
-import software.wings.beans.artifact.Artifact;
 import software.wings.common.NotificationMessageResolver;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.WorkflowExecutionUpdate;
 import software.wings.service.impl.deployment.checks.DeploymentFreezeUtils;
 import software.wings.service.intfc.ArtifactService;
@@ -368,7 +368,7 @@ public class EnvStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldGetTimeout() {
     Integer timeoutMillis = envState.getTimeoutMillis();
-    assertThat(timeoutMillis).isEqualTo(EnvState.ENV_STATE_TIMEOUT_MILLIS);
+    assertThat(timeoutMillis).isEqualTo(EnvState.INFINITE_TIMEOUT);
   }
 
   @Test
@@ -401,7 +401,7 @@ public class EnvStateTest extends WingsBaseTest {
     when(workflowExecutionService.triggerOrchestrationExecution(
              eq(APP_ID), eq(null), eq(WORKFLOW_ID), eq(PIPELINE_WORKFLOW_EXECUTION_ID), any(), any()))
         .thenThrow(new DeploymentFreezeException(ErrorCode.DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, WingsException.USER,
-            ACCOUNT_ID, deploymentFreezeIds, "", false, false));
+            ACCOUNT_ID, deploymentFreezeIds, Collections.singletonList(""), "", false, false));
     when(workflowExecutionService.fetchWorkflowExecution(APP_ID, PIPELINE_WORKFLOW_EXECUTION_ID,
              WorkflowExecutionKeys.createdAt, WorkflowExecutionKeys.triggeredBy, WorkflowExecutionKeys.status))
         .thenReturn(WorkflowExecution.builder().build());
@@ -431,7 +431,7 @@ public class EnvStateTest extends WingsBaseTest {
     when(workflowExecutionService.triggerOrchestrationExecution(
              eq(APP_ID), eq(null), eq(WORKFLOW_ID), eq(PIPELINE_WORKFLOW_EXECUTION_ID), any(), any()))
         .thenThrow(new DeploymentFreezeException(ErrorCode.DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, WingsException.USER,
-            ACCOUNT_ID, Collections.emptyList(), "", true, false));
+            ACCOUNT_ID, Collections.emptyList(), Collections.emptyList(), "", true, false));
     when(workflowExecutionService.fetchWorkflowExecution(APP_ID, PIPELINE_WORKFLOW_EXECUTION_ID,
              WorkflowExecutionKeys.createdAt, WorkflowExecutionKeys.triggeredBy, WorkflowExecutionKeys.status))
         .thenReturn(WorkflowExecution.builder().build());

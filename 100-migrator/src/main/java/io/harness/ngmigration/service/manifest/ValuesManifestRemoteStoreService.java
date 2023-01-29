@@ -24,7 +24,6 @@ import software.wings.beans.GitFileConfig;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
-import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -39,10 +38,10 @@ public class ValuesManifestRemoteStoreService implements NgManifestService {
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
     GitFileConfig gitFileConfig = applicationManifest.getGitFileConfig();
-    NgEntityDetail connector =
-        migratedEntities
-            .get(CgEntityId.builder().id(gitFileConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build())
-            .getNgEntityDetail();
+    NgEntityDetail connector = NgManifestFactory.getGitConnector(migratedEntities, applicationManifest);
+    if (connector == null) {
+      return Collections.emptyList();
+    }
 
     ValuesManifest valuesManifest =
         ValuesManifest.builder()

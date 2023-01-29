@@ -40,7 +40,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -117,9 +119,10 @@ public class PipelineRefreshResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String pipelineIdentifier,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    return ResponseDTO.newResponse(
-        pipelineRefreshService.validateTemplateInputsInPipeline(accountId, orgId, projectId, pipelineIdentifier));
+    return ResponseDTO.newResponse(pipelineRefreshService.validateTemplateInputsInPipeline(
+        accountId, orgId, projectId, pipelineIdentifier, loadFromCache));
   }
 
   @GET

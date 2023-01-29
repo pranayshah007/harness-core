@@ -12,6 +12,8 @@ import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.beans.TransactionMetricInfo;
 import io.harness.cvng.analysis.beans.TransactionMetricInfoSummaryPageDTO;
 import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis;
+import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
+import io.harness.cvng.cdng.beans.v2.MetricsAnalysisOverview;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
 import io.harness.cvng.core.entities.CVConfig;
@@ -45,4 +47,9 @@ public interface DeploymentTimeSeriesAnalysisService {
 
   List<String> getTransactionNames(String accountId, String verificationJobInstanceId);
   Set<String> getNodeNames(String accountId, String verificationJobInstanceId);
+
+  List<MetricsAnalysis> getFilteredMetricAnalysesForVerifyStepExecutionId(String accountId,
+      String verifyStepExecutionId, DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter);
+
+  MetricsAnalysisOverview getMetricsAnalysisOverview(String verifyStepExecutionId);
 }

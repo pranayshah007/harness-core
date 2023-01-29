@@ -23,34 +23,51 @@ import io.harness.beans.version.Version;
 import io.harness.cli.CliHelper;
 import io.harness.cli.CliResponse;
 import io.harness.cli.LogCallbackOutputStream;
+import io.harness.cli.TerraformCliErrorLogOutputStream;
+import io.harness.exception.HintException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.serializer.JsonUtils;
 import io.harness.terragrunt.v2.request.AbstractTerragruntCliRequest;
+import io.harness.terragrunt.v2.request.TerragruntApplyCliRequest;
 import io.harness.terragrunt.v2.request.TerragruntCliRequest;
+import io.harness.terragrunt.v2.request.TerragruntDestroyCliRequest;
+import io.harness.terragrunt.v2.request.TerragruntOutputCliRequest;
+import io.harness.terragrunt.v2.request.TerragruntPlanCliRequest;
 import io.harness.terragrunt.v2.request.TerragruntRunType;
 import io.harness.terragrunt.v2.request.TerragruntShowCliRequest;
+import io.harness.terragrunt.v2.request.TerragruntWorkspaceCliRequest;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.zeroturnaround.exec.stream.LogOutputStream;
 
 @Builder
-@OwnedBy(CDP)
 @AllArgsConstructor(onConstructor = @__({ @Nonnull }))
+@Slf4j
+@OwnedBy(CDP)
 public class TerragruntClientImpl implements TerragruntClient {
   private static final Pattern TF_LOG_LINE_PATTERN =
       Pattern.compile("\\[(?:TRACE|DEBUG|INFO|WARN|ERROR|CRITICAL)\\]\\s?(.+?)?:");
   private static final Version MIN_TF_SHOW_JSON_VERSION = Version.parse("0.12");
+  private static final Version MIN_TF_AUTO_APPROVE_VERSION = Version.parse("0.15");
 
+  private String terragruntInfoJson;
   private Version terragruntVersion;
   private Version terraformVersion;
   private CliHelper cliHelper;
@@ -59,8 +76,32 @@ public class TerragruntClientImpl implements TerragruntClient {
   @Override
   public CliResponse init(@Nonnull TerragruntCliRequest request, @Nonnull LogCallback logCallback)
       throws InterruptedException, TimeoutException, IOException {
-    String command = TerragruntCommandUtils.init(request.getArgs().getBackendConfigFile());
+    String command = TerragruntCommandUtils.init(request.getArgs().getBackendConfigFile(), request.getRunType());
+    log.info("Execute terragrunt init: {}", command);
     return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
+  }
+
+  @NotNull
+  @Override
+  public CliResponse workspace(@NotNull TerragruntWorkspaceCliRequest request, @NotNull LogCallback logCallback)
+      throws InterruptedException, TimeoutException, IOException {
+    CliResponse workspaceListResponse = executeCliCommand(TerragruntCommandUtils.workspaceList(request.getRunType()),
+        request, logCallback, new LogCallbackOutputStream(logCallback));
+    if (CommandExecutionStatus.SUCCESS != workspaceListResponse.getCommandExecutionStatus()) {
+      return workspaceListResponse;
+    }
+
+    Set<String> existingWorkspaces = parseWorkspaceList(workspaceListResponse.getOutput());
+    if (existingWorkspaces.contains(request.getWorkspace())) {
+      String command = TerragruntCommandUtils.workspaceSelect(request.getWorkspace(), request.getRunType());
+      log.info("Workspace {} exists in workspaces set: {}", request.getWorkspace(), existingWorkspaces);
+      return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
+    } else {
+      log.info("No workspace {} found in workspaces set {}", request.getWorkspace(), existingWorkspaces);
+      logCallback.saveExecutionLog(format("Workspace %s doesn't exist, create a new one", request.getWorkspace()));
+      String command = TerragruntCommandUtils.workspaceNew(request.getWorkspace(), request.getRunType());
+      return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
+    }
   }
 
   @Nonnull
@@ -72,20 +113,62 @@ public class TerragruntClientImpl implements TerragruntClient {
     String command = TerragruntRunType.RUN_ALL == request.getRunType()
         ? TerragruntCommandUtils.runAllRefresh(targetArgs, varArgs)
         : TerragruntCommandUtils.refresh(targetArgs, varArgs);
-
+    log.info("Execute terragrunt refresh: {}", command);
     return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
   }
 
   @NotNull
   @Override
-  public CliResponse plan(@NotNull TerragruntCliRequest request, LogOutputStream planOutputStream,
-      @NotNull LogCallback logCallback) throws InterruptedException, TimeoutException, IOException {
+  public CliResponse plan(@NotNull TerragruntPlanCliRequest request, @NotNull LogCallback logCallback)
+      throws InterruptedException, TimeoutException, IOException {
     String targetArgs = getTargetArgs(request.getArgs().getTargets());
     String varArgs = getVarArgs(request.getArgs().getVarFiles());
     String command = TerragruntRunType.RUN_ALL == request.getRunType()
-        ? TerragruntCommandUtils.runAllPlan(targetArgs, varArgs)
-        : TerragruntCommandUtils.plan(targetArgs, varArgs);
-    return executeCliCommand(command, request, logCallback, planOutputStream);
+        ? TerragruntCommandUtils.runAllPlan(targetArgs, varArgs, request.isDestroy())
+        : TerragruntCommandUtils.plan(targetArgs, varArgs, request.isDestroy());
+    log.info("Execute terragrunt plan: {}", command);
+    return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
+  }
+
+  @NotNull
+  @Override
+  public CliResponse apply(@NotNull TerragruntApplyCliRequest request, @NotNull LogCallback logCallback)
+      throws InterruptedException, TimeoutException, IOException {
+    String targetArgs = getTargetArgs(request.getArgs().getTargets());
+    String varArgs = getVarArgs(request.getArgs().getVarFiles());
+
+    String command = TerragruntRunType.RUN_ALL == request.getRunType()
+        ? TerragruntCommandUtils.runAllApply(targetArgs, varArgs)
+        : TerragruntCommandUtils.apply(request.getTerraformPlanName());
+
+    log.info("Execute terragrunt apply: {}", command);
+    return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
+  }
+
+  @NotNull
+  @Override
+  public CliResponse output(@NotNull TerragruntOutputCliRequest request, @NotNull LogCallback logCallback)
+      throws InterruptedException, TimeoutException, IOException {
+    String command = TerragruntRunType.RUN_ALL == request.getRunType()
+        ? TerragruntCommandUtils.runAllOutput(request.getTerraformOutputsFile())
+        : TerragruntCommandUtils.output(request.getTerraformOutputsFile());
+    log.info("Execute terragrunt output: {}", command);
+    return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
+  }
+
+  @NotNull
+  @Override
+  public CliResponse destroy(@NotNull TerragruntDestroyCliRequest request, @NotNull LogCallback logCallback)
+      throws InterruptedException, TimeoutException, IOException {
+    String targetArgs = getTargetArgs(request.getArgs().getTargets());
+    String varArgs = getVarArgs(request.getArgs().getVarFiles());
+
+    String command = TerragruntRunType.RUN_ALL == request.getRunType()
+        ? TerragruntCommandUtils.runAllDestroy(getAutoApproveArgument(terraformVersion), targetArgs, varArgs)
+        : TerragruntCommandUtils.destroy(getAutoApproveArgument(terraformVersion), targetArgs, varArgs);
+
+    log.info("Execute terragrunt destroy: {}", command);
+    return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
   }
 
   @NotNull
@@ -93,6 +176,7 @@ public class TerragruntClientImpl implements TerragruntClient {
   public CliResponse show(@NotNull TerragruntShowCliRequest request, @NotNull LogCallback logCallback)
       throws IOException, InterruptedException, TimeoutException {
     if (request.isJson() && terraformVersion.compareTo(MIN_TF_SHOW_JSON_VERSION) < 0) {
+      log.warn("Terragrunt export json is not supported for terraform version: {}", terraformVersion);
       String message = format(
           "Command terragrunt show -json is not supported by terraform version '%s'. Minimum required version is v0.12.x.",
           terraformVersion);
@@ -103,7 +187,21 @@ public class TerragruntClientImpl implements TerragruntClient {
     String command = TerragruntRunType.RUN_ALL == request.getRunType()
         ? TerragruntCommandUtils.runAllShow(request.isJson(), request.getPlanName())
         : TerragruntCommandUtils.show(request.isJson(), request.getPlanName());
+    log.info("Execute terragrunt show: {}", command);
     return executeCliCommand(command, request, logCallback, request.getOutputStream());
+  }
+
+  @NotNull
+  @Override
+  public String terragruntWorkingDirectory() {
+    try {
+      return JsonUtils.jsonPath(terragruntInfoJson, "WorkingDir");
+    } catch (Exception e) {
+      throw new HintException("Please check your terragrunt configuration and path configuration",
+          NestedExceptionUtils.hintWithExplanationException("Or check if terragrunt/terraform is installed on delegate",
+              "Unable to detect terragrunt working directory in terragrunt info json:" + terragruntInfoJson,
+              new InvalidRequestException("Unable to detect terragrunt working directory: " + e.getMessage())));
+    }
   }
 
   private String getTargetArgs(List<String> targets) {
@@ -134,6 +232,24 @@ public class TerragruntClientImpl implements TerragruntClient {
     logCallback.saveExecutionLog(color(command, LogColor.White, LogWeight.Bold), INFO, CommandExecutionStatus.RUNNING);
     return cliHelper.executeCliCommand(command, cliRequest.getTimeoutInMillis(), cliRequest.getEnvVars(),
         cliRequest.getWorkingDirectory(), logCallback, command, outputStream,
-        logLine -> isNotEmpty(logLine) && !TF_LOG_LINE_PATTERN.matcher(logLine).find());
+        new TerraformCliErrorLogOutputStream(logCallback));
+  }
+
+  private Set<String> parseWorkspaceList(String workspaceOutput) {
+    log.info("Parse workspaces list: {}", workspaceOutput.replaceAll("\n", "\\\\n"));
+    String[] outputs = StringUtils.split(workspaceOutput, "\n");
+    Set<String> workspaces = new HashSet<>();
+    for (String output : outputs) {
+      if (output.charAt(0) == '*') {
+        output = output.substring(1);
+      }
+      output = output.trim();
+      workspaces.add(output);
+    }
+    return workspaces;
+  }
+
+  private String getAutoApproveArgument(Version version) {
+    return version.compareTo(MIN_TF_AUTO_APPROVE_VERSION) < 0 ? "-force" : "-auto-approve";
   }
 }

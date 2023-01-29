@@ -10,6 +10,8 @@ package io.harness.remote.client;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.network.Http.DEFAULT_OKHTTP_CLIENT;
 import static io.harness.network.Http.checkAndGetNonProxyIfApplicable;
+import static io.harness.network.Http.getSslContext;
+import static io.harness.network.Http.getTrustManagers;
 import static io.harness.ng.core.CorrelationContext.getCorrelationIdInterceptor;
 import static io.harness.request.RequestContextFilter.getRequestContextInterceptor;
 import static io.harness.security.JWTAuthenticationFilter.X_SOURCE_PRINCIPAL;
@@ -26,6 +28,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.manage.GlobalContextManager;
+import io.harness.network.NoopHostnameVerifier;
 import io.harness.security.PmsAuthInterceptor;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.ServiceTokenGenerator;
@@ -208,6 +211,8 @@ public abstract class AbstractHttpClientFactory {
     try {
       OkHttpClient.Builder builder =
           DEFAULT_OKHTTP_CLIENT.newBuilder()
+              .sslSocketFactory(getSslContext().getSocketFactory(), (X509TrustManager) getTrustManagers()[0])
+              .hostnameVerifier(new NoopHostnameVerifier())
               .proxy(checkAndGetNonProxyIfApplicable(baseUrl))
               .connectTimeout(serviceHttpClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
               .readTimeout(serviceHttpClientConfig.getReadTimeOutSeconds(), TimeUnit.SECONDS)

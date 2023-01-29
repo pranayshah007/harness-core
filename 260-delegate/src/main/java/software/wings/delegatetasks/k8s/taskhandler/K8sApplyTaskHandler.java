@@ -129,7 +129,7 @@ public class K8sApplyTaskHandler extends K8sTaskHandler {
     }
 
     success = k8sTaskHelperBase.applyManifests(k8sApplyHandlerConfig.getClient(), k8sApplyHandlerConfig.getResources(),
-        k8sDelegateTaskParams, k8sTaskHelper.getExecutionLogCallback(k8sApplyTaskParameters, Apply), true);
+        k8sDelegateTaskParams, k8sTaskHelper.getExecutionLogCallback(k8sApplyTaskParameters, Apply), true, null);
     if (!success) {
       return getFailureResponse();
     }

@@ -26,10 +26,10 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
+import dev.morphia.Morphia;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Morphia;
 
 @Slf4j
 public class AuditViewerPermissionMigration implements Migration {

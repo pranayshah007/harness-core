@@ -16,6 +16,7 @@ import io.harness.cdng.ecs.beans.EcsBlueGreenPrepareRollbackDataOutcome;
 import io.harness.cdng.ecs.beans.EcsBlueGreenRollbackOutcome;
 import io.harness.cdng.ecs.beans.EcsBlueGreenSwapTargetGroupsStartOutcome;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -33,7 +34,6 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -59,7 +59,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class EcsBlueGreenRollbackStep extends TaskExecutableWithRollbackAndRbac<EcsCommandResponse> {
+public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.ECS_BLUE_GREEN_ROLLBACK.getYamlType())
                                                .setStepCategory(StepCategory.STEP)

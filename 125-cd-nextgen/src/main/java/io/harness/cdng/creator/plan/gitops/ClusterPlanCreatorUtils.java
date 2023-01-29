@@ -11,7 +11,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.Arrays.asList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -89,8 +88,12 @@ public class ClusterPlanCreatorUtils {
     final String envRef = fetchEnvRef(envConfig);
     if (envConfig.isDeployToAll()) {
       return ClusterStepParameters.builder()
-          .envClusterRefs(
-              asList(EnvClusterRefs.builder().envRef(envRef).envName(envConfig.getName()).deployToAll(true).build()))
+          .envClusterRefs(List.of(EnvClusterRefs.builder()
+                                      .envRef(envRef)
+                                      .envName(envConfig.getName())
+                                      .envType(envConfig.getType() != null ? envConfig.getType().toString() : null)
+                                      .deployToAll(true)
+                                      .build()))
           .build();
     }
 
@@ -98,27 +101,31 @@ public class ClusterPlanCreatorUtils {
         "list of gitops clusterRefs must be provided when not deploying to all clusters");
 
     return ClusterStepParameters.builder()
-        .envClusterRefs(Collections.singletonList(EnvClusterRefs.builder()
-                                                      .envRef(envRef)
-                                                      .envName(envConfig.getName())
-                                                      .clusterRefs(getClusterRefs(envConfig))
-                                                      .build()))
+        .envClusterRefs(
+            Collections.singletonList(EnvClusterRefs.builder()
+                                          .envRef(envRef)
+                                          .envName(envConfig.getName())
+                                          .envType(envConfig.getType() != null ? envConfig.getType().toString() : null)
+                                          .clusterRefs(getClusterRefs(envConfig))
+                                          .build()))
         .build();
   }
 
   private ClusterStepParameters getStepParams(EnvGroupPlanCreatorConfig config) {
     checkNotNull(config, "environment group must be present");
 
-    ClusterStepParametersBuilder clusterStepParametersBuilder = ClusterStepParameters.builder()
-                                                                    .envGroupRef(config.getIdentifier())
-                                                                    .envGroupName(config.getName())
-                                                                    .deployToAllEnvs(false);
+    ClusterStepParametersBuilder clusterStepParametersBuilder =
+        ClusterStepParameters.builder()
+            .envGroupRef(config.getIdentifier())
+            .envGroupName(config.getName())
+            .deployToAllEnvs(false)
+            .environmentGroupYaml(config.getEnvironmentGroupYaml());
 
     if (config.isDeployToAll()) {
       clusterStepParametersBuilder.deployToAllEnvs(true);
     }
 
-    checkArgument(isNotEmpty(config.getEnvironmentPlanCreatorConfigs()),
+    checkArgument(isNotEmpty(config.getEnvironmentPlanCreatorConfigs()) || config.getEnvironmentGroupYaml() != null,
         "list of environments must be provided when not deploying to all clusters");
 
     // Deploy to filtered list
@@ -129,6 +136,7 @@ public class ClusterPlanCreatorUtils {
                 -> EnvClusterRefs.builder()
                        .envRef(c.getEnvironmentRef().getValue())
                        .envName(c.getName())
+                       .envType(c.getType() != null ? c.getType().toString() : null)
                        .deployToAll(c.isDeployToAll())
                        .clusterRefs(c.isDeployToAll() ? null : ClusterPlanCreatorUtils.getClusterRefs(c))
                        .build())
@@ -147,6 +155,7 @@ public class ClusterPlanCreatorUtils {
       EnvClusterRefs envClusterRefs = EnvClusterRefs.builder()
                                           .envName(envData.getEnvName())
                                           .envRef(envData.getEnvRef())
+                                          .envType(envData.getType())
                                           .clusterRefs(envData.getGitOpsClusterRefs())
                                           .deployToAll(envData.isDeployToAll())
                                           .build();
@@ -154,7 +163,9 @@ public class ClusterPlanCreatorUtils {
       envClusterRefList.add(envClusterRefs);
     }
 
-    return clusterStepParametersBuilder.envClusterRefs(envClusterRefList).build();
+    return clusterStepParametersBuilder.envClusterRefs(envClusterRefList)
+        .environmentsYaml(envConfig.getEnvironmentsYaml())
+        .build();
   }
 
   private Set<String> getClusterRefs(EnvironmentPlanCreatorConfig config) {

@@ -64,6 +64,7 @@ import io.harness.overviewdashboard.dtos.TopProjectsPanel;
 import io.harness.overviewdashboard.rbac.service.DashboardRBACService;
 import io.harness.overviewdashboard.remote.ParallelRestCallExecutor;
 import io.harness.pipeline.dashboards.PMSLandingDashboardResourceClient;
+import io.harness.pms.dashboards.ExecutionsCount;
 import io.harness.pms.dashboards.GroupBy;
 import io.harness.pms.dashboards.LandingDashboardRequestPMS;
 import io.harness.pms.dashboards.PipelinesCount;
@@ -309,6 +310,8 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
         getResponseOptional(restCallResponses, OverviewDashboardRequestType.GET_ENV_COUNT);
     Optional<RestCallResponse> pipelinesCountOptional =
         getResponseOptional(restCallResponses, OverviewDashboardRequestType.GET_PIPELINES_COUNT);
+    Optional<RestCallResponse> executionsCountOptional =
+        getResponseOptional(restCallResponses, OverviewDashboardRequestType.GET_EXECUTIONS_COUNT);
     Optional<RestCallResponse> projectsCountOptional =
         getResponseOptional(restCallResponses, OverviewDashboardRequestType.GET_PROJECTS_COUNT);
     Optional<RestCallResponse> usersCountOptional =
@@ -320,8 +323,8 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
           Optional.of(RestCallResponse.builder().response(ActiveProjectsCountDTO.builder().count(0).build()).build());
       listOfAccessibleProject = Collections.emptyList();
     }
-    List<Optional<RestCallResponse>> entitiesResponses = Arrays.asList(
-        servicesCountOptional, envCountOptional, pipelinesCountOptional, projectsCountOptional, usersCountOptional);
+    List<Optional<RestCallResponse>> entitiesResponses = Arrays.asList(servicesCountOptional, envCountOptional,
+        pipelinesCountOptional, executionsCountOptional, projectsCountOptional, usersCountOptional);
     if (isCountPresent(entitiesResponses)) {
       if (isCallFailed(entitiesResponses)) {
         return ExecutionResponse.<CountOverview>builder()
@@ -332,6 +335,7 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
         ServicesCount servicesCount = (ServicesCount) servicesCountOptional.get().getResponse();
         EnvCount envCount = (EnvCount) envCountOptional.get().getResponse();
         PipelinesCount pipelinesCount = (PipelinesCount) pipelinesCountOptional.get().getResponse();
+        ExecutionsCount executionsCount = (ExecutionsCount) executionsCountOptional.get().getResponse();
         ActiveProjectsCountDTO projectsNewCount = (ActiveProjectsCountDTO) projectsCountOptional.get().getResponse();
         UsersCountDTO usersCount = (UsersCountDTO) usersCountOptional.get().getResponse();
         CountOverviewBuilder countOverviewBuilder =
@@ -342,6 +346,7 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
                 .projectsCountDetail(getProjectsCount(listOfAccessibleProject.size(), projectsNewCount));
         if (featureFlagService.isEnabled(accountIdentifier, FeatureName.LANDING_OVERVIEW_PAGE_V2)) {
           countOverviewBuilder.usersCountDetail(getUsersCount(usersCount));
+          countOverviewBuilder.executionsCountDetail(getExecutionsCount(executionsCount));
         }
 
         return ExecutionResponse.<CountOverview>builder()
@@ -523,6 +528,14 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
         .build();
   }
 
+  private static CountChangeDetails getExecutionsCount(ExecutionsCount executionsCount) {
+    return CountChangeDetails.builder()
+        .countChangeAndCountChangeRateInfo(
+            CountChangeAndCountChangeRateInfo.builder().countChange(executionsCount.getNewCount()).build())
+        .count(executionsCount.getTotalCount())
+        .build();
+  }
+
   private CountChangeDetails getUsersCount(UsersCountDTO usersCount) {
     return CountChangeDetails.builder()
         .countChangeAndCountChangeRateInfo(
@@ -651,10 +664,10 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
                                     accountIdentifier, startInterval, endInterval, landingDashboardRequestPMS))
                                 .requestType(OverviewDashboardRequestType.GET_PIPELINES_COUNT)
                                 .build());
-    restCallRequestList.add(RestCallRequest.<PipelinesCount>builder()
-                                .request(pmsLandingDashboardResourceClient.getPipelinesCount(
+    restCallRequestList.add(RestCallRequest.<ExecutionsCount>builder()
+                                .request(pmsLandingDashboardResourceClient.getExecutionsCount(
                                     accountIdentifier, startInterval, endInterval, landingDashboardRequestPMS))
-                                .requestType(OverviewDashboardRequestType.GET_PIPELINES_COUNT)
+                                .requestType(OverviewDashboardRequestType.GET_EXECUTIONS_COUNT)
                                 .build());
     restCallRequestList.add(
         RestCallRequest.<ActiveProjectsCountDTO>builder()

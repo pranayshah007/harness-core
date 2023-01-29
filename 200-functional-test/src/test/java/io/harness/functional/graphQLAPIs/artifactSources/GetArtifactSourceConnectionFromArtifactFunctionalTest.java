@@ -23,8 +23,8 @@ import io.harness.testframework.restutils.ArtifactRestUtils;
 import io.harness.testframework.restutils.GraphQLRestUtils;
 
 import software.wings.beans.Service;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.ArtifactStreamService;
 
 import com.google.inject.Inject;

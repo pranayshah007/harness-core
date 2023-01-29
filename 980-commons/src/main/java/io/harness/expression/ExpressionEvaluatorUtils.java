@@ -14,12 +14,14 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.algorithm.IdentifierName;
 import io.harness.exception.CriticalExpressionEvaluationException;
+import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.expression.common.ExpressionConstants;
 
 import com.google.common.collect.ImmutableSet;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -274,7 +276,15 @@ public class ExpressionEvaluatorUtils {
 
     if (o instanceof Map) {
       Map m = (Map) o;
-      m.replaceAll((k, v) -> updateExpressionsInternal(v, functor, depth - 1, cache));
+      m.replaceAll((k, v) -> {
+        try {
+          return updateExpressionsInternal(v, functor, depth - 1, cache);
+        } catch (UnresolvedExpressionsException ex) {
+          // Throwing the error again with field name added in the message
+          // Now the error message would like this: "Some expressions couldn't be evaluated: 'key': expr2, expr2"
+          throw new UnresolvedExpressionsException((String) k, new ArrayList<>(ex.fetchExpressions()));
+        }
+      });
       return o;
     }
 

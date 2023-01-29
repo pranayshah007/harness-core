@@ -7,10 +7,11 @@
 
 package io.harness.migrations.all;
 
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_TOKEN_CREATE_EVENT;
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_TOKEN_REVOKE_EVENT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.events.DelegateNgTokenCreateEvent;
-import io.harness.delegate.events.DelegateNgTokenRevokeEvent;
 import io.harness.migrations.Migration;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.OutboxEvent.OutboxEventKeys;
@@ -38,8 +39,8 @@ public class DeleteFailedNgDelegateTokenAuditsMigration implements Migration {
   private static final long MARCH_1ST_2022_IN_MS = 1646092800000L;
   private static final int BATCH_SIZE = 500;
 
-  private static final List<String> EventTypesToDelete = Arrays.asList(
-      DelegateNgTokenCreateEvent.DELEGATE_TOKEN_CREATE_EVENT, DelegateNgTokenRevokeEvent.DELEGATE_TOKEN_REVOKE_EVENT);
+  private static final List<String> EventTypesToDelete =
+      Arrays.asList(DELEGATE_TOKEN_CREATE_EVENT, DELEGATE_TOKEN_REVOKE_EVENT);
 
   @Override
   public void migrate() {

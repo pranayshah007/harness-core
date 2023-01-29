@@ -22,6 +22,7 @@ import io.harness.encryption.Scope;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
@@ -54,6 +55,8 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
 
   @Mock TemplateGitXService templateGitXService;
 
+  @Mock GitAwareEntityHelper gitAwareEntityHelper;
+
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -65,8 +68,8 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    templateServiceHelper =
-        new NGTemplateServiceHelper(filterService, templateRepository, gitSyncSdkService, templateGitXService);
+    templateServiceHelper = new NGTemplateServiceHelper(
+        filterService, templateRepository, gitSyncSdkService, templateGitXService, gitAwareEntityHelper);
   }
 
   @Test

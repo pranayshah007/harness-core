@@ -13,10 +13,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HeaderConfig;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
 import io.harness.ngtriggers.beans.dto.WebhookEventProcessingDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
+import io.harness.ngtriggers.beans.source.GitMoveOperationType;
+import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.ngtriggers.validations.ValidationResult;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 
@@ -76,4 +79,8 @@ public interface NGTriggerService {
 
   void checkAuthorization(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, List<HeaderConfig> headerConfigs);
+  TriggerYamlDiffDTO getTriggerYamlDiff(TriggerDetails triggerDetails);
+
+  TriggerUpdateCount updateBranchName(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, GitMoveOperationType operationType, String pipelineBranchName);
 }

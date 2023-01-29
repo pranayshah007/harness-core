@@ -17,6 +17,7 @@ import static io.harness.filestore.FileStoreTestConstants.FILE_UUID;
 import static io.harness.filestore.FileStoreTestConstants.FOLDER_IDENTIFIER;
 import static io.harness.filestore.FileStoreTestConstants.FOLDER_NAME;
 import static io.harness.filestore.FileStoreTestConstants.IDENTIFIER;
+import static io.harness.filestore.FileStoreTestConstants.INVALID_ACCOUNT_IDENTIFIER;
 import static io.harness.filestore.FileStoreTestConstants.ORG_IDENTIFIER;
 import static io.harness.filestore.FileStoreTestConstants.PARENT_IDENTIFIER;
 import static io.harness.filestore.FileStoreTestConstants.PROJECT_IDENTIFIER;
@@ -51,6 +52,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.EntityType;
+import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -74,12 +76,17 @@ import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.entities.NGFile;
 import io.harness.filestore.service.impl.FileReferenceServiceImpl;
 import io.harness.filestore.service.impl.FileStoreServiceImpl;
+import io.harness.filestore.service.impl.FileValidationServiceImpl;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.dto.EmbeddedUserDetailsDTO;
+import io.harness.ng.core.entities.Organization;
+import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ng.core.filestore.NGFileType;
 import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.filestore.dto.FileFilterDTO;
+import io.harness.ng.core.services.OrganizationService;
+import io.harness.ng.core.services.ProjectService;
 import io.harness.repositories.spring.FileStoreRepository;
 import io.harness.rule.Owner;
 
@@ -103,6 +110,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -119,6 +127,11 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Mock private FileReferenceServiceImpl fileReferenceService;
   @Mock private FileFailsafeService fileFailsafeService;
   @Mock private FileStructureService fileStructureService;
+  @Mock private AccountService accountService;
+  @Mock private OrganizationService organizationService;
+  @Mock private ProjectService projectService;
+
+  @Spy @InjectMocks private FileValidationService fileValidationService = new FileValidationServiceImpl();
 
   @InjectMocks private FileStoreServiceImpl fileStoreService;
 
@@ -310,7 +323,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldSaveNgFile() {
     // Given
-    givenThatExistsParentFolderButNotFile("parent-identifier", "file-identifier");
+    givenThatExistsParentFolderButNotFile(PARENT_IDENTIFIER, FILE_IDENTIFIER);
     final FileDTO fileDto = aFileDto();
     fileDto.setDraft(false);
 
@@ -336,11 +349,86 @@ public class FileStoreServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void shouldSaveNgFileOnOrgLevel() {
+    // Given
+    givenThatExistsParentFolderButNotFile(PARENT_IDENTIFIER, FILE_IDENTIFIER);
+    final FileDTO fileDto = aFileDto();
+    fileDto.setOrgIdentifier(ORG_IDENTIFIER);
+    fileDto.setDraft(false);
+    when(organizationService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER))
+        .thenReturn(Optional.of(
+            Organization.builder().accountIdentifier(ACCOUNT_IDENTIFIER).identifier(ORG_IDENTIFIER).build()));
+
+    // When
+    fileStoreService.create(fileDto, getStreamWithDummyContent());
+
+    // Then
+    NGFile expected = builder()
+                          .identifier(fileDto.getIdentifier())
+                          .accountIdentifier(fileDto.getAccountIdentifier())
+                          .orgIdentifier(ORG_IDENTIFIER)
+                          .description(fileDto.getDescription())
+                          .name(fileDto.getName())
+                          .type(fileDto.getType())
+                          .checksumType(ChecksumType.MD5)
+                          .draft(false)
+                          .tags(Collections.emptyList())
+                          .size(0L)
+                          .parentIdentifier(fileDto.getParentIdentifier())
+                          .path("/Root/folder/file-name")
+                          .build();
+
+    verify(fileFailsafeService).saveAndPublish(expected);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void shouldSaveNgFileOnProjectLevel() {
+    // Given
+    givenThatExistsParentFolderButNotFile(PARENT_IDENTIFIER, FILE_IDENTIFIER);
+    final FileDTO fileDto = aFileDto();
+    fileDto.setOrgIdentifier(ORG_IDENTIFIER);
+    fileDto.setProjectIdentifier(PROJECT_IDENTIFIER);
+    fileDto.setDraft(false);
+    when(projectService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .thenReturn(Optional.of(Project.builder()
+                                    .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                    .identifier(ORG_IDENTIFIER)
+                                    .identifier(PROJECT_IDENTIFIER)
+                                    .build()));
+
+    // When
+    fileStoreService.create(fileDto, getStreamWithDummyContent());
+
+    // Then
+    NGFile expected = builder()
+                          .identifier(fileDto.getIdentifier())
+                          .accountIdentifier(fileDto.getAccountIdentifier())
+                          .orgIdentifier(ORG_IDENTIFIER)
+                          .projectIdentifier(PROJECT_IDENTIFIER)
+                          .description(fileDto.getDescription())
+                          .name(fileDto.getName())
+                          .type(fileDto.getType())
+                          .checksumType(ChecksumType.MD5)
+                          .draft(false)
+                          .tags(Collections.emptyList())
+                          .size(0L)
+                          .parentIdentifier(fileDto.getParentIdentifier())
+                          .path("/Root/folder/file-name")
+                          .build();
+
+    verify(fileFailsafeService).saveAndPublish(expected);
+  }
+
+  @Test
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
   public void shouldSaveFileUsingFileService() {
     // Given
-    givenThatExistsParentFolderButNotFile("parent-identifier", "file-identifier");
+    givenThatExistsParentFolderButNotFile(PARENT_IDENTIFIER, FILE_IDENTIFIER);
     final FileDTO fileDto = aFileDto();
 
     // When
@@ -375,7 +463,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldNotInvokeSaveFileOnFileServiceForDraftFile() {
     // Given
-    givenThatExistsParentFolderButNotFile("parent-identifier", "file-identifier");
+    givenThatExistsParentFolderButNotFile(PARENT_IDENTIFIER, FILE_IDENTIFIER);
     final FileDTO fileDto = aFileDto();
     fileDto.setDraft(true);
 
@@ -391,7 +479,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldSaveDraftNgFile() {
     // Given
-    givenThatExistsParentFolderButNotFile("parent-identifier", "file-identifier");
+    givenThatExistsParentFolderButNotFile(PARENT_IDENTIFIER, FILE_IDENTIFIER);
     final FileDTO fileDto = aFileDto();
     fileDto.setDraft(true);
 
@@ -457,7 +545,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     assertThatThrownBy(() -> fileStoreService.create(fileDTO, getStreamWithDummyContent()))
         .isInstanceOf(DuplicateFieldException.class)
         .hasMessageContaining(
-            "Try another name, file with name [file-name] already exists in the parent folder [parent-identifier].",
+            "Try another name, file with name [file-name] already exists in the parent folder [parentIdentifier].",
             fileDTO.getIdentifier());
   }
 
@@ -684,6 +772,77 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .contains(FileNodeDTO.builder().name("fileName").identifier("fileIdentifier").build(),
             FolderNodeDTO.builder().name("folderName1").identifier("folderIdentifier1").build(),
             FolderNodeDTO.builder().name("folderName2").identifier("folderIdentifier2").build());
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testListFolderNodesOnPath() {
+    String path = "/folder1/fileName";
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndPath(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, path))
+        .thenReturn(Optional.of(getNgFile()));
+    when(fileStoreRepository.findAllAndSort(
+             createCriteriaByScopeAndParentIdentifier(
+                 Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER), ROOT_FOLDER_IDENTIFIER),
+             createSortByLastModifiedAtDesc()))
+        .thenReturn(getRootNgFiles());
+    when(fileStoreRepository.findAllAndSort(
+             createCriteriaByScopeAndParentIdentifier(
+                 Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER), "folder1"),
+             createSortByLastModifiedAtDesc()))
+        .thenReturn(getFolder1NgFiles());
+
+    FolderNodeDTO populatedFolderNodeDTO =
+        fileStoreService.listFileStoreNodesOnPath(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, path, null);
+
+    assertThat(populatedFolderNodeDTO.getIdentifier()).isEqualTo(ROOT_FOLDER_IDENTIFIER);
+    assertThat(populatedFolderNodeDTO.getChildren().size()).isEqualTo(1);
+    List<FileStoreNodeDTO> children = populatedFolderNodeDTO.getChildren();
+    FolderNodeDTO folder1 = (FolderNodeDTO) children.get(0);
+    assertThat(folder1.getIdentifier()).isEqualTo("folder1");
+    assertThat(folder1.getPath()).isEqualTo("/folder1");
+
+    List<FileStoreNodeDTO> folder1Children = folder1.getChildren();
+    assertThat(folder1Children.size()).isEqualTo(2);
+
+    FolderNodeDTO folder2 = (FolderNodeDTO) folder1Children.get(0);
+    assertThat(folder2.getIdentifier()).isEqualTo("folder2");
+    assertThat(folder2.getPath()).isEqualTo("/folder1/folder2");
+
+    FileNodeDTO file = (FileNodeDTO) folder1Children.get(1);
+    assertThat(file.getIdentifier()).isEqualTo("fileIdentifier");
+    assertThat(file.getName()).isEqualTo("fileName");
+    assertThat(file.getPath()).isEqualTo("/folder1/fileName");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testListFolderNodesOnPathWithNotValidPath() {
+    String path = "folder1/fileName";
+
+    assertThatThrownBy(()
+                           -> fileStoreService.listFileStoreNodesOnPath(
+                               ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, path, null))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("Invalid file path, path: folder1/fileName");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testListFolderNodesOnPathWithNotFoundFile() {
+    String path = "/folder1/fileName";
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndPath(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, path))
+        .thenThrow(new InvalidArgumentsException(format("Not found file, path: %s", path)));
+
+    assertThatThrownBy(()
+                           -> fileStoreService.listFileStoreNodesOnPath(
+                               ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, path, null))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage(format("Not found file, path: %s", path));
   }
 
   @Test
@@ -976,7 +1135,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldNotSaveNgFileWithIdentifierRoot() {
     // Given
-    givenThatExistsParentFolderButNotFile("parent-identifier", "file-identifier");
+    givenThatExistsParentFolderButNotFile(PARENT_IDENTIFIER, FILE_IDENTIFIER);
     final FileDTO fileDto = aFileDto();
     fileDto.setIdentifier(ROOT_FOLDER_IDENTIFIER);
     fileDto.setDraft(false);
@@ -1090,14 +1249,63 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class);
   }
 
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testCreateFileWithRootParentProjectNotExist() {
+    FileDTO fileDTO = aFileDto();
+    fileDTO.setOrgIdentifier(ORG_IDENTIFIER);
+    fileDTO.setProjectIdentifier(PROJECT_IDENTIFIER);
+    fileDTO.setParentIdentifier(ROOT_FOLDER_IDENTIFIER);
+    when(projectService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER)).thenReturn(Optional.empty());
+    givenThatExistsParentFolderButNotFile(PARENT_IDENTIFIER, FILE_IDENTIFIER);
+
+    assertThatThrownBy(() -> fileStoreService.create(fileDTO, null))
+        .hasMessage(
+            "Project with identifier [projectIdentifier] does not exist, orgIdentifier: orgIdentifier, accountIdentifier: accountIdentifier")
+        .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testCreateFileWithRootParentOrgNotExist() {
+    FileDTO fileDTO = aFileDto();
+    fileDTO.setOrgIdentifier(ORG_IDENTIFIER);
+    fileDTO.setParentIdentifier(ROOT_FOLDER_IDENTIFIER);
+    when(organizationService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER)).thenReturn(Optional.empty());
+    givenThatExistsParentFolderButNotFile(PARENT_IDENTIFIER, FILE_IDENTIFIER);
+
+    assertThatThrownBy(() -> fileStoreService.create(fileDTO, null))
+        .hasMessage("Org with identifier [orgIdentifier] does not exist, accountIdentifier: accountIdentifier")
+        .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testCreateFileWithRootParentAccountNotExist() {
+    FileDTO fileDTO = aFileDto();
+    fileDTO.setParentIdentifier(ROOT_FOLDER_IDENTIFIER);
+    fileDTO.setAccountIdentifier(INVALID_ACCOUNT_IDENTIFIER);
+    when(accountService.getAccount(INVALID_ACCOUNT_IDENTIFIER))
+        .thenThrow(new InvalidRequestException(
+            format("Account with identifier %s does not exist", INVALID_ACCOUNT_IDENTIFIER)));
+    givenThatExistsParentFolderButNotFile(PARENT_IDENTIFIER, FILE_IDENTIFIER);
+
+    assertThatThrownBy(() -> fileStoreService.create(fileDTO, null))
+        .hasMessage(format("Account with identifier %s does not exist", INVALID_ACCOUNT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
   private static FileDTO aFileDto() {
     return FileDTO.builder()
         .identifier(FILE_IDENTIFIER)
-        .accountIdentifier("account-ident")
+        .accountIdentifier(ACCOUNT_IDENTIFIER)
         .description("some description")
         .name("file-name")
         .type(NGFileType.FILE)
-        .parentIdentifier("parent-identifier")
+        .parentIdentifier(PARENT_IDENTIFIER)
         .path("/Root/file-name")
         .build();
   }
@@ -1105,7 +1313,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   private static FileDTO aFolderDto() {
     return FileDTO.builder()
         .identifier(FOLDER_IDENTIFIER)
-        .accountIdentifier("account-ident")
+        .accountIdentifier(ACCOUNT_IDENTIFIER)
         .description("some description")
         .name("folder-name")
         .type(NGFileType.FOLDER)
@@ -1200,6 +1408,47 @@ public class FileStoreServiceImplTest extends CategoryTest {
             .createdBy(EmbeddedUser.builder().name("testuser2").email("testuser2@test.com").build())
             .path("/asd/dummy")
             .build());
+  }
+
+  private List<NGFile> getRootNgFiles() {
+    return Arrays.asList(builder()
+                             .type(NGFileType.FOLDER)
+                             .name("folder1")
+                             .identifier("folder1")
+                             .parentIdentifier(ROOT_FOLDER_IDENTIFIER)
+                             .createdBy(EmbeddedUser.builder().name("testuser1").email("testuser1@test.com").build())
+                             .path("/folder1")
+                             .build());
+  }
+
+  private List<NGFile> getFolder1NgFiles() {
+    return Arrays.asList(builder()
+                             .type(NGFileType.FOLDER)
+                             .name("folder2")
+                             .identifier("folder2")
+                             .parentIdentifier("folder1")
+                             .createdBy(EmbeddedUser.builder().name("testuser1").email("testuser1@test.com").build())
+                             .path("/folder1/folder2")
+                             .build(),
+        builder()
+            .type(NGFileType.FILE)
+            .name("fileName")
+            .identifier("fileIdentifier")
+            .parentIdentifier("folder1")
+            .createdBy(EmbeddedUser.builder().name("testuser2").email("testuser2@test.com").build())
+            .path("/folder1/fileName")
+            .build());
+  }
+
+  private NGFile getNgFile() {
+    return builder()
+        .type(NGFileType.FILE)
+        .name("fileName")
+        .identifier("fileIdentifier")
+        .parentIdentifier("folder1")
+        .createdBy(EmbeddedUser.builder().name("testuser2").email("testuser2@test.com").build())
+        .path("/folder1/fileName")
+        .build();
   }
 
   private void givenThatFileNotExistInDB() {

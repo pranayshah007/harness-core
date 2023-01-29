@@ -26,4 +26,5 @@ public interface GitProcessingRequestService {
       String commitId, String fileId, FileProcessingStatus status, String errorMsg, String accountId);
 
   GitProcessRequest get(String commitId, String accountId, String repo, String branch);
+  boolean deleteByAccount(String accountId);
 }

@@ -7,13 +7,11 @@
 
 package io.harness.cdng.provision.shellscript;
 
-import static io.harness.beans.FeatureName.SHELL_SCRIPT_PROVISION_NG;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 
@@ -39,6 +37,7 @@ import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -71,17 +70,6 @@ public class ShellScriptProvisionStepTest extends CategoryTest {
   @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
-  public void testValidateResources() {
-    doReturn(false).when(cdFeatureFlagHelper).isEnabled(any(), eq(SHELL_SCRIPT_PROVISION_NG));
-    assertThatThrownBy(
-        () -> shellScriptProvisionStep.validateResources(getAmbiance(), StepElementParameters.builder().build()))
-        .hasMessageContaining(
-            "Shell Script Provisioner is not enabled for this account. Please contact harness customer care.");
-  }
-
-  @Test
-  @Owner(developers = TMACARI)
-  @Category(UnitTests.class)
   public void testObtainTaskAfterRbac() {
     String script = "test";
     Map<String, Object> environmentVariables = new HashMap<>();
@@ -93,8 +81,8 @@ public class ShellScriptProvisionStepTest extends CategoryTest {
             .spec(ShellScriptProvisionStepParameters.infoBuilder().environmentVariables(environmentVariables).build())
             .build();
     doReturn(script).when(sshCommandStepHelper).getShellScript(any(), any());
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenAnswer(invocation -> TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
@@ -102,8 +90,8 @@ public class ShellScriptProvisionStepTest extends CategoryTest {
         getAmbiance(), stepElementParameters, StepInputPackage.builder().build());
 
     assertThat(taskRequest).isNotNull();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
     TaskData taskData = taskDataArgumentCaptor.getValue();
     ShellScriptProvisionTaskNGRequest taskNGRequest = (ShellScriptProvisionTaskNGRequest) taskData.getParameters()[0];
     assertThat(taskNGRequest.getScriptBody()).isEqualTo(script);

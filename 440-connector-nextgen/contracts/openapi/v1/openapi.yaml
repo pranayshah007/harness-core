@@ -1,20 +1,23 @@
 openapi: 3.0.3
 info:
   title: Harness NextGen Software Delivery Platform API Reference
-  version: '1.0'
-  description: This is the Open Api Spec 3 for the NextGen Manager. This is under active development. Beware of the breaking change with respect to the generated code stub
+  version: '1'
+  description: This is the Open Api Spec 3 for Connectors. This is under active development. Beware of the breaking change with respect to the generated code stub
   contact:
     email: contact@harness.io
 servers:
-  - url: 'http://api.harness.io'
-    description: Harness host url
+  - url: 'https://api.harness.io'
+    description: Harness host URL.
 tags:
   - name: Account Connector
-    description: Everything about account scoped connector
+    description: This contains APIs for Account-scoped Connectors.
+    x-displayName: Account Connectors
   - name: Org Connector
-    description: Everything about org scoped connector
+    description: This contains APIs for Organization-scoped Connectors.
+    x-displayName: Organization Connectors
   - name: Project Connector
-    description: Everything about project scoped connector
+    description: This contains APIs for Project-scoped Connectors.
+    x-displayName: Project Connectors
 paths:
   /v1/connectors:
     post:
@@ -52,6 +55,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
   '/v1/connectors/{connector}':
     get:
       summary: Retrieve a connector
@@ -60,42 +65,48 @@ paths:
         '200':
           $ref: '#/components/responses/ConnectorResponse'
       description: |
-        Retrieves the information of the connector with the matching connector slug.
+        Retrieves the information of the connector with the matching connector identifier.
       tags:
         - Account Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     put:
       summary: Update a connector
       operationId: update-account-scoped-connector
       responses:
         '200':
           $ref: '#/components/responses/ConnectorResponse'
-      description: Updates the information of the secret with the matching secret slug.
+      description: Updates the information of the secret with the matching secret identifier.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
         $ref: '#/components/requestBodies/ConnectorRequest'
       tags:
         - Account Connector
+      security:
+        - x-api-key: []
     parameters:
       - schema:
           type: string
         name: connector
         in: path
         required: true
-        description: Connector slug
+        description: Connector identifier
     delete:
       summary: Delete a connector
       operationId: delete-account-scoped-connector
       responses:
         '200':
           description: OK
-      description: Deletes the information of the connector with the matching connector slug.
+      description: Deletes the information of the connector with the matching connector identifier.
       tags:
         - Account Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
   '/v1/connectors/{connector}/test-connection':
     get:
       summary: Test a connector
@@ -104,18 +115,20 @@ paths:
         '200':
           $ref: '#/components/responses/ConnectorTestConnectionResponse'
       description: |
-        Tests connection of the connector with the matching connector slug.
+        Tests connection of the connector with the matching connector identifier.
       tags:
         - Account Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     parameters:
       - schema:
           type: string
         name: connector
         in: path
         required: true
-        description: Connector slug
+        description: Connector identifier
   '/v1/orgs/{org}/connectors':
     post:
       summary: Create a Connector
@@ -154,6 +167,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
   '/v1/orgs/{org}/connectors/{connector}':
     get:
       summary: Retrieve a connector
@@ -162,35 +177,41 @@ paths:
         '200':
           $ref: '#/components/responses/ConnectorResponse'
       description: |
-        Retrieves the information of the connector with the matching connector slug.
+        Retrieves the information of the connector with the matching connector identifier.
       tags:
         - Org Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     put:
       summary: Update a connector
       operationId: update-org-scoped-connector
       responses:
         '200':
           $ref: '#/components/responses/ConnectorResponse'
-      description: Updates the information of the secret with the matching secret slug.
+      description: Updates the information of the secret with the matching secret identifier.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
         $ref: '#/components/requestBodies/ConnectorRequest'
       tags:
         - Org Connector
+      security:
+        - x-api-key: []
     delete:
       summary: Delete a connector
       operationId: delete-org-scoped-connector
       responses:
         '200':
           description: OK
-      description: Deletes the information of the connector with the matching connector slug.
+      description: Deletes the information of the connector with the matching connector identifier.
       tags:
         - Org Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - schema:
@@ -198,7 +219,7 @@ paths:
         name: connector
         in: path
         required: true
-        description: Connector slug
+        description: Connector identifier
   '/v1/orgs/{org}/connectors/{connector}/test-connection':
     get:
       summary: Test a connector
@@ -207,11 +228,13 @@ paths:
         '200':
           $ref: '#/components/responses/ConnectorTestConnectionResponse'
       description: |
-        Tests connection of the connector with the matching connector slug.
+        Tests connection of the connector with the matching connector identifier.
       tags:
         - Org Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - schema:
@@ -219,7 +242,7 @@ paths:
         name: connector
         in: path
         required: true
-        description: Connector slug
+        description: Connector identifier
   '/v1/orgs/{org}/projects/{project}/connectors':
     post:
       summary: Create a Connector
@@ -259,6 +282,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
   '/v1/orgs/{org}/projects/{project}/connectors/{connector}':
     get:
       summary: Retrieve a connector
@@ -267,35 +292,41 @@ paths:
         '200':
           $ref: '#/components/responses/ConnectorResponse'
       description: |
-        Retrieves the information of the connector with the matching connector slug.
+        Retrieves the information of the connector with the matching connector identifier.
       tags:
         - Project Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     put:
       summary: Update a connector
       operationId: update-project-scoped-connector
       responses:
         '200':
           $ref: '#/components/responses/ConnectorResponse'
-      description: Updates the information of the secret with the matching secret slug.
+      description: Updates the information of the secret with the matching secret identifier.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
         $ref: '#/components/requestBodies/ConnectorRequest'
       tags:
         - Project Connector
+      security:
+        - x-api-key: []
     delete:
       summary: Delete a connector
       operationId: delete-project-scoped-connector
       responses:
         '200':
           description: OK
-      description: Deletes the information of the connector with the matching connector slug.
+      description: Deletes the information of the connector with the matching connector identifier.
       tags:
         - Project Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ProjectPathParam'
@@ -304,7 +335,7 @@ paths:
         name: connector
         in: path
         required: true
-        description: Connector slug
+        description: Connector identifier
   '/v1/orgs/{org}/projects/{project}/connectors/{connector}/test-connection':
     get:
       summary: Test a connector
@@ -313,11 +344,13 @@ paths:
         '200':
           $ref: '#/components/responses/ConnectorTestConnectionResponse'
       description: |
-        Tests connection of the connector with the matching connector slug.
+        Tests connection of the connector with the matching connector identifier.
       tags:
         - Project Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ProjectPathParam'
@@ -326,7 +359,7 @@ paths:
         name: connector
         in: path
         required: true
-        description: Connector slug
+        description: Connector identifier
 components:
   schemas:
     ConnectorTestConnectionErrorDetail:
@@ -436,22 +469,22 @@ components:
           type: string
           description: Connector name
           pattern: '^[0-9a-zA-Z-_ ]{0,63}$'
-        slug:
+        identifier:
           type: string
           minLength: 1
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
-          description: Connector slug
+          description: Connector identifier
           maxLength: 64
         description:
           type: string
           description: Connector description
         org:
           type: string
-          description: Organization slug for connector
+          description: Organization identifier for connector
           pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
         project:
           type: string
-          description: Project slug for connector
+          description: Project identifier for connector
           pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
         tags:
           type: object
@@ -462,7 +495,7 @@ components:
           $ref: '#/components/schemas/ConnectorSpec'
       required:
         - name
-        - slug
+        - identifier
         - spec
     ConnectorSpec:
       title: ConnectorSpec
@@ -1427,7 +1460,7 @@ components:
               value:
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   org: default
                   project: example_project
                   tags:
@@ -1450,7 +1483,7 @@ components:
               value: |
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   org: default
                   project: example_project
                   tags:
@@ -1478,7 +1511,7 @@ components:
               value:
                 - connector:
                     name: example_connector
-                    slug: example_connector
+                    identifier: example_connector
                     org: default
                     project: example_project
                     tags:
@@ -1501,7 +1534,7 @@ components:
               value: |
                 - connector:
                     name: example_connector
-                    slug: example_connector
+                    identifier: example_connector
                     org: default
                     project: example_project
                     tags:
@@ -1535,7 +1568,7 @@ components:
               value:
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1553,7 +1586,7 @@ components:
               value:
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1572,7 +1605,7 @@ components:
               value:
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1589,7 +1622,7 @@ components:
               value:
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1606,7 +1639,7 @@ components:
               value:
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1623,7 +1656,7 @@ components:
               value:
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1640,7 +1673,7 @@ components:
               value:
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1655,7 +1688,7 @@ components:
               value:
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1672,7 +1705,7 @@ components:
               value:
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1691,7 +1724,7 @@ components:
               value:
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1710,7 +1743,7 @@ components:
               value:
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1726,7 +1759,7 @@ components:
               value:
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1744,7 +1777,7 @@ components:
               value:
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1764,7 +1797,7 @@ components:
               value: |
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1782,7 +1815,7 @@ components:
               value: |
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1801,7 +1834,7 @@ components:
               value: |
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1818,7 +1851,7 @@ components:
               value: |
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1835,7 +1868,7 @@ components:
               value: |
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1852,7 +1885,7 @@ components:
               value: |
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1869,7 +1902,7 @@ components:
               value: |
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1884,7 +1917,7 @@ components:
               value: |
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1901,7 +1934,7 @@ components:
               value: |
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1920,7 +1953,7 @@ components:
               value: |
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1939,7 +1972,7 @@ components:
               value: |
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1955,7 +1988,7 @@ components:
               value: |
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -1973,7 +2006,7 @@ components:
               value: |
                 connector:
                   name: example_connector
-                  slug: example_connector
+                  identifier: example_connector
                   description: example_connector
                   org: default
                   project: example_project
@@ -2016,18 +2049,18 @@ components:
       required: false
       schema:
         type: string
-      description: 'Slug field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+      description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
     OrgPathParam:
       name: org
       in: path
       required: true
       schema:
         type: string
-      description: Slug field of the organization the resource is scoped to
+      description: Identifier field of the organization the resource is scoped to
     ProjectPathParam:
       name: project
       in: path
       required: true
       schema:
         type: string
-      description: Slug field of the project the resource is scoped to
+      description: Identifier field of the project the resource is scoped to

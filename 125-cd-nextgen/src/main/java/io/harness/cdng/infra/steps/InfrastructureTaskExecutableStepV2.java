@@ -30,7 +30,6 @@ import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -65,7 +64,9 @@ import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
@@ -100,6 +101,7 @@ import io.harness.utils.YamlPipelineUtils;
 
 import com.google.inject.Inject;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -115,6 +117,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTaskExecutableStep
     implements AsyncExecutableWithRbac<InfrastructureTaskExecutableStepV2Params> {
+  @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.INFRASTRUCTURE_TASKSTEP_V2.getName())
                                                .setStepCategory(StepCategory.STEP)
@@ -127,9 +130,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private StageExecutionHelper stageExecutionHelper;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
-  @Inject private InfrastructureMapper infrastructureMapper;
   @Inject private InfrastructureValidator infrastructureValidator;
-
   @Inject private CDExpressionResolver resolver;
 
   @Override
@@ -167,7 +168,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
                   .stream()
                   .map(TaskSelectorYaml::getDelegateSelectors)
                   .collect(Collectors.toSet()));
-      String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+      String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
       return AsyncExecutableResponse.newBuilder()
           .addCallbackIds(taskId)
           .addAllLogKeys(StepUtils.generateLogKeys(ambiance, List.of(LOG_SUFFIX)))
@@ -277,9 +278,13 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
       log.warn("no principal found while executing the infrastructure step. skipping resource validation");
       return;
     }
-    final Set<EntityDetailProtoDTO> entityDetails =
+
+    Set<EntityDetailProtoDTO> entityDetailsProto =
         entityReferenceExtractorUtils.extractReferredEntities(ambiance, infraSpec);
-    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
+    List<EntityDetail> entityDetails =
+        entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(entityDetailsProto));
+
+    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
   }
 
   public void setInfraIdentifierAndName(Infrastructure infraSpec, InfrastructureConfig infrastructureConfig) {
@@ -309,8 +314,9 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     infrastructureValidator.validate(spec);
 
-    final InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(spec, environmentOutcome,
-        serviceOutcome, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    final InfrastructureOutcome infrastructureOutcome =
+        infrastructureOutcomeProvider.getOutcome(spec, environmentOutcome, serviceOutcome,
+            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     // save spec sweeping output for further use within the step
     executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,
@@ -489,7 +495,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     }
     Map<String, Object> inputMap = new HashMap<>();
     inputMap.put(YamlTypes.INFRASTRUCTURE_DEF, inputs);
-    return MergeHelper.mergeInputSetFormatYamlToOriginYaml(originalYaml, YamlPipelineUtils.writeYamlString(inputMap));
+    return MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
+        originalYaml, YamlPipelineUtils.writeYamlString(inputMap), true);
   }
 
   @Override

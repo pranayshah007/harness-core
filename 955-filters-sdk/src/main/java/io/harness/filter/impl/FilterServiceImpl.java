@@ -15,6 +15,7 @@ import static io.harness.filter.dto.FilterVisibility.ONLY_CREATOR;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.encryption.ScopeHelper;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
@@ -35,6 +36,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
+import javax.ws.rs.NotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -151,8 +153,23 @@ public class FilterServiceImpl implements FilterService {
     return false;
   }
 
+  @Override
+  public void deleteByScope(Scope scope) {
+    Criteria criteria =
+        createScopeCriteria(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
+    filterRepository.deleteAll(criteria);
+  }
+
+  private Criteria createScopeCriteria(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    criteria.and(FilterKeys.accountIdentifier).is(accountIdentifier);
+    criteria.and(FilterKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(FilterKeys.projectIdentifier).is(projectIdentifier);
+    return criteria;
+  }
+
   private void throwNoFilterExistsException(String orgIdentifier, String projectIdentifier, String identifier) {
-    throw new InvalidRequestException(format(
+    throw new NotFoundException(format(
         "No Filter exists with the identifier %s in org %s, project %s", identifier, orgIdentifier, projectIdentifier));
   }
 

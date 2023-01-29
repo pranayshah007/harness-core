@@ -6,6 +6,23 @@
 
 set -ex
 
+function check_cmd_status() {
+  if [ $1 != 0 ]; then
+      echo "ERROR: $LINENO: $2. Exiting..."; exit 1
+  fi
+}
+
+function get_PR_Modules(){
+  GIT_DIFF="git diff --name-only $COMMIT_SHA..$BASE_SHA"
+
+  PR_MODULES=()
+  PR_MODULES+=($($GIT_DIFF | awk -F/ '{print $1}' | sort -u | tr '\r\n' ' '))
+  check_cmd_status "$?" "Failed to get modules from commits."
+
+  echo "List of targets modules for your PR."
+  echo "${PR_MODULES[@]}"
+}
+
 #local_repo=${HOME}/.m2/repository
 BAZEL_ARGUMENTS=
 if [ "${PLATFORM}" == "jenkins" ]; then
@@ -43,14 +60,36 @@ if [ "${RUN_BAZEL_TESTS}" == "true" ]; then
 fi
 
 if [ "${RUN_CHECKS}" == "true" ]; then
-  TARGETS=$(bazel query 'attr(tags, "checkstyle", //...:*)')
-  bazel ${bazelrc} build ${BAZEL_ARGUMENTS} -k ${TARGETS}
+  get_PR_Modules
+  TARGETS=()
+  for module in "${PR_MODULES[@]}"
+  do
+    if [[ $(bazel query 'attr (tags,"checkstyle",//'"$module"':*)') ]];then
+      TARGETS+=($(bazel query 'attr (tags,"checkstyle",//'"$module"':*)'))
+    fi
+  done
+
+  echo "list of target to be build "
+  echo "${TARGETS[@]}"
+
+  bazel ${bazelrc} build ${BAZEL_ARGUMENTS} -k ${TARGETS[@]}
   exit $?
 fi
 
 if [ "${RUN_PMDS}" == "true" ]; then
-  TARGETS=$(bazel query 'attr(tags, "pmd", //...:*)')
-  bazel ${bazelrc} build ${BAZEL_ARGUMENTS} -k ${TARGETS}
+  get_PR_Modules
+  TARGETS=()
+  for module in "${PR_MODULES[@]}"
+  do
+    if [[ $(bazel query 'attr (tags,"pmd",//'"$module"':*)') ]];then
+      TARGETS+=($(bazel query 'attr (tags,"pmd",//'"$module"':*)'))
+    fi
+  done
+
+  echo "list of target to be build "
+  echo "${TARGETS[@]}"
+
+  bazel ${bazelrc} build ${BAZEL_ARGUMENTS} -k ${TARGETS[@]}
   exit $?
 fi
 
@@ -72,7 +111,6 @@ BAZEL_MODULES="\
   //420-delegate-agent:module \
   //420-delegate-service:module \
   //425-verification-commons:module \
-  //430-cv-nextgen-commons:module \
   //440-connector-nextgen:module \
   //440-secret-management-service:module \
   //441-cg-instance-sync:module \
@@ -98,7 +136,6 @@ BAZEL_MODULES="\
   //platform-service/modules/notification-service/contracts:module \
   //platform-service/modules/notification-service/contracts/src/main/proto:all \
   //platform-service/modules/notification-service/delegate-tasks:module \
-  //platform-service/modules/resource-group-service/contracts:module \
   //platform-service/modules/audit-service:module \
   //platform-service/modules/notification-service:module \
   //platform-service/modules/resource-group-service:module \
@@ -139,7 +176,6 @@ BAZEL_MODULES="\
   //945-license-usage-sdk:module \
   //clients/audit:module \
   //947-scim-core:module \
-  //948-cv-nextgen-beans:module \
   //950-command-library-common:module \
   //959-common-entities:module \
   //950-delegate-tasks-beans/src/main/proto:all \
@@ -204,6 +240,9 @@ BAZEL_MODULES="\
   //access-control/contracts:module \
   //product/ci/engine/proto:all \
   //product/ci/scm/proto:all \
+  //srm-service/modules/cv-nextgen-service/contracts/api:module \
+  //srm-service/modules/cv-nextgen-service/contracts/commons:module \
+  //srm-service/modules/cv-nextgen-service/contracts/delegate:module \
   //srm-service/modules/cv-nextgen-service/service:module \
 "
 
@@ -302,7 +341,6 @@ build_bazel_module 410-cg-rest
 build_bazel_module 420-delegate-agent
 build_bazel_module 420-delegate-service
 build_bazel_module 425-verification-commons
-build_bazel_module 430-cv-nextgen-commons
 build_bazel_module 440-connector-nextgen
 build_bazel_module 440-secret-management-service
 build_bazel_module 445-cg-connectors
@@ -329,7 +367,6 @@ build_bazel_module 933-ci-commons
 build_bazel_module 940-feature-flag
 build_bazel_module 940-secret-manager-client
 build_bazel_module 947-scim-core
-build_bazel_module 948-cv-nextgen-beans
 build_bazel_module 950-command-library-common
 build_bazel_module 959-common-entities
 build_bazel_module 950-delegate-tasks-beans

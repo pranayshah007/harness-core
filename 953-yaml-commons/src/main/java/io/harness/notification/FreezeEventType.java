@@ -17,10 +17,7 @@ public enum FreezeEventType {
   @JsonProperty(FreezeEventTypeConstants.FREEZE_WINDOW_ENABLED)
   FREEZE_WINDOW_ENABLED("Freeze", FreezeEventTypeConstants.FREEZE_WINDOW_ENABLED),
   @JsonProperty(FreezeEventTypeConstants.DEPLOYMENT_REJECTED_DUE_TO_FREEZE)
-  DEPLOYMENT_REJECTED_DUE_TO_FREEZE("Freeze", FreezeEventTypeConstants.DEPLOYMENT_REJECTED_DUE_TO_FREEZE),
-  @JsonProperty(FreezeEventTypeConstants.TRIGGER_INVOCATION_REJECTED_DUE_TO_FREEZE)
-  TRIGGER_INVOCATION_REJECTED_DUE_TO_FREEZE(
-      "Freeze", FreezeEventTypeConstants.TRIGGER_INVOCATION_REJECTED_DUE_TO_FREEZE);
+  DEPLOYMENT_REJECTED_DUE_TO_FREEZE("Freeze", FreezeEventTypeConstants.DEPLOYMENT_REJECTED_DUE_TO_FREEZE);
 
   private String level;
   private String displayName;

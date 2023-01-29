@@ -21,17 +21,20 @@ public class DeploymentFreezeException extends WingsException {
   private String accountId;
   private boolean masterFreeze;
   private List<String> deploymentFreezeIds;
+  private List<String> deploymentFreezeNamesList;
   private String deploymentFreezeNames;
   private boolean serviceFrozen;
 
   private static final String MESSAGE_KEY = "message";
   public DeploymentFreezeException(ErrorCode code, Level level, EnumSet<ReportTarget> reportTargets, String accountId,
-      List<String> deploymentFreezeIds, String deploymentFreezeNames, boolean masterFreeze, boolean serviceFrozen) {
+      List<String> deploymentFreezeIds, List<String> deploymentFreezeNamesList, String deploymentFreezeNames,
+      boolean masterFreeze, boolean serviceFrozen) {
     super(getErrorMessage(deploymentFreezeNames, deploymentFreezeIds.size(), masterFreeze, serviceFrozen), null, code,
         level, reportTargets, null);
     param(MESSAGE_KEY, getErrorMessage(deploymentFreezeNames, deploymentFreezeIds.size(), masterFreeze, serviceFrozen));
     this.masterFreeze = masterFreeze;
     this.deploymentFreezeIds = deploymentFreezeIds;
+    this.deploymentFreezeNamesList = deploymentFreezeNamesList;
     this.accountId = accountId;
     this.deploymentFreezeNames = deploymentFreezeNames;
     this.serviceFrozen = serviceFrozen;

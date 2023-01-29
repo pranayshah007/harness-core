@@ -33,9 +33,10 @@ public class AccountServicesApiImpl extends AbstractServicesApiImpl implements A
   @Inject
   AccountServicesApiImpl(ServiceEntityService serviceEntityService, AccessControlClient accessControlClient,
       ServiceEntityManagementService serviceEntityManagementService,
-      OrgAndProjectValidationHelper orgAndProjectValidationHelper, ServiceResourceApiUtils serviceResourceApiUtils) {
+      OrgAndProjectValidationHelper orgAndProjectValidationHelper, ServiceResourceApiUtils serviceResourceApiUtils,
+      ServiceEntityYamlSchemaHelper serviceSchemaHelper) {
     super(serviceEntityService, accessControlClient, serviceEntityManagementService, orgAndProjectValidationHelper,
-        serviceResourceApiUtils);
+        serviceResourceApiUtils, serviceSchemaHelper);
   }
 
   @Override
@@ -45,8 +46,9 @@ public class AccountServicesApiImpl extends AbstractServicesApiImpl implements A
 
   @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_delete")
   @Override
-  public Response deleteAccountScopedService(@ResourceIdentifier String service, @AccountIdentifier String account) {
-    return super.deleteServiceEntity(null, null, service, account);
+  public Response deleteAccountScopedService(
+      @ResourceIdentifier String service, @AccountIdentifier String account, Boolean forceDelete) {
+    return super.deleteServiceEntity(null, null, service, account, Boolean.TRUE == forceDelete);
   }
 
   @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_view")

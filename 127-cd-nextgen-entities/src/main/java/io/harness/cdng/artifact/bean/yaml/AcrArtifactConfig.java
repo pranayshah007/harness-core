@@ -26,6 +26,7 @@ import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.VariableExpression;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.Arrays;
@@ -140,5 +141,11 @@ public class AcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
+  }
+
+  @JsonIgnore
+  @ApiModelProperty(hidden = true)
+  public List<ParameterField<String>> getStringParameterFields() {
+    return Arrays.asList(connectorRef, subscriptionId, registry, repository, tag, tagRegex);
   }
 }

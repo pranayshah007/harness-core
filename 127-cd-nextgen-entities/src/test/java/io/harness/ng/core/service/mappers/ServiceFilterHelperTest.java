@@ -101,11 +101,11 @@ public class ServiceFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetList1() {
     Criteria criteria =
-        ServiceFilterHelper.createCriteriaForGetList("accId", "orgId", "projId", false, "foo", null, null);
+        ServiceFilterHelper.createCriteriaForGetList("accId", "orgId", "projId", false, "foo", null, null, false);
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}]}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"tags.key\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"tags.value\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}]}");
   }
 
   @Test
@@ -113,11 +113,11 @@ public class ServiceFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetList2() {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.KUBERNETES, Boolean.TRUE);
+        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.KUBERNETES, Boolean.TRUE, false);
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"type\": \"KUBERNETES\", \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}], \"gitOpsEnabled\": true}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"type\": \"KUBERNETES\", \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"tags.key\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"tags.value\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}], \"gitOpsEnabled\": true}");
   }
 
   @Test
@@ -125,10 +125,10 @@ public class ServiceFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetList3() {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.NATIVE_HELM, null);
+        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.NATIVE_HELM, null, false);
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"type\": \"NATIVE_HELM\", \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}]}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"type\": \"NATIVE_HELM\", \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"tags.key\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"tags.value\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}]}");
   }
 }

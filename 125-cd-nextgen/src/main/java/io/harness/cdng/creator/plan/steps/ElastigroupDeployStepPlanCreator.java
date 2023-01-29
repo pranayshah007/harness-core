@@ -10,7 +10,7 @@ package io.harness.cdng.creator.plan.steps;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepNode;
+import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;

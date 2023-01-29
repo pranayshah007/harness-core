@@ -25,6 +25,7 @@ import io.harness.migrations.timescaledb.AddIndexToInstanceV2Migration;
 import io.harness.migrations.timescaledb.AddIndicesForCostEvents;
 import io.harness.migrations.timescaledb.AddInfraIdsToDeploymentsEnvIdsToInfraTable;
 import io.harness.migrations.timescaledb.AddInstancesDeployedToDeployment;
+import io.harness.migrations.timescaledb.AddIsDeletedColumnToAllTimescaleEntities;
 import io.harness.migrations.timescaledb.AddMaxStorageColumns;
 import io.harness.migrations.timescaledb.AddMaxUtilColumns;
 import io.harness.migrations.timescaledb.AddNewIndexToAnomalies;
@@ -173,6 +174,7 @@ public class TimescaleDBMigrationList {
         .add(Pair.of(75, ChangeChunkSizeForDeploymentsTable.class))
         .add(Pair.of(76, BaseTimeScaleDBMigration.class))
         .add(Pair.of(77, AddInfraIdsToDeploymentsEnvIdsToInfraTable.class))
+        .add(Pair.of(78, AddIsDeletedColumnToAllTimescaleEntities.class))
         .build();
   }
 }

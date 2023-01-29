@@ -27,6 +27,7 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.data.output.PmsSweepingOutput;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
+import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -35,9 +36,13 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.jexl3.JexlException;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -132,6 +137,16 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
     } catch (UnresolvedExpressionsException | JexlException e) {
       return RawOptionalSweepingOutput.builder().found(false).build();
     }
+  }
+
+  @Override
+  public void deleteAllSweepingOutputInstances(Set<String> planExecutionIds) {
+    Criteria criteria = where(ExecutionSweepingOutputKeys.planExecutionId).in(planExecutionIds);
+    Query query = new Query(criteria);
+    RetryPolicy<Object> retryPolicy =
+        PersistenceUtils.getRetryPolicy("[Retrying]: Failed deleting ExecutionSweepingOutputInstance; attempt: {}",
+            "[Failed]: Failed deleting ExecutionSweepingOutputInstance; attempt: {}");
+    Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, ExecutionSweepingOutputInstance.class));
   }
 
   private RawOptionalSweepingOutput resolveOptionalUsingRuntimeId(Ambiance ambiance, RefObject refObject) {

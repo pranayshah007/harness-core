@@ -27,6 +27,7 @@ import io.harness.ngtriggers.beans.target.TargetType;
 import io.harness.persistence.PersistentEntity;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.constraints.Size;
@@ -36,7 +37,6 @@ import lombok.Singular;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -98,7 +98,7 @@ public class NGTriggerEntity implements PersistentEntity, PersistentNGCronIterab
         .build();
   }
 
-  @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Id @dev.morphia.annotations.Id String uuid;
   @EntityName String name;
   @EntityIdentifier @NotEmpty String identifier;
   @Size(max = 1024) String description;
@@ -121,6 +121,8 @@ public class NGTriggerEntity implements PersistentEntity, PersistentNGCronIterab
   @Singular @Size(max = 128) List<NGTag> tags;
   @Builder.Default Boolean enabled = Boolean.TRUE;
   String pollInterval;
+  String webhookId;
+  String encryptedWebhookSecretIdentifier;
   @FdIndex private List<Long> nextIterations; // List of activation times for cron triggers
   @Builder.Default Long ymlVersion = Long.valueOf(3);
 

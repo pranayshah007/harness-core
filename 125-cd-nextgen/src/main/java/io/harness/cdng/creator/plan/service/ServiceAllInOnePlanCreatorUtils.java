@@ -7,6 +7,8 @@
 
 package io.harness.cdng.creator.plan.service;
 
+import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_OVERRIDE_INPUTS_EXPRESSION;
+import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_REF_EXPRESSION;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cdng.artifact.steps.ArtifactsStepV2;
@@ -17,6 +19,7 @@ import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.elastigroup.ElastigroupServiceSettingsStep;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
+import io.harness.cdng.environment.helper.EnvironmentInfraFilterUtils;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.manifest.steps.ManifestsStepV2;
@@ -25,6 +28,7 @@ import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.service.steps.ServiceStepV3Parameters;
+import io.harness.cdng.service.steps.ServiceStepV3Parameters.ServiceStepV3ParametersBuilder;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
@@ -56,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -70,7 +75,7 @@ public class ServiceAllInOnePlanCreatorUtils {
    */
   public LinkedHashMap<String, PlanCreationResponse> addServiceNode(YamlField specField, KryoSerializer kryoSerializer,
       ServiceYamlV2 serviceYamlV2, EnvironmentYamlV2 environmentYamlV2, String serviceNodeId, String nextNodeId,
-      ServiceDefinitionType serviceType) {
+      ServiceDefinitionType serviceType, ParameterField<String> envGroupRef) {
     final ServiceYamlV2 finalServiceYaml = useFromStage(serviceYamlV2)
         ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage(), specField)
         : serviceYamlV2;
@@ -79,18 +84,24 @@ public class ServiceAllInOnePlanCreatorUtils {
 
     // add nodes for artifacts/manifests/files
     final List<String> childrenNodeIds = addChildrenNodes(planCreationResponseMap, serviceType);
-    final ServiceStepV3Parameters stepParameters =
-        ServiceStepV3Parameters.builder()
-            .serviceRef(finalServiceYaml.getServiceRef())
-            .inputs(finalServiceYaml.getServiceInputs())
-            .envRef(environmentYamlV2.getEnvironmentRef())
-            .envInputs(environmentYamlV2.getEnvironmentInputs())
-            .childrenNodeIds(childrenNodeIds)
-            .serviceOverrideInputs(environmentYamlV2.getServiceOverrideInputs())
-            .deploymentType(serviceType)
-            .build();
+    ParameterField<Map<String, Object>> serviceOverrideInputs = environmentYamlV2.getServiceOverrideInputs();
+    if (finalServiceYaml.getServiceRef().isExpression()
+        && finalServiceYaml.getServiceRef().getExpressionValue().equals(SERVICE_REF_EXPRESSION)) {
+      serviceOverrideInputs =
+          ParameterField.createExpressionField(true, SERVICE_OVERRIDE_INPUTS_EXPRESSION, null, false);
+    }
+    final ServiceStepV3ParametersBuilder stepParameters = ServiceStepV3Parameters.builder()
+                                                              .serviceRef(finalServiceYaml.getServiceRef())
+                                                              .inputs(finalServiceYaml.getServiceInputs())
 
-    return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters);
+                                                              .childrenNodeIds(childrenNodeIds)
+                                                              .serviceOverrideInputs(serviceOverrideInputs)
+                                                              .deploymentType(serviceType)
+                                                              .envRef(environmentYamlV2.getEnvironmentRef())
+                                                              .envInputs(environmentYamlV2.getEnvironmentInputs())
+                                                              .envGroupRef(envGroupRef);
+
+    return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters.build());
   }
 
   public LinkedHashMap<String, PlanCreationResponse> addServiceNodeForGitOpsEnvGroup(YamlField specField,
@@ -104,24 +115,31 @@ public class ServiceAllInOnePlanCreatorUtils {
 
     // add nodes for artifacts/manifests/files
     final List<String> childrenNodeIds = addChildrenNodes(planCreationResponseMap, serviceType);
-    final ServiceStepV3Parameters stepParameters =
+    ServiceStepV3ParametersBuilder stepParameters =
         ServiceStepV3Parameters.builder()
             .serviceRef(finalServiceYaml.getServiceRef())
             .inputs(finalServiceYaml.getServiceInputs())
-            .envGroupRef(environmentGroupYaml.getEnvGroupRef())
-            .envRefs(environmentGroupYaml.getEnvironments()
-                         .getValue()
-                         .stream()
-                         .map(e -> e.getEnvironmentRef())
-                         .collect(Collectors.toList()))
-            .envToEnvInputs(getMergedEnvironmentRuntimeInputs(environmentGroupYaml.getEnvironments().getValue()))
-            .envToSvcOverrideInputs(getMergedServiceOverrideInputs(environmentGroupYaml.getEnvironments().getValue()))
             .childrenNodeIds(childrenNodeIds)
             .deploymentType(serviceType)
             .gitOpsMultiSvcEnvEnabled(ParameterField.<Boolean>builder().value(true).build())
-            .build();
+            .envGroupRef(environmentGroupYaml.getEnvGroupRef());
 
-    return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters);
+    if (EnvironmentInfraFilterUtils.areFiltersPresent(environmentGroupYaml)) {
+      stepParameters.environmentGroupYaml(environmentGroupYaml)
+          .envToEnvInputs(new HashMap<>())
+          .envToSvcOverrideInputs(new HashMap<>());
+    } else {
+      stepParameters
+          .envRefs(environmentGroupYaml.getEnvironments()
+                       .getValue()
+                       .stream()
+                       .map(e -> e.getEnvironmentRef())
+                       .collect(Collectors.toList()))
+          .envToEnvInputs(getMergedEnvironmentRuntimeInputs(environmentGroupYaml.getEnvironments().getValue()))
+          .envToSvcOverrideInputs(getMergedServiceOverrideInputs(environmentGroupYaml.getEnvironments().getValue()));
+    }
+
+    return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters.build());
   }
 
   public LinkedHashMap<String, PlanCreationResponse> addServiceNodeForGitOpsEnvironments(YamlField specField,
@@ -135,23 +153,30 @@ public class ServiceAllInOnePlanCreatorUtils {
 
     // add nodes for artifacts/manifests/files
     final List<String> childrenNodeIds = addChildrenNodes(planCreationResponseMap, serviceType);
-    final ServiceStepV3Parameters stepParameters =
+    final ServiceStepV3ParametersBuilder stepParameters =
         ServiceStepV3Parameters.builder()
             .serviceRef(finalServiceYaml.getServiceRef())
-            .envRefs(environmentsYaml.getValues()
-                         .getValue()
-                         .stream()
-                         .map(e -> e.getEnvironmentRef())
-                         .collect(Collectors.toList()))
-            .envToEnvInputs(getMergedEnvironmentRuntimeInputs(environmentsYaml.getValues().getValue()))
-            .envToSvcOverrideInputs(getMergedServiceOverrideInputs(environmentsYaml.getValues().getValue()))
             .inputs(finalServiceYaml.getServiceInputs())
             .childrenNodeIds(childrenNodeIds)
             .deploymentType(serviceType)
-            .gitOpsMultiSvcEnvEnabled(ParameterField.<Boolean>builder().value(true).build())
-            .build();
+            .gitOpsMultiSvcEnvEnabled(ParameterField.<Boolean>builder().value(true).build());
 
-    return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters);
+    if (EnvironmentInfraFilterUtils.areFiltersPresent(environmentsYaml)) {
+      stepParameters.environmentsYaml(environmentsYaml)
+          .envToEnvInputs(new HashMap<>())
+          .envToSvcOverrideInputs(new HashMap<>());
+    } else {
+      stepParameters
+          .envRefs(environmentsYaml.getValues()
+                       .getValue()
+                       .stream()
+                       .map(e -> e.getEnvironmentRef())
+                       .collect(Collectors.toList()))
+          .envToEnvInputs(getMergedEnvironmentRuntimeInputs(environmentsYaml.getValues().getValue()))
+          .envToSvcOverrideInputs(getMergedServiceOverrideInputs(environmentsYaml.getValues().getValue()));
+    }
+
+    return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters.build());
   }
 
   private static LinkedHashMap<String, PlanCreationResponse> createPlanNode(KryoSerializer kryoSerializer,
@@ -313,6 +338,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     return mergedServiceOverrideInputs;
   }
 
+  @NonNull
   private ServiceYamlV2 useServiceYamlFromStage(@NotNull ServiceUseFromStageV2 useFromStage, YamlField specField) {
     final YamlField serviceField = specField.getNode().getField(YamlTypes.SERVICE_ENTITY);
     String stage = useFromStage.getStage();
@@ -326,8 +352,17 @@ public class ServiceAllInOnePlanCreatorUtils {
       DeploymentStageConfig deploymentStage = stageElementConfig.getDeploymentStageConfig();
       if (deploymentStage != null) {
         if (deploymentStage.getService() != null && useFromStage(deploymentStage.getService())) {
-          throw new InvalidArgumentsException(
-              "Invalid identifier given in useFromStage. Cannot reference a stage which also has useFromStage parameter");
+          throw new InvalidArgumentsException("Invalid identifier [" + stage
+              + "] given in useFromStage. Cannot reference a stage which also has useFromStage parameter");
+        }
+
+        if (deploymentStage.getService() == null) {
+          if (deploymentStage.getServices() != null) {
+            throw new InvalidRequestException(
+                "Propagate from stage is not supported with multi service deployments, hence not possible to propagate service from that stage");
+          }
+          throw new InvalidRequestException(String.format(
+              "Could not find service in stage [%s], hence not possible to propagate service from that stage", stage));
         }
         return deploymentStage.getService();
       } else {

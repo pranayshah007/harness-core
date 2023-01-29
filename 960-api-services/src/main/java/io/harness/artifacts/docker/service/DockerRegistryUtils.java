@@ -56,40 +56,20 @@ public class DockerRegistryUtils {
 
   public ArtifactMetaInfo getArtifactMetaInfo(DockerInternalConfig dockerConfig,
       DockerRegistryRestClient registryRestClient, Function<Headers, String> getTokenFn, String authHeader,
-      String imageName, String tag) {
+      String imageName, String tag, boolean shouldFetchDockerV2DigestSHA256) {
     try {
       Response<DockerImageManifestResponse> response =
-          registryRestClient.getImageManifest(authHeader, imageName, tag).execute();
-      if (DockerRegistryUtils.fallbackToTokenAuth(response.code(), dockerConfig)) { // unauthorized
-        if (getTokenFn == null) {
-          // We don't want to retry if getTokenFn is null.
-          throw NestedExceptionUtils.hintWithExplanationException("Invalid Credentials",
-              "Check if the provided credentials are correct",
-              new InvalidArtifactServerException("Invalid Docker Registry credentials", USER));
-        }
-        String token = getTokenFn.apply(response.headers());
-        authHeader = "Bearer " + token;
-        response = registryRestClient.getImageManifest(authHeader, imageName, tag).execute();
-        if (response.code() == 401) {
-          // Unauthorized even after retry.
-          throw NestedExceptionUtils.hintWithExplanationException("Invalid Credentials",
-              "Check if the provided credentials are correct",
-              new InvalidArtifactServerException("Invalid Docker Registry credentials", USER));
+          getImageManifestResponse(dockerConfig, registryRestClient, getTokenFn, authHeader, imageName, tag);
+      ArtifactMetaInfo artifactMetaInfo = parseArtifactMetaInfoResponse(response, imageName);
+      if (artifactMetaInfo != null && shouldFetchDockerV2DigestSHA256) {
+        Response<DockerImageManifestResponse> responseV2 =
+            getImageManifestResponseV2(dockerConfig, registryRestClient, getTokenFn, authHeader, imageName, tag);
+        ArtifactMetaInfo artifactMetaInfoV2 = parseArtifactMetaInfoResponse(responseV2, imageName);
+        if (artifactMetaInfoV2 != null) {
+          artifactMetaInfo.setShaV2(artifactMetaInfoV2.getSha());
         }
       }
-
-      if (!isSuccessful(response)) {
-        throw NestedExceptionUtils.hintWithExplanationException(
-            "Failed to fetch tags for image. Check if the image details are correct",
-            "Check if the image exists, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching tags for the image",
-            new InvalidArtifactServerException(response.message(), USER));
-      }
-      checkValidImage(imageName, response);
-      DockerImageManifestResponse dockerImageManifestResponse = response.body();
-      if (dockerImageManifestResponse == null) {
-        return null;
-      }
-      return dockerImageManifestResponse.fetchArtifactMetaInfo(response);
+      return artifactMetaInfo;
     } catch (Exception e) {
       log.error("Unable to fetch artifact metainfo", e);
       return null;
@@ -243,5 +223,71 @@ public class DockerRegistryUtils {
 
   public static boolean isGithubContainerRegistry(DockerInternalConfig config) {
     return config.getDockerRegistryUrl().contains(GITHUB_CONTAINER_REGISTRY);
+  }
+
+  private Response<DockerImageManifestResponse> getImageManifestResponse(DockerInternalConfig dockerConfig,
+      DockerRegistryRestClient registryRestClient, Function<Headers, String> getTokenFn, String authHeader,
+      String imageName, String tag) throws IOException {
+    Response<DockerImageManifestResponse> response =
+        registryRestClient.getImageManifest(authHeader, imageName, tag).execute();
+    if (DockerRegistryUtils.fallbackToTokenAuth(response.code(), dockerConfig)) { // unauthorized
+      if (getTokenFn == null) {
+        // We don't want to retry if getTokenFn is null.
+        throw NestedExceptionUtils.hintWithExplanationException("Invalid Credentials",
+            "Check if the provided credentials are correct",
+            new InvalidArtifactServerException("Invalid Docker Registry credentials", USER));
+      }
+      String token = getTokenFn.apply(response.headers());
+      authHeader = "Bearer " + token;
+      response = registryRestClient.getImageManifest(authHeader, imageName, tag).execute();
+      if (response.code() == 401) {
+        // Unauthorized even after retry.
+        throw NestedExceptionUtils.hintWithExplanationException("Invalid Credentials",
+            "Check if the provided credentials are correct",
+            new InvalidArtifactServerException("Invalid Docker Registry credentials", USER));
+      }
+    }
+    return response;
+  }
+
+  private Response<DockerImageManifestResponse> getImageManifestResponseV2(DockerInternalConfig dockerConfig,
+      DockerRegistryRestClient registryRestClient, Function<Headers, String> getTokenFn, String authHeader,
+      String imageName, String tag) throws IOException {
+    Response<DockerImageManifestResponse> response =
+        registryRestClient.getImageManifestV2(authHeader, imageName, tag).execute();
+    if (DockerRegistryUtils.fallbackToTokenAuth(response.code(), dockerConfig)) { // unauthorized
+      if (getTokenFn == null) {
+        // We don't want to retry if getTokenFn is null.
+        throw NestedExceptionUtils.hintWithExplanationException("Invalid Credentials",
+            "Check if the provided credentials are correct",
+            new InvalidArtifactServerException("Invalid Docker Registry credentials", USER));
+      }
+      String token = getTokenFn.apply(response.headers());
+      authHeader = "Bearer " + token;
+      response = registryRestClient.getImageManifestV2(authHeader, imageName, tag).execute();
+      if (response.code() == 401) {
+        // Unauthorized even after retry.
+        throw NestedExceptionUtils.hintWithExplanationException("Invalid Credentials",
+            "Check if the provided credentials are correct",
+            new InvalidArtifactServerException("Invalid Docker Registry credentials", USER));
+      }
+    }
+    return response;
+  }
+
+  private ArtifactMetaInfo parseArtifactMetaInfoResponse(
+      Response<DockerImageManifestResponse> response, String imageName) {
+    if (!isSuccessful(response)) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Failed to fetch tags for image. Check if the image details are correct",
+          "Check if the image exists, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching tags for the image",
+          new InvalidArtifactServerException(response.message(), USER));
+    }
+    checkValidImage(imageName, response);
+    DockerImageManifestResponse dockerImageManifestResponse = response.body();
+    if (dockerImageManifestResponse == null) {
+      return null;
+    }
+    return dockerImageManifestResponse.fetchArtifactMetaInfo(response);
   }
 }

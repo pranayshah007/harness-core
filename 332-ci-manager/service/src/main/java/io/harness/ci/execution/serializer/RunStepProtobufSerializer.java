@@ -20,8 +20,12 @@ import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.callback.DelegateCallbackToken;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.ng.core.NGAccess;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.Report;
 import io.harness.product.ci.engine.proto.RunStep;
@@ -34,6 +38,7 @@ import io.harness.yaml.core.variables.OutputNGVariable;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -44,10 +49,12 @@ import java.util.stream.Collectors;
 public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStepInfo> {
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   @Inject private CIFeatureFlagService featureFlagService;
-
+  @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
+  private static List<String> INFORMATICA_ACCOUNT_IDS =
+      new ArrayList<>(List.of("0imfjG07TR2hVBcS5AZpCQ", "z40YS0M5RCCOybahmyEVgQ"));
   public UnitStep serializeStepWithStepParameters(RunStepInfo runStepInfo, Integer port, String callbackId,
       String logKey, String identifier, ParameterField<Timeout> parameterFieldTimeout, String accountId,
-      String stepName) {
+      String stepName, Ambiance ambiance) {
     if (callbackId == null) {
       throw new CIStageExecutionException("CallbackId can not be null");
     }
@@ -59,9 +66,20 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
     String gitSafeCMD = SerializerUtils.getSafeGitDirectoryCmd(
         RunTimeInputHandler.resolveShellType(runStepInfo.getShell()), accountId, featureFlagService);
 
+    String command = null;
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()
+        && INFORMATICA_ACCOUNT_IDS.contains(ngAccess.getAccountIdentifier())) {
+      command = SerializerUtils.getK8sDebugCommand(ciExecutionServiceConfig.getRemoteDebugTimeout())
+          + System.lineSeparator()
+          + RunTimeInputHandler.resolveStringParameter("Command", "Run", identifier, runStepInfo.getCommand(), true);
+    } else {
+      command =
+          RunTimeInputHandler.resolveStringParameter("Command", "Run", identifier, runStepInfo.getCommand(), true);
+    }
+
     RunStep.Builder runStepBuilder = RunStep.newBuilder();
-    runStepBuilder.setCommand(gitSafeCMD
-        + RunTimeInputHandler.resolveStringParameter("Command", "Run", identifier, runStepInfo.getCommand(), true));
+    runStepBuilder.setCommand(gitSafeCMD + command);
 
     runStepBuilder.setContainerPort(port);
     Map<String, String> envvars =

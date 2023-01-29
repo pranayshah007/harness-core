@@ -27,13 +27,14 @@ import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
-import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
@@ -125,10 +126,10 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   @Inject private CDStepHelper cdStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private StageExecutionHelper stageExecutionHelper;
-  @Inject private InfrastructureMapper infrastructureMapper;
   @Inject private InfrastructureValidator infrastructureValidator;
   @Inject private CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Inject private InstanceOutcomeHelper instanceOutcomeHelper;
+  @Inject private InfrastructureOutcomeProvider infrastructureOutcomeProvider;
 
   @Override
   public Class<Infrastructure> getStepParametersClass() {
@@ -160,8 +161,10 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     infrastructureValidator.validate(infrastructure);
 
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(infrastructure, environmentOutcome,
-        serviceOutcome, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    final InfrastructureOutcome infrastructureOutcome =
+        infrastructureOutcomeProvider.getOutcome(infrastructure, environmentOutcome, serviceOutcome,
+            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+
     if (environmentOutcome != null) {
       if (isNotEmpty(environmentOutcome.getName())) {
         saveExecutionLogSafely(
@@ -384,6 +387,14 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       }
     }
 
+    if (InfrastructureKind.ASG.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.AWS.name()));
+      }
+    }
+
     saveExecutionLogSafely(logCallback, color("Connector validated", Green));
   }
 
@@ -488,6 +499,11 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
             (TanzuApplicationServiceInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(tanzuApplicationServiceInfrastructure.getConnectorRef(),
             tanzuApplicationServiceInfrastructure.getOrganization(), tanzuApplicationServiceInfrastructure.getSpace());
+        break;
+
+      case InfrastructureKind.ASG:
+        AsgInfrastructure asgInfrastructure = (AsgInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(asgInfrastructure.getConnectorRef(), asgInfrastructure.getRegion());
         break;
 
       default:

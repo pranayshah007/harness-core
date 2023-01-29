@@ -25,5 +25,8 @@ public interface ArtifactMetadataKeys {
 
   String FILE_NAME = "fileName";
   String IMAGE_PATH = "imagePath";
+  String SHA = "SHA";
+  String SHAV2 = "SHAV2";
   String url = "url";
+  String bucket = "bucket";
 }

@@ -39,6 +39,8 @@ import io.harness.persistence.HPersistence;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import dev.morphia.query.Sort;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -47,7 +49,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
-import org.mongodb.morphia.query.Sort;
 
 public class GraphDataServiceImpl implements GraphDataService {
   @Inject SLIRecordService sliRecordService;
@@ -56,6 +57,7 @@ public class GraphDataServiceImpl implements GraphDataService {
   @Inject MonitoredServiceService monitoredServiceService;
   @Inject EntityDisabledTimeService entityDisabledTimeService;
   @Inject HPersistence hPersistence;
+  @Inject private Clock clock;
   @VisibleForTesting static int MAX_NUMBER_OF_POINTS = 2000;
 
   @Override
@@ -102,7 +104,6 @@ public class GraphDataServiceImpl implements GraphDataService {
     List<SLODashboardWidget.Point> errorBudgetBurndown = new ArrayList<>();
     double errorBudgetRemainingPercentage = 100;
     int errorBudgetRemaining = totalErrorBudgetMinutes;
-    boolean isReCalculatingSLI = false;
     boolean isCalculatingSLI = false;
     boolean enabled = true;
     if (!sloRecords.isEmpty()) {
@@ -119,12 +120,11 @@ public class GraphDataServiceImpl implements GraphDataService {
         double goodCountFromStart = sloRecord.getRunningGoodCount() - prevRecordGoodCount;
         double badCountFromStart = sloRecord.getRunningBadCount() - prevRecordBadCount;
         if (sloRecord.getSloVersion() != sloVersion) {
-          isReCalculatingSLI = true;
           return SLODashboardWidget.SLOGraphData.builder()
               .errorBudgetBurndown(errorBudgetBurndown)
               .errorBudgetRemaining(errorBudgetRemaining)
               .sloPerformanceTrend(sloTrend)
-              .isRecalculatingSLI(isReCalculatingSLI)
+              .isRecalculatingSLI(false)
               .isCalculatingSLI(isCalculatingSLI)
               .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
               .build();
@@ -144,7 +144,8 @@ public class GraphDataServiceImpl implements GraphDataService {
       }
       errorBudgetRemainingPercentage = errorBudgetBurndown.get(errorBudgetBurndown.size() - 1).getValue();
       errorBudgetRemaining = totalErrorBudgetMinutes - (int) sloValue.getBadCount();
-    } else {
+    } else if (Instant.ofEpochMilli(compositeServiceLevelObjective.getStartedAt())
+                   .isBefore(clock.instant().minus(Duration.ofMinutes(10)))) {
       isCalculatingSLI = true;
     }
 
@@ -164,7 +165,7 @@ public class GraphDataServiceImpl implements GraphDataService {
         .errorBudgetBurndown(errorBudgetBurndown)
         .errorBudgetRemaining(errorBudgetRemaining)
         .sloPerformanceTrend(sloTrend)
-        .isRecalculatingSLI(isReCalculatingSLI)
+        .isRecalculatingSLI(false)
         .isCalculatingSLI(isCalculatingSLI)
         .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
         .build();
@@ -201,7 +202,6 @@ public class GraphDataServiceImpl implements GraphDataService {
     int badCountTillRangeEndTime = 0;
     int badCountTillRangeStartTime = 0;
     boolean getBadCountTillRangeStartTime = true;
-    boolean isReCalculatingSLI = false;
     boolean isCalculatingSLI = false;
     if (!sliRecords.isEmpty()) {
       SLIValue sliValue = null;
@@ -230,14 +230,13 @@ public class GraphDataServiceImpl implements GraphDataService {
           enabled =
               enabled && !disableTimes.get(currentDisabledRange - 1).contains(sliRecord.getTimestamp().toEpochMilli());
         }
-        if (!isCalculatingSLI && sliRecord.getSliVersion() != sliVersion) {
-          isReCalculatingSLI = true;
+        if (sliRecord.getSliVersion() != sliVersion) {
           return SLODashboardWidget.SLOGraphData.builder()
               .errorBudgetBurndown(errorBudgetBurndown)
               .errorBudgetRemaining(errorBudgetRemaining)
               .sloPerformanceTrend(sliTread)
-              .isRecalculatingSLI(isReCalculatingSLI)
-              .isCalculatingSLI(isCalculatingSLI)
+              .isRecalculatingSLI(true)
+              .isCalculatingSLI(false)
               .sliStatusPercentage(sliStatusPercentage)
               .errorBudgetBurned(Math.max(badCountTillRangeEndTime - badCountTillRangeStartTime, 0))
               .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
@@ -249,7 +248,9 @@ public class GraphDataServiceImpl implements GraphDataService {
         if (getBadCountTillRangeStartTime
             && !sliRecord.getTimestamp().isBefore(DateTimeUtils.roundDownTo1MinBoundary(filter.getStartTime()))) {
           badCountTillRangeStartTime = sliValue.getBadCount();
-          if (sliRecord.getSliState().equals(SLIRecord.SLIState.BAD)) {
+          if (sliRecord.getSliState().equals(SLIRecord.SLIState.BAD)
+              || (sliRecord.getSliState().equals(SLIRecord.SLIState.NO_DATA)
+                  && sliMissingDataType == SLIMissingDataType.BAD)) {
             badCountTillRangeStartTime--;
           }
           getBadCountTillRangeStartTime = false;
@@ -274,7 +275,8 @@ public class GraphDataServiceImpl implements GraphDataService {
       errorBudgetRemainingPercentage = errorBudgetBurndown.get(errorBudgetBurndown.size() - 1).getValue();
       sliStatusPercentage = sliTread.get(sliTread.size() - 1).getValue();
       errorBudgetRemaining = totalErrorBudgetMinutes - sliValue.getBadCount();
-    } else {
+    } else if (Instant.ofEpochMilli(serviceLevelIndicator.getCreatedAt())
+                   .isBefore(clock.instant().minus(Duration.ofMinutes(10)))) {
       isCalculatingSLI = true;
     }
 
@@ -294,7 +296,7 @@ public class GraphDataServiceImpl implements GraphDataService {
         .errorBudgetBurndown(errorBudgetBurndown)
         .errorBudgetRemaining(errorBudgetRemaining)
         .sloPerformanceTrend(sliTread)
-        .isRecalculatingSLI(isReCalculatingSLI)
+        .isRecalculatingSLI(false)
         .isCalculatingSLI(isCalculatingSLI)
         .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
         .errorBudgetBurned(Math.max(badCountTillRangeEndTime - badCountTillRangeStartTime, 0))

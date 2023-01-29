@@ -12,8 +12,8 @@ import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
@@ -31,7 +31,6 @@ import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -46,10 +45,12 @@ import io.harness.provision.TerraformConstants;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -59,13 +60,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
-public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<TerraformTaskNGResponse> {
+public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.TERRAFORM_DESTROY.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private TerraformStepHelper helper;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
@@ -161,8 +162,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
                     : helper.getEnvironmentVariablesMap(spec.getEnvironmentVariables()))
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
-            .useOptimizedTfPlan(
-                cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.OPTIMIZED_TF_PLAN_NG))
+            .useOptimizedTfPlan(true)
             .build();
 
     TaskData taskData =
@@ -172,7 +172,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
             .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {terraformTaskNGParameters})
             .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         Collections.singletonList(TerraformCommandUnit.Destroy.name()),
         terraformTaskNGParameters.getDelegateTaskType().getDisplayName(),
         TaskSelectorYaml.toTaskSelector(parameters.getDelegateSelectors()), stepHelper.getEnvironmentType(ambiance));
@@ -213,8 +213,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
                     : inheritOutput.getEnvironmentVariables())
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
-            .useOptimizedTfPlan(
-                cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.OPTIMIZED_TF_PLAN_NG))
+            .useOptimizedTfPlan(true)
             .build();
 
     TaskData taskData =
@@ -224,7 +223,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
             .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {terraformTaskNGParameters})
             .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         Collections.singletonList(TerraformCommandUnit.Destroy.name()),
         terraformTaskNGParameters.getDelegateTaskType().getDisplayName(),
         TaskSelectorYaml.toTaskSelector(parameters.getDelegateSelectors()), stepHelper.getEnvironmentType(ambiance));
@@ -255,8 +254,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
                 : terraformConfig.getEnvironmentVariables())
         .timeoutInMillis(
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
-        .useOptimizedTfPlan(
-            cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.OPTIMIZED_TF_PLAN_NG));
+        .useOptimizedTfPlan(true);
     if (terraformConfig.getConfigFiles() != null) {
       builder.configFile(helper.getGitFetchFilesConfig(
           terraformConfig.getConfigFiles().toGitStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES));
@@ -276,7 +274,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
             .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {terraformTaskNGParameters})
             .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         Collections.singletonList(TerraformCommandUnit.Destroy.name()),
         terraformTaskNGParameters.getDelegateTaskType().getDisplayName(),
         TaskSelectorYaml.toTaskSelector(parameters.getDelegateSelectors()), stepHelper.getEnvironmentType(ambiance));

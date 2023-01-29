@@ -10,20 +10,26 @@ package software.wings.helpers.ext.gcr;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.artifacts.gcr.GcrRestClient;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
 import io.harness.artifacts.gcr.service.GcrApiServiceImpl;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.HintException;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
 
@@ -40,6 +46,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
 @OwnedBy(CDC)
 public class GcrApiServiceTest extends WingsBaseTest {
@@ -50,6 +58,7 @@ public class GcrApiServiceTest extends WingsBaseTest {
   private String url;
   String basicAuthHeader = "auth";
   GcrInternalConfig gcpInternalConfig;
+  @Mock GcrRestClient gcrRestClient;
 
   @Before
   public void setUp() {
@@ -114,8 +123,8 @@ public class GcrApiServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldGetBuildFailure() {
     assertThatThrownBy(() -> gcrService.getBuilds(gcpInternalConfig, "noImage", 100))
-        .extracting(ex -> ((WingsException) ex).getParams().get("args"))
-        .isEqualTo("Image name [noImage] does not exist in Google Container Registry.");
+        .isInstanceOf(HintException.class)
+        .hasMessage("Invalid request: Image name [noImage] does not exist in Google Container Registry.");
 
     assertThatThrownBy(() -> gcrService.getBuilds(gcpInternalConfig, "invalidProject", 100))
         .extracting(ex -> ((WingsException) ex).getParams().get("message"))
@@ -147,5 +156,31 @@ public class GcrApiServiceTest extends WingsBaseTest {
   public void shouldGetBuild() {
     BuildDetailsInternal actual = gcrService.verifyBuildNumber(gcpInternalConfig, "someImage", "latest");
     assertThat(actual.getNumber()).isEqualTo("latest");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void shouldRetryFetchToken() {
+    final GcrRestClient restClient = Mockito.spy(gcrRestClient);
+    doThrow(RuntimeException.class).when(restClient).getImageManifest("authHeader", "realm-value", "tag");
+    try {
+      gcrService.fetchImage(restClient, "authHeader", "realm-value", "tag");
+    } catch (Exception e) {
+      verify(restClient, times(5)).getImageManifest("authHeader", "realm-value", "tag");
+    }
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void shouldRetryListTag() {
+    final GcrRestClient restClient = Mockito.spy(gcrRestClient);
+    doThrow(RuntimeException.class).when(restClient).listImageTags("authHeader", "realm-value");
+    try {
+      gcrService.listImageTag(restClient, "authHeader", "realm-value");
+    } catch (Exception e) {
+      verify(restClient, times(5)).listImageTags("authHeader", "realm-value");
+    }
   }
 }

@@ -11,7 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
+import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.K8sRollingStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -42,7 +43,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = K8sRollingStepInfoVisitorHelper.class)
 @TypeAlias("k8sRollingStepInfo")
 @RecasterAlias("io.harness.cdng.k8s.K8sRollingStepInfo")
-public class K8sRollingStepInfo extends K8sRollingBaseStepInfo implements CDStepInfo, Visitable {
+public class K8sRollingStepInfo extends K8sRollingBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -53,8 +54,9 @@ public class K8sRollingStepInfo extends K8sRollingBaseStepInfo implements CDStep
 
   @Builder(builderMethodName = "infoBuilder")
   public K8sRollingStepInfo(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> pruningEnabled,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String canaryStepFqn) {
-    super(skipDryRun, pruningEnabled, delegateSelectors, canaryStepFqn);
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String canaryStepFqn,
+      List<K8sStepCommandFlag> commandFlags) {
+    super(skipDryRun, pruningEnabled, delegateSelectors, canaryStepFqn, commandFlags);
   }
 
   @Override
@@ -74,6 +76,7 @@ public class K8sRollingStepInfo extends K8sRollingBaseStepInfo implements CDStep
         .pruningEnabled(pruningEnabled)
         .delegateSelectors(this.getDelegateSelectors())
         .canaryStepFqn(canaryStepFqn)
+        .commandFlags(commandFlags)
         .build();
   }
 

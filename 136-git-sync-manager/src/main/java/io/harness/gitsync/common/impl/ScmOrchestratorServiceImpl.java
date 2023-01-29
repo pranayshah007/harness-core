@@ -14,6 +14,8 @@ import static io.harness.gitsync.GitSyncModule.SCM_ON_MANAGER;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.exception.ScmInternalServerErrorException;
+import io.harness.exception.UnexpectedException;
 import io.harness.gitsync.common.dtos.GitSyncSettingsDTO;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.service.GitSyncSettingsService;
@@ -97,12 +99,16 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
   @Override
   public <R> R processScmRequestUsingConnectorSettings(
       Function<ScmClientFacilitatorService, R> scmRequest, ScmConnector scmConnector) {
-    if (scmConnector instanceof ManagerExecutable) {
-      final Boolean executeOnDelegate = ((ManagerExecutable) scmConnector).getExecuteOnDelegate();
-      if (executeOnDelegate == Boolean.FALSE) {
-        return scmRequest.apply(scmClientManagerService);
+    try {
+      if (scmConnector instanceof ManagerExecutable) {
+        final Boolean executeOnDelegate = ((ManagerExecutable) scmConnector).getExecuteOnDelegate();
+        if (executeOnDelegate == Boolean.FALSE) {
+          return scmRequest.apply(scmClientManagerService);
+        }
       }
+      return scmRequest.apply(scmClientDelegateService);
+    } catch (UnexpectedException ex) {
+      throw new ScmInternalServerErrorException(ex.getMessage());
     }
-    return scmRequest.apply(scmClientDelegateService);
   }
 }

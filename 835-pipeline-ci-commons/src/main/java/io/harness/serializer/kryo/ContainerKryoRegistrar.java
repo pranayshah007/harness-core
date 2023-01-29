@@ -7,11 +7,14 @@
 
 package io.harness.serializer.kryo;
 
+import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 
 public class ContainerKryoRegistrar implements KryoRegistrar {
   @Override
-  public void register(Kryo kryo) {}
+  public void register(Kryo kryo) {
+    kryo.register(LiteEnginePodDetailsOutcome.class, 100089);
+  }
 }

@@ -24,6 +24,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 
 import software.wings.beans.loginSettings.UserLockoutInfo;
@@ -38,6 +39,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Reference;
+import dev.morphia.annotations.Transient;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,9 +57,6 @@ import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.Email;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Reference;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * User bean class.
@@ -97,6 +98,11 @@ public class User extends Base implements Principal {
                  .field(UserKeys.email)
                  .field(UserKeys.pendingAccounts)
                  .field(UserKeys.disabled)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountsCreatedAt")
+                 .field(UserKeys.accounts)
+                 .descSortField("createdAt")
                  .build())
         .build();
   }
@@ -184,14 +190,13 @@ public class User extends Base implements Principal {
    * @return Partial User object without sensitive information.
    */
   @JsonIgnore
-  public User getPublicUser() {
+  public User getPublicUser(boolean includeSupportAccounts) {
     User publicUser = new User();
     publicUser.setUuid(getUuid());
     publicUser.setName(getName());
     publicUser.setEmail(getEmail());
     publicUser.setDefaultAccountId(getDefaultAccountId());
     publicUser.setAccounts(getAccounts());
-    publicUser.setSupportAccounts(getSupportAccounts());
     publicUser.setTwoFactorAuthenticationEnabled(isTwoFactorAuthenticationEnabled());
     publicUser.setTwoFactorAuthenticationMechanism(getTwoFactorAuthenticationMechanism());
     publicUser.setFirstLogin(isFirstLogin());
@@ -200,6 +205,9 @@ public class User extends Base implements Principal {
     publicUser.setUserLocked(isUserLocked());
     publicUser.setImported(isImported());
     // publicUser.setCompanyName(getCompanyName());
+    if (includeSupportAccounts) {
+      publicUser.setSupportAccounts(getSupportAccounts());
+    }
     return publicUser;
   }
   public boolean isAccountAdmin(String accountId) {

@@ -9,6 +9,7 @@ package io.harness.ng.core.events;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.audit.ResourceTypeConstants.ENVIRONMENT;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.ResourceConstants.INFRASTRUCTURE_ID;
 import static io.harness.ng.core.ResourceConstants.RESOURCE_TYPE;
 import static io.harness.ng.core.ResourceConstants.SERVICE_OVERRIDE_NAME;
@@ -16,6 +17,8 @@ import static io.harness.ng.core.ResourceConstants.STATUS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.event.Event;
+import io.harness.ng.core.AccountScope;
+import io.harness.ng.core.OrgScope;
 import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceScope;
@@ -57,7 +60,12 @@ public class EnvironmentUpdatedEvent implements Event {
   @JsonIgnore
   @Override
   public ResourceScope getResourceScope() {
-    return new ProjectScope(accountIdentifier, getOrgIdentifier(), getProjectIdentifier());
+    if (isNotEmpty(getProjectIdentifier())) {
+      return new ProjectScope(accountIdentifier, getOrgIdentifier(), getProjectIdentifier());
+    } else if (isNotEmpty(getOrgIdentifier())) {
+      return new OrgScope(accountIdentifier, getOrgIdentifier());
+    }
+    return new AccountScope(accountIdentifier);
   }
 
   private String getProjectIdentifier() {
@@ -88,6 +96,7 @@ public class EnvironmentUpdatedEvent implements Event {
         return newEnvironment.getOrgIdentifier();
     }
   }
+
   private String resourceName() {
     switch (resourceType) {
       case SERVICE_OVERRIDE:

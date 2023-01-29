@@ -25,12 +25,12 @@ import software.wings.verification.CVActivityLog.LogLevel;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
+import dev.morphia.query.Sort;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 public class CVActivityLogServiceImpl implements CVActivityLogService {

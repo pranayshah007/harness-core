@@ -12,6 +12,8 @@ import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,7 +31,9 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.beans.ServiceV2YamlMetadata;
 import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
@@ -41,7 +45,9 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
+import io.harness.utils.NGFeatureFlagHelperService;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -61,6 +67,8 @@ public class ServiceResourceV2Test extends CategoryTest {
   @InjectMocks ServiceResourceV2 serviceResourceV2;
   @Mock OrgAndProjectValidationHelper orgAndProjectValidationHelper;
   @Mock AccessControlClient accessControlClient;
+  @Mock NGFeatureFlagHelperService featureFlagHelperService;
+  @Mock ServiceEntityYamlSchemaHelper serviceSchemaHelper;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -116,6 +124,31 @@ public class ServiceResourceV2Test extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testCreateServiceWithSchemaValidationFlagOn() throws IOException {
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION))
+        .thenReturn(false);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
+    String yaml = "service:\n"
+        + "  name: das\n"
+        + "  identifier: das\n"
+        + "  tags: {}\n"
+        + "  serviceDefinition:\n"
+        + "    type: Kubernetes";
+    serviceRequestDTO = ServiceRequestDTO.builder()
+                            .identifier(IDENTIFIER)
+                            .orgIdentifier(ORG_IDENTIFIER)
+                            .projectIdentifier(PROJ_IDENTIFIER)
+                            .name(NAME)
+                            .yaml(yaml)
+                            .build();
+    assertThatThrownBy(() -> serviceResourceV2.create(ACCOUNT_ID, serviceRequestDTO))
+        .isInstanceOf(InvalidRequestException.class);
+    verify(serviceSchemaHelper, times(1)).validateSchema(ACCOUNT_ID, serviceRequestDTO.getYaml());
+  }
+
+  @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testCreateServices() {
@@ -137,6 +170,42 @@ public class ServiceResourceV2Test extends CategoryTest {
             Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
     verify(orgAndProjectValidationHelper, times(1))
         .checkThatTheOrganizationAndProjectExists(ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testCreateServicesWithSchemaValidationFlagOn() throws IOException {
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION))
+        .thenReturn(false);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
+    String yaml = "service:\n"
+        + "  name: das\n"
+        + "  identifier: das\n"
+        + "  tags: {}\n"
+        + "  serviceDefinition:\n"
+        + "    type: Kubernetes";
+    List<ServiceRequestDTO> serviceRequestDTOList = new ArrayList<>();
+    serviceRequestDTO = ServiceRequestDTO.builder()
+                            .identifier(IDENTIFIER)
+                            .orgIdentifier(ORG_IDENTIFIER)
+                            .projectIdentifier(PROJ_IDENTIFIER)
+                            .name(NAME)
+                            .yaml("")
+                            .build();
+    ServiceRequestDTO serviceRequestDTO1 = ServiceRequestDTO.builder()
+                                               .identifier(IDENTIFIER)
+                                               .orgIdentifier(ORG_IDENTIFIER)
+                                               .projectIdentifier(PROJ_IDENTIFIER)
+                                               .name(NAME)
+                                               .yaml(yaml)
+                                               .build();
+    serviceRequestDTOList.add(serviceRequestDTO);
+    serviceRequestDTOList.add(serviceRequestDTO1);
+
+    assertThatThrownBy(() -> serviceResourceV2.createServices(ACCOUNT_ID, serviceRequestDTOList))
+        .isInstanceOf(InvalidRequestException.class);
+    verify(serviceSchemaHelper, times(1)).validateSchema(ACCOUNT_ID, serviceRequestDTO.getYaml());
   }
 
   @Test
@@ -172,6 +241,25 @@ public class ServiceResourceV2Test extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testUpdateServiceWithSchemeFfOn() {
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION))
+        .thenReturn(false);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
+    when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
+             ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
+        .thenReturn(true);
+    when(serviceEntityService.update(any())).thenReturn(entity);
+    serviceResourceV2.update("IF_MATCH", ACCOUNT_ID, serviceRequestDTO);
+    verify(accessControlClient, times(1))
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, serviceRequestDTO.getOrgIdentifier(),
+                                   serviceRequestDTO.getProjectIdentifier()),
+            Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
+    verify(serviceSchemaHelper, times(1)).validateSchema(ACCOUNT_ID, serviceRequestDTO.getYaml());
+  }
+
+  @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testUpsertService() {
@@ -186,6 +274,24 @@ public class ServiceResourceV2Test extends CategoryTest {
             Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
     verify(orgAndProjectValidationHelper, times(1))
         .checkThatTheOrganizationAndProjectExists(ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testUpsertServiceWithSchemaValidationFlagOn() {
+    when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
+             ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
+        .thenReturn(true);
+    when(serviceEntityService.upsert(any(), eq(UpsertOptions.DEFAULT))).thenReturn(entity);
+    serviceResourceV2.upsert("IF_MATCH", ACCOUNT_ID, serviceRequestDTO);
+    verify(accessControlClient, times(1))
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, serviceRequestDTO.getOrgIdentifier(),
+                                   serviceRequestDTO.getProjectIdentifier()),
+            Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
+    verify(orgAndProjectValidationHelper, times(1))
+        .checkThatTheOrganizationAndProjectExists(ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID);
+    verify(serviceSchemaHelper, times(1)).validateSchema(ACCOUNT_ID, serviceRequestDTO.getYaml());
   }
 
   @Test
@@ -205,6 +311,9 @@ public class ServiceResourceV2Test extends CategoryTest {
         .when(serviceEntityService)
         .getServices(anyString(), anyString(), anyString(), anyList());
     doReturn("input-set1", "input-set2").when(serviceEntityService).createServiceInputsYaml(anyString(), anyString());
+
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY))
+        .thenReturn(true);
 
     final ResponseDTO<ServicesV2YamlMetadataDTO> servicesYamlAndRuntimeInputsResponse =
         serviceResourceV2.getServicesYamlAndRuntimeInputs(
@@ -229,5 +338,99 @@ public class ServiceResourceV2Test extends CategoryTest {
                    .map(ServiceV2YamlMetadata::getInputSetTemplateYaml)
                    .collect(Collectors.toList()))
         .containsExactlyInAnyOrder("input-set1", "input-set2");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testCreateServiceWithEmptyYaml() throws IOException {
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION))
+        .thenReturn(false);
+
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
+
+    when(serviceEntityService.create(any())).thenReturn(entity);
+
+    serviceRequestDTO = ServiceRequestDTO.builder()
+                            .identifier(IDENTIFIER)
+                            .orgIdentifier(ORG_IDENTIFIER)
+                            .projectIdentifier(PROJ_IDENTIFIER)
+                            .name(NAME)
+                            .yaml("")
+                            .build();
+
+    serviceResourceV2.create(ACCOUNT_ID, serviceRequestDTO);
+    verify(serviceSchemaHelper, times(2)).validateSchema(any(), any());
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testUpsertServiceWithEmptyYaml() {
+    when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
+             ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
+        .thenReturn(true);
+
+    when(serviceEntityService.upsert(any(), eq(UpsertOptions.DEFAULT))).thenReturn(entity);
+
+    serviceRequestDTO = ServiceRequestDTO.builder()
+                            .identifier(IDENTIFIER)
+                            .orgIdentifier(ORG_IDENTIFIER)
+                            .projectIdentifier(PROJ_IDENTIFIER)
+                            .name(NAME)
+                            .yaml("")
+                            .build();
+
+    serviceResourceV2.upsert("IF_MATCH", ACCOUNT_ID, serviceRequestDTO);
+
+    verify(serviceSchemaHelper, times(2)).validateSchema(any(), any());
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testCreateServicesWithEmptyYaml() throws IOException {
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION))
+        .thenReturn(false);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
+    List<ServiceRequestDTO> serviceRequestDTOList = new ArrayList<>();
+    List<ServiceEntity> outputServiceEntitiesList = new ArrayList<>();
+    outputServiceEntitiesList.add(entity);
+    serviceRequestDTO = ServiceRequestDTO.builder()
+                            .identifier(IDENTIFIER)
+                            .orgIdentifier(ORG_IDENTIFIER)
+                            .projectIdentifier(PROJ_IDENTIFIER)
+                            .name(NAME)
+                            .build();
+    ServiceRequestDTO serviceRequestDTO1 = ServiceRequestDTO.builder()
+                                               .identifier(IDENTIFIER)
+                                               .orgIdentifier(ORG_IDENTIFIER)
+                                               .projectIdentifier(PROJ_IDENTIFIER)
+                                               .name(NAME)
+                                               .build();
+    serviceRequestDTOList.add(serviceRequestDTO);
+    serviceRequestDTOList.add(serviceRequestDTO1);
+    when(serviceEntityService.bulkCreate(eq(ACCOUNT_ID), any())).thenReturn(new PageImpl<>(outputServiceEntitiesList));
+    serviceResourceV2.createServices(ACCOUNT_ID, serviceRequestDTOList);
+    verify(serviceSchemaHelper, times(4)).validateSchema(any(), any());
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testUpdateServiceWithEmptyYaml() {
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION))
+        .thenReturn(false);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
+    when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
+             ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
+        .thenReturn(true);
+    when(serviceEntityService.update(any())).thenReturn(entity);
+    ServiceRequestDTO serviceRequestDTO1 = ServiceRequestDTO.builder()
+                                               .identifier(IDENTIFIER)
+                                               .orgIdentifier(ORG_IDENTIFIER)
+                                               .projectIdentifier(PROJ_IDENTIFIER)
+                                               .name(NAME)
+                                               .build();
+    serviceResourceV2.update("IF_MATCH", ACCOUNT_ID, serviceRequestDTO1);
+    verify(serviceSchemaHelper, times(2)).validateSchema(any(), any());
   }
 }

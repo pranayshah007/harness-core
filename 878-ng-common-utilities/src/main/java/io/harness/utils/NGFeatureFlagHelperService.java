@@ -16,6 +16,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -23,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 public class NGFeatureFlagHelperService {
   private static final String ERROR_MESSAGE = "Unexpected error, could not fetch the feature flag";
 
-  @Inject AccountClient accountClient;
+  @Inject @Named("PRIVILEGED") AccountClient accountClient;
 
   public boolean isEnabled(String accountId, FeatureName featureName) {
     try {

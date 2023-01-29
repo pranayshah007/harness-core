@@ -11,8 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.k8s.model.KubernetesResource;
-import io.harness.k8s.releasehistory.K8sLegacyRelease;
-import io.harness.k8s.releasehistory.ReleaseHistory;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 
 import java.util.List;
 import lombok.Data;
@@ -22,8 +22,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class K8sRollingHandlerConfig extends K8sHandlerConfig {
-  private ReleaseHistory releaseHistory;
-  private K8sLegacyRelease release;
+  private IK8sReleaseHistory releaseHistory;
+  private IK8sRelease release;
   private List<KubernetesResource> managedWorkloads;
   private List<KubernetesResource> customWorkloads;
+  private int currentReleaseNumber;
+  private boolean useDeclarativeRollback;
 }

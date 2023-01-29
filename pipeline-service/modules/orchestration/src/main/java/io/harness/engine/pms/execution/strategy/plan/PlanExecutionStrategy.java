@@ -90,19 +90,23 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
       String projectIdentifier = ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.projectIdentifier);
       String expandedPipelineJson = metadata.getExpandedPipelineJson();
       PlanExecution planExecution;
-      PlanExecutionSettingResponse planExecutionSettingResponse = pipelineSettingsService.shouldQueuePlanExecution(
-          accountId, orgIdentifier, projectIdentifier, ambiance.getMetadata().getPipelineIdentifier());
-      GovernanceMetadata governanceMetadata =
-          governanceService.evaluateGovernancePolicies(expandedPipelineJson, accountId, orgIdentifier,
-              projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN, ambiance.getPlanExecutionId());
-      if (planExecutionSettingResponse.isShouldQueue()) {
-        planExecution = createPlanExecution(ambiance, metadata, governanceMetadata, Status.QUEUED);
-        orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
-            OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(metadata).build());
-        if (governanceMetadata.getDeny()) {
-          return planExecutionService.updateStatus(ambiance.getPlanExecutionId(), ERRORED,
-              ops -> ops.set(PlanExecutionKeys.endTs, System.currentTimeMillis()));
-        }
+      PlanExecutionSettingResponse planExecutionSettingResponse =
+          pipelineSettingsService.shouldQueuePlanExecution(accountId, ambiance.getMetadata().getPipelineIdentifier());
+      GovernanceMetadata governanceMetadata = governanceService.evaluateGovernancePolicies(expandedPipelineJson,
+          accountId, orgIdentifier, projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN,
+          ambiance.getPlanExecutionId(), ambiance.getMetadata().getHarnessVersion());
+
+      planExecution = createPlanExecution(ambiance, metadata, governanceMetadata, planExecutionSettingResponse);
+      if (governanceMetadata.getDeny()) {
+        log.info(
+            "Not starting the planExecution with planExecutionId: {} because the governance check denied the execution.",
+            ambiance.getPlanExecutionId());
+        return planExecutionService.markPlanExecutionErrored(ambiance.getPlanExecutionId());
+      }
+
+      // isNewFlow: for restrictions using the enforcements.
+      if (planExecutionSettingResponse.isUseNewFlow() || planExecutionSettingResponse.isShouldQueue()) {
+        // Attach a Callback so that if this finishes then next execution starts
         PlanExecutionResumeCallback callback = PlanExecutionResumeCallback.builder()
                                                    .accountIdIdentifier(accountId)
                                                    .orgIdentifier(orgIdentifier)
@@ -112,27 +116,12 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
 
         waitNotifyEngine.waitForAllOn(
             publisherName, callback, String.format(ENFORCEMENT_CALLBACK_ID, planExecution.getUuid()));
-        return planExecution;
       }
-      planExecution = createPlanExecution(ambiance, metadata, governanceMetadata, Status.RUNNING);
-      orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
-          OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(metadata).build());
-      if (governanceMetadata.getDeny()) {
-        return planExecutionService.updateStatus(ambiance.getPlanExecutionId(), ERRORED,
-            ops -> ops.set(PlanExecutionKeys.endTs, System.currentTimeMillis()));
+
+      if (!planExecutionSettingResponse.isShouldQueue()) {
+        // Start the planExecution if it should not be queued.
+        startPlanExecution(plan, ambiance);
       }
-      if (planExecutionSettingResponse.isUseNewFlow()) {
-        // Attach a Callback so that if this finishes then next execution starts
-        PlanExecutionResumeCallback callback = PlanExecutionResumeCallback.builder()
-                                                   .accountIdIdentifier(accountId)
-                                                   .orgIdentifier(orgIdentifier)
-                                                   .projectIdentifier(projectIdentifier)
-                                                   .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
-                                                   .build();
-        waitNotifyEngine.waitForAllOn(
-            publisherName, callback, String.format(ENFORCEMENT_CALLBACK_ID, planExecution.getUuid()));
-      }
-      startPlanExecution(plan, ambiance);
       return planExecution;
     } finally {
       log.info("[PMS_PlanExecution] Time taken to runNode plan in PlanExecutionStrategy: {} ",
@@ -151,7 +140,12 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
   }
 
   private PlanExecution createPlanExecution(Ambiance ambiance, PlanExecutionMetadata planExecutionMetadata,
-      GovernanceMetadata governanceMetadata, Status status) {
+      GovernanceMetadata governanceMetadata, PlanExecutionSettingResponse planExecutionSettingResponse) {
+    // Will start the planExecution with running status if its not being queued.
+    Status status = Status.RUNNING;
+    if (planExecutionSettingResponse.isShouldQueue()) {
+      status = Status.QUEUED;
+    }
     PlanExecution planExecution = PlanExecution.builder()
                                       .uuid(ambiance.getPlanExecutionId())
                                       .planId(ambiance.getPlanId())
@@ -163,10 +157,21 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
                                       .ambiance(ambiance)
                                       .build();
 
-    return transactionHelper.performTransaction(() -> {
+    PlanExecution createdPlanExecution = transactionHelper.performTransaction(() -> {
       planExecutionMetadataService.save(planExecutionMetadata);
       return planExecutionService.save(planExecution);
     });
+
+    try {
+      orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
+          OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(planExecutionMetadata).build());
+    } catch (Exception e) {
+      // Marking the planExecution Errored if OrchestrationStartObservers failed.
+      planExecutionService.markPlanExecutionErrored(ambiance.getPlanExecutionId());
+      log.error("Not starting the PlanExecution:", e);
+      throw e;
+    }
+    return createdPlanExecution;
   }
 
   @Override

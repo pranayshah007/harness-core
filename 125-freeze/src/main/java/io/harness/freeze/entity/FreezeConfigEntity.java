@@ -13,12 +13,19 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.encryption.Scope;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
+import io.harness.freeze.beans.FreezeWindow;
+import io.harness.freeze.beans.yaml.FreezeConfig;
+import io.harness.freeze.beans.yaml.FreezeInfoConfig;
+import io.harness.freeze.helpers.FreezeTimeUtils;
+import io.harness.freeze.mappers.NGFreezeDtoMapper;
+import io.harness.iterator.PersistentIrregularIterable;
 import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
@@ -32,6 +39,8 @@ import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
+import dev.morphia.annotations.Entity;
+import java.util.ArrayList;
 import java.util.List;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -42,7 +51,6 @@ import lombok.Setter;
 import lombok.Singular;
 import lombok.With;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -64,8 +72,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = true)
 @Persistent
 public class FreezeConfigEntity implements PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware,
-                                           CreatedByAware, UpdatedByAware {
-  @Id @org.mongodb.morphia.annotations.Id String uuid;
+                                           CreatedByAware, UpdatedByAware, PersistentIrregularIterable {
+  @Id @dev.morphia.annotations.Id String uuid;
 
   @NotEmpty String accountId;
 
@@ -91,4 +99,25 @@ public class FreezeConfigEntity implements PersistentEntity, AccountAccess, Uuid
 
   @SchemaIgnore @CreatedBy private EmbeddedUser createdBy;
   @SchemaIgnore @LastModifiedBy private EmbeddedUser lastUpdatedBy;
+
+  List<Long> nextIterations;
+
+  @Override
+  public List<Long> recalculateNextIterations(String fieldName, boolean skipMissed, long throttled) {
+    if (status.equals(FreezeStatus.DISABLED)) {
+      nextIterations = new ArrayList<>();
+      return nextIterations;
+    }
+    nextIterations = new ArrayList<>();
+    FreezeConfig freezeConfig = NGFreezeDtoMapper.toFreezeConfig(yaml);
+    FreezeInfoConfig freezeInfoConfig = freezeConfig.getFreezeInfoConfig();
+    List<FreezeWindow> windows = freezeInfoConfig.getWindows();
+    nextIterations = FreezeTimeUtils.fetchUpcomingTimeWindow(windows);
+    return nextIterations;
+  }
+
+  @Override
+  public Long obtainNextIteration(String fieldName) {
+    return EmptyPredicate.isEmpty(nextIterations) ? null : nextIterations.get(0);
+  }
 }

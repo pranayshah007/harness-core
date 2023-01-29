@@ -28,7 +28,6 @@ import io.harness.beans.FileReference;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
@@ -72,7 +71,7 @@ import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 
 import software.wings.beans.TaskType;
 
@@ -105,9 +104,6 @@ public class AzureCreateBPStepTest extends CategoryTest {
   @Mock private EngineExpressionService engineExpressionService;
   @Mock private FileStoreService fileStoreService;
   @Mock private SecretManagerClientService secretManagerClientService;
-
-  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
-
   @Mock private AzureCommonHelper azureCommonHelper;
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
 
@@ -129,7 +125,6 @@ public class AzureCreateBPStepTest extends CategoryTest {
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
   }
 
   @Test
@@ -209,8 +204,8 @@ public class AzureCreateBPStepTest extends CategoryTest {
     when(azureCommonHelper.getAzureConnectorConfig(any(), any()))
         .thenReturn((AzureConnectorDTO) azureHelperTest.createAzureConnectorDTO().getConnectorConfig());
     StepInputPackage inputPackage = StepInputPackage.builder().build();
-    Mockito.mockStatic(StepUtils.class);
-    Mockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    Mockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
     Class<ArrayList<TaskSelector>> delegateSelectors = (Class<ArrayList<TaskSelector>>) (Class) ArrayList.class;
@@ -222,8 +217,8 @@ public class AzureCreateBPStepTest extends CategoryTest {
     verify(azureCommonHelper, times(0)).getGitStoreDelegateConfig(any(), any(), any());
     verify(azureCommonHelper, times(0)).getGitFetchFileTaskChainResponse(any(), any(), any(), any(), any(), any());
     assertThat(taskChainResponse).isNotNull();
-    verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(
+    verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(
         any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
@@ -267,8 +262,8 @@ public class AzureCreateBPStepTest extends CategoryTest {
               }
             })
             .build();
-    Mockito.mockStatic(StepUtils.class);
-    when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
@@ -281,8 +276,8 @@ public class AzureCreateBPStepTest extends CategoryTest {
         azureCreateBPStep.executeNextLinkWithSecurityContext(azureHelperTest.getAmbiance(), step, inputPackage,
             AzureCreateBPPassThroughData.builder().build(), () -> response);
     assertThat(taskChainResponse).isNotNull();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(
         any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();

@@ -15,7 +15,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.githubpackages.dtos.GithubPackagesResponseDTO;
 import io.harness.cdng.artifact.resources.githubpackages.mappers.GithubPackagesResourceMapper;
-import io.harness.cdng.artifact.utils.ArtifactStepHelper;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -199,7 +199,7 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
                                                         .attributes(delegateRequest)
                                                         .build();
 
-    Map<String, String> abstractions = ArtifactStepHelper.getTaskSetupAbstractions(ngAccess);
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
 
     final DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
@@ -211,7 +211,7 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
             .taskSelectors(delegateRequest.getGithubConnectorDTO().getDelegateSelectors())
             .build();
     try {
-      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      return delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }

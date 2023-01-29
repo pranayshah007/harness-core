@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service;
 
+import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
+
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -32,13 +34,18 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
-import software.wings.ngmigration.NGMigrationStatus;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -67,15 +74,18 @@ public abstract class NgMigrationService {
 
   public abstract DiscoveryNode discover(String accountId, String appId, String entityId);
 
-  public abstract NGMigrationStatus canMigrate(NGMigrationEntity entity);
-
   public static String getYamlString(NGYamlFile yamlFile) {
-    return NGYamlUtils.getYamlString(yamlFile.getYaml());
-  }
-
-  public NGMigrationStatus canMigrate(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    return canMigrate(entities.get(entityId).getEntity());
+    final ObjectMapper YAML_MAPPER = new ObjectMapper(
+        new YAMLFactory().enable(YAMLGenerator.Feature.MINIMIZE_QUOTES).enable(Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS))
+                                         .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                                         .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+                                         .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+                                         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                                         .configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false)
+                                         .configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true)
+                                         .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
+                                         .enable(SerializationFeature.INDENT_OUTPUT);
+    return NGYamlUtils.getYamlString(yamlFile.getYaml(), NG_DEFAULT_OBJECT_MAPPER, YAML_MAPPER);
   }
 
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
@@ -90,13 +100,9 @@ public abstract class NgMigrationService {
     return canMigrateAll;
   }
 
-  public List<NGYamlFile> getYaml(MigrationInputDTO inputDTO, CgEntityId root, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    if (!isNGEntityExists() || !canMigrate(entityId, root, inputDTO.isMigrateReferencedEntities())) {
-      return new ArrayList<>();
-    }
+  public NGYamlFile getExistingYaml(
+      MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities, CgEntityId entityId) {
     CgEntityNode cgEntityNode = entities.get(entityId);
-    // TODO: CG Basic Info should be part of CGEntityNode
     CgBasicInfo cgBasicInfo = cgEntityNode.getEntity().getCgBasicInfo();
     NgEntityDetail ngEntityDetail = getNGEntityDetail(inputDTO, entities, entityId);
     boolean mappingExist = migratorMappingService.doesMappingExist(cgBasicInfo, ngEntityDetail);
@@ -108,24 +114,30 @@ public abstract class NgMigrationService {
             .type(entityId.getType())
             .build();
     if (mappingExist) {
-      YamlDTO yamlDTO = null;
       try {
-        yamlDTO = getNGEntity(ngEntityDetail, inputDTO.getAccountIdentifier());
+        YamlDTO yamlDTO = getNGEntity(ngEntityDetail, inputDTO.getAccountIdentifier());
+        if (yamlDTO == null) {
+          return null;
+        }
+        ngYamlFile.setExists(true);
+        ngYamlFile.setYaml(yamlDTO);
+        return ngYamlFile;
       } catch (Exception ex) {
         log.error("Failed to retrieve NG Entity. ", ex);
       }
-      if (yamlDTO == null) {
-        // Deleted
-        return generateYaml(inputDTO, entities, graph, entityId, migratedEntities);
-      } else {
-        ngYamlFile.setExists(true);
-        ngYamlFile.setYaml(yamlDTO);
-        migratedEntities.put(entityId, ngYamlFile);
-        return Arrays.asList(ngYamlFile);
-      }
-    } else {
-      return generateYaml(inputDTO, entities, graph, entityId, migratedEntities);
     }
+    return null;
+  }
+
+  public List<NGYamlFile> getYaml(MigrationInputDTO inputDTO, CgEntityId root, Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+    if (!isNGEntityExists() || !canMigrate(entityId, root, inputDTO.isMigrateReferencedEntities())) {
+      return new ArrayList<>();
+    }
+    if (migratedEntities.containsKey(entityId)) {
+      return new ArrayList<>();
+    }
+    return generateYaml(inputDTO, entities, graph, entityId, migratedEntities);
   }
 
   private NgEntityDetail getNGEntityDetail(
@@ -190,7 +202,7 @@ public abstract class NgMigrationService {
                      inputDTO.getProjectIdentifier(), content, name, identifier, fileUsage, type, parentIdentifier,
                      mimeType)
                  .execute();
-      log.info("Connector creation Response details {} {}", resp.code(), resp.message());
+      log.info("File store creation Response details {} {}", resp.code(), resp.message());
     } catch (IOException e) {
       log.error("Failed to create file", e);
       return MigrationImportSummaryDTO.builder()

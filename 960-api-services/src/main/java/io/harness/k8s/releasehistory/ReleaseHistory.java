@@ -13,11 +13,11 @@ import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.WingsException;
-import io.harness.k8s.manifest.ObjectYamlUtils;
+import io.harness.k8s.model.K8sYamlUtils;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.releasehistory.IK8sRelease.Status;
-import io.harness.serializer.YamlUtils;
+import io.harness.k8s.utils.ObjectYamlUtils;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import java.io.IOException;
@@ -48,11 +48,11 @@ public class ReleaseHistory {
   }
 
   public static ReleaseHistory createFromData(String releaseHistory) throws IOException {
-    return new YamlUtils().read(releaseHistory, ReleaseHistory.class);
+    return new K8sYamlUtils().read(releaseHistory, ReleaseHistory.class);
   }
 
   public K8sLegacyRelease createNewRelease(List<KubernetesResourceId> resources) {
-    int releaseNumber = getCurrentReleaseNumber();
+    int releaseNumber = getAndIncrementLatestReleaseNumber();
     this.getReleases().add(0,
         K8sLegacyRelease.builder()
             .number(releaseNumber)
@@ -64,7 +64,7 @@ public class ReleaseHistory {
   }
 
   public K8sLegacyRelease createNewReleaseWithResourceMap(List<KubernetesResource> resources) {
-    int releaseNumber = getCurrentReleaseNumber();
+    int releaseNumber = getAndIncrementLatestReleaseNumber();
     this.getReleases().add(0,
         K8sLegacyRelease.builder()
             .number(releaseNumber)
@@ -76,7 +76,12 @@ public class ReleaseHistory {
     return getLatestRelease();
   }
 
-  public int getCurrentReleaseNumber() {
+  public K8sLegacyRelease addReleaseToReleaseHistory(K8sLegacyRelease release) {
+    this.getReleases().add(0, release);
+    return release;
+  }
+
+  public int getAndIncrementLatestReleaseNumber() {
     int releaseNumber = 1;
     if (!this.getReleases().isEmpty()) {
       releaseNumber = getLatestRelease().getNumber() + 1;

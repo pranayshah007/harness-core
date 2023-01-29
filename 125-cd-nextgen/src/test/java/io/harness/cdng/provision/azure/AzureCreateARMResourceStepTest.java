@@ -32,7 +32,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.azure.webapp.AzureWebAppStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
@@ -81,7 +80,7 @@ import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 
 import software.wings.beans.TaskType;
 
@@ -112,7 +111,6 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
   @Mock private SecretManagerClientService secretManagerClientService;
   @Mock private AzureWebAppStepHelper azureWebAppStepHelper;
   @Mock private AzureARMConfigDAL azureARMConfigDAL;
-  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private AzureCommonHelper azureCommonHelper;
   @Mock private CDExpressionResolver cdExpressionResolver;
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
@@ -136,7 +134,6 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
   }
 
   @Test
@@ -350,8 +347,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     when(azureWebAppStepHelper.fetchFileContentFromHarnessStore(
              azureHelperTest.getAmbiance(), AZURE_PARAMETER_SELECTOR, (HarnessStore) parametersStore.getSpec()))
         .thenReturn(parametersFile);
-    Mockito.mockStatic(StepUtils.class);
-    Mockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    Mockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
     Class<ArrayList<TaskSelector>> delegateSelectors = (Class<ArrayList<TaskSelector>>) (Class) ArrayList.class;
@@ -362,8 +359,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
         azureHelperTest.getAmbiance(), createStep("RG", templateStore, parametersStore), inputPackage);
 
     assertThat(taskChainResponse).isNotNull();
-    verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(
+    verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(
         any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
@@ -403,8 +400,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
              azureHelperTest.getAmbiance(), AZURE_PARAMETER_SELECTOR, (HarnessStore) fileStoreConfigWrapper.getSpec()))
         .thenReturn(parametersFile);
 
-    Mockito.mockStatic(StepUtils.class);
-    when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
@@ -416,8 +413,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
 
     assertThat(taskChainResponse).isNotNull();
     verify(azureARMConfigDAL).saveAzureARMConfig(any());
-    verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(
+    verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(
         any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
@@ -467,8 +464,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     when(azureWebAppStepHelper.fetchFileContentFromHarnessStore(
              azureHelperTest.getAmbiance(), AZURE_PARAMETER_SELECTOR, (HarnessStore) fileStoreConfigWrapper.getSpec()))
         .thenReturn(parametersFile);
-    Mockito.mockStatic(StepUtils.class);
-    Mockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    Mockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
     Class<ArrayList<TaskSelector>> delegateSelectors = (Class<ArrayList<TaskSelector>>) (Class) ArrayList.class;
@@ -480,9 +477,9 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
         azureHelperTest.getAmbiance(), createStep("SUBS", templateStore, fileStoreConfigWrapper), inputPackage);
     assertThat(taskChainResponse).isNotNull();
     verify(azureARMConfigDAL).saveAzureARMConfig(any());
-    verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), unitsArgumentCaptor.capture(), any(),
-        taskSelectorsArgumentCaptor.capture(), any());
+    verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(),
+        unitsArgumentCaptor.capture(), any(), taskSelectorsArgumentCaptor.capture(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     AzureARMTaskNGParameters taskNGParameters =
@@ -546,8 +543,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     when(azureWebAppStepHelper.fetchFileContentFromHarnessStore(
              azureHelperTest.getAmbiance(), AZURE_PARAMETER_SELECTOR, (HarnessStore) fileStoreConfigWrapper.getSpec()))
         .thenReturn(parametersFile);
-    Mockito.mockStatic(StepUtils.class);
-    when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     azureCreateStep.startChainLinkAfterRbac(azureHelperTest.getAmbiance(), step, inputPackage);
@@ -608,8 +605,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
             .build();
     StepElementParameters step = createStep("RG", templateStore, fileStoreConfigWrapper);
     GitFetchResponse response = getGitFetchResponse();
-    Mockito.mockStatic(StepUtils.class);
-    when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
@@ -624,8 +621,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
         azureCreateStep.executeNextLinkWithSecurityContext(azureHelperTest.getAmbiance(), step, inputPackage,
             AzureCreateARMResourcePassThroughData.builder().build(), () -> response);
     assertThat(taskChainResponse).isNotNull();
-    verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(
+    verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(
         any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
@@ -660,10 +657,10 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
             .build();
     StepElementParameters step = createStep("RG", templateStore, fileStoreConfigWrapper);
     GitFetchResponse response = getGitFetchResponseForParametersOnly();
-    Mockito.mockStatic(StepUtils.class);
+    Mockito.mockStatic(TaskRequestsUtils.class);
     when(cdExpressionResolver.renderExpression(any(), eq("Inline"))).thenReturn("Inline");
     when(cdExpressionResolver.renderExpression(any(), eq("file"))).thenReturn("file");
-    when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
@@ -678,8 +675,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
         azureCreateStep.executeNextLinkWithSecurityContext(azureHelperTest.getAmbiance(), step, inputPackage,
             AzureCreateARMResourcePassThroughData.builder().build(), () -> response);
     assertThat(taskChainResponse).isNotNull();
-    verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(
+    verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(
         any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
@@ -716,8 +713,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
             .build();
     StepElementParameters step = createStep("SUBS", templateStore, fileStoreConfigWrapper);
     GitFetchResponse response = getGitFetchResponse();
-    Mockito.mockStatic(StepUtils.class);
-    when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
@@ -732,8 +729,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
         azureCreateStep.executeNextLinkWithSecurityContext(azureHelperTest.getAmbiance(), step, inputPackage,
             AzureCreateARMResourcePassThroughData.builder().build(), () -> response);
     assertThat(taskChainResponse).isNotNull();
-    verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(
+    verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(
         any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
@@ -770,10 +767,10 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
             .build();
     StepElementParameters step = createStep("MNG", templateStore, fileStoreConfigWrapper);
     GitFetchResponse response = getGitFetchResponse();
-    Mockito.mockStatic(StepUtils.class);
+    Mockito.mockStatic(TaskRequestsUtils.class);
     when(cdExpressionResolver.renderExpression(any(), eq("template"))).thenReturn("template");
     when(cdExpressionResolver.renderExpression(any(), eq("file"))).thenReturn("file");
-    when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
@@ -786,8 +783,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
         azureCreateStep.executeNextLinkWithSecurityContext(azureHelperTest.getAmbiance(), step, inputPackage,
             AzureCreateARMResourcePassThroughData.builder().build(), () -> response);
     assertThat(taskChainResponse).isNotNull();
-    verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(
+    verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(
         any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
@@ -862,8 +859,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     when(azureWebAppStepHelper.fetchFileContentFromHarnessStore(
              azureHelperTest.getAmbiance(), AZURE_PARAMETER_SELECTOR, (HarnessStore) fileStoreConfigWrapper.getSpec()))
         .thenReturn(parametersFile);
-    Mockito.mockStatic(StepUtils.class);
-    when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     TaskChainResponse taskChainResponse = TaskChainResponse.builder()
                                               .chainEnd(false)
@@ -907,8 +904,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
             .build();
     StepElementParameters step = createStep("SUBS", templateStore, fileStoreConfigWrapper);
     GitFetchResponse response = getGitFetchResponse();
-    Mockito.mockStatic(StepUtils.class);
-    when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
@@ -923,8 +920,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
         azureCreateStep.executeNextLinkWithSecurityContext(azureHelperTest.getAmbiance(), step, inputPackage,
             AzureCreateARMResourcePassThroughData.builder().build(), () -> response);
     assertThat(taskChainResponse).isNotNull();
-    verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(
+    verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(
         any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();

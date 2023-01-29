@@ -43,7 +43,6 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.ConfigService;
 
 import com.google.inject.Inject;
@@ -55,7 +54,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -93,11 +91,6 @@ public class ConfigFileMigrationService extends NgMigrationService {
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
     return discover(configService.get(appId, entityId));
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    throw new NotImplementedException("Config file can migrate not implemented");
   }
 
   @Override
@@ -224,7 +217,9 @@ public class ConfigFileMigrationService extends NgMigrationService {
       if (configNode != null) {
         ConfigFile configFile = (ConfigFile) configNode.getEntity();
         NGYamlFile file = getYamlFileForConfigFile(configFile, inputDTO, entities);
-        configWrappers.add(getConfigFileWrapper(configFile, migratedEntities, file));
+        if (file != null) {
+          configWrappers.add(getConfigFileWrapper(configFile, migratedEntities, file));
+        }
       }
     }
     return configWrappers;
@@ -237,7 +232,7 @@ public class ConfigFileMigrationService extends NgMigrationService {
 
   private ConfigFileWrapper getConfigFileWrapper(
       ConfigFile configFile, Map<CgEntityId, NGYamlFile> migratedEntities, NGYamlFile file) {
-    ParameterField<List<String>> files = ParameterField.ofNull();
+    ParameterField<List<String>> files = ParameterField.createValueField(Collections.emptyList());
     List<String> secretFiles = new ArrayList<>();
     if (configFile.isEncrypted()) {
       SecretRefData secretRefData = MigratorUtility.getSecretRef(migratedEntities, configFile.getEncryptedFileId());

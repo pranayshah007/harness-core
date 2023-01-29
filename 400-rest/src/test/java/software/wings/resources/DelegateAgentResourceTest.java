@@ -25,6 +25,7 @@ import static software.wings.utils.WingsTestConstants.ARTIFACT_STREAM_ID;
 import static software.wings.utils.WingsTestConstants.DELEGATE_ID;
 import static software.wings.utils.WingsTestConstants.STATE_EXECUTION_ID;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.util.Collections.singletonList;
 import static javax.ws.rs.client.Entity.entity;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,7 +37,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessModule;
@@ -47,10 +47,8 @@ import io.harness.artifact.ArtifactCollectionResponseHandler;
 import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateTaskEventsResponse;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateConfiguration;
-import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateProfileParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
@@ -72,6 +70,7 @@ import io.harness.manifest.ManifestCollectionResponseHandler;
 import io.harness.perpetualtask.connector.ConnectorHearbeatPublisher;
 import io.harness.perpetualtask.instancesync.InstanceSyncResponsePublisher;
 import io.harness.polling.client.PollingResourceClient;
+import io.harness.queueservice.infc.DelegateCapacityManagementService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -138,6 +137,8 @@ public class DelegateAgentResourceTest extends CategoryTest {
   private static final DelegateTaskService delegateTaskService = mock(DelegateTaskService.class);
   private static final InstanceSyncResponsePublisher instanceSyncResponsePublisher =
       mock(InstanceSyncResponsePublisher.class);
+  private static final DelegateCapacityManagementService delegateCapacityManagementService =
+      mock(DelegateCapacityManagementService.class);
 
   static {
     artifactCollectionResponseHandler = mock(ArtifactCollectionResponseHandler.class);
@@ -161,11 +162,12 @@ public class DelegateAgentResourceTest extends CategoryTest {
   @ClassRule
   public static final ResourceTestRule RESOURCES =
       ResourceTestRule.builder()
-          .instance(new DelegateAgentResource(delegateService, accountService, wingsPersistence,
-              delegateRequestRateLimiter, subdomainUrlHelper, artifactCollectionResponseHandler,
-              instanceSyncResponseHandler, manifestCollectionResponseHandler, connectorHearbeatPublisher,
-              kryoSerializer, configurationController, featureFlagService, delegateTaskServiceClassic,
-              pollResourceClient, instanceSyncResponsePublisher, delegatePollingHeartbeatService))
+          .instance(
+              new DelegateAgentResource(delegateService, accountService, wingsPersistence, delegateRequestRateLimiter,
+                  subdomainUrlHelper, artifactCollectionResponseHandler, instanceSyncResponseHandler,
+                  manifestCollectionResponseHandler, connectorHearbeatPublisher, kryoSerializer,
+                  configurationController, featureFlagService, delegateTaskServiceClassic, pollResourceClient,
+                  instanceSyncResponsePublisher, delegatePollingHeartbeatService, delegateCapacityManagementService))
           .instance(new AbstractBinder() {
             @Override
             protected void configure() {
@@ -215,21 +217,6 @@ public class DelegateAgentResourceTest extends CategoryTest {
     assertThat(restResponse.getResource()).isInstanceOf(DelegateConfiguration.class).isNotNull();
     assertThat(restResponse.getResource().getAction()).isEqualTo(SELF_DESTRUCT);
     assertThat(restResponse.getResource().getDelegateVersions()).isNull();
-  }
-
-  @Test
-  @Owner(developers = ROHITKARELIA)
-  @Category(UnitTests.class)
-  public void shouldGetConnectionHeartbeat() {
-    DelegateConnectionHeartbeat delegateConnectionHeartbeat = DelegateConnectionHeartbeat.builder().build();
-    RESOURCES.client()
-        .target("/agent/delegates/connectionHeartbeat/" + DELEGATE_ID + "?delegateId=" + DELEGATE_ID
-            + "&accountId=" + ACCOUNT_ID)
-        .request()
-        .post(entity(delegateConnectionHeartbeat, MediaType.APPLICATION_JSON),
-            new GenericType<RestResponse<String>>() {});
-    verify(delegateService, atLeastOnce())
-        .registerHeartbeat(ACCOUNT_ID, DELEGATE_ID, delegateConnectionHeartbeat, ConnectionMode.POLLING);
   }
 
   @Test

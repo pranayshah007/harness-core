@@ -11,10 +11,16 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Explanations.EXPLAIN_CHART_VERSION_IMPROPER_CONSTRAINT;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Explanations.EXPLAIN_NO_CHART_FOUND;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Explanations.EXPLAIN_NO_CHART_VERSION_FOUND;
+import static io.harness.delegate.task.helm.HelmExceptionConstants.Explanations.EXPLAIN_NO_RELEASES_ERROR;
+import static io.harness.delegate.task.helm.HelmExceptionConstants.Explanations.EXPLAIN_TIMEOUT_EXCEPTION;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HINT_CHART_VERSION_IMPROPER_CONSTRAINT;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HINT_NO_CHART_FOUND;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HINT_NO_CHART_VERSION_FOUND;
+import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HINT_NO_RELEASES_ERROR;
+import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HINT_TIMEOUT_ERROR;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.ACHYUTH;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,7 +43,6 @@ import org.junit.experimental.categories.Category;
 @OwnedBy(CDP)
 public class HelmClientRuntimeExceptionHandlerTest extends CategoryTest {
   private HelmClientRuntimeExceptionHandler handler = new HelmClientRuntimeExceptionHandler();
-
   @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
@@ -207,5 +212,34 @@ public class HelmClientRuntimeExceptionHandlerTest extends CategoryTest {
     final WingsException handledException = handler.handleException(runtimeException);
     assertThat(handledException).isInstanceOf(InvalidRequestException.class);
     assertThat(handledException.getMessage()).contains("Error: Some Error I have not seen before");
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void handleNoDeployedReleasesError() {
+    HelmClientRuntimeException runtimeException = new HelmClientRuntimeException(
+        new HelmClientException("Release rel-051222 has no deployed releases", HelmCliCommandType.UPGRADE));
+    final WingsException handledException = handler.handleException(runtimeException);
+    assertThat(handledException).isInstanceOf(HintException.class);
+    assertThat(handledException.getMessage()).contains(HINT_NO_RELEASES_ERROR);
+    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getCause().getMessage()).contains(EXPLAIN_NO_RELEASES_ERROR);
+    assertThat(handledException.getCause().getCause()).isInstanceOf(HelmClientException.class);
+    assertThat(handledException.getCause().getCause().getMessage()).isNotEmpty();
+  }
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void handleTimeoutError() {
+    HelmClientRuntimeException runtimeException = new HelmClientRuntimeException(new HelmClientException(
+        "Release rel-051222 failed. Error: timed out waiting for the condition", HelmCliCommandType.INSTALL));
+    final WingsException handledException = handler.handleException(runtimeException);
+    assertThat(handledException).isInstanceOf(HintException.class);
+    assertThat(handledException.getMessage()).contains(String.format(HINT_TIMEOUT_ERROR, HelmCliCommandType.INSTALL));
+    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getCause().getMessage()).contains(EXPLAIN_TIMEOUT_EXCEPTION);
+    assertThat(handledException.getCause().getCause()).isInstanceOf(HelmClientException.class);
+    assertThat(handledException.getCause().getCause().getMessage()).isNotEmpty();
   }
 }

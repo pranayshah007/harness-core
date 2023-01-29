@@ -17,4 +17,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @OwnedBy(HarnessTeam.CDC)
 @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-public interface FilterSpec {}
+public interface FilterSpec {
+  FilterSpec clone();
+}

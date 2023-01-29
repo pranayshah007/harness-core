@@ -11,7 +11,7 @@ import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.beans.MetricPackDTO;
 import io.harness.cvng.beans.newrelic.NewRelicApplication;
 import io.harness.cvng.core.beans.MetricPackValidationResponse;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.services.api.NewRelicService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -65,7 +65,8 @@ public class NewRelicResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get all newrelic applications", nickname = "getNewRelicApplications")
-  public ResponseDTO<List<NewRelicApplication>> getNewRelicApplications(@NotNull @BeanParam ProjectParams projectParams,
+  public ResponseDTO<List<NewRelicApplication>> getNewRelicApplications(
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @QueryParam("pageSize") @NotNull int pageSize, @QueryParam("offset") @NotNull int offset,
       @QueryParam("filter") @DefaultValue("") String filter, @NotNull @QueryParam("tracingId") String tracingId) {
@@ -80,7 +81,7 @@ public class NewRelicResource {
   @ExceptionMetered
   @ApiOperation(value = "get metric data for given metric packs", nickname = "getNewRelicMetricData")
   public ResponseDTO<MetricPackValidationResponse> getNewRelicMetricData(
-      @NotNull @BeanParam ProjectParams projectParams,
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("connectorIdentifier") @NotNull String connectorIdentifier,
       @QueryParam("appName") @NotNull String appName, @QueryParam("appId") @NotNull String appId,
       @QueryParam("requestGuid") @NotNull String requestGuid, @NotNull @Valid @Body List<MetricPackDTO> metricPacks) {
@@ -94,10 +95,10 @@ public class NewRelicResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get sample data for given nrql", nickname = "getSampleDataForNRQL")
-  public ResponseDTO<LinkedHashMap> getSampleDataForNRQL(@NotNull @BeanParam ProjectParams projectParams,
+  public ResponseDTO<LinkedHashMap> getSampleDataForNRQL(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("connectorIdentifier") @NotNull String connectorIdentifier,
       @QueryParam("requestGuid") @NotNull String requestGuid, @QueryParam("nrql") @NotNull String nrql) {
     return ResponseDTO.newResponse(
-        newRelicService.fetchSampleData(projectParams, connectorIdentifier, nrql, requestGuid));
+        newRelicService.fetchSampleData(projectParams.getProjectParams(), connectorIdentifier, nrql, requestGuid));
   }
 }

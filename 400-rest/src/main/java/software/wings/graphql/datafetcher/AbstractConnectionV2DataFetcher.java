@@ -34,6 +34,7 @@ import software.wings.graphql.schema.query.QLPageQueryParameters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import graphql.schema.DataFetchingEnvironment;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -44,7 +45,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 @TargetModule(HarnessModule._380_CG_GRAPHQL)

@@ -20,19 +20,19 @@ import static java.util.Arrays.asList;
 import io.harness.beans.EmbeddedUser;
 
 import software.wings.beans.NotificationAction.NotificationActionType;
-import software.wings.beans.artifact.Artifact.Status;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.artifact.Artifact.Status;
 import software.wings.service.intfc.ArtifactService;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.HashMap;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by anubhaw on 7/25/16.

@@ -8,6 +8,7 @@
 package io.harness.git;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.UNREACHABLE_HOST;
@@ -89,9 +90,12 @@ import java.nio.file.StandardCopyOption;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
@@ -145,6 +149,7 @@ public class GitClientV2Impl implements GitClientV2 {
   private static final String INVALID_ADVERTISEMENT_ERROR = "invalid advertisement of";
   private static final String REDIRECTION_BLOCKED_ERROR = "Redirection blocked";
   private static final String TIMEOUT_ERROR = "Connection time out";
+  private static final int SOCKET_CONNECTION_READ_TIMEOUT_SECONDS = 60;
 
   @Inject private GitClientHelper gitClientHelper;
   /**
@@ -855,11 +860,15 @@ public class GitClientV2Impl implements GitClientV2 {
       if (remoteRefUpdate.getStatus() == OK || remoteRefUpdate.getStatus() == UP_TO_DATE) {
         return pushResultBuilder().refUpdate(refUpdate).build();
       } else {
-        String errorMsg = format("Unable to push changes to git repository [%s]. "
-                + "Status reported by Remote is: %s and message is: %s. "
-                + "Other info: Force push: %s. Fast forward: %s",
-            commitAndPushRequest.getRepoUrl(), remoteRefUpdate.getStatus(), remoteRefUpdate.getMessage(),
-            remoteRefUpdate.isForceUpdate(), remoteRefUpdate.isFastForward());
+        String errorMsg = format("Unable to push changes to git repository [%s] and branch [%s]. "
+                + "Status reported by Remote is: %s and message is: %s. \n \n"
+                + "Files which were staged: [%s]",
+            commitAndPushRequest.getRepoUrl(), commitAndPushRequest.getBranch(), remoteRefUpdate.getStatus(),
+            remoteRefUpdate.getMessage(),
+            emptyIfNull(commitAndPushRequest.getGitFileChanges())
+                .stream()
+                .map(GitFileChange::getFilePath)
+                .collect(Collectors.toList()));
         log.error(gitClientHelper.getGitLogMessagePrefix(commitAndPushRequest.getRepoType()) + errorMsg);
         throw new YamlException(errorMsg, ADMIN_SRE);
       }
@@ -1096,7 +1105,7 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   @Override
-  public void downloadFiles(DownloadFilesRequest request) throws IOException {
+  public String downloadFiles(DownloadFilesRequest request) throws IOException {
     cleanup(request);
     validateRequiredArgs(request);
 
@@ -1106,7 +1115,7 @@ public class GitClientV2Impl implements GitClientV2 {
       try (FileOutputStream fileOutputStream = new FileOutputStream(lockFile);
            FileLock lock = fileOutputStream.getChannel().lock()) {
         log.info("Successfully acquired lock on {}", lockFile);
-        checkoutFiles(request);
+        String commitReference = checkoutFiles(request);
         String repoPath = gitClientHelper.getFileDownloadRepoDirectory(request);
 
         FileIo.createDirectoryIfDoesNotExist(request.getDestinationDirectory());
@@ -1138,6 +1147,7 @@ public class GitClientV2Impl implements GitClientV2 {
         }
 
         resetWorkingDir(request);
+        return commitReference;
       } catch (WingsException e) {
         tryResetWorkingDir(request);
         throw e;
@@ -1161,7 +1171,8 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   @Override
-  public void cloneRepoAndCopyToDestDir(DownloadFilesRequest request) {
+  @Nullable
+  public String cloneRepoAndCopyToDestDir(DownloadFilesRequest request) {
     final File lockFile = gitClientHelper.getLockObject(request.getConnectorId());
     synchronized (lockFile) {
       log.info("Trying to acquire lock on {}", lockFile);
@@ -1169,12 +1180,14 @@ public class GitClientV2Impl implements GitClientV2 {
            FileLock ignored = fileOutputStream.getChannel().lock()) {
         log.info("Successfully acquired lock on {}", lockFile);
         ensureRepoLocallyClonedAndUpdated(request);
-        String repoPath = gitClientHelper.getFileDownloadRepoDirectory(request);
+        String repoPath = gitClientHelper.getRepoDirectory(request);
         File src = new File(repoPath);
         File dest = new File(request.getDestinationDirectory());
         deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
         FileUtils.copyDirectory(src, dest);
         FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+
+        return getLatestCommitReference(repoPath);
       } catch (WingsException e) {
         tryResetWorkingDir(request);
         throw e;
@@ -1221,7 +1234,7 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   // use this method wrapped in inter process file lock to handle multiple delegate version
-  private void checkoutFiles(FetchFilesByPathRequest request) {
+  private String checkoutFiles(FetchFilesByPathRequest request) {
     synchronized (gitClientHelper.getLockObject(request.getConnectorId())) {
       log.info(new StringBuilder(128)
                    .append(" Processing Git command: FETCH_FILES ")
@@ -1241,11 +1254,13 @@ public class GitClientV2Impl implements GitClientV2 {
       cloneRepoForFilePathCheckout(request);
 
       // if useBranch is set, use it to checkout latest, else checkout given commitId
+      String commitId = request.getCommitId();
       if (request.useBranch()) {
-        checkoutBranchForPath(request);
+        commitId = checkoutBranchForPath(request);
       } else {
         checkoutGivenCommitForPath(request);
       }
+      return commitId;
     }
   }
 
@@ -1268,7 +1283,7 @@ public class GitClientV2Impl implements GitClientV2 {
     }
   }
 
-  private void checkoutBranchForPath(FetchFilesByPathRequest request) {
+  private String checkoutBranchForPath(FetchFilesByPathRequest request) {
     try (Git git = openGit(
              new File(gitClientHelper.getFileDownloadRepoDirectory(request)), request.getDisableUserGitConfig())) {
       log.info("Checking out Branch: " + request.getBranch());
@@ -1282,6 +1297,7 @@ public class GitClientV2Impl implements GitClientV2 {
       setPathsForCheckout(request.getFilePaths(), checkoutCommand);
       checkoutCommand.call();
       log.info("Successfully Checked out Branch: " + request.getBranch());
+      return getCommitId(git, request.getBranch());
     } catch (Exception ex) {
       log.error(GIT_YAML_LOG_PREFIX + EXCEPTION_STRING, ex);
       throw JGitRuntimeException.builder()
@@ -1290,6 +1306,19 @@ public class GitClientV2Impl implements GitClientV2 {
           .branch(request.getBranch())
           .build();
     }
+  }
+
+  private String getCommitId(Git git, String branch) {
+    String commitId = null;
+    try {
+      Ref ref = git.getRepository().getAllRefs().get("refs/remotes/origin/" + branch);
+      if (ref != null && ref.getObjectId() != null) {
+        commitId = ref.getObjectId().name();
+      }
+    } catch (Exception e) {
+      log.error("Failed to get commit id: {}", e.getMessage());
+    }
+    return commitId;
   }
 
   private void setPathsForCheckout(List<String> filePaths, CheckoutCommand checkoutCommand) {
@@ -1394,6 +1423,14 @@ public class GitClientV2Impl implements GitClientV2 {
       gitCommand.setTransportConfigCallback(transport -> {
         if (transport instanceof TransportHttp) {
           TransportHttp http = (TransportHttp) transport;
+          // Without proper timeout socket can get hang (ref: java.net.SocketInputStream.socketRead0) indefinitely
+          // during packet loss. In some scenarios even if connection is established back this may still remain stuck.
+          // Since socketRead0 ignores the thread interruptions, the original task thread will remain in running state
+          // forever. As all of our operations are synchronized stuck thread will block other git tasks to execute
+          // This timeout is used for setting connection and read timeout based on current implementation. A better
+          // option for further improvements is to have a custom connection factory where will use a more granular
+          // configuration of these timeouts parameters
+          http.setTimeout(SOCKET_CONNECTION_READ_TIMEOUT_SECONDS);
           http.setHttpConnectionFactory(connectionFactory);
         }
       });
@@ -1414,5 +1451,20 @@ public class GitClientV2Impl implements GitClientV2 {
       SystemReader.setInstance(null);
     }
     return Git.open(repoDir);
+  }
+
+  private String getLatestCommitReference(String repoDir) {
+    try (Git git = Git.open(new File(repoDir))) {
+      Iterator<RevCommit> commits = git.log().call().iterator();
+      if (commits.hasNext()) {
+        RevCommit firstCommit = commits.next();
+
+        return firstCommit.toString().split(" ")[1];
+      }
+    } catch (IOException | GitAPIException e) {
+      log.error("Failed to extract the commit id from the cloned repo.", e);
+    }
+
+    return null;
   }
 }

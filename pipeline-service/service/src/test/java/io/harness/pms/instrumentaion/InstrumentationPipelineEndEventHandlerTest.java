@@ -19,6 +19,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
+import io.harness.PipelineServiceTestHelper;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -65,10 +66,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InstrumentationPipelineEndEventHandlerTest extends CategoryTest {
@@ -134,10 +132,10 @@ public class InstrumentationPipelineEndEventHandlerTest extends CategoryTest {
             .build();
     List<NodeExecution> nodeExecutionList =
         Arrays.asList(NodeExecution.builder().ambiance(ambiance).planNode(planNode).build());
-    Pageable pageable = PageRequest.of(0, 1000);
-    Page<NodeExecution> nodeExecutions = new PageImpl<>(nodeExecutionList, pageable, 1);
 
-    doReturn(nodeExecutions).when(nodeExecutionService).fetchAllStepNodeExecutions(any(), any(), any());
+    CloseableIterator<NodeExecution> iterator =
+        PipelineServiceTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    doReturn(iterator).when(nodeExecutionService).fetchAllStepNodeExecutions(any(), any());
     doReturn(new HashSet() {
       { add("Http"); }
     })

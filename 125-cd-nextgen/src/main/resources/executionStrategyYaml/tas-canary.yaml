@@ -8,31 +8,33 @@ spec:
   execution:
     steps:
       - step:
-          name: "Canary Setup Step"
-          identifier: canarySetupStep
-          type: TasCanaryAppSetup
+          name: "Canary App Setup"
+          identifier: CanaryAppSetup
+          type: CanaryAppSetup
           timeout: 10m
           spec:
-            instanceCount: FromManifest
+            tasInstanceCountType: FromManifest
             resizeStrategy: DownScaleOldFirst
-            existingVersionToKepp: 3
-            additionalRoutes: ""
+            existingVersionToKeep: 3
+            additionalRoutes: []
       - step:
-          name: "Deploy Step"
-          identifier: deployStep
-          type: TasAppResize
+          name: "App Resize"
+          identifier: AppResize
+          type: AppResize
           timeout: 10m
           spec:
             newAppInstances:
-              type: Count
-              value: 2
-            oldAppInstances:
               type: Percentage
-              value: 10
+              spec:
+                value: 100
+            oldAppInstances:
+              type: Count
+              spec:
+                value: 0
     rollbackSteps:
       - step:
           name: "App Rollback"
-          identifier: appRollback
-          type: TasRollback
+          identifier: AppRollback
+          type: AppRollback
           timeout: 10m
           spec: {}

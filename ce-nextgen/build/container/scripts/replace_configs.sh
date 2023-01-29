@@ -154,3 +154,5 @@ replace_key_value governanceConfig.OOTBAccount "$GOVERNANCE_OOTB_ACCOUNT"
 replace_key_value dkronClientConfig.baseUrl "$DKRON_CLIENT_BASEURL"
 replace_key_value dkronClientConfig.connectTimeOutSeconds "$DKRON_CLIENT_CONNECTTIMEOUT"
 replace_key_value dkronClientConfig.readTimeOutSeconds "$DKRON_CLIENT_READTIMEOUT"
+
+replace_key_value currencyPreferences.historicalUpdateMonthsCount "$CURRENCY_PREFERENCE_HISTORICAL_UPDATE_MONTHS_COUNT"

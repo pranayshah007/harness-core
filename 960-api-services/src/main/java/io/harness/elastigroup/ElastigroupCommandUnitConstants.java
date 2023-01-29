@@ -8,58 +8,52 @@
 package io.harness.elastigroup;
 
 public enum ElastigroupCommandUnitConstants {
-  createSetup {
+  FETCH_STARTUP_SCRIPT {
     @Override
     public String toString() {
-      return "Create Setup";
+      return "Fetch Startup Script";
     }
   },
-  fetchStartupScript {
+  FETCH_ELASTIGROUP_CONFIGURATION {
     @Override
     public String toString() {
-      return "Fetch Startup Scripts";
+      return "Fetch Elastigroup Configuration";
     }
   },
-  fetchManifests {
+  CREATE_ELASTIGROUP {
     @Override
     public String toString() {
-      return "Fetch Manifests";
+      return "Create Elastigroup";
     }
   },
-  prepareRollbackData {
+  UPSCALE {
     @Override
     public String toString() {
-      return "Prepare Rollback Data";
+      return "Upscale Elastigroup";
     }
   },
-  deploy {
+  UPSCALE_STEADY_STATE {
     @Override
     public String toString() {
-      return "Deploy";
+      return "Upscale Steady State";
     }
   },
-  rollback {
+  DOWNSCALE {
     @Override
     public String toString() {
-      return "Rollback";
+      return "Downscale Elastigroup";
     }
   },
-  deleteService {
+  DOWNSCALE_STEADY_STATE {
     @Override
     public String toString() {
-      return "Delete Service";
+      return "Downscale Steady State";
     }
   },
-  swapTargetGroup {
+  SWAP_TARGET_GROUP {
     @Override
     public String toString() {
       return "Swap Target Group";
-    }
-  },
-  runTask {
-    @Override
-    public String toString() {
-      return "Run Task";
     }
   }
 }

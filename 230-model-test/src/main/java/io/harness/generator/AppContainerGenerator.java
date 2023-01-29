@@ -7,8 +7,8 @@
 
 package io.harness.generator;
 
-import software.wings.beans.AppContainer;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.AppContainer;
 import software.wings.service.intfc.AppContainerService;
 
 import com.google.inject.Inject;

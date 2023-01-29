@@ -41,4 +41,6 @@ public interface GitCommitService {
   Optional<GitCommitDTO> findLastGitCommit(String accountIdentifier, String repo, String branchName);
 
   UpdateResult upsertOnCommitIdAndRepoUrlAndGitSyncDirection(GitCommitDTO gitCommitDTO);
+
+  void deleteByAccount(String accountId);
 }

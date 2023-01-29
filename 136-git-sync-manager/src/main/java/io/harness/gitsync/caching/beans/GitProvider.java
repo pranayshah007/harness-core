@@ -9,12 +9,37 @@ package io.harness.gitsync.caching.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidArgumentsException;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public enum GitProvider {
-  UNKNOWN,
-  GITHUB_SAAS,
-  BITBUCKET_SAAS,
-  BITBUCKET_ON_PREM,
-  AZURE_SAAS;
+  UNKNOWN("UNKNOWN"),
+  GITHUB_SAAS("GITHUB_SAAS"),
+  BITBUCKET_SAAS("BITBUCKET_SAAS"),
+  BITBUCKET_ON_PREM("BITBUCKET_ON_PREM"),
+  AZURE_SAAS("AZURE_SAAS");
+
+  private static final Map<String, GitProvider> map = new HashMap<>(values().length, 1);
+  static {
+    for (GitProvider c : values()) {
+      map.put(c.name, c);
+    }
+  }
+
+  private final String name;
+
+  GitProvider(String name) {
+    this.name = name;
+  }
+
+  public static GitProvider getByName(String name) {
+    GitProvider gitProvider = map.get(name);
+    if (gitProvider == null) {
+      throw new InvalidArgumentsException("Invalid git provider name as input : " + name);
+    }
+    return gitProvider;
+  }
 }

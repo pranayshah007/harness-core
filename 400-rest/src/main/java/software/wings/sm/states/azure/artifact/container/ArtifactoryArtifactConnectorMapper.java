@@ -18,9 +18,9 @@ import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefHelper;
 
 import software.wings.annotation.EncryptableSetting;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.config.ArtifactoryConfig;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.sm.states.azure.artifact.ArtifactConnectorMapper;
 
 import java.util.Optional;

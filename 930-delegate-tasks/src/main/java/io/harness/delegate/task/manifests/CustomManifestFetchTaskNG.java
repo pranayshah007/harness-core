@@ -194,11 +194,23 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
       String manifestFilesDirectory) throws IOException {
     CustomManifestSource customManifestSource = fetchParams.getCustomManifestSource();
     final String destZippedManifestDirectory = customManifestService.getWorkingDirectory();
-    final Path destZippedManifestFile = Paths.get(destZippedManifestDirectory, "destZipManifestFile.zip");
-    final Path pathToManifestFiles =
-        Paths.get(manifestFilesDirectory, customManifestSource.getFilePaths().get(0)).normalize();
-
-    zipManifestFiles(pathToManifestFiles.toString(), destZippedManifestFile.toString());
+    Path destZippedManifestFile = Paths.get(destZippedManifestDirectory, "destZipManifestFile.zip");
+    Path pathToManifestFiles;
+    if (customManifestSource.getFilePaths().get(0).charAt(0) == '/') {
+      try {
+        pathToManifestFiles = Paths.get(manifestFilesDirectory, customManifestSource.getFilePaths().get(0)).normalize();
+        zipManifestFiles(pathToManifestFiles.toString(), destZippedManifestFile.toString());
+      } catch (Exception e) {
+        log.warn(
+            "Unable to fetch files from temporary working directory. Looking into Manifest File Location specified by user");
+        pathToManifestFiles = Path.of(customManifestSource.getFilePaths().get(0));
+        destZippedManifestFile = Paths.get(pathToManifestFiles.toString(), "destZipManifestFile.zip");
+        zipManifestFiles(customManifestSource.getFilePaths().get(0), destZippedManifestFile.toString());
+      }
+    } else {
+      pathToManifestFiles = Paths.get(manifestFilesDirectory, customManifestSource.getFilePaths().get(0)).normalize();
+      zipManifestFiles(pathToManifestFiles.toString(), destZippedManifestFile.toString());
+    }
 
     final DelegateFile delegateFile = aDelegateFile()
                                           .withAccountId(fetchParams.getAccountId())

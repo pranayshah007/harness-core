@@ -18,6 +18,7 @@ import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.filestore.dto.FileStoreRequest;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
+import io.harness.ng.serializer.kryo.NGCacheDataKryoRegistrar;
 import io.harness.serializer.morphia.FeedbackMorphiaRegistrars;
 import io.harness.serializer.morphia.InvitesMorphiaRegistrar;
 import io.harness.serializer.morphia.MockRoleAssignmentMorphiaRegistrar;
@@ -31,8 +32,8 @@ import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import dev.morphia.converters.TypeConverter;
 import io.serializer.registrars.NGCommonsRegistrars;
-import org.mongodb.morphia.converters.TypeConverter;
 
 @OwnedBy(HarnessTeam.PL)
 public class NextGenRegistrars {
@@ -49,6 +50,7 @@ public class NextGenRegistrars {
           .addAll(LicenseManagerRegistrars.kryoRegistrars)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
+          .add(NGCacheDataKryoRegistrar.class)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =

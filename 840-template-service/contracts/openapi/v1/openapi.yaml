@@ -3,20 +3,23 @@ x-stoplight:
   id: t4e4wu6mfxgxh
 info:
   title: Harness NextGen Software Delivery Platform API Reference
-  version: '1.0'
-  description: This is the Open Api Spec 3 for the Templates Validations and Refresh. This is under active development. Beware of the breaking change with respect to the generated code stub.
+  version: '1'
+  description: This is the Open Api Spec 3 for the Template Service. This is under active development. Beware of the breaking change with respect to the generated code stub.
   contact:
     email: contact@harness.io
 servers:
-  - url: 'http://api.harness.io'
-    description: Harness host url
+  - url: 'https://api.harness.io'
+    description: Harness host URL.
 tags:
   - name: Account Template
-    description: This contains APIs for performing CRUD operations on Templates at account scope.
+    description: This contains APIs for Account-scoped Templates.
+    x-displayName: Account Templates
   - name: Org Template
-    description: This contains APIs for performing CRUD operations on Templates at org scope.
+    description: This contains APIs for Organization-scoped Templates.
+    x-displayName: Organization Templates
   - name: Project Template
-    description: This contains APIs for performing CRUD operations on Templates at project scope.
+    description: This contains APIs for Project-scoped Templates.
+    x-displayName: Project Templates
 paths:
   /v1/templates:
     post:
@@ -118,6 +121,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeaderParam'
         - $ref: '#/components/parameters/Comments'
+        - $ref: '#/components/parameters/ForceDelete'
       tags:
         - Account Template
       description: Deletes particular version of Template at Account scope.
@@ -244,6 +248,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeaderParam'
         - $ref: '#/components/parameters/Comments'
+        - $ref: '#/components/parameters/ForceDelete'
       tags:
         - Org Template
       description: Deletes particular version of Template at Organization scope.
@@ -374,6 +379,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeaderParam'
         - $ref: '#/components/parameters/Comments'
+        - $ref: '#/components/parameters/ForceDelete'
       tags:
         - Project Template
       description: Deletes particular version of Template at Project scope.
@@ -412,7 +418,7 @@ components:
           account: example_account
           org: example_organization
           project: example_project
-          slug: example_template
+          identifier: example_template
           name: Example_template
           description: string
           tags:
@@ -477,7 +483,7 @@ components:
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
-        slug:
+        identifier:
           type: string
           description: Template identifier
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
@@ -552,7 +558,7 @@ components:
           description: True if this version is stable version of Template
       required:
         - account
-        - slug
+        - identifier
         - name
         - yaml
     TemplateMetadataSummaryResponse:
@@ -565,7 +571,7 @@ components:
           account: example_account
           org: example_organization
           project: example_project
-          slug: example_template
+          identifier: example_template
           name: Example_template
           description: string
           tags:
@@ -605,7 +611,7 @@ components:
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
-        slug:
+        identifier:
           type: string
           description: Template identifier
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
@@ -686,7 +692,7 @@ components:
             account: example_account
             org: example_organization
             project: example_project
-            slug: example_template
+            identifier: example_template
             name: Example_template
             description: string
             tags:
@@ -755,7 +761,7 @@ components:
           - account: example_account
             org: example_organization
             project: example_project
-            slug: example_template
+            identifier: example_template
             name: Example_template
             description: string
             tags:
@@ -1101,7 +1107,7 @@ components:
       in: header
       schema:
         type: string
-      description: 'Slug field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+      description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
     Comments:
       name: comments
       in: query
@@ -1109,6 +1115,13 @@ components:
       schema:
         type: string
       description: 'Specify comment with respect to changes  '
+    ForceDelete:
+      name: forceDelete
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Enable this field to force delete a template
     Limit:
       name: limit
       in: query
@@ -1134,7 +1147,7 @@ components:
       schema:
         type: string
         enum:
-          - slug
+          - identifier
           - name
           - updated
       description: Parameter on the basis of which sorting is done.
@@ -1493,7 +1506,7 @@ components:
                 account: example_account
                 org: example_organization
                 project: example_project
-                slug: example_template
+                identifier: example_template
                 name: Example_template
                 description: string
                 tags:
@@ -1551,7 +1564,7 @@ components:
                 account: example_account
                 org: example_organization
                 project: example_project
-                slug: example_template
+                identifier: example_template
                 name: Example_template
                 description: string
                 tags:
@@ -1613,7 +1626,7 @@ components:
                   account: example_account
                   org: example_organization
                   project: example_project
-                  slug: example_template
+                  identifier: example_template
                   name: Example_template
                   description: string
                   tags:
@@ -1673,7 +1686,7 @@ components:
                   account: example_account
                   org: example_organization
                   project: example_project
-                  slug: example_template
+                  identifier: example_template
                   name: Example_template
                   description: string
                   tags:
@@ -1735,7 +1748,7 @@ components:
                 - account: example_account
                   org: example_organization
                   project: example_project
-                  slug: example_template
+                  identifier: example_template
                   name: Example_template
                   description: string
                   tags:
@@ -1767,7 +1780,7 @@ components:
                 - account: example_account
                   org: example_organization
                   project: example_project
-                  slug: example_template
+                  identifier: example_template
                   name: Example_template
                   description: string
                   tags:

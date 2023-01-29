@@ -12,7 +12,7 @@ import io.harness.beans.EmbeddedUser;
 import software.wings.beans.Notification;
 import software.wings.beans.NotificationRule;
 import software.wings.beans.alert.AlertNotificationRule;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 
 import java.util.List;
 import java.util.Map;

@@ -54,6 +54,7 @@ public class MailSenderDelegateTask extends AbstractDelegateRunnableTask {
             .port(notificationSmtpConfig.getPort())
             .fromAddress(notificationSmtpConfig.getFromAddress())
             .useSSL(notificationSmtpConfig.isUseSSL())
+            .startTLS(notificationSmtpConfig.isStartTLS())
             .username(notificationSmtpConfig.getUsername())
             .password(notificationSmtpConfig.getPassword())
             .encryptedPassword(notificationSmtpConfig.getEncryptedPassword())

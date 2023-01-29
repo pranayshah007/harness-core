@@ -51,7 +51,7 @@ public class K8sReleaseHistoryHelperTest extends CategoryTest {
 
     Set<String> releaseNumbersToClean = K8sReleaseHistoryHelper.getReleaseNumbersToClean(
         K8sReleaseHistory.builder().releaseHistory(releaseHistory).build(), 10);
-    assertThat(releaseNumbersToClean).isEqualTo(Set.of("2"));
+    assertThat(releaseNumbersToClean).containsExactly("2");
 
     releaseHistory.add(createRelease("4", Failed.name()));
     releaseHistory.add(createRelease("5", Succeeded.name()));
@@ -61,13 +61,27 @@ public class K8sReleaseHistoryHelperTest extends CategoryTest {
 
     releaseNumbersToClean = K8sReleaseHistoryHelper.getReleaseNumbersToClean(
         K8sReleaseHistory.builder().releaseHistory(releaseHistory).build(), 10);
-    assertThat(releaseNumbersToClean).isEqualTo(Set.of("2", "4", "6"));
+    assertThat(releaseNumbersToClean).containsExactly("1", "2", "3", "4", "5", "6");
 
     releaseHistory.add(createRelease("9", Succeeded.name()));
 
     releaseNumbersToClean = K8sReleaseHistoryHelper.getReleaseNumbersToClean(
         K8sReleaseHistory.builder().releaseHistory(releaseHistory).build(), 10);
-    assertThat(releaseNumbersToClean).isEqualTo(Set.of("1", "2", "4", "6"));
+    assertThat(releaseNumbersToClean).containsExactly("1", "2", "3", "4", "5", "6", "7");
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testGetReleaseNumbers() {
+    List<K8sRelease> releases = new ArrayList<>();
+    releases.add(createRelease("1", Succeeded.name()));
+    releases.add(createRelease("2", Failed.name()));
+    releases.add(createRelease("3", Succeeded.name()));
+    releases.add(createRelease("4", Failed.name()));
+
+    Set<String> releaseNumbersFromReleases = K8sReleaseHistoryHelper.getReleaseNumbersFromReleases(releases);
+    assertThat(releaseNumbersFromReleases).containsExactly("1", "2", "3", "4");
   }
 
   private K8sRelease createRelease(String releaseNumber, String status) {

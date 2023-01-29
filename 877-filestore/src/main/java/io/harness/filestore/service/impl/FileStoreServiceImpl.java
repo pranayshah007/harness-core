@@ -20,6 +20,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.FileBucket.FILE_STORE;
+import static io.harness.filestore.utils.FileStoreUtils.getSubPaths;
+import static io.harness.filestore.utils.FileStoreUtils.isPathValid;
 import static io.harness.filestore.utils.FileStoreUtils.nameChanged;
 import static io.harness.filestore.utils.FileStoreUtils.parentChanged;
 import static io.harness.filter.FilterType.FILESTORE;
@@ -53,6 +55,7 @@ import io.harness.filestore.entities.NGFile;
 import io.harness.filestore.service.FileFailsafeService;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.filestore.service.FileStructureService;
+import io.harness.filestore.service.FileValidationService;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.ng.core.dto.EmbeddedUserDetailsDTO;
@@ -104,6 +107,7 @@ public class FileStoreServiceImpl implements FileStoreService {
   private final FilterService filterService;
   private final FileFailsafeService fileFailsafeService;
   private final FileStructureService fileStructureService;
+  private final FileValidationService fileValidationService;
 
   @Override
   public FileDTO create(@NotNull FileDTO fileDto, InputStream content) {
@@ -275,6 +279,31 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   @Override
+  public FolderNodeDTO listFileStoreNodesOnPath(@NotNull String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, @NotNull String path, @Nullable FileStoreNodesFilterQueryPropertiesDTO filterParams) {
+    if (!isPathValid(path)) {
+      throw new InvalidArgumentsException(format("Invalid file path, path: %s", path));
+    }
+    findByPath(accountIdentifier, orgIdentifier, projectIdentifier, path)
+        .orElseThrow(
+            ()
+                -> new InvalidArgumentsException(format(
+                    "Not found file/folder on path [%s], accountIdentifier [%s], orgIdentifier [%s] and projectIdentifier [%s]",
+                    path, accountIdentifier, orgIdentifier, projectIdentifier)));
+
+    List<String> subPaths = getSubPaths(path).orElseThrow(
+        () -> new InvalidArgumentsException(format("Unable to extract sub-parts of path, path: %s", path)));
+    FolderNodeDTO root = FolderNodeDTO.builder()
+                             .path(ROOT_FOLDER_PATH)
+                             .parentIdentifier(ROOT_FOLDER_PARENT_IDENTIFIER)
+                             .identifier(ROOT_FOLDER_IDENTIFIER)
+                             .name(ROOT_FOLDER_NAME)
+                             .build();
+    return populateFolderNodeIncludingSubNodesOnPath(
+        Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), root, subPaths, filterParams);
+  }
+
+  @Override
   public Page<EntitySetupUsageDTO> listReferencedBy(SearchPageParams pageParams, @NotNull String accountIdentifier,
       String orgIdentifier, String projectIdentifier, @NotNull String identifier, EntityType entityType) {
     if (isEmpty(identifier)) {
@@ -376,21 +405,6 @@ public class FileStoreServiceImpl implements FileStoreService {
     });
   }
 
-  private boolean isFileExistsByIdentifier(FileDTO fileDto) {
-    return fileStoreRepository
-        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(fileDto.getAccountIdentifier(),
-            fileDto.getOrgIdentifier(), fileDto.getProjectIdentifier(), fileDto.getIdentifier())
-        .isPresent();
-  }
-
-  private boolean isFileExistByName(FileDTO fileDto) {
-    return fileStoreRepository
-        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifierAndName(
-            fileDto.getAccountIdentifier(), fileDto.getOrgIdentifier(), fileDto.getProjectIdentifier(),
-            fileDto.getParentIdentifier(), fileDto.getName())
-        .isPresent();
-  }
-
   private String getDuplicateEntityIdentifierMessage(@NotNull FileDTO fileDto) {
     return format("Try another identifier, %s with identifier [%s] already exists.",
         fileDto.getType().name().toLowerCase(), fileDto.getIdentifier());
@@ -474,6 +488,36 @@ public class FileStoreServiceImpl implements FileStoreService {
         .collect(Collectors.toList());
   }
 
+  private FolderNodeDTO populateFolderNodeIncludingSubNodesOnPath(Scope scope, FolderNodeDTO folderNode,
+      final List<String> subNodePaths, FileStoreNodesFilterQueryPropertiesDTO filterParams) {
+    List<FileStoreNodeDTO> fileStoreNodes =
+        listFolderChildrenIncludingSubNodesOnPath(scope, folderNode.getIdentifier(), subNodePaths, filterParams);
+    for (FileStoreNodeDTO node : fileStoreNodes) {
+      folderNode.addChild(node);
+    }
+    return folderNode;
+  }
+
+  private List<FileStoreNodeDTO> listFolderChildrenIncludingSubNodesOnPath(Scope scope, String folderIdentifier,
+      @NotNull final List<String> subNodePaths, FileStoreNodesFilterQueryPropertiesDTO filterParams) {
+    return listAllByParentIdentifierFilteredByParamsAndSortedByLastModifiedAt(scope, folderIdentifier, filterParams)
+        .stream()
+        .filter(Objects::nonNull)
+        .map(ngFile -> {
+          if (ngFile.isFolder()) {
+            FolderNodeDTO folderNode = FileStoreNodeDTOMapper.getFolderNodeDTO(ngFile);
+            if (subNodePaths.contains(ngFile.getPath())) {
+              subNodePaths.remove(ngFile.getPath());
+              populateFolderNodeIncludingSubNodesOnPath(scope, folderNode, subNodePaths, filterParams);
+            }
+            return folderNode;
+          } else {
+            return FileStoreNodeDTOMapper.getFileNodeDTO(ngFile, null);
+          }
+        })
+        .collect(Collectors.toList());
+  }
+
   private List<NGFile> listAllByParentIdentifierFilteredByParamsAndSortedByLastModifiedAt(
       Scope scope, String parentIdentifier, FileStoreNodesFilterQueryPropertiesDTO filterParams) {
     return fileStoreRepository.findAllAndSort(
@@ -539,11 +583,12 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   private void validateCreationFileDto(FileDTO fileDto) {
-    if (isFileExistByName(fileDto)) {
+    if (fileValidationService.isFileExistByName(fileDto)) {
       throw new DuplicateFieldException(getDuplicateEntityNameMessage(fileDto));
     }
 
-    if (ROOT_FOLDER_IDENTIFIER.equals(fileDto.getIdentifier()) || isFileExistsByIdentifier(fileDto)) {
+    if (ROOT_FOLDER_IDENTIFIER.equals(fileDto.getIdentifier())
+        || fileValidationService.isFileExistsByIdentifier(fileDto)) {
       throw new DuplicateFieldException(getDuplicateEntityIdentifierMessage(fileDto));
     }
 
@@ -583,7 +628,7 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
   // common validation rules for creation and update
   private void validateFileDto(FileDTO fileDto) {
-    if (!parentFolderExists(fileDto)) {
+    if (!fileValidationService.parentFolderExists(fileDto)) {
       throw new InvalidArgumentsException(
           format("Parent folder with identifier [%s] does not exist", fileDto.getParentIdentifier()));
     }
@@ -592,17 +637,6 @@ public class FileStoreServiceImpl implements FileStoreService {
       throw new InvalidArgumentsException(
           format("File usage cannot be set for folder, identifier [%s]", fileDto.getIdentifier()));
     }
-  }
-
-  private boolean parentFolderExists(FileDTO fileDto) {
-    if (ROOT_FOLDER_IDENTIFIER.equals(fileDto.getParentIdentifier())) {
-      return true;
-    }
-    return fileStoreRepository
-        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(fileDto.getAccountIdentifier(),
-            fileDto.getOrgIdentifier(), fileDto.getProjectIdentifier(), fileDto.getParentIdentifier())
-        .filter(NGFile::isFolder)
-        .isPresent();
   }
 
   private String createPath(FileDTO fileDto) {

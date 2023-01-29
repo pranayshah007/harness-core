@@ -37,7 +37,7 @@ import io.harness.cdng.customdeployment.CustomDeploymentStringNGVariable;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
@@ -87,6 +87,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
@@ -113,6 +114,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
@@ -126,6 +128,7 @@ import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.service.impl.aws.model.AwsEC2Instance;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -138,6 +141,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -151,7 +155,7 @@ import org.mockito.Spy;
 
 public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Mock private InfrastructureEntityService infrastructureEntityService;
-  @Mock private InfrastructureMapper infrastructureMapper;
+  @Mock private InfrastructureOutcomeProvider infrastructureOutcomeProvider;
   @Mock InfrastructureValidator infrastructureValidator;
   @Mock private InfrastructureStepHelper infrastructureStepHelper;
   @Mock private CDStepHelper cdStepHelper = Mockito.spy(CDStepHelper.class);
@@ -165,6 +169,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Mock private NGLogCallback logCallback;
   @Mock private CDExpressionResolver resolver;
   @Spy InstanceOutcomeHelper instanceOutcomeHelper;
+  @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
 
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @InjectMocks private InfrastructureTaskExecutableStepV2 step = new InfrastructureTaskExecutableStepV2();
@@ -174,6 +179,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   private final InfrastructureConfig awsInfra = testAwsInfra();
   private final InfrastructureConfig azureInfra = testAzureInfra();
   private final InfrastructureConfig pdcInfra = testPdcInfra();
+  private final InfrastructureConfig pdcInfraWithInputs = testPdcInfraWithInputs();
 
   @Before
   public void setUp() throws Exception {
@@ -200,7 +206,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
              any(Ambiance.class), any(ExecutionInfoKey.class), any(), any(Set.class), anyString(), anyBoolean(), any()))
         .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(3, Set.class));
 
-    Mockito.doReturn("taskId").when(delegateGrpcClientWrapper).submitAsyncTask(any(), any());
+    Mockito.doReturn("taskId").when(delegateGrpcClientWrapper).submitAsyncTaskV2(any(), any());
 
     doCallRealMethod().when(cdStepHelper).mapTaskRequestToDelegateTaskRequest(any(), any(), anySet());
   }
@@ -331,7 +337,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
 
     doThrow(AccessDeniedException.class)
         .when(pipelineRbacHelper)
-        .checkRuntimePermissions(any(Ambiance.class), any(Set.class));
+        .checkRuntimePermissions(any(Ambiance.class), any(List.class), anyBoolean());
     assertThatExceptionOfType(AccessDeniedException.class)
         .isThrownBy(()
                         -> step.executeAsyncAfterRbac(ambiance,
@@ -345,12 +351,17 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category({UnitTests.class})
-  public void executeAsyncNonTaskTypeInfra() {
-    mockInfra(pdcInfra);
+  public void executeAsyncNonTaskTypeInfra() throws IOException {
+    mockInfra(pdcInfraWithInputs);
+    String inputYaml = "identifier: \"infra-id\"\n"
+        + "type: \"Pdc\"\n"
+        + "spec:\n"
+        + "  credentialsRef: \"qa\"";
     AsyncExecutableResponse asyncExecutableResponse = step.executeAsyncAfterRbac(ambiance,
         InfrastructureTaskExecutableStepV2Params.builder()
             .envRef(ParameterField.createValueField("env-id"))
             .infraRef(ParameterField.createValueField("infra-id"))
+            .infraInputs(ParameterField.createValueField(YamlUtils.read(inputYaml, Map.class)))
             .build(),
         null);
     assertThat(asyncExecutableResponse.getLogKeysCount()).isEqualTo(1);
@@ -359,6 +370,26 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
             "accountId:ACCOUNT_ID/orgId:ORG_ID/projectId:PROJECT_ID/pipelineId:/runSequence:0/level0:infrastructure-commandUnit:Execute");
 
     verify(resolver, times(1)).updateExpressions(any(Ambiance.class), any(Infrastructure.class));
+  }
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category({UnitTests.class})
+  public void testInfraInputsMerge() {
+    mockInfra(pdcInfraWithInputs);
+    String inputYaml = "identifier: \"infra-id\"\n"
+        + "type: \"Pdc\"\n"
+        + "spec:\n"
+        + "  credentialsRef: \"prod\"";
+    Assertions.assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(()
+                        -> step.executeAsyncAfterRbac(ambiance,
+                            InfrastructureTaskExecutableStepV2Params.builder()
+                                .envRef(ParameterField.createValueField("env-id"))
+                                .infraRef(ParameterField.createValueField("infra-id"))
+                                .infraInputs(ParameterField.createValueField(YamlUtils.read(inputYaml, Map.class)))
+                                .build(),
+                            null))
+        .withMessageContaining("The value provided prod does not match any of the allowed values [dev,qa]");
   }
 
   @Test
@@ -380,7 +411,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
             .build())
         .when(cdStepHelper)
         .getSshInfraDelegateConfig(any(InfrastructureOutcome.class), any(Ambiance.class));
-    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
         .thenReturn(SshWinRmAwsInfrastructureOutcome.builder()
                         .connectorRef("awsconnector")
                         .hostConnectionType("PrivateIP")
@@ -400,7 +431,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     verify(resolver, times(1)).updateExpressions(any(Ambiance.class), any(Infrastructure.class));
 
     ArgumentCaptor<DelegateTaskRequest> captor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateGrpcClientWrapper, times(1)).submitAsyncTask(captor.capture(), eq(Duration.ZERO));
+    verify(delegateGrpcClientWrapper, times(1)).submitAsyncTaskV2(captor.capture(), eq(Duration.ZERO));
 
     DelegateTaskRequest delegateTaskRequest = captor.getValue();
 
@@ -425,7 +456,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
         .getSshInfraDelegateConfig(any(InfrastructureOutcome.class), any(Ambiance.class));
 
     mockInfra(azureInfra);
-    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
         .thenReturn(SshWinRmAzureInfrastructureOutcome.builder()
                         .connectorRef("azureconnector")
                         .subscriptionId("dev-subscription")
@@ -450,7 +481,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     verify(resolver, times(1)).updateExpressions(any(Ambiance.class), any(Infrastructure.class));
 
     ArgumentCaptor<DelegateTaskRequest> captor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateGrpcClientWrapper, times(1)).submitAsyncTask(captor.capture(), eq(Duration.ZERO));
+    verify(delegateGrpcClientWrapper, times(1)).submitAsyncTaskV2(captor.capture(), eq(Duration.ZERO));
 
     DelegateTaskRequest delegateTaskRequest = captor.getValue();
 
@@ -860,6 +891,9 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     return InfrastructureConfig.builder()
         .infrastructureDefinitionConfig(
             InfrastructureDefinitionConfig.builder()
+                .orgIdentifier("orgId")
+                .projectIdentifier("projectId")
+                .identifier("infra-id")
                 .type(InfrastructureType.PDC)
                 .spec(PdcInfrastructure.builder()
                           .connectorRef(ParameterField.createValueField("awsconnector"))
@@ -870,10 +904,31 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
         .build();
   }
 
+  private InfrastructureConfig testPdcInfraWithInputs() {
+    return InfrastructureConfig.builder()
+        .infrastructureDefinitionConfig(
+            InfrastructureDefinitionConfig.builder()
+                .orgIdentifier("orgId")
+                .projectIdentifier("projectId")
+                .identifier("infra-id")
+                .type(InfrastructureType.PDC)
+                .spec(PdcInfrastructure.builder()
+                          .connectorRef(ParameterField.createValueField("awsconnector"))
+                          .credentialsRef(
+                              ParameterField.createExpressionField(true, "<+input>.allowedValues(dev, qa)", null, true))
+                          .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
+                          .build())
+                .build())
+        .build();
+  }
+
   private InfrastructureConfig testAzureInfra() {
     return InfrastructureConfig.builder()
         .infrastructureDefinitionConfig(
             InfrastructureDefinitionConfig.builder()
+                .orgIdentifier("orgId")
+                .projectIdentifier("projectId")
+                .identifier("infra-id")
                 .type(InfrastructureType.SSH_WINRM_AZURE)
                 .spec(SshWinRmAzureInfrastructure.builder()
                           .connectorRef(ParameterField.createValueField("azureconnector"))
@@ -889,6 +944,9 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     return InfrastructureConfig.builder()
         .infrastructureDefinitionConfig(
             InfrastructureDefinitionConfig.builder()
+                .orgIdentifier("orgId")
+                .projectIdentifier("projectId")
+                .identifier("infra-id")
                 .type(InfrastructureType.SSH_WINRM_AWS)
                 .spec(SshWinRmAwsInfrastructure.builder()
                           .connectorRef(ParameterField.createValueField("awsconnector"))

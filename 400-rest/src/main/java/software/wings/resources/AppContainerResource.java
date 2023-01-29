@@ -21,7 +21,7 @@ import io.harness.rest.RestResponse;
 import io.harness.stream.BoundedInputStream;
 
 import software.wings.app.MainConfiguration;
-import software.wings.beans.AppContainer;
+import software.wings.persistence.AppContainer;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.AppContainerService;

@@ -15,7 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
 
 import software.wings.app.MainConfiguration;
-import software.wings.beans.BaseFile;
+import software.wings.persistence.BaseFile;
 import software.wings.service.intfc.FileService;
 
 import com.google.inject.Inject;

@@ -8,6 +8,7 @@
 package io.harness.ng.core.service.services.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -104,7 +105,6 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                                              .setScope(ScopeProtoEnum.PROJECT)
                                              .build())
                        .setType(EntityTypeProtoEnum.SERVICE)
-                       .setName(entity.getName())
                        .build());
 
     assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
@@ -205,7 +205,7 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
     String serviceYaml = readFile("service/serviceWith3ConnectorAndTemplateReferences.yaml");
     ServiceEntity entity = ServiceEntity.builder()
                                .identifier("v2serviceTEMP")
-                               .name("my-service")
+                               .name("v2serviceTEMP")
                                .accountId("accountId")
                                .orgIdentifier("orgId")
                                .projectIdentifier("projId")
@@ -266,6 +266,93 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
     assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
     assertThat(metadataMap.get("referredEntityType")).isEqualTo("TEMPLATE");
     assertThat(metadataMap.get("action")).isEqualTo("flushCreate");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testUpdateSetupUsages_3() throws InvalidProtocolBufferException {
+    ArgumentCaptor<Message> msgCaptor = ArgumentCaptor.forClass(Message.class);
+
+    // org level service
+    ServiceEntity entity = ServiceEntity.builder()
+                               .identifier("id")
+                               .name("my-service")
+                               .accountId("accountId")
+                               .orgIdentifier("orgId")
+                               .build();
+    entitySetupUsageHelper.updateSetupUsages(entity);
+
+    verify(producer, times(1)).send(msgCaptor.capture());
+
+    Message value = msgCaptor.getValue();
+    EntitySetupUsageCreateV2DTO createV2DTO = EntitySetupUsageCreateV2DTO.parseFrom(value.getData());
+    Map<String, String> metadataMap = value.getMetadataMap();
+
+    assertThat(createV2DTO.getReferredEntitiesList()).isEmpty();
+    assertThat(createV2DTO.getReferredByEntity())
+        .isEqualTo(EntityDetailProtoDTO.newBuilder()
+                       .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
+                                             .setIdentifier(StringValue.of(entity.getIdentifier()))
+                                             .setAccountIdentifier(StringValue.of(entity.getAccountId()))
+                                             .setOrgIdentifier(StringValue.of(entity.getOrgIdentifier()))
+                                             .setScope(ScopeProtoEnum.ORG)
+                                             .build())
+                       .setType(EntityTypeProtoEnum.SERVICE)
+                       .build());
+
+    assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
+    assertThat(metadataMap.get("referredEntityType")).isNull();
+    assertThat(metadataMap.get("action")).isEqualTo("flushCreate");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testUpdateSetupUsages_4() throws InvalidProtocolBufferException {
+    ArgumentCaptor<Message> msgCaptor = ArgumentCaptor.forClass(Message.class);
+
+    // org level service
+    ServiceEntity entity = ServiceEntity.builder().identifier("id").name("my-service").accountId("accountId").build();
+    entitySetupUsageHelper.updateSetupUsages(entity);
+
+    verify(producer, times(1)).send(msgCaptor.capture());
+
+    Message value = msgCaptor.getValue();
+    EntitySetupUsageCreateV2DTO createV2DTO = EntitySetupUsageCreateV2DTO.parseFrom(value.getData());
+    Map<String, String> metadataMap = value.getMetadataMap();
+
+    assertThat(createV2DTO.getReferredEntitiesList()).isEmpty();
+    assertThat(createV2DTO.getReferredByEntity())
+        .isEqualTo(EntityDetailProtoDTO.newBuilder()
+                       .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
+                                             .setIdentifier(StringValue.of(entity.getIdentifier()))
+                                             .setAccountIdentifier(StringValue.of(entity.getAccountId()))
+                                             .setScope(ScopeProtoEnum.ACCOUNT)
+                                             .build())
+                       .setType(EntityTypeProtoEnum.SERVICE)
+                       .build());
+
+    assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
+    assertThat(metadataMap.get("referredEntityType")).isNull();
+    assertThat(metadataMap.get("action")).isEqualTo("flushCreate");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testUpdateSetupUsages_WithInvalidReferredEntity() {
+    String serviceYaml = readFile("service/serviceWithInvalidConnectorReference.yaml");
+    // account level service
+    ServiceEntity entity = ServiceEntity.builder()
+                               .identifier("newservice")
+                               .name("newservice")
+                               .accountId("accountId")
+                               .yaml(serviceYaml)
+                               .build();
+    assertThatThrownBy(() -> entitySetupUsageHelper.getAllReferredEntities(entity))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("The org level connectors cannot be used at account level. Ref: [org.dp1]");
   }
 
   private String readFile(String filename) {

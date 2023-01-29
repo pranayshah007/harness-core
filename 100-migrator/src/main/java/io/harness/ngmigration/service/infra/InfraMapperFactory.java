@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.infra;
 
+import static software.wings.api.DeploymentType.AMI;
+import static software.wings.api.DeploymentType.ECS;
 import static software.wings.api.DeploymentType.HELM;
 import static software.wings.api.DeploymentType.KUBERNETES;
 import static software.wings.api.DeploymentType.SSH;
@@ -26,12 +28,16 @@ public class InfraMapperFactory {
   private static final InfraDefMapper k8sInfraDefMapper = new K8sInfraDefMapper();
   private static final InfraDefMapper helmInfraDefMapper = new NativeHelmInfraDefMapper();
   private static final InfraDefMapper sshInfraDefMapper = new SshInfraDefMapper();
+  private static final InfraDefMapper ecsInfraDefMapper = new EcsInfraDefMapper();
+  private static final InfraDefMapper elastigroupInfraDefMapper = new AmiElastigroupInfraDefMapper();
 
   public static final Map<DeploymentType, InfraDefMapper> INFRA_DEF_MAPPER_MAP =
       ImmutableMap.<DeploymentType, InfraDefMapper>builder()
           .put(KUBERNETES, k8sInfraDefMapper)
           .put(HELM, helmInfraDefMapper)
           .put(SSH, sshInfraDefMapper)
+          .put(ECS, ecsInfraDefMapper)
+          .put(AMI, elastigroupInfraDefMapper)
           .build();
 
   public static InfraDefMapper getInfraDefMapper(InfrastructureDefinition infraDef) {

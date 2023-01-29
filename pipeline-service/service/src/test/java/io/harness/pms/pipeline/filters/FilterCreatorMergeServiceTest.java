@@ -7,6 +7,7 @@
 
 package io.harness.pms.pipeline.filters;
 
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.SAHIL;
@@ -38,12 +39,16 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.manage.GlobalContextManager;
 import io.harness.pms.contracts.plan.Dependencies;
+import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 import io.harness.pms.contracts.plan.PlanCreationServiceGrpc;
 import io.harness.pms.contracts.plan.SetupMetadata;
+import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
 import io.harness.pms.filter.creation.FilterCreatorMergeServiceResponse;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.helpers.PrincipalInfoHelper;
+import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineSetupUsageHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
@@ -67,6 +72,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Assertions;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
@@ -132,6 +138,8 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
   @Mock PipelineSetupUsageHelper pipelineSetupUsageHelper;
   @Mock PmsGitSyncHelper pmsGitSyncHelper;
   @Mock PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
+  @Mock PrincipalInfoHelper principalInfoHelper;
+  @Mock TriggeredByHelper triggeredByHelper;
   @Inject IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   @Mock GitSyncSdkService gitSyncSdkService;
   FilterCreatorMergeService filterCreatorMergeService;
@@ -139,7 +147,8 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
   @Before
   public void init() {
     filterCreatorMergeService = spy(new FilterCreatorMergeService(pmsSdkHelper, pipelineSetupUsageHelper,
-        pmsGitSyncHelper, pmsPipelineTemplateHelper, identifierRefProtoDTOHelper, gitSyncSdkService));
+        pmsGitSyncHelper, pmsPipelineTemplateHelper, identifierRefProtoDTOHelper, gitSyncSdkService,
+        principalInfoHelper, triggeredByHelper));
     when(
         pmsPipelineTemplateHelper.getTemplateReferencesForGivenYaml(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(new ArrayList<>());
@@ -165,6 +174,11 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
         .when(filterCreatorMergeService)
         .obtainFiltersRecursively(any(), any(), any(), any());
     doNothing().when(pipelineSetupUsageHelper).deleteExistingSetupUsages(ACCOUNT_ID, ORG_ID, PROJECT_ID, IDENTIFIER);
+
+    doReturn(ExecutionPrincipalInfo.newBuilder().build())
+        .when(principalInfoHelper)
+        .getPrincipalInfoFromSecurityContext();
+    doReturn(TriggeredBy.newBuilder().build()).when(triggeredByHelper).getFromSecurityContext();
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .yaml(pipelineYaml)
                                         .accountId(ACCOUNT_ID)
@@ -271,6 +285,44 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
         .isInstanceOf(RuntimeException.class);
 
     verify(filterCreatorMergeService).obtainFiltersPerIteration(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetPipelineInfoForOldGitSync() throws IOException {
+    when(gitSyncSdkService.isGitSyncEnabled(anyString(), anyString(), anyString())).thenReturn(true);
+    Map<String, Set<String>> stepToSupportedTypes = new HashMap<>();
+    stepToSupportedTypes.put("pipeline", Collections.singleton("__any__"));
+    Map<String, PlanCreatorServiceInfo> sdkInstances = new HashMap<>();
+    when(pmsSdkHelper.getServices()).thenReturn(sdkInstances);
+
+    doReturn(
+        FilterCreationBlobResponse.newBuilder().addReferredEntities(EntityDetailProtoDTO.newBuilder().build()).build())
+        .when(filterCreatorMergeService)
+        .obtainFiltersRecursively(any(), any(), any(), any());
+    doNothing().when(pipelineSetupUsageHelper).deleteExistingSetupUsages(ACCOUNT_ID, ORG_ID, PROJECT_ID, IDENTIFIER);
+
+    doReturn(ExecutionPrincipalInfo.newBuilder().build())
+        .when(principalInfoHelper)
+        .getPrincipalInfoFromSecurityContext();
+    doReturn(TriggeredBy.newBuilder().build()).when(triggeredByHelper).getFromSecurityContext();
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .yaml(pipelineYaml)
+                                        .accountId(ACCOUNT_ID)
+                                        .projectIdentifier(PROJECT_ID)
+                                        .orgIdentifier(ORG_ID)
+                                        .identifier(IDENTIFIER)
+                                        .build();
+    doReturn(Collections.singletonList(EntityDetailProtoDTO.newBuilder().build()))
+        .when(pmsPipelineTemplateHelper)
+        .getTemplateReferencesForGivenYaml(anyString(), anyString(), anyString(), anyString());
+    Assertions.assertDoesNotThrow(() -> filterCreatorMergeService.getPipelineInfo(pipelineEntity));
+
+    ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
+    verify(pmsSdkHelper).getServices();
+    verify(pipelineSetupUsageHelper).publishSetupUsageEvent(eq(pipelineEntity), listArgumentCaptor.capture());
+    assertThat(listArgumentCaptor.getValue()).isNotNull().isNotEmpty().hasSize(1);
   }
 
   @Test

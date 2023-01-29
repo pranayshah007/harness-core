@@ -116,6 +116,7 @@ import com.google.inject.Inject;
 import com.splunk.Job;
 import com.splunk.JobArgs;
 import com.splunk.JobCollection;
+import dev.morphia.query.Query;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -133,7 +134,6 @@ import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.query.Query;
 import retrofit2.Call;
 
 /**
@@ -432,7 +432,9 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     final ValidationResult validationResult = settingValidationService.validateConnectivity(
         aSettingAttribute().withAccountId(accountId).withName(generateUuid()).withValue(sumoConfig).build());
     assertThat(validationResult.isValid()).isFalse();
-    assertThat(validationResult.getErrorMessage()).isEqualTo("SumoClientException: Error reading server response");
+    assertThat(validationResult.getErrorMessage())
+        .isEqualTo("SumoClientException: Error reading server response; "
+            + "Cause: UnknownHostException: sumo-example.com: Name or service not known");
   }
 
   @Test

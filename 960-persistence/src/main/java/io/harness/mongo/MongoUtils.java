@@ -9,9 +9,9 @@ package io.harness.mongo;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import dev.morphia.query.UpdateOperations;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @UtilityClass
 @Slf4j

@@ -243,7 +243,7 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                                       .mode(ExecutionMode.SYNC)
                                       .build();
 
-    when(nodeExecutionService.update(eq(nodeExecutionId), any())).thenReturn(nodeExecution);
+    when(nodeExecutionService.update(eq(nodeExecutionId), any(), any())).thenReturn(nodeExecution);
     executionStrategy.endNodeExecution(ambiance);
     verify(orchestrationEngine, times(1)).endNodeExecution(any());
 
@@ -258,7 +258,7 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                                               .status(Status.INTERVENTION_WAITING)
                                               .mode(ExecutionMode.SYNC)
                                               .build();
-    when(nodeExecutionService.update(eq(nodeExecutionId), any())).thenReturn(nodeExecutionNotifyId);
+    when(nodeExecutionService.update(eq(nodeExecutionId), any(), any())).thenReturn(nodeExecutionNotifyId);
     executionStrategy.endNodeExecution(ambiance);
 
     ArgumentCaptor<String> notifyId = ArgumentCaptor.forClass(String.class);
@@ -380,9 +380,7 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
     doNothing().when(pmsGraphStepDetailsService).copyStepDetailsForRetry(anyString(), anyString(), anyString());
     on(identityNodeExecutionStrategyHelper).set("nodeExecutionService", nodeExecutionService);
     on(identityNodeExecutionStrategyHelper).set("pmsGraphStepDetailsService", pmsGraphStepDetailsService);
-    doCallRealMethod()
-        .when(identityNodeExecutionStrategyHelper)
-        .createNodeExecution(any(), any(), any(), any(), any(), any());
+    doCallRealMethod().when(identityNodeExecutionStrategyHelper).createNodeExecution(any(), any(), any(), any(), any());
     NodeExecution nodeExecution1 = executionStrategy.createNodeExecution(ambiance, node, null, "NID", "PaID", "PrID");
     assertEquals(nodeExecution1, nodeExecution);
     verify(pmsGraphStepDetailsService, times(1)).copyStepDetailsForRetry(anyString(), anyString(), anyString());

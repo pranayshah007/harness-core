@@ -11,6 +11,7 @@ import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARPIT;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.GEORGE;
 
 import static java.lang.System.currentTimeMillis;
@@ -23,22 +24,31 @@ import io.harness.DelegateServiceTestBase;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskBuilder;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateBuilder;
+import io.harness.delegate.beans.DelegateSyncTaskResponse;
+import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskDataV2;
+import io.harness.exception.ExceptionUtils;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
+import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateTaskService;
 import io.harness.threading.Morpheus;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Arrays;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class DelegateTaskServiceTest extends DelegateServiceTestBase {
   @Inject HPersistence persistence;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject DelegateTaskService delegateTaskService;
 
   @Inject DelegateCache delegateCache;
@@ -98,5 +108,38 @@ public class DelegateTaskServiceTest extends DelegateServiceTestBase {
 
     assertThat(isTaskType1Supported).isTrue();
     assertThat(isTaskType2Supported).isFalse();
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testHandleResponseV2() {
+    String delegateId = generateUuid();
+    DelegateTask delegateTask = DelegateTask.builder()
+                                    .uuid(generateUuid())
+                                    .accountId(TEST_ACCOUNT_ID)
+                                    .delegateId(delegateId)
+                                    .status(STARTED)
+                                    .taskDataV2(TaskDataV2.builder().timeout(1000L).build())
+                                    .expiry(currentTimeMillis() + 1000L)
+                                    .build();
+
+    NoEligibleDelegatesInAccountException exception =
+        new NoEligibleDelegatesInAccountException("some url not provided exception");
+    DelegateTaskResponse delegateTaskResponse = DelegateTaskResponse.builder()
+                                                    .response(ErrorNotifyResponseData.builder()
+                                                                  .errorMessage(ExceptionUtils.getMessage(exception))
+                                                                  .exception(exception)
+                                                                  .build())
+                                                    .responseCode(DelegateTaskResponse.ResponseCode.FAILED)
+                                                    .accountId(TEST_ACCOUNT_ID)
+                                                    .build();
+
+    delegateTaskService.handleResponseV2(delegateTask, null, delegateTaskResponse);
+    DelegateSyncTaskResponse delegateSyncTaskResponse =
+        persistence.get(DelegateSyncTaskResponse.class, delegateTask.getUuid());
+    Object responseData = referenceFalseKryoSerializer.asInflatedObject(delegateSyncTaskResponse.getResponseData());
+    assertThat(delegateSyncTaskResponse.isUsingKryoWithoutReference()).isTrue();
+    assertThat(responseData).isInstanceOf(ErrorNotifyResponseData.class);
   }
 }

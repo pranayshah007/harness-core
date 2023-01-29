@@ -17,6 +17,7 @@ import io.harness.plancreator.stages.stage.StageInfoConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -53,6 +54,7 @@ public class PipelineStageConfig implements StageInfoConfig {
 
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)
   @YamlSchemaTypes(runtime)
+  @VariableExpression(skipVariableExpression = true)
   private ParameterField<Map<String, Object>> inputs;
 
   // TODO: this field should be deleted after ui changes

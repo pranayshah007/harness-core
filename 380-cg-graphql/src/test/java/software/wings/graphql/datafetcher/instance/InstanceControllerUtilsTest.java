@@ -9,8 +9,8 @@ package software.wings.graphql.datafetcher.instance;
 
 import static io.harness.rule.OwnerRule.POOJA;
 
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.graphql.datafetcher.instance.InstanceControllerUtils.DUMMY_ARTIFACT_SOURCE_ID;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -19,10 +19,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.graphql.datafetcher.AbstractDataFetcherTestBase;
 import software.wings.graphql.schema.type.artifact.QLArtifact;
+import software.wings.persistence.artifact.Artifact;
 
 import com.google.inject.Inject;
 import org.junit.Test;

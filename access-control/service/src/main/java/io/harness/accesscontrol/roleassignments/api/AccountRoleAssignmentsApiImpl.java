@@ -42,6 +42,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.spec.server.accesscontrol.v1.AccountRoleAssignmentsApi;
 import io.harness.spec.server.accesscontrol.v1.model.RoleAssignment;
 import io.harness.spec.server.accesscontrol.v1.model.RoleAssignmentResponse;
+import io.harness.utils.ApiUtils;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -211,8 +212,8 @@ public class AccountRoleAssignmentsApiImpl implements AccountRoleAssignmentsApi 
 
     ResponseBuilder responseBuilder = Response.ok();
 
-    ResponseBuilder responseBuilderWithLinks = roleAssignmentApiUtils.addLinksHeader(
-        responseBuilder, "/v1/roleassignments", roleAssignmentResponses.size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, "/v1/role-assignments", roleAssignmentResponses.size(), page, limit);
 
     return responseBuilderWithLinks.entity(roleAssignmentResponses).build();
   }

@@ -10,6 +10,7 @@ package io.harness.engine.executions.plan;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.engine.pms.execution.strategy.plan.PlanExecutionStrategy.ENFORCEMENT_CALLBACK_ID;
+import static io.harness.pms.contracts.execution.Status.ERRORED;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -51,21 +52,18 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Field;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PIPELINE)
 @Slf4j
 @Singleton
 public class PlanExecutionServiceImpl implements PlanExecutionService {
-  private static int MAX_NODES_BATCH_SIZE = 1000;
-
   @Inject private PlanExecutionRepository planExecutionRepository;
   @Inject private MongoTemplate mongoTemplate;
   @Inject private NodeStatusUpdateHandlerFactory nodeStatusUpdateHandlerFactory;
@@ -96,6 +94,12 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   public PlanExecution updateStatusForceful(
       @NonNull String planExecutionId, @NonNull Status status, Consumer<Update> ops, boolean forced) {
     EnumSet<Status> allowedStartStatuses = StatusUtils.planAllowedStartSet(status);
+    return updateStatusForceful(planExecutionId, status, ops, forced, allowedStartStatuses);
+  }
+
+  @Override
+  public PlanExecution updateStatusForceful(@NonNull String planExecutionId, @NonNull Status status,
+      Consumer<Update> ops, boolean forced, EnumSet<Status> allowedStartStatuses) {
     Query query = query(where(PlanExecutionKeys.uuid).is(planExecutionId));
     if (!forced) {
       query.addCriteria(where(PlanExecutionKeys.status).in(allowedStartStatuses));
@@ -122,6 +126,11 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   @Override
   public PlanExecution updateStatus(@NonNull String planExecutionId, @NonNull Status status) {
     return updateStatus(planExecutionId, status, null);
+  }
+
+  @Override
+  public PlanExecution markPlanExecutionErrored(String planExecutionId) {
+    return updateStatus(planExecutionId, ERRORED, ops -> ops.set(PlanExecutionKeys.endTs, System.currentTimeMillis()));
   }
 
   @Override
@@ -193,27 +202,19 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   public Status calculateStatus(String planExecutionId) {
-    List<Status> statuses = nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesOnlyStatus(planExecutionId);
+    List<Status> statuses = nodeExecutionService.fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId);
     return OrchestrationUtils.calculateStatusForPlanExecution(statuses, planExecutionId);
   }
 
   @Override
   public Status calculateStatusExcluding(String planExecutionId, String excludedNodeExecutionId) {
-    int currentPage = 0;
-    int totalPages = 0;
-
     List<NodeExecution> nodeExecutions = new LinkedList<>();
-    do {
-      Page<NodeExecution> paginatedNodeExecutions =
-          nodeExecutionService.fetchWithoutRetriesAndStatusIn(planExecutionId, EnumSet.noneOf(Status.class),
-              NodeProjectionUtils.withStatus, PageRequest.of(currentPage, MAX_NODES_BATCH_SIZE));
-      if (paginatedNodeExecutions == null || paginatedNodeExecutions.getTotalElements() == 0) {
-        break;
+    try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(
+             planExecutionId, NodeProjectionUtils.withStatus)) {
+      while (iterator.hasNext()) {
+        nodeExecutions.add(iterator.next());
       }
-      totalPages = paginatedNodeExecutions.getTotalPages();
-      nodeExecutions.addAll(new LinkedList<>(paginatedNodeExecutions.getContent()));
-      currentPage++;
-    } while (currentPage < totalPages);
+    }
 
     List<Status> filtered = nodeExecutions.stream()
                                 .filter(ne -> !ne.getUuid().equals(excludedNodeExecutionId))
@@ -252,6 +253,16 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
+  public CloseableIterator<PlanExecution> fetchPlanExecutionsByStatus(Set<Status> statuses, Set<String> fieldNames) {
+    // Uses status_idx index
+    Query query = query(where(PlanExecutionKeys.status).in(statuses));
+    for (String fieldName : fieldNames) {
+      query.fields().include(fieldName);
+    }
+    return planExecutionRepository.fetchPlanExecutionsFromAnalytics(query);
+  }
+
+  @Override
   public List<PlanExecution> findAllByAccountIdAndOrgIdAndProjectIdAndLastUpdatedAtInBetweenTimestamps(
       String accountId, String orgId, String projectId, long fromTS, long toTS) {
     Map<String, String> setupAbstractionSubFields = new HashMap<>();
@@ -269,34 +280,21 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
-  public long countRunningExecutionsForGivenPipeline(
-      String accountId, String orgId, String projectId, String pipelineIdentifier) {
+  public long countRunningExecutionsForGivenPipelineInAccount(String accountId, String pipelineIdentifier) {
+    // Uses - accountId_status_idx
     Criteria criteria = new Criteria()
                             .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
                             .is(accountId)
-                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.orgIdentifier)
-                            .is(orgId)
-                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.projectIdentifier)
-                            .is(projectId)
-                            .and(PlanExecutionKeys.metadata + ".pipelineIdentifier")
-                            .is(pipelineIdentifier)
                             .and(PlanExecutionKeys.status)
                             .in(StatusUtils.activeStatuses());
     return mongoTemplate.count(new Query(criteria), PlanExecution.class);
   }
 
   @Override
-  public PlanExecution findNextExecutionToRun(
-      String accountId, String orgId, String projectId, String pipelineIdentifier) {
+  public PlanExecution findNextExecutionToRunInAccount(String accountId) {
     Criteria criteria = new Criteria()
                             .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
                             .is(accountId)
-                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.orgIdentifier)
-                            .is(orgId)
-                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.projectIdentifier)
-                            .is(projectId)
-                            .and(PlanExecutionKeys.metadata + ".pipelineIdentifier")
-                            .is(pipelineIdentifier)
                             .and(PlanExecutionKeys.status)
                             .is(Status.QUEUED);
     return mongoTemplate.findOne(

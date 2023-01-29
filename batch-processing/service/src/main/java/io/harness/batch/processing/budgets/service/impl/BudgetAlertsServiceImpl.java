@@ -18,15 +18,19 @@ import static java.util.Collections.singletonList;
 import static org.joda.time.Months.monthsBetween;
 
 import io.harness.batch.processing.config.BatchMainConfig;
-import io.harness.batch.processing.mail.CEMailNotificationService;
 import io.harness.batch.processing.shard.AccountShardService;
+import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelper;
+import io.harness.ccm.BudgetCommon;
 import io.harness.ccm.budget.AlertThreshold;
 import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.entities.BudgetAlertsData;
 import io.harness.ccm.budget.utils.BudgetUtils;
+import io.harness.ccm.budgetGroup.BudgetGroup;
+import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
 import io.harness.ccm.commons.entities.billing.Budget;
+import io.harness.ccm.currency.Currency;
 import io.harness.notification.Team;
 import io.harness.notification.dtos.NotificationChannelDTO;
 import io.harness.notification.dtos.NotificationChannelDTO.NotificationChannelDTOBuilder;
@@ -40,7 +44,6 @@ import software.wings.beans.notification.SlackNotificationSetting;
 import software.wings.beans.security.UserGroup;
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 import software.wings.graphql.datafetcher.budget.BudgetTimescaleQueryHelper;
-import software.wings.service.intfc.SlackMessageSender;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.google.common.collect.ImmutableMap;
@@ -70,159 +73,234 @@ import retrofit2.Response;
 @Slf4j
 public class BudgetAlertsServiceImpl {
   @Autowired private TimeScaleDBService timeScaleDBService;
-  @Autowired private CEMailNotificationService emailNotificationService;
   @Autowired private NotificationResourceClient notificationResourceClient;
-  @Autowired private SlackMessageSender slackMessageSender;
   @Autowired private BudgetTimescaleQueryHelper budgetTimescaleQueryHelper;
   @Autowired private BudgetDao budgetDao;
+  @Autowired private BudgetGroupDao budgetGroupDao;
   @Autowired private BatchMainConfig mainConfiguration;
   @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
   @Autowired private AccountShardService accountShardService;
   @Autowired private CloudBillingHelper cloudBillingHelper;
+  @Autowired private CurrencyPreferenceHelper currencyPreferenceHelper;
 
   private static final String BUDGET_MAIL_ERROR = "Budget alert email couldn't be sent";
   private static final String NG_PATH_CONST = "ng/";
   private static final String BUDGET_DETAILS_URL_FORMAT = "/account/%s/continuous-efficiency/budget/%s";
   private static final String BUDGET_DETAILS_URL_FORMAT_NG = "/account/%s/ce/budget/%s/%s";
   private static final String ACTUAL_COST_BUDGET = "cost";
+  private static final String SUBJECT_ACTUAL_COST_BUDGET = "Spent so far";
   private static final String FORECASTED_COST_BUDGET = "forecasted cost";
+  private static final String SUBJECT_FORECASTED_COST_BUDGET = "Forecasted cost";
+  private static final String BUDGET = "budget";
+  private static final String BUDGET_CAMEL_CASE = "Budget";
+  private static final String BUDGET_GROUP = "budget group";
+  private static final String BUDGET_GROUP_CAMEL_CASE = "Budget Group";
+  private static final String DAY = "day";
+  private static final String WEEK = "week";
+  private static final String MONTH = "month";
+  private static final String QUARTER = "quarter";
+  private static final String YEAR = "year";
 
-  public void sendBudgetAlerts() {
+  public void sendBudgetAndBudgetGroupAlerts() {
     List<String> accountIds = accountShardService.getCeEnabledAccountIds();
     accountIds.forEach(accountId -> {
       List<Budget> budgets = budgetDao.list(accountId);
+      // [TODO]: Cache currency symbol for each account
+      Currency currency = currencyPreferenceHelper.getDestinationCurrency(accountId);
       budgets.forEach(budget -> {
         updateCGBudget(budget);
         try {
-          checkAndSendAlerts(budget);
+          checkAndSendAlerts(buildBudgetCommon(budget, null), currency);
         } catch (Exception e) {
-          log.error("Can't send alert for budget : {}, Exception: ", budget.getUuid(), e);
+          log.error("Can't send alert for budget : {}, accountId: {}, Exception: ", budget.getUuid(),
+              budget.getAccountId(), e);
+        }
+      });
+      List<BudgetGroup> budgetGroups = budgetGroupDao.list(accountId, Integer.MAX_VALUE, 0);
+      budgetGroups.forEach(budgetGroup -> {
+        try {
+          checkAndSendAlerts(buildBudgetCommon(null, budgetGroup), currency);
+        } catch (Exception e) {
+          log.error("Can't send alert for budget group : {}, accountId: {}, Exception: ", budgetGroup.getUuid(),
+              budgetGroup.getAccountId(), e);
         }
       });
     });
   }
 
-  private void checkAndSendAlerts(Budget budget) {
-    checkNotNull(budget.getAlertThresholds());
-    checkNotNull(budget.getAccountId());
+  private BudgetCommon buildBudgetCommon(Budget budget, BudgetGroup group) {
+    if (budget != null) {
+      return BudgetCommon.builder()
+          .alertThresholds(budget.getAlertThresholds())
+          .forecastCost(budget.getForecastCost())
+          .name(budget.getName())
+          .lastMonthCost(budget.getLastMonthCost())
+          .budgetAmount(budget.getBudgetAmount())
+          .period(budget.getPeriod())
+          .startTime(budget.getStartTime())
+          .accountId(budget.getAccountId())
+          .uuid(budget.getUuid())
+          .budgetGroup(false)
+          .budgetMonthlyBreakdown(budget.getBudgetMonthlyBreakdown())
+          .actualCost(budget.getActualCost())
+          .emailAddresses(budget.getEmailAddresses())
+          .userGroupIds(budget.getUserGroupIds())
+          .isNgBudget(budget.isNgBudget())
+          .notifyOnSlack(budget.isNotifyOnSlack())
+          .build();
+    }
+    return BudgetCommon.builder()
+        .alertThresholds(group.getAlertThresholds())
+        .forecastCost(group.getForecastCost())
+        .name(group.getName())
+        .lastMonthCost(group.getLastMonthCost())
+        .budgetAmount(group.getBudgetGroupAmount())
+        .period(group.getPeriod())
+        .startTime(group.getStartTime())
+        .accountId(group.getAccountId())
+        .uuid(group.getUuid())
+        .budgetGroup(true)
+        .budgetMonthlyBreakdown(group.getBudgetGroupMonthlyBreakdown())
+        .actualCost(group.getActualCost())
+        .emailAddresses(null)
+        .userGroupIds(null)
+        .isNgBudget(true)
+        .notifyOnSlack(true)
+        .build();
+  }
+
+  private void checkAndSendAlerts(BudgetCommon budgetCommon, Currency currency) {
+    checkNotNull(budgetCommon.getAlertThresholds());
+    checkNotNull(budgetCommon.getAccountId());
 
     List<String> emailAddresses =
-        Lists.newArrayList(Optional.ofNullable(budget.getEmailAddresses()).orElse(new String[0]));
+        Lists.newArrayList(Optional.ofNullable(budgetCommon.getEmailAddresses()).orElse(new String[0]));
 
-    List<String> userGroupIds = Arrays.asList(Optional.ofNullable(budget.getUserGroupIds()).orElse(new String[0]));
-    emailAddresses.addAll(getEmailsForUserGroup(budget.getAccountId(), userGroupIds));
+    List<String> userGroupIds =
+        Arrays.asList(Optional.ofNullable(budgetCommon.getUserGroupIds()).orElse(new String[0]));
+    emailAddresses.addAll(getEmailsForUserGroup(budgetCommon.getAccountId(), userGroupIds));
 
     // For sending alerts based on actual cost
     AlertThreshold[] alertsBasedOnActualCost =
-        BudgetUtils.getSortedAlertThresholds(ACTUAL_COST, budget.getAlertThresholds());
-    double actualCost = budget.getActualCost();
-    if (budget.getBudgetMonthlyBreakdown() != null
-        && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
-      int month = monthDifferenceStartAndCurrentTime(budget.getStartTime());
+        BudgetUtils.getSortedAlertThresholds(ACTUAL_COST, budgetCommon.getAlertThresholds());
+    double actualCost = budgetCommon.getActualCost();
+    if (budgetCommon.getBudgetMonthlyBreakdown() != null
+        && budgetCommon.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+      int month = monthDifferenceStartAndCurrentTime(budgetCommon.getStartTime());
       if (month != -1) {
-        actualCost = budget.getBudgetMonthlyBreakdown().getActualMonthlyCost()[month];
+        actualCost = budgetCommon.getBudgetMonthlyBreakdown().getActualMonthlyCost()[month];
       }
     }
-    checkAlertThresholdsAndSendAlerts(budget, alertsBasedOnActualCost, emailAddresses, actualCost);
+    checkAlertThresholdsAndSendAlerts(budgetCommon, alertsBasedOnActualCost, emailAddresses, actualCost, currency);
 
     // For sending alerts based on forecast cost
     AlertThreshold[] alertsBasedOnForecastCost =
-        BudgetUtils.getSortedAlertThresholds(FORECASTED_COST, budget.getAlertThresholds());
-    double forecastCost = budget.getForecastCost();
-    if (budget.getBudgetMonthlyBreakdown() != null
-        && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
-      int month = monthDifferenceStartAndCurrentTime(budget.getStartTime());
+        BudgetUtils.getSortedAlertThresholds(FORECASTED_COST, budgetCommon.getAlertThresholds());
+    double forecastCost = budgetCommon.getForecastCost();
+    if (budgetCommon.getBudgetMonthlyBreakdown() != null
+        && budgetCommon.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+      int month = monthDifferenceStartAndCurrentTime(budgetCommon.getStartTime());
       if (month != -1) {
-        forecastCost = budget.getBudgetMonthlyBreakdown().getForecastMonthlyCost()[month];
+        forecastCost = budgetCommon.getBudgetMonthlyBreakdown().getForecastMonthlyCost()[month];
       }
     }
-    checkAlertThresholdsAndSendAlerts(budget, alertsBasedOnForecastCost, emailAddresses, forecastCost);
+    checkAlertThresholdsAndSendAlerts(budgetCommon, alertsBasedOnForecastCost, emailAddresses, forecastCost, currency);
   }
 
-  private void checkAlertThresholdsAndSendAlerts(
-      Budget budget, AlertThreshold[] alertThresholds, List<String> emailAddresses, double cost) {
+  private void checkAlertThresholdsAndSendAlerts(BudgetCommon budgetCommon, AlertThreshold[] alertThresholds,
+      List<String> emailAddresses, double cost, Currency currency) {
+    String budgetOrBudgetGroup = budgetCommon.isBudgetGroup() ? BUDGET_GROUP : BUDGET;
+    String budgetOrBudgetGroupCamelCase = budgetCommon.isBudgetGroup() ? BUDGET_GROUP_CAMEL_CASE : BUDGET_CAMEL_CASE;
     for (AlertThreshold alertThreshold : alertThresholds) {
       List<String> userGroupIds =
           Arrays.asList(Optional.ofNullable(alertThreshold.getUserGroupIds()).orElse(new String[0]));
-      emailAddresses.addAll(getEmailsForUserGroup(budget.getAccountId(), userGroupIds));
+      emailAddresses.addAll(getEmailsForUserGroup(budgetCommon.getAccountId(), userGroupIds));
       if (alertThreshold.getEmailAddresses() != null && alertThreshold.getEmailAddresses().length > 0) {
         emailAddresses.addAll(Arrays.asList(alertThreshold.getEmailAddresses()));
       }
 
       List<String> slackWebhooks =
           Arrays.asList(Optional.ofNullable(alertThreshold.getSlackWebhooks()).orElse(new String[0]));
-      slackWebhooks.addAll(getSlackWebhooksForUserGroup(budget.getAccountId(), userGroupIds));
+      slackWebhooks.addAll(getSlackWebhooksForUserGroup(budgetCommon.getAccountId(), userGroupIds));
 
       if (isEmpty(slackWebhooks) && isEmpty(emailAddresses)) {
-        log.warn("The budget with id={} has no associated communication channels for threshold={}.", budget.getUuid(),
-            alertThreshold);
+        log.warn("The {} with id={} has no associated communication channels for threshold={}.", budgetOrBudgetGroup,
+            budgetCommon.getUuid(), alertThreshold);
         continue;
       }
 
       BudgetAlertsData data = BudgetAlertsData.builder()
-                                  .accountId(budget.getAccountId())
+                                  .accountId(budgetCommon.getAccountId())
                                   .actualCost(cost)
-                                  .budgetedCost(budget.getBudgetAmount())
-                                  .budgetId(budget.getUuid())
+                                  .budgetedCost(budgetCommon.getBudgetAmount())
+                                  .budgetId(budgetCommon.getUuid())
                                   .alertThreshold(alertThreshold.getPercentage())
                                   .alertBasedOn(alertThreshold.getBasedOn())
                                   .time(System.currentTimeMillis())
                                   .build();
 
-      if (BudgetUtils.isAlertSentInCurrentPeriod(budget,
-              budgetTimescaleQueryHelper.getLastAlertTimestamp(data, budget.getAccountId()), budget.getStartTime())) {
+      if (BudgetUtils.isAlertSentInCurrentPeriod(budgetCommon,
+              budgetTimescaleQueryHelper.getLastAlertTimestamp(data, budgetCommon.getAccountId()),
+              budgetCommon.getStartTime())) {
         break;
       }
       String costType = ACTUAL_COST_BUDGET;
+      String subjectCostType = SUBJECT_ACTUAL_COST_BUDGET;
       try {
         if (alertThreshold.getBasedOn() == FORECASTED_COST) {
           costType = FORECASTED_COST_BUDGET;
+          subjectCostType = SUBJECT_FORECASTED_COST_BUDGET;
         }
-        log.info("{} has been spent under the budget with id={} ", cost, budget.getUuid());
+        log.info("{} has been spent under the {} with id={}, accountId={}", cost, budgetOrBudgetGroup,
+            budgetCommon.getUuid(), budgetCommon.getAccountId());
       } catch (Exception e) {
         log.error(e.getMessage());
         break;
       }
 
-      if (exceedsThreshold(cost, getThresholdAmount(budget, alertThreshold))) {
+      if (exceedsThreshold(cost, getThresholdAmount(budgetCommon, alertThreshold))) {
         try {
-          sendBudgetAlertViaSlack(budget, alertThreshold, slackWebhooks);
-          log.info("slack budget alert sent!");
+          sendBudgetAlertViaSlack(budgetCommon, alertThreshold, slackWebhooks);
+          log.info("slack {} alert sent! for accountId: {}, budgetId: {}", budgetOrBudgetGroup,
+              budgetCommon.getAccountId(), budgetCommon.getUuid());
         } catch (Exception e) {
-          log.error("Notification via slack not send : ", e);
+          log.error("Notification via slack not sent for accountId: {}, budgetId: {} : ", budgetCommon.getAccountId(),
+              budgetCommon.getUuid(), e);
         }
-        sendBudgetAlertMail(budget.getAccountId(), emailAddresses, budget.getUuid(), budget.getName(), alertThreshold,
-            cost, costType, budget.isNgBudget());
+        sendBudgetAlertMail(budgetCommon.getAccountId(), emailAddresses, budgetCommon.getUuid(), budgetCommon.getName(),
+            alertThreshold, cost, costType, budgetCommon.isNgBudget(), subjectCostType,
+            getBudgetPeriodForEmailAlert(budgetCommon), currency, budgetOrBudgetGroup, budgetOrBudgetGroupCamelCase);
         // insert in timescale table
-        budgetTimescaleQueryHelper.insertAlertEntryInTable(data, budget.getAccountId());
+        budgetTimescaleQueryHelper.insertAlertEntryInTable(data, budgetCommon.getAccountId());
         break;
       }
     }
   }
 
-  private void sendBudgetAlertViaSlack(Budget budget, AlertThreshold alertThreshold, List<String> slackWebhooks)
-      throws IOException, URISyntaxException {
-    if ((isEmpty(slackWebhooks) || !budget.isNotifyOnSlack()) && alertThreshold.getSlackWebhooks() == null) {
+  private void sendBudgetAlertViaSlack(BudgetCommon budgetCommon, AlertThreshold alertThreshold,
+      List<String> slackWebhooks) throws IOException, URISyntaxException {
+    if ((isEmpty(slackWebhooks) || !budgetCommon.isNotifyOnSlack()) && alertThreshold.getSlackWebhooks() == null) {
       return;
     }
-    String budgetUrl = buildAbsoluteUrl(budget.getAccountId(), budget.getUuid(), budget.getName(), budget.isNgBudget());
-    Map<String, String> templateData =
-        ImmutableMap.<String, String>builder()
-            .put("THRESHOLD_PERCENTAGE", String.format("%.1f", alertThreshold.getPercentage()))
-            .put("BUDGET_NAME", budget.getName())
-            .put("BUDGET_URL", budgetUrl)
-            .build();
+    String budgetUrl = buildAbsoluteUrl(
+        budgetCommon.getAccountId(), budgetCommon.getUuid(), budgetCommon.getName(), budgetCommon.isNgBudget());
+    Map<String, String> templateData = ImmutableMap.<String, String>builder()
+                                           .put("THRESHOLD_PERCENTAGE", format("%.1f", alertThreshold.getPercentage()))
+                                           .put("BUDGET_NAME", budgetCommon.getName())
+                                           .put("BUDGET_URL", budgetUrl)
+                                           .build();
     NotificationChannelDTOBuilder slackChannelBuilder = NotificationChannelDTO.builder()
-                                                            .accountId(budget.getAccountId())
+                                                            .accountId(budgetCommon.getAccountId())
                                                             .templateData(templateData)
                                                             .webhookUrls(slackWebhooks)
                                                             .team(Team.OTHER)
                                                             .templateId("slack_ccm_budget_alert")
                                                             .userGroups(Collections.emptyList());
     Response<RestResponse<NotificationResult>> response =
-        notificationResourceClient.sendNotification(budget.getAccountId(), slackChannelBuilder.build()).execute();
+        notificationResourceClient.sendNotification(budgetCommon.getAccountId(), slackChannelBuilder.build()).execute();
     if (!response.isSuccessful()) {
-      log.error("Failed to send slack notification: {}",
+      log.error("Failed to send slack notification for accountId: {}, budgetId: {} error: {}",
+          budgetCommon.getAccountId(), budgetCommon.getUuid(),
           (response.errorBody() != null) ? response.errorBody().string() : response.code());
     }
   }
@@ -259,7 +337,8 @@ public class BudgetAlertsServiceImpl {
   }
 
   private void sendBudgetAlertMail(String accountId, List<String> emailAddresses, String budgetId, String budgetName,
-      AlertThreshold alertThreshold, double currentCost, String costType, boolean isNgBudget) {
+      AlertThreshold alertThreshold, double currentCost, String costType, boolean isNgBudget, String subjectCostType,
+      String period, Currency currency, String budgetOrBudgetGroup, String budgetOrBudgetGroupCamelCase) {
     List<String> uniqueEmailAddresses = new ArrayList<>(new HashSet<>(emailAddresses));
 
     try {
@@ -268,9 +347,13 @@ public class BudgetAlertsServiceImpl {
       Map<String, String> templateModel = new HashMap<>();
       templateModel.put("url", budgetUrl);
       templateModel.put("BUDGET_NAME", budgetName);
-      templateModel.put("THRESHOLD_PERCENTAGE", String.format("%.1f", alertThreshold.getPercentage()));
-      templateModel.put("CURRENT_COST", String.format("%.2f", currentCost));
+      templateModel.put("THRESHOLD_PERCENTAGE", format("%.1f", alertThreshold.getPercentage()));
+      templateModel.put("CURRENT_COST", format("%s%s", currency.getUtf8HexSymbol(), format("%.2f", currentCost)));
       templateModel.put("COST_TYPE", costType);
+      templateModel.put("SUBJECT_COST_TYPE", subjectCostType);
+      templateModel.put("PERIOD", period);
+      templateModel.put("BUDGET_OR_BUDGET_GROUP", budgetOrBudgetGroup);
+      templateModel.put("BUDGET_OR_BUDGET_GROUP_CAMEL_CASE", budgetOrBudgetGroupCamelCase);
 
       uniqueEmailAddresses.forEach(emailAddress -> {
         templateModel.put("name", emailAddress.substring(0, emailAddress.lastIndexOf('@')));
@@ -286,10 +369,10 @@ public class BudgetAlertsServiceImpl {
           Response<RestResponse<NotificationResult>> response =
               notificationResourceClient.sendNotification(accountId, emailChannelBuilder.build()).execute();
           if (!response.isSuccessful()) {
-            log.error("Failed to send email notification: {}",
-                (response.errorBody() != null) ? response.errorBody().string() : response.code());
+            log.error("Failed to send email notification for accountId: {}, budgetId: {} error: {}", accountId,
+                budgetId, (response.errorBody() != null) ? response.errorBody().string() : response.code());
           } else {
-            log.info("email sent to {} successfully", emailAddress);
+            log.info("email sent successfully for accountId: {}, budgetId: {}", accountId, budgetId);
           }
         } catch (IOException e) {
           log.error(BUDGET_MAIL_ERROR, e);
@@ -317,7 +400,7 @@ public class BudgetAlertsServiceImpl {
     return currentAmount >= thresholdAmount;
   }
 
-  private double getThresholdAmount(Budget budget, AlertThreshold alertThreshold) {
+  private double getThresholdAmount(BudgetCommon budget, AlertThreshold alertThreshold) {
     switch (alertThreshold.getBasedOn()) {
       case ACTUAL_COST:
       case FORECASTED_COST:
@@ -360,5 +443,27 @@ public class BudgetAlertsServiceImpl {
       return -1;
     }
     return monthDiff;
+  }
+
+  // We don't have monthly here as one of the period in cases
+  // We have placed it in default itself
+  private String getBudgetPeriodForEmailAlert(BudgetCommon budget) {
+    switch (budget.getPeriod()) {
+      case DAILY:
+        return DAY;
+      case WEEKLY:
+        return WEEK;
+      case QUARTERLY:
+        return QUARTER;
+      case YEARLY:
+        if (budget.getBudgetMonthlyBreakdown() != null
+            && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+          return MONTH;
+        } else {
+          return YEAR;
+        }
+      default:
+        return MONTH;
+    }
   }
 }

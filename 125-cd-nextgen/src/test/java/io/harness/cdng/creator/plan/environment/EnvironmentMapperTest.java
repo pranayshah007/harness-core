@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator.plan.environment;
 
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -152,7 +153,7 @@ public class EnvironmentMapperTest extends CDNGTestBase {
                     .build())
             .build();
 
-    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride);
+    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride, null);
 
     assertThat(((ParameterField) outcome.getVariables().get("var1")).getValue()).isEqualTo("svcoverrideval1");
     assertThat(((ParameterField) outcome.getVariables().get("var2")).getValue()).isEqualTo(16.0);
@@ -178,7 +179,7 @@ public class EnvironmentMapperTest extends CDNGTestBase {
                     .build())
             .build();
 
-    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride);
+    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride, null);
 
     assertThat(((ParameterField) outcome.getVariables().get("var1")).getValue()).isEqualTo("svcoverrideval1");
     assertThat(((ParameterField) outcome.getVariables().get("var2")).getValue()).isEqualTo(16.0);
@@ -203,7 +204,7 @@ public class EnvironmentMapperTest extends CDNGTestBase {
                                               .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder().build())
                                               .build();
 
-    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride);
+    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride, null);
 
     assertThat(((ParameterField) outcome.getVariables().get("var1")).getValue()).isEqualTo("val1");
     assertThat(((ParameterField) outcome.getVariables().get("var2")).getValue()).isEqualTo(4.0);
@@ -221,8 +222,23 @@ public class EnvironmentMapperTest extends CDNGTestBase {
                                               .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder().build())
                                               .build();
 
-    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride);
+    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride, null);
 
     assertThat(outcome.getVariables()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testOutcomeWithRef() {
+    Environment envEntity = Environment.builder().accountId("accountId").identifier("envId").build();
+    NGEnvironmentConfig env =
+        NGEnvironmentConfig.builder().ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder().build()).build();
+    NGServiceOverrideConfig svcOverride = NGServiceOverrideConfig.builder()
+                                              .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder().build())
+                                              .build();
+
+    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride, null);
+    assertThat(outcome.getIdentifier()).isEqualTo("account.envId");
   }
 }

@@ -8,6 +8,7 @@
 package io.harness.ng.core.service.services.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,6 +29,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 import java.util.Set;
+import lombok.NonNull;
 
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
@@ -51,10 +53,49 @@ public class ServiceEntitySetupUsageHelper {
   }
 
   /**
+   * Create setup usages for the current service entity if referred entities are present
+   */
+  public void createSetupUsages(@NonNull ServiceEntity entity, Set<EntityDetailProtoDTO> referredEntities) {
+    final SetupUsageOwnerEntity ownerEntity = getOwnerEntity(entity);
+    if (isNotEmpty(referredEntities)) {
+      setupUsageHelper.publishServiceEntitySetupUsage(ownerEntity, referredEntities);
+    }
+  }
+
+  /**
+   * Update setup usages for the current service entity with referred entities
+   */
+  protected void updateSetupUsages(ServiceEntity entity, Set<EntityDetailProtoDTO> referredEntities) {
+    final SetupUsageOwnerEntity ownerEntity = getOwnerEntity(entity);
+    if (isEmpty(referredEntities)) {
+      setupUsageHelper.deleteServiceSetupUsages(ownerEntity);
+    } else {
+      setupUsageHelper.publishServiceEntitySetupUsage(ownerEntity, referredEntities);
+    }
+  }
+
+  /**
    * Delete all setup usages where the 'referred by' is the current service entity
    */
   protected void deleteSetupUsages(ServiceEntity entity) {
     setupUsageHelper.deleteServiceSetupUsages(getOwnerEntity(entity));
+  }
+
+  /**
+   * Delete all setup usages where the 'referred by' is the current service entity,Here we have only service id, service
+   * name in the entity
+   */
+  protected void deleteSetupUsagesWithOnlyIdentifierInfo(
+      String serviceId, String accountId, String orgIdentifier, String projectIdentifier) {
+    SetupUsageOwnerEntity entitySetupUsage = SetupUsageOwnerEntity.builder()
+                                                 .accountId(accountId)
+                                                 .orgIdentifier(orgIdentifier)
+                                                 .projectIdentifier(projectIdentifier)
+                                                 .identifier(serviceId)
+                                                 .type(EntityTypeProtoEnum.SERVICE)
+                                                 .build();
+
+    setupUsageHelper.deleteServiceSetupUsages(entitySetupUsage);
   }
 
   private Set<EntityDetailProtoDTO> getAllReferredEntities(String rootName, ServiceEntity entity) {
@@ -87,5 +128,10 @@ public class ServiceEntitySetupUsageHelper {
     // todo(@hinger): support fetching from git once service is supported
     return NGRestUtils.getResponse(templateResourceClient.getTemplateReferenceForGivenYaml(
         accountId, orgId, projectId, null, null, null, TemplateReferenceRequestDTO.builder().yaml(yaml).build()));
+  }
+
+  public Set<EntityDetailProtoDTO> getAllReferredEntities(ServiceEntity entity) {
+    final String ROOT_LEVEL_NAME = "service";
+    return getAllReferredEntities(ROOT_LEVEL_NAME, entity);
   }
 }

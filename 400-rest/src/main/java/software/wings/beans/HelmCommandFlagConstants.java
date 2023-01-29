@@ -9,6 +9,7 @@ package software.wings.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static software.wings.beans.appmanifest.StoreType.CUSTOM;
 import static software.wings.beans.appmanifest.StoreType.HelmChartRepo;
 import static software.wings.beans.appmanifest.StoreType.HelmSourceRepo;
 
@@ -33,30 +34,31 @@ public final class HelmCommandFlagConstants {
   @Getter
   public enum HelmSubCommand {
     INSTALL(HelmSubCommandType.INSTALL, ImmutableSet.of(DeploymentType.HELM),
-        ImmutableSet.of(HelmSourceRepo, HelmChartRepo)),
+        ImmutableSet.of(HelmSourceRepo, HelmChartRepo, CUSTOM)),
     UPGRADE(HelmSubCommandType.UPGRADE, ImmutableSet.of(DeploymentType.HELM),
-        ImmutableSet.of(HelmSourceRepo, HelmChartRepo)),
+        ImmutableSet.of(HelmSourceRepo, HelmChartRepo, CUSTOM)),
     ROLLBACK(HelmSubCommandType.ROLLBACK, ImmutableSet.of(DeploymentType.HELM),
-        ImmutableSet.of(HelmSourceRepo, HelmChartRepo)),
+        ImmutableSet.of(HelmSourceRepo, HelmChartRepo, CUSTOM)),
     HISTORY(HelmSubCommandType.HISTORY, ImmutableSet.of(DeploymentType.HELM),
-        ImmutableSet.of(HelmSourceRepo, HelmChartRepo)),
+        ImmutableSet.of(HelmSourceRepo, HelmChartRepo, CUSTOM)),
     DELETE(HelmSubCommandType.DELETE, ImmutableSet.of(DeploymentType.HELM),
-        ImmutableSet.of(HelmSourceRepo, HelmChartRepo)),
+        ImmutableSet.of(HelmSourceRepo, HelmChartRepo, CUSTOM)),
     UNINSTALL(HelmSubCommandType.UNINSTALL, ImmutableSet.of(DeploymentType.HELM),
-        ImmutableSet.of(HelmSourceRepo, HelmChartRepo)),
-    LIST(HelmSubCommandType.LIST, ImmutableSet.of(DeploymentType.HELM), ImmutableSet.of(HelmSourceRepo, HelmChartRepo)),
+        ImmutableSet.of(HelmSourceRepo, HelmChartRepo, CUSTOM)),
+    LIST(HelmSubCommandType.LIST, ImmutableSet.of(DeploymentType.HELM),
+        ImmutableSet.of(HelmSourceRepo, HelmChartRepo, CUSTOM)),
     VERSION(HelmSubCommandType.VERSION, ImmutableSet.of(DeploymentType.HELM, DeploymentType.KUBERNETES),
-        ImmutableSet.of(HelmSourceRepo, HelmChartRepo)),
+        ImmutableSet.of(HelmSourceRepo, HelmChartRepo, CUSTOM)),
     PULL(HelmSubCommandType.PULL, ImmutableSet.of(DeploymentType.HELM, DeploymentType.KUBERNETES),
-        ImmutableSet.of(HelmChartRepo)),
+        ImmutableSet.of(HelmChartRepo, CUSTOM)),
     FETCH(HelmSubCommandType.FETCH, ImmutableSet.of(DeploymentType.HELM, DeploymentType.KUBERNETES),
-        ImmutableSet.of(HelmChartRepo)),
+        ImmutableSet.of(HelmChartRepo, CUSTOM)),
     TEMPLATE(HelmSubCommandType.TEMPLATE, ImmutableSet.of(DeploymentType.HELM, DeploymentType.KUBERNETES),
-        ImmutableSet.of(HelmSourceRepo, HelmChartRepo)),
+        ImmutableSet.of(HelmSourceRepo, HelmChartRepo, CUSTOM)),
     REPO_ADD(HelmSubCommandType.REPO_ADD, ImmutableSet.of(DeploymentType.HELM, DeploymentType.KUBERNETES),
-        ImmutableSet.of(HelmChartRepo)),
+        ImmutableSet.of(HelmChartRepo, CUSTOM)),
     REPO_UPDATE(HelmSubCommandType.REPO_UPDATE, ImmutableSet.of(DeploymentType.HELM, DeploymentType.KUBERNETES),
-        ImmutableSet.of(HelmChartRepo));
+        ImmutableSet.of(HelmChartRepo, CUSTOM));
 
     private final HelmSubCommandType subCommandType;
     private final Set<DeploymentType> deploymentTypes;

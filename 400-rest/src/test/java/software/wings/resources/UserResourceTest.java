@@ -8,7 +8,10 @@
 package software.wings.resources;
 
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
+import static io.harness.eraro.ErrorCode.DOMAIN_WHITELIST_FILTER_CHECK_FAILED;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.MEHUL;
 import static io.harness.rule.OwnerRule.MOHIT;
@@ -29,6 +32,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -44,6 +48,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.common.beans.Generation;
 import io.harness.rest.RestResponse;
@@ -225,7 +230,7 @@ public class UserResourceTest extends WingsBaseTest {
   @Test
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
-  public void testAaccountIDIsOptionalInSAMLLogin() throws URISyntaxException {
+  public void testAccountIDIsOptionalInSAMLLogin() throws URISyntaxException {
     String accountId = UUIDGenerator.generateUuid();
     String relayState = "test-relay-state";
     String samlResponse = "test-saml-response";
@@ -253,6 +258,42 @@ public class UserResourceTest extends WingsBaseTest {
                                             .header("Content-Type", MediaType.APPLICATION_FORM_URLENCODED)
                                             .post(form(requestEntity));
     assertThat(responseWithoutAccountId.getStatus()).isEqualTo(200);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testSamlLogin_withDomainWhitelistException() throws URISyntaxException {
+    String accountId = UUIDGenerator.generateUuid();
+    String relayState = "test-relay-state";
+    String samlResponse = "test-saml-response";
+    MultivaluedMap<String, String> requestEntity = new MultivaluedHashMap<>();
+    requestEntity.add("SAMLResponse", samlResponse);
+    requestEntity.add("RelayState", relayState);
+
+    when(httpServletRequest.getHeader(com.google.common.net.HttpHeaders.REFERER)).thenReturn("headervalue");
+    doThrow(new WingsException(DOMAIN_WHITELIST_FILTER_CHECK_FAILED, USER))
+        .when(AUTHENTICATION_MANAGER)
+        .samlLogin(any());
+
+    Response responseWithAccountId = RESOURCES.client()
+                                         .target("/users/saml-login")
+                                         .queryParam("accountId", accountId)
+                                         .request()
+                                         .header("Content-Type", MediaType.APPLICATION_FORM_URLENCODED)
+                                         .post(form(requestEntity));
+    assertThat(responseWithAccountId.getStatus()).isEqualTo(401);
+    assertThat(responseWithAccountId.getHeaders().get("X-HARNESS-ERROR"))
+        .isEqualTo(List.of("DOMAIN_WHITELIST_FILTER_CHECK_FAILED"));
+
+    Response responseWithoutAccountId = RESOURCES.client()
+                                            .target("/users/saml-login")
+                                            .request()
+                                            .header("Content-Type", MediaType.APPLICATION_FORM_URLENCODED)
+                                            .post(form(requestEntity));
+    assertThat(responseWithoutAccountId.getStatus()).isEqualTo(401);
+    assertThat(responseWithoutAccountId.getHeaders().get("X-HARNESS-ERROR"))
+        .isEqualTo(List.of("DOMAIN_WHITELIST_FILTER_CHECK_FAILED"));
   }
 
   @Test

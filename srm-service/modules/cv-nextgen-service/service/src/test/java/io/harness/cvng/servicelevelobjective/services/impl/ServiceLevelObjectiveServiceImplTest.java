@@ -88,7 +88,6 @@ import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHeal
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.ServiceLevelObjectiveKeys;
-import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -110,11 +109,9 @@ import com.google.inject.Inject;
 import io.serializer.HObjectMapper;
 import java.io.IOException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -168,6 +165,8 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   public void setup() throws IllegalAccessException, ParseException {
     MockitoAnnotations.initMocks(this);
     builderFactory = BuilderFactory.getDefault();
+    builderFactory.getContext().setProjectIdentifier("project");
+    builderFactory.getContext().setOrgIdentifier("orgIdentifier");
     accountId = builderFactory.getContext().getAccountId();
     orgIdentifier = builderFactory.getContext().getOrgIdentifier();
     projectIdentifier = builderFactory.getContext().getProjectIdentifier();
@@ -309,7 +308,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
         () -> serviceLevelObjectiveService.delete(projectParams, serviceLevelObjectiveDTO.getIdentifier()))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present",
+            "SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.",
             serviceLevelObjectiveDTO.getIdentifier(), projectParams.getAccountIdentifier(),
             projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
   }
@@ -483,15 +482,6 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                                      .getUuid();
 
     assertThat(sliIndicator).isEqualTo(updatedSliIndicator);
-    String verificationTaskId =
-        verificationTaskService.createSLIVerificationTask(builderFactory.getContext().getAccountId(), sliIndicator);
-    AnalysisOrchestrator analysisOrchestrator =
-        hPersistence.createQuery(AnalysisOrchestrator.class)
-            .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
-            .get();
-    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().size()).isEqualTo(14);
-    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().get(0).getStartTime())
-        .isEqualTo(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse("2020-07-20T12:00:00").toInstant());
   }
 
   @Test
@@ -522,13 +512,6 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     assertThat(updateServiceLevelObjectiveResponse.getServiceLevelObjectiveDTO().getTarget())
         .isEqualTo(updatedSloTarget);
     assertThat(sliIndicator).isEqualTo(updatedSliIndicator);
-    String verificationTaskId =
-        verificationTaskService.createSLIVerificationTask(builderFactory.getContext().getAccountId(), sliIndicator);
-    AnalysisOrchestrator analysisOrchestrator =
-        hPersistence.createQuery(AnalysisOrchestrator.class)
-            .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
-            .get();
-    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().size()).isEqualTo(121);
   }
 
   @Test
@@ -601,19 +584,6 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                                      .getUuid();
 
     assertThat(sliIndicator).isEqualTo(updatedSliIndicator);
-    String verificationTaskId =
-        verificationTaskService.createSLIVerificationTask(builderFactory.getContext().getAccountId(), sliIndicator);
-    AnalysisOrchestrator analysisOrchestrator =
-        hPersistence.createQuery(AnalysisOrchestrator.class)
-            .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
-            .get();
-    ServiceLevelObjective serviceLevelObjective =
-        serviceLevelObjectiveService.getEntity(projectParams, sloDTO.getIdentifier());
-    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().size()).isEqualTo(14);
-    LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
-    TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
-    Instant startTime = timePeriod.getStartTime(serviceLevelObjective.getZoneOffset());
-    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().get(0).getAnalysisStartTime()).isBefore(startTime);
   }
 
   @Test
@@ -751,7 +721,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     assertThatThrownBy(() -> serviceLevelObjectiveService.update(projectParams, sloDTO.getIdentifier(), sloDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+            "SLO  with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.",
             sloDTO.getIdentifier(), projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier()));
   }

@@ -36,24 +36,37 @@ public class InfraRollbackPMSPlanCreator {
   public static final String INFRA_ROLLBACK_NODE_ID_SUFFIX = "_infraRollback";
 
   public static PlanCreationResponse createInfraRollbackPlan(YamlField infraField) {
-    if (!isDynamicallyProvisioned(infraField)) {
+    if (!provisionerExistsInInfraDef(infraField)) {
       return PlanCreationResponse.builder().build();
     }
-
-    Map<String, YamlField> dependencies = new HashMap();
 
     YamlField provisionerField = infraField.getNode()
                                      .getField(YamlTypes.INFRASTRUCTURE_DEF)
                                      .getNode()
                                      .getField(YAMLFieldNameConstants.PROVISIONER);
+    return createProvisionerParentNodePlan(infraField, provisionerField);
+  }
 
+  public static PlanCreationResponse createProvisionerRollbackPlan(YamlField envField) {
+    if (!provisionerExistsInEnvironmentV2(envField)) {
+      return PlanCreationResponse.builder().build();
+    }
+
+    YamlField provisionerField = envField.getNode().getField(YAMLFieldNameConstants.PROVISIONER);
+    return createProvisionerParentNodePlan(envField, provisionerField);
+  }
+
+  private PlanCreationResponse createProvisionerParentNodePlan(
+      YamlField provisionerParentField, YamlField provisionerField) {
     RollbackOptionalChildChainStepParametersBuilder stepParametersBuilder =
         RollbackOptionalChildChainStepParameters.builder();
 
     YamlField rollbackStepsField = provisionerField.getNode().getField(YAMLFieldNameConstants.ROLLBACK_STEPS);
 
+    Map<String, YamlField> dependencies = new HashMap<>();
+
     if (rollbackStepsField != null && rollbackStepsField.getNode() != null
-        && rollbackStepsField.getNode().asArray().size() > 0) {
+        && !rollbackStepsField.getNode().asArray().isEmpty()) {
       // Adding dependencies
       dependencies.put(
           rollbackStepsField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STEPS_NODE_ID_SUFFIX,
@@ -71,7 +84,7 @@ public class InfraRollbackPMSPlanCreator {
 
     PlanNode infraRollbackNode =
         PlanNode.builder()
-            .uuid(infraField.getNode().getUuid() + INFRA_ROLLBACK_NODE_ID_SUFFIX)
+            .uuid(provisionerParentField.getNode().getUuid() + INFRA_ROLLBACK_NODE_ID_SUFFIX)
             .name(NGCommonUtilPlanCreationConstants.INFRA_ROLLBACK_NODE_NAME)
             .identifier(NGCommonUtilPlanCreationConstants.INFRA_ROLLBACK_NODE_IDENTIFIER)
             .stepType(RollbackOptionalChildChainStep.STEP_TYPE)
@@ -89,15 +102,25 @@ public class InfraRollbackPMSPlanCreator {
         .build();
   }
 
-  private static boolean isDynamicallyProvisioned(YamlField infraField) {
+  private static boolean provisionerExistsInInfraDef(YamlField infraField) {
     if (infraField == null) {
       return false;
     }
+
     YamlField infraDefField = infraField.getNode().getField(YamlTypes.INFRASTRUCTURE_DEF);
     if (infraDefField == null) {
       return false;
     }
     YamlField provisionerField = infraDefField.getNode().getField(YAMLFieldNameConstants.PROVISIONER);
+    return provisionerField != null;
+  }
+
+  private static boolean provisionerExistsInEnvironmentV2(YamlField envField) {
+    if (envField == null) {
+      return false;
+    }
+
+    YamlField provisionerField = envField.getNode().getField(YAMLFieldNameConstants.PROVISIONER);
     return provisionerField != null;
   }
 }

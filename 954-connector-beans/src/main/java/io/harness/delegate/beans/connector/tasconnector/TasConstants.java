@@ -12,5 +12,6 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(HarnessTeam.CDP)
 public class TasConstants {
   public static final String MANUAL_CONFIG = "ManualConfig";
-  public static final String INVALID_CREDS = "Invalid Credentials";
+  public static final String PERCENTAGE = "Percentage";
+  public static final String COUNT = "Count";
 }

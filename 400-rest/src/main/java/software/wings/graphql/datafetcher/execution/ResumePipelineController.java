@@ -23,10 +23,10 @@ import software.wings.beans.ArtifactVariable;
 import software.wings.beans.ExecutionArgs;
 import software.wings.beans.Pipeline;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.graphql.schema.mutation.pipeline.input.QLRuntimeExecutionInputs;
 import software.wings.graphql.schema.mutation.pipeline.payload.QLContinueExecutionPayload;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.PipelineService;
 import software.wings.service.intfc.WorkflowExecutionService;
 

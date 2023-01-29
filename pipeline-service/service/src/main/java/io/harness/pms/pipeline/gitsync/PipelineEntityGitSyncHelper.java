@@ -10,7 +10,7 @@ package io.harness.pms.pipeline.gitsync;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.common.EntityReference;
+import io.harness.beans.EntityReference;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
@@ -150,7 +150,7 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   @Override
   protected PipelineConfig updateEntityFilePath(String accountIdentifier, String yaml, String newFilePath) {
     PipelineEntity entity = PMSPipelineDtoMapper.toPipelineEntity(accountIdentifier, yaml);
-    pipelineServiceHelper.resolveTemplatesAndValidatePipeline(entity, true);
+    pipelineServiceHelper.resolveTemplatesAndValidatePipeline(entity, true, false);
     PipelineEntity pipelineEntity = pmsPipelineService.updateGitFilePath(entity, newFilePath);
     return PipelineYamlDtoMapper.toDto(pipelineEntity);
   }

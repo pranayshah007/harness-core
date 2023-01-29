@@ -151,6 +151,19 @@ public interface FileStoreService {
       @NotNull FolderNodeDTO folderNodeDTO, @Nullable FileStoreNodesFilterQueryPropertiesDTO filterParams);
 
   /**
+   * Get file store nodes on path including first level nodes and sub-nodes on path.
+   *
+   * @param accountIdentifier the account identifier
+   * @param orgIdentifier the organization identifier
+   * @param projectIdentifier the project identifier
+   * @param path the file path
+   * @param filterParams filter files and folder by params
+   * @return the folder populated with nodes
+   */
+  FolderNodeDTO listFileStoreNodesOnPath(@NotNull String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, @NotNull String path, @Nullable FileStoreNodesFilterQueryPropertiesDTO filterParams);
+
+  /**
    * Get list of entities file is referenced by.
    *
    * @param accountIdentifier the account identifier

@@ -3,26 +3,27 @@ x-stoplight:
   id: bfet7n314xd4i
 info:
   title: Harness NextGen Software Delivery Platform API Reference
-  version: '1.0'
+  version: '1'
   description: This is the Open Api Spec 3 for the Access Control Service. This is under active development. Beware of the breaking change with respect to the generated code stub.
   contact:
     email: contact@harness.io
 servers:
-  - url: 'http://api.harness.io'
-    description: Harness host url
+  - url: 'https://api.harness.io'
+    description: Harness host URL.
 tags:
   - name: Account Roles
-    description: This contains APIs for performing CRUD operations on Account level Roles.
+    description: This contains APIs for Account-scoped Roles.
   - name: Organization Roles
-    description: This contains APIs for performing CRUD operations on Organization level Roles.
+    description: This contains APIs for Organization-scoped Roles.
   - name: Project Roles
-    description: This contains APIs for performing CRUD operations on Project level Roles.
+    description: This contains APIs for Project-scoped Roles.
   - name: Account Role Assignments
-    description: This contains APIs for performing CRUD operations on Account level Role Assignments.
+    description: This contains APIs for Account-scoped Role Assignments.
   - name: Org Role Assignments
-    description: This contains APIs for performing CRUD operations on Organization level Role Assignments.
+    description: This contains APIs for Organization-scoped Role Assignments.
+    x-displayName: Organization Role Assignments
   - name: Project Role Assignments
-    description: This contains APIs for performing CRUD operations on Project level Role Assignments.
+    description: This contains APIs for Project-scoped Role Assignments.
 paths:
   /v1/roles:
     parameters: []
@@ -283,6 +284,8 @@ paths:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Sort'
         - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
     post:
       summary: Create a role assignment
       operationId: create-account-scoped-role-assignments
@@ -296,6 +299,8 @@ paths:
         - Account Role Assignments
       requestBody:
         $ref: '#/components/requestBodies/RoleAssignmentRequest'
+      security:
+        - x-api-key: []
   '/v1/role-assignments/{role-assignment}':
     parameters:
       - schema:
@@ -303,7 +308,7 @@ paths:
         name: role-assignment
         in: path
         required: true
-        description: Role assignment slug
+        description: Role assignment identifier
     get:
       summary: Retrieve a role assignment
       tags:
@@ -312,21 +317,25 @@ paths:
         '200':
           $ref: '#/components/responses/RoleAssignmentResponse'
       operationId: get-account-scoped-role-assignment
-      description: Retrieves the information of the role assignment with the matching role assignment slug.
+      description: Retrieves the information of the role assignment with the matching role assignment identifier.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     delete:
       summary: Delete a role assignment
       operationId: delete-account-scoped-role-assignment
       responses:
         '200':
           $ref: '#/components/responses/RoleAssignmentResponse'
-      description: Deletes the information of the role assignment with the matching role assignment slug.
+      description: Deletes the information of the role assignment with the matching role assignment identifier.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
         - Account Role Assignments
-  /v1/orgs/{org}/role-assignments:
+      security:
+        - x-api-key: []
+  '/v1/orgs/{org}/role-assignments':
     get:
       summary: List role assignments
       tags:
@@ -342,6 +351,8 @@ paths:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Sort'
         - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
     post:
       summary: Create a role assignment
       operationId: create-org-scoped-role-assignments
@@ -355,6 +366,8 @@ paths:
         - Org Role Assignments
       requestBody:
         $ref: '#/components/requestBodies/RoleAssignmentRequest'
+      security:
+        - x-api-key: []
     parameters:
       - $ref: '#/components/parameters/OrgParam'
   '/v1/orgs/{org}/role-assignments/{role-assignment}':
@@ -364,7 +377,7 @@ paths:
         name: role-assignment
         in: path
         required: true
-        description: Role assignment slug
+        description: Role assignment identifier
       - $ref: '#/components/parameters/OrgParam'
     get:
       summary: Retrieve a role assignment
@@ -374,21 +387,25 @@ paths:
         '200':
           $ref: '#/components/responses/RoleAssignmentResponse'
       operationId: get-org-scoped-role-assignment
-      description: Retrieves the information of the role assignment with the matching role assignment slug.
+      description: Retrieves the information of the role assignment with the matching role assignment identifier.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     delete:
       summary: Delete a role assignment
       operationId: delete-org-scoped-role-assignment
       responses:
         '200':
           $ref: '#/components/responses/RoleAssignmentResponse'
-      description: Deletes the information of the role assignment with the matching role assignment slug.
+      description: Deletes the information of the role assignment with the matching role assignment identifier.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
         - Org Role Assignments
-  /v1/orgs/{org}/projects/{project}/role-assignments:
+      security:
+        - x-api-key: []
+  '/v1/orgs/{org}/projects/{project}/role-assignments':
     get:
       summary: List role assignments
       tags:
@@ -404,6 +421,8 @@ paths:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Sort'
         - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
     post:
       summary: Create a role assignment
       operationId: create-project-scoped-role-assignments
@@ -417,6 +436,8 @@ paths:
         - Project Role Assignments
       requestBody:
         $ref: '#/components/requestBodies/RoleAssignmentRequest'
+      security:
+        - x-api-key: []
     parameters:
       - $ref: '#/components/parameters/OrgParam'
       - $ref: '#/components/parameters/ProjectParam'
@@ -427,7 +448,7 @@ paths:
         name: role-assignment
         in: path
         required: true
-        description: Role assignment slug
+        description: Role assignment identifier
       - $ref: '#/components/parameters/OrgParam'
       - $ref: '#/components/parameters/ProjectParam'
     get:
@@ -438,20 +459,24 @@ paths:
         '200':
           $ref: '#/components/responses/RoleAssignmentResponse'
       operationId: get-project-scoped-role-assignment
-      description: Retrieves the information of the role assignment with the matching role assignment slug.
+      description: Retrieves the information of the role assignment with the matching role assignment identifier.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     delete:
       summary: Delete a role assignment
       operationId: delete-project-scoped-role-assignment
       responses:
         '200':
           $ref: '#/components/responses/RoleAssignmentResponse'
-      description: Deletes the information of the role assignment with the matching role assignment slug.
+      description: Deletes the information of the role assignment with the matching role assignment identifier.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
         - Project Role Assignments
+      security:
+        - x-api-key: []
 components:
   schemas:
     RolesResponse:
@@ -462,7 +487,7 @@ components:
       description: Role Response Model
       x-examples:
         example-role:
-          slug: example_role
+          identifier: example_role
           name: Example_Role
           permissions:
             - core_resource_view
@@ -480,7 +505,7 @@ components:
           updated: 1234567890
           harness_managed: true
       properties:
-        slug:
+        identifier:
           type: string
           description: Role Identifier
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
@@ -489,7 +514,7 @@ components:
         name:
           type: string
           description: Role Name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
         permissions:
@@ -532,7 +557,7 @@ components:
           type: boolean
           description: 'This indicates if this Role is managed by Harness or not. If true, Harness can manage and modify this Role.'
       required:
-        - slug
+        - identifier
         - name
     CreateRoleRequest:
       title: CreateRoleRequest
@@ -542,7 +567,7 @@ components:
       description: Role request body
       x-examples:
         role-request:
-          slug: example_role
+          identifier: example_role
           name: Example_Role
           permissions:
             - core_view
@@ -551,7 +576,7 @@ components:
             example-tag-1: example-tag-1-value
             example-tag-2: example-tag-2-value
       properties:
-        slug:
+        identifier:
           type: string
           minLength: 1
           maxLength: 64
@@ -580,7 +605,7 @@ components:
           maxProperties: 128
           description: Role tags
       required:
-        - slug
+        - identifier
         - name
     RoleScope:
       title: Scope
@@ -608,15 +633,15 @@ components:
       type: object
       description: Role assignment request model
       properties:
-        slug:
+        identifier:
           type: string
-          description: Role assignment slug
+          description: Role assignment identifier
         resource_group:
           type: string
           description: Resource group name
         role:
           type: string
-          description: Role slug
+          description: Role identifier
         principal:
           $ref: '#/components/schemas/Principal'
         disabled:
@@ -626,7 +651,7 @@ components:
           type: boolean
           description: Role assignment is managed or not
       required:
-        - slug
+        - identifier
         - resource_group
         - role
         - principal
@@ -638,9 +663,9 @@ components:
         scope_level:
           type: string
           description: Role assignment principal scope level
-        slug:
+        identifier:
           type: string
-          description: Role assignment principal slug
+          description: Role assignment principal identifier
         type:
           type: string
           enum:
@@ -651,14 +676,14 @@ components:
             - SERVICE_ACCOUNT
           description: Role assignment principal type
       required:
-        - slug
+        - identifier
         - type
     RoleAssignmentResponse:
       title: RoleAssignmentResponse
       type: object
       description: Role assignment response model
       properties:
-        roleassignment:
+        role-assignment:
           $ref: '#/components/schemas/RoleAssignment'
         created:
           type: integer
@@ -694,7 +719,7 @@ components:
       schema:
         type: string
         enum:
-          - slug
+          - identifier
           - name
           - created
           - updated
@@ -751,7 +776,7 @@ components:
       required: false
       schema:
         type: string
-      description: 'Slug field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+      description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
   responses:
     RolesListResponse:
       description: Roles List Response body
@@ -764,7 +789,7 @@ components:
           examples:
             role-list-response:
               value:
-                - slug: example_role
+                - identifier: example_role
                   name: Example_Role
                   permissions:
                     - core_resource_view
@@ -789,7 +814,7 @@ components:
           examples:
             role-list-response:
               value: |
-                - slug: example_role
+                - identifier: example_role
                   name: Example_Role
                   permissions:
                     - core_resource_view
@@ -823,7 +848,7 @@ components:
           examples:
             role-response:
               value:
-                slug: example_role
+                identifier: example_role
                 name: Example_Role
                 permissions:
                   - core_resource_view
@@ -846,7 +871,7 @@ components:
           examples:
             role-response:
               value: |
-                slug: example_role
+                identifier: example_role
                 name: Example_Role
                 permissions:
                   - core_resource_view
@@ -872,13 +897,13 @@ components:
           examples:
             role-assignment-response-json:
               value:
-                roleassignment:
-                  slug: example_role_assignment
-                  resource_group: example_resource_group_slug
-                  role: example_role_slug
+                role-assignment:
+                  identifier: example_role_assignment
+                  resource_group: example_resource_group_identifier
+                  role: example_role_identifier
                   principal:
                     scope: ACCOUNT
-                    slug: example_principal_slug
+                    identifier: example_principal_identifier
                     type: USER
                   disabled: false
                   managed: false
@@ -891,13 +916,13 @@ components:
           examples:
             role-assignment-response-yaml:
               value: |
-                roleassignment:
-                  slug: example_role_assignment
-                  resource_group: example_resource_group_slug
-                  role: example_role_slug
+                role-assignment:
+                  identifier: example_role_assignment
+                  resource_group: example_resource_group_identifier
+                  role: example_role_identifier
                   principal:
                     scope: ACCOUNT
-                    slug: example_principal_slug
+                    identifier: example_principal_identifier
                     type: USER
                   disabled: false
                   managed: false
@@ -915,13 +940,13 @@ components:
           examples:
             role-assignment-response-json:
               value:
-                - roleassignment:
-                    slug: example_role_assignment
-                    resource_group: example_resource_group_slug
-                    role: example_role_slug
+                - role-assignment:
+                    identifier: example_role_assignment
+                    resource_group: example_resource_group_identifier
+                    role: example_role_identifier
                     principal:
                       scope: ACCOUNT
-                      slug: example_principal_slug
+                      identifier: example_principal_identifier
                       type: USER
                     disabled: false
                     managed: false
@@ -936,13 +961,13 @@ components:
           examples:
             role-assignment-response-json:
               value: |
-                - roleassignment:
-                    slug: example_role_assignment
-                    resource_group: example_resource_group_slug
-                    role: example_role_slug
+                - role-assignment:
+                    identifier: example_role_assignment
+                    resource_group: example_resource_group_identifier
+                    role: example_role_identifier
                     principal:
                       scope: ACCOUNT
-                      slug: example_principal_slug
+                      identifier: example_principal_identifier
                       type: USER
                     disabled: false
                     managed: false
@@ -966,7 +991,7 @@ components:
           examples:
             role-request:
               value:
-                slug: example_role
+                identifier: example_role
                 name: Example_Role
                 permissions:
                   - core_view
@@ -980,7 +1005,7 @@ components:
           examples:
             role-request:
               value: |
-                slug: example_role
+                identifier: example_role
                 name: Example_Role
                 permissions:
                   - core_view
@@ -998,12 +1023,12 @@ components:
           examples:
             role-assignment-request-json:
               value:
-                slug: example_role_assignment
-                resource_group: example_resource_group_slug
-                role: example_role_slug
+                identifier: example_role_assignment
+                resource_group: example_resource_group_identifier
+                role: example_role_identifier
                 principal:
                   scope: ACCOUNT
-                  slug: example_principal_slug
+                  identifier: example_principal_identifier
                   type: USER
                 disabled: false
                 managed: false
@@ -1013,12 +1038,12 @@ components:
           examples:
             role-assignment-request-yaml:
               value: |
-                slug: example_role_assignment
-                resource_group: example_resource_group_slug
-                role: example_role_slug
+                identifier: example_role_assignment
+                resource_group: example_resource_group_identifier
+                role: example_role_identifier
                 principal:
                   scope: ACCOUNT
-                  slug: example_principal_slug
+                  identifier: example_principal_identifier
                   type: USER
                 disabled: false
                 managed: false

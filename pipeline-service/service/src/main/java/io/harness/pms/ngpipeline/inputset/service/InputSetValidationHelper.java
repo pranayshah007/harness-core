@@ -20,19 +20,17 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
-import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlDiffDTO;
-import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
-import io.harness.pms.ngpipeline.inputset.helpers.InputSetErrorsHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
+import io.harness.pms.yaml.PipelineVersion;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -41,56 +39,46 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class InputSetValidationHelper {
+  public void checkForPipelineStoreType(InputSetEntity inputSetEntity, PMSPipelineService pipelineService) {
+    Optional<PipelineEntity> pipelineEntityOnlyMetadata =
+        pipelineService.getPipeline(inputSetEntity.getAccountIdentifier(), inputSetEntity.getOrgIdentifier(),
+            inputSetEntity.getProjectIdentifier(), inputSetEntity.getPipelineIdentifier(), false, true);
+    if (pipelineEntityOnlyMetadata.isEmpty()) {
+      throw new InvalidRequestException(
+          PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(inputSetEntity.getOrgIdentifier(),
+              inputSetEntity.getProjectIdentifier(), inputSetEntity.getPipelineIdentifier()));
+    }
+    StoreType storeTypeInContext = GitAwareContextHelper.getGitRequestParamsInfo().getStoreType();
+    boolean isForRemote = storeTypeInContext != null && storeTypeInContext.equals(StoreType.REMOTE);
+    boolean isPipelineRemote = pipelineEntityOnlyMetadata.get().getStoreType() == StoreType.REMOTE;
+    if (isForRemote ^ isPipelineRemote) {
+      throw new InvalidRequestException("Input Set should have the same Store Type as the Pipeline it is for");
+    }
+  }
+
   // this method is not for old git sync
-  public void validateInputSet(PMSInputSetService inputSetService, PMSPipelineService pipelineService,
-      InputSetEntity inputSetEntity, boolean checkForStoreType) {
-    String accountId = inputSetEntity.getAccountId();
+  public void validateInputSet(
+      PMSInputSetService inputSetService, InputSetEntity inputSetEntity, boolean hasNewYamlStructure) {
+    switch (inputSetEntity.getHarnessVersion()) {
+      case PipelineVersion.V1:
+        return;
+      case PipelineVersion.V0:
+        break;
+      default:
+        throw new IllegalStateException("version not supported");
+    }
     String orgIdentifier = inputSetEntity.getOrgIdentifier();
     String projectIdentifier = inputSetEntity.getProjectIdentifier();
     String pipelineIdentifier = inputSetEntity.getPipelineIdentifier();
     String yaml = inputSetEntity.getYaml();
     InputSetEntityType type = inputSetEntity.getInputSetEntityType();
-
-    PipelineEntity pipelineEntity = getPipelineEntityAndCheckForStoreType(
-        pipelineService, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, checkForStoreType);
     if (type.equals(InputSetEntityType.INPUT_SET)) {
-      InputSetErrorWrapperDTOPMS errorWrapperDTO =
-          validateInputSet(pipelineEntity, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
-      if (errorWrapperDTO != null) {
-        throw new InvalidInputSetException(
-            "Some fields in the Input Set are invalid.", errorWrapperDTO, inputSetEntity);
+      if (!hasNewYamlStructure) {
+        validateIdentifyingFieldsInYAML(orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
       }
     } else {
-      OverlayInputSetValidationHelper.validateOverlayInputSet(
-          inputSetService, inputSetEntity, pipelineEntity.getYaml());
+      OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity);
     }
-  }
-
-  InputSetErrorWrapperDTOPMS validateInputSet(PipelineEntity pipelineEntity, String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, String yaml) {
-    validateIdentifyingFieldsInYAML(orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
-    String pipelineYAML = pipelineEntity.getYaml();
-    return InputSetErrorsHelper.getErrorMap(pipelineYAML, yaml);
-  }
-
-  /*
-  We only need to check for store type in input set create flow. During update, it can be assumed that the store type
-  for pipeline and input set are in sync
-   */
-  PipelineEntity getPipelineEntityAndCheckForStoreType(PMSPipelineService pmsPipelineService, String accountId,
-      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, boolean checkForStoreType) {
-    PipelineEntity pipelineEntity =
-        getPipelineEntity(pmsPipelineService, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-    if (checkForStoreType) {
-      StoreType storeTypeInContext = GitAwareContextHelper.getGitRequestParamsInfo().getStoreType();
-      boolean isForRemote = storeTypeInContext != null && storeTypeInContext.equals(StoreType.REMOTE);
-      boolean isPipelineRemote = pipelineEntity.getStoreType() == StoreType.REMOTE;
-      if (isForRemote ^ isPipelineRemote) {
-        throw new InvalidRequestException("Input Set should have the same Store Type as the Pipeline it is for");
-      }
-    }
-
-    return pipelineEntity;
   }
 
   /*
@@ -119,34 +107,6 @@ public class InputSetValidationHelper {
           orgIdentifier, projectIdentifier, pipelineIdentifier));
     }
     return optionalPipelineEntity.get();
-  }
-
-  public void validateInputSetForOldGitSync(PMSInputSetService inputSetService, PMSPipelineService pipelineService,
-      InputSetEntity inputSetEntity, String pipelineBranch, String pipelineRepoID) {
-    String accountId = inputSetEntity.getAccountId();
-    String orgIdentifier = inputSetEntity.getOrgIdentifier();
-    String projectIdentifier = inputSetEntity.getProjectIdentifier();
-    String pipelineIdentifier = inputSetEntity.getPipelineIdentifier();
-    String yaml = inputSetEntity.getYaml();
-    InputSetEntityType type = inputSetEntity.getInputSetEntityType();
-    String pipelineYaml = getPipelineYamlForOldGitSyncFlow(pipelineService, accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, pipelineBranch, pipelineRepoID);
-    if (type.equals(InputSetEntityType.INPUT_SET)) {
-      InputSetErrorWrapperDTOPMS errorWrapperDTO =
-          validateInputSetForOldGitSync(pipelineYaml, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
-      if (errorWrapperDTO != null) {
-        throw new InvalidInputSetException(
-            "Some fields in the Input Set are invalid.", errorWrapperDTO, inputSetEntity);
-      }
-    } else {
-      OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity, pipelineYaml);
-    }
-  }
-
-  InputSetErrorWrapperDTOPMS validateInputSetForOldGitSync(
-      String pipelineYaml, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String yaml) {
-    validateIdentifyingFieldsInYAML(orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
-    return InputSetErrorsHelper.getErrorMap(pipelineYaml, yaml);
   }
 
   public String getPipelineYamlForOldGitSyncFlow(PMSPipelineService pmsPipelineService, String accountId,

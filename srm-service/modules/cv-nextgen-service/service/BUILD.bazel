@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("@rules_java//java:defs.bzl", "java_binary")
 load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
@@ -9,7 +14,6 @@ shared_dependencies = [
     "@maven//:io_netty_netty_all",
 ] + [
     "//:lombok",
-    "//430-cv-nextgen-commons:module",
     "//440-connector-nextgen:module",
     "//878-ng-common-utilities:module",
     "//930-ng-core-clients:module",
@@ -31,6 +35,7 @@ shared_dependencies = [
     "//980-commons:module",
     "//clients/access-control/sdk:module",
     "//clients/pipeline-service/pms-sdk:module",
+    "//srm-service/modules/cv-nextgen-service/contracts/api:module",
     "@maven//:com_fasterxml_jackson_core_jackson_annotations",
     "@maven//:com_fasterxml_jackson_core_jackson_core",
     "@maven//:com_fasterxml_jackson_core_jackson_databind",
@@ -85,7 +90,7 @@ shared_dependencies = [
     "@maven//:org_glassfish_jersey_core_jersey_common",
     "@maven//:org_glassfish_jersey_core_jersey_server",
     "@maven//:org_hibernate_validator_hibernate_validator",
-    "@maven//:org_mongodb_morphia_morphia",
+    "@maven//:dev_morphia_morphia_core",
     "@maven//:org_reflections_reflections",
     "@maven//:org_slf4j_slf4j_api",
     "@maven//:ru_vyarus_guice_validator",
@@ -96,6 +101,7 @@ shared_dependencies = [
     "@maven//:io_swagger_core_v3_swagger_annotations",
     "@maven//:io_swagger_core_v3_swagger_models",
     "@maven//:io_swagger_core_v3_swagger_integration",
+    "@maven//:org_postgresql_postgresql",
 ]
 
 java_binary(

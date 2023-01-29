@@ -8,11 +8,14 @@
 package io.harness.gitsync.common.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -53,8 +56,11 @@ import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByCommitIdRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
+import io.harness.gitsync.common.dtos.ScmGetFileUrlRequestDTO;
+import io.harness.gitsync.common.dtos.ScmGetFileUrlResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
 import io.harness.gitsync.common.helper.GitClientEnabledHelper;
+import io.harness.gitsync.common.helper.GitFilePathHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
 import io.harness.ng.beans.PageRequest;
@@ -73,9 +79,12 @@ import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -107,12 +116,19 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   Scope scope;
   ScmConnector scmConnector;
   @Mock GitFileCacheService gitFileCacheService;
+  ExecutorService executorService = Executors.newFixedThreadPool(1);
+
+  @InjectMocks GitFilePathHelper gitFilePathHelper;
+  @Mock GitFilePathHelper gitFilePathHelperMock;
+
+  String fileUrl = "https://github.com/harness/repoName/blob/branch/filePath";
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
     scmFacilitatorService = new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, connectorService,
-        scmOrchestratorService, ngFeatureFlagHelperService, gitClientEnabledHelper, gitFileCacheService);
+        scmOrchestratorService, ngFeatureFlagHelperService, gitClientEnabledHelper, gitFileCacheService,
+        executorService, gitFilePathHelper);
     pageRequest = PageRequest.builder().build();
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
                                              .connectionType(GitConnectionType.ACCOUNT)
@@ -497,6 +513,40 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
         .thenReturn(scmConnector);
 
     assertThatThrownBy(() -> scmFacilitatorService.getRepoUrl(scope, connectorRef, repoName))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetFileUrl() {
+    ScmGetFileUrlRequestDTO fileUrlRequestDTO = ScmGetFileUrlRequestDTO.builder()
+                                                    .scope(scope)
+                                                    .branch(branch)
+                                                    .connectorRef(connectorRef)
+                                                    .commitId(commitId)
+                                                    .filePath(filePath)
+                                                    .repoName(repoName)
+                                                    .build();
+    ScmGetFileUrlResponseDTO scmGetFileUrlResponseDTO = scmFacilitatorService.getFileUrl(fileUrlRequestDTO);
+    assertEquals(fileUrl, scmGetFileUrlResponseDTO.getFileURL());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetFileUrlWhenConnectorRefISWrong() {
+    ScmGetFileUrlRequestDTO fileUrlRequestDTO = ScmGetFileUrlRequestDTO.builder()
+                                                    .scope(scope)
+                                                    .connectorRef(connectorRef)
+                                                    .commitId(commitId)
+                                                    .filePath(filePath)
+                                                    .repoName(repoName)
+                                                    .build();
+    on(gitFilePathHelper).set("gitSyncConnectorHelper", gitSyncConnectorHelper);
+    when(gitSyncConnectorHelper.getScmConnectorForGivenRepo(any(), any(), any(), any(), any()))
+        .thenThrow(InvalidRequestException.class);
+    assertThatThrownBy(() -> scmFacilitatorService.getFileUrl(fileUrlRequestDTO))
         .isInstanceOf(InvalidRequestException.class);
   }
 

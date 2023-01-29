@@ -7,6 +7,8 @@
 
 package io.harness.cvng.statemachine.services.api;
 
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getAppliedDeploymentAnalysisTypeFromLearningEngineTaskType;
+
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.analysis.services.api.TimeSeriesAnalysisService;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
@@ -93,6 +95,7 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
            Post deployment hosts are n3, n4
            */
           Set<String> testHosts = new HashSet<>();
+          // TODO: This should be no data state, control & test hosts should be empty.
           Set<String> controlHosts = new HashSet<>(preDeploymentHosts);
           analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
           analysisState.setInputs(analysisInputBuilder.build());
@@ -152,11 +155,18 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
             analysisState.setInputs(analysisInputBuilder.build());
           }
         }
+        updateAppliedDeploymentAnalysisTypeForAutoVerification(analysisState);
         break;
       default:
         log.warn("Unrecognized verification job type.");
     }
     return analysisState;
+  }
+
+  private void updateAppliedDeploymentAnalysisTypeForAutoVerification(HostSamplingState analysisState) {
+    verificationJobInstanceService.updateAppliedDeploymentAnalysisTypeForVerificationTaskId(
+        analysisState.getVerificationJobInstanceId(), analysisState.getInputs().getVerificationTaskId(),
+        getAppliedDeploymentAnalysisTypeFromLearningEngineTaskType(analysisState.getLearningEngineTaskType()));
   }
 
   @Override

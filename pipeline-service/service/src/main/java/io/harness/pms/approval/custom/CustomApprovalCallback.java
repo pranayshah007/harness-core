@@ -24,7 +24,7 @@ import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.approval.AbstractApprovalCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.serializer.KryoSerializer;
-import io.harness.servicenow.TicketNG;
+import io.harness.servicenow.misc.TicketNG;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.CriteriaSpecDTO;
@@ -42,6 +42,7 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Builder;
@@ -56,6 +57,7 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private ShellScriptHelperService shellScriptHelperService;
   @Inject private CustomApprovalInstanceHandler customApprovalInstanceHandler;
 
@@ -94,7 +96,10 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
     ShellScriptTaskResponseNG scriptTaskResponse;
     try {
       ResponseData responseData = response.values().iterator().next();
-      responseData = (ResponseData) kryoSerializer.asInflatedObject(((BinaryResponseData) responseData).getData());
+      BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
+      responseData = (ResponseData) (binaryResponseData.isUsingKryoWithoutReference()
+              ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+              : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
       if (responseData instanceof ErrorNotifyResponseData) {
         log.warn("Failed to run Custom Approval script");
         logCallback.saveExecutionLog("Failed to run custom approval script: " + responseData, LogLevel.WARN);

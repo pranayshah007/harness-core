@@ -18,6 +18,7 @@ import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
+import static io.harness.ngtriggers.beans.source.YamlFields.PIPELINE_BRANCH_NAME;
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
 
 import static java.util.Collections.emptyList;
@@ -34,19 +35,20 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.dto.PollingResponseDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.TriggerException;
+import io.harness.exception.ngexception.NGPipelineNotFoundException;
 import io.harness.expression.common.ExpressionConstants;
 import io.harness.network.SafeHttpCall;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
 import io.harness.ngtriggers.beans.dto.WebhookEventProcessingDetails;
 import io.harness.ngtriggers.beans.dto.WebhookEventProcessingDetails.WebhookEventProcessingDetailsBuilder;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
@@ -60,8 +62,10 @@ import io.harness.ngtriggers.beans.entity.metadata.status.PollingSubscriptionSta
 import io.harness.ngtriggers.beans.entity.metadata.status.StatusResult;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.ValidationStatus;
+import io.harness.ngtriggers.beans.source.GitMoveOperationType;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
+import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.ngtriggers.beans.source.artifact.BuildAware;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
@@ -89,6 +93,8 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
 import io.harness.pms.rbac.PipelineRbacPermissions;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.polling.client.PollingResourceClient;
 import io.harness.polling.contracts.PollingItem;
@@ -106,18 +112,22 @@ import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.DeleteResult;
 import java.io.IOException;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -414,9 +424,11 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     if (foundTriggerEntity.getType() == WEBHOOK
         && GITHUB.getEntityMetadataName().equalsIgnoreCase(foundTriggerEntity.getMetadata().getWebhook().getType())
         && pmsFeatureFlagService.isEnabled(foundTriggerEntity.getAccountId(), FeatureName.CD_GIT_WEBHOOK_POLLING)) {
-      String webhookId = foundTriggerEntity.getTriggerStatus().getWebhookInfo().getWebhookId();
-      String pollInterval = foundTriggerEntity.getPollInterval();
-      return !StringUtils.isEmpty(webhookId) && !StringUtils.isEmpty(pollInterval);
+      if (foundTriggerEntity.getTriggerStatus().getWebhookInfo() != null) {
+        String webhookId = foundTriggerEntity.getTriggerStatus().getWebhookInfo().getWebhookId();
+        String pollInterval = foundTriggerEntity.getPollInterval();
+        return !StringUtils.isEmpty(webhookId) && !StringUtils.isEmpty(pollInterval);
+      }
     }
     return false;
   }
@@ -665,8 +677,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         if (pmsFeatureFlagService.isEnabled(
                 triggerDetails.getNgTriggerEntity().getAccountId(), FeatureName.CD_GIT_WEBHOOK_POLLING)) {
           String pollInterval = triggerDetails.getNgTriggerEntity().getPollInterval();
-          if (pollInterval == null) {
-            throw new InvalidArgumentsException("Poll Interval cannot be empty");
+          if (StringUtils.isEmpty(pollInterval)) {
+            log.info("Polling not enabled for trigger {}, pollInterval {} ",
+                triggerDetails.getNgTriggerEntity().getIdentifier(), pollInterval);
+            return;
           }
           int pollInt = NGTimeConversionHelper.convertTimeStringToMinutesZeroAllowed(
               triggerDetails.getNgTriggerEntity().getPollInterval());
@@ -750,7 +764,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       String triggerYaml = triggerDetails.getNgTriggerEntity().getYaml();
       String triggerPipelineYml = getPipelineComponent(triggerYaml);
       Map<FQN, String> invalidFQNs = getInvalidFQNsInTrigger(templateYaml, triggerPipelineYml);
-      if (EmptyPredicate.isEmpty(invalidFQNs)) {
+      if (isEmpty(invalidFQNs)) {
         return errorMap;
       }
 
@@ -766,7 +780,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
   private String getPipelineComponent(String triggerYml) {
     try {
-      if (EmptyPredicate.isEmpty(triggerYml)) {
+      if (isEmpty(triggerYml)) {
         return triggerYml;
       }
       JsonNode node = YamlUtils.readTree(triggerYml).getNode().getCurrJsonNode();
@@ -785,11 +799,29 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
   }
 
+  private String setPipelineComponent(String triggerYml, String pipelineComponent) {
+    try {
+      if (isEmpty(triggerYml)) {
+        return triggerYml;
+      }
+      JsonNode node = YamlUtils.readTree(triggerYml).getNode().getCurrJsonNode();
+      ObjectNode innerMap = (ObjectNode) node.get(TRIGGER);
+      if (innerMap == null) {
+        throw new InvalidRequestException("Invalid Trigger Yaml.");
+      }
+      ObjectMapper objectMapper = ngTriggerElementMapper.getObjectMapper();
+      innerMap.set(INPUT_YAML, new TextNode(pipelineComponent));
+      return objectMapper.writeValueAsString(node);
+    } catch (IOException e) {
+      throw new InvalidYamlException("Invalid Trigger Yaml", e);
+    }
+  }
+
   public Map<FQN, String> getInvalidFQNsInTrigger(String templateYaml, String triggerPipelineCompYaml) {
     Map<FQN, String> errorMap = new LinkedHashMap<>();
     YamlConfig triggerConfig = new YamlConfig(triggerPipelineCompYaml);
     Set<FQN> triggerFQNs = new LinkedHashSet<>(triggerConfig.getFqnToValueMap().keySet());
-    if (EmptyPredicate.isEmpty(templateYaml)) {
+    if (isEmpty(templateYaml)) {
       triggerFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains runtime input"));
       return errorMap;
     }
@@ -814,7 +846,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           }
         } else {
           String error = validateStaticValues(templateValue, value);
-          if (EmptyPredicate.isNotEmpty(error)) {
+          if (isNotEmpty(error)) {
             errorMap.put(key, error);
           }
         }
@@ -1003,6 +1035,52 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     return triggerCatalogHelper.getTriggerTypeToCategoryMapping(accountIdentifier);
   }
 
+  private String getUpdatedTriggerPipelineComponent(String triggerPipelineYaml, String templateYaml) {
+    // This method updates the input specs in trigger's yaml according to the current pipeline's input specs
+    // In case pipeline's input specs have changed since trigger's creation, this will fix the trigger's input yaml
+    String newTriggerPipelineYaml = "pipeline: {}\n";
+    if (isNotEmpty(templateYaml)) {
+      YamlConfig templateConfig = new YamlConfig(templateYaml);
+      YamlConfig triggerConfig = new YamlConfig(triggerPipelineYaml);
+      Map<FQN, Object> toUpdateTriggerPipelineFQNToValueMap = new HashMap<>();
+      Set<FQN> triggerFQNs = new LinkedHashSet<>(triggerConfig.getFqnToValueMap().keySet());
+      templateConfig.getFqnToValueMap().forEach((key, templateValue) -> {
+        // Iterate through pipeline's input keys
+        // If trigger contains input spec which no longer exists in pipeline, it will not be added
+        if (triggerFQNs.contains(key)) {
+          // Case where trigger input yaml contains a key from pipeline's input yaml
+          Object triggerValue = triggerConfig.getFqnToValueMap().get(key);
+          if (key.isType() || key.isIdentifierOrVariableName()) {
+            // If key is variable identifier or name, keep it
+            toUpdateTriggerPipelineFQNToValueMap.put(key, templateValue);
+          } else {
+            // If key is variable value, validate its value type
+            String error = validateStaticValues(templateValue, triggerValue);
+            if (isNotEmpty(error)) {
+              // Replace by empty variable value if validation fails (user will need to provide the value)
+              toUpdateTriggerPipelineFQNToValueMap.put(key, "");
+            } else {
+              // Keep variable value if validation succeeds
+              toUpdateTriggerPipelineFQNToValueMap.put(key, triggerValue);
+            }
+          }
+        } else {
+          // Case where trigger input yaml does not contain a key from pipeline's input yaml
+          if (key.isType() || key.isIdentifierOrVariableName()) {
+            // If key is variable identifier or name, add it
+            toUpdateTriggerPipelineFQNToValueMap.put(key, templateValue);
+          } else {
+            // If key is variable value, add it with empty value (user will need to provide the value)
+            toUpdateTriggerPipelineFQNToValueMap.put(key, "");
+          }
+        }
+      });
+      newTriggerPipelineYaml =
+          new YamlConfig(toUpdateTriggerPipelineFQNToValueMap, templateConfig.getYamlMap(), true).getYaml();
+    }
+    return newTriggerPipelineYaml;
+  }
+
   @Override
   public void checkAuthorization(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, List<HeaderConfig> headerConfigs) {
@@ -1027,6 +1105,69 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     if (hasApiKey) {
       accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
           Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_EXECUTE);
+    }
+  }
+
+  public TriggerYamlDiffDTO getTriggerYamlDiff(TriggerDetails triggerDetails) {
+    String triggerYaml = triggerDetails.getNgTriggerEntity().getYaml();
+    String newTriggerYaml;
+    if (triggerDetails.getNgTriggerConfigV2() == null
+        || isNotEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
+        || isNotEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
+      // No reconciliation can be done at trigger level if it is for remote pipeline or if it is using input sets
+      newTriggerYaml = triggerYaml;
+    } else {
+      Optional<String> pipelineYmlOptional = validationHelper.fetchPipelineForTrigger(triggerDetails);
+      if (pipelineYmlOptional.isPresent()) {
+        String pipelineYaml = pipelineYmlOptional.get();
+        String templateYaml = createRuntimeInputForm(pipelineYaml);
+        String triggerPipelineYaml = getPipelineComponent(triggerYaml);
+        String newTriggerPipelineYaml = getUpdatedTriggerPipelineComponent(triggerPipelineYaml, templateYaml);
+        newTriggerYaml = setPipelineComponent(triggerYaml, newTriggerPipelineYaml);
+      } else {
+        throw new NGPipelineNotFoundException(
+            "No pipeline found for trigger " + triggerDetails.getNgTriggerConfigV2().getIdentifier());
+      }
+    }
+    return TriggerYamlDiffDTO.builder().oldYAML(triggerYaml).newYAML(newTriggerYaml).build();
+  }
+
+  public TriggerUpdateCount updateBranchName(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String targetIdentifier, GitMoveOperationType operationType, String pipelineBranchName) {
+    Optional<List<NGTriggerEntity>> listOfTriggers =
+        ngTriggerRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndDeletedNot(
+            accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, true);
+    List<NGTriggerEntity> listOfUpdatedTriggers = new ArrayList<>();
+    long failedYamlUpdateCount = 0;
+    if (listOfTriggers.isPresent()) {
+      for (NGTriggerEntity triggerEntity : listOfTriggers.get()) {
+        try {
+          YamlField yamlField = YamlUtils.readTree(triggerEntity.getYaml());
+          YamlNode triggerNode = yamlField.getNode().getField("trigger").getNode();
+          if (Objects.equals(operationType, GitMoveOperationType.INLINE_TO_REMOTE)) {
+            ((ObjectNode) triggerNode.getCurrJsonNode()).put(PIPELINE_BRANCH_NAME, pipelineBranchName);
+          } else if (Objects.equals(operationType, GitMoveOperationType.REMOTE_TO_INLINE)) {
+            ((ObjectNode) triggerNode.getCurrJsonNode()).remove(PIPELINE_BRANCH_NAME);
+          }
+          String updateYml = YamlUtils.writeYamlString(yamlField);
+          triggerEntity.setYaml(updateYml);
+          listOfUpdatedTriggers.add(triggerEntity);
+        } catch (Exception e) {
+          failedYamlUpdateCount++;
+          log.error(
+              "Error performing updateBranchName operation on trigger: " + TriggerHelper.getTriggerRef(triggerEntity),
+              e);
+        }
+      }
+
+      TriggerUpdateCount updateTriggerYamlResult = ngTriggerRepository.updateTriggerYaml(listOfUpdatedTriggers);
+      return TriggerUpdateCount.builder()
+          .failureCount(updateTriggerYamlResult.getFailureCount() + failedYamlUpdateCount)
+          .successCount(updateTriggerYamlResult.getSuccessCount())
+          .build();
+    } else {
+      log.info("No non-deleted Trigger found to update pipelineBranchName");
+      return TriggerUpdateCount.builder().successCount(0).failureCount(0).build();
     }
   }
 }

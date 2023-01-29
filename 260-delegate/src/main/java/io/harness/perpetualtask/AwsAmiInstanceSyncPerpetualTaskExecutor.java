@@ -42,7 +42,9 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExe
   @Override
   public PerpetualTaskResponse runOnce(
       PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime) {
-    log.info("Running the InstanceSync perpetual task executor for task id: {}", taskId);
+    if (log.isDebugEnabled()) {
+      log.debug("Running the InstanceSync perpetual task executor for task id: {}", taskId);
+    }
 
     final AwsAmiInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AwsAmiInstanceSyncPerpetualTaskParams.class);

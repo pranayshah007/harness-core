@@ -18,6 +18,7 @@ import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.ServerlessAwsLambdaServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.SpotServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -39,6 +40,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = AzureSshWinrmServerInstanceInfo.class, name = "AzureSshWinrmServerInstanceInfo"),
       @JsonSubTypes.Type(value = AwsSshWinrmServerInstanceInfo.class, name = "AwsSshWinrmServerInstanceInfo"),
       @JsonSubTypes.Type(value = CustomDeploymentServerInstanceInfo.class, name = "CustomDeploymentServerInstanceInfo"),
+      @JsonSubTypes.Type(value = SpotServerInstanceInfo.class, name = "SpotServerInstanceInfo"),
       @JsonSubTypes.Type(value = TasServerInstanceInfo.class, name = "TasServerInstanceInfo")
 })
 @OwnedBy(HarnessTeam.DX)

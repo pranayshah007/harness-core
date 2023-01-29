@@ -8,9 +8,9 @@
 package io.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
-import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.*;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PIPELINE_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
@@ -43,6 +43,7 @@ import io.harness.filter.mapper.FilterPropertiesMapper;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.server.PipelineServiceGrpcModule;
+import io.harness.hsqs.client.HsqsServiceClientModule;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
@@ -85,6 +86,7 @@ import io.harness.pms.dashboard.PipelineDashboardOverviewResource;
 import io.harness.pms.dashboard.PipelineDashboardOverviewResourceImpl;
 import io.harness.pms.dashboard.PipelineDashboardOverviewResourceV2;
 import io.harness.pms.dashboard.PipelineDashboardOverviewResourceV2Impl;
+import io.harness.pms.event.entitycrud.AccountEntityCrudStreamListener;
 import io.harness.pms.event.entitycrud.PipelineEntityCRUDStreamListener;
 import io.harness.pms.event.entitycrud.ProjectEntityCrudStreamListener;
 import io.harness.pms.event.pollingevent.PollingEventStreamListener;
@@ -92,6 +94,9 @@ import io.harness.pms.expressions.PMSExpressionEvaluatorProvider;
 import io.harness.pms.health.HealthResource;
 import io.harness.pms.health.HealthResourceImpl;
 import io.harness.pms.jira.JiraStepHelperServiceImpl;
+import io.harness.pms.ngpipeline.inputs.api.InputsApiImpl;
+import io.harness.pms.ngpipeline.inputs.service.PMSInputsService;
+import io.harness.pms.ngpipeline.inputs.service.PMSInputsServiceImpl;
 import io.harness.pms.ngpipeline.inputset.api.InputSetsApiImpl;
 import io.harness.pms.ngpipeline.inputset.resources.InputSetResourcePMS;
 import io.harness.pms.ngpipeline.inputset.resources.InputSetResourcePMSImpl;
@@ -173,6 +178,7 @@ import io.harness.serializer.OrchestrationStepsModuleRegistrars;
 import io.harness.serializer.PipelineServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.spec.server.pipeline.v1.InputSetsApi;
+import io.harness.spec.server.pipeline.v1.InputsApi;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.custom.CustomApprovalHelperService;
@@ -218,6 +224,7 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import dev.morphia.converters.TypeConverter;
 import io.dropwizard.jackson.Jackson;
 import java.util.HashSet;
 import java.util.List;
@@ -235,7 +242,6 @@ import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.ExecuteListener;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.redisson.api.RedissonClient;
 import org.springframework.core.convert.converter.Converter;
 
@@ -341,7 +347,9 @@ public class PipelineServiceModule extends AbstractModule {
     install(new DelegateSelectionLogHttpClientModule(configuration.getManagerClientConfig(),
         configuration.getManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
     install(new PipelineServiceEventsFrameworkModule(configuration.getEventsFrameworkConfiguration(),
-        configuration.getPipelineRedisEventsConfig(), configuration.getDebeziumConsumerConfigs()));
+        configuration.getPipelineRedisEventsConfig(), configuration.getDebeziumConsumersConfigs(),
+        configuration.getEventsFrameworkSnapshotConfiguration(),
+        configuration.isShouldUseEventsFrameworkSnapshotDebezium()));
     install(new EntitySetupUsageClientModule(this.configuration.getNgManagerServiceHttpClientConfig(),
         this.configuration.getManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
     install(new LogStreamingModule(configuration.getLogStreamingServiceConfig().getBaseUrl()));
@@ -363,6 +371,9 @@ public class PipelineServiceModule extends AbstractModule {
     });
     install(new VariableClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
+    install(new HsqsServiceClientModule(this.configuration.getQueueServiceClientConfig(),
+        this.configuration.getQueueServiceSecret(), BEARER.getServiceId()));
+
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(PMSOutboxEventHandler.class);
     bind(HPersistence.class).to(MongoPersistence.class);
@@ -430,6 +441,8 @@ public class PipelineServiceModule extends AbstractModule {
     bind(PMSResourceConstraintService.class).to(PMSResourceConstraintServiceImpl.class);
     bind(PMSLandingDashboardService.class).to(PMSLandingDashboardServiceImpl.class);
     bind(InputSetResourcePMS.class).to(InputSetResourcePMSImpl.class);
+    bind(InputsApi.class).to(InputsApiImpl.class);
+    bind(PMSInputsService.class).to(PMSInputsServiceImpl.class);
     bind(PlanExecutionResource.class).to(PlanExecutionResourceImpl.class);
     bind(WaitStepResource.class).to(WaitStepResourceImpl.class);
     bind(WaitStepService.class).to(WaitStepServiceImpl.class);
@@ -487,6 +500,10 @@ public class PipelineServiceModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(PROJECT_ENTITY + ENTITY_CRUD))
         .to(ProjectEntityCrudStreamListener.class);
+
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(ACCOUNT_ENTITY + ENTITY_CRUD))
+        .to(AccountEntityCrudStreamListener.class);
 
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.POLLING_EVENTS_STREAM))

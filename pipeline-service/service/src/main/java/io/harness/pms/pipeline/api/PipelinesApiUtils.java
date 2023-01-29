@@ -10,8 +10,6 @@ package io.harness.pms.pipeline.api;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import static javax.ws.rs.core.UriBuilder.fromPath;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -35,10 +33,10 @@ import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.mappers.CacheStateMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
-import io.harness.spec.server.commons.model.GovernanceMetadata;
-import io.harness.spec.server.commons.model.GovernanceStatus;
-import io.harness.spec.server.commons.model.Policy;
-import io.harness.spec.server.commons.model.PolicySet;
+import io.harness.spec.server.commons.v1.model.GovernanceMetadata;
+import io.harness.spec.server.commons.v1.model.GovernanceStatus;
+import io.harness.spec.server.commons.v1.model.Policy;
+import io.harness.spec.server.commons.v1.model.PolicySet;
 import io.harness.spec.server.pipeline.v1.model.CacheResponseMetadataDTO;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo.TriggerTypeEnum;
@@ -56,6 +54,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBo
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo;
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo.ExecutionStatusEnum;
 import io.harness.spec.server.pipeline.v1.model.YAMLSchemaErrorWrapper;
+import io.harness.utils.ApiUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,8 +63,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import org.bson.Document;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -113,7 +110,7 @@ public class PipelinesApiUtils {
     NodeInfo nodeInfo = new NodeInfo();
     nodeInfo.setFqn(errorInfo.getFqn());
     nodeInfo.setName(errorInfo.getName());
-    nodeInfo.setSlug(errorInfo.getIdentifier());
+    nodeInfo.setIdentifier(errorInfo.getIdentifier());
     nodeInfo.setType(errorInfo.getType());
     return nodeInfo;
   }
@@ -121,14 +118,14 @@ public class PipelinesApiUtils {
   public static PipelineGetResponseBody getGetResponseBody(PipelineEntity pipelineEntity) {
     PipelineGetResponseBody pipelineGetResponseBody = new PipelineGetResponseBody();
     pipelineGetResponseBody.setPipelineYaml(pipelineEntity.getYaml());
-    pipelineGetResponseBody.setSlug(pipelineEntity.getIdentifier());
+    pipelineGetResponseBody.setIdentifier(pipelineEntity.getIdentifier());
     pipelineGetResponseBody.setName(pipelineEntity.getName());
     pipelineGetResponseBody.setOrg(pipelineEntity.getOrgIdentifier());
     pipelineGetResponseBody.setProject(pipelineEntity.getProjectIdentifier());
     pipelineGetResponseBody.setDescription(pipelineEntity.getDescription());
-    pipelineGetResponseBody.setTags(getTagsFromNGTag(pipelineEntity.getTags()));
+    pipelineGetResponseBody.setTags(ApiUtils.getTags(pipelineEntity.getTags()));
     pipelineGetResponseBody.setGitDetails(getGitDetails(PMSPipelineDtoMapper.getEntityGitDetails(pipelineEntity)));
-    pipelineGetResponseBody.setModules(getModules(pipelineEntity.getFilters().keySet()));
+    pipelineGetResponseBody.setModules(getModules(pipelineEntity));
     pipelineGetResponseBody.setCreated(pipelineEntity.getCreatedAt());
     pipelineGetResponseBody.setUpdated(pipelineEntity.getLastUpdatedAt());
     pipelineGetResponseBody.setValid(true);
@@ -149,18 +146,9 @@ public class PipelinesApiUtils {
     return cacheResponseMetadataDTO;
   }
 
-  public static Map<String, String> getTagsFromNGTag(List<NGTag> ngTags) {
-    if (isEmpty(ngTags)) {
-      return null;
-    }
-    Map<String, String> tags = new HashMap<>();
-    for (NGTag ngTag : ngTags) {
-      tags.put(ngTag.getKey(), ngTag.getValue());
-    }
-    return tags;
-  }
+  public static List<String> getModules(PipelineEntity pipelineEntity) {
+    Set<String> modules = pipelineEntity.getFilters().keySet();
 
-  public static List<String> getModules(Set<String> modules) {
     if (modules == null) {
       return null;
     }
@@ -240,39 +228,9 @@ public class PipelinesApiUtils {
     return (map.isEmpty()) ? null : new Document(map);
   }
 
-  public static ResponseBuilder addLinksHeader(
-      ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
-    ArrayList<Link> links = new ArrayList();
-    links.add(Link.fromUri(fromPath(path)
-                               .queryParam("page", new Object[] {page})
-                               .queryParam("page_size", new Object[] {limit})
-                               .build(new Object[0]))
-                  .rel("self")
-                  .build(new Object[0]));
-    if (page >= 1) {
-      links.add(Link.fromUri(fromPath(path)
-                                 .queryParam("page", new Object[] {page - 1})
-                                 .queryParam("page_size", new Object[] {limit})
-                                 .build(new Object[0]))
-                    .rel("previous")
-                    .build(new Object[0]));
-    }
-
-    if (limit == currentResultCount) {
-      links.add(Link.fromUri(fromPath(path)
-                                 .queryParam("page", new Object[] {page + 1})
-                                 .queryParam("page_size", new Object[] {limit})
-                                 .build(new Object[0]))
-                    .rel("next")
-                    .build(new Object[0]));
-    }
-
-    return responseBuilder.links((Link[]) links.toArray(new Link[links.size()]));
-  }
-
   public static PipelineListResponseBody getPipelines(PMSPipelineSummaryResponseDTO pipelineDTO) {
     PipelineListResponseBody responseBody = new PipelineListResponseBody();
-    responseBody.setSlug(pipelineDTO.getIdentifier());
+    responseBody.setIdentifier(pipelineDTO.getIdentifier());
     responseBody.setName(pipelineDTO.getName());
     responseBody.setDescription(pipelineDTO.getDescription());
     responseBody.setTags(pipelineDTO.getTags());
@@ -421,7 +379,7 @@ public class PipelinesApiUtils {
       throw new InvalidRequestException("Create Request Body cannot be null.");
     }
     return PipelineRequestInfoDTO.builder()
-        .identifier(createRequestBody.getSlug())
+        .identifier(createRequestBody.getIdentifier())
         .name(createRequestBody.getName())
         .yaml(createRequestBody.getPipelineYaml())
         .description(createRequestBody.getDescription())
@@ -434,7 +392,7 @@ public class PipelinesApiUtils {
       throw new InvalidRequestException("Update Request Body cannot be null.");
     }
     return PipelineRequestInfoDTO.builder()
-        .identifier(updateRequestBody.getSlug())
+        .identifier(updateRequestBody.getIdentifier())
         .name(updateRequestBody.getName())
         .yaml(updateRequestBody.getPipelineYaml())
         .description(updateRequestBody.getDescription())
@@ -448,7 +406,11 @@ public class PipelinesApiUtils {
   }
 
   public static PipelineValidationResponseBody buildPipelineValidationResponseBody(PipelineValidationEvent event) {
-    return new PipelineValidationResponseBody().status(event.getStatus().name());
+    return new PipelineValidationResponseBody()
+        .status(event.getStatus().name())
+        .policyEval(event.getResult().getGovernanceResponse())
+        .startTs(event.getStartTs())
+        .endTs(event.getEndTs());
   }
 
   public static GovernanceMetadata buildGovernanceMetadataFromProto(

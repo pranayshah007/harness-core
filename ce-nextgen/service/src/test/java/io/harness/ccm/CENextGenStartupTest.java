@@ -35,8 +35,8 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(CE)
 public class CENextGenStartupTest extends CategoryTest {
-  public static DropwizardTestSupport<CENextGenConfiguration> SUPPORT;
-  public static MongoServer MONGO_SERVER;
+  private static DropwizardTestSupport<CENextGenConfiguration> support;
+  private static MongoServer mongoServer;
 
   private static MongoServer startMongoServer() {
     final MongoServer mongoServer = new MongoServer(new MemoryBackend());
@@ -45,26 +45,26 @@ public class CENextGenStartupTest extends CategoryTest {
   }
 
   private static void stopMongoServer() {
-    if (MONGO_SERVER != null) {
-      MONGO_SERVER.shutdownNow();
+    if (mongoServer != null) {
+      mongoServer.shutdownNow();
     }
   }
 
   private static String getMongoUri() {
-    InetSocketAddress serverAddress = MONGO_SERVER.getLocalAddress();
+    InetSocketAddress serverAddress = mongoServer.getLocalAddress();
     final ServerAddress addr = new ServerAddress(serverAddress);
     return String.format("mongodb://%s:%s/events", addr.getHost(), addr.getPort());
   }
 
   @BeforeClass
   public static void beforeClass() throws Exception {
-    MONGO_SERVER = startMongoServer();
-    SUPPORT = new DropwizardTestSupport<>(CENextGenApplication.class,
+    mongoServer = startMongoServer();
+    support = new DropwizardTestSupport<>(CENextGenApplication.class,
         String.valueOf(new File("ce-nextgen/service/src/test/resources/test-config.yml")),
         ConfigOverride.config("server.applicationConnectors[0].port", "0"),
         ConfigOverride.config("events-mongo.uri", getMongoUri()), ConfigOverride.config("hostname", "localhost"),
         ConfigOverride.config("basePathPrefix", SERVICE_ROOT_PATH));
-    SUPPORT.before();
+    support.before();
   }
 
   @Test
@@ -72,7 +72,7 @@ public class CENextGenStartupTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSchemaUrlAccessible() {
     final Client client = new JerseyClientBuilder().build();
-    final String URL = String.format("http://localhost:%d%s/graphql/schema", SUPPORT.getLocalPort(), SERVICE_ROOT_PATH);
+    final String URL = String.format("http://localhost:%d%s/graphql/schema", support.getLocalPort(), SERVICE_ROOT_PATH);
     final Response response = client.target(URL).request().get();
 
     assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
@@ -81,7 +81,7 @@ public class CENextGenStartupTest extends CategoryTest {
 
   @AfterClass
   public static void afterClass() {
-    SUPPORT.after();
+    support.after();
     stopMongoServer();
   }
 }

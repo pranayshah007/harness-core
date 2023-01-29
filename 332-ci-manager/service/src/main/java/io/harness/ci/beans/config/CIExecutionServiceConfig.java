@@ -8,7 +8,9 @@
 package io.harness.ci.config;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.beans.execution.QueueServiceClient;
 import io.harness.execution.ExecutionServiceConfig;
+import io.harness.sto.config.STOStepConfig;
 
 import lombok.Builder;
 import lombok.Data;
@@ -26,17 +28,29 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
   CIStepConfig stepConfig;
   CICacheIntelligenceConfig cacheIntelligenceConfig;
   ExecutionLimits executionLimits;
+  QueueServiceClient queueServiceClient;
+  HostedVmConfig hostedVmConfig;
+  STOStepConfig stoStepConfig;
+  // Base 64 encoded credentials for gcp
+  MiningPatternConfig miningPatternConfig;
+  Integer remoteDebugTimeout;
 
   @Builder
   public CIExecutionServiceConfig(String addonImageTag, String liteEngineImageTag, String defaultInternalImageConnector,
       String delegateServiceEndpointVariableValue, Integer defaultMemoryLimit, Integer defaultCPULimit,
       Integer pvcDefaultStorageSize, String addonImage, String liteEngineImage, boolean isLocal, String ciImageTag,
-      CIStepConfig stepConfig, CICacheIntelligenceConfig cacheIntelligenceConfig, ExecutionLimits executionLimits) {
+      CIStepConfig stepConfig, CICacheIntelligenceConfig cacheIntelligenceConfig, ExecutionLimits executionLimits,
+      QueueServiceClient queueServiceClient, HostedVmConfig hostedVmConfig, STOStepConfig stoStepConfig,
+      Integer remoteDebugTimeout) {
     super(addonImageTag, liteEngineImageTag, defaultInternalImageConnector, delegateServiceEndpointVariableValue,
         defaultMemoryLimit, defaultCPULimit, pvcDefaultStorageSize, addonImage, liteEngineImage, isLocal);
     this.ciImageTag = ciImageTag;
     this.stepConfig = stepConfig;
     this.cacheIntelligenceConfig = cacheIntelligenceConfig;
     this.executionLimits = executionLimits;
+    this.stoStepConfig = stoStepConfig;
+    this.queueServiceClient = queueServiceClient;
+    this.hostedVmConfig = hostedVmConfig;
+    this.remoteDebugTimeout = remoteDebugTimeout;
   }
 }

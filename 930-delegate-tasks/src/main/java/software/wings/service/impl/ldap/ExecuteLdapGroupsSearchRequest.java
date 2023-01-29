@@ -9,6 +9,8 @@ package software.wings.service.impl.ldap;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.OwnedBy;
 
 import software.wings.helpers.ext.ldap.LdapGroupConfig;
@@ -39,9 +41,11 @@ public class ExecuteLdapGroupsSearchRequest implements Function<LdapListGroupsRe
     try {
       searchResult = ldapSearch.execute(ldapListGroupsRequest.getReturnArguments());
     } catch (LdapException le) {
-      log.error("LdapException occurred while searchGroupbyName for base {} and searchQuery {}", ldapSearch.getBaseDN(),
-          ldapSearch.getSearchFilter(), le);
-      searchStatusMessage = le.getResultCode().toString();
+      String defaultErrorMessage =
+          String.format("LdapException occurred while searchGroupbyName for base %s and searchQuery %s",
+              ldapSearch.getBaseDN(), ldapSearch.getSearchFilter());
+      log.error(defaultErrorMessage, le);
+      searchStatusMessage = isNull(le.getMessage()) ? defaultErrorMessage : le.getMessage();
     }
 
     if (searchResult != null) {

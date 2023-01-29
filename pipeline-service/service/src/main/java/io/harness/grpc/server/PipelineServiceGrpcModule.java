@@ -40,6 +40,7 @@ import io.grpc.Channel;
 import io.grpc.ServerInterceptor;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
+import io.grpc.netty.shaded.io.grpc.netty.NegotiationType;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -89,8 +90,9 @@ public class PipelineServiceGrpcModule extends AbstractModule {
     map.put(ModuleType.PMS,
         PlanCreationServiceGrpc.newBlockingStub(InProcessChannelBuilder.forName("pmsSdkInternal").build()));
     for (Map.Entry<String, GrpcClientConfig> entry : configuration.getGrpcClientConfigs().entrySet()) {
-      map.put(
-          ModuleType.fromString(entry.getKey()), PlanCreationServiceGrpc.newBlockingStub(getChannel(entry.getValue())));
+      map.put(ModuleType.fromString(entry.getKey()),
+          PlanCreationServiceGrpc.newBlockingStub(
+              getChannel(entry.getValue(), configuration.getGrpcNegotiationType())));
     }
     return map;
   }
@@ -103,7 +105,8 @@ public class PipelineServiceGrpcModule extends AbstractModule {
 
     for (Map.Entry<String, GrpcClientConfig> entry : configuration.getGrpcClientConfigs().entrySet()) {
       map.put(ModuleType.fromString(entry.getKey()),
-          RemoteFunctorServiceGrpc.newBlockingStub(getChannel(entry.getValue())));
+          RemoteFunctorServiceGrpc.newBlockingStub(
+              getChannel(entry.getValue(), configuration.getGrpcNegotiationType())));
     }
 
     return map;
@@ -117,18 +120,19 @@ public class PipelineServiceGrpcModule extends AbstractModule {
 
     for (Map.Entry<String, GrpcClientConfig> entry : configuration.getGrpcClientConfigs().entrySet()) {
       map.put(ModuleType.fromString(entry.getKey()),
-          JsonExpansionServiceGrpc.newBlockingStub(getChannel(entry.getValue())));
+          JsonExpansionServiceGrpc.newBlockingStub(
+              getChannel(entry.getValue(), configuration.getGrpcNegotiationType())));
     }
     map.put(ModuleType.PMS,
         JsonExpansionServiceGrpc.newBlockingStub(InProcessChannelBuilder.forName("pmsSdkInternal").build()));
     return map;
   }
 
-  private Channel getChannel(GrpcClientConfig clientConfig) throws SSLException {
+  private Channel getChannel(GrpcClientConfig clientConfig, NegotiationType grpcNegotiationType) throws SSLException {
     String authorityToUse = clientConfig.getAuthority();
     Channel channel;
 
-    if ("ONPREM".equals(deployMode) || "KUBERNETES_ONPREM".equals(deployMode)) {
+    if (shouldUsePlainTextNegotiationType(grpcNegotiationType, deployMode)) {
       channel = NettyChannelBuilder.forTarget(clientConfig.getTarget())
                     .overrideAuthority(authorityToUse)
                     .usePlaintext()
@@ -182,5 +186,11 @@ public class PipelineServiceGrpcModule extends AbstractModule {
     services.add(entityReferenceService);
     services.add(variablesService);
     return services;
+  }
+
+  @VisibleForTesting
+  boolean shouldUsePlainTextNegotiationType(NegotiationType negotiationType, String deployMode) {
+    return "ONPREM".equals(deployMode) || "KUBERNETES_ONPREM".equals(deployMode)
+        || (negotiationType != null && negotiationType.equals(NegotiationType.PLAINTEXT));
   }
 }

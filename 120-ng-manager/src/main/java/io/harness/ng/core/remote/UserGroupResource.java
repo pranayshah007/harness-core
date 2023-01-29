@@ -80,6 +80,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -132,9 +133,10 @@ public class UserGroupResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns the successfully created User Group")
       })
+  @FeatureRestrictionCheck(FeatureRestrictionName.MULTIPLE_USER_GROUPS)
   public ResponseDTO<UserGroupDTO>
   create(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
-             NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
@@ -217,9 +219,13 @@ public class UserGroupResource {
         Resource.of(USERGROUP, identifier), VIEW_USERGROUP_PERMISSION);
     Optional<UserGroup> userGroupOptional =
         userGroupService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    return userGroupOptional
-        .map(userGroup -> ResponseDTO.newResponse(Long.toString(userGroup.getVersion()), toDTO(userGroup)))
-        .orElseGet(() -> ResponseDTO.newResponse(null));
+    if (userGroupOptional.isPresent()) {
+      return ResponseDTO.newResponse(
+          Long.toString(userGroupOptional.get().getVersion()), toDTO(userGroupOptional.get()));
+    } else {
+      throw new NotFoundException(
+          String.format("User Group with identifier [%s] is not found in the given scope", identifier));
+    }
   }
 
   @DELETE
@@ -271,8 +277,6 @@ public class UserGroupResource {
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @QueryParam("filterType") @DefaultValue("EXCLUDE_INHERITED_GROUPS") UserGroupFilterType filterType,
       @BeanParam PageRequest pageRequest) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION);
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order = SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build();
       pageRequest.setSortOrders(ImmutableList.of(order));
@@ -303,7 +307,7 @@ public class UserGroupResource {
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION);
+        Resource.of(USERGROUP, userGroupIdentifier), VIEW_USERGROUP_PERMISSION);
     List<ScopeNameDTO> inheritingScopeNames = userGroupService.getInheritingChildScopeList(
         accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
     return ResponseDTO.newResponse(inheritingScopeNames);
@@ -354,10 +358,6 @@ public class UserGroupResource {
            NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @RequestBody(
           description = "User Group Filter", required = true) @Body @NotNull UserGroupFilterDTO userGroupFilterDTO) {
-    accessControlClient.checkForAccessOrThrow(
-        ResourceScope.of(userGroupFilterDTO.getAccountIdentifier(), userGroupFilterDTO.getOrgIdentifier(),
-            userGroupFilterDTO.getProjectIdentifier()),
-        Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION);
     List<UserGroupDTO> userGroups =
         userGroupService.list(userGroupFilterDTO).stream().map(UserGroupMapper::toDTO).collect(Collectors.toList());
     return ResponseDTO.newResponse(userGroups);

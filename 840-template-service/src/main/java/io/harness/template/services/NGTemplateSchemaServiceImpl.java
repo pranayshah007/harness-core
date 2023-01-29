@@ -122,8 +122,9 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
         case PIPELINE_TEMPLATE:
           return "PIPELINE";
         case STAGE_TEMPLATE:
-        case STEPGROUP_TEMPLATE:
           return "STAGE";
+        case STEPGROUP_TEMPLATE:
+          return "STEP_GROUP";
         case STEP_TEMPLATE:
           return "STEP";
         default:
@@ -185,7 +186,7 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
               .schemaErrors(Collections.singletonList(
                   YamlSchemaErrorDTO.builder().message(ex.getMessage()).fqn("$.pipeline").build()))
               .build();
-      throw new io.harness.yaml.validator.InvalidYamlException(ex.getMessage(), ex, errorWrapperDTO);
+      throw new io.harness.yaml.validator.InvalidYamlException(ex.getMessage(), ex, errorWrapperDTO, templateYaml);
     }
   }
 }

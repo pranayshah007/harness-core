@@ -11,6 +11,7 @@ import static io.harness.cvng.core.entities.DataCollectionTask.Type.SERVICE_GUAR
 import static io.harness.cvng.core.services.CVNextGenConstants.CVNG_MAX_PARALLEL_THREADS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
+import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.beans.CVNGPerpetualTaskDTO;
 import io.harness.cvng.beans.CVNGPerpetualTaskState;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
@@ -39,6 +40,12 @@ import io.harness.metrics.service.api.MetricService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 import io.fabric8.utils.Lists;
 import java.time.Clock;
 import java.time.Instant;
@@ -48,12 +55,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
 
 @Slf4j
 public class DataCollectionTaskServiceImpl implements DataCollectionTaskService {
@@ -84,10 +85,10 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
                                           .filter(DataCollectionTaskKeys.dataCollectionWorkerId, dataCollectionWorkerId)
                                           .field(DataCollectionTaskKeys.validAfter)
                                           .lessThanOrEq(clock.instant())
-                                          .order(Sort.ascending(DataCollectionTaskKeys.lastUpdatedAt));
+                                          .order(Sort.ascending(VerificationTaskBaseKeys.lastUpdatedAt));
     query.or(query.criteria(DataCollectionTaskKeys.status).equal(DataCollectionExecutionStatus.QUEUED),
         query.and(query.criteria(DataCollectionTaskKeys.status).equal(DataCollectionExecutionStatus.RUNNING),
-            query.criteria(DataCollectionTaskKeys.lastUpdatedAt)
+            query.criteria(VerificationTaskBaseKeys.lastUpdatedAt)
                 .lessThan(clock.millis() - TimeUnit.MINUTES.toMillis(5))));
     query.or(query.criteria(DataCollectionTaskKeys.type).equal(SERVICE_GUARD),
         query.criteria(DataCollectionTaskKeys.retryCount).lessThanOrEq(DeploymentDataCollectionTask.MAX_RETRY_COUNT));
@@ -96,7 +97,7 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
             .set(DataCollectionTaskKeys.status, DataCollectionExecutionStatus.RUNNING)
             .inc(DataCollectionTaskKeys.retryCount)
             .set(DataCollectionTaskKeys.lastPickedAt, clock.instant())
-            .set(DataCollectionTaskKeys.lastUpdatedAt, clock.millis());
+            .set(VerificationTaskBaseKeys.lastUpdatedAt, clock.millis());
 
     DataCollectionTask task = hPersistence.findAndModify(query, updateOperations, new FindAndModifyOptions());
     return Optional.ofNullable(task);

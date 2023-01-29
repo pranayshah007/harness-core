@@ -19,10 +19,10 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 @Singleton
@@ -51,8 +51,8 @@ public class RuleExecutionDAO {
                                      .equal(ruleExecutionFilter.getAccountId());
     log.info("Added accountId filter");
     if (ruleExecutionFilter.getTargetAccount() != null) {
-      query.field(RuleExecutionKeys.targetAccount).equal(ruleExecutionFilter.getTargetAccount());
-      log.info("Added target account filter");
+      query.field(RuleExecutionKeys.targetAccount).in(ruleExecutionFilter.getTargetAccount());
+      log.info("Added target account filter: {} ", ruleExecutionFilter.getTargetAccount());
     }
     if (ruleExecutionFilter.getRuleIds() != null) {
       query.field(RuleExecutionKeys.ruleIdentifier).in(ruleExecutionFilter.getRuleIds());
@@ -61,7 +61,7 @@ public class RuleExecutionDAO {
       query.field(RuleExecutionKeys.rulePackIdentifier).in(ruleExecutionFilter.getRuleSetIds());
     }
     if (ruleExecutionFilter.getRuleEnforcementId() != null) {
-      query.field(RuleExecutionKeys.uuid).in(ruleExecutionFilter.getRuleEnforcementId());
+      query.field(RuleExecutionKeys.ruleEnforcementIdentifier).in(ruleExecutionFilter.getRuleEnforcementId());
     }
     if (ruleExecutionFilter.getRegion() != null) {
       query.field(RuleExecutionKeys.targetRegions).in(ruleExecutionFilter.getRegion());

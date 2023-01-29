@@ -154,14 +154,14 @@ public class BuildCleanerTest {
     BuildFile outputBuildFile = buildCleaner.generateBuildForModule(Paths.get(""), indexedDependencyMap).get();
 
     // Assert
-    assertTrue(outputBuildFile.getJavaBinaryList().isEmpty());
+    assertTrue(outputBuildFile.getJavaBinaries().isEmpty());
 
     SortedSet<LoadStatement> loadStatementSet = outputBuildFile.getLoadStatements();
     assertEquals(2, loadStatementSet.size());
     assertEquals("load(\"@rules_java//java:defs.bzl\", \"java_library\")",
-        loadStatementSet.stream().findFirst().get().toString());
+        loadStatementSet.stream().findFirst().get().toStarlark());
 
-    List<JavaLibrary> javaLibraryTargets = outputBuildFile.getJavaLibraryList();
+    List<JavaLibrary> javaLibraryTargets = outputBuildFile.getJavaLibraries();
     assertEquals(1, javaLibraryTargets.size());
     assertEquals(ImmutableSet.of("//root:module", "//root/nested:module"), javaLibraryTargets.get(0).getDeps());
   }

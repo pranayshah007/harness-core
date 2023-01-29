@@ -42,8 +42,8 @@ import software.wings.beans.PipelineStage;
 import software.wings.beans.Service;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.WorkflowExecutionService;
 
 import com.google.inject.Inject;

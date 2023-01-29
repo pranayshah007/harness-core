@@ -18,9 +18,13 @@ import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.serviceaccount.ServiceAccountDTO;
 
 import java.util.List;
+import okhttp3.RequestBody;
 import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.Call;
+import retrofit2.http.Body;
 import retrofit2.http.GET;
+import retrofit2.http.Headers;
+import retrofit2.http.POST;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -38,4 +42,11 @@ public interface TokenClient {
   @GET("serviceaccount/internal/{identifier}")
   Call<ResponseDTO<ServiceAccountDTO>> getServiceAccount(
       @Path(value = "identifier") String identifier, @Query(value = "accountIdentifier") String accountIdentifier);
+
+  // This API required POST data in text/plain format, but retrofit somehow adds a '"' around the String, so should wrap
+  // in another object
+  @Headers({"Content-Type: text/plain; charset=utf-8", "accept-language: en-US"})
+  @POST("token/validate")
+  Call<ResponseDTO<TokenDTO>> validateApiKey(
+      @Query(value = "accountIdentifier") String accountIdentifier, @Body RequestBody apiKey);
 }

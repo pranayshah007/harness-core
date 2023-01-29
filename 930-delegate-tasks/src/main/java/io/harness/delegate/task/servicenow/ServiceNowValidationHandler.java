@@ -32,7 +32,8 @@ public class ServiceNowValidationHandler implements ConnectorValidationHandler {
               .serviceNowConnectorDTO(serviceNowValidationParams.getServiceNowConnectorDTO())
               .encryptionDetails(serviceNowValidationParams.getEncryptedDataDetails())
               .action(ServiceNowActionNG.VALIDATE_CREDENTIALS)
-              .build());
+              .build(),
+          null);
       return ConnectorValidationResult.builder()
           .status(ConnectivityStatus.SUCCESS)
           .testedAt(System.currentTimeMillis())

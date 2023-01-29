@@ -19,7 +19,7 @@ PROJFILE="$SHDIR/jira-projects.txt"
 check_file_present $PROJFILE
 PROJECTS=$(<$PROJFILE)
 
-COMMIT_CONTENT="\[feat]|\[fix]|\[techdebt]|feat|fix|techdebt"
+COMMIT_CONTENT="\[feat]|\[fix]|\[techdebt]\[hotfixpreqa]|feat|fix|techdebt|hotfixpreqa"
 SHDIR=`dirname "$0"`
 PROJECTS=$(<$SHDIR/jira-projects.txt)
 
@@ -36,7 +36,7 @@ if [ -z "$PR_MESSAGE" ]
 then
     echo The PR title \"${ghprbPullTitle}\"
     echo "does not match the expectations"
-    echo "Make sure that your commit message is in format -> ${COMMIT_CONTENT}: [${PROJECTS}-<number>]: <description>"
+    echo "Make sure that your PR Title is in format -> ${COMMIT_CONTENT}: [${PROJECTS}-<number>]: <description>"
     echo "Example -> \"feat: [BT-100]: Commit Message\""
     exit 1
 fi

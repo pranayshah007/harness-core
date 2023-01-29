@@ -33,17 +33,18 @@ import lombok.experimental.FieldDefaults;
 @EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@ApiModel("ExecutionFilterProperty")
+@ApiModel("ExecutionFilterProperties")
 @JsonTypeName(EXECUTION_FILTER)
 public class ExecutionFilterProperty extends FilterProperties {
-  List<String> policyId;
-  List<String> ruleSet;
+  List<String> ruleIds;
+  List<String> ruleSetIds;
+  List<String> ruleEnforcementId;
   List<String> region;
   ExecutionStatus executionStatus;
   RuleCloudProviderType cloudProvider;
-  String targetAccount;
+  List<String> targetAccount;
 
-  List<CCMTimeFilter> timeFilters;
+  List<CCMTimeFilter> time;
   Integer offset;
   Integer limit;
 }

@@ -16,9 +16,11 @@ import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.ng.core.ScopeAware;
 import io.harness.persistence.PersistentEntity;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -26,7 +28,6 @@ import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -42,7 +43,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity")
 @RecasterAlias("io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity")
 @OwnedBy(CDC)
-public class NGServiceOverridesEntity implements PersistentEntity {
+public class NGServiceOverridesEntity implements PersistentEntity, ScopeAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -57,11 +58,11 @@ public class NGServiceOverridesEntity implements PersistentEntity {
         .build();
   }
 
-  @Wither @Id @org.mongodb.morphia.annotations.Id String id;
+  @Wither @Id @dev.morphia.annotations.Id String id;
   @Trimmed @NotEmpty String accountId;
 
-  @NotNull @Trimmed String orgIdentifier;
-  @NotNull @Trimmed String projectIdentifier;
+  @Trimmed String orgIdentifier;
+  @Trimmed String projectIdentifier;
   @NotNull @Trimmed String serviceRef;
   @NotNull @Trimmed String environmentRef;
 

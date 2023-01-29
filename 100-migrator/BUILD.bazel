@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("@rules_java//java:defs.bzl", "java_binary")
 load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
@@ -30,7 +35,6 @@ java_binary(
         "//390-db-migration:module",
         "//400-rest:module",
         "//420-delegate-service:module",
-        "//430-cv-nextgen-commons:module",
         "//840-template-service:module",
         "//870-cg-orchestration:module",
         "//874-orchestration-delay:module",
@@ -48,6 +52,7 @@ java_binary(
         "//959-timeout-engine:module",
         "//960-continuous-features:module",
         "//960-persistence:module",
+        "//965-api-key-filter:module",
         "//970-api-services-beans:module",
         "//970-grpc:module",
         "//970-ng-commons:module",
@@ -58,6 +63,8 @@ java_binary(
         "//pipeline-service/modules/orchestration-beans:module",
         "//pipeline-service/modules/orchestration-steps:module",
         "//pipeline-service/modules/orchestration-steps/contracts:module",
+        "//srm-service/modules/cv-nextgen-service/contracts/commons:module",
+        "//srm-service/modules/cv-nextgen-service/service:module",
         "@maven//:com_fasterxml_jackson_core_jackson_databind",
         "@maven//:com_github_dirkraft_dropwizard_file_assets_dropwizard_file_assets",
         "@maven//:com_google_code_findbugs_annotations",
@@ -72,6 +79,7 @@ java_binary(
         "@maven//:com_squareup_retrofit2_converter_jackson",
         "@maven//:com_squareup_retrofit2_retrofit",
         "@maven//:commons_io_commons_io",
+        "@maven//:dev_morphia_morphia_core",
         "@maven//:guru_nidi_com_kitfox_svgSalamander",
         "@maven//:guru_nidi_graphviz_java",
         "@maven//:guru_nidi_graphviz_rough",
@@ -96,7 +104,6 @@ java_binary(
         "@maven//:org_glassfish_jersey_core_jersey_server",
         "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
         "@maven//:org_hibernate_validator_hibernate_validator",
-        "@maven//:org_mongodb_morphia_morphia",
         "@maven//:org_reflections_reflections",
         "@maven//:org_slf4j_slf4j_api",
         "@maven//:org_springframework_spring_core",

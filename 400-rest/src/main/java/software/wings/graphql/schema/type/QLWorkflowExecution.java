@@ -47,4 +47,5 @@ public class QLWorkflowExecution implements QLExecution {
   private String failureDetails;
   private List<QLManifest> manifests;
   private List<QLInputVariable> inputVariables;
+  private List<String> rejectedByFreezeWindows;
 }

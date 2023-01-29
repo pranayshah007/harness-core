@@ -63,7 +63,6 @@ import software.wings.beans.InfrastructureMappingType;
 import software.wings.beans.PhaseStepType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.Host;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.Instance.InstanceBuilder;
@@ -76,6 +75,7 @@ import software.wings.beans.infrastructure.instance.info.PhysicalHostInstanceInf
 import software.wings.beans.infrastructure.instance.key.HostInstanceKey;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.HostService;
@@ -737,7 +737,8 @@ public class InstanceHelper {
             infrastructureMapping.getUuid(), instanceSyncV2TaskDetails.getPerpetualTaskId(),
             instanceSyncV2TaskDetails.getUuid());
 
-        perpetualTaskService.deleteTask(accountId, perpetualTaskId);
+        instanceSyncPerpetualTaskService.deletePerpetualTask(
+            infrastructureMapping.getAccountId(), infrastructureMappingId, perpetualTaskId, true);
         log.info(
             "[INSTANCE_SYNC_V2_CG] Perpetual task with Id: [{}] deleted for infra mapping Id: [{}]. This is now migrated to new perpetual task: [{}], and instance sync task details: [{}]",
             perpetualTaskId, infrastructureMappingId, instanceSyncV2TaskDetails.getPerpetualTaskId(),

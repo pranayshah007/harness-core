@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.FILIP;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.NAVNEET;
 import static io.harness.rule.OwnerRule.SAHIL;
@@ -45,7 +46,7 @@ import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
-import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -60,6 +61,7 @@ import io.harness.cdng.infra.beans.host.HostFilter;
 import io.harness.cdng.infra.beans.host.HostNamesFilter;
 import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
+import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
@@ -154,7 +156,7 @@ public class InfrastructureStepTest extends CategoryTest {
   @Mock StageExecutionHelper stageExecutionHelper;
   @Mock NGLogCallback ngLogCallback;
   @Mock NGLogCallback ngLogCallbackOpen;
-  @Mock InfrastructureMapper infrastructureMapper;
+  @Mock InfrastructureOutcomeProvider infrastructureOutcomeProvider;
   @Mock InfrastructureValidator infrastructureValidator;
   @Mock InstanceOutcomeHelper instanceOutcomeHelper;
 
@@ -205,7 +207,7 @@ public class InfrastructureStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.KUBERNETES).build());
     when(cdStepHelper.getK8sInfraDelegateConfig(any(), eq(ambiance))).thenReturn(k8sInfraDelegateConfig);
-    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
         .thenReturn(
             PdcInfrastructureOutcome.builder()
                 .credentialsRef("sshKeyRef")
@@ -254,7 +256,7 @@ public class InfrastructureStepTest extends CategoryTest {
         .when(stageExecutionHelper)
         .saveStageExecutionInfoAndPublishExecutionInfoKey(
             eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.PDC));
-    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
         .thenReturn(
             PdcInfrastructureOutcome.builder()
                 .credentialsRef("sshKeyRef")
@@ -306,7 +308,7 @@ public class InfrastructureStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.WINRM).build());
     when(cdStepHelper.getWinRmInfraDelegateConfig(any(), eq(ambiance))).thenReturn(pdcWinRmInfraDelegateConfig);
-    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
         .thenReturn(
             PdcInfrastructureOutcome.builder()
                 .credentialsRef("sshKeyRef")
@@ -860,12 +862,26 @@ public class InfrastructureStepTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testValidateAsgInfrastructure() {
+    AsgInfrastructure infrastructure = AsgInfrastructure.builder()
+                                           .connectorRef(ParameterField.createValueField(""))
+                                           .region(ParameterField.createValueField("region"))
+                                           .build();
+    Ambiance ambiance = Mockito.mock(Ambiance.class);
+    doThrow(InvalidRequestException.class).when(infrastructureStepHelper).validateExpression(any());
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
+        .isInstanceOf(InvalidRequestException.class);
+    doNothing().when(infrastructureStepHelper).validateExpression(any());
+    assertThatCode(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
   @Owner(developers = ANIL)
   @Category(UnitTests.class)
   public void testValidateTASConnector() {
-    StoreConfig storeConfig =
-        InlineStoreConfig.builder().content(ParameterField.createValueField("this is content")).build();
-
     TanzuApplicationServiceInfrastructure infrastructure =
         TanzuApplicationServiceInfrastructure.builder()
             .connectorRef(ParameterField.createValueField("tanzuConnector"))

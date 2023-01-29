@@ -24,6 +24,8 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -53,8 +55,18 @@ public class ServiceEnvironmentV2MigrationResource {
 
   @POST
   @Path("/pipeline")
-  @ApiOperation(value = "Migrate a pipeline to new service and environment framework", nickname = "svc env migration")
-  public ResponseDTO<SvcEnvMigrationResponseDto> migratePipelineWithServiceInfraV2(
+  @ApiOperation(
+      value = "Migrate a pipeline to new service and environment framework", nickname = "migrateSvcEnvFromPipeline")
+  @Operation(operationId = "migrateSvcEnvFromPipeline",
+      summary = "get pipeline id and migrate to a new svc-env framework  ",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns updated pipeline yaml")
+      })
+  @Hidden
+  public ResponseDTO<SvcEnvMigrationResponseDto>
+  migratePipelineWithServiceInfraV2(
       @NotNull @QueryParam("accountIdentifier") String accountId, @Valid SvcEnvMigrationRequestDto requestDto) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), accountId);
@@ -65,9 +77,18 @@ public class ServiceEnvironmentV2MigrationResource {
 
   @POST
   @Path("/project")
-  @ApiOperation(value = "Migrate a project to new service and environment framework", nickname = "svc-env migration")
-  public ResponseDTO<SvcEnvMigrationProjectWrapperResponseDto> migrateProject(
-      @NotNull @QueryParam("accountIdentifier") String accountId,
+  @ApiOperation(
+      value = "Migrate a project to new service and environment framework", nickname = "migrateSvcEnvFromProject")
+  @Operation(operationId = "migrateSvcEnvFromProject",
+      summary = "get project id and migrate to a new svc-env framework ",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns migrated pipelines id")
+      })
+  @Hidden
+  public ResponseDTO<SvcEnvMigrationProjectWrapperResponseDto>
+  migrateProject(@NotNull @QueryParam("accountIdentifier") String accountId,
       @Valid SvcEnvMigrationProjectWrapperRequestDto requestDto) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), accountId);

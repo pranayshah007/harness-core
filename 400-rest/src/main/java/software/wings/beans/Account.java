@@ -45,6 +45,8 @@ import software.wings.yaml.BaseEntityYaml;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -63,8 +65,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(DX)
 @TargetModule(HarnessModule._955_ACCOUNT_MGMT)
@@ -186,6 +186,10 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @FdIndex @Getter @Setter boolean globalDelegateAccount;
 
   @Getter @Setter private boolean immutableDelegateEnabled = true;
+
+  @Getter private Long optionalDelegateTaskLimit;
+
+  @Getter private Long importantDelegateTaskLimit;
 
   private transient Map<String, String> defaults = new HashMap<>();
   /**

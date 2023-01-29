@@ -13,8 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NoopPipelineSettingServiceImpl implements PipelineSettingsService {
   @Override
-  public PlanExecutionSettingResponse shouldQueuePlanExecution(
-      String accountId, String orgId, String projectId, String pipelineIdentifier) {
+  public PlanExecutionSettingResponse shouldQueuePlanExecution(String accountId, String pipelineIdentifier) {
     return PlanExecutionSettingResponse.builder().useNewFlow(false).shouldQueue(false).build();
   }
 
