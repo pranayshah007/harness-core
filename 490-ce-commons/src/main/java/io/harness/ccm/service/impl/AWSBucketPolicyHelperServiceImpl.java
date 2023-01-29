@@ -19,8 +19,6 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.BucketPolicy;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -46,26 +44,29 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
     try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
              new CloseableAmazonWebServiceClient(awsClient.getAmazonS3Client(credentialsProvider))) {
       BucketPolicy bucketPolicy = closeableAmazonS3Client.getClient().getBucketPolicy(awsS3Bucket);
-      String policyText = (bucketPolicy == null || StringUtils.isEmpty(bucketPolicy.getPolicyText()))
-          ? initializeBucketPolicy(awsS3Bucket)
-          : bucketPolicy.getPolicyText();
       CEBucketPolicyJson policyJson;
-      try {
-        policyJson = new Gson().fromJson(policyText, CEBucketPolicyJson.class);
-      } catch (Exception e) {
-        log.info("Handled exception while updating bucket policy: ", e);
-        JSONObject jsonObject = new JSONObject(policyText);
-        List<String> awsPrincipalRoleList =
-            List.of(jsonObject.getJSONArray("Statement").getJSONObject(0).getJSONObject("Principal").getString("AWS"));
-        jsonObject.getJSONArray("Statement")
-            .getJSONObject(0)
-            .getJSONObject("Principal")
-            .put("AWS", awsPrincipalRoleList);
-        jsonObject.getJSONArray("Statement")
-            .getJSONObject(1)
-            .getJSONObject("Principal")
-            .put("AWS", awsPrincipalRoleList);
-        policyJson = new Gson().fromJson(jsonObject.toString(), CEBucketPolicyJson.class);
+      if ((bucketPolicy == null || StringUtils.isEmpty(bucketPolicy.getPolicyText()))) {
+        policyJson = initializeBucketPolicy(awsS3Bucket);
+      } else {
+        String policyText = bucketPolicy.getPolicyText();
+        try {
+          policyJson = new Gson().fromJson(policyText, CEBucketPolicyJson.class);
+        } catch (Exception e) {
+          log.info("Handled exception while updating bucket policy: ", e);
+          JSONObject jsonObject = new JSONObject(policyText);
+          List<String> awsPrincipalRoleList = List.of(
+              jsonObject.getJSONArray("Statement").getJSONObject(0).getJSONObject("Principal").getString("AWS"));
+          jsonObject.getJSONArray("Statement")
+              .getJSONObject(0)
+              .getJSONObject("Principal")
+              .put("AWS", awsPrincipalRoleList);
+          jsonObject.getJSONArray("Statement")
+              .getJSONObject(1)
+              .getJSONObject("Principal")
+              .put("AWS", awsPrincipalRoleList);
+          log.info(jsonObject.toString());
+          policyJson = new Gson().fromJson(jsonObject.toString(), CEBucketPolicyJson.class);
+        }
       }
       log.info(policyJson.toString());
       List<CEBucketPolicyStatement> listStatements = new ArrayList<>();
@@ -91,7 +92,7 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
     return true;
   }
 
-  public String initializeBucketPolicy(String awsS3BucketName) throws JsonProcessingException {
+  public CEBucketPolicyJson initializeBucketPolicy(String awsS3BucketName) throws JsonProcessingException {
     CEBucketPolicyJson ceBucketPolicyJson =
         CEBucketPolicyJson.builder()
             .Statement(List.of(CEBucketPolicyStatement.builder()
@@ -108,10 +109,11 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
                     .Principal(Map.of("AWS", Collections.emptyList()))
                     .Action("s3:ListBucket")
                     .Resource(String.format("arn:aws:s3:::%s", awsS3BucketName))
+                    .Condition(Map.of("StringLike", Map.of("s3:prefix", "${aws:userid}/*")))
                     .build()))
             .Version("2012-10-17")
             .build();
-    ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-    return ow.writeValueAsString(ceBucketPolicyJson);
+    log.info(ceBucketPolicyJson.toString());
+    return ceBucketPolicyJson;
   }
 }
