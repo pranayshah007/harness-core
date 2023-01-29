@@ -24,8 +24,7 @@ import org.springframework.core.env.Environment;
 public class AuditEventStreamingConfiguration {
   @Bean
   public static AuditEventStreamingConfig auditEventStreamingConfig(Environment environment) throws IOException {
-    String configFilePath = environment.getProperty("config-file",
-        "/Users/nishantsaini/IdeaProjects/harness-core/audit-event-streaming/service/src/main/resources/application.yml");
+    String configFilePath = environment.getProperty("config-file", "application.yml");
     log.info("audit-event-streaming configFilePath: {}", configFilePath);
     File configFile = new File(configFilePath);
     return new YamlUtils().read(FileUtils.readFileToString(configFile, UTF_8), AuditEventStreamingConfig.class);
