@@ -8,8 +8,6 @@
 package io.harness.cdng.creator.plan.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.advisers.rollback.RollbackStartAdvisor;
@@ -190,10 +188,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
     String uuid = MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(stageNode);
-    List<AdviserObtainment> adviserObtainments = new ArrayList<>();
-    if (!MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageNode)) {
-      adviserObtainments = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
-    }
     // We need to swap the ids if strategy is present
     PlanNodeBuilder builder =
         PlanNode.builder()
@@ -228,10 +222,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackCustomAdviserParameters)))
             .build());
 
-    DeploymentStageConfig stageConfig = stageNode.getDeploymentStageConfig();
-    if (stageConfig.getServices() == null && stageConfig.getEnvironments() == null
-        && stageConfig.getEnvironmentGroup() == null) {
-      adviserObtainment.addAll(getAdviserObtainmentFromMetaData(stageField));
+    if (!MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageNode)) {
+      adviserObtainment.addAll(getAdviserObtainmentFromMetaData(ctx.getCurrentField()));
     }
     return adviserObtainment;
   }
