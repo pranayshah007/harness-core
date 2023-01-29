@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperService {
@@ -46,9 +47,9 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
              new CloseableAmazonWebServiceClient(awsClient.getAmazonS3Client(credentialsProvider))) {
       BucketPolicy bucketPolicy = closeableAmazonS3Client.getClient().getBucketPolicy(awsS3Bucket);
       String policyText = bucketPolicy.getPolicyText();
-      if (policyText.isEmpty()) {
+      if (StringUtils.isEmpty(policyText)) {
         // It's a new bucket. Initialize bucket policy with default json
-        policyText = initializeBucketPolicy(awsS3Bucket, crossAccountRoleArn);
+        policyText = initializeBucketPolicy(awsS3Bucket);
       }
       CEBucketPolicyJson policyJson;
       try {
@@ -92,7 +93,7 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
     return true;
   }
 
-  public String initializeBucketPolicy(String awsS3BucketName, String crossAccountRoleArn)
+  public String initializeBucketPolicy(String awsS3BucketName)
       throws JsonProcessingException {
     CEBucketPolicyJson ceBucketPolicyJson =
         CEBucketPolicyJson.builder()

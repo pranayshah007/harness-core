@@ -113,7 +113,7 @@ grpcClient:
 
 #has to be comma ',' delimited flags
 featureFlagsEnabled: ""
-deployMode: KUBERNETES_ONPREM
+deployMode: KUBERNETES
 
 cfClientConfig:
   apiKey: ""
