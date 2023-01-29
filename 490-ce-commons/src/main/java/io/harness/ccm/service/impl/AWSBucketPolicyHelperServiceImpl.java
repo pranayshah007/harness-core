@@ -22,7 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -98,7 +98,7 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
             .Statement(List.of(CEBucketPolicyStatement.builder()
                                    .Sid("DelegateS3Access")
                                    .Effect("Allow")
-                                   .Principal(Map.of("AWS", Collections.emptyList()))
+                                   .Principal(new HashMap<>() {{put("AWS", new ArrayList<>());}})
                                    .Action(List.of("s3:PutObject", "s3:PutObjectAcl"))
                                    .Resource(List.of(String.format("arn:aws:s3:::%s/${aws:userid}", awsS3BucketName),
                                        String.format("arn:aws:s3:::%s/${aws:userid}/*", awsS3BucketName)))
@@ -106,7 +106,7 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
                 CEBucketPolicyStatement.builder()
                     .Sid("AllowStatement3")
                     .Effect("Allow")
-                    .Principal(Map.of("AWS", Collections.emptyList()))
+                    .Principal(new HashMap<>() {{put("AWS", new ArrayList<>());}})
                     .Action("s3:ListBucket")
                     .Resource(String.format("arn:aws:s3:::%s", awsS3BucketName))
                     .Condition(Map.of("StringLike", Map.of("s3:prefix", "${aws:userid}/*")))
