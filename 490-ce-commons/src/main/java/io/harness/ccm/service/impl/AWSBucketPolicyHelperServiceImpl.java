@@ -67,7 +67,7 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
             .put("AWS", awsPrincipalRoleList);
         policyJson = new Gson().fromJson(jsonObject.toString(), CEBucketPolicyJson.class);
       }
-
+      log.info(policyJson.toString());
       List<CEBucketPolicyStatement> listStatements = new ArrayList<>();
       for (CEBucketPolicyStatement statement : policyJson.getStatement()) {
         Map<String, List<String>> principal = statement.getPrincipal();
