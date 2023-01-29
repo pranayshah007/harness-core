@@ -25,7 +25,8 @@ public class ClickHouseServiceImpl implements ClickHouseService {
 
   @Override
   public Connection getConnection(ClickHouseConfig clickHouseConfig, Properties properties) throws SQLException {
-    return DriverManager.getConnection(clickHouseConfig.getUrl(), properties);
+    ClickHouseDataSource dataSource = new ClickHouseDataSource(clickHouseConfig.getUrl(), new Properties());
+    return dataSource.getConnection(clickHouseConfig.getUsername(), clickHouseConfig.getPassword());
   }
 
   @Override
