@@ -3,6 +3,7 @@ package io.harness.batch.processing.billing.timeseries.service.impl;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.avro.ClusterBillingData;
+import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.config.ClickHouseConfig;
@@ -56,24 +57,27 @@ public class ClickHouseClusterDataService {
   @Autowired private ClickHouseService clickHouseService;
   @Autowired ClickHouseConfig clickHouseConfig;
 
+  @Autowired BatchMainConfig batchMainConfig;
+
   public void createClickHouseDataBaseIfNotExist() throws Exception {
-    clickHouseService.getQueryResult(clickHouseConfig, CREATE_CCM_DB_QUERY);
+    clickHouseService.getQueryResult(batchMainConfig.getClickHouseConfig(), CREATE_CCM_DB_QUERY);
   }
 
   public void createTableAndDeleteExistingDataFromClickHouse(JobConstants jobConstants, String tableName)
       throws Exception {
     if (!tableName.contains("Aggregated")) {
-      clickHouseService.getQueryResult(clickHouseConfig, getClusterDataCreationQuery(tableName));
+      clickHouseService.getQueryResult(batchMainConfig.getClickHouseConfig(), getClusterDataCreationQuery(tableName));
     } else {
-      clickHouseService.getQueryResult(clickHouseConfig, getClusterDataAggregatedCreationQuery(tableName));
+      clickHouseService.getQueryResult(
+          batchMainConfig.getClickHouseConfig(), getClusterDataAggregatedCreationQuery(tableName));
     }
     clickHouseService.getQueryResult(
-        clickHouseConfig, deleteDataFromClickHouse(tableName, jobConstants.getJobStartTime()));
+        batchMainConfig.getClickHouseConfig(), deleteDataFromClickHouse(tableName, jobConstants.getJobStartTime()));
   }
 
   public void ingestClusterData(String clusterDataTableName, List<ClusterBillingData> allClusterBillingData)
       throws SQLException {
-    try (Connection connection = clickHouseService.getConnection(clickHouseConfig)) {
+    try (Connection connection = clickHouseService.getConnection(batchMainConfig.getClickHouseConfig())) {
       String query = String.format(CLUSTER_DATA_INGESTION_QUERY, clusterDataTableName);
       PreparedStatement prepareStatement = connection.prepareStatement(query);
       connection.setAutoCommit(false);
@@ -87,9 +91,9 @@ public class ClickHouseClusterDataService {
   }
 
   public void processUnifiedTableToCLickHouse(ZonedDateTime zdt, String clusterDataTableName) throws Exception {
-    clickHouseService.getQueryResult(clickHouseConfig, getUnifiedTableCreateQuery());
+    clickHouseService.getQueryResult(batchMainConfig.getClickHouseConfig(), getUnifiedTableCreateQuery());
     clickHouseService.getQueryResult(
-        clickHouseConfig, deleteDataFromClickHouseForUnifiedTable(zdt.toLocalDate().toString()));
+        batchMainConfig.getClickHouseConfig(), deleteDataFromClickHouseForUnifiedTable(zdt.toLocalDate().toString()));
   }
 
   public void processAggregatedTable(JobConstants jobConstants, String clusterDataAggregatedTableName)
@@ -98,14 +102,14 @@ public class ClickHouseClusterDataService {
   }
 
   public void processCostAggregatedData(JobConstants jobConstants, ZonedDateTime zdt) throws SQLException {
-    clickHouseService.getQueryResult(clickHouseConfig, getCreateCostAggregatedQuery());
-    clickHouseService.getQueryResult(clickHouseConfig,
+    clickHouseService.getQueryResult(batchMainConfig.getClickHouseConfig(), getCreateCostAggregatedQuery());
+    clickHouseService.getQueryResult(batchMainConfig.getClickHouseConfig(),
         deleteCostAggregatedDataFromClickHouse(zdt.toLocalDate().toString(), jobConstants.getAccountId()));
   }
 
   public void ingestToCostAggregatedTable(String startTime) throws Exception {
     String costAggregatedIngestionQuery = String.format(COST_AGGREGATED_INGESTION_QUERY, startTime);
-    clickHouseService.getQueryResult(clickHouseConfig, costAggregatedIngestionQuery);
+    clickHouseService.getQueryResult(batchMainConfig.getClickHouseConfig(), costAggregatedIngestionQuery);
   }
 
   private static String getCreateCostAggregatedQuery() {
@@ -124,8 +128,8 @@ public class ClickHouseClusterDataService {
     String insertQueryForPodAndPv = String.format(CLUSTER_DATA_AGGREGATED_INGESTION_QUERY,
         clusterDataAggregatedTableName, clusterDataTableName, jobConstants.getJobStartTime());
 
-    clickHouseService.getQueryResult(clickHouseConfig, insertQueryForPods);
-    clickHouseService.getQueryResult(clickHouseConfig, insertQueryForPodAndPv);
+    clickHouseService.getQueryResult(batchMainConfig.getClickHouseConfig(), insertQueryForPods);
+    clickHouseService.getQueryResult(batchMainConfig.getClickHouseConfig(), insertQueryForPodAndPv);
   }
 
   private String deleteDataFromClickHouseForUnifiedTable(String jobStartTime) {
@@ -135,7 +139,7 @@ public class ClickHouseClusterDataService {
   public void ingestIntoUnifiedTable(ZonedDateTime zdt, String clusterDataTableName) throws Exception {
     String unifiedTableIngestQuery =
         String.format(UNIFIED_TABLE_INGESTION_QUERY, clusterDataTableName, zdt.toLocalDate());
-    clickHouseService.getQueryResult(clickHouseConfig, unifiedTableIngestQuery);
+    clickHouseService.getQueryResult(batchMainConfig.getClickHouseConfig(), unifiedTableIngestQuery);
   }
 
   public static String getUnifiedTableCreateQuery() {
