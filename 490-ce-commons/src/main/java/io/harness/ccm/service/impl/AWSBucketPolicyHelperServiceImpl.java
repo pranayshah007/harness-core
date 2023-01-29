@@ -29,8 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 
 @Slf4j
 public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperService {
@@ -46,11 +46,9 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
     try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
              new CloseableAmazonWebServiceClient(awsClient.getAmazonS3Client(credentialsProvider))) {
       BucketPolicy bucketPolicy = closeableAmazonS3Client.getClient().getBucketPolicy(awsS3Bucket);
-      String policyText = bucketPolicy.getPolicyText();
-      if (StringUtils.isEmpty(policyText)) {
-        // It's a new bucket. Initialize bucket policy with default json
-        policyText = initializeBucketPolicy(awsS3Bucket);
-      }
+      String policyText = (bucketPolicy == null || StringUtils.isEmpty(bucketPolicy.getPolicyText()))
+          ? initializeBucketPolicy(awsS3Bucket)
+          : bucketPolicy.getPolicyText();
       CEBucketPolicyJson policyJson;
       try {
         policyJson = new Gson().fromJson(policyText, CEBucketPolicyJson.class);
@@ -93,8 +91,7 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
     return true;
   }
 
-  public String initializeBucketPolicy(String awsS3BucketName)
-      throws JsonProcessingException {
+  public String initializeBucketPolicy(String awsS3BucketName) throws JsonProcessingException {
     CEBucketPolicyJson ceBucketPolicyJson =
         CEBucketPolicyJson.builder()
             .Statement(List.of(CEBucketPolicyStatement.builder()
