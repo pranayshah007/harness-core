@@ -8,6 +8,8 @@
 package io.harness.cdng.creator.plan.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.advisers.rollback.RollbackStartAdvisor;
@@ -223,7 +225,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .build());
 
     if (!MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageNode)) {
-      adviserObtainment.addAll(getAdviserObtainmentFromMetaData(ctx.getCurrentField()));
+      adviserObtainment.addAll(getAdviserObtainmentFromMetaData(stageField));
     }
     return adviserObtainment;
   }
