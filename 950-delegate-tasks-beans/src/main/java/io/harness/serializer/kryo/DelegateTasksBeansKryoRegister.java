@@ -674,6 +674,7 @@ import io.harness.delegate.task.gitpolling.GitPollingTaskType;
 import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
 import io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters;
 import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
+import io.harness.delegate.task.googlefunctionbeans.GoogleCloudSourceArtifactConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleCloudStorageArtifactConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
@@ -2284,7 +2285,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GoogleFunctionRollbackResponse.class, 673581);
     kryo.register(GoogleFunctionTrafficShiftRequest.class, 673582);
     kryo.register(GoogleFunctionTrafficShiftResponse.class, 673583);
-    kryo.register(GoogleFunctionException.class, 673584);
+    kryo.register(GoogleFunctionException.class, 673589);
+    kryo.register(GoogleCloudSourceArtifactConfig.class, 673590);
 
     kryo.register(K8sDryRunManifestRequest.class, 573594);
     kryo.register(K8sDryRunManifestResponse.class, 573595);

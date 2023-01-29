@@ -187,11 +187,13 @@ public class GoogleFunctionCommandTaskHelper {
     } else if (googleFunctionArtifactConfig instanceof GoogleCloudSourceArtifactConfig) {
       GoogleCloudSourceArtifactConfig googleCloudSourceArtifactConfig =
           (GoogleCloudSourceArtifactConfig) googleFunctionArtifactConfig;
-      RepoSource repoSource = RepoSource.newBuilder()
-                                  .setProjectId(googleCloudSourceArtifactConfig.getProject())
-                                  .setRepoName(googleCloudSourceArtifactConfig.getRepository())
-                                  .setDir(googleCloudSourceArtifactConfig.getSourceDirectory())
-                                  .build();
+      RepoSource repoSource =
+          RepoSource.newBuilder()
+              .setProjectId(googleCloudSourceArtifactConfig.getProject())
+              .setRepoName(getCloudSourceRepositoryName(
+                  googleCloudSourceArtifactConfig.getProject(), googleCloudSourceArtifactConfig.getRepository()))
+              .setDir(googleCloudSourceArtifactConfig.getSourceDirectory())
+              .build();
       return Source.newBuilder().setRepoSource(repoSource).build();
     }
     throw new InvalidRequestException("Invalid Artifact Source.");
@@ -252,11 +254,15 @@ public class GoogleFunctionCommandTaskHelper {
       }
       Morpheus.sleep(ofSeconds(10));
     } while (currentApiCall < MAXIMUM_STEADY_STATE_CHECK_API_CALL);
-
     if (function.getState() == Function.State.ACTIVE) {
       logCallback.saveExecutionLog(color("Deployed Function successfully...", LogColor.Green));
+      logCallback.saveExecutionLog(function.getStateMessagesList().toString());
     } else {
       logCallback.saveExecutionLog(color("Function Deployment failed...", LogColor.Red));
+      logCallback.saveExecutionLog(color(function.getStateMessagesList().toString(), LogColor.Red));
+      throw NestedExceptionUtils.hintWithExplanationException("Function didn't able to reach steady state",
+          "Could not able to deploy google cloud function due to below error",
+          new InvalidRequestException(function.getStateMessagesList().toString()));
     }
     return function;
   }
@@ -491,6 +497,10 @@ public class GoogleFunctionCommandTaskHelper {
 
   public String getFunctionName(String project, String region, String function) {
     return "projects/" + project + "/locations/" + region + "/functions/" + function;
+  }
+
+  public String getCloudSourceRepositoryName(String project, String repo) {
+    return "projects/" + project + "/repositories/" + repo;
   }
 
   private String getTemporaryRevisionName(String serviceName) {
