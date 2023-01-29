@@ -60,6 +60,12 @@ public class ClickHouseClusterDataService {
   @Autowired BatchMainConfig batchMainConfig;
 
   public void createClickHouseDataBaseIfNotExist() throws Exception {
+    log.info("Ok Testing with batchMainConfig.getClickHouseConfig() ::::: Username: {}, Password: {}",
+        batchMainConfig.getClickHouseConfig().getUsername(), batchMainConfig.getClickHouseConfig().getPassword());
+
+    log.info("Ok Testing with clickHouseConfig ::::: Username: {}, Password: {}", clickHouseConfig.getUsername(),
+        clickHouseConfig.getPassword());
+
     clickHouseService.getQueryResult(batchMainConfig.getClickHouseConfig(), CREATE_CCM_DB_QUERY);
   }
 
