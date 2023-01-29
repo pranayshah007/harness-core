@@ -49,6 +49,7 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
       String policyText = (bucketPolicy == null || StringUtils.isEmpty(bucketPolicy.getPolicyText()))
           ? initializeBucketPolicy(awsS3Bucket)
           : bucketPolicy.getPolicyText();
+      log.info("PolicyText: " + policyText);
       CEBucketPolicyJson policyJson;
       try {
         policyJson = new Gson().fromJson(policyText, CEBucketPolicyJson.class);
@@ -65,6 +66,7 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
             .getJSONObject(1)
             .getJSONObject("Principal")
             .put("AWS", awsPrincipalRoleList);
+        log.info(jsonObject.toString());
         policyJson = new Gson().fromJson(jsonObject.toString(), CEBucketPolicyJson.class);
       }
       log.info(policyJson.toString());
@@ -111,6 +113,7 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
                     .build()))
             .Version("2012-10-17")
             .build();
+    log.info(ceBucketPolicyJson.toString());
     ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
     return ow.writeValueAsString(ceBucketPolicyJson);
   }
