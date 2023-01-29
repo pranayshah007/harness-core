@@ -7,9 +7,6 @@
 
 package io.harness.ccm.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import io.harness.aws.AwsClientImpl;
 import io.harness.aws.CloseableAmazonWebServiceClient;
 import io.harness.ccm.commons.beans.billing.CEBucketPolicyJson;
@@ -21,13 +18,18 @@ import io.harness.exception.InvalidRequestException;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.BucketPolicy;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 
 @Slf4j
 public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperService {
@@ -48,7 +50,25 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
         // It's a new bucket. Initialize bucket policy with default json
         policyText = initializeBucketPolicy(awsS3Bucket, crossAccountRoleArn);
       }
-      CEBucketPolicyJson policyJson = new Gson().fromJson(policyText, CEBucketPolicyJson.class);
+      CEBucketPolicyJson policyJson;
+      try {
+        policyJson = new Gson().fromJson(policyText, CEBucketPolicyJson.class);
+      } catch (Exception e) {
+        log.info("Handled exception while updating bucket policy: ", e);
+        JSONObject jsonObject = new JSONObject(policyText);
+        List<String> awsPrincipalRoleList =
+            List.of(jsonObject.getJSONArray("Statement").getJSONObject(0).getJSONObject("Principal").getString("AWS"));
+        jsonObject.getJSONArray("Statement")
+            .getJSONObject(0)
+            .getJSONObject("Principal")
+            .put("AWS", awsPrincipalRoleList);
+        jsonObject.getJSONArray("Statement")
+            .getJSONObject(1)
+            .getJSONObject("Principal")
+            .put("AWS", awsPrincipalRoleList);
+        policyJson = new Gson().fromJson(jsonObject.toString(), CEBucketPolicyJson.class);
+      }
+
       List<CEBucketPolicyStatement> listStatements = new ArrayList<>();
       for (CEBucketPolicyStatement statement : policyJson.getStatement()) {
         Map<String, List<String>> principal = statement.getPrincipal();
@@ -72,24 +92,25 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
     return true;
   }
 
-  public String initializeBucketPolicy(String awsS3BucketName, String crossAccountRoleArn) throws JsonProcessingException {
-    CEBucketPolicyJson ceBucketPolicyJson = CEBucketPolicyJson.builder()
-            .Statement(List.of(
-                    CEBucketPolicyStatement.builder()
-                            .Sid("DelegateS3Access")
-                            .Effect("Allow")
-                            .Principal(Map.of("AWS", List.of(String.format("%s-DUMMY_NON_EXISTENT_ROLE", crossAccountRoleArn))))
-                            .Action(List.of("s3:PutObject", "s3:PutObjectAcl"))
-                            .Resource(List.of(String.format("arn:aws:s3:::%s/${aws:userid}", awsS3BucketName),
-                                    String.format("arn:aws:s3:::%s/${aws:userid}/*", awsS3BucketName)))
-                            .build(),
-                    CEBucketPolicyStatement.builder()
-                            .Sid("AllowStatement3")
-                            .Effect("Allow")
-                            .Principal(Map.of("AWS", List.of(String.format("%s-DUMMY_NON_EXISTENT_ROLE", crossAccountRoleArn))))
-                            .Action("s3:ListBucket")
-                            .Resource(String.format("arn:aws:s3:::%s", awsS3BucketName))
-                            .build()))
+  public String initializeBucketPolicy(String awsS3BucketName, String crossAccountRoleArn)
+      throws JsonProcessingException {
+    CEBucketPolicyJson ceBucketPolicyJson =
+        CEBucketPolicyJson.builder()
+            .Statement(List.of(CEBucketPolicyStatement.builder()
+                                   .Sid("DelegateS3Access")
+                                   .Effect("Allow")
+                                   .Principal(Map.of("AWS", Collections.emptyList()))
+                                   .Action(List.of("s3:PutObject", "s3:PutObjectAcl"))
+                                   .Resource(List.of(String.format("arn:aws:s3:::%s/${aws:userid}", awsS3BucketName),
+                                       String.format("arn:aws:s3:::%s/${aws:userid}/*", awsS3BucketName)))
+                                   .build(),
+                CEBucketPolicyStatement.builder()
+                    .Sid("AllowStatement3")
+                    .Effect("Allow")
+                    .Principal(Map.of("AWS", Collections.emptyList()))
+                    .Action("s3:ListBucket")
+                    .Resource(String.format("arn:aws:s3:::%s", awsS3BucketName))
+                    .build()))
             .Version("2012-10-17")
             .build();
     ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();

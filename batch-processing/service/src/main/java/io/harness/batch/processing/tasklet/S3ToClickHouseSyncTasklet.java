@@ -89,49 +89,53 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
     S3Objects s3Objects = awsClient.getIterableS3ObjectSummaries(
         credentials, configuration.getAwsS3SyncConfig().getAwsS3BucketName(), "");
     for (S3ObjectSummary objectSummary : s3Objects) {
-      List<String> path = Arrays.asList(objectSummary.getKey().split("/"));
-      if (path.size() != 5 && path.size() != 6)
-        continue;
+      try {
+        List<String> path = Arrays.asList(objectSummary.getKey().split("/"));
+        if (path.size() != 5 && path.size() != 6)
+          continue;
 
-      // gcs DT job's work will be performed by this 'if' condition
-      if (objectSummary.getLastModified().compareTo(java.util.Date.from(startTime)) >= 0
-          && objectSummary.getLastModified().compareTo(java.util.Date.from(endTime)) <= 0) {
-        if (objectSummary.getKey().endsWith(".csv.gz") || objectSummary.getKey().endsWith(".csv.zip")
-            || objectSummary.getKey().endsWith(".csv")) {
-          // String folderName = String.join("/", path.subList(0, path.size()-1));
-          String csvFolderName = String.join("/", path.subList(0, path.size() - 1));
-          if (!isValidMonthFolder(path.get(path.size() - 2))) {
-            // versioned folder case
-            // update uniqueMonthFolders
-            String monthFolderPath = String.join("/", path.subList(0, path.size() - 2));
-            if (!uniqueMonthFolders.containsKey(monthFolderPath)) {
-              uniqueMonthFolders.put(monthFolderPath, new ArrayList<>());
-            }
-            List<String> subFoldersList = uniqueMonthFolders.get(monthFolderPath);
-            subFoldersList.add(csvFolderName);
-            uniqueMonthFolders.put(monthFolderPath, subFoldersList);
+        // gcs DT job's work will be performed by this 'if' condition
+        if (objectSummary.getLastModified().compareTo(java.util.Date.from(startTime)) >= 0
+            && objectSummary.getLastModified().compareTo(java.util.Date.from(endTime)) <= 0) {
+          if (objectSummary.getKey().endsWith(".csv.gz") || objectSummary.getKey().endsWith(".csv.zip")
+              || objectSummary.getKey().endsWith(".csv")) {
+            // String folderName = String.join("/", path.subList(0, path.size()-1));
+            String csvFolderName = String.join("/", path.subList(0, path.size() - 1));
+            if (!isValidMonthFolder(path.get(path.size() - 2))) {
+              // versioned folder case
+              // update uniqueMonthFolders
+              String monthFolderPath = String.join("/", path.subList(0, path.size() - 2));
+              if (!uniqueMonthFolders.containsKey(monthFolderPath)) {
+                uniqueMonthFolders.put(monthFolderPath, new ArrayList<>());
+              }
+              List<String> subFoldersList = uniqueMonthFolders.get(monthFolderPath);
+              subFoldersList.add(csvFolderName);
+              uniqueMonthFolders.put(monthFolderPath, subFoldersList);
 
-            // update csvFolderSizeMap
-            if (!csvFolderSizeMap.containsKey(csvFolderName)) {
-              csvFolderSizeMap.put(csvFolderName, objectSummary.getSize());
+              // update csvFolderSizeMap
+              if (!csvFolderSizeMap.containsKey(csvFolderName)) {
+                csvFolderSizeMap.put(csvFolderName, objectSummary.getSize());
+              } else {
+                csvFolderSizeMap.put(csvFolderName, csvFolderSizeMap.get(csvFolderName) + objectSummary.getSize());
+              }
             } else {
-              csvFolderSizeMap.put(csvFolderName, csvFolderSizeMap.get(csvFolderName) + objectSummary.getSize());
-            }
-          } else {
-            // update uniqueMonthFolders
-            uniqueMonthFolders.put(csvFolderName, List.of(csvFolderName));
+              // update uniqueMonthFolders
+              uniqueMonthFolders.put(csvFolderName, List.of(csvFolderName));
 
-            // update csvFolderSizeMap
-            if (!csvFolderSizeMap.containsKey(csvFolderName)) {
-              csvFolderSizeMap.put(csvFolderName, objectSummary.getSize());
-            } else {
-              csvFolderSizeMap.put(csvFolderName, csvFolderSizeMap.get(csvFolderName) + objectSummary.getSize());
+              // update csvFolderSizeMap
+              if (!csvFolderSizeMap.containsKey(csvFolderName)) {
+                csvFolderSizeMap.put(csvFolderName, objectSummary.getSize());
+              } else {
+                csvFolderSizeMap.put(csvFolderName, csvFolderSizeMap.get(csvFolderName) + objectSummary.getSize());
+              }
             }
           }
+          // else if (objectSummary.getKey().endsWith("Manifest.json")) {
+          //     manifestJsons.add(objectSummary.getKey());
+          // }
         }
-        // else if (objectSummary.getKey().endsWith("Manifest.json")) {
-        //     manifestJsons.add(objectSummary.getKey());
-        // }
+      } catch (Exception e) {
+        log.error(String.format("Exception while processing s3 object: %s", objectSummary.getKey()), e);
       }
     }
 
@@ -154,78 +158,82 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
     log.info("\nFollowing folders will be ingested:\n" + String.join(", ", foldersToIngest));
 
     for (String folderPath : foldersToIngest) {
-      String jsonString = fetchSchemaFromManifestFileInFolder(folderPath);
-      JSONObject obj = new JSONObject(jsonString);
+      try {
+        String jsonString = fetchSchemaFromManifestFileInFolder(folderPath);
+        JSONObject obj = new JSONObject(jsonString);
 
-      JSONArray column_list = obj.getJSONArray("columns");
-      Map<String, Integer> map_tags = new HashMap<>();
-      String schema = "";
-      List<String> availableColumns = new ArrayList<>();
+        JSONArray column_list = obj.getJSONArray("columns");
+        Map<String, Integer> map_tags = new HashMap<>();
+        String schema = "";
+        List<String> availableColumns = new ArrayList<>();
 
-      for (int i = 0; i < column_list.length(); i++) {
-        if (!schema.isEmpty())
-          schema += ", ";
+        for (int i = 0; i < column_list.length(); i++) {
+          if (!schema.isEmpty())
+            schema += ", ";
 
-        JSONObject column = column_list.getJSONObject(i);
-        String name = column.getString("name").toLowerCase().replaceAll("\\s+", "");
-        // uncomment following line to test for tag column
-        // name = "aws:autoscaling:groupName";
-        String nameConverted = name;
-        if (name.replaceAll("[^a-zA-Z0-9_]", "_") != name) {
-          nameConverted = name.replaceAll("[^a-zA-Z0-9_]", "_");
-          name = "TAG_" + nameConverted;
+          JSONObject column = column_list.getJSONObject(i);
+          String name = column.getString("name").toLowerCase().replaceAll("\\s+", "");
+          // uncomment following line to test for tag column
+          // name = "aws:autoscaling:groupName";
+          String nameConverted = name;
+          if (name.replaceAll("[^a-zA-Z0-9_]", "_") != name) {
+            nameConverted = name.replaceAll("[^a-zA-Z0-9_]", "_");
+            name = "TAG_" + nameConverted;
+          }
+          // System.out.println(nameConverted);
+          String name_for_map = nameConverted;
+          if (map_tags.containsKey(name_for_map)) {
+            name = name + "_" + map_tags.get(name_for_map);
+            map_tags.put(name_for_map, map_tags.get(name_for_map) + 1);
+          } else {
+            map_tags.put(name_for_map, 1);
+          }
+          String dataType = getMappedDataColumn(column.getString("type"));
+          schema += ("`" + name + "` " + dataType + " NULL");
+          availableColumns.add(name);
         }
-        // System.out.println(nameConverted);
-        String name_for_map = nameConverted;
-        if (map_tags.containsKey(name_for_map)) {
-          name = name + "_" + map_tags.get(name_for_map);
-          map_tags.put(name_for_map, map_tags.get(name_for_map) + 1);
-        } else {
-          map_tags.put(name_for_map, 1);
+
+        // System.out.println(schema);
+
+        List<String> ps = Arrays.asList(folderPath.split("/"));
+        String monthFolder = "";
+        if (ps.size() == 4) {
+          monthFolder = ps.get(ps.size() - 1);
+        } else if (ps.size() == 5) {
+          monthFolder = ps.get(ps.size() - 2);
         }
-        String dataType = getMappedDataColumn(column.getString("type"));
-        schema += ("`" + name + "` " + dataType + " NULL");
-        availableColumns.add(name);
+        String reportYear = Arrays.asList(monthFolder.split("-")).get(0).substring(0, 4);
+        String reportMonth = Arrays.asList(monthFolder.split("-")).get(0).substring(4, 6);
+        String connectorId = ps.get(1);
+        String awsBillingTableId = "ccm.awsBilling_" + connectorId + "_" + reportYear + "_" + reportMonth;
+
+        // System.out.println(awsBillingTableId + " <-- " + folderPath);
+
+        // DROP existing table if found
+        clickHouseService.executeClickHouseQuery(
+            configuration.getClickHouseConfig(), "DROP TABLE IF EXISTS " + awsBillingTableId, Boolean.FALSE);
+
+        String createAwsBillingTableQuery = "CREATE TABLE IF NOT EXISTS " + awsBillingTableId + " (" + schema
+            + " ) ENGINE = MergeTree ORDER BY tuple(usagestartdate) SETTINGS allow_nullable_key = 1;";
+        // System.out.println(createAwsBillingTableQuery);
+        log.info(createAwsBillingTableQuery);
+        clickHouseService.executeClickHouseQuery(
+            configuration.getClickHouseConfig(), createAwsBillingTableQuery, Boolean.FALSE);
+
+        insertIntoAwsBillingTableFromS3Bucket(awsBillingTableId, folderPath);
+
+        List<String> usageAccountIds = getUniqueAccountIds(awsBillingTableId);
+        log.info(String.join(", ", usageAccountIds));
+
+        ingestDataIntoAwsCur(awsBillingTableId, usageAccountIds, "" + reportYear + "-" + reportMonth + "-01");
+        ingestDataIntoUnified(usageAccountIds, "" + reportYear + "-" + reportMonth + "-01");
+        ingestDataIntoPreAgg(usageAccountIds, "" + reportYear + "-" + reportMonth + "-01");
+
+        updateConnectorDataSyncStatus(accountId, connectorId);
+        ingestDataIntoCostAgg(accountId, "" + reportYear + "-" + reportMonth + "-01");
+      } catch (Exception e) {
+        log.error(String.format("Exception while processing s3 bucket path: %s", folderPath), e);
       }
-
-      // System.out.println(schema);
-
-      List<String> ps = Arrays.asList(folderPath.split("/"));
-      String monthFolder = "";
-      if (ps.size() == 4) {
-        monthFolder = ps.get(ps.size() - 1);
-      } else if (ps.size() == 5) {
-        monthFolder = ps.get(ps.size() - 2);
-      }
-      String reportYear = Arrays.asList(monthFolder.split("-")).get(0).substring(0, 4);
-      String reportMonth = Arrays.asList(monthFolder.split("-")).get(0).substring(4, 6);
-      String connectorId = ps.get(1);
-      String awsBillingTableId = "ccm.awsBilling_" + connectorId + "_" + reportYear + "_" + reportMonth;
-
-      // System.out.println(awsBillingTableId + " <-- " + folderPath);
-
-      // DROP existing table if found
-      clickHouseService.executeClickHouseQuery(
-          configuration.getClickHouseConfig(), "DROP TABLE IF EXISTS " + awsBillingTableId, Boolean.FALSE);
-
-      String createAwsBillingTableQuery = "CREATE TABLE IF NOT EXISTS " + awsBillingTableId + " (" + schema
-          + " ) ENGINE = MergeTree ORDER BY tuple(usagestartdate) SETTINGS allow_nullable_key = 1;";
-      // System.out.println(createAwsBillingTableQuery);
-      log.info(createAwsBillingTableQuery);
-      clickHouseService.executeClickHouseQuery(
-          configuration.getClickHouseConfig(), createAwsBillingTableQuery, Boolean.FALSE);
-
-      insertIntoAwsBillingTableFromS3Bucket(awsBillingTableId, folderPath);
-
-      List<String> usageAccountIds = getUniqueAccountIds(awsBillingTableId);
-      log.info(String.join(", ", usageAccountIds));
-
-      ingestDataIntoAwsCur(awsBillingTableId, usageAccountIds, "" + reportYear + "-" + reportMonth + "-01");
-      ingestDataIntoUnified(usageAccountIds, "" + reportYear + "-" + reportMonth + "-01");
-      ingestDataIntoPreAgg(usageAccountIds, "" + reportYear + "-" + reportMonth + "-01");
-
-      updateConnectorDataSyncStatus(accountId, connectorId);
-      ingestDataIntoCostAgg(accountId, "" + reportYear + "-" + reportMonth + "-01");
     }
 
     return null;
