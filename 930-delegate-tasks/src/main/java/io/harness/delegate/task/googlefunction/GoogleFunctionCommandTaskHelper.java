@@ -26,6 +26,7 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDT
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
+import io.harness.delegate.task.googlefunctionbeans.GoogleCloudSourceArtifactConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleCloudStorageArtifactConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionArtifactConfig;
@@ -55,6 +56,7 @@ import com.google.cloud.functions.v2.Environment;
 import com.google.cloud.functions.v2.Function;
 import com.google.cloud.functions.v2.GetFunctionRequest;
 import com.google.cloud.functions.v2.OperationMetadata;
+import com.google.cloud.functions.v2.RepoSource;
 import com.google.cloud.functions.v2.ServiceConfig;
 import com.google.cloud.functions.v2.Source;
 import com.google.cloud.functions.v2.StorageSource;
@@ -182,8 +184,17 @@ public class GoogleFunctionCommandTaskHelper {
                                         .setObject(googleCloudStorageArtifactConfig.getFilePath())
                                         .build();
       return Source.newBuilder().setStorageSource(storageSource).build();
+    } else if (googleFunctionArtifactConfig instanceof GoogleCloudSourceArtifactConfig) {
+      GoogleCloudSourceArtifactConfig googleCloudSourceArtifactConfig =
+          (GoogleCloudSourceArtifactConfig) googleFunctionArtifactConfig;
+      RepoSource repoSource = RepoSource.newBuilder()
+                                  .setProjectId(googleCloudSourceArtifactConfig.getProject())
+                                  .setRepoName(googleCloudSourceArtifactConfig.getRepository())
+                                  .setDir(googleCloudSourceArtifactConfig.getSourceDirectory())
+                                  .build();
+      return Source.newBuilder().setRepoSource(repoSource).build();
     }
-    return null;
+    throw new InvalidRequestException("Invalid Artifact Source.");
   }
 
   public Function createFunction(CreateFunctionRequest createFunctionRequest, GcpConnectorDTO gcpConnectorDTO,
@@ -325,8 +336,11 @@ public class GoogleFunctionCommandTaskHelper {
     try {
       return Optional.of(googleCloudFunctionClient.getFunction(
           getFunctionRequest, getGcpInternalConfig(gcpConnectorDTO, region, project)));
-    } catch (NotFoundException e) {
-      return Optional.empty();
+    } catch (Exception e) {
+      if (e.getCause() instanceof NotFoundException) {
+        return Optional.empty();
+      }
+      throw e;
     }
   }
 

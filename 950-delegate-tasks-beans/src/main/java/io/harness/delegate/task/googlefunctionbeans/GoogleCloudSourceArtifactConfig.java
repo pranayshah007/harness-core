@@ -23,10 +23,10 @@ import lombok.experimental.NonFinal;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class GoogleCloudStorageArtifactConfig implements GoogleFunctionArtifactConfig {
+public class GoogleCloudSourceArtifactConfig implements GoogleFunctionArtifactConfig {
   @NonFinal @Expression(ALLOW_SECRETS) String project;
-  @NonFinal @Expression(ALLOW_SECRETS) String bucket;
-  @NonFinal @Expression(ALLOW_SECRETS) String filePath;
+  @NonFinal @Expression(ALLOW_SECRETS) String repository;
+  @NonFinal @Expression(ALLOW_SECRETS) String sourceDirectory;
   String identifier;
   ConnectorInfoDTO connectorDTO;
   List<EncryptedDataDetail> encryptedDataDetails;

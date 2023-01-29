@@ -1,3 +1,10 @@
+/*
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.googlefunction;
 
 import static software.wings.beans.LogColor.Green;
@@ -23,6 +30,9 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
+
 import com.google.cloud.functions.v2.Function;
 import com.google.cloud.run.v2.Service;
 import com.google.inject.Inject;
@@ -42,9 +52,9 @@ public class GoogleFunctionTrafficShiftCommandTaskHandler extends GoogleFunction
         (GoogleFunctionTrafficShiftRequest) googleFunctionCommandRequest;
     GcpGoogleFunctionInfraConfig googleFunctionInfraConfig =
         (GcpGoogleFunctionInfraConfig) googleFunctionTrafficShiftRequest.getGoogleFunctionInfraConfig();
+    LogCallback executionLogCallback = new NGDelegateLogCallback(iLogStreamingTaskClient,
+        GoogleFunctionsCommandUnitConstants.trafficShift.toString(), true, commandUnitsProgress);
     try {
-      LogCallback executionLogCallback = new NGDelegateLogCallback(iLogStreamingTaskClient,
-          GoogleFunctionsCommandUnitConstants.trafficShift.toString(), true, commandUnitsProgress);
       if (!googleFunctionTrafficShiftRequest.isFirstDeployment()) {
         executionLogCallback.saveExecutionLog(format("Starting traffic shift..%n%n"), LogLevel.INFO);
         Function.Builder functionBuilder = Function.newBuilder();
@@ -77,6 +87,8 @@ public class GoogleFunctionTrafficShiftCommandTaskHandler extends GoogleFunction
           .errorMessage("traffic shift not allowed with first deployment")
           .build();
     } catch (Exception exception) {
+      executionLogCallback.saveExecutionLog(color(format("%n Traffic Shift Failed."), LogColor.Red, LogWeight.Bold),
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw new GoogleFunctionException(exception);
     }
   }

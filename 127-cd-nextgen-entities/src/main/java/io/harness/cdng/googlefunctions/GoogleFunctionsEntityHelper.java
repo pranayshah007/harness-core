@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GoogleCloudSourceArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GoogleCloudStorageArtifactOutcome;
 import io.harness.cdng.infra.beans.GoogleFunctionsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -28,6 +29,7 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
+import io.harness.delegate.task.googlefunctionbeans.GoogleCloudSourceArtifactConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleCloudStorageArtifactConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionArtifactConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionInfraConfig;
@@ -98,12 +100,30 @@ public class GoogleFunctionsEntityHelper {
   }
 
   public GoogleFunctionArtifactConfig getArtifactConfig(ArtifactOutcome artifactOutcome, NGAccess ngAccess) {
+    ConnectorInfoDTO connectorDTO;
     if (artifactOutcome instanceof GoogleCloudStorageArtifactOutcome) {
       GoogleCloudStorageArtifactOutcome googleCloudStorageArtifactOutcome =
           (GoogleCloudStorageArtifactOutcome) artifactOutcome;
+      connectorDTO = getConnectorInfoDTO(googleCloudStorageArtifactOutcome.getConnectorRef(), ngAccess);
       return GoogleCloudStorageArtifactConfig.builder()
+          .project(googleCloudStorageArtifactOutcome.getProject())
           .bucket(googleCloudStorageArtifactOutcome.getBucket())
           .filePath(googleCloudStorageArtifactOutcome.getArtifactPath())
+          .connectorDTO(connectorDTO)
+          .encryptedDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+          .identifier(googleCloudStorageArtifactOutcome.getIdentifier())
+          .build();
+    } else if (artifactOutcome instanceof GoogleCloudSourceArtifactOutcome) {
+      GoogleCloudSourceArtifactOutcome googleCloudSourceArtifactOutcome =
+          (GoogleCloudSourceArtifactOutcome) artifactOutcome;
+      connectorDTO = getConnectorInfoDTO(googleCloudSourceArtifactOutcome.getConnectorRef(), ngAccess);
+      return GoogleCloudSourceArtifactConfig.builder()
+          .project(googleCloudSourceArtifactOutcome.getProject())
+          .repository(googleCloudSourceArtifactOutcome.getRepository())
+          .sourceDirectory(googleCloudSourceArtifactOutcome.getSourceDirectory())
+          .connectorDTO(connectorDTO)
+          .encryptedDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+          .identifier(googleCloudSourceArtifactOutcome.getIdentifier())
           .build();
     } else {
       throw new UnsupportedOperationException(

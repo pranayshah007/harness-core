@@ -386,6 +386,7 @@ import io.harness.delegate.exception.AsgNGException;
 import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.delegate.exception.EcsNGException;
 import io.harness.delegate.exception.ElastigroupNGException;
+import io.harness.delegate.exception.GoogleFunctionException;
 import io.harness.delegate.exception.HelmNGException;
 import io.harness.delegate.exception.ServerlessNGException;
 import io.harness.delegate.exception.TaskNGDataException;
@@ -2283,6 +2284,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GoogleFunctionRollbackResponse.class, 673581);
     kryo.register(GoogleFunctionTrafficShiftRequest.class, 673582);
     kryo.register(GoogleFunctionTrafficShiftResponse.class, 673583);
+    kryo.register(GoogleFunctionException.class, 673584);
 
     kryo.register(K8sDryRunManifestRequest.class, 573594);
     kryo.register(K8sDryRunManifestResponse.class, 573595);

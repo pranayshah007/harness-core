@@ -32,6 +32,9 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
+
 import com.google.cloud.functions.v2.CreateFunctionRequest;
 import com.google.cloud.functions.v2.Function;
 import com.google.cloud.run.v2.Service;
@@ -60,10 +63,9 @@ public class GoogleFunctionPrepareRollbackCommandTaskHandler extends GoogleFunct
         (GoogleFunctionPrepareRollbackRequest) googleFunctionCommandRequest;
     GcpGoogleFunctionInfraConfig googleFunctionInfraConfig =
         (GcpGoogleFunctionInfraConfig) googleFunctionPrepareRollbackRequest.getGoogleFunctionInfraConfig();
+    LogCallback executionLogCallback = new NGDelegateLogCallback(iLogStreamingTaskClient,
+        GoogleFunctionsCommandUnitConstants.prepareRollbackData.toString(), true, commandUnitsProgress);
     try {
-      LogCallback executionLogCallback = new NGDelegateLogCallback(iLogStreamingTaskClient,
-          GoogleFunctionsCommandUnitConstants.prepareRollbackData.toString(), true, commandUnitsProgress);
-
       executionLogCallback.saveExecutionLog(format("Preparing Rollback Data..%n%n"), LogLevel.INFO);
       CreateFunctionRequest.Builder createFunctionRequestBuilder = CreateFunctionRequest.newBuilder();
       googleFunctionCommandTaskHelper.parseStringContentAsClassBuilder(
@@ -147,6 +149,8 @@ public class GoogleFunctionPrepareRollbackCommandTaskHandler extends GoogleFunct
             .build();
       }
     } catch (Exception exception) {
+      executionLogCallback.saveExecutionLog(color(format("%n Prepare Rollback Failed."), LogColor.Red, LogWeight.Bold),
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw new GoogleFunctionException(exception);
     }
   }

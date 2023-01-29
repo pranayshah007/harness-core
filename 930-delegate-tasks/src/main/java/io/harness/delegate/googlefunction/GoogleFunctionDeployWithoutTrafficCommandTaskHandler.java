@@ -30,6 +30,9 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
+
 import com.google.cloud.functions.v2.Function;
 import com.google.inject.Inject;
 import lombok.NoArgsConstructor;
@@ -48,9 +51,9 @@ public class GoogleFunctionDeployWithoutTrafficCommandTaskHandler extends Google
         (GoogleFunctionDeployWithoutTrafficRequest) googleFunctionCommandRequest;
     GcpGoogleFunctionInfraConfig googleFunctionInfraConfig =
         (GcpGoogleFunctionInfraConfig) googleFunctionDeployWithoutTrafficRequest.getGoogleFunctionInfraConfig();
+    LogCallback executionLogCallback = new NGDelegateLogCallback(
+        iLogStreamingTaskClient, GoogleFunctionsCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
     try {
-      LogCallback executionLogCallback = new NGDelegateLogCallback(
-          iLogStreamingTaskClient, GoogleFunctionsCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
       executionLogCallback.saveExecutionLog(format("Deploying..%n%n"), LogLevel.INFO);
       Function function = googleFunctionCommandTaskHelper.deployFunction(googleFunctionInfraConfig,
           googleFunctionDeployWithoutTrafficRequest.getGoogleFunctionDeployManifestContent(),
@@ -66,6 +69,8 @@ public class GoogleFunctionDeployWithoutTrafficCommandTaskHandler extends Google
           .function(googleFunction)
           .build();
     } catch (Exception exception) {
+      executionLogCallback.saveExecutionLog(color(format("%n Deployment Failed."), LogColor.Red, LogWeight.Bold),
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw new GoogleFunctionException(exception);
     }
   }
