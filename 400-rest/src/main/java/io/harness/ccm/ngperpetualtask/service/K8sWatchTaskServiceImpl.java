@@ -35,11 +35,11 @@ import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.perpetualtask.k8s.watch.K8sWatchTaskParams;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.utils.RestCallToNGManagerClientUtils;
 
 import com.google.api.client.util.Preconditions;
 import com.google.inject.Inject;
@@ -182,8 +182,8 @@ public class K8sWatchTaskServiceImpl implements K8sWatchTaskService {
         sanitizedScopedConnectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
 
     Optional<ConnectorDTO> connectorDTO =
-        RestCallToNGManagerClientUtils.execute(connectorResourceClient.get(connectorRef.getIdentifier(),
-            accountIdentifier, connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier()));
+        NGRestUtils.getResponse(connectorResourceClient.get(connectorRef.getIdentifier(), accountIdentifier,
+            connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier()));
 
     Preconditions.checkArgument(
         connectorDTO.isPresent(), String.format("referenced connector %s not found", connectorRef.toString()));

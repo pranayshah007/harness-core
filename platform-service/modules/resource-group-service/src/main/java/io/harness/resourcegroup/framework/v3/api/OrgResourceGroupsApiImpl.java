@@ -109,7 +109,7 @@ public class OrgResourceGroupsApiImpl implements OrganizationResourceGroupsApi {
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = EDIT_RESOURCEGROUP_PERMISSION)
   public Response updateResourceGroupOrg(CreateResourceGroupRequest body, @OrgIdentifier String org,
       @ResourceIdentifier String resourceGroup, @AccountIdentifier String account) {
-    if (!resourceGroup.equals(body.getSlug())) {
+    if (!resourceGroup.equals(body.getIdentifier())) {
       throw new InvalidRequestException("Resource Group identifier in the request body and the URL do not match.");
     }
     ResourceGroupRequest resourceGroupRequest = ResourceGroupApiUtils.getResourceGroupRequestOrg(org, body, account);

@@ -29,11 +29,11 @@ import software.wings.graphql.schema.type.aggregation.pipeline.QLPipelineTagType
 import software.wings.graphql.utils.nameservice.NameService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 @OwnedBy(CDC)

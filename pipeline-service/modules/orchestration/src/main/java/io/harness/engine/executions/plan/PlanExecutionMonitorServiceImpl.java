@@ -21,8 +21,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorService {
@@ -33,17 +33,18 @@ public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorServ
 
   @Override
   public void registerActiveExecutionMetrics() {
-    List<PlanExecution> planExecutions = planExecutionService.findByStatusWithProjections(
-        StatusUtils.activeStatuses(), ImmutableSet.of(PlanExecutionKeys.setupAbstractions, PlanExecutionKeys.metadata));
     Map<PipelineExecutionMetric, Integer> metricMap = new HashMap<>();
-
-    for (PlanExecution planExecution : planExecutions) {
-      PipelineExecutionMetric planExecutionMetric =
-          PipelineExecutionMetric.builder()
-              .accountId(planExecution.getSetupAbstractions().get(SetupAbstractionKeys.accountId))
-              .build();
-
-      metricMap.put(planExecutionMetric, metricMap.getOrDefault(planExecutionMetric, 0) + 1);
+    try (CloseableIterator<PlanExecution> iterator =
+             planExecutionService.fetchPlanExecutionsByStatus(StatusUtils.activeStatuses(),
+                 ImmutableSet.of(PlanExecutionKeys.setupAbstractions, PlanExecutionKeys.metadata))) {
+      while (iterator.hasNext()) {
+        PlanExecution planExecution = iterator.next();
+        PipelineExecutionMetric planExecutionMetric =
+            PipelineExecutionMetric.builder()
+                .accountId(planExecution.getSetupAbstractions().get(SetupAbstractionKeys.accountId))
+                .build();
+        metricMap.put(planExecutionMetric, metricMap.getOrDefault(planExecutionMetric, 0) + 1);
+      }
     }
 
     for (Map.Entry<PipelineExecutionMetric, Integer> entry : metricMap.entrySet()) {

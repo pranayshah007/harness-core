@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.pms.yaml.YamlField;
@@ -48,6 +49,10 @@ public class ServiceFilterHelper {
       Criteria searchCriteria = new Criteria().orOperator(
           where(ServiceEntityKeys.name).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
           where(ServiceEntityKeys.identifier)
+              .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+          where(ServiceEntityKeys.tags + "." + NGTagKeys.key)
+              .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+          where(ServiceEntityKeys.tags + "." + NGTagKeys.value)
               .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
       andCriterias.add(searchCriteria);
     }
@@ -132,8 +137,12 @@ public class ServiceFilterHelper {
       if (includeAllServicesAccessibleAtScope) {
         includeAllServicesCriteria = getCriteriaToReturnAllAccessibleServicesAtScope(orgIdentifier, projectIdentifier);
       } else {
-        criteria.and(ORG_ID).is(orgIdentifier);
-        criteria.and(PROJECT_ID).is(projectIdentifier);
+        if (isNotEmpty(orgIdentifier)) {
+          criteria.and(ORG_ID).is(orgIdentifier);
+        }
+        if (isNotEmpty(projectIdentifier)) {
+          criteria.and(PROJECT_ID).is(projectIdentifier);
+        }
       }
       List<Criteria> criteriaList = new ArrayList<>();
       if (includeAllServicesCriteria != null) {

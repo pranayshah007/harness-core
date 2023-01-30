@@ -48,6 +48,7 @@ import software.wings.security.authentication.TwoFactorAuthenticationSettings;
 import software.wings.security.authentication.oauth.OauthUserInfo;
 import software.wings.service.intfc.ownership.OwnedByAccount;
 
+import dev.morphia.query.UpdateOperations;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -60,7 +61,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.UpdateOperations;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 /**
@@ -191,6 +191,14 @@ public interface UserService extends OwnedByAccount {
    * @param userId    the user id
    */
   void delete(@NotEmpty String accountId, @NotEmpty String userId);
+
+  /**
+   * Deletes the user from both CG and NG.
+   *
+   * @param accountId the account id
+   * @param userId    the user id
+   */
+  void forceDelete(@NotEmpty String accountId, @NotEmpty String userId);
 
   /**
    * overrideTwoFactorforAccount
@@ -637,7 +645,7 @@ public interface UserService extends OwnedByAccount {
   InviteOperationResponse checkInviteStatus(UserInvite userInvite, Generation gen);
 
   void loadUserGroupsForUsers(List<User> users, String accountId);
-
+  boolean isUserPartOfAnyUserGroupInCG(String userId, String accountId);
   boolean isUserPresent(String userId);
 
   List<User> getUsers(List<String> userIds, String accountId);

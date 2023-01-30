@@ -79,6 +79,7 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes({runtime})
   @SkipAutoEvaluation
+  @JsonProperty("patchesPaths")
   ParameterField<List<String>> patchesPaths;
 
   @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> skipResourceVersioning;

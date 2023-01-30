@@ -37,11 +37,11 @@ import software.wings.service.intfc.PreferenceService;
 import software.wings.utils.WingsTestConstants;
 
 import com.google.inject.Inject;
+import dev.morphia.mapping.Mapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
-import org.mongodb.morphia.mapping.Mapper;
 
 public class PreferenceServiceTest extends WingsBaseTest {
   private static final String TEST_USER_ID = "123";

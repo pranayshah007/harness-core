@@ -23,8 +23,8 @@ import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.polling.ArtifactCollectionTaskParamsNg;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.polling.bean.ArtifactInfo;
 import io.harness.polling.bean.PollingDocument;
-import io.harness.polling.bean.artifact.ArtifactInfo;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;

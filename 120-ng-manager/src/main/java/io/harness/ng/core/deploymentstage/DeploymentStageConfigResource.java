@@ -8,14 +8,14 @@
 package io.harness.ng.core.deploymentstage;
 
 import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
+import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
+import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.CDStageMetaDataDTO;
@@ -28,11 +28,13 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
 
+import io.fabric8.utils.Lists;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -74,7 +76,7 @@ public class DeploymentStageConfigResource {
           format("Could not find stage %s in pipeline yaml", requestDTO.getStageIdentifier()));
     }
 
-    String serviceRef = null;
+    List<String> serviceRefs = null;
     final Optional<String> referredStageForServiceOptional = getReferredStageForService(actualStage);
     if (referredStageForServiceOptional.isPresent()) {
       final String referredStageIdentifier = referredStageForServiceOptional.get();
@@ -83,18 +85,24 @@ public class DeploymentStageConfigResource {
         throw new InvalidRequestException(
             format("Could not find referred stage %s in pipeline yaml", referredStageIdentifier));
       }
-      serviceRef = getServiceRef(referredStage.getDeploymentStageConfig());
+      serviceRefs = getServiceRefs(referredStage.getDeploymentStageConfig());
     } else {
-      serviceRef = getServiceRef(actualStage.getDeploymentStageConfig());
-    }
-    if (isNotBlank(serviceRef)) {
-      CDStageMetaDataDTOBuilder.serviceRef(serviceRef);
+      serviceRefs = getServiceRefs(actualStage.getDeploymentStageConfig());
     }
 
-    final String environmentRef = getEnvironmentRef(actualStage.getDeploymentStageConfig());
-    if (isNotBlank(environmentRef)) {
-      CDStageMetaDataDTOBuilder.environmentRef(environmentRef);
+    final List<String> environmentRefs = getEnvironmentRefs(actualStage.getDeploymentStageConfig());
+    if (serviceRefs.size() == 1 && environmentRefs.size() == 1) {
+      CDStageMetaDataDTOBuilder.environmentRef(environmentRefs.get(0));
+      CDStageMetaDataDTOBuilder.serviceRef(serviceRefs.get(0));
     }
+
+    for (String serviceRef : serviceRefs) {
+      for (String envRef : environmentRefs) {
+        CDStageMetaDataDTOBuilder.serviceEnvRef(
+            CDStageMetaDataDTO.ServiceEnvRef.builder().serviceRef(serviceRef).environmentRef(envRef).build());
+      }
+    }
+
     return ResponseDTO.newResponse(CDStageMetaDataDTOBuilder.build());
   }
 
@@ -146,40 +154,64 @@ public class DeploymentStageConfigResource {
     return Collections.emptyList();
   }
 
-  private String getEnvironmentRef(DeploymentStageConfig deploymentStageConfig) {
+  private List<String> getEnvironmentRefs(DeploymentStageConfig deploymentStageConfig) {
     final PipelineInfrastructure infrastructure = deploymentStageConfig.getInfrastructure();
     if (infrastructure != null) {
       if (infrastructure.getEnvironmentRef() != null) {
-        return getReferenceValue(infrastructure.getEnvironmentRef());
+        return Lists.newArrayList(getReferenceValue(infrastructure.getEnvironmentRef()));
       } else {
         if (infrastructure.getEnvironment() != null) {
-          return infrastructure.getEnvironment().getIdentifier();
+          return Lists.newArrayList(infrastructure.getEnvironment().getIdentifier());
         }
       }
     } else {
       if (deploymentStageConfig.getEnvironment() != null
           && deploymentStageConfig.getEnvironment().getEnvironmentRef() != null) {
-        return getReferenceValue(deploymentStageConfig.getEnvironment().getEnvironmentRef());
+        return Lists.newArrayList(getReferenceValue(deploymentStageConfig.getEnvironment().getEnvironmentRef()));
+      }
+
+      if (deploymentStageConfig.getEnvironments() != null
+          && ParameterField.isNotNull(deploymentStageConfig.getEnvironments().getValues())
+          && !deploymentStageConfig.getEnvironments().getValues().isExpression()) {
+        return deploymentStageConfig.getEnvironments()
+            .getValues()
+            .getValue()
+            .stream()
+            .map(EnvironmentYamlV2::getEnvironmentRef)
+            .map(this::getReferenceValue)
+            .collect(Collectors.toList());
       }
     }
-    return EMPTY;
+    return new ArrayList<>();
   }
 
-  private String getServiceRef(DeploymentStageConfig deploymentStageConfig) {
+  private List<String> getServiceRefs(DeploymentStageConfig deploymentStageConfig) {
     if (deploymentStageConfig.getServiceConfig() != null) {
       if (deploymentStageConfig.getServiceConfig().getServiceRef() != null) {
-        return getReferenceValue(deploymentStageConfig.getServiceConfig().getServiceRef());
+        return Lists.newArrayList(getReferenceValue(deploymentStageConfig.getServiceConfig().getServiceRef()));
       } else {
         if (deploymentStageConfig.getServiceConfig().getService() != null) {
-          return deploymentStageConfig.getServiceConfig().getService().getIdentifier();
+          return Lists.newArrayList(deploymentStageConfig.getServiceConfig().getService().getIdentifier());
         }
       }
     } else {
       if (deploymentStageConfig.getService() != null && deploymentStageConfig.getService().getServiceRef() != null) {
-        return getReferenceValue(deploymentStageConfig.getService().getServiceRef());
+        return Lists.newArrayList(getReferenceValue(deploymentStageConfig.getService().getServiceRef()));
+      }
+      if (deploymentStageConfig.getServices() != null) {
+        if (ParameterField.isNotNull(deploymentStageConfig.getServices().getValues())
+            && !deploymentStageConfig.getServices().getValues().isExpression()) {
+          return deploymentStageConfig.getServices()
+              .getValues()
+              .getValue()
+              .stream()
+              .map(ServiceYamlV2::getServiceRef)
+              .map(this::getReferenceValue)
+              .collect(Collectors.toList());
+        }
       }
     }
-    return EMPTY;
+    return new ArrayList<>();
   }
 
   private String getReferenceValue(ParameterField<String> parameterField) {

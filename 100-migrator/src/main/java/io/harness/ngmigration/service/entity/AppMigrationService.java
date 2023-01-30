@@ -11,7 +11,9 @@ import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.encryption.Scope.PROJECT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.APPLICATION;
+import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER;
 import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
+import static software.wings.ngmigration.NGMigrationEntityType.TRIGGER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -40,6 +42,7 @@ import io.harness.serializer.JsonUtils;
 import software.wings.beans.Application;
 import software.wings.beans.Application.ApplicationKeys;
 import software.wings.beans.EntityType;
+import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.Pipeline;
 import software.wings.beans.Pipeline.PipelineKeys;
 import software.wings.beans.Service;
@@ -50,14 +53,16 @@ import software.wings.beans.Workflow.WorkflowKeys;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ApplicationManifest.ApplicationManifestKeys;
 import software.wings.beans.template.Template;
+import software.wings.beans.trigger.Trigger;
+import software.wings.beans.trigger.Trigger.TriggerKeys;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.EnvironmentService;
+import software.wings.service.intfc.InfrastructureProvisionerService;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.ServiceVariableService;
 
@@ -83,6 +88,8 @@ public class AppMigrationService extends NgMigrationService {
   @Inject private ServiceResourceService serviceResourceService;
   @Inject private ServiceVariableService serviceVariableService;
   @Inject private TemplateImportService templateService;
+
+  @Inject InfrastructureProvisionerService infrastructureProvisionerService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -179,6 +186,31 @@ public class AppMigrationService extends NgMigrationService {
                           .collect(Collectors.toList()));
     }
 
+    // Infra Provisioners
+    List<InfrastructureProvisioner> infrastructureProvisioners =
+        hPersistence.createQuery(InfrastructureProvisioner.class)
+            .filter(InfrastructureProvisioner.APP_ID, appId)
+            .filter(InfrastructureProvisioner.ACCOUNT_ID_KEY, application.getAccountId())
+            .asList();
+    if (EmptyPredicate.isNotEmpty(infrastructureProvisioners)) {
+      children.addAll(
+          infrastructureProvisioners.stream()
+              .distinct()
+              .map(provisioner -> CgEntityId.builder().id(provisioner.getUuid()).type(INFRA_PROVISIONER).build())
+              .collect(Collectors.toList()));
+    }
+
+    List<Trigger> triggers = hPersistence.createQuery(Trigger.class)
+                                 .filter(TriggerKeys.appId, appId)
+                                 .filter(TriggerKeys.accountId, application.getAccountId())
+                                 .asList();
+    if (EmptyPredicate.isNotEmpty(triggers)) {
+      children.addAll(triggers.stream()
+                          .distinct()
+                          .map(trigger -> CgEntityId.builder().id(trigger.getUuid()).type(TRIGGER).build())
+                          .collect(Collectors.toList()));
+    }
+
     return DiscoveryNode.builder()
         .entityNode(CgEntityNode.builder()
                         .id(appId)
@@ -195,12 +227,6 @@ public class AppMigrationService extends NgMigrationService {
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
     return discover(appService.get(entityId));
   }
-
-  @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    return NGMigrationStatus.builder().status(true).build();
-  }
-
   @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
       TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {

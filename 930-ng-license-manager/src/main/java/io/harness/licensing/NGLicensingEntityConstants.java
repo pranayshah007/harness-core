@@ -22,4 +22,5 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class NGLicensingEntityConstants {
   public static final String GA_CLIENT_ID = "gaClientId";
+  public static final String VISITOR_TOKEN = "visitorToken";
 }

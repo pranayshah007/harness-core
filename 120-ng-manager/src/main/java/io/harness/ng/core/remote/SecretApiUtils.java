@@ -80,7 +80,7 @@ public class SecretApiUtils {
 
   public SecretDTOV2 toSecretDto(Secret secret) {
     SecretDTOV2Builder secretDTOV2Builder = SecretDTOV2.builder()
-                                                .identifier(secret.getSlug())
+                                                .identifier(secret.getIdentifier())
                                                 .name(secret.getName())
                                                 .orgIdentifier(secret.getOrg())
                                                 .projectIdentifier(secret.getProject())
@@ -197,14 +197,14 @@ public class SecretApiUtils {
   private SecretSpecDTO fromSecretFileSpec(Secret secret) {
     SecretFileSpec secretFileSpec = (SecretFileSpec) secret.getSpec();
 
-    return SecretFileSpecDTO.builder().secretManagerIdentifier(secretFileSpec.getSecretManagerSlug()).build();
+    return SecretFileSpecDTO.builder().secretManagerIdentifier(secretFileSpec.getSecretManagerIdentifier()).build();
   }
 
   private SecretSpecDTO fromSecretText(Secret secret) {
     SecretTextSpec secretTextSpec = (SecretTextSpec) secret.getSpec();
 
     return SecretTextSpecDTO.builder()
-        .secretManagerIdentifier(secretTextSpec.getSecretManagerSlug())
+        .secretManagerIdentifier(secretTextSpec.getSecretManagerIdentifier())
         .valueType(ValueType.valueOf(secretTextSpec.getValueType().value()))
         .value(secretTextSpec.getValue())
         .build();
@@ -290,7 +290,7 @@ public class SecretApiUtils {
 
   public Secret toSecret(SecretDTOV2 secretDTOV2) {
     Secret secret = new Secret()
-                        .slug(secretDTOV2.getIdentifier())
+                        .identifier(secretDTOV2.getIdentifier())
                         .name(secretDTOV2.getName())
                         .org(secretDTOV2.getOrgIdentifier())
                         .project(secretDTOV2.getProjectIdentifier())
@@ -428,14 +428,14 @@ public class SecretApiUtils {
   private SecretFileSpec getSecretFileSpec(SecretFileSpecDTO secretFileSpecDTO) {
     SecretFileSpec secretFileSpec = new SecretFileSpec();
     secretFileSpec.setType(SECRETFILE);
-    secretFileSpec.setSecretManagerSlug(secretFileSpecDTO.getSecretManagerIdentifier());
+    secretFileSpec.setSecretManagerIdentifier(secretFileSpecDTO.getSecretManagerIdentifier());
     return secretFileSpec;
   }
 
   private SecretTextSpec getSecretTextSpec(SecretTextSpecDTO secretTextSpecDTO) {
     SecretTextSpec secretTextSpec = new SecretTextSpec();
     secretTextSpec.setType(SECRETTEXT);
-    secretTextSpec.secretManagerSlug(secretTextSpecDTO.getSecretManagerIdentifier());
+    secretTextSpec.secretManagerIdentifier(secretTextSpecDTO.getSecretManagerIdentifier());
     secretTextSpec.setValueType(fromValue(secretTextSpecDTO.getValueType().name()));
     secretTextSpec.setValue(secretTextSpecDTO.getValue());
     return secretTextSpec;

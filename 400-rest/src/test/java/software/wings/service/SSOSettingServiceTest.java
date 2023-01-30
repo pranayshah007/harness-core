@@ -44,15 +44,15 @@ import software.wings.service.intfc.SSOSettingService;
 import software.wings.service.intfc.UserGroupService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
 import java.util.Iterator;
 import javax.validation.ConstraintViolationException;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.Query;
 
 @TargetModule(HarnessModule._950_NG_AUTHENTICATION_SERVICE)
 public class SSOSettingServiceTest extends WingsBaseTest {

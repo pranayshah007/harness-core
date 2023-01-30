@@ -15,6 +15,7 @@ import io.harness.pms.yaml.YamlUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 
@@ -191,5 +192,23 @@ public class FQN {
       stageNode = fqnList.get(3);
     }
     return stageNode.getUuidValue();
+  }
+
+  public FQN getBaseFQNTillOneOfGivenFields(Set<String> fields) {
+    for (int i = 0; i < fqnList.size(); i++) {
+      FQNNode fqnNode = fqnList.get(i);
+      if (fqnNode.getNodeType() != NodeType.KEY) {
+        continue;
+      }
+      String key = fqnNode.getKey();
+      if (fields.contains(key)) {
+        return FQN.builder().fqnList(fqnList.subList(0, i + 1)).build();
+      }
+    }
+    return null;
+  }
+
+  public FQN getParent() {
+    return FQN.builder().fqnList(fqnList.subList(0, fqnList.size() - 1)).build();
   }
 }

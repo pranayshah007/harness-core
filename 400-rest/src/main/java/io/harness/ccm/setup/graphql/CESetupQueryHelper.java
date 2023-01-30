@@ -21,10 +21,10 @@ import software.wings.graphql.schema.type.aggregation.QLIdFilter;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import java.util.List;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @Singleton
 @OwnedBy(CE)

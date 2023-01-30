@@ -64,7 +64,7 @@ public class StreamingDestinationsApiUtils {
   public StreamingDestinationResponse getStreamingDestinationResponse(StreamingDestination streamingDestination) {
     StreamingDestinationResponse streamingDestinationResponse = new StreamingDestinationResponse();
     StreamingDestinationDTO streamingDestinationDTO = new StreamingDestinationDTO();
-    streamingDestinationDTO.slug(streamingDestination.getIdentifier())
+    streamingDestinationDTO.identifier(streamingDestination.getIdentifier())
         .name(streamingDestination.getName())
         .status(streamingDestination.getStatus())
         .connectorRef(streamingDestination.getConnectorRef())
@@ -97,7 +97,7 @@ public class StreamingDestinationsApiUtils {
       sortField = PageUtils.SortFields.UNSUPPORTED;
     }
     switch (sortField) {
-      case SLUG:
+      case IDENTIFIER:
         fieldName = StreamingDestinationKeys.identifier;
         break;
       case NAME:

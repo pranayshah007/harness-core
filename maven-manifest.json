@@ -1,5 +1,5 @@
 {
-    "integrity": "24657a058bf2a5854a7b6841e0f92aa57bedd352e18cd78561042fdb2205e773",
+    "integrity": "bb728ce8da0378032569f89ba854cf577aa3f2b2fea675d2c68710f22c902367",
     "manifest": {
         "artifacts_mapping": {
             "allbegray.slack": [
@@ -103,6 +103,48 @@
             ],
             "au.com.bytecode.opencsv.bean": [
                 "@maven//:net_sf_opencsv_opencsv"
+            ],
+            "brave": [
+                "@maven//:io_zipkin_brave_brave"
+            ],
+            "brave.baggage": [
+                "@maven//:io_zipkin_brave_brave"
+            ],
+            "brave.handler": [
+                "@maven//:io_zipkin_brave_brave"
+            ],
+            "brave.http": [
+                "@maven//:io_zipkin_brave_brave_instrumentation_http"
+            ],
+            "brave.internal": [
+                "@maven//:io_zipkin_brave_brave"
+            ],
+            "brave.internal.baggage": [
+                "@maven//:io_zipkin_brave_brave"
+            ],
+            "brave.internal.codec": [
+                "@maven//:io_zipkin_brave_brave"
+            ],
+            "brave.internal.collect": [
+                "@maven//:io_zipkin_brave_brave"
+            ],
+            "brave.internal.extra": [
+                "@maven//:io_zipkin_brave_brave"
+            ],
+            "brave.internal.handler": [
+                "@maven//:io_zipkin_brave_brave"
+            ],
+            "brave.internal.propagation": [
+                "@maven//:io_zipkin_brave_brave"
+            ],
+            "brave.internal.recorder": [
+                "@maven//:io_zipkin_brave_brave"
+            ],
+            "brave.propagation": [
+                "@maven//:io_zipkin_brave_brave"
+            ],
+            "brave.sampler": [
+                "@maven//:io_zipkin_brave_brave"
             ],
             "ch.qos.logback.access": [
                 "@maven//:ch_qos_logback_logback_access"
@@ -805,6 +847,15 @@
             "com.amazonaws.services.costandusagereport.model.transform": [
                 "@maven//:com_amazonaws_aws_java_sdk_costandusagereport"
             ],
+            "com.amazonaws.services.costexplorer": [
+                "@maven//:com_amazonaws_aws_java_sdk_costexplorer"
+            ],
+            "com.amazonaws.services.costexplorer.model": [
+                "@maven//:com_amazonaws_aws_java_sdk_costexplorer"
+            ],
+            "com.amazonaws.services.costexplorer.model.transform": [
+                "@maven//:com_amazonaws_aws_java_sdk_costexplorer"
+            ],
             "com.amazonaws.services.ec2": [
                 "@maven//:com_amazonaws_aws_java_sdk_ec2"
             ],
@@ -1141,6 +1192,21 @@
             "com.auth0.jwt.interfaces": [
                 "@maven//:com_auth0_java_jwt"
             ],
+            "com.azure.containers.containerregistry": [
+                "@maven//:com_azure_azure_containers_containerregistry"
+            ],
+            "com.azure.containers.containerregistry.implementation": [
+                "@maven//:com_azure_azure_containers_containerregistry"
+            ],
+            "com.azure.containers.containerregistry.implementation.authentication": [
+                "@maven//:com_azure_azure_containers_containerregistry"
+            ],
+            "com.azure.containers.containerregistry.implementation.models": [
+                "@maven//:com_azure_azure_containers_containerregistry"
+            ],
+            "com.azure.containers.containerregistry.models": [
+                "@maven//:com_azure_azure_containers_containerregistry"
+            ],
             "com.azure.core.annotation": [
                 "@maven//:com_azure_azure_core"
             ],
@@ -1164,6 +1230,12 @@
             ],
             "com.azure.core.http.netty.implementation": [
                 "@maven//:com_azure_azure_core_http_netty"
+            ],
+            "com.azure.core.http.okhttp": [
+                "@maven//:com_azure_azure_core_http_okhttp"
+            ],
+            "com.azure.core.http.okhttp.implementation": [
+                "@maven//:com_azure_azure_core_http_okhttp"
             ],
             "com.azure.core.http.policy": [
                 "@maven//:com_azure_azure_core"
@@ -1194,6 +1266,36 @@
             ],
             "com.azure.core.implementation.util": [
                 "@maven//:com_azure_azure_core"
+            ],
+            "com.azure.core.management": [
+                "@maven//:com_azure_azure_core_management"
+            ],
+            "com.azure.core.management.exception": [
+                "@maven//:com_azure_azure_core_management"
+            ],
+            "com.azure.core.management.http.policy": [
+                "@maven//:com_azure_azure_core_management"
+            ],
+            "com.azure.core.management.implementation.http": [
+                "@maven//:com_azure_azure_core_management"
+            ],
+            "com.azure.core.management.implementation.polling": [
+                "@maven//:com_azure_azure_core_management"
+            ],
+            "com.azure.core.management.implementation.serializer": [
+                "@maven//:com_azure_azure_core_management"
+            ],
+            "com.azure.core.management.polling": [
+                "@maven//:com_azure_azure_core_management"
+            ],
+            "com.azure.core.management.profile": [
+                "@maven//:com_azure_azure_core_management"
+            ],
+            "com.azure.core.management.provider": [
+                "@maven//:com_azure_azure_core_management"
+            ],
+            "com.azure.core.management.serializer": [
+                "@maven//:com_azure_azure_core_management"
             ],
             "com.azure.core.models": [
                 "@maven//:com_azure_azure_core"
@@ -1233,6 +1335,441 @@
             ],
             "com.azure.identity.implementation.util": [
                 "@maven//:com_azure_azure_identity"
+            ],
+            "com.azure.resourcemanager": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager"
+            ],
+            "com.azure.resourcemanager.appplatform": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_appplatform"
+            ],
+            "com.azure.resourcemanager.appplatform.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_appplatform"
+            ],
+            "com.azure.resourcemanager.appplatform.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_appplatform"
+            ],
+            "com.azure.resourcemanager.appplatform.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_appplatform"
+            ],
+            "com.azure.resourcemanager.appplatform.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_appplatform"
+            ],
+            "com.azure.resourcemanager.appservice": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_appservice"
+            ],
+            "com.azure.resourcemanager.appservice.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_appservice"
+            ],
+            "com.azure.resourcemanager.appservice.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_appservice"
+            ],
+            "com.azure.resourcemanager.appservice.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_appservice"
+            ],
+            "com.azure.resourcemanager.appservice.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_appservice"
+            ],
+            "com.azure.resourcemanager.authorization": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_authorization"
+            ],
+            "com.azure.resourcemanager.authorization.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_authorization"
+            ],
+            "com.azure.resourcemanager.authorization.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_authorization"
+            ],
+            "com.azure.resourcemanager.authorization.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_authorization"
+            ],
+            "com.azure.resourcemanager.authorization.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_authorization"
+            ],
+            "com.azure.resourcemanager.authorization.utils": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_authorization"
+            ],
+            "com.azure.resourcemanager.cdn": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_cdn"
+            ],
+            "com.azure.resourcemanager.cdn.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_cdn"
+            ],
+            "com.azure.resourcemanager.cdn.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_cdn"
+            ],
+            "com.azure.resourcemanager.cdn.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_cdn"
+            ],
+            "com.azure.resourcemanager.cdn.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_cdn"
+            ],
+            "com.azure.resourcemanager.compute": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_compute"
+            ],
+            "com.azure.resourcemanager.compute.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_compute"
+            ],
+            "com.azure.resourcemanager.compute.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_compute"
+            ],
+            "com.azure.resourcemanager.compute.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_compute"
+            ],
+            "com.azure.resourcemanager.compute.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_compute"
+            ],
+            "com.azure.resourcemanager.containerinstance": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerinstance"
+            ],
+            "com.azure.resourcemanager.containerinstance.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerinstance"
+            ],
+            "com.azure.resourcemanager.containerinstance.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerinstance"
+            ],
+            "com.azure.resourcemanager.containerinstance.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerinstance"
+            ],
+            "com.azure.resourcemanager.containerinstance.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerinstance"
+            ],
+            "com.azure.resourcemanager.containerregistry": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerregistry"
+            ],
+            "com.azure.resourcemanager.containerregistry.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerregistry"
+            ],
+            "com.azure.resourcemanager.containerregistry.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerregistry"
+            ],
+            "com.azure.resourcemanager.containerregistry.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerregistry"
+            ],
+            "com.azure.resourcemanager.containerregistry.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerregistry"
+            ],
+            "com.azure.resourcemanager.containerservice": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerservice"
+            ],
+            "com.azure.resourcemanager.containerservice.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerservice"
+            ],
+            "com.azure.resourcemanager.containerservice.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerservice"
+            ],
+            "com.azure.resourcemanager.containerservice.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerservice"
+            ],
+            "com.azure.resourcemanager.containerservice.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerservice"
+            ],
+            "com.azure.resourcemanager.cosmos": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_cosmos"
+            ],
+            "com.azure.resourcemanager.cosmos.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_cosmos"
+            ],
+            "com.azure.resourcemanager.cosmos.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_cosmos"
+            ],
+            "com.azure.resourcemanager.cosmos.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_cosmos"
+            ],
+            "com.azure.resourcemanager.cosmos.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_cosmos"
+            ],
+            "com.azure.resourcemanager.dns": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_dns"
+            ],
+            "com.azure.resourcemanager.dns.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_dns"
+            ],
+            "com.azure.resourcemanager.dns.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_dns"
+            ],
+            "com.azure.resourcemanager.dns.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_dns"
+            ],
+            "com.azure.resourcemanager.dns.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_dns"
+            ],
+            "com.azure.resourcemanager.eventhubs": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_eventhubs"
+            ],
+            "com.azure.resourcemanager.eventhubs.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_eventhubs"
+            ],
+            "com.azure.resourcemanager.eventhubs.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_eventhubs"
+            ],
+            "com.azure.resourcemanager.eventhubs.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_eventhubs"
+            ],
+            "com.azure.resourcemanager.eventhubs.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_eventhubs"
+            ],
+            "com.azure.resourcemanager.keyvault": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_keyvault"
+            ],
+            "com.azure.resourcemanager.keyvault.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_keyvault"
+            ],
+            "com.azure.resourcemanager.keyvault.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_keyvault"
+            ],
+            "com.azure.resourcemanager.keyvault.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_keyvault"
+            ],
+            "com.azure.resourcemanager.keyvault.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_keyvault"
+            ],
+            "com.azure.resourcemanager.monitor": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_monitor"
+            ],
+            "com.azure.resourcemanager.monitor.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_monitor"
+            ],
+            "com.azure.resourcemanager.monitor.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_monitor"
+            ],
+            "com.azure.resourcemanager.monitor.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_monitor"
+            ],
+            "com.azure.resourcemanager.monitor.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_monitor"
+            ],
+            "com.azure.resourcemanager.msi": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_msi"
+            ],
+            "com.azure.resourcemanager.msi.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_msi"
+            ],
+            "com.azure.resourcemanager.msi.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_msi"
+            ],
+            "com.azure.resourcemanager.msi.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_msi"
+            ],
+            "com.azure.resourcemanager.msi.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_msi"
+            ],
+            "com.azure.resourcemanager.network": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_network"
+            ],
+            "com.azure.resourcemanager.network.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_network"
+            ],
+            "com.azure.resourcemanager.network.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_network"
+            ],
+            "com.azure.resourcemanager.network.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_network"
+            ],
+            "com.azure.resourcemanager.network.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_network"
+            ],
+            "com.azure.resourcemanager.privatedns": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_privatedns"
+            ],
+            "com.azure.resourcemanager.privatedns.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_privatedns"
+            ],
+            "com.azure.resourcemanager.privatedns.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_privatedns"
+            ],
+            "com.azure.resourcemanager.privatedns.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_privatedns"
+            ],
+            "com.azure.resourcemanager.privatedns.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_privatedns"
+            ],
+            "com.azure.resourcemanager.redis": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_redis"
+            ],
+            "com.azure.resourcemanager.redis.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_redis"
+            ],
+            "com.azure.resourcemanager.redis.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_redis"
+            ],
+            "com.azure.resourcemanager.redis.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_redis"
+            ],
+            "com.azure.resourcemanager.redis.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_redis"
+            ],
+            "com.azure.resourcemanager.resources": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluentcore": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluentcore.arm": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluentcore.arm.collection": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluentcore.arm.collection.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluentcore.arm.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluentcore.arm.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluentcore.arm.models.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluentcore.collection": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluentcore.dag": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluentcore.exception": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluentcore.model": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluentcore.model.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluentcore.policy": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluentcore.rest": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.fluentcore.utils": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.resources.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources"
+            ],
+            "com.azure.resourcemanager.search": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_search"
+            ],
+            "com.azure.resourcemanager.search.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_search"
+            ],
+            "com.azure.resourcemanager.search.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_search"
+            ],
+            "com.azure.resourcemanager.search.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_search"
+            ],
+            "com.azure.resourcemanager.search.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_search"
+            ],
+            "com.azure.resourcemanager.servicebus": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_servicebus"
+            ],
+            "com.azure.resourcemanager.servicebus.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_servicebus"
+            ],
+            "com.azure.resourcemanager.servicebus.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_servicebus"
+            ],
+            "com.azure.resourcemanager.servicebus.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_servicebus"
+            ],
+            "com.azure.resourcemanager.servicebus.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_servicebus"
+            ],
+            "com.azure.resourcemanager.sql": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_sql"
+            ],
+            "com.azure.resourcemanager.sql.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_sql"
+            ],
+            "com.azure.resourcemanager.sql.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_sql"
+            ],
+            "com.azure.resourcemanager.sql.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_sql"
+            ],
+            "com.azure.resourcemanager.sql.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_sql"
+            ],
+            "com.azure.resourcemanager.storage": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_storage"
+            ],
+            "com.azure.resourcemanager.storage.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_storage"
+            ],
+            "com.azure.resourcemanager.storage.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_storage"
+            ],
+            "com.azure.resourcemanager.storage.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_storage"
+            ],
+            "com.azure.resourcemanager.storage.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_storage"
+            ],
+            "com.azure.resourcemanager.trafficmanager": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_trafficmanager"
+            ],
+            "com.azure.resourcemanager.trafficmanager.fluent": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_trafficmanager"
+            ],
+            "com.azure.resourcemanager.trafficmanager.fluent.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_trafficmanager"
+            ],
+            "com.azure.resourcemanager.trafficmanager.implementation": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_trafficmanager"
+            ],
+            "com.azure.resourcemanager.trafficmanager.models": [
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_trafficmanager"
+            ],
+            "com.azure.security.keyvault.administration": [
+                "@maven//:com_azure_azure_security_keyvault_administration"
+            ],
+            "com.azure.security.keyvault.administration.implementation": [
+                "@maven//:com_azure_azure_security_keyvault_administration"
+            ],
+            "com.azure.security.keyvault.administration.implementation.models": [
+                "@maven//:com_azure_azure_security_keyvault_administration"
+            ],
+            "com.azure.security.keyvault.administration.models": [
+                "@maven//:com_azure_azure_security_keyvault_administration"
+            ],
+            "com.azure.security.keyvault.keys": [
+                "@maven//:com_azure_azure_security_keyvault_keys"
+            ],
+            "com.azure.security.keyvault.keys.cryptography": [
+                "@maven//:com_azure_azure_security_keyvault_keys"
+            ],
+            "com.azure.security.keyvault.keys.cryptography.models": [
+                "@maven//:com_azure_azure_security_keyvault_keys"
+            ],
+            "com.azure.security.keyvault.keys.implementation": [
+                "@maven//:com_azure_azure_security_keyvault_keys"
+            ],
+            "com.azure.security.keyvault.keys.implementation.models": [
+                "@maven//:com_azure_azure_security_keyvault_keys"
+            ],
+            "com.azure.security.keyvault.keys.models": [
+                "@maven//:com_azure_azure_security_keyvault_keys"
+            ],
+            "com.azure.security.keyvault.secrets": [
+                "@maven//:com_azure_azure_security_keyvault_secrets"
+            ],
+            "com.azure.security.keyvault.secrets.implementation": [
+                "@maven//:com_azure_azure_security_keyvault_secrets"
+            ],
+            "com.azure.security.keyvault.secrets.models": [
+                "@maven//:com_azure_azure_security_keyvault_secrets"
             ],
             "com.azure.storage.blob": [
                 "@maven//:com_azure_azure_storage_blob"
@@ -1281,6 +1818,30 @@
             ],
             "com.azure.storage.common.sas": [
                 "@maven//:com_azure_azure_storage_common"
+            ],
+            "com.azure.storage.file.share": [
+                "@maven//:com_azure_azure_storage_file_share"
+            ],
+            "com.azure.storage.file.share.implementation": [
+                "@maven//:com_azure_azure_storage_file_share"
+            ],
+            "com.azure.storage.file.share.implementation.models": [
+                "@maven//:com_azure_azure_storage_file_share"
+            ],
+            "com.azure.storage.file.share.implementation.util": [
+                "@maven//:com_azure_azure_storage_file_share"
+            ],
+            "com.azure.storage.file.share.models": [
+                "@maven//:com_azure_azure_storage_file_share"
+            ],
+            "com.azure.storage.file.share.options": [
+                "@maven//:com_azure_azure_storage_file_share"
+            ],
+            "com.azure.storage.file.share.sas": [
+                "@maven//:com_azure_azure_storage_file_share"
+            ],
+            "com.azure.storage.file.share.specialized": [
+                "@maven//:com_azure_azure_storage_file_share"
             ],
             "com.azure.storage.internal.avro.implementation": [
                 "@maven//:com_azure_azure_storage_internal_avro"
@@ -1519,6 +2080,192 @@
                 "@maven//:com_fasterxml_woodstox_woodstox_core",
                 "@maven//:org_codehaus_woodstox_woodstox_core_asl"
             ],
+            "com.ctc.wstx.shaded.msv.org_isorelax.catalog": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv.org_isorelax.dispatcher": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv.org_isorelax.dispatcher.impl": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv.org_isorelax.jaxp": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv.org_isorelax.verifier": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv.org_isorelax.verifier.impl": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv.org_jp_gr_xml.dom": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv.org_jp_gr_xml.sax": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv.org_jp_gr_xml.xml": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv.relaxng_datatype": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv.relaxng_datatype.helpers": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv.xsd_util": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.datatype": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.datatype.regexp": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.datatype.xsd": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.datatype.xsd.datetime": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.datatype.xsd.ngimpl": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.datatype.xsd.regex": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.driver.textui": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.grammar": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.grammar.dtd": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.grammar.relax": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.grammar.relaxng": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.grammar.relaxng.datatype": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.grammar.trex": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.grammar.trex.typed": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.grammar.util": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.grammar.xmlschema": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.reader": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.reader.datatype": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.reader.datatype.xsd": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.reader.dtd": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.reader.relax": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.reader.relax.core": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.reader.relax.core.checker": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.reader.trex": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.reader.trex.classic": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.reader.trex.ng": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.reader.trex.ng.comp": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.reader.trex.typed": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.reader.util": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.reader.xmlschema": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.relaxns.grammar": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.relaxns.grammar.relax": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.relaxns.grammar.trex": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.relaxns.reader": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.relaxns.reader.relax": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.relaxns.reader.trex": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.relaxns.verifier": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.scanner.dtd": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.util": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.util.xml": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.verifier": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.verifier.identity": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.verifier.jarv": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.verifier.jaxp": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.verifier.psvi": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.verifier.regexp": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.verifier.regexp.xmlschema": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.verifier.util": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.writer": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
+            "com.ctc.wstx.shaded.msv_core.writer.relaxng": [
+                "@maven//:com_fasterxml_woodstox_woodstox_core"
+            ],
             "com.ctc.wstx.sr": [
                 "@maven//:com_fasterxml_woodstox_woodstox_core",
                 "@maven//:org_codehaus_woodstox_woodstox_core_asl"
@@ -1555,6 +2302,9 @@
             ],
             "com.eclipsesource.v8.utils.typedarrays": [
                 "@maven//:com_eclipsesource_j2v8_j2v8_macosx_x86_64"
+            ],
+            "com.esotericsoftware.asm": [
+                "@maven//:com_esotericsoftware_reflectasm"
             ],
             "com.esotericsoftware.kryo": [
                 "@maven//:com_esotericsoftware_kryo"
@@ -2740,6 +3490,34 @@
             "com.google.cloud.datastore.testing": [
                 "@maven//:com_google_cloud_google_cloud_datastore"
             ],
+            "com.google.cloud.functions.v1": [
+                "@maven//:com_google_api_grpc_proto_google_cloud_functions_v1",
+                "@maven//:com_google_cloud_google_cloud_functions"
+            ],
+            "com.google.cloud.functions.v1.stub": [
+                "@maven//:com_google_cloud_google_cloud_functions"
+            ],
+            "com.google.cloud.functions.v2": [
+                "@maven//:com_google_api_grpc_proto_google_cloud_functions_v2",
+                "@maven//:com_google_cloud_google_cloud_functions"
+            ],
+            "com.google.cloud.functions.v2.stub": [
+                "@maven//:com_google_cloud_google_cloud_functions"
+            ],
+            "com.google.cloud.functions.v2alpha": [
+                "@maven//:com_google_api_grpc_proto_google_cloud_functions_v2alpha",
+                "@maven//:com_google_cloud_google_cloud_functions"
+            ],
+            "com.google.cloud.functions.v2alpha.stub": [
+                "@maven//:com_google_cloud_google_cloud_functions"
+            ],
+            "com.google.cloud.functions.v2beta": [
+                "@maven//:com_google_api_grpc_proto_google_cloud_functions_v2beta",
+                "@maven//:com_google_cloud_google_cloud_functions"
+            ],
+            "com.google.cloud.functions.v2beta.stub": [
+                "@maven//:com_google_cloud_google_cloud_functions"
+            ],
             "com.google.cloud.grpc": [
                 "@maven//:com_google_cloud_google_cloud_core_grpc"
             ],
@@ -2801,6 +3579,13 @@
             ],
             "com.google.cloud.resourcemanager.testing": [
                 "@maven//:com_google_cloud_google_cloud_resourcemanager"
+            ],
+            "com.google.cloud.run.v2": [
+                "@maven//:com_google_api_grpc_proto_google_cloud_run_v2",
+                "@maven//:com_google_cloud_google_cloud_run"
+            ],
+            "com.google.cloud.run.v2.stub": [
+                "@maven//:com_google_cloud_google_cloud_run"
             ],
             "com.google.cloud.secretmanager.v1": [
                 "@maven//:com_google_api_grpc_proto_google_cloud_secretmanager_v1",
@@ -2940,6 +3725,7 @@
                 "@maven//:com_google_code_gson_gson"
             ],
             "com.google.iam.v1": [
+                "@maven//:com_google_api_grpc_grpc_google_iam_v1",
                 "@maven//:com_google_api_grpc_proto_google_iam_v1"
             ],
             "com.google.iam.v1.logging": [
@@ -3006,6 +3792,9 @@
             ],
             "com.google.pubsub.v1": [
                 "@maven//:com_google_api_grpc_proto_google_cloud_pubsub_v1"
+            ],
+            "com.google.re2j": [
+                "@maven//:com_google_re2j_re2j"
             ],
             "com.google.rpc": [
                 "@maven//:com_google_api_grpc_proto_google_common_protos"
@@ -5038,6 +5827,9 @@
             "com.jakewharton.retrofit": [
                 "@maven//:com_jakewharton_retrofit_retrofit1_okhttp3_client"
             ],
+            "com.jakewharton.retrofit2.adapter.reactor": [
+                "@maven//:com_jakewharton_retrofit_retrofit2_reactor_adapter"
+            ],
             "com.jayway.jsonpath": [
                 "@maven//:com_jayway_jsonpath_json_path"
             ],
@@ -5426,7 +6218,8 @@
             "com.mongodb": [
                 "@maven//:org_mongodb_mongo_java_driver",
                 "@maven//:org_mongodb_mongodb_driver",
-                "@maven//:org_mongodb_mongodb_driver_core"
+                "@maven//:org_mongodb_mongodb_driver_core",
+                "@maven//:org_mongodb_mongodb_driver_legacy"
             ],
             "com.mongodb.annotations": [
                 "@maven//:org_mongodb_mongo_java_driver",
@@ -5437,10 +6230,12 @@
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.async": [
-                "@maven//:org_mongodb_mongo_java_driver"
+                "@maven//:org_mongodb_mongo_java_driver",
+                "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.binding": [
-                "@maven//:org_mongodb_mongo_java_driver"
+                "@maven//:org_mongodb_mongo_java_driver",
+                "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.bulk": [
                 "@maven//:org_mongodb_mongo_java_driver",
@@ -5471,12 +6266,14 @@
             ],
             "com.mongodb.client.jndi": [
                 "@maven//:org_mongodb_mongo_java_driver",
-                "@maven//:org_mongodb_mongodb_driver"
+                "@maven//:org_mongodb_mongodb_driver",
+                "@maven//:org_mongodb_mongodb_driver_legacy"
             ],
             "com.mongodb.client.model": [
                 "@maven//:org_mongodb_mongo_java_driver",
                 "@maven//:org_mongodb_mongodb_driver",
-                "@maven//:org_mongodb_mongodb_driver_core"
+                "@maven//:org_mongodb_mongodb_driver_core",
+                "@maven//:org_mongodb_mongodb_driver_legacy"
             ],
             "com.mongodb.client.model.changestream": [
                 "@maven//:org_mongodb_mongo_java_driver",
@@ -5520,7 +6317,8 @@
             ],
             "com.mongodb.gridfs": [
                 "@maven//:org_mongodb_mongo_java_driver",
-                "@maven//:org_mongodb_mongodb_driver"
+                "@maven//:org_mongodb_mongodb_driver",
+                "@maven//:org_mongodb_mongodb_driver_legacy"
             ],
             "com.mongodb.internal": [
                 "@maven//:org_mongodb_mongo_java_driver",
@@ -5528,9 +6326,6 @@
             ],
             "com.mongodb.internal.async": [
                 "@maven//:org_mongodb_mongo_java_driver",
-                "@maven//:org_mongodb_mongodb_driver_core"
-            ],
-            "com.mongodb.internal.async.client": [
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.internal.authentication": [
@@ -5545,18 +6340,12 @@
                 "@maven//:org_mongodb_mongo_java_driver",
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
-            "com.mongodb.internal.bulk": [
-                "@maven//:org_mongodb_mongodb_driver_core"
-            ],
             "com.mongodb.internal.capi": [
                 "@maven//:org_mongodb_mongo_java_driver",
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.internal.client.model": [
                 "@maven//:org_mongodb_mongo_java_driver",
-                "@maven//:org_mongodb_mongodb_driver_core"
-            ],
-            "com.mongodb.internal.client.model.changestream": [
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.internal.connection": [
@@ -5588,13 +6377,11 @@
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.internal.management.jmx": [
-                "@maven//:org_mongodb_mongo_java_driver"
-            ],
-            "com.mongodb.internal.operation": [
                 "@maven//:org_mongodb_mongo_java_driver",
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
-            "com.mongodb.internal.selector": [
+            "com.mongodb.internal.operation": [
+                "@maven//:org_mongodb_mongo_java_driver",
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.internal.session": [
@@ -5618,7 +6405,8 @@
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.operation": [
-                "@maven//:org_mongodb_mongo_java_driver"
+                "@maven//:org_mongodb_mongo_java_driver",
+                "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.selector": [
                 "@maven//:org_mongodb_mongo_java_driver",
@@ -5630,7 +6418,8 @@
             ],
             "com.mongodb.util": [
                 "@maven//:org_mongodb_mongo_java_driver",
-                "@maven//:org_mongodb_mongodb_driver"
+                "@maven//:org_mongodb_mongodb_driver",
+                "@maven//:org_mongodb_mongodb_driver_legacy"
             ],
             "com.networknt.schema": [
                 "@maven//:com_networknt_json_schema_validator"
@@ -6582,6 +7371,27 @@
             "com.spotify.docker.client.npipe": [
                 "@maven//:com_spotify_docker_client"
             ],
+            "com.squareup.okhttp": [
+                "@maven//:com_squareup_okhttp_okhttp"
+            ],
+            "com.squareup.okhttp.internal": [
+                "@maven//:com_squareup_okhttp_okhttp"
+            ],
+            "com.squareup.okhttp.internal.framed": [
+                "@maven//:com_squareup_okhttp_okhttp"
+            ],
+            "com.squareup.okhttp.internal.http": [
+                "@maven//:com_squareup_okhttp_okhttp"
+            ],
+            "com.squareup.okhttp.internal.io": [
+                "@maven//:com_squareup_okhttp_okhttp"
+            ],
+            "com.squareup.okhttp.internal.tls": [
+                "@maven//:com_squareup_okhttp_okhttp"
+            ],
+            "com.squareup.okhttp.logging": [
+                "@maven//:com_squareup_okhttp_logging_interceptor"
+            ],
             "com.squareup.wire": [
                 "@maven//:com_squareup_wire_wire_runtime"
             ],
@@ -6725,12 +7535,10 @@
             ],
             "com.sun.activation.registries": [
                 "@maven//:com_sun_activation_jakarta_activation",
-                "@maven//:com_sun_activation_javax_activation",
                 "@maven//:javax_activation_activation"
             ],
             "com.sun.activation.viewers": [
                 "@maven//:com_sun_activation_jakarta_activation",
-                "@maven//:com_sun_activation_javax_activation",
                 "@maven//:javax_activation_activation"
             ],
             "com.sun.codemodel": [
@@ -7771,6 +8579,72 @@
             ],
             "de.skuzzle.semantic": [
                 "@maven//:de_skuzzle_semantic_version"
+            ],
+            "dev.morphia": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.aggregation": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.annotations": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.converters": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.converters.experimental": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.dao": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.geo": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.internal": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.logging": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.logging.jdk": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.mapping": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.mapping.cache": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.mapping.experimental": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.mapping.lazy": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.mapping.lazy.proxy": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.mapping.validation": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.mapping.validation.classrules": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.mapping.validation.fieldrules": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.query": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.query.internal": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.query.validation": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.utils": [
+                "@maven//:dev_morphia_morphia_core"
             ],
             "dig": [
                 "@maven//:dnsjava_dnsjava"
@@ -9490,6 +10364,9 @@
             "io.grpc.channelz.v1": [
                 "@maven//:io_grpc_grpc_services"
             ],
+            "io.grpc.googleapis": [
+                "@maven//:io_grpc_grpc_googleapis"
+            ],
             "io.grpc.grpclb": [
                 "@maven//:io_grpc_grpc_grpclb"
             ],
@@ -9737,6 +10614,219 @@
             "io.grpc.util": [
                 "@maven//:io_grpc_grpc_core"
             ],
+            "io.grpc.xds": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.internal": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.internal.rbac.engine": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.internal.security": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.internal.security.certprovider": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.internal.security.trust": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.orca": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.com.github.udpa.udpa.type.v1": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.com.github.xds.core.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.com.github.xds.data.orca.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.com.github.xds.service.orca.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.com.github.xds.type.matcher.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.com.github.xds.type.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.com.google.api.expr.v1alpha1": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.envoy.annotations": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.admin.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.api.v2": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.api.v2.auth": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.api.v2.cluster": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.api.v2.core": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.api.v2.endpoint": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.api.v2.listener": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.api.v2.route": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.accesslog.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.bootstrap.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.cluster.aggregate.v2alpha": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.cluster.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.core.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.endpoint.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.filter.accesslog.v2": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.filter.fault.v2": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.filter.http.fault.v2": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.filter.http.router.v2": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.filter.network.http_connection_manager.v2": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.listener.v2": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.listener.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.metrics.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.overload.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.rbac.v2": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.rbac.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.route.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.trace.v2": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.config.trace.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.extensions.clusters.aggregate.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.extensions.filters.common.fault.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.extensions.filters.http.fault.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.extensions.filters.http.rbac.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.extensions.filters.http.router.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.extensions.load_balancing_policies.least_request.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.extensions.load_balancing_policies.ring_hash.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.extensions.load_balancing_policies.round_robin.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.extensions.load_balancing_policies.wrr_locality.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.extensions.transport_sockets.tls.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.service.discovery.v2": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.service.discovery.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.service.load_stats.v2": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.service.load_stats.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.service.status.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.type": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.type.http.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.type.matcher": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.type.matcher.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.type.metadata.v2": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.type.metadata.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.type.tracing.v2": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.type.tracing.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.envoy.type.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.io.envoyproxy.pgv.validate": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.udpa.annotations": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
+            "io.grpc.xds.shaded.xds.annotations.v3": [
+                "@maven//:io_grpc_grpc_xds"
+            ],
             "io.gsonfire": [
                 "@maven//:io_gsonfire_gson_fire"
             ],
@@ -9761,6 +10851,33 @@
             "io.gsonfire.util.reflection": [
                 "@maven//:io_gsonfire_gson_fire"
             ],
+            "io.harness": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.agent": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.agent.sdk": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.alert": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.annotation": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.annotations": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.annotations.dev": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.annotations.retry": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.annotations.test": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
             "io.harness.antlr": [
                 "@maven//:io_harness_cv_data_collection_dsl"
             ],
@@ -9769,6 +10886,27 @@
             ],
             "io.harness.antlr.visitor": [
                 "@maven//:io_harness_cv_data_collection_dsl"
+            ],
+            "io.harness.artifact": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.beans": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.cache": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.ccm": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.ccm.license": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.ccm.license.remote": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.cd": [
+                "@maven//:io_harness_ng_license_beans"
             ],
             "io.harness.cf": [
                 "@maven//:io_harness_ff_java_server_sdk"
@@ -9779,34 +10917,19 @@
             "io.harness.cf.auth": [
                 "@maven//:io_harness_ff_java_server_sdk"
             ],
-            "io.harness.cf.client": [
-                "@maven//:io_harness_ff_java_server_sdk"
-            ],
             "io.harness.cf.client.api": [
-                "@maven//:io_harness_ff_java_server_sdk"
-            ],
-            "io.harness.cf.client.api.analytics": [
-                "@maven//:io_harness_ff_java_server_sdk"
-            ],
-            "io.harness.cf.client.api.rules": [
                 "@maven//:io_harness_ff_java_server_sdk"
             ],
             "io.harness.cf.client.common": [
                 "@maven//:io_harness_ff_java_server_sdk"
             ],
+            "io.harness.cf.client.connector": [
+                "@maven//:io_harness_ff_java_server_sdk"
+            ],
             "io.harness.cf.client.dto": [
                 "@maven//:io_harness_ff_java_server_sdk"
             ],
-            "io.harness.cf.metrics": [
-                "@maven//:io_harness_ff_java_server_sdk"
-            ],
-            "io.harness.cf.metrics.api": [
-                "@maven//:io_harness_ff_java_server_sdk"
-            ],
-            "io.harness.cf.metrics.auth": [
-                "@maven//:io_harness_ff_java_server_sdk"
-            ],
-            "io.harness.cf.metrics.model": [
+            "io.harness.cf.client.logger": [
                 "@maven//:io_harness_ff_java_server_sdk"
             ],
             "io.harness.cf.model": [
@@ -9824,6 +10947,45 @@
             "io.harness.cf.version.model": [
                 "@maven//:io_harness_ff_java_server_sdk"
             ],
+            "io.harness.common": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.concurrent": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.config": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.configuration": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.connector": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.context": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.core": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.cvng.beans.appd": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.data.algorithm": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.data.encoding": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.data.parser": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.data.structure": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.data.validator": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
             "io.harness.datacollection": [
                 "@maven//:io_harness_cv_data_collection_dsl"
             ],
@@ -9839,11 +11001,401 @@
             "io.harness.datacollection.utils": [
                 "@maven//:io_harness_cv_data_collection_dsl"
             ],
-            "io.harness.spec.server.ng": [
-                "@maven//:io_harness_ng_manager_server_spec"
+            "io.harness.delegate": [
+                "@maven//:io_harness_ng_license_beans"
             ],
-            "io.harness.spec.server.ng.model": [
-                "@maven//:io_harness_ng_manager_server_spec"
+            "io.harness.distribution.barrier": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.distribution.constraint": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.distribution.idempotence": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.encryption": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.environment": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.eraro": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.eraro.mongo": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.errorhandling": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.event": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.event.model": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.eventsframework.schemas.entity": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.exception": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.exception.bean": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.exception.exceptionmanager": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.exception.exceptionmanager.exceptionhandler": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.exception.ngexception": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.exception.ngexception.beans": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.exception.ngexception.beans.templateservice": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.exception.ngexception.beans.yamlschema": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.exception.runtime": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.exception.runtime.azure": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.exception.runtime.serverless": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.exceptions": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.expression": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.expression.functors": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.fieldrecaster": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.filestore": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.filesystem": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.flow": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.gitsync.beans": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.gitsync.interceptor": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.gitsync.sdk": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.govern": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.governance": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.hash": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.health": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.histogram": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.http": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.instancesyncmonitoring.model": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.instancesyncmonitoring.module": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.instancesyncmonitoring.service": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.jackson": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.k8s": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.licensing": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.licensing.beans": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.licensing.beans.modules": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.licensing.beans.response": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.licensing.beans.summary": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.licensing.remote": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.licensing.remote.admin": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.licensing.utils": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.limits.impl.memory": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.limits.impl.model": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.limits.lib": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.logging": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.logstreaming": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.maintenance": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.manage": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.metrics": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.metrics.beans": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.metrics.jobs": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.metrics.modules": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.metrics.service.api": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.metrics.service.impl": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.morphia": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.network": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.ng.beans": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.ng.core": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.ng.core.common.beans": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.ng.core.deserializer": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.ng.core.dto": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.ng.core.entitydetail": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.ng.core.entitysetupusage.dto": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.ng.core.event": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.ng.core.logging": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.ng.core.mapper": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.ng.core.utils": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.ngtriggers.conditionchecker": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.notification": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.obfuscate": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.observer": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.packages": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.pms.dashboards": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.pms.yaml": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.pms.yaml.validation": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.preflight": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.reflection": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.registries": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.registries.exceptions": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.remote": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.remote.client": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.request": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.rest": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.secret": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.secrets": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.security": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.security.annotations": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.security.dto": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.serializer": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.serializer.jackson": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.serializer.kryo": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.serializer.morphia": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.serviceaccount": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.smp.license": [
+                "@maven//:io_harness_smp_license"
+            ],
+            "io.harness.smp.license.models": [
+                "@maven//:io_harness_smp_license"
+            ],
+            "io.harness.smp.license.util": [
+                "@maven//:io_harness_smp_license"
+            ],
+            "io.harness.smp.license.v1": [
+                "@maven//:io_harness_smp_license"
+            ],
+            "io.harness.state": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.stream": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.supplier": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.swagger": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.tasks": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.testing": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.text": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.text.resolver": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.threading": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.time": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.transformers": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.transformers.simplevalue": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.utils": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.utils.function": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.validation": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.validator": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.version": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.virtualstack": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.waiter": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.webhook": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.windows": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.yaml": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.yaml.core": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.harness.yaml.core.timeout": [
+                "@maven//:io_harness_ng_license_beans"
             ],
             "io.jsonwebtoken": [
                 "@maven//:io_jsonwebtoken_jjwt",
@@ -9971,6 +11523,7 @@
                 "@maven//:io_kubernetes_client_java_api"
             ],
             "io.kubernetes.client.openapi.models": [
+                "@maven//:io_kubernetes_client_java_api",
                 "@maven//:io_kubernetes_client_java_api_fluent"
             ],
             "io.kubernetes.client.proto": [
@@ -10401,7 +11954,8 @@
                 "@maven//:io_netty_netty_handler"
             ],
             "io.netty.handler.ssl.ocsp": [
-                "@maven//:io_netty_netty_handler"
+                "@maven//:io_netty_netty_handler",
+                "@maven//:io_netty_netty_handler_ssl_ocsp"
             ],
             "io.netty.handler.ssl.util": [
                 "@maven//:io_netty_netty_handler"
@@ -10414,6 +11968,9 @@
             ],
             "io.netty.handler.traffic": [
                 "@maven//:io_netty_netty_handler"
+            ],
+            "io.netty.incubator.codec.quic": [
+                "@maven//:io_netty_incubator_netty_incubator_codec_classes_quic"
             ],
             "io.netty.resolver": [
                 "@maven//:io_netty_netty_resolver"
@@ -10541,6 +12098,27 @@
             "io.opencensus.metrics.export": [
                 "@maven//:io_opencensus_opencensus_api"
             ],
+            "io.opencensus.proto.agent.common.v1": [
+                "@maven//:io_opencensus_opencensus_proto"
+            ],
+            "io.opencensus.proto.agent.metrics.v1": [
+                "@maven//:io_opencensus_opencensus_proto"
+            ],
+            "io.opencensus.proto.agent.trace.v1": [
+                "@maven//:io_opencensus_opencensus_proto"
+            ],
+            "io.opencensus.proto.metrics.v1": [
+                "@maven//:io_opencensus_opencensus_proto"
+            ],
+            "io.opencensus.proto.resource.v1": [
+                "@maven//:io_opencensus_opencensus_proto"
+            ],
+            "io.opencensus.proto.stats.v1": [
+                "@maven//:io_opencensus_opencensus_proto"
+            ],
+            "io.opencensus.proto.trace.v1": [
+                "@maven//:io_opencensus_opencensus_proto"
+            ],
             "io.opencensus.resource": [
                 "@maven//:io_opencensus_opencensus_api"
             ],
@@ -10577,6 +12155,42 @@
             ],
             "io.opencensus.trace.unsafe": [
                 "@maven//:io_opencensus_opencensus_api"
+            ],
+            "io.opentelemetry.api": [
+                "@maven//:io_opentelemetry_opentelemetry_api"
+            ],
+            "io.opentelemetry.api.baggage": [
+                "@maven//:io_opentelemetry_opentelemetry_api"
+            ],
+            "io.opentelemetry.api.baggage.propagation": [
+                "@maven//:io_opentelemetry_opentelemetry_api"
+            ],
+            "io.opentelemetry.api.common": [
+                "@maven//:io_opentelemetry_opentelemetry_api"
+            ],
+            "io.opentelemetry.api.internal": [
+                "@maven//:io_opentelemetry_opentelemetry_api"
+            ],
+            "io.opentelemetry.api.metrics": [
+                "@maven//:io_opentelemetry_opentelemetry_api"
+            ],
+            "io.opentelemetry.api.trace": [
+                "@maven//:io_opentelemetry_opentelemetry_api"
+            ],
+            "io.opentelemetry.api.trace.propagation": [
+                "@maven//:io_opentelemetry_opentelemetry_api"
+            ],
+            "io.opentelemetry.api.trace.propagation.internal": [
+                "@maven//:io_opentelemetry_opentelemetry_api"
+            ],
+            "io.opentelemetry.context": [
+                "@maven//:io_opentelemetry_opentelemetry_context"
+            ],
+            "io.opentelemetry.context.internal.shaded": [
+                "@maven//:io_opentelemetry_opentelemetry_context"
+            ],
+            "io.opentelemetry.context.propagation": [
+                "@maven//:io_opentelemetry_opentelemetry_context"
             ],
             "io.perfmark": [
                 "@maven//:io_perfmark_perfmark_api"
@@ -10873,6 +12487,18 @@
             ],
             "io.restassured.spi": [
                 "@maven//:io_rest_assured_rest_assured"
+            ],
+            "io.serializer": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.serializer.jackson": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.serializer.morphia": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "io.serializer.registrars": [
+                "@maven//:io_harness_ng_license_beans"
             ],
             "io.specto.hoverfly.junit.api": [
                 "@maven//:io_specto_hoverfly_java"
@@ -11345,7 +12971,6 @@
             ],
             "javax.activation": [
                 "@maven//:com_sun_activation_jakarta_activation",
-                "@maven//:com_sun_activation_javax_activation",
                 "@maven//:jakarta_activation_jakarta_activation_api",
                 "@maven//:javax_activation_activation",
                 "@maven//:javax_activation_javax_activation_api",
@@ -11828,7 +13453,8 @@
             "javax.ws.rs": [
                 "@maven//:jakarta_ws_rs_jakarta_ws_rs_api",
                 "@maven//:javax_javaee_api",
-                "@maven//:javax_ws_rs_javax_ws_rs_api"
+                "@maven//:javax_ws_rs_javax_ws_rs_api",
+                "@maven//:javax_ws_rs_jsr311_api"
             ],
             "javax.ws.rs.client": [
                 "@maven//:jakarta_ws_rs_jakarta_ws_rs_api",
@@ -11843,12 +13469,14 @@
             "javax.ws.rs.core": [
                 "@maven//:jakarta_ws_rs_jakarta_ws_rs_api",
                 "@maven//:javax_javaee_api",
-                "@maven//:javax_ws_rs_javax_ws_rs_api"
+                "@maven//:javax_ws_rs_javax_ws_rs_api",
+                "@maven//:javax_ws_rs_jsr311_api"
             ],
             "javax.ws.rs.ext": [
                 "@maven//:jakarta_ws_rs_jakarta_ws_rs_api",
                 "@maven//:javax_javaee_api",
-                "@maven//:javax_ws_rs_javax_ws_rs_api"
+                "@maven//:javax_ws_rs_javax_ws_rs_api",
+                "@maven//:javax_ws_rs_jsr311_api"
             ],
             "javax.ws.rs.sse": [
                 "@maven//:jakarta_ws_rs_jakarta_ws_rs_api",
@@ -12499,6 +14127,9 @@
             "kotlin.io": [
                 "@maven//:org_jetbrains_kotlin_kotlin_stdlib"
             ],
+            "kotlin.io.path": [
+                "@maven//:org_jetbrains_kotlin_kotlin_stdlib_jdk7"
+            ],
             "kotlin.jdk7": [
                 "@maven//:org_jetbrains_kotlin_kotlin_stdlib_jdk7"
             ],
@@ -12519,6 +14150,12 @@
             ],
             "kotlin.jvm.internal.unsafe": [
                 "@maven//:org_jetbrains_kotlin_kotlin_stdlib"
+            ],
+            "kotlin.jvm.jdk8": [
+                "@maven//:org_jetbrains_kotlin_kotlin_stdlib_jdk8"
+            ],
+            "kotlin.jvm.optionals": [
+                "@maven//:org_jetbrains_kotlin_kotlin_stdlib_jdk8"
             ],
             "kotlin.math": [
                 "@maven//:org_jetbrains_kotlin_kotlin_stdlib"
@@ -12548,6 +14185,9 @@
                 "@maven//:org_jetbrains_kotlin_kotlin_stdlib"
             ],
             "kotlin.text": [
+                "@maven//:org_jetbrains_kotlin_kotlin_stdlib"
+            ],
+            "kotlin.text._OneToManyTitlecaseMappingsKt": [
                 "@maven//:org_jetbrains_kotlin_kotlin_stdlib"
             ],
             "kotlin.text.jdk8": [
@@ -12608,14 +14248,46 @@
                 "@maven//:dnsjava_dnsjava"
             ],
             "module-info": [
+                "@maven//:com_azure_azure_containers_containerregistry",
                 "@maven//:com_azure_azure_core",
                 "@maven//:com_azure_azure_core_http_netty",
+                "@maven//:com_azure_azure_core_http_okhttp",
+                "@maven//:com_azure_azure_core_management",
                 "@maven//:com_azure_azure_identity",
+                "@maven//:com_azure_azure_security_keyvault_administration",
+                "@maven//:com_azure_azure_security_keyvault_keys",
+                "@maven//:com_azure_azure_security_keyvault_secrets",
                 "@maven//:com_azure_azure_storage_blob",
                 "@maven//:com_azure_azure_storage_common",
+                "@maven//:com_azure_azure_storage_file_share",
                 "@maven//:com_azure_azure_storage_internal_avro",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_appplatform",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_appservice",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_authorization",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_cdn",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_compute",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerinstance",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerregistry",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerservice",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_cosmos",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_dns",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_eventhubs",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_keyvault",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_monitor",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_msi",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_network",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_privatedns",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_redis",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_search",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_servicebus",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_sql",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_storage",
+                "@maven//:com_azure_resourcemanager_azure_resourcemanager_trafficmanager",
                 "@maven//:com_fasterxml_jackson_core_jackson_annotations",
                 "@maven//:com_fasterxml_uuid_java_uuid_generator",
+                "@maven//:com_fasterxml_woodstox_woodstox_core",
                 "@maven//:com_github_tomakehurst_wiremock_jre8_standalone",
                 "@maven//:com_google_code_gson_gson",
                 "@maven//:com_sun_activation_jakarta_activation",
@@ -12845,12 +14517,15 @@
                 "@maven//:net_jodah_failsafe"
             ],
             "net.jpountz.lz4": [
+                "@maven//:net_jpountz_lz4_lz4",
                 "@maven//:org_lz4_lz4_java"
             ],
             "net.jpountz.util": [
+                "@maven//:net_jpountz_lz4_lz4",
                 "@maven//:org_lz4_lz4_java"
             ],
             "net.jpountz.xxhash": [
+                "@maven//:net_jpountz_lz4_lz4",
                 "@maven//:org_lz4_lz4_java"
             ],
             "net.minidev.asm": [
@@ -13272,10 +14947,9 @@
                 "@maven//:com_squareup_okhttp3_okhttp_urlconnection"
             ],
             "okhttp3.internal": [
-                "@maven//:com_squareup_okhttp3_okhttp",
-                "@maven//:com_squareup_okhttp3_okhttp_urlconnection"
+                "@maven//:com_squareup_okhttp3_okhttp"
             ],
-            "okhttp3.internal.annotations": [
+            "okhttp3.internal.authenticator": [
                 "@maven//:com_squareup_okhttp3_okhttp"
             ],
             "okhttp3.internal.cache": [
@@ -13284,8 +14958,14 @@
             "okhttp3.internal.cache2": [
                 "@maven//:com_squareup_okhttp3_okhttp"
             ],
+            "okhttp3.internal.concurrent": [
+                "@maven//:com_squareup_okhttp3_okhttp"
+            ],
             "okhttp3.internal.connection": [
                 "@maven//:com_squareup_okhttp3_okhttp"
+            ],
+            "okhttp3.internal.duplex": [
+                "@maven//:com_squareup_okhttp3_mockwebserver"
             ],
             "okhttp3.internal.http": [
                 "@maven//:com_squareup_okhttp3_okhttp"
@@ -13294,16 +14974,15 @@
                 "@maven//:com_squareup_okhttp3_okhttp"
             ],
             "okhttp3.internal.http2": [
-                "@maven//:com_squareup_okhttp3_mockwebserver",
                 "@maven//:com_squareup_okhttp3_okhttp"
-            ],
-            "okhttp3.internal.huc": [
-                "@maven//:com_squareup_okhttp3_okhttp_urlconnection"
             ],
             "okhttp3.internal.io": [
                 "@maven//:com_squareup_okhttp3_okhttp"
             ],
             "okhttp3.internal.platform": [
+                "@maven//:com_squareup_okhttp3_okhttp"
+            ],
+            "okhttp3.internal.platform.android": [
                 "@maven//:com_squareup_okhttp3_okhttp"
             ],
             "okhttp3.internal.proxy": [
@@ -13313,7 +14992,6 @@
                 "@maven//:com_squareup_okhttp3_okhttp"
             ],
             "okhttp3.internal.tls": [
-                "@maven//:com_squareup_okhttp3_mockwebserver",
                 "@maven//:com_squareup_okhttp3_okhttp"
             ],
             "okhttp3.internal.ws": [
@@ -13325,7 +15003,46 @@
             "okhttp3.mockwebserver": [
                 "@maven//:com_squareup_okhttp3_mockwebserver"
             ],
+            "okhttp3.mockwebserver.internal.duplex": [
+                "@maven//:com_squareup_okhttp3_mockwebserver"
+            ],
             "okio": [
+                "@maven//:com_squareup_okio_okio"
+            ],
+            "okio.-Base64": [
+                "@maven//:com_squareup_okio_okio"
+            ],
+            "okio.-DeflaterSinkExtensions": [
+                "@maven//:com_squareup_okio_okio"
+            ],
+            "okio.-DeprecatedOkio": [
+                "@maven//:com_squareup_okio_okio"
+            ],
+            "okio.-DeprecatedUpgrade": [
+                "@maven//:com_squareup_okio_okio"
+            ],
+            "okio.-DeprecatedUtf8": [
+                "@maven//:com_squareup_okio_okio"
+            ],
+            "okio.-GzipSinkExtensions": [
+                "@maven//:com_squareup_okio_okio"
+            ],
+            "okio.-GzipSourceExtensions": [
+                "@maven//:com_squareup_okio_okio"
+            ],
+            "okio.-InflaterSourceExtensions": [
+                "@maven//:com_squareup_okio_okio"
+            ],
+            "okio.-Platform": [
+                "@maven//:com_squareup_okio_okio"
+            ],
+            "okio.-Util": [
+                "@maven//:com_squareup_okio_okio"
+            ],
+            "okio.internal": [
+                "@maven//:com_squareup_okio_okio"
+            ],
+            "okio.internal._Utf8Kt": [
                 "@maven//:com_squareup_okio_okio"
             ],
             "org": [
@@ -14166,10 +15883,16 @@
             "org.apache.commons.text.diff": [
                 "@maven//:org_apache_commons_commons_text"
             ],
+            "org.apache.commons.text.io": [
+                "@maven//:org_apache_commons_commons_text"
+            ],
             "org.apache.commons.text.lookup": [
                 "@maven//:org_apache_commons_commons_text"
             ],
             "org.apache.commons.text.matcher": [
+                "@maven//:org_apache_commons_commons_text"
+            ],
+            "org.apache.commons.text.numbers": [
                 "@maven//:org_apache_commons_commons_text"
             ],
             "org.apache.commons.text.similarity": [
@@ -16290,22 +18013,29 @@
             "org.apache.sshd.agent.unix": [
                 "@maven//:org_apache_sshd_sshd_core"
             ],
+            "org.apache.sshd.certificate": [
+                "@maven//:org_apache_sshd_sshd_core"
+            ],
             "org.apache.sshd.client": [
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.client.auth": [
+                "@maven//:org_apache_sshd_sshd_common",
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.client.auth.hostbased": [
+                "@maven//:org_apache_sshd_sshd_common",
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.client.auth.keyboard": [
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.client.auth.password": [
+                "@maven//:org_apache_sshd_sshd_common",
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.client.auth.pubkey": [
+                "@maven//:org_apache_sshd_sshd_common",
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.client.channel": [
@@ -16318,10 +18048,10 @@
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.client.config.hosts": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.client.config.keys": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.client.future": [
                 "@maven//:org_apache_sshd_sshd_core"
@@ -16333,9 +18063,6 @@
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.client.keyverifier": [
-                "@maven//:org_apache_sshd_sshd_core"
-            ],
-            "org.apache.sshd.client.scp": [
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.client.session": [
@@ -16350,31 +18077,16 @@
             "org.apache.sshd.client.subsystem": [
                 "@maven//:org_apache_sshd_sshd_core"
             ],
-            "org.apache.sshd.client.subsystem.sftp": [
-                "@maven//:org_apache_sshd_sshd_core"
-            ],
-            "org.apache.sshd.client.subsystem.sftp.extensions": [
-                "@maven//:org_apache_sshd_sshd_core"
-            ],
-            "org.apache.sshd.client.subsystem.sftp.extensions.helpers": [
-                "@maven//:org_apache_sshd_sshd_core"
-            ],
-            "org.apache.sshd.client.subsystem.sftp.extensions.openssh": [
-                "@maven//:org_apache_sshd_sshd_core"
-            ],
-            "org.apache.sshd.client.subsystem.sftp.extensions.openssh.helpers": [
-                "@maven//:org_apache_sshd_sshd_core"
-            ],
-            "org.apache.sshd.client.subsystem.sftp.impl": [
-                "@maven//:org_apache_sshd_sshd_core"
-            ],
             "org.apache.sshd.common": [
+                "@maven//:org_apache_sshd_sshd_common",
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.common.auth": [
+                "@maven//:org_apache_sshd_sshd_common",
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.common.channel": [
+                "@maven//:org_apache_sshd_sshd_common",
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.common.channel.exception": [
@@ -16384,51 +18096,71 @@
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.common.cipher": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.compression": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.config": [
+                "@maven//:org_apache_sshd_sshd_common",
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.common.config.keys": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.config.keys.impl": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.config.keys.loader": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.config.keys.loader.openssh": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
+            ],
+            "org.apache.sshd.common.config.keys.loader.openssh.kdf": [
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.config.keys.loader.pem": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
+            ],
+            "org.apache.sshd.common.config.keys.loader.ssh2": [
+                "@maven//:org_apache_sshd_sshd_common"
+            ],
+            "org.apache.sshd.common.config.keys.u2f": [
+                "@maven//:org_apache_sshd_sshd_common"
+            ],
+            "org.apache.sshd.common.config.keys.writer": [
+                "@maven//:org_apache_sshd_sshd_common"
+            ],
+            "org.apache.sshd.common.config.keys.writer.openssh": [
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.digest": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.file": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.file.nativefs": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
+            ],
+            "org.apache.sshd.common.file.nonefs": [
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.file.root": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.file.util": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.file.virtualfs": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.forward": [
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.common.future": [
+                "@maven//:org_apache_sshd_sshd_common",
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.common.global": [
@@ -16438,90 +18170,120 @@
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.common.io": [
-                "@maven//:org_apache_sshd_sshd_core"
-            ],
-            "org.apache.sshd.common.io.mina": [
+                "@maven//:org_apache_sshd_sshd_common",
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.common.io.nio2": [
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.common.kex": [
+                "@maven//:org_apache_sshd_sshd_common",
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.common.kex.dh": [
                 "@maven//:org_apache_sshd_sshd_core"
             ],
-            "org.apache.sshd.common.keyprovider": [
+            "org.apache.sshd.common.kex.extension": [
+                "@maven//:org_apache_sshd_sshd_common",
                 "@maven//:org_apache_sshd_sshd_core"
+            ],
+            "org.apache.sshd.common.kex.extension.parser": [
+                "@maven//:org_apache_sshd_sshd_common"
+            ],
+            "org.apache.sshd.common.keyprovider": [
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.mac": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.random": [
-                "@maven//:org_apache_sshd_sshd_core"
-            ],
-            "org.apache.sshd.common.scp": [
-                "@maven//:org_apache_sshd_sshd_core"
-            ],
-            "org.apache.sshd.common.scp.helpers": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.session": [
+                "@maven//:org_apache_sshd_sshd_common",
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.common.session.helpers": [
+                "@maven//:org_apache_sshd_sshd_common",
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.common.signature": [
-                "@maven//:org_apache_sshd_sshd_core"
-            ],
-            "org.apache.sshd.common.subsystem.sftp": [
-                "@maven//:org_apache_sshd_sshd_core"
-            ],
-            "org.apache.sshd.common.subsystem.sftp.extensions": [
-                "@maven//:org_apache_sshd_sshd_core"
-            ],
-            "org.apache.sshd.common.subsystem.sftp.extensions.openssh": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.util": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.util.buffer": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.util.buffer.keys": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.util.closeable": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
+            ],
+            "org.apache.sshd.common.util.functors": [
+                "@maven//:org_apache_sshd_sshd_common"
+            ],
+            "org.apache.sshd.common.util.helper": [
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.util.io": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.util.io.der": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
+            ],
+            "org.apache.sshd.common.util.io.functors": [
+                "@maven//:org_apache_sshd_sshd_common"
+            ],
+            "org.apache.sshd.common.util.io.input": [
+                "@maven//:org_apache_sshd_sshd_common"
+            ],
+            "org.apache.sshd.common.util.io.output": [
+                "@maven//:org_apache_sshd_sshd_common"
+            ],
+            "org.apache.sshd.common.util.io.resource": [
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.util.logging": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.util.net": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.util.security": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.util.security.bouncycastle": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.util.security.eddsa": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.common.util.threads": [
+                "@maven//:org_apache_sshd_sshd_common"
+            ],
+            "org.apache.sshd.core": [
                 "@maven//:org_apache_sshd_sshd_core"
             ],
+            "org.apache.sshd.scp": [
+                "@maven//:org_apache_sshd_sshd_scp"
+            ],
+            "org.apache.sshd.scp.client": [
+                "@maven//:org_apache_sshd_sshd_scp"
+            ],
+            "org.apache.sshd.scp.common": [
+                "@maven//:org_apache_sshd_sshd_scp"
+            ],
+            "org.apache.sshd.scp.common.helpers": [
+                "@maven//:org_apache_sshd_sshd_scp"
+            ],
+            "org.apache.sshd.scp.server": [
+                "@maven//:org_apache_sshd_sshd_scp"
+            ],
             "org.apache.sshd.server": [
+                "@maven//:org_apache_sshd_sshd_common",
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.server.auth": [
@@ -16545,6 +18307,9 @@
             "org.apache.sshd.server.channel": [
                 "@maven//:org_apache_sshd_sshd_core"
             ],
+            "org.apache.sshd.server.command": [
+                "@maven//:org_apache_sshd_sshd_core"
+            ],
             "org.apache.sshd.server.config": [
                 "@maven//:org_apache_sshd_sshd_core"
             ],
@@ -16564,21 +18329,16 @@
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.server.keyprovider": [
-                "@maven//:org_apache_sshd_sshd_core"
-            ],
-            "org.apache.sshd.server.scp": [
-                "@maven//:org_apache_sshd_sshd_core"
+                "@maven//:org_apache_sshd_sshd_common"
             ],
             "org.apache.sshd.server.session": [
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.server.shell": [
+                "@maven//:org_apache_sshd_sshd_common",
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.server.subsystem": [
-                "@maven//:org_apache_sshd_sshd_core"
-            ],
-            "org.apache.sshd.server.subsystem.sftp": [
                 "@maven//:org_apache_sshd_sshd_core"
             ],
             "org.apache.sshd.server.x11": [
@@ -20416,6 +22176,9 @@
             "org.cloudfoundry.client.v3._Errors": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client"
             ],
+            "org.cloudfoundry.client.v3._KpackData": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
             "org.cloudfoundry.client.v3._LastOperation": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client"
             ],
@@ -21202,46 +22965,7 @@
             "org.cloudfoundry.client.v3.routes._UpdateRouteResponse": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client"
             ],
-            "org.cloudfoundry.client.v3.serviceInstances": [
-                "@maven//:org_cloudfoundry_cloudfoundry_client"
-            ],
-            "org.cloudfoundry.client.v3.serviceInstances._ListServiceInstancesRequest": [
-                "@maven//:org_cloudfoundry_cloudfoundry_client"
-            ],
-            "org.cloudfoundry.client.v3.serviceInstances._ListServiceInstancesResponse": [
-                "@maven//:org_cloudfoundry_cloudfoundry_client"
-            ],
-            "org.cloudfoundry.client.v3.serviceInstances._ListSharedSpacesRelationshipRequest": [
-                "@maven//:org_cloudfoundry_cloudfoundry_client"
-            ],
-            "org.cloudfoundry.client.v3.serviceInstances._ListSharedSpacesRelationshipResponse": [
-                "@maven//:org_cloudfoundry_cloudfoundry_client"
-            ],
-            "org.cloudfoundry.client.v3.serviceInstances._ServiceInstanceRelationships": [
-                "@maven//:org_cloudfoundry_cloudfoundry_client"
-            ],
-            "org.cloudfoundry.client.v3.serviceInstances._ServiceInstanceResource": [
-                "@maven//:org_cloudfoundry_cloudfoundry_client"
-            ],
-            "org.cloudfoundry.client.v3.serviceInstances._ShareServiceInstanceRequest": [
-                "@maven//:org_cloudfoundry_cloudfoundry_client"
-            ],
-            "org.cloudfoundry.client.v3.serviceInstances._ShareServiceInstanceResponse": [
-                "@maven//:org_cloudfoundry_cloudfoundry_client"
-            ],
-            "org.cloudfoundry.client.v3.serviceInstances._UnshareServiceInstanceRequest": [
-                "@maven//:org_cloudfoundry_cloudfoundry_client"
-            ],
-            "org.cloudfoundry.client.v3.serviceInstances._UpdateServiceInstanceRequest": [
-                "@maven//:org_cloudfoundry_cloudfoundry_client"
-            ],
-            "org.cloudfoundry.client.v3.serviceInstances._UpdateServiceInstanceResponse": [
-                "@maven//:org_cloudfoundry_cloudfoundry_client"
-            ],
             "org.cloudfoundry.client.v3.servicebindings": [
-                "@maven//:org_cloudfoundry_cloudfoundry_client"
-            ],
-            "org.cloudfoundry.client.v3.servicebindings._CreateServiceBindingData": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client"
             ],
             "org.cloudfoundry.client.v3.servicebindings._CreateServiceBindingRequest": [
@@ -21251,6 +22975,18 @@
                 "@maven//:org_cloudfoundry_cloudfoundry_client"
             ],
             "org.cloudfoundry.client.v3.servicebindings._DeleteServiceBindingRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebindings._GetServiceBindingDetailsRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebindings._GetServiceBindingDetailsResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebindings._GetServiceBindingParametersRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebindings._GetServiceBindingParametersResponse": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client"
             ],
             "org.cloudfoundry.client.v3.servicebindings._GetServiceBindingRequest": [
@@ -21265,13 +23001,115 @@
             "org.cloudfoundry.client.v3.servicebindings._ListServiceBindingsResponse": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client"
             ],
-            "org.cloudfoundry.client.v3.servicebindings._ServiceBindingData": [
-                "@maven//:org_cloudfoundry_cloudfoundry_client"
-            ],
             "org.cloudfoundry.client.v3.servicebindings._ServiceBindingRelationships": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client"
             ],
             "org.cloudfoundry.client.v3.servicebindings._ServiceBindingResource": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebindings._UpdateServiceBindingRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebindings._UpdateServiceBindingResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebrokers": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebrokers._BasicAuthentication": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebrokers._CreateServiceBrokerRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebrokers._DeleteServiceBrokerRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebrokers._GetServiceBrokerRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebrokers._GetServiceBrokerResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebrokers._ListServiceBrokersRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebrokers._ListServiceBrokersResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebrokers._ServiceBrokerRelationships": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebrokers._ServiceBrokerResource": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebrokers._UpdateServiceBrokerRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.servicebrokers._UpdateServiceBrokerResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._CreateServiceInstanceRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._CreateServiceInstanceResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._DeleteServiceInstanceRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._GetManagedServiceParametersRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._GetManagedServiceParametersResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._GetServiceInstanceRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._GetServiceInstanceResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._GetUserProvidedCredentialsRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._GetUserProvidedCredentialsResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._ListServiceInstancesRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._ListServiceInstancesResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._ListSharedSpacesRelationshipRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._ListSharedSpacesRelationshipResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._ServiceInstanceRelationships": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._ServiceInstanceResource": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._ShareServiceInstanceRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._ShareServiceInstanceResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._UnshareServiceInstanceRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._UpdateServiceInstanceRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceinstances._UpdateServiceInstanceResponse": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client"
             ],
             "org.cloudfoundry.client.v3.serviceofferings": [
@@ -21340,6 +23178,9 @@
             "org.cloudfoundry.client.v3.serviceplans._MaintenanceInfo": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client"
             ],
+            "org.cloudfoundry.client.v3.serviceplans._Organization": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
             "org.cloudfoundry.client.v3.serviceplans._Parameters": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client"
             ],
@@ -21365,6 +23206,12 @@
                 "@maven//:org_cloudfoundry_cloudfoundry_client"
             ],
             "org.cloudfoundry.client.v3.serviceplans._UpdateServicePlanResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceplans._UpdateServicePlanVisibilityRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.serviceplans._UpdateServicePlanVisibilityResponse": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client"
             ],
             "org.cloudfoundry.client.v3.spaces": [
@@ -21416,6 +23263,39 @@
                 "@maven//:org_cloudfoundry_cloudfoundry_client"
             ],
             "org.cloudfoundry.client.v3.spaces._UpdateSpaceResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.stacks": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.stacks._CreateStackRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.stacks._CreateStackResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.stacks._DeleteStackRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.stacks._GetStackRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.stacks._GetStackResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.stacks._ListStacksRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.stacks._ListStacksResponse": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.stacks._StackResource": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.stacks._UpdateStackRequest": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client"
+            ],
+            "org.cloudfoundry.client.v3.stacks._UpdateStackResponse": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client"
             ],
             "org.cloudfoundry.client.v3.tasks": [
@@ -22030,6 +23910,9 @@
             "org.cloudfoundry.reactor._HttpClientResponseWithConnection": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client_reactor"
             ],
+            "org.cloudfoundry.reactor._HttpClientResponseWithParsedBody": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client_reactor"
+            ],
             "org.cloudfoundry.reactor._InfoPayloadRootProvider": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client_reactor"
             ],
@@ -22195,6 +24078,9 @@
             "org.cloudfoundry.reactor.client.v3.servicebindings": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client_reactor"
             ],
+            "org.cloudfoundry.reactor.client.v3.servicebrokers": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client_reactor"
+            ],
             "org.cloudfoundry.reactor.client.v3.serviceinstances": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client_reactor"
             ],
@@ -22205,6 +24091,9 @@
                 "@maven//:org_cloudfoundry_cloudfoundry_client_reactor"
             ],
             "org.cloudfoundry.reactor.client.v3.spaces": [
+                "@maven//:org_cloudfoundry_cloudfoundry_client_reactor"
+            ],
+            "org.cloudfoundry.reactor.client.v3.stacks": [
                 "@maven//:org_cloudfoundry_cloudfoundry_client_reactor"
             ],
             "org.cloudfoundry.reactor.client.v3.tasks": [
@@ -23611,6 +25500,525 @@
             ],
             "org.eclipse.aether.version": [
                 "@maven//:org_apache_maven_resolver_maven_resolver_api"
+            ],
+            "org.eclipse.collections.api": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.annotation": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.bag": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.bag.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.bag.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.bimap": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.comparator": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.comparator.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.factory": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.function": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.function.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.predicate": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.predicate.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.procedure": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.procedure.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.collection": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.collection.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.bag": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.bag.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.bag.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.bag.strategy": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.bimap": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.list": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.list.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.map": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.map.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.map.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.map.strategy": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.set": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.set.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.set.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.set.strategy": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.stack": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.stack.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.iterator": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.list": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.list.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.map": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.map.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.map.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.multimap": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.multimap.bag": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.multimap.list": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.multimap.ordered": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.multimap.set": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.multimap.sortedbag": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.multimap.sortedset": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.ordered": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.ordered.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.partition": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.partition.bag": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.partition.bag.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.partition.list": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.partition.ordered": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.partition.set": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.partition.set.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.partition.stack": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.set": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.set.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.set.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.stack": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.stack.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.tuple": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.tuple.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.impl": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bag": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bag.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bag.immutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bag.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bag.mutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bag.sorted.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bag.sorted.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bag.strategy.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bimap": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bimap.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bimap.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.comparator": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.comparator.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.factory": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.factory.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.function": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.function.checked": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.function.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.predicate": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.predicate.checked": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.predicate.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.procedure": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.procedure.checked": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.procedure.checked.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.procedure.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.collection": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.collection.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.collection.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.collection.mutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.collector": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.factory": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.factory.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.forkjoin": [
+                "@maven//:org_eclipse_collections_eclipse_collections_forkjoin"
+            ],
+            "org.eclipse.collections.impl.iterator": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.lazy": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.lazy.iterator": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.lazy.parallel": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.lazy.parallel.bag": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.lazy.parallel.list": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.lazy.parallel.set": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.lazy.parallel.set.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.lazy.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.list": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.list.fixed": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.list.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.list.immutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.list.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.list.mutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.list.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.fixed": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.immutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.mutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.ordered.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.sorted.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.sorted.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.strategy.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.strategy.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.bag": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.bag.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.bag.sorted.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.bag.sorted.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.bag.strategy": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.list": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.set": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.set.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.set.strategy": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.parallel": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.partition.bag": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.partition.bag.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.partition.list": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.partition.set": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.partition.set.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.partition.set.strategy": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.partition.stack": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.fixed": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.immutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.mutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.sorted.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.sorted.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.strategy.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.strategy.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.stack.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.stack.immutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.stack.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.stack.mutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.stack.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.stream": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.stream.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.string.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.tuple": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.tuple.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.utility": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.utility.internal": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.utility.internal.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.utility.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
             ],
             "org.eclipse.jetty.alpn": [
                 "@maven//:org_mortbay_jetty_alpn_alpn_boot"
@@ -26920,6 +29328,18 @@
             "org.locationtech.spatial4j.shape.jts": [
                 "@maven//:org_locationtech_spatial4j_spatial4j"
             ],
+            "org.mapdb": [
+                "@maven//:org_mapdb_mapdb"
+            ],
+            "org.mapdb.elsa": [
+                "@maven//:org_mapdb_elsa"
+            ],
+            "org.mapdb.serializer": [
+                "@maven//:org_mapdb_mapdb"
+            ],
+            "org.mapdb.volume": [
+                "@maven//:org_mapdb_mapdb"
+            ],
             "org.mindrot.jbcrypt": [
                 "@maven//:org_mindrot_jbcrypt"
             ],
@@ -27219,9 +29639,6 @@
             ],
             "org.mongodb.morphia.logging.jdk": [
                 "@maven//:org_mongodb_morphia_morphia"
-            ],
-            "org.mongodb.morphia.logging.slf4j": [
-                "@maven//:org_mongodb_morphia_morphia_logging_slf4j"
             ],
             "org.mongodb.morphia.mapping": [
                 "@maven//:org_mongodb_morphia_morphia"
@@ -28717,8 +31134,7 @@
                 "@maven//:org_slf4j_slf4j_api"
             ],
             "org.slf4j.impl": [
-                "@maven//:ch_qos_logback_logback_classic",
-                "@maven//:org_slf4j_slf4j_simple"
+                "@maven//:ch_qos_logback_logback_classic"
             ],
             "org.slf4j.spi": [
                 "@maven//:com_github_tomakehurst_wiremock_jre8_standalone",
@@ -31016,34 +33432,36 @@
                 "@maven//:io_projectreactor_reactor_core"
             ],
             "reactor.netty": [
-                "@maven//:io_projectreactor_netty_reactor_netty",
                 "@maven//:io_projectreactor_netty_reactor_netty_core"
             ],
             "reactor.netty.channel": [
-                "@maven//:io_projectreactor_netty_reactor_netty",
                 "@maven//:io_projectreactor_netty_reactor_netty_core"
             ],
             "reactor.netty.http": [
-                "@maven//:io_projectreactor_netty_reactor_netty",
                 "@maven//:io_projectreactor_netty_reactor_netty_http"
             ],
+            "reactor.netty.http.brave": [
+                "@maven//:io_projectreactor_netty_reactor_netty_http_brave"
+            ],
             "reactor.netty.http.client": [
-                "@maven//:io_projectreactor_netty_reactor_netty",
+                "@maven//:io_projectreactor_netty_reactor_netty_http"
+            ],
+            "reactor.netty.http.logging": [
                 "@maven//:io_projectreactor_netty_reactor_netty_http"
             ],
             "reactor.netty.http.server": [
-                "@maven//:io_projectreactor_netty_reactor_netty",
                 "@maven//:io_projectreactor_netty_reactor_netty_http"
             ],
             "reactor.netty.http.server.logging": [
                 "@maven//:io_projectreactor_netty_reactor_netty_http"
             ],
             "reactor.netty.http.websocket": [
-                "@maven//:io_projectreactor_netty_reactor_netty",
                 "@maven//:io_projectreactor_netty_reactor_netty_http"
             ],
+            "reactor.netty.incubator.quic": [
+                "@maven//:io_projectreactor_netty_incubator_reactor_netty_incubator_quic"
+            ],
             "reactor.netty.internal.shaded.reactor.pool": [
-                "@maven//:io_projectreactor_netty_reactor_netty",
                 "@maven//:io_projectreactor_netty_reactor_netty_core"
             ],
             "reactor.netty.internal.shaded.reactor.pool.decorators": [
@@ -31056,11 +33474,9 @@
                 "@maven//:io_projectreactor_netty_reactor_netty_core"
             ],
             "reactor.netty.resources": [
-                "@maven//:io_projectreactor_netty_reactor_netty",
                 "@maven//:io_projectreactor_netty_reactor_netty_core"
             ],
             "reactor.netty.tcp": [
-                "@maven//:io_projectreactor_netty_reactor_netty",
                 "@maven//:io_projectreactor_netty_reactor_netty_core"
             ],
             "reactor.netty.transport": [
@@ -31070,7 +33486,6 @@
                 "@maven//:io_projectreactor_netty_reactor_netty_core"
             ],
             "reactor.netty.udp": [
-                "@maven//:io_projectreactor_netty_reactor_netty",
                 "@maven//:io_projectreactor_netty_reactor_netty_core"
             ],
             "reactor.util": [
@@ -31092,6 +33507,7 @@
                 "@maven//:io_projectreactor_reactor_core"
             ],
             "relocated.morphia.org.apache.commons.collections": [
+                "@maven//:dev_morphia_morphia_core",
                 "@maven//:org_mongodb_morphia_morphia"
             ],
             "retrofit": [
@@ -31127,11 +33543,11 @@
             "retrofit2.converter.jackson": [
                 "@maven//:com_squareup_retrofit2_converter_jackson"
             ],
-            "retrofit2.converter.protobuf": [
-                "@maven//:com_squareup_retrofit2_converter_protobuf"
-            ],
             "retrofit2.converter.jaxb": [
                 "@maven//:com_squareup_retrofit2_converter_jaxb"
+            ],
+            "retrofit2.converter.protobuf": [
+                "@maven//:com_squareup_retrofit2_converter_protobuf"
             ],
             "retrofit2.http": [
                 "@maven//:com_squareup_retrofit2_retrofit"
@@ -31592,6 +34008,24 @@
             "software.amazon.awssdk.services.ecs.waiters.internal": [
                 "@maven//:software_amazon_awssdk_ecs"
             ],
+            "software.amazon.awssdk.services.elasticloadbalancingv2": [
+                "@maven//:software_amazon_awssdk_elasticloadbalancingv2"
+            ],
+            "software.amazon.awssdk.services.elasticloadbalancingv2.model": [
+                "@maven//:software_amazon_awssdk_elasticloadbalancingv2"
+            ],
+            "software.amazon.awssdk.services.elasticloadbalancingv2.paginators": [
+                "@maven//:software_amazon_awssdk_elasticloadbalancingv2"
+            ],
+            "software.amazon.awssdk.services.elasticloadbalancingv2.transform": [
+                "@maven//:software_amazon_awssdk_elasticloadbalancingv2"
+            ],
+            "software.amazon.awssdk.services.elasticloadbalancingv2.waiters": [
+                "@maven//:software_amazon_awssdk_elasticloadbalancingv2"
+            ],
+            "software.amazon.awssdk.services.elasticloadbalancingv2.waiters.internal": [
+                "@maven//:software_amazon_awssdk_elasticloadbalancingv2"
+            ],
             "software.amazon.awssdk.services.health": [
                 "@maven//:software_amazon_awssdk_health"
             ],
@@ -31762,6 +34196,42 @@
             ],
             "software.chronicle.enterprise.internals.impl": [
                 "@maven//:net_openhft_affinity"
+            ],
+            "software.wings": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "software.wings.app": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "software.wings.beans": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "software.wings.beans.appmanifest": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "software.wings.beans.artifact": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "software.wings.common": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "software.wings.exception": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "software.wings.jersey": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "software.wings.misc": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "software.wings.security": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "software.wings.stencils": [
+                "@maven//:io_harness_ng_license_beans"
+            ],
+            "software.wings.utils": [
+                "@maven//:io_harness_ng_license_beans"
             ],
             "sun.security.ssl": [
                 "@maven//:org_mortbay_jetty_alpn_alpn_boot"
@@ -32707,6 +35177,36 @@
             ],
             "wiremock.org.xmlunit.xpath": [
                 "@maven//:com_github_tomakehurst_wiremock_jre8_standalone"
+            ],
+            "zipkin2": [
+                "@maven//:io_zipkin_zipkin2_zipkin"
+            ],
+            "zipkin2.codec": [
+                "@maven//:io_zipkin_zipkin2_zipkin"
+            ],
+            "zipkin2.internal": [
+                "@maven//:io_zipkin_zipkin2_zipkin"
+            ],
+            "zipkin2.internal.gson.internal": [
+                "@maven//:io_zipkin_zipkin2_zipkin"
+            ],
+            "zipkin2.internal.gson.stream": [
+                "@maven//:io_zipkin_zipkin2_zipkin"
+            ],
+            "zipkin2.reporter": [
+                "@maven//:io_zipkin_reporter2_zipkin_reporter"
+            ],
+            "zipkin2.reporter.brave": [
+                "@maven//:io_zipkin_reporter2_zipkin_reporter_brave"
+            ],
+            "zipkin2.reporter.internal": [
+                "@maven//:io_zipkin_reporter2_zipkin_reporter"
+            ],
+            "zipkin2.storage": [
+                "@maven//:io_zipkin_zipkin2_zipkin"
+            ],
+            "zipkin2.v1": [
+                "@maven//:io_zipkin_zipkin2_zipkin"
             ]
         }
     }

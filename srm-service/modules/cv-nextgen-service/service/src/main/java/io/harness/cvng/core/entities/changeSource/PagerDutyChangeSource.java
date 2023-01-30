@@ -10,13 +10,13 @@ package io.harness.cvng.core.entities.changeSource;
 import io.harness.mongo.index.FdIndex;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.query.UpdateOperations;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @JsonTypeName("PAGER_DUTY")
 @Data

@@ -54,6 +54,7 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
             .action(action)
             .params(ValidationParams.builder().pipelineEntity(entity).build())
             .result(ValidationResult.builder().build())
+            .startTs(System.currentTimeMillis())
             .build();
     PipelineValidationEvent savedPipelineValidationEvent =
         pipelineValidationEventRepository.save(pipelineValidationEvent);
@@ -76,7 +77,7 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
 
   @Override
   public Optional<PipelineValidationEvent> getLatestEventByFQNAndAction(String fqn, Action action) {
-    return pipelineValidationEventRepository.findByFqnAndAction(fqn, action);
+    return pipelineValidationEventRepository.findLatestValidEvent(fqn, action);
   }
 
   @Override

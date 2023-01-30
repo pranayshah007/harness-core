@@ -20,8 +20,8 @@ import io.harness.serializer.morphia.CommonEntitiesMorphiaRegister;
 import io.harness.serializer.morphia.DelegateTasksBeansMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableSet;
+import dev.morphia.converters.TypeConverter;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.converters.TypeConverter;
 
 @OwnedBy(DEL)
 @UtilityClass

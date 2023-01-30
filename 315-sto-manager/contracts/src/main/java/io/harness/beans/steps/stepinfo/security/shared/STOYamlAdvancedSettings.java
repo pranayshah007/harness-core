@@ -9,19 +9,21 @@ package io.harness.beans.steps.stepinfo.security.shared;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
-import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.sto.variables.STOYamlFailOnSeverity;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-import org.codehaus.jackson.annotate.JsonProperty;
 
 @Data
 @OwnedBy(STO)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class STOYamlAdvancedSettings {
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "io.harness.beans.steps.stepinfo.security.shared.STOYamlLog")
@@ -32,17 +34,10 @@ public class STOYamlAdvancedSettings {
   protected STOYamlArgs args;
 
   @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
-  @JsonProperty("include_raw")
-  protected ParameterField<Boolean> includeRaw;
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH, name = "include_raw")
+  private ParameterField<Boolean> includeRaw;
 
   @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = INTEGER_CLASSPATH)
-  @JsonProperty("fail_on_severity")
-  protected ParameterField<Integer> failOnSeverity;
-
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
-  @JsonProperty("ssl")
-  protected ParameterField<Boolean> ssl;
+  @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlFailOnSeverity", name = "fail_on_severity")
+  private STOYamlFailOnSeverity failOnSeverity;
 }

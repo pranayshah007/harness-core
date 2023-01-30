@@ -16,14 +16,14 @@ import io.harness.persistence.UserProvider;
 
 import software.wings.security.ThreadLocalUserProvider;
 
+import dev.morphia.AdvancedDatastore;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.AdvancedDatastore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
+import org.springframework.data.mongodb.core.SimpleMongoClientDbFactory;
 
 @Configuration
 @Slf4j
@@ -40,7 +40,8 @@ public class BatchMongoConfiguration {
   public MongoDbFactory mongoDbFactory(HPersistence hPersistence, BatchMainConfig config) {
     registerEventsStore(hPersistence, config);
     AdvancedDatastore eventsDatastore = hPersistence.getDatastore(EVENTS_STORE);
-    return new SimpleMongoDbFactory(eventsDatastore.getMongo(), eventsDatastore.getDB().getName());
+    return new SimpleMongoClientDbFactory(
+        hPersistence.getNewMongoClient(EVENTS_STORE), eventsDatastore.getDB().getName());
   }
 
   @Bean

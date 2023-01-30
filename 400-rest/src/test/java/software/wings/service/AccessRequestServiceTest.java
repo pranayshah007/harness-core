@@ -45,6 +45,7 @@ import software.wings.service.intfc.UserService;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -54,7 +55,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(HarnessTeam.PL)
 @TargetModule(HarnessModule._970_RBAC_CORE)

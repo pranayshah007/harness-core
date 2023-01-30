@@ -16,11 +16,15 @@ import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCreateFileRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
+import io.harness.gitsync.common.dtos.ScmGetBatchFilesByBranchRequestDTO;
+import io.harness.gitsync.common.dtos.ScmGetBatchFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByCommitIdRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
+import io.harness.gitsync.common.dtos.ScmGetFileUrlRequestDTO;
+import io.harness.gitsync.common.dtos.ScmGetFileUrlResponseDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
@@ -47,6 +51,9 @@ public interface ScmFacilitatorService {
 
   ScmGetFileResponseDTO getFileByBranchV2(ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO);
 
+  ScmGetBatchFilesResponseDTO getBatchFilesByBranch(
+      ScmGetBatchFilesByBranchRequestDTO scmGetBatchFilesByBranchRequestDTO);
+
   List<UserRepoResponse> listAllReposForOnboardingFlow(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef);
 
@@ -64,4 +71,6 @@ public interface ScmFacilitatorService {
       ScmGetBranchHeadCommitRequestDTO scmGetBranchHeadCommitRequestDTO);
 
   ScmListFilesResponseDTO listFiles(ScmListFilesRequestDTO scmListFilesRequestDTO);
+
+  ScmGetFileUrlResponseDTO getFileUrl(ScmGetFileUrlRequestDTO scmGetFileUrlRequestDTO);
 }

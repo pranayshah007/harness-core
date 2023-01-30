@@ -9,6 +9,7 @@ package io.harness.delegate.task.git;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -107,6 +108,29 @@ public class ScmFetchFilesHelperNGTest extends CategoryTest {
 
     assertThatExceptionOfType(GitClientException.class)
         .isThrownBy(() -> spyScmFetchFilesHelperNG.fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePathList));
+  }
+
+  @Test
+  @Owner(developers = VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void testShouldFetchAnyFilesPresent() {
+    ScmFetchFilesHelperNG spyScmFetchFilesHelperNG = spy(scmFetchFilesHelperNG);
+    List<String> filePathList = Collections.singletonList("test");
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        GitStoreDelegateConfig.builder().fetchType(FetchType.BRANCH).branch("branch").build();
+    doReturn(FileContentBatchResponse.builder()
+                 .fileBatchContentResponse(
+                     FileBatchContentResponse.newBuilder()
+                         .addFileContents(FileContent.newBuilder().setStatus(200).setContent("content").build())
+                         .addFileContents(FileContent.newBuilder().setStatus(400).setContent("content").build())
+                         .build())
+                 .build())
+        .when(scmDelegateClient)
+        .processScmRequest(any());
+
+    FetchFilesResult fetchFilesResult =
+        spyScmFetchFilesHelperNG.fetchAnyFilesFromRepoWithScm(gitStoreDelegateConfig, filePathList);
+    assertThat(fetchFilesResult.getFiles()).hasSize(1);
   }
 
   @Test

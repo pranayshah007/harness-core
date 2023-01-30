@@ -17,11 +17,11 @@ import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @OwnedBy(HarnessTeam.PL)
 @Data

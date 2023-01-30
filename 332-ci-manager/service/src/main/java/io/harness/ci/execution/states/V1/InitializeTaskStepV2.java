@@ -9,7 +9,7 @@ package io.harness.ci.states.V1;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.FeatureName.CIE_HOSTED_VMS;
-import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS;
+import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS_CONCURRENCY;
 import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
 import static io.harness.beans.outcomes.VmDetailsOutcome.VM_DETAILS_OUTCOME;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
@@ -34,7 +34,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
 import io.harness.beans.environment.ServiceDefinitionInfo;
-import io.harness.beans.execution.CIExecutionArgs;
+import io.harness.beans.execution.CIInitTaskArgs;
 import io.harness.beans.outcomes.DependencyOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
@@ -48,7 +48,9 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.ci.buildstate.BuildSetupUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.executable.CiAsyncExecutable;
 import io.harness.ci.execution.BackgroundTaskUtility;
+import io.harness.ci.execution.QueueExecutionUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
@@ -82,6 +84,7 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.hsqs.client.HsqsServiceClient;
 import io.harness.hsqs.client.model.EnqueueRequest;
+import io.harness.hsqs.client.model.EnqueueResponse;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logging.CommandExecutionStatus;
@@ -114,7 +117,6 @@ import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
-import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.steps.matrix.ExpandedExecutionWrapperInfo;
 import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.steps.matrix.StrategyHelper;
@@ -126,6 +128,7 @@ import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -138,10 +141,11 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(CI)
-public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElementParameters> {
+public class InitializeTaskStepV2 extends CiAsyncExecutable {
   @Inject private ExceptionManager exceptionManager;
   @Inject private AccountClient accountClient;
   @Inject private CIDelegateTaskExecutor ciDelegateTaskExecutor;
@@ -168,6 +172,7 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
 
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
+  @Inject QueueExecutionUtils queueExecutionUtils;
   private static final String DEPENDENCY_OUTCOME = "dependencies";
 
   @Override
@@ -185,22 +190,29 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
     String logKey = getLogKey(ambiance);
     String taskId;
 
-    if (ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS, AmbianceUtils.getAccountId(ambiance))) {
+    if (ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, AmbianceUtils.getAccountId(ambiance))) {
       log.info("start executeAsyncAfterRbac for initialize step with queue");
       taskId = generateUuid();
       String topic = "ci";
-      String payload = RecastOrchestrationUtils.toJson(CIExecutionArgs.builder()
-                                                           .ambiance(ambiance)
-                                                           .callbackId(taskId)
-                                                           .stepElementParameters(stepParameters)
-                                                           .build());
+      String payload = RecastOrchestrationUtils.toJson(
+          CIInitTaskArgs.builder().ambiance(ambiance).callbackId(taskId).stepElementParameters(stepParameters).build());
       EnqueueRequest enqueueRequest = EnqueueRequest.builder()
                                           .topic(topic)
                                           .subTopic(AmbianceUtils.getAccountId(ambiance))
                                           .producerName(topic)
                                           .payload(payload)
                                           .build();
-      hsqsServiceClient.enqueue(enqueueRequest, ciExecutionServiceConfig.getQueueServiceToken());
+      try {
+        Response<EnqueueResponse> execute = hsqsServiceClient.enqueue(enqueueRequest).execute();
+        if (execute.code() == 200) {
+          log.info("build queued. message id: {}", execute.body().getItemId());
+        } else {
+          log.info("build queue failed. response code {}", execute.code());
+        }
+      } catch (IOException e) {
+        throw new CIStageExecutionException(format("failed to process execution, queuing failed. runtime Id: {}",
+            AmbianceUtils.getStageRuntimeIdAmbiance(ambiance)));
+      }
     } else {
       taskId = executeBuild(ambiance, stepParameters);
     }
@@ -215,7 +227,7 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
         .build();
   }
 
-  private String executeBuild(Ambiance ambiance, StepElementParameters stepParameters) {
+  public String executeBuild(Ambiance ambiance, StepElementParameters stepParameters) {
     log.info("start executeAsyncAfterRbac for initialize step async");
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepParameters.getSpec();
 
@@ -265,6 +277,12 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(
         accountId, taskData, abstractions, generateLogAbstractions(ambiance));
 
+    try {
+      queueExecutionUtils.addActiveExecutionBuild(initializeStepInfo, accountId, stageExecutionId);
+    } catch (Exception ex) {
+      log.error("Failed to add Execution record for {}", stageExecutionId, ex);
+    }
+
     return ciDelegateTaskExecutor.queueTask(abstractions, task,
         taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()), new ArrayList<>(),
         executeOnHarnessHostedDelegates, emitEvent, stageExecutionId, generateLogAbstractions(ambiance),
@@ -272,7 +290,7 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
   }
 
   @Override
-  public StepResponse handleAsyncResponse(
+  public StepResponse handleAsyncResponseInternal(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     // If any of the responses are in serialized format, deserialize them
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);

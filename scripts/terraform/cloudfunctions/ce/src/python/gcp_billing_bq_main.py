@@ -72,11 +72,11 @@ publisher = pubsub_v1.PublisherClient()
 GCPCFTOPIC = publisher.topic_path(PROJECTID, os.environ.get('GCPCFTOPIC', 'ce-gcp-billing-cf'))
 GCP_STANDARD_EXPORT_COLUMNS = ["billing_account_id", "usage_start_time", "usage_end_time", "export_time",
                                "cost", "currency", "currency_conversion_rate", "cost_type", "labels",
-                               "system_labels", "tags", "credits", "usage", "invoice", "adjustment_info",
+                               "system_labels", "credits", "usage", "invoice", "adjustment_info",
                                "service", "sku", "project", "location"]
 GCP_DETAILED_EXPORT_COLUMNS = ["billing_account_id", "usage_start_time", "usage_end_time", "export_time",
                                "cost", "currency", "currency_conversion_rate", "cost_type", "labels",
-                               "system_labels", "tags", "credits", "usage", "invoice", "adjustment_info",
+                               "system_labels", "credits", "usage", "invoice", "adjustment_info",
                                "service", "sku", "project", "location", "resource"]
 
 
@@ -202,7 +202,7 @@ def main(event, context):
 
 def trigger_historical_cost_update_in_preferred_currency(jsonData):
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
     if "disableHistoricalUpdateForMonths" not in jsonData or not jsonData["disableHistoricalUpdateForMonths"]:
         jsonData["disableHistoricalUpdateForMonths"] = [f"{currentYear}-{currentMonth}-01"]
@@ -311,7 +311,7 @@ def get_preferred_currency(jsonData):
 def insert_currencies_with_unit_conversion_factors_in_bq(jsonData):
     # we are inserting these rows for showing active month's source_currencies to user
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
 
     # update 1.0 rows in currencyConversionFactorDefault table only for current month
@@ -413,7 +413,7 @@ def fetch_default_conversion_factors_from_API(jsonData):
         return
 
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
     date_start = "%s-%s-01" % (currentYear, currentMonth)
     date_end = "%s-%s-%s" % (currentYear, currentMonth, monthrange(int(currentYear), int(currentMonth))[1])
@@ -784,18 +784,32 @@ def syncDataset(jsonData):
         """ % (jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"])
         # Configure the query job.
         print_(" Destination :%s" % destination)
-        job_config = bigquery.QueryJobConfig(
-            destination=destination,
-            write_disposition=bigquery.job.WriteDisposition.WRITE_TRUNCATE,
-            time_partitioning=bigquery.table.TimePartitioning(field=jsonData["gcpBillingExportTablePartitionColumnName"]),
-            query_parameters=[
-                bigquery.ScalarQueryParameter(
-                    "run_date",
-                    "DATE",
-                    datetime.datetime.utcnow().date(),
-                )
-            ]
-        )
+        if jsonData["gcpBillingExportTablePartitionColumnName"] == "usage_start_time":
+            job_config = bigquery.QueryJobConfig(
+                destination=destination,
+                write_disposition=bigquery.job.WriteDisposition.WRITE_TRUNCATE,
+                time_partitioning=bigquery.table.TimePartitioning(field=jsonData["gcpBillingExportTablePartitionColumnName"]),
+                query_parameters=[
+                    bigquery.ScalarQueryParameter(
+                        "run_date",
+                        "DATE",
+                        datetime.datetime.utcnow().date(),
+                    )
+                ]
+            )
+        else:
+            job_config = bigquery.QueryJobConfig(
+                destination=destination,
+                write_disposition=bigquery.job.WriteDisposition.WRITE_TRUNCATE,
+                time_partitioning=bigquery.table.TimePartitioning(),
+                query_parameters=[
+                    bigquery.ScalarQueryParameter(
+                        "run_date",
+                        "DATE",
+                        datetime.datetime.utcnow().date(),
+                    )
+                ]
+            )
     else:
         # keeping this 3 days for currency customers also
         # only tables other than gcp_billing_export require to be updated with current month currency factors

@@ -12,11 +12,11 @@ import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.ng.DbAliases;
 
+import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 

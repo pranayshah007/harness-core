@@ -7,6 +7,7 @@
 
 package software.wings.resources;
 
+import static io.harness.beans.FeatureName.SPG_WORKFLOW_RBAC_ON_TRIGGER_RESOURCE;
 import static io.harness.beans.SearchFilter.Operator.IN;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -19,6 +20,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.WorkflowType;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.WebHookToken;
@@ -61,6 +63,7 @@ import lombok.extern.slf4j.Slf4j;
 @Scope(APPLICATION)
 public class TriggerResource {
   private TriggerService triggerService;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Inject
   public TriggerResource(TriggerService triggerService) {
@@ -100,6 +103,10 @@ public class TriggerResource {
   @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Trigger> get(@QueryParam("appId") String appId, @PathParam("triggerId") String triggerId) {
     triggerService.authorizeAppAccess(Collections.singletonList(appId));
+    Trigger trigger = triggerService.get(appId, triggerId);
+    if (featureFlagService.isEnabled(SPG_WORKFLOW_RBAC_ON_TRIGGER_RESOURCE, trigger.getAccountId())) {
+      triggerService.authorizeRead(trigger);
+    }
     return new RestResponse<>(triggerService.get(appId, triggerId));
   }
 
@@ -123,7 +130,13 @@ public class TriggerResource {
       }
       triggerService.authorize(existingTrigger, true);
       triggerService.authorize(trigger, false);
+      if (featureFlagService.isEnabled(SPG_WORKFLOW_RBAC_ON_TRIGGER_RESOURCE, trigger.getAccountId())) {
+        triggerService.authorizeUpdate(trigger);
+      }
       return new RestResponse(triggerService.update(trigger, false));
+    }
+    if (featureFlagService.isEnabled(SPG_WORKFLOW_RBAC_ON_TRIGGER_RESOURCE, trigger.getAccountId())) {
+      triggerService.authorizeSave(trigger);
     }
     triggerService.authorize(trigger, false);
     return new RestResponse<>(triggerService.save(trigger));
@@ -151,6 +164,9 @@ public class TriggerResource {
     }
     triggerService.authorize(existingTrigger, true);
     triggerService.authorize(trigger, false);
+    if (featureFlagService.isEnabled(SPG_WORKFLOW_RBAC_ON_TRIGGER_RESOURCE, trigger.getAccountId())) {
+      triggerService.authorizeUpdate(trigger);
+    }
     return new RestResponse<>(triggerService.update(trigger, false));
   }
 
@@ -170,6 +186,9 @@ public class TriggerResource {
     if (trigger != null) {
       if (triggerService.triggerActionExists(trigger)) {
         triggerService.authorize(trigger, true);
+        if (featureFlagService.isEnabled(SPG_WORKFLOW_RBAC_ON_TRIGGER_RESOURCE, trigger.getAccountId())) {
+          triggerService.authorizeDeletion(trigger);
+        }
       }
       triggerService.delete(appId, triggerId);
     }

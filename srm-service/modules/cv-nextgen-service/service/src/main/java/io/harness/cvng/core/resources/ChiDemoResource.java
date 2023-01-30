@@ -9,7 +9,7 @@ package io.harness.cvng.core.resources;
 
 import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.beans.change.DemoChangeEventDTO;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.services.api.demo.ChiDemoService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -39,9 +39,9 @@ public class ChiDemoResource {
   @NextGenManagerAuth
   @Path("register-event")
   @ApiOperation(value = "register a ChangeEvent", nickname = "registerChangeEventDemo")
-  public RestResponse<Void> register(
-      @BeanParam ProjectParams projectParams, @NotNull @Valid @Body DemoChangeEventDTO demoChangeEventDTO) {
-    chiDemoService.registerDemoChangeEvent(projectParams, demoChangeEventDTO);
+  public RestResponse<Void> register(@BeanParam ProjectScopedProjectParams projectParams,
+      @NotNull @Valid @Body DemoChangeEventDTO demoChangeEventDTO) {
+    chiDemoService.registerDemoChangeEvent(projectParams.getProjectParams(), demoChangeEventDTO);
     return new RestResponse<>(null);
   }
 }

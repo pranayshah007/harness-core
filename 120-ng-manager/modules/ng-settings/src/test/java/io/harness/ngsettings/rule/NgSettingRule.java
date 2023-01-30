@@ -18,6 +18,7 @@ import io.harness.licensing.services.LicenseService;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ngsettings.NgSettingsPersistenceTestModule;
+import io.harness.ngsettings.services.SettingEnforcementValidator;
 import io.harness.ngsettings.services.SettingValidator;
 import io.harness.ngsettings.services.SettingsService;
 import io.harness.ngsettings.services.impl.SettingsServiceImpl;
@@ -41,6 +42,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Names;
+import dev.morphia.converters.TypeConverter;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -50,7 +52,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -80,8 +81,8 @@ public class NgSettingRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
             .annotatedWith(Names.named("OUTBOX_TRANSACTION_TEMPLATE"))
             .toInstance(mock(TransactionTemplate.class));
         bind(LicenseService.class).toInstance(mock(LicenseService.class));
-        MapBinder<String, SettingValidator> settingValidatorMapBinder =
-            MapBinder.newMapBinder(binder(), String.class, SettingValidator.class);
+        MapBinder.newMapBinder(binder(), String.class, SettingValidator.class);
+        MapBinder.newMapBinder(binder(), String.class, SettingEnforcementValidator.class);
       }
     });
 

@@ -10,9 +10,11 @@ package io.harness.mongo.iterator.provider;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType;
 
 import io.harness.iterator.PersistentIterable;
+import io.harness.mongo.iterator.BulkWriteOpsResults;
 import io.harness.mongo.iterator.filter.FilterExpander;
 
 import java.time.Duration;
+import java.util.Iterator;
 import java.util.List;
 
 public interface PersistenceProvider<T extends PersistentIterable, F extends FilterExpander> {
@@ -21,4 +23,7 @@ public interface PersistenceProvider<T extends PersistentIterable, F extends Fil
       Duration targetInterval, F filterExpander, boolean unsorted);
   T findInstance(Class<T> clazz, String fieldName, F filterExpander);
   void recoverAfterPause(Class<T> clazz, String fieldName);
+  Iterator<T> obtainNextInstances(Class<T> clazz, String fieldName, F filterExpander, int limit);
+  BulkWriteOpsResults bulkWriteDocumentsMatchingIds(
+      Class<T> clazz, List<String> ids, String fieldName, long base, Duration targetInterval);
 }

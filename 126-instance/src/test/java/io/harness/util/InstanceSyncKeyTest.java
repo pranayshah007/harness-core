@@ -42,7 +42,7 @@ public class InstanceSyncKeyTest extends CategoryTest {
     String instanceSyncHandlerKey = k8sDeploymentInfoDTO.prepareInstanceSyncHandlerKey();
 
     assertThat(instanceSyncHandlerKey).isNotBlank();
-    assertThat(instanceSyncHandlerKey).isEqualTo("releaseName");
+    assertThat(instanceSyncHandlerKey).isEqualTo("releaseName_blueGreenStageColor");
   }
 
   @Test

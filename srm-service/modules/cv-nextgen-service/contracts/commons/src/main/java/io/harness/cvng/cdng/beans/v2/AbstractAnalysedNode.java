@@ -7,7 +7,16 @@
 
 package io.harness.cvng.cdng.beans.v2;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
+@NoArgsConstructor
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = AnalysedDeploymentNode.class, name = "DEPLOYMENT_NODE")
+  , @JsonSubTypes.Type(value = AnalysedLoadTestNode.class, name = "LOAD_TEST_NODE")
+})
 public abstract class AbstractAnalysedNode {}

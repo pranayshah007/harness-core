@@ -21,6 +21,7 @@ import software.wings.graphql.schema.type.QLService;
 import software.wings.graphql.schema.type.QLService.QLServiceBuilder;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +34,6 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.dataloader.MappedBatchLoader;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)

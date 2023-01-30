@@ -131,6 +131,11 @@ public class AMIArtifactResource {
 
     List<AMIFilter> amiFilters = new ArrayList<>();
 
+    if (amiRequestBody != null) {
+      amiTags = amiRequestBody.getTags();
+
+      amiFilters = amiRequestBody.getFilters();
+    }
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);

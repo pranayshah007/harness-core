@@ -27,4 +27,5 @@ public class CfDeployCommandResult {
   private List<CfInternalInstanceElement> oldAppInstances;
   private CfInBuiltVariablesUpdateValues updatedValues;
   private List<CfInternalInstanceElement> newAppInstances;
+  private boolean isStandardBG;
 }

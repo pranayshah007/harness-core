@@ -27,6 +27,8 @@ import io.harness.pms.governance.ExpansionRequest;
 import io.harness.pms.governance.ExpansionRequestsExtractor;
 import io.harness.pms.governance.ExpansionsMerger;
 import io.harness.pms.governance.JsonExpander;
+import io.harness.pms.utils.PipelineYamlHelper;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.PmsFeatureFlagService;
@@ -60,7 +62,7 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
     String expandedPipelineJSON = fetchExpandedPipelineJSONFromYaml(
         accountId, orgIdentifier, projectIdentifier, yamlWithResolvedTemplates, false);
     return governanceService.evaluateGovernancePolicies(expandedPipelineJSON, accountId, orgIdentifier,
-        projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE, "");
+        projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE, "", PipelineVersion.V0);
   }
 
   @Override
@@ -84,6 +86,12 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
   @Override
   public String fetchExpandedPipelineJSONFromYaml(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineYaml, boolean isExecution) {
+    switch (PipelineYamlHelper.getVersion(pipelineYaml)) {
+      case PipelineVersion.V1:
+        return pipelineYaml;
+      default:
+        break;
+    }
     if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
       return pipelineYaml;
     }

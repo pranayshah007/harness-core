@@ -191,7 +191,7 @@ public class GitBuildStatusUtility {
                                                   .taskDescription("CI git build status task")
                                                   .build();
 
-    String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+    String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
     log.info("Submitted git status update request for stage {}, planId {}, commitId {}, status {} with taskId {}",
         stageId, ambiance.getPlanExecutionId(), ciBuildStatusPushParameters.getSha(),
         ciBuildStatusPushParameters.getState(), taskId);

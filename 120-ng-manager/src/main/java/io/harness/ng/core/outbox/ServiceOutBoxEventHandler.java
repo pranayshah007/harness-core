@@ -26,6 +26,7 @@ import io.harness.context.GlobalContext;
 import io.harness.ng.core.events.OutboxEventConstants;
 import io.harness.ng.core.events.ServiceCreateEvent;
 import io.harness.ng.core.events.ServiceDeleteEvent;
+import io.harness.ng.core.events.ServiceForceDeleteEvent;
 import io.harness.ng.core.events.ServiceUpdateEvent;
 import io.harness.ng.core.events.ServiceUpsertEvent;
 import io.harness.ng.core.service.entity.ServiceRequest;
@@ -146,6 +147,31 @@ public class ServiceOutBoxEventHandler implements OutboxEventHandler {
     }
     return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
   }
+  private boolean handlerServiceForceDeleted(OutboxEvent outboxEvent) throws IOException {
+    GlobalContext globalContext = outboxEvent.getGlobalContext();
+
+    ServiceForceDeleteEvent serviceForceDeleteEvent =
+        objectMapper.readValue(outboxEvent.getEventData(), ServiceForceDeleteEvent.class);
+
+    AuditEntry auditEntry =
+        AuditEntry.builder()
+            .action(Action.FORCE_DELETE)
+            .module(ModuleType.CORE)
+            .insertId(outboxEvent.getId())
+            .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+            .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+            .timestamp(outboxEvent.getCreatedAt())
+            .oldYaml(getYamlString(ServiceRequest.builder().service(serviceForceDeleteEvent.getService()).build()))
+            .build();
+
+    Principal principal = null;
+    if (globalContext.get(PRINCIPAL_CONTEXT) == null) {
+      principal = new ServicePrincipal(NG_MANAGER.getServiceId());
+    } else if (globalContext.get(PRINCIPAL_CONTEXT) != null) {
+      principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
+    }
+    return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
+  }
 
   @Override
   public boolean handle(OutboxEvent outboxEvent) {
@@ -159,6 +185,8 @@ public class ServiceOutBoxEventHandler implements OutboxEventHandler {
           return handlerServiceUpdated(outboxEvent);
         case OutboxEventConstants.SERVICE_DELETED:
           return handlerServiceDeleted(outboxEvent);
+        case OutboxEventConstants.SERVICE_FORCE_DELETED:
+          return handlerServiceForceDeleted(outboxEvent);
         default:
           return false;
       }

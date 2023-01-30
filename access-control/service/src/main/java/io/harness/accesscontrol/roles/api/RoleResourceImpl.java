@@ -48,6 +48,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import javax.validation.executable.ValidateOnExecution;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -90,7 +91,7 @@ public class RoleResourceImpl implements RoleResource {
     String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();
     RoleFilter roleFilter =
         RoleFilter.builder().searchTerm(searchTerm).scopeIdentifier(scopeIdentifier).managedFilter(NO_FILTER).build();
-    PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter);
+    PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter, true);
     return ResponseDTO.newResponse(pageResponse.map(roleDTOMapper::toResponseDTO));
   }
 
@@ -103,7 +104,8 @@ public class RoleResourceImpl implements RoleResource {
     String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();
     return ResponseDTO.newResponse(roleDTOMapper.toResponseDTO(
         roleService.get(identifier, scopeIdentifier, NO_FILTER).<InvalidRequestException>orElseThrow(() -> {
-          throw new InvalidRequestException("Role not found with the given scope and identifier");
+          throw new NotFoundException(
+              String.format("Role with identifier [%s] is not found in the given scope", identifier));
         })));
   }
 

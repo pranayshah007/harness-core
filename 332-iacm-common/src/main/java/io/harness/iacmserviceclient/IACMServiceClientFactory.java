@@ -9,7 +9,7 @@ package io.harness.iacmserviceclient;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.iacm.beans.entities.IACMServiceConfig;
+import io.harness.beans.entities.IACMServiceConfig;
 import io.harness.network.Http;
 
 import com.google.gson.Gson;

@@ -17,10 +17,12 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.bitbucket.outcome.BitbucketConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.scm.utils.ScmConnectorHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
@@ -147,13 +149,17 @@ public class BitbucketConnectorDTO
   }
 
   @Override
-  public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
+  public String getFileUrl(String branchName, String filePath, String commitId, GitRepositoryDTO gitRepositoryDTO) {
     ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
     String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
     filePath = removeStartingAndEndingSlash(filePath);
     if (GitClientHelper.isBitBucketSAAS(repoUrl)) {
       String httpRepoUrl = GitClientHelper.getCompleteHTTPUrlForBitbucketSaas(repoUrl);
-      return String.format("%s/src/%s/%s", httpRepoUrl, branchName, filePath);
+      if (isNotEmpty(commitId)) {
+        return String.format("%s/src/%s/%s?at=%s", httpRepoUrl, commitId, filePath, branchName);
+      } else {
+        return String.format("%s/src/%s/%s", httpRepoUrl, branchName, filePath);
+      }
     }
     return getFileUrlForBitbucketServer(repoUrl, branchName, filePath, gitRepositoryDTO);
   }
@@ -239,5 +245,18 @@ public class BitbucketConnectorDTO
         }
       }
     }
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return BitbucketConnectorOutcomeDTO.builder()
+        .type(this.connectionType)
+        .url(this.url)
+        .validationRepo(this.validationRepo)
+        .authentication(this.authentication.toOutcome())
+        .apiAccess(this.apiAccess)
+        .delegateSelectors(this.delegateSelectors)
+        .executeOnDelegate(this.executeOnDelegate)
+        .build();
   }
 }

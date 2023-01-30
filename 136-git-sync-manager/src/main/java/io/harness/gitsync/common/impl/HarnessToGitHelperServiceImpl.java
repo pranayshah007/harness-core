@@ -14,10 +14,10 @@ import static io.harness.gitsync.common.scmerrorhandling.ScmErrorCodeToHttpStatu
 
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EntityReference;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
-import io.harness.common.EntityReference;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -688,7 +688,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
       return getFileRequest.getFilePath();
     }
     return gitFilePathHelper.getFileUrl(scope, getFileRequest.getConnectorRef(), scmGetFileResponseDTO.getBranchName(),
-        getFileRequest.getFilePath(), gitRepositoryDTO);
+        getFileRequest.getFilePath(), scmGetFileResponseDTO.getCommitId(), gitRepositoryDTO);
   }
 
   private io.harness.gitsync.CreateFileResponse prepareCreateFileResponse(
@@ -703,7 +703,8 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
                             .setCommitId(scmCommitFileResponseDTO.getCommitId())
                             .setBlobId(scmCommitFileResponseDTO.getBlobId())
                             .setFileUrl(gitFilePathHelper.getFileUrl(scope, createFileRequest.getConnectorRef(),
-                                createFileRequest.getBranchName(), createFileRequest.getFilePath(), gitRepositoryDTO))
+                                createFileRequest.getBranchName(), createFileRequest.getFilePath(),
+                                scmCommitFileResponseDTO.getCommitId(), gitRepositoryDTO))
                             .setRepoUrl(scmFacilitatorService.getRepoUrl(
                                 scope, createFileRequest.getConnectorRef(), createFileRequest.getRepoName()))
                             .build())
@@ -722,7 +723,8 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
                             .setCommitId(scmCommitFileResponseDTO.getCommitId())
                             .setBlobId(scmCommitFileResponseDTO.getBlobId())
                             .setFileUrl(gitFilePathHelper.getFileUrl(scope, updateFileRequest.getConnectorRef(),
-                                updateFileRequest.getBranchName(), updateFileRequest.getFilePath(), gitRepositoryDTO))
+                                updateFileRequest.getBranchName(), updateFileRequest.getFilePath(),
+                                scmCommitFileResponseDTO.getCommitId(), gitRepositoryDTO))
                             .build())
         .build();
   }

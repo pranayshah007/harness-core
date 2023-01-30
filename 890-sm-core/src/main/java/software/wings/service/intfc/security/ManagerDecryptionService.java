@@ -10,8 +10,8 @@ package software.wings.service.intfc.security;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.security.encryption.EncryptableSettingWithEncryptionDetails;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.setting.EncryptableSettingWithEncryptionDetails;
 
 import software.wings.annotation.EncryptableSetting;
 

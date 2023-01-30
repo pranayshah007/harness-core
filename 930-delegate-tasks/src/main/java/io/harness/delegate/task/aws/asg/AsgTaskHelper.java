@@ -8,13 +8,19 @@
 package io.harness.delegate.task.aws.asg;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.exception.ExceptionUtils;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.LogCallback;
 
 import software.wings.service.impl.AwsUtils;
@@ -45,11 +51,15 @@ public class AsgTaskHelper {
   }
 
   public String getAsgLaunchTemplateContent(Map<String, List<String>> asgStoreManifestsContent) {
-    return asgStoreManifestsContent.get("AsgLaunchTemplate").get(0);
+    return asgStoreManifestsContent.get(AsgLaunchTemplate).get(0);
   }
 
   public String getAsgConfigurationContent(Map<String, List<String>> asgStoreManifestsContent) {
-    return asgStoreManifestsContent.get("AsgConfiguration").get(0);
+    return asgStoreManifestsContent.get(AsgConfiguration).get(0);
+  }
+
+  public List<String> getAsgScalingPolicyContent(Map<String, List<String>> asgStoreManifestsContent) {
+    return asgStoreManifestsContent.get(AsgScalingPolicy);
   }
 
   public AutoScalingGroupContainer mapToAutoScalingGroupContainer(AutoScalingGroup autoScalingGroup) {
@@ -90,5 +100,33 @@ public class AsgTaskHelper {
         .steadyStateTimeOutInMinutes(timeoutInMinutes)
         .timeLimiter(timeLimiter)
         .build();
+  }
+
+  public AsgSdkManager getAsgSdkManager(
+      AsgCommandRequest asgCommandRequest, LogCallback logCallback, ElbV2Client elbV2Client) {
+    Integer timeoutInMinutes = asgCommandRequest.getTimeoutIntervalInMin();
+    AsgInfraConfig asgInfraConfig = asgCommandRequest.getAsgInfraConfig();
+
+    String region = asgInfraConfig.getRegion();
+    AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO(), region);
+
+    Supplier<AmazonEC2Client> ec2ClientSupplier =
+        () -> awsUtils.getAmazonEc2Client(Regions.fromName(region), awsInternalConfig);
+    Supplier<AmazonAutoScalingClient> asgClientSupplier =
+        () -> awsUtils.getAmazonAutoScalingClient(Regions.fromName(region), awsInternalConfig);
+
+    return AsgSdkManager.builder()
+        .ec2ClientSupplier(ec2ClientSupplier)
+        .asgClientSupplier(asgClientSupplier)
+        .logCallback(logCallback)
+        .steadyStateTimeOutInMinutes(timeoutInMinutes)
+        .timeLimiter(timeLimiter)
+        .elbV2Client(elbV2Client)
+        .build();
+  }
+
+  public String getExceptionMessage(Exception e) {
+    Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+    return ExceptionUtils.getMessage(sanitizedException);
   }
 }

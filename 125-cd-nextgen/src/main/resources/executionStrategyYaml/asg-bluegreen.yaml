@@ -1,0 +1,38 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - stepGroup:
+          name: Blue Green Deployment
+          identifier: blueGreenDepoyment
+          steps:
+            - step:
+                name: "Asg Blue Green Deploy"
+                identifier: AsgBlueGreenDeploy
+                type: AsgBlueGreenDeploy
+                timeout: 10m
+                spec:
+                  loadBalancer: ""
+                  prodListener: ""
+                  prodListenerRuleArn: ""
+                  stageListener: ""
+                  stageListenerRuleArn: ""
+            - step:
+                name: "Asg Blue Green Swap Services"
+                identifier: AsgBlueGreenSwapService
+                type: AsgBlueGreenSwapService
+                timeout: 10m
+                spec:
+                  downsizeOldAsg: false
+    rollbackSteps:
+      - step:
+          name: "Asg Blue Green Rollback"
+          identifier: AsgBlueGreenRollback
+          type: AsgBlueGreenRollback
+          timeout: 10m
+          spec: {}

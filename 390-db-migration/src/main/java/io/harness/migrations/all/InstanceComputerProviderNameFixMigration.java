@@ -19,9 +19,9 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.SettingsService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class InstanceComputerProviderNameFixMigration implements Migration {

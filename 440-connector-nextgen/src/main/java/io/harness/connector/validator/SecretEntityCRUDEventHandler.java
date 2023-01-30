@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.common.EntityReference;
+import io.harness.beans.EntityReference;
 import io.harness.connector.services.ConnectorService;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.ng.core.EntityDetail;

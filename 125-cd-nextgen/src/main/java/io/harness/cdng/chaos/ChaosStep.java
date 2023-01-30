@@ -16,6 +16,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.opaclient.OpaServiceClient;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
@@ -26,15 +27,15 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.steps.executable.AsyncExecutableWithCapabilities;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.PolicyEvalUtils;
 
 import com.google.inject.Inject;
 import java.util.Map;
@@ -42,11 +43,12 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ChaosStep implements AsyncExecutable<StepElementParameters> {
+public class ChaosStep extends AsyncExecutableWithCapabilities {
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(StepSpecTypeConstants.CHAOS_STEP).setStepCategory(StepCategory.STEP).build();
 
   @Inject private ChaosHttpClient client;
+  @Inject OpaServiceClient opaServiceClient;
 
   private static final String BODY =
       "mutation{reRunChaosWorkFlow(workflowID: \"%s\",identifiers:{orgIdentifier: \"%s\",projectIdentifier: \"%s\",accountIdentifier: \"%s\"}){notifyID}}";
@@ -57,8 +59,8 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
   }
 
   @Override
-  public AsyncExecutableResponse executeAsync(Ambiance ambiance, StepElementParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData) {
+  public AsyncExecutableResponse executeAsyncAfterRbac(
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     ChaosStepParameters params = (ChaosStepParameters) stepParameters.getSpec();
     String callbackId = triggerWorkflow(ambiance, params);
     log.info("Triggered chaos experiment with ref: {}, workflowRunId: {}", params.getExperimentRef(), callbackId);
@@ -81,7 +83,7 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
   }
 
   @Override
-  public StepResponse handleAsyncResponse(
+  public StepResponse handleAsyncResponseInternal(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     ChaosStepParameters params = (ChaosStepParameters) stepParameters.getSpec();
     ChaosStepNotifyData data = (ChaosStepNotifyData) responseDataMap.values().iterator().next();
@@ -168,5 +170,19 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
     } catch (Exception e) {
       throw new InvalidRequestException("Assertion provided is not a valid expression", e);
     }
+  }
+
+  @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+
+  // evaluating policies added in advanced section of the steps and updating status and failure info in the step
+  // response
+  @Override
+  public StepResponse postAsyncValidate(
+      Ambiance ambiance, StepElementParameters stepParameters, StepResponse stepResponse) {
+    if (Status.SUCCEEDED.equals(stepResponse.getStatus())) {
+      return PolicyEvalUtils.evalPolicies(ambiance, stepParameters, stepResponse, opaServiceClient);
+    }
+    return stepResponse;
   }
 }

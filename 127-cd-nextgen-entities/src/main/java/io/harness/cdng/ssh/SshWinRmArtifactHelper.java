@@ -23,6 +23,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
@@ -33,11 +34,13 @@ import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.aws.s3.S3FileDetailRequest;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
@@ -162,6 +165,26 @@ public class SshWinRmArtifactHelper {
           .artifactPath(request.getFileKey())
           .bucketName(request.getBucketName())
           .build();
+    } else if (artifactOutcome instanceof AzureArtifactsOutcome) {
+      AzureArtifactsOutcome azureArtifactsOutcome = (AzureArtifactsOutcome) artifactOutcome;
+      connectorDTO = getConnectorInfoDTO(azureArtifactsOutcome.getConnectorRef(), ngAccess);
+      return AzureArtifactDelegateConfig.builder()
+          .identifier(azureArtifactsOutcome.getIdentifier())
+          .connectorDTO(connectorDTO)
+          .project(azureArtifactsOutcome.getProject())
+          .feed(azureArtifactsOutcome.getFeed())
+          .scope(azureArtifactsOutcome.getScope())
+          .packageType(azureArtifactsOutcome.getPackageType())
+          .packageId(azureArtifactsOutcome.getPackageId())
+          .packageName(azureArtifactsOutcome.getPackageName())
+          .version(azureArtifactsOutcome.getVersion())
+          .versionRegex(azureArtifactsOutcome.getVersionRegex())
+          .identifier(azureArtifactsOutcome.getIdentifier())
+          .type(azureArtifactsOutcome.getType())
+          .image(azureArtifactsOutcome.getImage())
+          .imagePullSecret(azureArtifactsOutcome.getImagePullSecret())
+          .encryptedDataDetails(getArtifactEncryptionDataDetails(connectorDTO, ngAccess))
+          .build();
     } else {
       throw new UnsupportedOperationException(
           format("Unsupported Artifact type: [%s]", artifactOutcome.getArtifactType()));
@@ -203,6 +226,16 @@ public class SshWinRmArtifactHelper {
         List<DecryptableEntity> awsDecryptableEntities = awsConnectorDTO.getDecryptableEntities();
         if (isNotEmpty(awsDecryptableEntities)) {
           return secretManagerClientService.getEncryptionDetails(ngAccess, awsConnectorDTO.getCredential().getConfig());
+        } else {
+          return emptyList();
+        }
+      case AZURE_ARTIFACTS:
+        AzureArtifactsConnectorDTO azureArtifactsConnectorDTO =
+            (AzureArtifactsConnectorDTO) connectorDTO.getConnectorConfig();
+        List<DecryptableEntity> azureArtifactsDecryptableEntities = azureArtifactsConnectorDTO.getDecryptableEntities();
+        if (isNotEmpty(azureArtifactsDecryptableEntities)) {
+          return secretManagerClientService.getEncryptionDetails(
+              ngAccess, azureArtifactsConnectorDTO.getAuth().getCredentials().getCredentialsSpec());
         } else {
           return emptyList();
         }

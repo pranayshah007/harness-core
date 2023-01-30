@@ -26,6 +26,7 @@ import io.harness.execution.PlanExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.skip.SkipInfo;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -144,6 +145,7 @@ public class PipelineStatusUpdateEventHandlerTest extends PipelineServiceTestBas
         .layoutNodeMap(layoutNode)
         .moduleInfo(moduleInfo)
         .status(ExecutionStatus.SUCCESS)
+        .parentStageInfo(PipelineStageInfo.newBuilder().setHasParentPipeline(true).build())
         .endTs(4321L)
         .build();
   }

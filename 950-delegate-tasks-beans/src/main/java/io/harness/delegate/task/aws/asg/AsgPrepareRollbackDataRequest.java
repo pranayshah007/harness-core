@@ -18,10 +18,10 @@ import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 import lombok.experimental.NonFinal;
 
-@Value
+@Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class AsgPrepareRollbackDataRequest implements AsgCommandRequest, NestedAnnotationResolver {

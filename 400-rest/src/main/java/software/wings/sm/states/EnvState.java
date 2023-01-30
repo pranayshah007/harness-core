@@ -96,6 +96,7 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -111,7 +112,6 @@ import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * A Env state to pause state machine execution.
@@ -124,8 +124,6 @@ import org.mongodb.morphia.annotations.Transient;
 @FieldNameConstants(innerTypeName = "EnvStateKeys")
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class EnvState extends State implements WorkflowState {
-  public static final Integer ENV_STATE_TIMEOUT_MILLIS = 7 * 24 * 60 * 60 * 1000;
-
   private static final Pattern secretNamePattern = Pattern.compile("\\$\\{secrets.getValue\\([^{}]+\\)}");
   private static final Pattern secretManagerObtainPattern = Pattern.compile("\\$\\{secretManager.obtain\\([^{}]+\\)}");
 
@@ -613,7 +611,7 @@ public class EnvState extends State implements WorkflowState {
   @Override
   public Integer getTimeoutMillis() {
     if (super.getTimeoutMillis() == null) {
-      return ENV_STATE_TIMEOUT_MILLIS;
+      return INFINITE_TIMEOUT;
     }
     return super.getTimeoutMillis();
   }

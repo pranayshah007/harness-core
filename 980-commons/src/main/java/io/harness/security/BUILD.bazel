@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("@rules_java//java:defs.bzl", "java_library")
 load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
 
@@ -25,11 +30,11 @@ java_library(
         "@maven//:com_nimbusds_nimbus_jose_jwt",
         "@maven//:com_squareup_okhttp3_okhttp",
         "@maven//:commons_codec_commons_codec",
+        "@maven//:dev_morphia_morphia_core",
         "@maven//:jakarta_ws_rs_jakarta_ws_rs_api",
         "@maven//:javax_annotation_javax_annotation_api",
         "@maven//:javax_ws_rs_javax_ws_rs_api",
         "@maven//:org_apache_commons_commons_lang3",
-        "@maven//:org_mongodb_morphia_morphia",
         "@maven//:org_springframework_data_spring_data_commons",
     ],
 )

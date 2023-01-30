@@ -175,7 +175,7 @@ public class EmailNotificationServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldSendEmailWithTemplate() {
     emailDataNotificationService.send(nonSystemEmailTemplateData);
-    verify(delegateService).queueTask(any(DelegateTask.class));
+    verify(delegateService).queueTaskV2(any(DelegateTask.class));
     verify(settingsService).getGlobalSettingAttributesByType(ACCOUNT_ID, SettingVariableTypes.SMTP.name());
     verifyNoMoreInteractions(alertService);
   }
@@ -190,7 +190,7 @@ public class EmailNotificationServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldSendEmailWithBody() {
     emailDataNotificationService.send(nonSystemEmailBodyData);
-    verify(delegateService).queueTask(any(DelegateTask.class));
+    verify(delegateService).queueTaskV2(any(DelegateTask.class));
     verify(settingsService).getGlobalSettingAttributesByType(ACCOUNT_ID, SettingVariableTypes.SMTP.name());
     verifyNoMoreInteractions(mailer);
     verifyNoMoreInteractions(alertService);
@@ -222,7 +222,7 @@ public class EmailNotificationServiceTest extends WingsBaseTest {
   public void shouldSendCustomerEmailWithBody() {
     emailDataNotificationService.send(customerEmailBodyData);
     verifyNoMoreInteractions(mailer);
-    verify(delegateService).queueTask(any(DelegateTask.class));
+    verify(delegateService).queueTaskV2(any(DelegateTask.class));
     verify(settingsService).getGlobalSettingAttributesByType(ACCOUNT_ID, SettingVariableTypes.SMTP.name());
     verifyNoMoreInteractions(alertService);
   }

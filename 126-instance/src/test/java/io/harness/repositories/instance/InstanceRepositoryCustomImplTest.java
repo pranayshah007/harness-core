@@ -110,16 +110,10 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void getActiveInstancesByAccountTestWithoutTimestamp() {
     Instance instance = Instance.builder().instanceKey("abc").build();
-    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
-                            .is(ACCOUNT_ID)
-                            .and(InstanceKeys.orgIdentifier)
-                            .is(ORGANIZATION_ID)
-                            .and(InstanceKeys.projectIdentifier)
-                            .is(PROJECT_ID)
-                            .and(InstanceKeys.serviceIdentifier)
-                            .is(SERVICE_ID)
-                            .and(InstanceKeys.isDeleted)
-                            .is(false);
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(ACCOUNT_ID);
+    criteria.and(InstanceKeys.orgIdentifier).is(ORGANIZATION_ID);
+    criteria.and(InstanceKeys.projectIdentifier).is(PROJECT_ID);
+    criteria.and(InstanceKeys.serviceIdentifier).is(SERVICE_ID).and(InstanceKeys.isDeleted).is(false);
     Query query = new Query().addCriteria(criteria);
     when(analyticsMongoTemplate.find(query, Instance.class)).thenReturn(Collections.singletonList(instance));
 
@@ -269,16 +263,14 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void getActiveInstancesByInfrastructureMappingIdTest() {
-    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
-                            .is(ACCOUNT_ID)
-                            .and(InstanceKeys.orgIdentifier)
-                            .is(ORGANIZATION_ID)
-                            .and(InstanceKeys.projectIdentifier)
-                            .is(PROJECT_ID)
-                            .and(InstanceKeys.infrastructureMappingId)
-                            .is(INFRASTRUCTURE_MAPPING_ID)
-                            .and(InstanceKeys.isDeleted)
-                            .is(false);
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(ACCOUNT_ID);
+    criteria.and(InstanceKeys.orgIdentifier).is(ORGANIZATION_ID);
+    criteria.and(InstanceKeys.projectIdentifier).is(PROJECT_ID);
+    criteria.and(InstanceKeys.infrastructureMappingId)
+        .is(INFRASTRUCTURE_MAPPING_ID)
+        .and(InstanceKeys.isDeleted)
+        .is(false);
+
     Query query = new Query().addCriteria(criteria);
     Instance instance = Instance.builder().build();
     when(secondaryMongoTemplate.find(query, Instance.class)).thenReturn(Arrays.asList(instance));
@@ -333,9 +325,9 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
         new AggregationResults<>(Arrays.asList(instancesByBuildId), new Document());
     when(secondaryMongoTemplate.aggregate(any(Aggregation.class), eq(Instance.class), eq(InstancesByBuildId.class)))
         .thenReturn(aggregationResults);
-    assertThat(instanceRepositoryCustom.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_ID, ORGANIZATION_ID,
-                   PROJECT_ID, SERVICE_ID, ENVIRONMENT_ID, buildIds, TIMESTAMP, limit, null, clusterId,
-                   pipelineExecutionId, System.currentTimeMillis()))
+    assertThat(
+        instanceRepositoryCustom.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID,
+            SERVICE_ID, ENVIRONMENT_ID, buildIds, TIMESTAMP, limit, null, clusterId, pipelineExecutionId))
         .isEqualTo(aggregationResults);
   }
 

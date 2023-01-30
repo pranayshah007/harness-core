@@ -14,6 +14,7 @@ import (
 
 	"github.com/dchest/authcookie"
 	"github.com/harness/harness-core/product/log-service/config"
+	"github.com/harness/harness-core/product/platform/client"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +31,8 @@ func TestTokenGenerationMiddleware_Success(t *testing.T) {
 	header := http.Header{}
 	header.Add(authHeader, globalToken)
 	httpReq := &http.Request{Form: v, Header: header}
-	fn := TokenGenerationMiddleware(config, true)
+	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
+	fn := TokenGenerationMiddleware(config, true, ngClient)
 	mockHandler := &MockHandler{}
 	handlerFunc := fn(mockHandler)
 	writer := httptest.NewRecorder()
@@ -47,7 +49,8 @@ func TestTokenGenerationMiddleware_TokenInURL_Success(t *testing.T) {
 	v.Add(authHeader, globalToken)
 	header := http.Header{}
 	httpReq := &http.Request{Form: v, Header: header}
-	fn := TokenGenerationMiddleware(config, true)
+	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
+	fn := TokenGenerationMiddleware(config, true, ngClient)
 	mockHandler := &MockHandler{}
 	handlerFunc := fn(mockHandler)
 	writer := httptest.NewRecorder()
@@ -64,7 +67,8 @@ func TestTokenGenerationMiddleware_IncorrectToken(t *testing.T) {
 	header := http.Header{}
 	header.Add(authHeader, "incorrect_token")
 	httpReq := &http.Request{Form: v, Header: header}
-	fn := TokenGenerationMiddleware(config, true)
+	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
+	fn := TokenGenerationMiddleware(config, true, ngClient)
 	mockHandler := &MockHandler{}
 	handlerFunc := fn(mockHandler)
 	writer := httptest.NewRecorder()
@@ -79,7 +83,8 @@ func TestTokenGenerationMiddleware_AccountIDAbsent(t *testing.T) {
 	header := http.Header{}
 	header.Add(authHeader, "token")
 	httpReq := &http.Request{Header: header}
-	fn := TokenGenerationMiddleware(config, true)
+	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
+	fn := TokenGenerationMiddleware(config, true, ngClient)
 	mockHandler := &MockHandler{}
 	handlerFunc := fn(mockHandler)
 	writer := httptest.NewRecorder()
@@ -94,7 +99,8 @@ func TestTokenGenerationMiddleware_SkipAccountIDCheck(t *testing.T) {
 	header := http.Header{}
 	header.Add(authHeader, "token")
 	httpReq := &http.Request{Header: header}
-	fn := TokenGenerationMiddleware(config, false)
+	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
+	fn := TokenGenerationMiddleware(config, false, ngClient)
 	mockHandler := &MockHandler{}
 	handlerFunc := fn(mockHandler)
 	writer := httptest.NewRecorder()
@@ -114,7 +120,8 @@ func TestAuthMiddleware_Success(t *testing.T) {
 	v.Add("key", "key")
 	header.Add(authHeader, cookie)
 	httpReq := &http.Request{Form: v, Header: header}
-	fn := AuthMiddleware(config)
+	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
+	fn := AuthMiddleware(config, ngClient)
 	mockHandler := &MockHandler{}
 	handlerFunc := fn(mockHandler)
 	writer := httptest.NewRecorder()
@@ -134,7 +141,8 @@ func TestAuthMiddleware_TokenInURL_Success(t *testing.T) {
 	v.Add("key", "key")
 	v.Add(authHeader, cookie)
 	httpReq := &http.Request{Form: v, Header: header}
-	fn := AuthMiddleware(config)
+	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
+	fn := AuthMiddleware(config, ngClient)
 	mockHandler := &MockHandler{}
 	handlerFunc := fn(mockHandler)
 	writer := httptest.NewRecorder()
@@ -156,7 +164,8 @@ func TestAuthMiddleware_IncorrectSecret(t *testing.T) {
 	v.Add("key", "key")
 	header.Add(authHeader, cookie)
 	httpReq := &http.Request{Form: v, Header: header}
-	fn := AuthMiddleware(config)
+	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
+	fn := AuthMiddleware(config, ngClient)
 	mockHandler := &MockHandler{}
 	handlerFunc := fn(mockHandler)
 	writer := httptest.NewRecorder()
@@ -178,7 +187,8 @@ func TestAuthMiddleware_IncorrectAccount(t *testing.T) {
 	v.Add("key", "key")
 	header.Add(authHeader, cookie)
 	httpReq := &http.Request{Form: v, Header: header}
-	fn := AuthMiddleware(config)
+	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
+	fn := AuthMiddleware(config, ngClient)
 	mockHandler := &MockHandler{}
 	handlerFunc := fn(mockHandler)
 	writer := httptest.NewRecorder()
@@ -199,7 +209,8 @@ func TestAuthMiddleware_NoKeyPresent(t *testing.T) {
 	v.Add("accountID", accountID)
 	header.Add(authHeader, cookie)
 	httpReq := &http.Request{Form: v, Header: header}
-	fn := AuthMiddleware(config)
+	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
+	fn := AuthMiddleware(config, ngClient)
 	mockHandler := &MockHandler{}
 	handlerFunc := fn(mockHandler)
 	writer := httptest.NewRecorder()

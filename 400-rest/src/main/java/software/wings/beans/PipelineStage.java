@@ -16,6 +16,7 @@ import io.harness.annotations.dev.TargetModule;
 import software.wings.yaml.BaseYamlWithType;
 
 import com.google.common.collect.Lists;
+import dev.morphia.annotations.NotSaved;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,7 +26,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.mongodb.morphia.annotations.NotSaved;
 
 /**
  * Created by anubhaw on 11/17/16.

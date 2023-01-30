@@ -64,14 +64,14 @@ public class JiraConnectorValidatorTest extends CategoryTest {
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(JiraTestConnectionTaskNGResponse.builder().canConnect(true).build());
 
     ConnectorValidationResult result = connectorValidator.validate(
         jiraConnectorDTO, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
 
     assertThat(result.getStatus()).isEqualTo(SUCCESS);
-    verify(delegateGrpcClientWrapper).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(any());
   }
 
   @Test
@@ -86,13 +86,13 @@ public class JiraConnectorValidatorTest extends CategoryTest {
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(JiraTestConnectionTaskNGResponse.builder().canConnect(false).build());
 
     ConnectorValidationResult result = connectorValidator.validate(
         jiraConnectorDTO, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
 
     assertThat(result.getStatus()).isEqualTo(FAILURE);
-    verify(delegateGrpcClientWrapper).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(any());
   }
 }

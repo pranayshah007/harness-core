@@ -525,7 +525,8 @@
       "type": "object",
       "required": [
         "key",
-        "operator"
+        "operator",
+        "value"
       ],
       "properties": {
         "key": {
@@ -642,7 +643,7 @@
             "connectorRef": {
               "type": "string"
             },
-            "delegateSelectors": {
+            "entrypoint": {
               "oneOf": [
                 {
                   "type": "array",
@@ -651,17 +652,15 @@
                   }
                 },
                 {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
+                  "type": "string"
                 }
               ]
             },
-            "entrypoint": {
+            "envVariables": {
               "oneOf": [
                 {
-                  "type": "array",
-                  "items": {
+                  "type": "object",
+                  "additionalProperties": {
                     "type": "string"
                   }
                 },
@@ -2112,7 +2111,8 @@
               "DelegateProvisioning",
               "PolicyEvaluationFailure",
               "InputTimeoutError",
-              "ApprovalRejection"
+              "ApprovalRejection",
+              "DelegateRestart"
             ]
           }
         }
@@ -2323,6 +2323,39 @@
           "additionalProperties": {
             "$ref": "#/definitions/JsonNode"
           }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldMatrixConfigInterface": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "$ref": "#/definitions/MatrixConfigInterface"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/MatrixConfigInterface"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4226,110 +4259,74 @@
       ]
     },
     "StepGroupElementConfig": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "oneOf": [
-        {
-          "type": "object",
-          "required": [
-            "identifier",
-            "name",
-            "template"
-          ],
-          "properties": {
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "failureStrategies": {
+      "type": "object",
+      "required": [
+        "identifier",
+        "name"
+      ],
+      "properties": {
+        "delegateSelectors": {
+          "oneOf": [
+            {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/FailureStrategyConfig"
+                "type": "string"
               }
             },
-            "identifier": {
+            {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
-            },
-            "name": {
-              "type": "string",
-              "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
-            },
-            "strategy": {
-              "$ref": "#/definitions/StrategyConfig"
-            },
-            "template": {
-              "$ref": "#/definitions/TemplateLinkConfig"
-            },
-            "when": {
-              "$ref": "#/definitions/StepWhenCondition"
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
             }
-          },
-          "additionalProperties": false
+          ]
         },
+        "failureStrategies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FailureStrategyConfig"
+          }
+        },
+        "identifier": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExecutionWrapperConfig"
+          },
+          "maxItems": 2147483647,
+          "minItems": 1
+        },
+        "strategy": {
+          "$ref": "#/definitions/StrategyConfig"
+        },
+        "template": {
+          "$ref": "#/definitions/TemplateLinkConfig"
+        },
+        "when": {
+          "$ref": "#/definitions/StepWhenCondition"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
         {
-          "type": "object",
-          "required": [
-            "identifier",
-            "name",
-            "steps"
-          ],
-          "properties": {
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+          "oneOf": [
+            {
+              "required": [
+                "template"
               ]
             },
-            "failureStrategies": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/FailureStrategyConfig"
-              }
-            },
-            "identifier": {
-              "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
-            },
-            "name": {
-              "type": "string",
-              "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
-            },
-            "steps": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ExecutionWrapperConfig"
-              },
-              "maxItems": 2147483647,
-              "minItems": 1
-            },
-            "strategy": {
-              "$ref": "#/definitions/StrategyConfig"
-            },
-            "when": {
-              "$ref": "#/definitions/StepWhenCondition"
+            {
+              "required": [
+                "steps"
+              ]
             }
-          },
-          "additionalProperties": false
+          ]
         }
       ]
     },
@@ -4385,7 +4382,16 @@
       "type": "object",
       "properties": {
         "matrix": {
-          "$ref": "#/definitions/MatrixConfigInterface"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ParameterFieldMatrixConfigInterface"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "parallelism": {
           "oneOf": [
@@ -4595,6 +4601,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "duration"
+          ],
           "properties": {
             "duration": {
               "type": "string",

@@ -23,6 +23,7 @@ import io.harness.repositories.CITelemetryStatusRepository;
 import io.harness.repositories.ModuleLicenseRepository;
 
 import com.google.inject.Inject;
+import java.lang.instrument.Instrumentation;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +37,8 @@ public class CiTelemetryPublisher {
   @Inject AccountClient accountClient;
   @Inject CITelemetryStatusRepository ciTelemetryStatusRepository;
   @Inject ModuleLicenseRepository moduleLicenseRepository;
+  @Inject Instrumentation instrumentation;
+
   String COUNT_ACTIVE_DEVELOPERS = "ci_license_developers_used";
   String ACCOUNT_DEPLOY_TYPE = "account_deploy_type";
   // Locking for a bit less than one day. It's ok to send a bit more than less considering downtime/etc
@@ -49,6 +52,8 @@ public class CiTelemetryPublisher {
     log.info("CiTelemetryPublisher recordTelemetry execute started.");
     try {
       List<AccountDTO> accountDTOList = getAllAccounts();
+
+      log.info("All account size is %d", instrumentation.getObjectSize(accountDTOList));
       for (AccountDTO accountDTO : accountDTOList) {
         String accountId = accountDTO.getIdentifier();
         if (EmptyPredicate.isNotEmpty(accountId) && !accountId.equals(GLOBAL_ACCOUNT_ID)) {

@@ -18,6 +18,7 @@ import io.harness.encryption.Scope;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.AdfsAuthException;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.ArtifactoryServerException;
@@ -67,6 +68,7 @@ import io.harness.exception.SecretNotFoundException;
 import io.harness.exception.ServiceNowException;
 import io.harness.exception.ShellExecutionException;
 import io.harness.exception.TerraformCommandExecutionException;
+import io.harness.exception.TerragruntCommandExecutionException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.UnresolvedExpressionsException;
@@ -201,5 +203,7 @@ public class CommonsKryoRegistrar implements KryoRegistrar {
     kryo.register(TemplateInputsErrorMetadataDTO.class, 980034);
     kryo.register(AzureARMTaskException.class, 980035);
     kryo.register(AzureBPTaskException.class, 980037);
+    kryo.register(AdfsAuthException.class, 10000120);
+    kryo.register(TerragruntCommandExecutionException.class, 10000262);
   }
 }

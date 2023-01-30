@@ -8,10 +8,12 @@
 package software.wings.graphql.datafetcher.trigger;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.SPG_WORKFLOW_RBAC_ON_TRIGGER_RESOURCE;
 
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 
@@ -28,6 +30,7 @@ import com.google.inject.Inject;
 @OwnedBy(CDC)
 public class UpdateTriggerDataFetcher extends BaseMutatorDataFetcher<QLCreateOrUpdateTriggerInput, QLTriggerPayload> {
   @Inject TriggerController triggerController;
+  @Inject FeatureFlagService featureFlagService;
   private TriggerService triggerService;
 
   @Inject
@@ -41,8 +44,11 @@ public class UpdateTriggerDataFetcher extends BaseMutatorDataFetcher<QLCreateOrU
   protected QLTriggerPayload mutateAndFetch(QLCreateOrUpdateTriggerInput parameter, MutationContext mutationContext) {
     try (AutoLogContext ignore0 =
              new AccountLogContext(mutationContext.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
-      final Trigger savedTrigger =
-          triggerService.update(triggerController.prepareTrigger(parameter, mutationContext.getAccountId()), false);
+      final Trigger trigger = triggerController.prepareTrigger(parameter, mutationContext.getAccountId());
+      if (featureFlagService.isEnabled(SPG_WORKFLOW_RBAC_ON_TRIGGER_RESOURCE, mutationContext.getAccountId())) {
+        triggerService.authorizeUpdate(trigger);
+      }
+      final Trigger savedTrigger = triggerService.update(trigger, false);
       return triggerController.prepareQLTrigger(
           savedTrigger, parameter.getClientMutationId(), mutationContext.getAccountId());
     }

@@ -173,13 +173,14 @@ public class PlanCreatorMergeService {
     String pipelineVersion = metadata != null && EmptyPredicate.isNotEmpty(metadata.getHarnessVersion())
         ? metadata.getHarnessVersion()
         : PipelineVersion.V0;
+    boolean isExecutionInputEnabled = pipelineVersion.equals(PipelineVersion.V0)
+        && pmsFeatureFlagService.isEnabled(accountId, FeatureName.NG_EXECUTION_INPUT);
     Map<String, PlanCreationContextValue> planCreationContextMap = new HashMap<>();
-    PlanCreationContextValue.Builder builder =
-        PlanCreationContextValue.newBuilder()
-            .setAccountIdentifier(accountId)
-            .setOrgIdentifier(orgIdentifier)
-            .setProjectIdentifier(projectIdentifier)
-            .setIsExecutionInputEnabled(pmsFeatureFlagService.isEnabled(accountId, FeatureName.NG_EXECUTION_INPUT));
+    PlanCreationContextValue.Builder builder = PlanCreationContextValue.newBuilder()
+                                                   .setAccountIdentifier(accountId)
+                                                   .setOrgIdentifier(orgIdentifier)
+                                                   .setProjectIdentifier(projectIdentifier)
+                                                   .setIsExecutionInputEnabled(isExecutionInputEnabled);
     if (metadata != null) {
       builder.setMetadata(metadata);
     }

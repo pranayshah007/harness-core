@@ -41,7 +41,7 @@ import org.mockito.MockitoAnnotations;
 public class InputSetsApiUtilsTest extends CategoryTest {
   private InputSetsApiUtils inputSetsApiUtils;
   @Mock private PmsFeatureFlagHelper pmsFeatureFlagHelper;
-  String slug = randomAlphabetic(10);
+  String identifier = randomAlphabetic(10);
   String name = randomAlphabetic(10);
   String account = "accountId";
 
@@ -85,14 +85,14 @@ public class InputSetsApiUtilsTest extends CategoryTest {
   public void testGetResponseBody() {
     InputSetEntity inputSetEntity = InputSetEntity.builder()
                                         .yaml("yaml")
-                                        .identifier(slug)
+                                        .identifier(identifier)
                                         .name(name)
                                         .createdAt(123456L)
                                         .lastUpdatedAt(987654L)
                                         .build();
     InputSetResponseBody responseBody = inputSetsApiUtils.getInputSetResponse(inputSetEntity);
     assertEquals("yaml", responseBody.getInputSetYaml());
-    assertEquals(slug, responseBody.getSlug());
+    assertEquals(identifier, responseBody.getIdentifier());
     assertEquals(name, responseBody.getName());
     assertEquals(123456L, responseBody.getCreated().longValue());
     assertEquals(987654L, responseBody.getUpdated().longValue());

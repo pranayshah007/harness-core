@@ -14,4 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 public class YamlConstants {
   public static final String JSON_EXTENSION = ".json";
   public static final String SCHEMA_FILE_NAME = "all" + JSON_EXTENSION;
+
+  public static final String INPUT = "<+input>";
 }

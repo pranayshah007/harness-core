@@ -54,7 +54,6 @@ public class CommonStepInfo {
           .setName("Email")
           .setType("Email")
           .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Utilities/Non-Scripted").build())
-          .setFeatureFlag(FeatureName.NG_EMAIL_STEP.name())
           .build();
   StepInfo harnessApprovalStepInfo =
       StepInfo.newBuilder()
@@ -175,6 +174,13 @@ public class CommonStepInfo {
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_SERVICE_NOW.name())
           .build();
 
+  StepInfo containerStepInfo =
+      StepInfo.newBuilder()
+          .setName("Container Step")
+          .setType(StepSpecTypeConstants.CONTAINER_STEP)
+          .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Utilities/Scripted").build())
+          .build();
+
   public List<StepInfo> getCommonSteps(String category) {
     List<StepInfo> stepInfos = new ArrayList<>();
     stepInfos.add(shellScriptStepInfo);
@@ -193,6 +199,7 @@ public class CommonStepInfo {
     stepInfos.add(emailStepInfo);
     stepInfos.add(waitStepInfo);
     stepInfos.add(serviceNowImportSetStepInfo);
+    stepInfos.add(containerStepInfo);
 
     return stepInfos.stream().filter(getStepInfoPredicate(category)).collect(Collectors.toList());
   }

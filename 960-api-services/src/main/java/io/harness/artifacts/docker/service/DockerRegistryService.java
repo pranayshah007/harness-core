@@ -85,5 +85,6 @@ public interface DockerRegistryService {
    */
   boolean validateCredentials(DockerInternalConfig dockerConfig);
 
-  ArtifactMetaInfo getArtifactMetaInfo(DockerInternalConfig dockerConfig, String imageName, String tag);
+  ArtifactMetaInfo getArtifactMetaInfo(
+      DockerInternalConfig dockerConfig, String imageName, String tag, boolean shouldFetchDockerV2DigestSHA256);
 }

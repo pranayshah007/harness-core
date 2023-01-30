@@ -20,6 +20,8 @@ import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendat
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 import java.util.HashMap;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,8 +30,6 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 @RunWith(MockitoJUnitRunner.class)

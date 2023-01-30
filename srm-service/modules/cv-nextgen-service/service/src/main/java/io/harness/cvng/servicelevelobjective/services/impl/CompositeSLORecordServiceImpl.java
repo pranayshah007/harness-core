@@ -20,6 +20,8 @@ import io.harness.persistence.HPersistence;
 
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.inject.Inject;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Sort;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -30,8 +32,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Sort;
 
 public class CompositeSLORecordServiceImpl implements CompositeSLORecordService {
   private static final int RETRY_COUNT = 3;
@@ -87,9 +87,12 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
   }
 
   @Override
-  public CompositeSLORecord getLatestCompositeSLORecordWithVersion(String sloId, int sloVersion) {
+  public CompositeSLORecord getLatestCompositeSLORecordWithVersion(
+      String sloId, Instant startTimeForCurrentRange, int sloVersion) {
     return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
         .filter(CompositeSLORecordKeys.sloId, sloId)
+        .field(CompositeSLORecordKeys.timestamp)
+        .greaterThanOrEq(startTimeForCurrentRange)
         .filter(CompositeSLORecordKeys.sloVersion, sloVersion)
         .order(Sort.descending(CompositeSLORecordKeys.timestamp))
         .get();

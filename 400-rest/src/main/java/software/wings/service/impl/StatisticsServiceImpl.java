@@ -17,6 +17,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.time.EpochUtils.PST_ZONE_ID;
 import static io.harness.validation.Validator.notNullCheck;
 
+import static software.wings.beans.WorkflowExecution.ACCOUNTID_PIPEXECUTIONID_CREATEDAT;
+
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.groupingBy;
@@ -26,6 +28,7 @@ import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.ff.FeatureFlagService;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.time.EpochUtils;
 
 import software.wings.beans.ElementExecutionSummary;
@@ -42,6 +45,8 @@ import software.wings.service.intfc.WorkflowExecutionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -49,8 +54,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
 
 @Singleton
 @Slf4j
@@ -191,7 +194,7 @@ public class StatisticsServiceImpl implements StatisticsService {
     }
 
     FindOptions findOptions = new FindOptions();
-    findOptions.modifier("$hint", "accountId_pipExecutionId_createdAt");
+    findOptions.hint(BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), ACCOUNTID_PIPEXECUTIONID_CREATEDAT));
 
     List<WorkflowExecution> workflowExecutions = query.asList(findOptions);
 

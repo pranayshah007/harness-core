@@ -61,15 +61,19 @@ public class DockerRequestResponseMapper {
   public DockerArtifactDelegateResponse toDockerResponse(BuildDetailsInternal buildDetailsInternal,
       DockerArtifactDelegateRequest request, Map<String, String> label, ArtifactMetaInfo artifactMetaInfo) {
     String sha = null;
+    String shaV2 = null;
     if (artifactMetaInfo != null && artifactMetaInfo.getLabels() != null) {
       label.putAll(artifactMetaInfo.getLabels());
     }
     if (artifactMetaInfo != null && artifactMetaInfo.getSha() != null) {
       sha = artifactMetaInfo.getSha();
     }
+    if (artifactMetaInfo != null && artifactMetaInfo.getShaV2() != null) {
+      shaV2 = artifactMetaInfo.getShaV2();
+    }
 
     return DockerArtifactDelegateResponse.builder()
-        .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal, sha))
+        .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal, sha, shaV2))
         .imagePath(request.getImagePath())
         .tag(buildDetailsInternal.getNumber())
         .label(label)

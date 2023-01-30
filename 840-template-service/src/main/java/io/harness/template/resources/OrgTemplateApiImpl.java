@@ -44,8 +44,9 @@ public class OrgTemplateApiImpl implements OrgTemplateApi {
 
   @Override
   public Response deleteTemplateOrg(@ResourceIdentifier String templateIdentifier, @OrgIdentifier String org,
-      String versionLabel, @AccountIdentifier String account, String comments) {
-    return templateResourceApiUtils.deleteTemplate(account, org, null, templateIdentifier, versionLabel, comments);
+      String versionLabel, @AccountIdentifier String account, String comments, Boolean forceDelete) {
+    return templateResourceApiUtils.deleteTemplate(
+        account, org, null, templateIdentifier, versionLabel, comments, Boolean.TRUE == forceDelete);
   }
 
   @Override

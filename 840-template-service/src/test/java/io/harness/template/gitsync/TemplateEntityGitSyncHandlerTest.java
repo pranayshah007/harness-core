@@ -146,7 +146,8 @@ public class TemplateEntityGitSyncHandlerTest extends CategoryTest {
                                         .build();
     doReturn(true)
         .when(templateService)
-        .delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "");
+        .delete(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "", false);
     assertThat(templateEntityGitSyncHandler.delete(reference)).isTrue();
   }
 

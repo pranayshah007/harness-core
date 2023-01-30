@@ -24,6 +24,7 @@ public class FeatureFlagNames {
 
   public static final String SRM_COMPOSITE_SLO = "SRM_COMPOSITE_SLO";
 
+  public static final String SRM_DOWNTIME = "SRM_DOWNTIME";
   public static final String SRM_CODE_ERROR_NOTIFICATIONS = "SRM_CODE_ERROR_NOTIFICATIONS";
 
   public static final String SRM_INTERNAL_CHANGE_SOURCE_FF = "SRM_INTERNAL_CHANGE_SOURCE_FF";

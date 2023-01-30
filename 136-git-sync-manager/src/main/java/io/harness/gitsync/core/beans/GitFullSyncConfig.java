@@ -11,14 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.mongo.CollationLocale;
-import io.harness.mongo.CollationStrength;
+import io.harness.mongo.collation.CollationLocale;
+import io.harness.mongo.collation.CollationStrength;
 import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,7 +27,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -45,7 +45,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @FieldNameConstants(innerTypeName = "GitFullSyncConfigKeys")
 @OwnedBy(DX)
 public class GitFullSyncConfig {
-  @Id @org.mongodb.morphia.annotations.Id private String id;
+  @Id @dev.morphia.annotations.Id private String id;
   @CreatedDate private long createdAt;
   @LastModifiedDate private long lastModifiedAt;
   private String branch;

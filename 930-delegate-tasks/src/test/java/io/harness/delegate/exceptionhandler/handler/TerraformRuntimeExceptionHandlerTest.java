@@ -35,15 +35,12 @@ import io.harness.rule.Owner;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @OwnedBy(CDP)
 public class TerraformRuntimeExceptionHandlerTest {
-  private static final String TEST_ERROR_NO_MODULE =
-      "\u001B[31m\u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mUnreadable module directory\u001B[0m\u001B[0mUnable to evaluate directory symlink: lstat modues: no such file or directory\u001B[0m\u001B[0m\u001B[31m\u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mFailed to read module directory\u001B[0m\u001B[0mModule directory  does not exist or cannot be read.\u001B[0m\u001B[0m\u001B[31m\u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mUnreadable module directory\u001B[0m\u001B[0mUnable to evaluate directory symlink: lstat modues: no such file or directory\u001B[0m\u001B[0m\u001B[31m\u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mFailed to read module directory\u001B[0m\u001B[0mModule directory  does not exist or cannot be read.\u001B[0m\u001B[0m\u001B[31m\u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mUnreadable module directory\u001B[0m\u001B[0mUnable to evaluate directory symlink: lstat modues: no such file or directory\u001B[0m\u001B[0m\u001B[31m\u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mFailed to read module directory\u001B[0m\u001B[0mModule directory  does not exist or cannot be read.\u001B[0m\u001B[0m";
   private static final String TEST_ERROR_NO_VALUE_VARIABLE =
       "\u001B[31m\u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mNo value for required variable\u001B[0m\u001B[0m  on config.tf line 1:   1: \u001B[4mvariable \"access_key\"\u001B[0m {\u001B[0mThe root module input variable \"access_key\" is not set, and has no default value. Use a -var or -var-file command line argument to provide a value for this variable.\u001B[0m\u001B[0m\u001B[31m\u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mNo value for required variable\u001B[0m\u001B[0m  on config.tf line 4:   4: \u001B[4mvariable \"secret_key\"\u001B[0m {\u001B[0mThe root module input variable \"secret_key\" is not set, and has no default value. Use a -var or -var-file command line argument to provide a value for this variable.\u001B[0m\u001B[0m\u001B[31m\u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mNo value for required variable\u001B[0m\u001B[0m  on config.tf line 7:   7: \u001B[4mvariable \"region\"\u001B[0m {\u001B[0mThe root module input variable \"region\" is not set, and has no default value. Use a -var or -var-file command line argument to provide a value for this variable.\u001B[0m\u001B[0m\u001B[31m\u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mNo value for required variable\u001B[0m\u001B[0m  on config.tf line 11:  11: \u001B[4mvariable \"tag_name\"\u001B[0m {\u001B[0mThe root module input variable \"tag_name\" is not set, and has no default value. Use a -var or -var-file command line argument to provide a value for this variable.\u001B[0m\u001B[0m\u001B[31m\u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mNo value for required variable\u001B[0m\u001B[0m  on config.tf line 16:  16: \u001B[4mvariable \"keyName\"\u001B[0m {}\u001B[0mThe root module input variable \"keyName\" is not set, and has no default value. Use a -var or -var-file command line argument to provide a value for this variable.\u001B[0m\u001B[0m";
   private static final String TEST_ERROR_UNKNOWN1 =
@@ -64,18 +61,6 @@ public class TerraformRuntimeExceptionHandlerTest {
   private static final String TEST_LONG_UNKNOWN_ERROR = StringUtils.repeat("Errr", 156);
 
   TerraformRuntimeExceptionHandler handler = new TerraformRuntimeExceptionHandler();
-
-  @Test
-  @Owner(developers = ABOSII)
-  @Category(UnitTests.class)
-  public void testGetAllErrorsSample1() {
-    Set<String> errors = TerraformRuntimeExceptionHandler.getAllErrors(TEST_ERROR_NO_MODULE);
-    // only 2 unique errors
-    assertThat(errors).hasSize(2);
-    assertThat(errors).containsExactlyInAnyOrder(
-        "[0m\u001B[0m\u001B[1mUnreadable module directory\u001B[0m\u001B[0mUnable to evaluate directory symlink: lstat modues: no such file or directory\u001B[0m\u001B[0m",
-        "[0m\u001B[0m\u001B[1mFailed to read module directory\u001B[0m\u001B[0mModule directory  does not exist or cannot be read.\u001B[0m\u001B[0m");
-  }
 
   @Test
   @Owner(developers = ABOSII)

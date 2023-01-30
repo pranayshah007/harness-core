@@ -145,7 +145,7 @@ public class EnvironmentResourceTest extends CategoryTest {
     doReturn(true)
         .when(environmentService)
         .delete("ACCOUNT_ID", environmentRequestDTO.getOrgIdentifier(), environmentRequestDTO.getProjectIdentifier(),
-            environmentRequestDTO.getIdentifier(), null);
+            environmentRequestDTO.getIdentifier(), null, false);
 
     Boolean data = environmentResource.delete(null, "IDENTIFIER", "ACCOUNT_ID", "ORG_ID", "PROJECT_ID").getData();
     assertThat(data).isTrue();

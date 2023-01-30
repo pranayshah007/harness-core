@@ -10,6 +10,7 @@ package io.harness.ccm.views.service;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
@@ -82,9 +83,9 @@ public interface ViewsBillingService {
   ViewCostData getCostData(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams);
 
-  Double[] getActualCostGroupedByPeriod(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
+  List<ValueDataPoint> getActualCostGroupedByPeriod(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
       List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName,
-      ViewQueryParams queryParams, boolean lastPeriod, long startTime);
+      ViewQueryParams queryParams);
 
   Integer getTotalCountForQuery(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       String cloudProviderTableName, ViewQueryParams queryParams);

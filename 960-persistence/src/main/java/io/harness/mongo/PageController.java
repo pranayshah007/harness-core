@@ -19,7 +19,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.Switch.unhandled;
 
 import static java.util.Arrays.asList;
-import static java.util.regex.Pattern.quote;
 import static java.util.stream.Collectors.joining;
 
 import io.harness.beans.PageRequest;
@@ -35,17 +34,18 @@ import io.harness.mongo.SampleEntity.SampleEntityKeys;
 import io.harness.persistence.HQuery;
 
 import com.google.common.base.Preconditions;
+import dev.morphia.Datastore;
+import dev.morphia.mapping.MappedClass;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.query.Criteria;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Datastore;
-import org.mongodb.morphia.mapping.MappedClass;
-import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.query.Criteria;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
 
 @UtilityClass
 @Slf4j
@@ -70,12 +70,16 @@ public class PageController {
     // when pageRequest has SKIPCOUNT option, we won't do count query to db.
     boolean hasSkipCount = req.getOptions() != null && req.getOptions().contains(PageRequest.Option.SKIPCOUNT);
     if (req.getOptions() == null || req.getOptions().contains(PageRequest.Option.LIST) || hasSkipCount) {
-      q.offset(req.getStart());
+      FindOptions findOptions = new FindOptions();
+      findOptions.skip(req.getStart());
 
       int limit = PageRequest.UNLIMITED.equals(req.getLimit()) ? PageRequest.DEFAULT_UNLIMITED : req.getPageSize();
-      q.limit(limit);
+      findOptions.limit(limit);
+      if (req.getIndexHint() != null) {
+        findOptions.hint(req.getIndexHint());
+      }
 
-      List<T> list = q.asList();
+      List<T> list = q.asList(findOptions);
       response.setResponse(list);
 
       if (req.getOptions() == null || (req.getOptions().contains(PageRequest.Option.COUNT) && !hasSkipCount)) {
@@ -237,11 +241,11 @@ public class PageController {
 
       case CONTAINS:
         assertOne(filter.getFieldValues());
-        return fieldEnd.containsIgnoreCase(quote(String.valueOf(filter.getFieldValues()[0])));
+        return fieldEnd.containsIgnoreCase(String.valueOf(filter.getFieldValues()[0]));
 
       case STARTS_WITH:
         assertOne(filter.getFieldValues());
-        return fieldEnd.startsWithIgnoreCase(quote(String.valueOf(filter.getFieldValues()[0])));
+        return fieldEnd.startsWithIgnoreCase(String.valueOf(filter.getFieldValues()[0]));
 
       case HAS:
         return fieldEnd.hasAnyOf(asList(filter.getFieldValues()));

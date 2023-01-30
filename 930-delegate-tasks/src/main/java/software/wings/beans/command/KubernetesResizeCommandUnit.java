@@ -40,6 +40,7 @@ import software.wings.service.intfc.security.EncryptionService;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import io.fabric8.istio.api.networking.v1alpha3.Destination;
 import io.fabric8.istio.api.networking.v1alpha3.HTTPRoute;
 import io.fabric8.istio.api.networking.v1alpha3.HTTPRouteDestination;
@@ -59,7 +60,6 @@ import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by brett on 3/3/17

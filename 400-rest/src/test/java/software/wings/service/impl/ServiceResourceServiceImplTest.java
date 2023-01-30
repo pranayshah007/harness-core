@@ -128,6 +128,7 @@ import software.wings.utils.ArtifactType;
 import software.wings.utils.WingsTestConstants.MockChecker;
 
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -148,7 +149,6 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceResourceServiceImplTest extends WingsBaseTest {

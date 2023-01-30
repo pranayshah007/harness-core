@@ -15,6 +15,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.pcf.cfcli.resolver.CfCliCommandResolver;
 import io.harness.pcf.model.CfCliVersion;
 import io.harness.rule.Owner;
 

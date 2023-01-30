@@ -21,7 +21,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.aws.AwsCallTracker;
+import io.harness.aws.util.AwsCallTracker;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 

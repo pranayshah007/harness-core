@@ -16,11 +16,11 @@ import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import dev.morphia.annotations.Entity;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.mongodb.morphia.annotations.Entity;
 
 /**
  * This is used as request for capturing instance information.

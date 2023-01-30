@@ -57,6 +57,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -78,6 +79,7 @@ public class AbstractMetricAnalysisStateTest extends WingsBaseTest {
   @Inject protected MetricDataAnalysisService metricAnalysisService;
   @Inject protected CVActivityLogService cvActivityLogService;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private FeatureTestHelper featureTestHelper;
   @Inject protected WorkflowVerificationResultService workflowVerificationResultService;
   @Mock private ExecutionContext executionContext;
@@ -458,7 +460,8 @@ public class AbstractMetricAnalysisStateTest extends WingsBaseTest {
     final NotifyResponse notifyResponse = persistence.get(NotifyResponse.class, correlationId);
     assertThat(notifyResponse).isNotNull();
     VerificationDataAnalysisResponse verificationDataAnalysisResponse =
-        (VerificationDataAnalysisResponse) kryoSerializer.asInflatedObject(notifyResponse.getResponseData());
+        (VerificationDataAnalysisResponse) referenceFalseKryoSerializer.asInflatedObject(
+            notifyResponse.getResponseData());
     assertThat(verificationDataAnalysisResponse.getExecutionStatus()).isEqualTo(executionStatus);
     assertThat(verificationDataAnalysisResponse.getStateExecutionData().getStatus()).isEqualTo(executionStatus);
 

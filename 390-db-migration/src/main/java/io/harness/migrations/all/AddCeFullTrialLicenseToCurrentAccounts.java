@@ -21,12 +21,12 @@ import software.wings.licensing.LicenseService;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 public class AddCeFullTrialLicenseToCurrentAccounts implements Migration {

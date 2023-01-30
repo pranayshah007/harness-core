@@ -39,6 +39,7 @@ import io.harness.persistence.HPersistence;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import dev.morphia.query.Sort;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -48,7 +49,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
-import org.mongodb.morphia.query.Sort;
 
 public class GraphDataServiceImpl implements GraphDataService {
   @Inject SLIRecordService sliRecordService;
@@ -104,7 +104,6 @@ public class GraphDataServiceImpl implements GraphDataService {
     List<SLODashboardWidget.Point> errorBudgetBurndown = new ArrayList<>();
     double errorBudgetRemainingPercentage = 100;
     int errorBudgetRemaining = totalErrorBudgetMinutes;
-    boolean isReCalculatingSLI = false;
     boolean isCalculatingSLI = false;
     boolean enabled = true;
     if (!sloRecords.isEmpty()) {
@@ -121,12 +120,11 @@ public class GraphDataServiceImpl implements GraphDataService {
         double goodCountFromStart = sloRecord.getRunningGoodCount() - prevRecordGoodCount;
         double badCountFromStart = sloRecord.getRunningBadCount() - prevRecordBadCount;
         if (sloRecord.getSloVersion() != sloVersion) {
-          isReCalculatingSLI = true;
           return SLODashboardWidget.SLOGraphData.builder()
               .errorBudgetBurndown(errorBudgetBurndown)
               .errorBudgetRemaining(errorBudgetRemaining)
               .sloPerformanceTrend(sloTrend)
-              .isRecalculatingSLI(isReCalculatingSLI)
+              .isRecalculatingSLI(false)
               .isCalculatingSLI(isCalculatingSLI)
               .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
               .build();
@@ -146,7 +144,8 @@ public class GraphDataServiceImpl implements GraphDataService {
       }
       errorBudgetRemainingPercentage = errorBudgetBurndown.get(errorBudgetBurndown.size() - 1).getValue();
       errorBudgetRemaining = totalErrorBudgetMinutes - (int) sloValue.getBadCount();
-    } else {
+    } else if (Instant.ofEpochMilli(compositeServiceLevelObjective.getStartedAt())
+                   .isBefore(clock.instant().minus(Duration.ofMinutes(10)))) {
       isCalculatingSLI = true;
     }
 
@@ -166,7 +165,7 @@ public class GraphDataServiceImpl implements GraphDataService {
         .errorBudgetBurndown(errorBudgetBurndown)
         .errorBudgetRemaining(errorBudgetRemaining)
         .sloPerformanceTrend(sloTrend)
-        .isRecalculatingSLI(isReCalculatingSLI)
+        .isRecalculatingSLI(false)
         .isCalculatingSLI(isCalculatingSLI)
         .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
         .build();

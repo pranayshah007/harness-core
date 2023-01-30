@@ -28,7 +28,7 @@ import io.harness.lock.PersistentLocker;
 import io.harness.lock.mongo.AcquiredDistributedLock.AcquiredDistributedLockBuilder;
 import io.harness.lock.mongo.AcquiredDistributedLock.CloseAction;
 import io.harness.persistence.HPersistence;
-import io.harness.persistence.Store;
+import io.harness.persistence.store.Store;
 
 import com.deftlabs.lock.mongo.DistributedLock;
 import com.deftlabs.lock.mongo.DistributedLockOptions;

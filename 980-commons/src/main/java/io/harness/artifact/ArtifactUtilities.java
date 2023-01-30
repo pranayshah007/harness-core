@@ -204,7 +204,7 @@ public class ArtifactUtilities {
     return stringToTrim;
   }
 
-  public String getArtifactName(final String artifactPath) {
+  public static String getArtifactName(final String artifactPath) {
     if (isEmpty(artifactPath)) {
       return artifactPath;
     }
@@ -217,7 +217,7 @@ public class ArtifactUtilities {
     return index == -1 ? EMPTY : artifactPath.substring(index + 1);
   }
 
-  public String getBasicAuthHeader(boolean hasCredentials, final String username, char[] password) {
+  public static String getBasicAuthHeader(boolean hasCredentials, final String username, char[] password) {
     String pair = username + ":" + new String(password);
     return hasCredentials ? "Basic " + encodeBase64(pair) : null;
   }

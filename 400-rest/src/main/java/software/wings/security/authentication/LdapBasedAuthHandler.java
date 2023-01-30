@@ -92,6 +92,11 @@ public class LdapBasedAuthHandler implements AuthHandler {
     String accountId = user.getDefaultAccountId();
     String uuid = user.getUuid();
     LdapSettings settings = ssoSettingService.getLdapSettingsByAccountId(account.getUuid());
+    if (null == settings) {
+      // log and throw invalid credential error
+      log.error("No LDAP sso settings exists for the account id: " + account.getUuid());
+      throw new WingsException(INVALID_CREDENTIAL, USER);
+    }
     try (AutoLogContext ignore = new UserLogContext(accountId, uuid, OVERRIDE_ERROR)) {
       log.info("Authenticating via LDAP");
       if (!domainWhitelistCheckerService.isDomainWhitelisted(user, account)) {
@@ -99,7 +104,6 @@ public class LdapBasedAuthHandler implements AuthHandler {
       }
 
       return doAuthenticationAndGetResponseInternal(username, password, user, settings, false);
-
     } catch (NoAvailableDelegatesException | NoEligibleDelegatesInAccountException e) {
       final String ldapConnectionInvalidRequestMsg =
           "Unable to connect to LDAP server, please try after some time. If the problem persist, please contact your admin";

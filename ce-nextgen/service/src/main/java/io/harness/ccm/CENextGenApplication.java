@@ -57,6 +57,8 @@ import io.harness.security.annotations.PublicApi;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
+import io.harness.yaml.YamlSdkConfiguration;
+import io.harness.yaml.YamlSdkInitHelper;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -203,6 +205,7 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
     registerScheduledJobs(injector);
     registerMigrations(injector);
     registerOasResource(configuration, environment, injector);
+    registerYamlSdk(injector);
 
     if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
       registerTraceFilter(environment, injector);
@@ -367,5 +370,14 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
 
     injector.getInstance(EnforcementSdkRegisterService.class)
         .initialize(restrictionUsageRegisterConfiguration, customConfig);
+  }
+
+  private void registerYamlSdk(Injector injector) {
+    YamlSdkConfiguration yamlSdkConfiguration = YamlSdkConfiguration.builder()
+                                                    .requireSchemaInit(true)
+                                                    .requireSnippetInit(true)
+                                                    .requireValidatorInit(true)
+                                                    .build();
+    YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
   }
 }

@@ -11,11 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
-import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 import io.harness.k8s.releasehistory.K8sLegacyRelease.KubernetesResourceIdRevision;
-import io.harness.k8s.releasehistory.ReleaseHistory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,10 +29,18 @@ import lombok.NoArgsConstructor;
 public class K8sRollingRollbackHandlerConfig {
   private KubernetesConfig kubernetesConfig;
   private Kubectl client;
-  private ReleaseHistory releaseHistory;
-  private K8sLegacyRelease release;
-  private K8sLegacyRelease previousRollbackEligibleRelease;
+  private IK8sReleaseHistory releaseHistory;
+  private IK8sRelease release;
+  private Integer currentReleaseNumber;
+  private IK8sRelease previousRollbackEligibleRelease;
   private boolean isNoopRollBack;
   List<KubernetesResourceIdRevision> previousManagedWorkloads = new ArrayList<>();
   List<KubernetesResource> previousCustomManagedWorkloads = new ArrayList<>();
+  private boolean useDeclarativeRollback;
+  List<KubernetesResource> previousResources = new ArrayList<>();
+  private K8sDelegateTaskParams k8sDelegateTaskParams;
+
+  // used when switching from declarative history to imperative history
+  private boolean switchToLegacyReleaseHistory;
+  private IK8sRelease latestDeclarativeRelease;
 }

@@ -13,12 +13,18 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngsettings.entities.Setting;
 
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PL)
 public interface SettingRepositoryCustom {
   Setting upsert(Setting setting);
   List<Setting> findAll(Criteria criteria);
   DeleteResult delete(Criteria criteria);
+  List<Setting> deleteAll(Criteria criteria);
+
+  UpdateResult updateMultiple(Query query, Update update);
 }

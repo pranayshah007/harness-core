@@ -1,12 +1,8 @@
 {
-  "identifier": "stage1",
-  "spec":
-  {
-    "serviceConfig": {
-      "serviceRef": "service"
-    },
-    "infrastructure": {
-      "environmentRef": "env"
-    }
+  "serviceConfig": {
+    "serviceRef": "service"
+  },
+  "infrastructure": {
+  "environmentRef" : "env"
   }
 }

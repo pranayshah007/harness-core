@@ -123,7 +123,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
                                                   .build();
 
     infrastructureEntityService.create(createInfraRequest);
-    Mockito.verify(infrastructureEntitySetupUsageHelper, times(1)).updateSetupUsages(eq(createInfraRequest));
+    Mockito.verify(infrastructureEntitySetupUsageHelper, times(1)).createSetupUsages(eq(createInfraRequest), any());
 
     String infrastructureInputsFromYaml = infrastructureEntityService.createInfrastructureInputsFromYaml(ACCOUNT_ID,
         ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER"), false, NoInputMergeInputAction.RETURN_EMPTY);
@@ -232,7 +232,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
                                                   .build();
 
     InfrastructureEntity updatedInfraResponse = infrastructureEntityService.update(updateInfraRequest);
-    Mockito.verify(infrastructureEntitySetupUsageHelper, times(1)).updateSetupUsages(eq(createInfraRequest));
+    Mockito.verify(infrastructureEntitySetupUsageHelper, times(1)).getAllReferredEntities(eq(updateInfraRequest));
     assertThat(updatedInfraResponse.getAccountId()).isEqualTo(updateInfraRequest.getAccountId());
     assertThat(updatedInfraResponse.getOrgIdentifier()).isEqualTo(updateInfraRequest.getOrgIdentifier());
     assertThat(updatedInfraResponse.getProjectIdentifier()).isEqualTo(updateInfraRequest.getProjectIdentifier());
@@ -264,7 +264,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
                                                   .deploymentType(ServiceDefinitionType.NATIVE_HELM)
                                                   .build();
     InfrastructureEntity upsertedInfra = infrastructureEntityService.upsert(upsertInfraRequest, UpsertOptions.DEFAULT);
-    Mockito.verify(infrastructureEntitySetupUsageHelper, times(1)).updateSetupUsages(eq(createInfraRequest));
+    Mockito.verify(infrastructureEntitySetupUsageHelper, times(1)).getAllReferredEntities(eq(createInfraRequest));
     assertThat(upsertedInfra.getAccountId()).isEqualTo(upsertInfraRequest.getAccountId());
     assertThat(upsertedInfra.getOrgIdentifier()).isEqualTo(upsertInfraRequest.getOrgIdentifier());
     assertThat(upsertedInfra.getProjectIdentifier()).isEqualTo(upsertInfraRequest.getProjectIdentifier());
@@ -287,7 +287,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
                              .build();
 
     upsertedInfra = infrastructureEntityService.upsert(upsertInfraRequest, UpsertOptions.DEFAULT);
-    Mockito.verify(infrastructureEntitySetupUsageHelper, times(1)).updateSetupUsages(eq(createInfraRequest));
+    Mockito.verify(infrastructureEntitySetupUsageHelper, times(1)).getAllReferredEntities(eq(createInfraRequest));
     assertThat(upsertedInfra.getAccountId()).isEqualTo(upsertInfraRequest.getAccountId());
     assertThat(upsertedInfra.getOrgIdentifier()).isEqualTo(upsertInfraRequest.getOrgIdentifier());
     assertThat(upsertedInfra.getProjectIdentifier()).isEqualTo(upsertInfraRequest.getProjectIdentifier());
@@ -581,6 +581,57 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     listPostDeletion = infrastructureEntityService.list(criteriaAllInProject, pageRequest);
     assertThat(listPostDeletion.getContent()).isNotNull();
     assertThat(listPostDeletion.getContent().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testModifyScopeToMatchEnvironment() {
+    String filename = "infrastructure-without-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+    // infra request has org and project id but env is account level
+    InfrastructureEntity createInfraRequest = InfrastructureEntity.builder()
+                                                  .accountId(ACCOUNT_ID)
+                                                  .identifier("IDENTIFIER1")
+                                                  .orgIdentifier(ORG_ID)
+                                                  .projectIdentifier(PROJECT_ID)
+                                                  .envIdentifier("account.ENV_IDENTIFIER")
+                                                  .yaml(yaml)
+                                                  .deploymentType(ServiceDefinitionType.NATIVE_HELM)
+                                                  .build();
+
+    InfrastructureEntity createdInfra = infrastructureEntityService.create(createInfraRequest);
+    assertThat(createdInfra).isNotNull();
+    assertThat(createdInfra.getAccountId()).isEqualTo(createInfraRequest.getAccountId());
+    // account scoped infra
+    assertThat(createdInfra.getOrgIdentifier()).isNull();
+    assertThat(createdInfra.getProjectIdentifier()).isNull();
+    assertThat(createdInfra.getIdentifier()).isEqualTo(createInfraRequest.getIdentifier());
+    assertThat(createdInfra.getEnvIdentifier()).isEqualTo("ENV_IDENTIFIER");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testCascadeDeletionForOrgLevelInfrastructures() {
+    String filename = "infrastructure-without-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+    for (int i = 1; i < 3; i++) {
+      InfrastructureEntity createInfraRequest = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT_ID)
+                                                    .identifier("IDENTIFIER" + i)
+                                                    .orgIdentifier(ORG_ID)
+                                                    .envIdentifier("ENV_IDENTIFIER")
+                                                    .yaml(yaml)
+                                                    .build();
+
+      infrastructureEntityService.create(createInfraRequest);
+    }
+
+    // delete operations
+    boolean delete = infrastructureEntityService.forceDeleteAllInOrg(ACCOUNT_ID, ORG_ID);
+    assertThat(delete).isTrue();
+    verify(infrastructureEntitySetupUsageHelper, times(2)).deleteSetupUsages(any());
   }
 
   private String readFile(String filename) {

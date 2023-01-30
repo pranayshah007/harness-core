@@ -9,7 +9,7 @@ package io.harness.cvng.core.resources;
 
 import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.core.beans.LogSampleRequestDTO;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.services.api.DatadogService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -52,11 +52,11 @@ public class DatadogLogResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get sample data for a query", nickname = "getDatadogLogSampleData")
-  public ResponseDTO<List<LinkedHashMap>> getDatadogSampleData(@BeanParam ProjectParams projectParams,
+  public ResponseDTO<List<LinkedHashMap>> getDatadogSampleData(@BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @NotNull @QueryParam("tracingId") String tracingId, @Body LogSampleRequestDTO logSampleRequestDTO) {
-    return ResponseDTO.newResponse(
-        datadogService.getSampleLogData(projectParams, connectorIdentifier, logSampleRequestDTO.getQuery(), tracingId));
+    return ResponseDTO.newResponse(datadogService.getSampleLogData(
+        projectParams.getProjectParams(), connectorIdentifier, logSampleRequestDTO.getQuery(), tracingId));
   }
 
   @GET
@@ -64,9 +64,10 @@ public class DatadogLogResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get datadog log indexes", nickname = "getDatadogLogIndexes")
-  public ResponseDTO<List<String>> getDatadogLogIndexes(@BeanParam ProjectParams projectParams,
+  public ResponseDTO<List<String>> getDatadogLogIndexes(@BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
       @NotNull @QueryParam("tracingId") String tracingId) {
-    return ResponseDTO.newResponse(datadogService.getLogIndexes(projectParams, connectorIdentifier, tracingId));
+    return ResponseDTO.newResponse(
+        datadogService.getLogIndexes(projectParams.getProjectParams(), connectorIdentifier, tracingId));
   }
 }

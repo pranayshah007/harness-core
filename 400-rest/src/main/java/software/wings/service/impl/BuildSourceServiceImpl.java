@@ -492,7 +492,7 @@ public class BuildSourceServiceImpl implements BuildSourceService {
     SyncTaskContext syncTaskContext = areDelegateSelectorsRequired(settingAttribute)
         ? appendDelegateSelector(settingAttribute, syncTaskContextBuilder)
         : syncTaskContextBuilder.build();
-    return delegateProxyFactory.get(buildServiceMap.get(settingAttribute.getValue().getClass()), syncTaskContext);
+    return delegateProxyFactory.getV2(buildServiceMap.get(settingAttribute.getValue().getClass()), syncTaskContext);
   }
 
   @Override
@@ -525,7 +525,7 @@ public class BuildSourceServiceImpl implements BuildSourceService {
     SyncTaskContext syncTaskContext = areDelegateSelectorsRequired(settingAttribute)
         ? appendDelegateSelector(settingAttribute, syncTaskContextBuilder)
         : syncTaskContextBuilder.build();
-    return delegateProxyFactory.get(buildServiceClass, syncTaskContext);
+    return delegateProxyFactory.getV2(buildServiceClass, syncTaskContext);
   }
 
   private List<EncryptedDataDetail> getEncryptedDataDetails(EncryptableSetting settingValue) {
@@ -576,7 +576,7 @@ public class BuildSourceServiceImpl implements BuildSourceService {
     SyncTaskContext syncTaskContext = areDelegateSelectorsRequired(settingAttribute)
         ? appendDelegateSelector(settingAttribute, syncTaskContextBuilder)
         : syncTaskContextBuilder.build();
-    return delegateProxyFactory.get(buildServiceMap.get(settingAttribute.getValue().getClass()), syncTaskContext);
+    return delegateProxyFactory.getV2(buildServiceMap.get(settingAttribute.getValue().getClass()), syncTaskContext);
   }
 
   private BuildService getBuildService(String artifactStreamType, SettingAttribute settingAttribute) {
@@ -589,7 +589,7 @@ public class BuildSourceServiceImpl implements BuildSourceService {
     SyncTaskContext syncTaskContext = areDelegateSelectorsRequired(settingAttribute)
         ? appendDelegateSelector(settingAttribute, syncTaskContextBuilder)
         : syncTaskContextBuilder.build();
-    return delegateProxyFactory.get(buildServiceClass, syncTaskContext);
+    return delegateProxyFactory.getV2(buildServiceClass, syncTaskContext);
   }
 
   @Override
@@ -787,7 +787,7 @@ public class BuildSourceServiceImpl implements BuildSourceService {
     GcpConfig gcpConfig = (GcpConfig) settingValue;
     GcbDelegateResponse delegateResponseData = null;
     try {
-      delegateResponseData = delegateService.executeTask(
+      delegateResponseData = delegateService.executeTaskV2(
           DelegateTask.builder()
               .accountId(gcpConfig.getAccountId())
               .data(TaskData.builder()

@@ -9,7 +9,6 @@ package io.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
-import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.changestreamsframework.ChangeTracker;
 import io.harness.entities.CDCEntity;
@@ -35,7 +34,7 @@ public class ChangeDataCaptureBulkMigrationHelper {
   @Inject private WingsPersistence wingsPersistence;
   @Inject private ChangeEventProcessor changeEventProcessor;
 
-  private <T extends PersistentEntity> int runBulkMigration(CDCEntity<T> cdcEntity, Bson filter) {
+  private <T extends PersistentEntity> int runBulkMigration(CDCEntity<T> cdcEntity, Bson filter, String changeHandler) {
     Class<T> subscriptionEntity = cdcEntity.getSubscriptionEntity();
     int counter = 0;
 
@@ -54,7 +53,7 @@ public class ChangeDataCaptureBulkMigrationHelper {
 
     try (MongoCursor<Document> cursor = documents.iterator()) {
       while (cursor.hasNext()) {
-        runSyncForEntity(cdcEntity, subscriptionEntity, cursor);
+        runSyncForEntity(subscriptionEntity, cursor, changeHandler);
         counter++;
       }
     }
@@ -62,34 +61,26 @@ public class ChangeDataCaptureBulkMigrationHelper {
   }
 
   private <T extends PersistentEntity> void runSyncForEntity(
-      CDCEntity<T> cdcEntity, Class<T> subscriptionEntity, MongoCursor<Document> cursor) {
+      Class<T> subscriptionEntity, MongoCursor<Document> cursor, String handler) {
     final Document document = cursor.next();
-    ChangeDataCapture[] dataCaptures = subscriptionEntity.getAnnotationsByType(ChangeDataCapture.class);
-    for (ChangeDataCapture changeDataCapture : dataCaptures) {
-      ChangeHandler changeHandler = cdcEntity.getChangeHandler(changeDataCapture.handler());
-      if (changeHandler != null) {
-        changeEventProcessor.processChangeEvent(CDCEntityBulkTaskConverter.convert(subscriptionEntity, document));
-      } else {
-        log.debug("ChangeHandler for {} is null", changeDataCapture.handler());
-      }
-    }
+    changeEventProcessor.processChangeEvent(CDCEntityBulkTaskConverter.convert(subscriptionEntity, document, handler));
   }
 
   public void doBulkSync(Iterable<CDCEntity<?>> entitiesToBulkSync) {
-    bulkSync(entitiesToBulkSync, null);
+    bulkSync(entitiesToBulkSync, null, null);
   }
 
-  public int doPartialSync(Iterable<CDCEntity<?>> entitiesToBulkSync, Bson filter) {
-    return bulkSync(entitiesToBulkSync, filter);
+  public int doPartialSync(Iterable<CDCEntity<?>> entitiesToBulkSync, Bson filter, String changeHandler) {
+    return bulkSync(entitiesToBulkSync, filter, changeHandler);
   }
 
-  public int bulkSync(Iterable<CDCEntity<?>> entitiesToBulkSync, Bson filter) {
+  public int bulkSync(Iterable<CDCEntity<?>> entitiesToBulkSync, Bson filter, String changeHandler) {
     int counter = 0;
     changeEventProcessor.startProcessingChangeEvents();
     for (CDCEntity<?> cdcEntity : entitiesToBulkSync) {
       if (isPartialSync(filter) || isFirstSync(cdcEntity)) {
         log.info("Migrating {} to Sink Change Data Capture", cdcEntity.getClass().getCanonicalName());
-        counter += runBulkMigration(cdcEntity, filter);
+        counter += runBulkMigration(cdcEntity, filter, changeHandler);
         log.info("{} migrated to Sink Change Data Capture", cdcEntity.getClass().getCanonicalName());
       }
     }

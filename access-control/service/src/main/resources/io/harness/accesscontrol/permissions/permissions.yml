@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 42
+version: 45
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -953,6 +953,30 @@ permissions:
       - account
       - organization
       - project
+  - identifier: sto_ticket_view
+    name: View External Ticket
+    status: EXPERIMENTAL
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sto_ticket_edit
+    name: Edit External Ticket
+    status: EXPERIMENTAL
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sto_ticket_delete
+    name: Delete External Ticket
+    status: EXPERIMENTAL
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: core_file_view
     name: View Files
     status: ACTIVE
@@ -1324,5 +1348,41 @@ permissions:
     name: Delete a CCM Governance Enforcement
     status: EXPERIMENTAL
     includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: iac_stack_view
+    name: View IAC Stack
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_stack_edit
+    name: Create or Edit IAC Stack
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_stack_delete
+    name: Delete IAC Stack
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_streamingDestination_view
+    name: View Streaming Destination
+    status: ACTIVE
+    allowedScopeLevels:
+      - account
+  - identifier: core_streamingDestination_edit
+    name: Create or Edit Streaming Destination
+    status: ACTIVE
+    allowedScopeLevels:
+      - account
+  - identifier: core_streamingDestination_delete
+    name: Delete Streaming Destination
+    status: ACTIVE
     allowedScopeLevels:
       - account

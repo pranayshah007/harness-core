@@ -30,7 +30,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
@@ -40,9 +42,10 @@ import org.zeroturnaround.exec.ProcessExecutor;
 @UtilityClass
 @Slf4j
 public class STOManagerExecutor {
-  public static final String MODULE = "315-sto-manager";
   public static final String MODULE_APP = "315-sto-manager/app";
-  public static final String CONFIG_YML = "/config/sto-manager-config.yml";
+
+  public static final String CONFIG_MODULE = "332-ci-manager";
+  public static final String CONFIG_YML = "/config/ci-manager-config.yml";
   private static boolean failedAlready;
   private static final Duration waiting = ofMinutes(3);
 
@@ -85,11 +88,16 @@ public class STOManagerExecutor {
     log.info("Execute the manager from {}", directory);
 
     final Path jar = getJar(MODULE_APP);
-    final Path config = getConfig(directory.getAbsolutePath(), MODULE, CONFIG_YML);
+    final Path config = getConfig(directory.getAbsolutePath(), CONFIG_MODULE, CONFIG_YML);
 
     for (int i = 0; i < 10; i++) {
       log.info("***");
     }
+    Map<String, String> envMap = new HashMap<>();
+    envMap.put("SERVER_APP_HTTPS_PORT", "7172");
+    envMap.put("PMS_SDK_SERVER_CONFIG_SECURE_PORT", "14301");
+    envMap.put("PMS_SDK_SERVER_CONFIG_PORT", "14302");
+    envMap.put("SERVER_APP_HTTP_PORT", "14057");
 
     List<String> command = new ArrayList<>();
     command.add("java");
@@ -110,6 +118,7 @@ public class STOManagerExecutor {
 
     ProcessExecutor processExecutor = new ProcessExecutor();
     processExecutor.directory(directory);
+    processExecutor.environment(envMap);
     processExecutor.command(command);
 
     processExecutor.redirectOutput(System.out);

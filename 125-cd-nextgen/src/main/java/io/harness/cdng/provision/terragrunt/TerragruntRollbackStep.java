@@ -20,6 +20,7 @@ import static java.lang.String.format;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.TaskData;
@@ -36,7 +37,6 @@ import io.harness.logging.UnitProgress;
 import io.harness.persistence.HIterator;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -54,11 +54,13 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -66,7 +68,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
-public class TerragruntRollbackStep extends TaskExecutableWithRollbackAndRbac<AbstractTerragruntTaskResponse> {
+public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntTaskResponse> {
   public static final StepType STEP_TYPE =
       TerragruntStepHelper.addStepType(ExecutionNodeType.TERRAGRUNT_ROLLBACK.getYamlType());
 
@@ -74,7 +76,7 @@ public class TerragruntRollbackStep extends TaskExecutableWithRollbackAndRbac<Ab
   @Inject private TerragruntConfigDAL terragruntConfigDAL;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private EngineExpressionService engineExpressionService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private AccountService accountService;
 
@@ -82,7 +84,7 @@ public class TerragruntRollbackStep extends TaskExecutableWithRollbackAndRbac<Ab
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     TerragruntRollbackStepParameters stepParametersSpec = (TerragruntRollbackStepParameters) stepParameters.getSpec();
-    log.info("Running Obtain Inline Task for Terragrunt Rollback Step");
+    log.info("Running Obtain Task for Terragrunt Rollback Step");
     String provisionerIdentifier = stepParametersSpec.getProvisionerIdentifier();
     String entityId =
         terragruntStepHelper.generateFullIdentifier(stepParametersSpec.getProvisionerIdentifier(), ambiance);
@@ -163,7 +165,7 @@ public class TerragruntRollbackStep extends TaskExecutableWithRollbackAndRbac<Ab
                             .parameters(new Object[] {parameters})
                             .build();
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnitsList,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, commandUnitsList,
         taskType.getDisplayName(), TaskSelectorYaml.toTaskSelector(stepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }

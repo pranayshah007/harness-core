@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.aws.service.AwsResourceServiceImpl;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
+import io.harness.cdng.infra.yaml.AwsBaseInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
@@ -243,9 +244,8 @@ public class AwsHelperResource {
   @ApiOperation(value = "Get clusters", nickname = "clusters")
   public ResponseDTO<List<String>> getClusterNames(@QueryParam("awsConnectorRef") String awsConnectorRef,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @QueryParam("region") String region,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @QueryParam("region") String region,
       @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
       @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
@@ -294,7 +294,7 @@ public class AwsHelperResource {
     }
 
     if (isEmpty(region) && spec != null) {
-      region = ((EcsInfrastructure) spec).getRegion().getValue();
+      region = ((AwsBaseInfrastructure) spec).getRegion().getValue();
     }
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
@@ -327,7 +327,7 @@ public class AwsHelperResource {
     }
 
     if (isEmpty(region) && spec != null) {
-      region = ((EcsInfrastructure) spec).getRegion().getValue();
+      region = ((AwsBaseInfrastructure) spec).getRegion().getValue();
     }
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
@@ -361,7 +361,7 @@ public class AwsHelperResource {
     }
 
     if (isEmpty(region) && spec != null) {
-      region = ((EcsInfrastructure) spec).getRegion().getValue();
+      region = ((AwsBaseInfrastructure) spec).getRegion().getValue();
     }
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);

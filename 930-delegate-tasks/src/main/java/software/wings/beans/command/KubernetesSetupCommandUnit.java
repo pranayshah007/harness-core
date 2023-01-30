@@ -99,6 +99,7 @@ import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import io.fabric8.istio.api.networking.v1alpha3.Destination;
 import io.fabric8.istio.api.networking.v1alpha3.DestinationRule;
 import io.fabric8.istio.api.networking.v1alpha3.DestinationRuleBuilder;
@@ -165,7 +166,6 @@ import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by brett on 3/3/17

@@ -41,7 +41,6 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.ServiceResourceService;
 
 import com.google.inject.Inject;
@@ -53,7 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -87,11 +85,6 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
     return discover(serviceResourceService.getEcsServiceSpecificationById(appId, entityId));
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    throw new NotImplementedException("Ecs Service Spec can migrate not implemented");
   }
 
   @Override

@@ -32,8 +32,8 @@ import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.exception.UnexpectedException;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.KryoSerializer;
-import io.harness.utils.RestCallToNGManagerClientUtils;
 
 import software.wings.beans.TaskType;
 
@@ -125,7 +125,7 @@ public class ConnectorHeartbeatPerpetualTaskClient implements PerpetualTaskServi
     String projectIdentifier = clientParams.get(PROJECT_KEY);
     String connectorIdentifier = clientParams.get(CONNECTOR_IDENTIFIER_KEY);
     ConnectorValidationParameterResponse connectorValidationParameterResponse =
-        RestCallToNGManagerClientUtils.execute(connectorResourceClient.getConnectorValidationParams(
+        NGRestUtils.getResponse(connectorResourceClient.getConnectorValidationParams(
             connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier));
     if (connectorValidationParameterResponse == null) {
       log.info(

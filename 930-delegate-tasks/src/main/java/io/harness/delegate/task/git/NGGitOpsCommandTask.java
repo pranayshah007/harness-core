@@ -72,6 +72,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
@@ -83,11 +84,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jooq.tools.StringUtils;
 import org.jooq.tools.json.JSONObject;
 import org.jooq.tools.json.JSONParser;
 import org.jooq.tools.json.ParseException;
@@ -218,7 +222,9 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       throws IOException, ParseException {
     try {
       FetchFilesResult fetchFilesResult = gitOpsTaskHelper.getFetchFilesResult(
-          gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId(), logCallback, true);
+          gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId(), logCallback, false);
+      updateFilesNotFoundWithEmptyContent(
+          fetchFilesResult, gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getPaths());
       this.logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);
       updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult);
       return fetchFilesResult;
@@ -245,6 +251,21 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       }
       throw e;
     }
+  }
+
+  @VisibleForTesting
+  void updateFilesNotFoundWithEmptyContent(@Nonnull FetchFilesResult fetchFilesResult, @Nonnull List<String> paths) {
+    List<GitFile> updatedGitFiles = new ArrayList<>();
+    for (String path : paths) {
+      Optional<GitFile> gitfile =
+          fetchFilesResult.getFiles().stream().filter(gitFile -> gitFile.getFilePath().equals(path)).findFirst();
+      if (!gitfile.isPresent()) {
+        updatedGitFiles.add(GitFile.builder().fileContent("").filePath(path).build());
+      } else {
+        updatedGitFiles.add(gitfile.get());
+      }
+    }
+    fetchFilesResult.setFiles(updatedGitFiles);
   }
 
   public DelegateResponseData handleCreatePR(NGGitOpsTaskParams gitOpsTaskParams) {
@@ -465,10 +486,14 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       Map<String, String> stringObjectMap = filesToVariablesMap.get(gitFile.getFilePath());
       stringObjectMap.forEach(
           (k, v) -> logCallback.saveExecutionLog(format("%s:%s", color(k, White, Bold), color(v, White, Bold)), INFO));
-      if (gitFile.getFilePath().toLowerCase().endsWith(".json")) {
-        updatedFiles.add(replaceFields(gitFile.getFileContent(), stringObjectMap));
+      if (StringUtils.isEmpty(gitFile.getFileContent())) {
+        updatedFiles.add(gson.toJson(stringObjectMap));
       } else {
-        updatedFiles.add(replaceFields(convertYamlToJson(gitFile.getFileContent()), stringObjectMap));
+        if (gitFile.getFilePath().toLowerCase().endsWith(".json")) {
+          updatedFiles.add(replaceFields(gitFile.getFileContent(), stringObjectMap));
+        } else {
+          updatedFiles.add(replaceFields(convertYamlToJson(gitFile.getFileContent()), stringObjectMap));
+        }
       }
     }
 

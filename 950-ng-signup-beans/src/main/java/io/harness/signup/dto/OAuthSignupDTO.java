@@ -34,4 +34,5 @@ public class OAuthSignupDTO {
   Edition edition;
   String referer;
   String gaClientId;
+  String visitorToken;
 }

@@ -9,21 +9,27 @@ package io.harness.gitsync.common.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.Scope;
+import io.harness.beans.WebhookEncryptedSecretDTO;
 import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitFileDetails.GitFileDetailsBuilder;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
+import io.harness.beans.request.GitFileBatchRequest;
 import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.request.GitFileRequestV2;
 import io.harness.beans.request.ListFilesInCommitRequest;
+import io.harness.beans.response.GitFileBatchResponse;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.connector.ConnectorResponseDTO;
@@ -35,11 +41,16 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.scm.ConnectorDecryptionParams;
+import io.harness.delegate.task.scm.GetFileTaskParamsPerConnector;
+import io.harness.delegate.task.scm.GitFileLocationDetails;
 import io.harness.delegate.task.scm.GitFileTaskResponseData;
 import io.harness.delegate.task.scm.GitFileTaskType;
 import io.harness.delegate.task.scm.GitPRTaskType;
 import io.harness.delegate.task.scm.GitRefType;
 import io.harness.delegate.task.scm.GitWebhookTaskType;
+import io.harness.delegate.task.scm.ScmBatchGetFileTaskParams;
+import io.harness.delegate.task.scm.ScmBatchGetFileTaskResponseData;
 import io.harness.delegate.task.scm.ScmGitFileTaskParams;
 import io.harness.delegate.task.scm.ScmGitRefTaskParams;
 import io.harness.delegate.task.scm.ScmGitRefTaskResponseData;
@@ -49,6 +60,8 @@ import io.harness.delegate.task.scm.ScmPRTaskParams;
 import io.harness.delegate.task.scm.ScmPRTaskResponseData;
 import io.harness.delegate.task.scm.ScmPushTaskParams;
 import io.harness.delegate.task.scm.ScmPushTaskResponseData;
+import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.DelegateNotAvailableException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.ExplanationException;
@@ -58,6 +71,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.git.model.ChangeType;
+import io.harness.gitsync.common.beans.ConnectorDetails;
 import io.harness.gitsync.common.beans.InfoForGitPush;
 import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.CreatePRDTO;
@@ -78,6 +92,7 @@ import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.ng.webhook.UpsertWebhookRequestDTO;
+import io.harness.ngtriggers.WebhookSecretData;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
@@ -104,16 +119,19 @@ import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 // Don't inject this directly go through ScmClientOrchestrator.
 @Slf4j
@@ -590,6 +608,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     final List<EncryptedDataDetail> encryptionDetails =
         getEncryptedDataDetails(upsertWebhookRequestDTO.getAccountIdentifier(),
             upsertWebhookRequestDTO.getOrgIdentifier(), upsertWebhookRequestDTO.getProjectIdentifier(), scmConnector);
+    final WebhookSecretData webhookSecretData = getWebhookSecretData(upsertWebhookRequestDTO);
     final ScmGitWebhookTaskParams gitWebhookTaskParams =
         ScmGitWebhookTaskParams.builder()
             .gitWebhookTaskType(gitWebhookTaskType)
@@ -599,6 +618,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
                                    .hookEventType(upsertWebhookRequestDTO.getHookEventType())
                                    .target(target)
                                    .build())
+            .webhookSecretData(webhookSecretData)
             .build();
     DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(upsertWebhookRequestDTO.getAccountIdentifier(),
         upsertWebhookRequestDTO.getOrgIdentifier(), upsertWebhookRequestDTO.getProjectIdentifier(),
@@ -896,6 +916,20 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     return gitFileTaskResponseData.getListFilesInCommitResponse();
   }
 
+  @Override
+  public GitFileBatchResponse getFileBatch(GitFileBatchRequest gitFileBatchRequest) {
+    ScmBatchGetFileTaskParams scmBatchGetFileTaskParams = getScmBatchGetFileTaskParams(gitFileBatchRequest);
+    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(gitFileBatchRequest.getAccountIdentifier(), null,
+        null, scmBatchGetFileTaskParams, TaskType.SCM_BATCH_GET_FILE_TASK, 5);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    ScmBatchGetFileTaskResponseData scmBatchGetFileTaskResponseData =
+        (ScmBatchGetFileTaskResponseData) delegateResponseData;
+    return GitFileBatchResponse.builder()
+        .getBatchFileRequestIdentifierGitFileResponseMap(
+            scmBatchGetFileTaskResponseData.getGetBatchFileRequestIdentifierGitFileResponseMap())
+        .build();
+  }
+
   // ------------------------------- PRIVATE METHODS -------------------------------
 
   private List<EncryptedDataDetail> getEncryptedDataDetails(
@@ -921,6 +955,25 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     return encryptedDataDetails;
   }
 
+  private WebhookSecretData getWebhookSecretData(UpsertWebhookRequestDTO upsertWebhookRequestDTO) {
+    WebhookSecretData webhookSecretData = null;
+    String secretIdentifierRef = upsertWebhookRequestDTO.getWebhookSecretIdentifierRef();
+    if (isNotEmpty(secretIdentifierRef)) {
+      final BaseNGAccess baseNGAccess = getBaseNGAccess(upsertWebhookRequestDTO.getAccountIdentifier(),
+          upsertWebhookRequestDTO.getOrgIdentifier(), upsertWebhookRequestDTO.getProjectIdentifier());
+      SecretRefData secretRefData = SecretRefHelper.createSecretRef(secretIdentifierRef);
+      WebhookEncryptedSecretDTO webhookEncryptedSecretDTO =
+          WebhookEncryptedSecretDTO.builder().secretRef(secretRefData).build();
+      List<EncryptedDataDetail> encryptedDataDetail =
+          secretManagerClientService.getEncryptionDetails(baseNGAccess, webhookEncryptedSecretDTO);
+      webhookSecretData = WebhookSecretData.builder()
+                              .webhookEncryptedSecretDTO(webhookEncryptedSecretDTO)
+                              .encryptedDataDetails(encryptedDataDetail)
+                              .build();
+    }
+    return webhookSecretData;
+  }
+
   private DelegateTaskRequest getDelegateTaskRequest(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, TaskParameters taskParameters, TaskType taskType) {
     final Map<String, String> ngTaskSetupAbstractionsWithOwner =
@@ -931,6 +984,19 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
         .taskParameters(taskParameters)
         .taskType(taskType.name())
         .executionTimeout(Duration.ofMinutes(2))
+        .build();
+  }
+
+  private DelegateTaskRequest getDelegateTaskRequest(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, TaskParameters taskParameters, TaskType taskType, long timeoutInMinutes) {
+    final Map<String, String> ngTaskSetupAbstractionsWithOwner =
+        getNGTaskSetupAbstractionsWithOwner(accountIdentifier, orgIdentifier, projectIdentifier);
+    return DelegateTaskRequest.builder()
+        .accountId(accountIdentifier)
+        .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
+        .taskParameters(taskParameters)
+        .taskType(taskType.name())
+        .executionTimeout(Duration.ofMinutes(timeoutInMinutes))
         .build();
   }
 
@@ -983,5 +1049,89 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
           new DelegateNotAvailableException(delegateDownErrorMessage, WingsException.USER));
     }
     return delegateResponseData;
+  }
+
+  // Group files per connector to optimize on payload and pass it as task params to delegate task
+  @VisibleForTesting
+  ScmBatchGetFileTaskParams getScmBatchGetFileTaskParams(GitFileBatchRequest gitFileBatchRequest) {
+    Map<ConnectorDetails, Pair<ScmConnector, List<EncryptedDataDetail>>> connectorDetailsToEncryptedDataDetailsMapping =
+        new HashMap<>();
+    Map<ConnectorDetails, Map<GetBatchFileRequestIdentifier, GitFileLocationDetails>>
+        connectorDetailsToFileLocationMapping = new HashMap<>();
+
+    gitFileBatchRequest.getGetBatchFileRequestIdentifierGitFileRequestV2Map().forEach((identifier, request) -> {
+      ConnectorDetails key =
+          ConnectorDetails.builder().scope(request.getScope()).connectorRef(request.getConnectorRef()).build();
+      populateScmConnectorEncryptionDetailsMap(
+          key, connectorDetailsToEncryptedDataDetailsMapping, request.getScope(), request.getScmConnector());
+      GitFileLocationDetails gitFileLocationDetails = getGitFileLocationDetails(request);
+      populateGitFileLocationDetailsMap(key, connectorDetailsToFileLocationMapping, gitFileLocationDetails, identifier);
+    });
+
+    List<GetFileTaskParamsPerConnector> getFileTaskParamsPerConnectorList = prepareGetFileTaskParamsPerConnectorList(
+        connectorDetailsToEncryptedDataDetailsMapping, connectorDetailsToFileLocationMapping);
+    return ScmBatchGetFileTaskParams.builder()
+        .getFileTaskParamsPerConnectorList(getFileTaskParamsPerConnectorList)
+        .build();
+  }
+
+  private GitFileLocationDetails getGitFileLocationDetails(GitFileRequestV2 gitFileRequest) {
+    return GitFileLocationDetails.builder()
+        .branch(gitFileRequest.getBranch())
+        .commitId(gitFileRequest.getCommitId())
+        .filepath(gitFileRequest.getFilepath())
+        .repo(gitFileRequest.getRepo())
+        .build();
+  }
+
+  private List<EncryptedDataDetail> populateScmConnectorEncryptionDetailsMap(ConnectorDetails key,
+      Map<ConnectorDetails, Pair<ScmConnector, List<EncryptedDataDetail>>> encryptedDataDetailsMap, Scope scope,
+      ScmConnector scmConnector) {
+    Pair<ScmConnector, List<EncryptedDataDetail>> scmConnectorEncryptionDetails = encryptedDataDetailsMap.get(key);
+    List<EncryptedDataDetail> encryptedDataDetails = null;
+    if (scmConnectorEncryptionDetails != null) {
+      encryptedDataDetails = scmConnectorEncryptionDetails.getValue();
+    }
+    if (encryptedDataDetails == null) {
+      encryptedDataDetails = getEncryptedDataDetailsForNewGitX(
+          scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
+      encryptedDataDetailsMap.put(key, Pair.of(scmConnector, encryptedDataDetails));
+      return encryptedDataDetails;
+    }
+    return encryptedDataDetails;
+  }
+
+  private void populateGitFileLocationDetailsMap(ConnectorDetails key,
+      Map<ConnectorDetails, Map<GetBatchFileRequestIdentifier, GitFileLocationDetails>>
+          connectorDetailsToFileLocationMapping,
+      GitFileLocationDetails gitFileLocationDetails, GetBatchFileRequestIdentifier requestIdentifier) {
+    Map<GetBatchFileRequestIdentifier, GitFileLocationDetails> gitFileLocationDetailsMap =
+        connectorDetailsToFileLocationMapping.get(key);
+    if (gitFileLocationDetailsMap == null) {
+      gitFileLocationDetailsMap = new HashMap<>();
+    }
+    gitFileLocationDetailsMap.put(requestIdentifier, gitFileLocationDetails);
+    connectorDetailsToFileLocationMapping.put(key, gitFileLocationDetailsMap);
+  }
+
+  private List<GetFileTaskParamsPerConnector> prepareGetFileTaskParamsPerConnectorList(
+      Map<ConnectorDetails, Pair<ScmConnector, List<EncryptedDataDetail>>>
+          connectorDetailsToEncryptedDataDetailsMapping,
+      Map<ConnectorDetails, Map<GetBatchFileRequestIdentifier, GitFileLocationDetails>>
+          connectorDetailsToFileLocationMapping) {
+    List<GetFileTaskParamsPerConnector> getFileTaskParamsPerConnectorList = new ArrayList<>();
+
+    connectorDetailsToEncryptedDataDetailsMapping.forEach((connectorDetails, scmConnectorEncryptionDetails) -> {
+      GetFileTaskParamsPerConnector getFileTaskParamsPerConnector =
+          GetFileTaskParamsPerConnector.builder()
+              .connectorDecryptionParams(ConnectorDecryptionParams.builder()
+                                             .encryptedDataDetails(scmConnectorEncryptionDetails.getValue())
+                                             .scmConnector(scmConnectorEncryptionDetails.getKey())
+                                             .build())
+              .gitFileLocationDetailsMap(connectorDetailsToFileLocationMapping.get(connectorDetails))
+              .build();
+      getFileTaskParamsPerConnectorList.add(getFileTaskParamsPerConnector);
+    });
+    return getFileTaskParamsPerConnectorList;
   }
 }

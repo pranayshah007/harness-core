@@ -23,7 +23,6 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
-import software.wings.ngmigration.NGMigrationStatus;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -56,17 +55,6 @@ public class DummyMigrationService extends NgMigrationService {
                         .build())
         .children(new HashSet<>())
         .build();
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    return NGMigrationStatus.builder().status(true).build();
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    return NGMigrationStatus.builder().status(true).build();
   }
 
   @Override
