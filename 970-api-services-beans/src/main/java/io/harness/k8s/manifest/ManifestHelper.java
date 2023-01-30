@@ -8,12 +8,13 @@
 package io.harness.k8s.manifest;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.k8s.manifest.ObjectYamlUtils.YAML_DOCUMENT_DELIMITER;
-import static io.harness.k8s.manifest.ObjectYamlUtils.newLineRegex;
-import static io.harness.k8s.manifest.ObjectYamlUtils.splitYamlFile;
 import static io.harness.k8s.model.Kind.Secret;
 import static io.harness.k8s.model.KubernetesResource.redactSecretValues;
+import static io.harness.k8s.utils.ObjectYamlUtils.YAML_DOCUMENT_DELIMITER;
+import static io.harness.k8s.utils.ObjectYamlUtils.newLineRegex;
+import static io.harness.k8s.utils.ObjectYamlUtils.splitYamlFile;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -24,11 +25,11 @@ import io.harness.exception.KubernetesValuesException;
 import io.harness.exception.KubernetesYamlException;
 import io.harness.exception.WingsException;
 import io.harness.k8s.model.HarnessAnnotations;
+import io.harness.k8s.model.K8sYamlUtils;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.model.ListKind;
-import io.harness.yaml.BooleanPatchedRepresenter;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
@@ -47,7 +48,6 @@ import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
 
 @UtilityClass
@@ -92,9 +92,7 @@ public class ManifestHelper {
   }
 
   private List<KubernetesResource> getKubernetesResources(Map map, ListKind listKind) {
-    org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
-        new io.kubernetes.client.util.Yaml.CustomConstructor(Object.class, new LoaderOptions()),
-        new BooleanPatchedRepresenter());
+    org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();
     List<KubernetesResource> resources =
         getItems(map).stream().map(item -> getKubernetesResource(yaml.dump(item), item)).collect(Collectors.toList());
 
@@ -112,7 +110,9 @@ public class ManifestHelper {
 
   private static Map readKubernetesSpecAsMap(String spec) {
     try {
-      Yaml yaml = new Yaml(new SafeConstructor());
+      LoaderOptions loaderOptions = new LoaderOptions();
+      loaderOptions.setCodePointLimit(K8sYamlUtils.customLoadSize());
+      Yaml yaml = new Yaml(loaderOptions);
       Object o = yaml.load(spec);
       if (o == null) {
         return null;
@@ -242,6 +242,9 @@ public class ManifestHelper {
       ImmutableSet.of("Deployment", "StatefulSet", "DaemonSet", "DeploymentConfig", "Job");
 
   public static List<KubernetesResource> getWorkloads(List<KubernetesResource> resources) {
+    if (isEmpty(resources)) {
+      return emptyList();
+    }
     return resources.stream()
         .filter(resource -> managedWorkloadKinds.contains(resource.getResourceId().getKind()))
         .filter(resource -> !resource.isDirectApply())
@@ -280,6 +283,9 @@ public class ManifestHelper {
   }
 
   public static List<KubernetesResource> getCustomResourceDefinitionWorkloads(List<KubernetesResource> resources) {
+    if (isEmpty(resources)) {
+      return emptyList();
+    }
     return resources.stream()
         .filter(resource -> !allManagedWorkloadKinds.contains(resource.getResourceId().getKind()))
         .filter(resource -> resource.isManagedWorkload())

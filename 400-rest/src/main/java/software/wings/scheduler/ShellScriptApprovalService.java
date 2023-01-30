@@ -136,7 +136,7 @@ public class ShellScriptApprovalService {
 
     DelegateResponseData responseData = null;
     try {
-      responseData = delegateService.executeTask(delegateTask);
+      responseData = delegateService.executeTaskV2(delegateTask);
     } catch (Exception e) {
       log.error("Failed to fetch Approval Status from Script", e);
       return true;

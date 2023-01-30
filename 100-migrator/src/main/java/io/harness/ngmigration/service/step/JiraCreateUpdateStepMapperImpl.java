@@ -10,7 +10,8 @@ package io.harness.ngmigration.service.step;
 import static io.harness.ngmigration.service.MigratorUtility.RUNTIME_INPUT;
 
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
@@ -22,7 +23,6 @@ import io.harness.steps.jira.update.JiraUpdateStepNode;
 import io.harness.steps.jira.update.beans.TransitionTo;
 
 import software.wings.beans.GraphNode;
-import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.sm.states.collaboration.JiraCreateUpdate;
 
@@ -31,7 +31,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class JiraCreateUpdateStepMapperImpl implements StepMapper {
+public class JiraCreateUpdateStepMapperImpl extends StepMapper {
+  @Override
+  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
+    return WorkflowStepSupportStatus.SUPPORTED;
+  }
+
   @Override
   public String getStepType(GraphNode stepYaml) {
     JiraCreateUpdate state = (JiraCreateUpdate) getState(stepYaml);
@@ -47,14 +52,14 @@ public class JiraCreateUpdateStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     JiraCreateUpdate state = new JiraCreateUpdate(stepYaml.getName());
     state.parseProperties(properties);
     return state;
   }
 
   @Override
-  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     JiraCreateUpdate state = (JiraCreateUpdate) getState(graphNode);
     switch (state.getJiraAction()) {
       case UPDATE_TICKET:

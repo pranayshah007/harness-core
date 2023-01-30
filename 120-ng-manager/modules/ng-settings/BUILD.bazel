@@ -22,6 +22,7 @@ java_library(
         "//930-ng-core-clients:module",
         "//930-ng-license-manager:module",
         "//940-feature-flag:module",
+        "//942-enforcement-sdk:module",
         "//945-account-mgmt:module",
         "//954-connector-beans:module",
         "//955-outbox-sdk:module",

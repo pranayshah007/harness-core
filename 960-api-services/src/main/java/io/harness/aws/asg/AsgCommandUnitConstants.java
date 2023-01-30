@@ -37,5 +37,11 @@ public enum AsgCommandUnitConstants {
     public String toString() {
       return "Rollback";
     }
+  },
+  swapService {
+    @Override
+    public String toString() {
+      return "Swap Service";
+    }
   }
 }

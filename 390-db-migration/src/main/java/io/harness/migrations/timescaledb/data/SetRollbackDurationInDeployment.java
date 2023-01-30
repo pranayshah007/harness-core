@@ -24,13 +24,13 @@ import software.wings.sm.StateExecutionInstance;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.ReadPreference;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Sort;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Sort;
 
 /**
  * This migration will set rollback duration for the last 60 days of top level executions to TimeScaleDB

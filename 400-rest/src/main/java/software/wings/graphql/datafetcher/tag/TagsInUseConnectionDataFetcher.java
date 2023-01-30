@@ -37,6 +37,8 @@ import com.mongodb.AggregationOptions;
 import com.mongodb.BasicDBObject;
 import com.mongodb.Cursor;
 import com.mongodb.DBCollection;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,8 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
 
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
 public class TagsInUseConnectionDataFetcher

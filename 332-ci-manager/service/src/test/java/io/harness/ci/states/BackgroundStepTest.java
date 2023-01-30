@@ -220,7 +220,8 @@ public class BackgroundStepTest extends CIExecutionTestBase {
              ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
         .thenReturn(OptionalSweepingOutput.builder().found(true).output(VmStageInfraDetails.builder().build()).build());
 
-    when(vmStepSerializer.serialize(any(), any(), any(), any(), any())).thenReturn(VmBackgroundStep.builder().build());
+    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any()))
+        .thenReturn(VmBackgroundStep.builder().build());
     when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false))).thenReturn(callbackId);
 
     AsyncExecutableResponse asyncExecutableResponse =

@@ -22,4 +22,6 @@ public interface GovernanceRuleService {
   Rule fetchById(String accountId, String name, boolean create);
   void check(String accountId, List<String> policiesIdentifier);
   void customRuleLimit(String accountId);
+  void custodianValidate(Rule rule);
+  void validateAWSSchema(Rule rule);
 }

@@ -33,9 +33,11 @@ import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.transformer.metricThresholdSpec.MetricThresholdSpecDTOTransformer;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.models.VerificationType;
+import io.harness.data.structure.UUIDGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.gson.Gson;
+import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -52,7 +54,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Data
 @SuperBuilder
@@ -108,6 +109,7 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
               gson.fromJson(gson.toJson(threshold), TimeSeriesThresholdCriteria.class);
           criteria.setThresholdType(type);
           thresholds.add(TimeSeriesThreshold.builder()
+                             .uuid(UUIDGenerator.generateUuid())
                              .accountId(getAccountId())
                              .projectIdentifier(getProjectIdentifier())
                              .dataSourceType(getType())
@@ -253,6 +255,7 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
                 String metricName = metricPackDTO.getMetricName();
                 TimeSeriesThreshold timeSeriesThreshold =
                     TimeSeriesThreshold.builder()
+                        .uuid(UUIDGenerator.generateUuid())
                         .accountId(getAccountId())
                         .projectIdentifier(getProjectIdentifier())
                         .dataSourceType(getType())

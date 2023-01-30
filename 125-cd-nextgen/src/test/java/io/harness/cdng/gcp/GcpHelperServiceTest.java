@@ -83,13 +83,13 @@ public class GcpHelperServiceTest extends CategoryTest {
     GcpListBucketsResponse response =
         GcpListBucketsResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
 
-    doReturn(response).when(delegateGrpcClientWrapper).executeSyncTask(any(DelegateTaskRequest.class));
+    doReturn(response).when(delegateGrpcClientWrapper).executeSyncTaskV2(any(DelegateTaskRequest.class));
 
     GcpListBucketsResponse actualResponse =
         gcpHelperService.executeSyncTask(baseNGAccess, gcpRequest, GcpTaskType.LIST_BUCKETS, "list GCS buckets");
     assertThat(actualResponse).isEqualTo(response);
     ArgumentCaptor<DelegateTaskRequest> taskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(taskRequestCaptor.capture());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(taskRequestCaptor.capture());
     DelegateTaskRequest taskRequest = taskRequestCaptor.getValue();
     GcpTaskParameters taskParameters = (GcpTaskParameters) taskRequest.getTaskParameters();
     assertThat(taskParameters.getGcpTaskType()).isEqualTo(GcpTaskType.LIST_BUCKETS);
@@ -110,7 +110,7 @@ public class GcpHelperServiceTest extends CategoryTest {
             .errorDetail(ErrorDetail.builder().code(500).message("Something went wrong").build())
             .build();
 
-    doReturn(response).when(delegateGrpcClientWrapper).executeSyncTask(any(DelegateTaskRequest.class));
+    doReturn(response).when(delegateGrpcClientWrapper).executeSyncTaskV2(any(DelegateTaskRequest.class));
 
     assertThatThrownBy(
         () -> gcpHelperService.executeSyncTask(baseNGAccess, gcpRequest, GcpTaskType.LIST_BUCKETS, "list GCS buckets"))
@@ -125,7 +125,7 @@ public class GcpHelperServiceTest extends CategoryTest {
     ErrorNotifyResponseData responseData =
         ErrorNotifyResponseData.builder().errorMessage("Something went wrong").build();
 
-    doReturn(responseData).when(delegateGrpcClientWrapper).executeSyncTask(any(DelegateTaskRequest.class));
+    doReturn(responseData).when(delegateGrpcClientWrapper).executeSyncTaskV2(any(DelegateTaskRequest.class));
 
     assertThatThrownBy(
         () -> gcpHelperService.executeSyncTask(baseNGAccess, gcpRequest, GcpTaskType.LIST_BUCKETS, "list GCS buckets"))

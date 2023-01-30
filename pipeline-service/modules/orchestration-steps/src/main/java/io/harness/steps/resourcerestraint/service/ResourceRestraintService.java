@@ -22,4 +22,11 @@ public interface ResourceRestraintService {
   ResourceRestraint getByNameAndAccountId(String name, String accountId);
   ResourceRestraint save(@Valid ResourceRestraint resourceConstraint);
   List<ResourceRestraint> getConstraintsIn(Set<String> constraintIds);
+
+  /**
+   * Deletes all resource restraints for given account id
+   * Uses - uniqueName idx
+   * @param accountId
+   */
+  void deleteAllRestraintForGivenAccount(String accountId);
 }

@@ -16,8 +16,8 @@ import static io.harness.ng.core.activityhistory.NGActivityType.ENTITY_USAGE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
+import io.harness.beans.EntityReference;
 import io.harness.category.element.UnitTests;
-import io.harness.common.EntityReference;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.activityhistory.NGActivityType;
 import io.harness.ng.core.activityhistory.dto.EntityUsageActivityDetailDTO;

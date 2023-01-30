@@ -58,8 +58,8 @@ public class KustomizeSourceRepoStoreService implements NgManifestService {
     KustomizeManifest kustomizeManifest =
         KustomizeManifest.builder()
             .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-            .skipResourceVersioning(
-                ParameterField.createValueField(applicationManifest.getSkipVersioningForAllK8sObjects()))
+            .skipResourceVersioning(ParameterField.createValueField(
+                Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
             .store(ParameterField.createValueField(
                 StoreConfigWrapper.builder().type(StoreConfigType.GIT).spec(storeConfig).build()))
             .pluginPath(ParameterField.createValueField(applicationManifest.getKustomizeConfig().getPluginRootDir()))

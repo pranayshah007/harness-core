@@ -16,7 +16,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
-import static software.wings.beans.Log.Builder.aLog;
+import static software.wings.beans.dto.Log.Builder.aLog;
 import static software.wings.common.Constants.WINDOWS_HOME_DIR;
 
 import static java.lang.String.format;

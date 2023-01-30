@@ -21,10 +21,10 @@ import software.wings.service.impl.WorkflowExecutionUpdate;
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Sort;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 public class WFEAddDeploymentMetaData implements Migration {

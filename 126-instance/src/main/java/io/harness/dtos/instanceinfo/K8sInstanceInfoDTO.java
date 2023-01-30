@@ -8,6 +8,7 @@
 package io.harness.dtos.instanceinfo;
 
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -46,6 +47,9 @@ public class K8sInstanceInfoDTO extends InstanceInfoDTO {
 
   @Override
   public String prepareInstanceSyncHandlerKey() {
+    if (isNotEmpty(blueGreenColor)) {
+      return InstanceSyncKey.builder().part(releaseName).part(blueGreenColor).build().toString();
+    }
     return InstanceSyncKey.builder().part(releaseName).build().toString();
   }
 

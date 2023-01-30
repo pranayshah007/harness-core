@@ -24,6 +24,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngtriggers.Constants;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
@@ -42,14 +43,15 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -107,8 +109,14 @@ public interface NGTriggerResource {
   create(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
-      @Parameter(description = "Identifier of the target pipeline") @NotNull @QueryParam("targetIdentifier")
-      @ResourceIdentifier String targetIdentifier, @NotNull @ApiParam(hidden = true, type = "") String yaml,
+      @Parameter(description = "Identifier of the target pipeline") @NotNull @QueryParam(
+          "targetIdentifier") @ResourceIdentifier String targetIdentifier,
+      @NotNull @RequestBody(required = true, description = "Triggers YAML",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Create", summary = "Sample Create Trigger YAML",
+                         value = Constants.API_SAMPLE_TRIGGER_YAML, description = "Sample Triggers YAML"))
+          }) String yaml,
       @QueryParam("ignoreError") @DefaultValue("false") boolean ignoreError,
       @QueryParam("withServiceV2") @DefaultValue("false") boolean withServiceV2);
 
@@ -154,8 +162,10 @@ public interface NGTriggerResource {
       @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
           "targetIdentifier") @ResourceIdentifier String targetIdentifier,
       @PathParam("triggerIdentifier") String triggerIdentifier,
-      @NotNull @ApiParam(hidden = true, type = "") String yaml,
-      @QueryParam("ignoreError") @DefaultValue("false") boolean ignoreError);
+      @NotNull @RequestBody(required = true, description = "Triggers YAML", content = {
+        @Content(examples = @ExampleObject(name = "Update", summary = "Sample Update Trigger YAML",
+                     value = Constants.API_SAMPLE_TRIGGER_YAML, description = "Sample Triggers YAML"))
+      }) String yaml, @QueryParam("ignoreError") @DefaultValue("false") boolean ignoreError);
 
   @PUT
   @Hidden

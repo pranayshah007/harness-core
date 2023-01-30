@@ -39,12 +39,15 @@ import io.harness.data.validator.Trimmed;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateApproval;
 import io.harness.delegate.beans.DelegateApprovalResponse;
+import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateSelector;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSizeDetails;
 import io.harness.delegate.beans.DelegateTags;
+import io.harness.delegate.service.intfc.DelegateInstallationCommandService;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.delegate.utilities.DelegateDeleteResponse;
+import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.k8s.KubernetesConvention;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -121,17 +124,20 @@ public class DelegateSetupResource {
   private final DownloadTokenService downloadTokenService;
   private final SubdomainUrlHelperIntfc subdomainUrlHelper;
   private final AccessControlClient accessControlClient;
+  private final DelegateInstallationCommandService delegateInstallationCommandService;
 
   @Inject
   public DelegateSetupResource(DelegateService delegateService, DelegateScopeService delegateScopeService,
       DownloadTokenService downloadTokenService, SubdomainUrlHelperIntfc subdomainUrlHelper,
-      DelegateCache delegateCache, AccessControlClient accessControlClient) {
+      DelegateCache delegateCache, AccessControlClient accessControlClient,
+      DelegateInstallationCommandService delegateInstallationCommandService) {
     this.delegateService = delegateService;
     this.delegateScopeService = delegateScopeService;
     this.downloadTokenService = downloadTokenService;
     this.subdomainUrlHelper = subdomainUrlHelper;
     this.delegateCache = delegateCache;
     this.accessControlClient = accessControlClient;
+    this.delegateInstallationCommandService = delegateInstallationCommandService;
   }
 
   @GET
@@ -788,6 +794,25 @@ public class DelegateSetupResource {
           .type("text/plain; charset=UTF-8")
           .header(CONTENT_DISPOSITION, ATTACHMENT_FILENAME + HARNESS_DELEGATE_VALUES_YAML + YAML)
           .build();
+    }
+  }
+
+  @GET
+  @Path("installation-command")
+  @Timed
+  @AuthRule(permissionType = LOGGED_IN)
+  @ExceptionMetered
+  public RestResponse<Map<String, String>> getInstallationCommand(@Context HttpServletRequest request,
+      @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("orgId") String orgId,
+      @QueryParam("projectId") String projectId, @QueryParam("commandType") @NotEmpty String commandType)
+      throws IOException {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      final String managerUrl = subdomainUrlHelper.getManagerUrl(request, accountId);
+      final DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgId, projectId);
+      final String command = delegateInstallationCommandService.getCommand(commandType, managerUrl, accountId, owner);
+      ImmutableMap<String, String> commandResponse =
+          ImmutableMap.<String, String>builder().put("command", command).build();
+      return new RestResponse(commandResponse);
     }
   }
 

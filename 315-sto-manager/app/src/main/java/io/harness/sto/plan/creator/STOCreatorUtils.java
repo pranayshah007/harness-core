@@ -23,12 +23,14 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.STO)
 public class STOCreatorUtils {
   public Set<String> getSupportedSteps() {
-    // These are internal steps does not need to be in V2
-    return Sets.newHashSet("Test", "SaveCache", "liteEngineTask", "Cleanup", "PublishArtifacts");
+    return Sets.newHashSet();
   }
 
   public Set<String> getSupportedStepsV2() {
     SortedSet<String> steps = new TreeSet<>();
+    steps.add("liteEngineTask");
+    steps.add("GitClone");
+    steps.add("Plugin");
     steps.add("Security");
     steps.add("Run");
     steps.add("Background");

@@ -25,6 +25,8 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import dev.morphia.ObjectFactory;
+import dev.morphia.mapping.DefaultCreator;
 import io.serializer.registrars.NGCommonsRegistrars;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
@@ -35,8 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.mongodb.morphia.ObjectFactory;
-import org.mongodb.morphia.mapping.DefaultCreator;
 
 @Slf4j
 @OwnedBy(PL)

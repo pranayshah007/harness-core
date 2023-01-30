@@ -7,6 +7,7 @@
 
 package io.harness.ccm.service.impl;
 
+import static io.harness.ccm.service.impl.ConnectorEntityChangeEventUtils.lightwingAutocudDc;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CREATE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
@@ -48,22 +49,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import net.sf.json.JSONObject;
-import okhttp3.MediaType;
-import okhttp3.RequestBody;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CE)
 public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventService {
   public static final String ACCOUNT_ID = "accountId";
-  private static final String ACCOUNT_IDENTIFIER = "account_identifier";
   public static final String ACTION = "action";
   public static final String AWS_INFRA_ACCOUNT_ID = "awsInfraAccountId";
   public static final String AWS_CROSS_ACCOUNT_EXTERNAL_ID = "awsCrossAccountExternalId";
   public static final String AWS_CROSS_ACCOUNT_ROLE_ARN = "awsCrossAccountRoleArn";
-  private static final String CONNECTOR = "connector";
   public static final String CONNECTOR_ID = "connectorId";
-  private static final String EVENT_TYPE = "event_type";
   private static final String GOOGLE_CREDENTIALS_PATH = "CE_GCP_CREDENTIALS_PATH";
   @Inject ConnectorResourceClient connectorResourceClient;
   @Inject LightwingClient lightwingClient;
@@ -88,7 +83,7 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
       case CREATE_ACTION:
         ceAwsConnectorDTO =
             (CEAwsConnectorDTO) getConnectorConfigDTO(accountIdentifier, identifier).getConnectorConfig();
-        lightwingAutoCUDDC(CREATE_ACTION, accountIdentifier, ceAwsConnectorDTO);
+        lightwingAutocudDc(CREATE_ACTION, accountIdentifier, ceAwsConnectorDTO, lightwingClient, configuration);
         // Update Bucket Policy
         if (isBillingFeatureEnabled(ceAwsConnectorDTO) && validateResourcesExists(awsConfig, ceAwsConnectorDTO)) {
           awsConnectorToBucketMappingDao.upsert(AWSConnectorToBucketMapping.builder()
@@ -115,7 +110,7 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
       case UPDATE_ACTION:
         ceAwsConnectorDTO =
             (CEAwsConnectorDTO) getConnectorConfigDTO(accountIdentifier, identifier).getConnectorConfig();
-        lightwingAutoCUDDC(UPDATE_ACTION, accountIdentifier, ceAwsConnectorDTO);
+        lightwingAutocudDc(UPDATE_ACTION, accountIdentifier, ceAwsConnectorDTO, lightwingClient, configuration);
         // Update Bucket Policy
         if (isBillingFeatureEnabled(ceAwsConnectorDTO) && validateResourcesExists(awsConfig, ceAwsConnectorDTO)) {
           awsConnectorToBucketMappingDao.upsert(AWSConnectorToBucketMapping.builder()
@@ -140,7 +135,6 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
         updateCECloudAccountMongoCollection(accountIdentifier, identifier, ceAwsConnectorDTO, awsConfig);
         break;
       case DELETE_ACTION:
-        lightwingAutoCUDDC(DELETE_ACTION, accountIdentifier, null);
         updateEventData(action, identifier, accountIdentifier, "", "", "", entityChangeEvents);
         EntityChangeEventServiceHelper.publishMessage(entityChangeEvents,
             configuration.getGcpConfig().getGcpProjectId(),
@@ -244,23 +238,5 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
             crossAccountAccessDTO.getCrossAccountRoleArn(), crossAccountAccessDTO.getExternalId());
     credentialsProvider.getCredentials();
     return credentialsProvider;
-  }
-
-  private void lightwingAutoCUDDC(String action, String accountIdentifier, CEAwsConnectorDTO ceAwsConnectorDTO) {
-    if (configuration.isEnableLightwingAutoCUDDC()) {
-      try {
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put(EVENT_TYPE, action);
-        jsonObject.put(ACCOUNT_IDENTIFIER, accountIdentifier);
-        if (ceAwsConnectorDTO != null) {
-          jsonObject.put(CONNECTOR, ceAwsConnectorDTO);
-        }
-        RequestBody body = RequestBody.create(MediaType.parse("application/json"), jsonObject.toString());
-        NGRestUtils.getResponse(lightwingClient.scheduleAutoCUDDataCollectorJob(body));
-        log.info("Connector {}: The data collector api of autocud fired with no exception", action);
-      } catch (Exception e) {
-        log.info("Connector {}: Error while calling the data collector job of autocud {}", action, e.toString());
-      }
-    }
   }
 }

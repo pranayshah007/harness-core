@@ -28,7 +28,9 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
+import io.harness.beans.ScopeLevel;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.eraro.ErrorCode;
@@ -64,6 +66,7 @@ import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.dto.PrincipalType;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
@@ -135,6 +138,7 @@ public class UserResource {
   ProjectService projectService;
   UserInfoService userInfoService;
   AccessControlClient accessControlClient;
+  NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @GET
   @Path("currentUser")
@@ -563,7 +567,12 @@ public class UserResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
-    if (isUserExternallyManaged(userId)) {
+    if (isUserExternallyManaged(userId)
+        && (ScopeLevel.ACCOUNT.equals(ScopeLevel.of(accountIdentifier, orgIdentifier, projectIdentifier))
+            || !ngFeatureFlagHelperService.isEnabled(
+                accountIdentifier, FeatureName.PL_REMOVE_EXTERNAL_USER_ORG_PROJECT))) {
+      // throw error when an externally managed user is being removed from account or the FF is disabled for org and
+      // project levels
       log.error("User is externally managed, cannot delete user - userId: {}", userId);
       throw new InvalidRequestException("User is externally managed, cannot delete user");
     } else {

@@ -34,7 +34,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 
 import java.sql.Timestamp;
 import java.util.Optional;
@@ -62,7 +62,7 @@ public class JiraStepHelperServiceImplTest extends CategoryTest {
     MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
     MockedStatic<NGTimeConversionHelper> aStatic2 = Mockito.mockStatic(NGTimeConversionHelper.class);
     aStatic2.when(() -> NGTimeConversionHelper.convertTimeStringToMilliseconds(any())).thenReturn(0L);
-    Mockito.mockStatic(StepUtils.class);
+    Mockito.mockStatic(TaskRequestsUtils.class);
     Ambiance ambiance = Ambiance.newBuilder()
                             .putSetupAbstractions("accountId", "accountId")
                             .putSetupAbstractions("orgIdentifier", "orgIdentifier")

@@ -11,6 +11,7 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -22,6 +23,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(
     name = "InfrastructureResponseDTO", description = "This is the InfrastructureResponseDTO entity defined in Harness")
 public class InfrastructureResponseDTO {

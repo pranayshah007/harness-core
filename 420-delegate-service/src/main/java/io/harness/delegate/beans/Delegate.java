@@ -29,6 +29,9 @@ import io.harness.validation.Update;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.Transient;
 import java.time.Duration;
 import java.util.Date;
 import java.util.List;
@@ -39,9 +42,6 @@ import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Transient;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
@@ -87,7 +87,11 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private String delegateGroupId;
   private String delegateName;
   private String delegateProfileId;
+
+  //@TODO: Move below 2 to Redis
+  private String delegateConnectionId;
   @FdIndex private long lastHeartBeat;
+
   private String version;
   private transient String sequenceNum;
   private String delegateType;
@@ -97,6 +101,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private boolean proxy;
   private boolean ceEnabled;
   private DelegateCapacity delegateCapacity;
+  private boolean disconnected;
 
   private List<String> supportedTaskTypes;
 
@@ -106,7 +111,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
 
   @Transient private String useJreVersion;
 
-  @Transient private String location;
+  private String location;
 
   private List<DelegateScope> includeScopes;
   private List<DelegateScope> excludeScopes;
@@ -187,6 +192,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
         .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
         .location(delegateParams.getLocation())
         .mtls(connectedUsingMtls)
+        .delegateConnectionId(delegateParams.getDelegateConnectionId())
         .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
         .supportedTaskTypes(delegateParams.getSupportedTaskTypes())
         .proxy(delegateParams.isProxy())

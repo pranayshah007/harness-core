@@ -38,4 +38,5 @@ run_tests()
 
 run_analysis(
     run_pmd = False,
+    run_sonar = False,
 )

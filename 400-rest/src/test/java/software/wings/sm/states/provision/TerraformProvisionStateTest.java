@@ -155,6 +155,7 @@ import software.wings.utils.GitUtilsManager;
 import software.wings.utils.WingsTestConstants;
 
 import com.google.common.collect.ImmutableMap;
+import dev.morphia.query.Query;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -177,7 +178,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.stubbing.Answer;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
@@ -1554,6 +1554,9 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
 
     applyStateSpy.handleAsyncResponse(executionContext, response);
     verify(fileService, times(1)).deleteFile("tfPlanJsonFileId", FileBucket.TERRAFORM_PLAN_JSON);
+    verify(terraformPlanHelper, times(1))
+        .removeTfPlanJsonFileIdFromSweepingOutput(
+            executionContext, "terraformApply", SweepingOutputInstance.Scope.PIPELINE);
   }
 
   private void assertParametersVariables(TerraformProvisionParameters parameters) {

@@ -7,6 +7,9 @@
 
 package io.harness.ccm.budget;
 
+import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
+import io.harness.ccm.budgetGroup.CascadeType;
+
 import io.leangen.graphql.annotations.GraphQLNonNull;
 import java.util.List;
 import lombok.Builder;
@@ -17,8 +20,8 @@ import lombok.Value;
 public class BudgetSummary {
   @GraphQLNonNull String id;
   @GraphQLNonNull String name;
-  @GraphQLNonNull String perspectiveId;
-  @GraphQLNonNull String perspectiveName;
+  String perspectiveId;
+  String perspectiveName;
   @GraphQLNonNull Double budgetAmount;
   @GraphQLNonNull Double actualCost;
   @GraphQLNonNull Double forecastCost;
@@ -29,10 +32,14 @@ public class BudgetSummary {
   @GraphQLNonNull List<Double> forecastCostAlerts;
   @GraphQLNonNull AlertThreshold[] alertThresholds;
   @GraphQLNonNull BudgetPeriod period;
-  @GraphQLNonNull BudgetType type;
-  @GraphQLNonNull Double growthRate;
+  BudgetType type;
+  Double growthRate;
   @GraphQLNonNull long startTime;
   BudgetMonthlyBreakdown budgetMonthlyBreakdown;
   List<BudgetSummary> childEntities;
+  List<BudgetGroupChildEntityDTO> childEntityProportions;
   boolean isBudgetGroup;
+  CascadeType cascadeType;
+  String parentId;
+  Boolean disableCurrencyWarning;
 }

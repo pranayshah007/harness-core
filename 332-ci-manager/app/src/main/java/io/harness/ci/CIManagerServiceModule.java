@@ -23,6 +23,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.impl.CIYamlSchemaServiceImpl;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
+import io.harness.cache.CICacheManagementService;
+import io.harness.cache.CICacheManagementServiceImpl;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
@@ -32,6 +34,8 @@ import io.harness.ci.buildstate.SecretDecryptorViaNg;
 import io.harness.ci.enforcement.CIBuildEnforcer;
 import io.harness.ci.enforcement.CIBuildEnforcerImpl;
 import io.harness.ci.execution.DelegateTaskEventListener;
+import io.harness.ci.execution.queue.CIInitTaskMessageProcessor;
+import io.harness.ci.execution.queue.CIInitTaskMessageProcessorImpl;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.ff.impl.CIFeatureFlagServiceImpl;
 import io.harness.ci.license.CILicenseService;
@@ -211,12 +215,14 @@ public class CIManagerServiceModule extends AbstractModule {
   protected void configure() {
     install(PrimaryVersionManagerModule.getInstance());
     bind(CIManagerConfiguration.class).toInstance(ciManagerConfiguration);
+    bind(CIInitTaskMessageProcessor.class).to(CIInitTaskMessageProcessorImpl.class);
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
     bind(BuildNumberService.class).to(BuildNumberServiceImpl.class);
     bind(CIYamlSchemaService.class).to(CIYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(CIFeatureFlagService.class).to(CIFeatureFlagServiceImpl.class).in(Singleton.class);
     bind(CILicenseService.class).to(CILicenseServiceImpl.class).in(Singleton.class);
     bind(CIOverviewDashboardService.class).to(CIOverviewDashboardServiceImpl.class);
+    bind(CICacheManagementService.class).to(CICacheManagementServiceImpl.class);
     bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
     bind(GithubService.class).to(GithubServiceImpl.class);
     bind(GitlabService.class).to(GitlabServiceImpl.class);
@@ -227,6 +233,11 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(CIYAMLSanitizationService.class).to(CIYAMLSanitizationServiceImpl.class).in(Singleton.class);
     install(NgLicenseHttpClientModule.getInstance(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId()));
+
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("ciInitTaskExecutor"))
+        .toInstance(ThreadPool.create(
+            10, 30, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("Init-Task-Handler-%d").build()));
 
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("ciTelemetryPublisherExecutor"))

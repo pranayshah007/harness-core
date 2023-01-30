@@ -46,7 +46,7 @@ import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
-import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -156,7 +156,7 @@ public class InfrastructureStepTest extends CategoryTest {
   @Mock StageExecutionHelper stageExecutionHelper;
   @Mock NGLogCallback ngLogCallback;
   @Mock NGLogCallback ngLogCallbackOpen;
-  @Mock InfrastructureMapper infrastructureMapper;
+  @Mock InfrastructureOutcomeProvider infrastructureOutcomeProvider;
   @Mock InfrastructureValidator infrastructureValidator;
   @Mock InstanceOutcomeHelper instanceOutcomeHelper;
 
@@ -207,7 +207,7 @@ public class InfrastructureStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.KUBERNETES).build());
     when(cdStepHelper.getK8sInfraDelegateConfig(any(), eq(ambiance))).thenReturn(k8sInfraDelegateConfig);
-    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
         .thenReturn(
             PdcInfrastructureOutcome.builder()
                 .credentialsRef("sshKeyRef")
@@ -256,7 +256,7 @@ public class InfrastructureStepTest extends CategoryTest {
         .when(stageExecutionHelper)
         .saveStageExecutionInfoAndPublishExecutionInfoKey(
             eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.PDC));
-    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
         .thenReturn(
             PdcInfrastructureOutcome.builder()
                 .credentialsRef("sshKeyRef")
@@ -308,7 +308,7 @@ public class InfrastructureStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.WINRM).build());
     when(cdStepHelper.getWinRmInfraDelegateConfig(any(), eq(ambiance))).thenReturn(pdcWinRmInfraDelegateConfig);
-    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
         .thenReturn(
             PdcInfrastructureOutcome.builder()
                 .credentialsRef("sshKeyRef")

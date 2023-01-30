@@ -3,8 +3,8 @@ pipeline:
   identifier: "testPipelineWithStepGroup"
   stages:
   - stage:
-      identifier: "gfd"
       name: "gfd"
+      identifier: "gfd"
       type: "Approval"
       spec:
         execution:
@@ -15,9 +15,9 @@ pipeline:
               stageType: "Deployment"
               steps:
               - step:
-                  identifier: "ShellScript"
                   type: "ShellScript"
                   name: "Shell Script"
+                  identifier: "ShellScript"
                   spec:
                     shell: "Bash"
                     onDelegate: true
@@ -34,9 +34,9 @@ pipeline:
                   stageType: "Deployment"
                   steps:
                   - step:
-                      identifier: "ShellScript"
                       type: "ShellScript"
                       name: "Shell Script"
+                      identifier: "ShellScript"
                       spec:
                         shell: "Bash"
                         onDelegate: true

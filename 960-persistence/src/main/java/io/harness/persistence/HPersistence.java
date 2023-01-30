@@ -12,9 +12,9 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.health.HealthMonitor;
-import io.harness.mongo.QueryFactory;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.HQuery.QueryChecks;
+import io.harness.persistence.store.Store;
 
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
@@ -23,18 +23,19 @@ import com.mongodb.MongoSocketReadException;
 import com.mongodb.ReadPreference;
 import com.mongodb.Tag;
 import com.mongodb.TagSet;
+import com.mongodb.client.MongoClient;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.query.CountOptions;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.query.CountOptions;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +67,8 @@ public interface HPersistence extends HealthMonitor {
    * @return         the datastore
    */
   AdvancedDatastore getDatastore(Store store);
+
+  MongoClient getNewMongoClient(Store store);
 
   /**
    * Gets the datastore.

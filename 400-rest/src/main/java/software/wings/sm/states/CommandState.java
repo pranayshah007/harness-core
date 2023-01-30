@@ -138,6 +138,7 @@ import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -154,7 +155,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @Slf4j
@@ -725,7 +725,7 @@ public class CommandState extends State {
             .setupAbstraction(Cd1SetupFields.SERVICE_ID_FIELD, serviceId)
             .selectionLogsTrackingEnabled(isSelectionLogsTrackingForTasksEnabled())
             .build();
-    delegateTaskId = delegateService.queueTask(delegateTask);
+    delegateTaskId = delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
     return delegateTaskId;
   }

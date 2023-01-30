@@ -7,6 +7,7 @@
 
 package io.harness.pms.pipeline.filters;
 
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.SAHIL;
@@ -71,6 +72,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Assertions;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
@@ -283,6 +285,44 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
         .isInstanceOf(RuntimeException.class);
 
     verify(filterCreatorMergeService).obtainFiltersPerIteration(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetPipelineInfoForOldGitSync() throws IOException {
+    when(gitSyncSdkService.isGitSyncEnabled(anyString(), anyString(), anyString())).thenReturn(true);
+    Map<String, Set<String>> stepToSupportedTypes = new HashMap<>();
+    stepToSupportedTypes.put("pipeline", Collections.singleton("__any__"));
+    Map<String, PlanCreatorServiceInfo> sdkInstances = new HashMap<>();
+    when(pmsSdkHelper.getServices()).thenReturn(sdkInstances);
+
+    doReturn(
+        FilterCreationBlobResponse.newBuilder().addReferredEntities(EntityDetailProtoDTO.newBuilder().build()).build())
+        .when(filterCreatorMergeService)
+        .obtainFiltersRecursively(any(), any(), any(), any());
+    doNothing().when(pipelineSetupUsageHelper).deleteExistingSetupUsages(ACCOUNT_ID, ORG_ID, PROJECT_ID, IDENTIFIER);
+
+    doReturn(ExecutionPrincipalInfo.newBuilder().build())
+        .when(principalInfoHelper)
+        .getPrincipalInfoFromSecurityContext();
+    doReturn(TriggeredBy.newBuilder().build()).when(triggeredByHelper).getFromSecurityContext();
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .yaml(pipelineYaml)
+                                        .accountId(ACCOUNT_ID)
+                                        .projectIdentifier(PROJECT_ID)
+                                        .orgIdentifier(ORG_ID)
+                                        .identifier(IDENTIFIER)
+                                        .build();
+    doReturn(Collections.singletonList(EntityDetailProtoDTO.newBuilder().build()))
+        .when(pmsPipelineTemplateHelper)
+        .getTemplateReferencesForGivenYaml(anyString(), anyString(), anyString(), anyString());
+    Assertions.assertDoesNotThrow(() -> filterCreatorMergeService.getPipelineInfo(pipelineEntity));
+
+    ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
+    verify(pmsSdkHelper).getServices();
+    verify(pipelineSetupUsageHelper).publishSetupUsageEvent(eq(pipelineEntity), listArgumentCaptor.capture());
+    assertThat(listArgumentCaptor.getValue()).isNotNull().isNotEmpty().hasSize(1);
   }
 
   @Test

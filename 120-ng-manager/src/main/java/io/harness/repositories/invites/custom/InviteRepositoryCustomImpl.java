@@ -54,4 +54,10 @@ public class InviteRepositoryCustomImpl implements InviteRepositoryCustom {
         .get(
             () -> mongoTemplate.findAndModify(query, update, new FindAndModifyOptions().returnNew(true), Invite.class));
   }
+
+  @Override
+  public List<Invite> deleteAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.findAllAndRemove(query, Invite.class);
+  }
 }

@@ -13,7 +13,6 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.SecurityStepInfo;
 import io.harness.sto.STOStepType;
-import io.harness.yaml.sto.variables.STOYamlGenericConfig;
 import io.harness.yaml.sto.variables.STOYamlScanMode;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -45,10 +44,6 @@ public class STOGenericStepInfo extends SecurityStepInfo {
   }
 
   @NotNull @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlScanMode") protected STOYamlScanMode mode;
-
-  @NotNull
-  @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlGenericConfig")
-  protected STOYamlGenericConfig config;
 
   @NotNull @JsonProperty protected STOYamlTarget target;
 

@@ -86,6 +86,9 @@ public interface YamlTypes {
   String ASG_CANARY_DELETE = StepSpecTypeConstants.ASG_CANARY_DELETE;
   String ASG_ROLLING_DEPLOY = StepSpecTypeConstants.ASG_ROLLING_DEPLOY;
   String ASG_ROLLING_ROLLBACK = StepSpecTypeConstants.ASG_ROLLING_ROLLBACK;
+  String ASG_BLUE_GREEN_DEPLOY = StepSpecTypeConstants.ASG_BLUE_GREEN_DEPLOY;
+  String ASG_BLUE_GREEN_ROLLBACK = StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK;
+  String ASG_BLUE_GREEN_SWAP_SERVICE = StepSpecTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE;
 
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";
@@ -187,4 +190,9 @@ public interface YamlTypes {
 
   String ELASTIGROUP_BG_STAGE_SETUP = StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP;
   String ELASTIGROUP_SWAP_ROUTE = StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE;
+
+  String TAS_ROLLING_DEPLOY = StepSpecTypeConstants.TAS_ROLLING_DEPLOY;
+  String TAS_ROLLING_ROLLBACK = StepSpecTypeConstants.TAS_ROLLING_ROLLBACK;
+
+  String K8S_DRY_RUN_MANIFEST = StepSpecTypeConstants.K8S_DRY_RUN_MANIFEST;
 }

@@ -41,8 +41,8 @@ public interface ServiceEntityService {
 
   List<ServiceEntity> listRunTimePermission(Criteria criteria);
 
-  boolean delete(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier, Long version);
+  boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
+      Long version, boolean forceDelete);
 
   Page<ServiceEntity> bulkCreate(String accountId, List<ServiceEntity> serviceEntities);
 
@@ -67,6 +67,14 @@ public interface ServiceEntityService {
   boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier);
 
   /**
+   * Deletes all services linked to a particular harness org.
+   * @param accountId  the account id
+   * @param orgIdentifier the organization identifier
+   * @return boolean to indicate if deletion was successful
+   */
+  boolean forceDeleteAllInOrg(String accountId, String orgIdentifier);
+
+  /**
    *
    * Locates the leaf node in a service entity for a given FQN of type
    * pipeline.stages.s1.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag
@@ -80,10 +88,14 @@ public interface ServiceEntityService {
   YamlNode getYamlNodeForFqn(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
       @NotEmpty String projectIdentifier, @NotEmpty String serviceIdentifier, @NotEmpty String fqn);
 
+  // Avoid using this method,as it  allows clients to access unbounded amount of data
+  @Deprecated
   List<ServiceEntity> getServices(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers);
 
   boolean isServiceField(String fieldName, JsonNode value);
+
+  List<String> getServiceIdentifiers(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
   Optional<ServiceEntity> getService(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier);

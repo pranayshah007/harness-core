@@ -7,21 +7,21 @@
 
 package io.harness.mongo.index.migrator;
 
-import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
-import static org.mongodb.morphia.aggregation.Group.grouping;
-import static org.mongodb.morphia.aggregation.Group.id;
+import static dev.morphia.aggregation.Accumulator.accumulator;
+import static dev.morphia.aggregation.Group.grouping;
+import static dev.morphia.aggregation.Group.id;
 
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfile.DelegateProfileKeys;
 import io.harness.persistence.HIterator;
 
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.aggregation.AggregationPipeline;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.internal.MorphiaCursor;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.aggregation.AggregationPipeline;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class DelegateProfileNameUniqueInAccountMigration implements Migrator {
@@ -36,9 +36,9 @@ public class DelegateProfileNameUniqueInAccountMigration implements Migrator {
                 grouping("count", accumulator("$sum", 1)))
             .match(queryForMultipleItems);
 
-    try (HIterator<AggregateResult> invalidEntries =
-             new HIterator((MorphiaIterator) invalidEntryPipeline.out(AggregateResult.class))) {
-      for (AggregateResult invalidEntry : invalidEntries) {
+    try (MorphiaCursor<AggregateResult> cursor = (MorphiaCursor) invalidEntryPipeline.out(AggregateResult.class)) {
+      while (cursor.hasNext()) {
+        AggregateResult invalidEntry = cursor.next();
         Query<DelegateProfile> delegateProfileToRenameQuery = datastore.createQuery(DelegateProfile.class)
                                                                   .field(DelegateProfileKeys.accountId)
                                                                   .equal(invalidEntry.get_id().getAccountId())

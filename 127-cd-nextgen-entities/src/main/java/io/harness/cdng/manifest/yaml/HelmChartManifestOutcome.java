@@ -8,6 +8,7 @@
 package io.harness.cdng.manifest.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +18,7 @@ import io.harness.k8s.model.HelmVersion;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Collections;
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
@@ -40,4 +42,11 @@ public class HelmChartManifestOutcome implements ManifestOutcome {
   HelmVersion helmVersion;
   List<HelmManifestCommandFlag> commandFlags;
   ParameterField<List<String>> valuesPaths;
+
+  public ParameterField<List<String>> getValuesPaths() {
+    if (!(getParameterFieldValue(this.valuesPaths) instanceof List)) {
+      return ParameterField.createValueField(Collections.emptyList());
+    }
+    return this.valuesPaths;
+  }
 }

@@ -22,7 +22,6 @@ import io.harness.delegate.beans.DelegateScope;
 import io.harness.delegate.beans.DelegateScope.DelegateScopeBuilder;
 import io.harness.delegate.beans.TaskGroup;
 
-import software.wings.beans.DelegateConnection;
 import software.wings.graphql.schema.type.QLEnvironmentType;
 
 import java.util.ArrayList;
@@ -45,8 +44,7 @@ public class DelegateController {
   private static final Map<String, QLTaskGroup> qlTaskGroupMap =
       EnumSet.allOf(QLTaskGroup.class).stream().collect(Collectors.toMap(Enum::name, taskGroup -> taskGroup));
 
-  public static void populateQLDelegate(
-      Delegate delegate, QLDelegateBuilder qlDelegateBuilder, List<DelegateConnection> delegateConnections) {
+  public static void populateQLDelegate(Delegate delegate, QLDelegateBuilder qlDelegateBuilder) {
     qlDelegateBuilder.accountId(delegate.getAccountId())
         .delegateName(delegate.getDelegateName())
         .delegateType(delegate.getDelegateType())
@@ -65,7 +63,6 @@ public class DelegateController {
         .excludeScopes(delegate.getExcludeScopes())
         .supportedTasks(delegate.getSupportedTaskTypes())
         .tags(delegate.getTags())
-        .connections(delegateConnections)
         .build();
   }
 

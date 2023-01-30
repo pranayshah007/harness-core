@@ -33,6 +33,7 @@ import io.kubernetes.client.openapi.models.V1DaemonSet;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 
@@ -54,7 +55,7 @@ public class DaemonSetApiWatcher implements WorkloadWatcher {
     Preconditions.checkNotNull(apiClient, "K8s API Client cannot be null.");
     AppsV1Api appsV1Api = new AppsV1Api(apiClient);
     boolean success = false;
-    while (true) {
+    while (!Thread.currentThread().isInterrupted()) {
       try (Watch<V1DaemonSet> watch = createWatchCall(apiClient, appsV1Api, workload.getNamespace())) {
         for (Watch.Response<V1DaemonSet> event : watch) {
           V1DaemonSet daemonSet = event.object;
@@ -95,8 +96,17 @@ public class DaemonSetApiWatcher implements WorkloadWatcher {
           throw e;
         }
         return false;
+      } catch (RuntimeException e) {
+        if (e.getCause() instanceof InterruptedIOException) {
+          log.warn("Kubernetes watch was aborted.", e);
+          Thread.currentThread().interrupt();
+          return false;
+        }
+        log.error("Runtime exception during Kubernetes watch.", e);
+        throw e;
       }
     }
+    return false;
   }
 
   private Watch<V1DaemonSet> createWatchCall(ApiClient apiClient, AppsV1Api appsV1Api, String namespace)

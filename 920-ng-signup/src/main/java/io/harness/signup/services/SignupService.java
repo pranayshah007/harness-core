@@ -26,11 +26,14 @@ public interface SignupService {
 
   boolean createSignupInvite(SignupDTO dto, String captchaToken);
 
-  UserInfo completeSignupInvite(String token, @Nullable String referer, @Nullable String gaClientId);
+  UserInfo completeSignupInvite(
+      String token, @Nullable String referer, @Nullable String gaClientId, @Nullable String visitorToken);
 
   UserInfo oAuthSignup(OAuthSignupDTO dto) throws WingsException;
 
   VerifyTokenResponseDTO verifyToken(String token);
 
   void resendVerificationEmail(String email);
+
+  void deleteByAccount(String accountId);
 }

@@ -7,20 +7,25 @@
 
 package software.wings.instancesyncv2.service;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import software.wings.dl.WingsMongoPersistence;
+import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails.InstanceSyncTaskDetailsKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(HarnessTeam.CDP)
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
@@ -36,6 +41,10 @@ public class CgInstanceSyncTaskDetailsService {
     }
 
     mongoPersistence.save(taskDetails);
+  }
+
+  public boolean delete(String taskDetailsId) {
+    return mongoPersistence.delete(InstanceSyncTaskDetails.class, taskDetailsId);
   }
 
   public InstanceSyncTaskDetails getForId(String taskDetailsId) {
@@ -65,9 +74,34 @@ public class CgInstanceSyncTaskDetailsService {
     return query.asList();
   }
 
-  public void updateLastRun(String taskDetailsId) {
+  public boolean isInstanceSyncTaskDetailsExist(String accountId, String perpetualTaskId) {
+    Query<InstanceSyncTaskDetails> query = mongoPersistence.createQuery(InstanceSyncTaskDetails.class)
+                                               .filter(InstanceSyncTaskDetailsKeys.accountId, accountId)
+                                               .filter(InstanceSyncTaskDetailsKeys.perpetualTaskId, perpetualTaskId);
+
+    return query.count() > 0;
+  }
+
+  public InstanceSyncTaskDetails getInstanceSyncTaskDetails(String accountId, String instanceSyncTaskDetailId) {
+    Query<InstanceSyncTaskDetails> query = mongoPersistence.createQuery(InstanceSyncTaskDetails.class)
+                                               .filter(InstanceSyncTaskDetailsKeys.accountId, accountId)
+                                               .filter(InstanceSyncTaskDetailsKeys.uuid, instanceSyncTaskDetailId);
+
+    return query.get();
+  }
+
+  public void updateLastRun(
+      String taskDetailsId, Set<CgReleaseIdentifiers> releasesToUpdate, Set<CgReleaseIdentifiers> releasesToDelete) {
     InstanceSyncTaskDetails taskDetails = getForId(taskDetailsId);
     taskDetails.setLastSuccessfulRun(System.currentTimeMillis());
+    if (!releasesToUpdate.isEmpty() || !releasesToDelete.isEmpty()) {
+      Set<CgReleaseIdentifiers> allReleases = new HashSet<>(releasesToUpdate);
+      if (isNotEmpty(taskDetails.getReleaseIdentifiers())) {
+        allReleases.addAll(taskDetails.getReleaseIdentifiers());
+      }
+      allReleases.removeAll(releasesToDelete);
+      taskDetails.setReleaseIdentifiers(allReleases);
+    }
     save(taskDetails);
   }
 }

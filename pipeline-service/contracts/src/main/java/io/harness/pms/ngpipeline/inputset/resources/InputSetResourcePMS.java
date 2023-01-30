@@ -36,6 +36,8 @@ import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetMoveConfigRequestDTO;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetMoveConfigResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSanitiseResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponseDTOPMS;
@@ -518,4 +520,29 @@ public interface InputSetResourcePMS {
       @PathParam(NGCommonEntityConstants.INPUT_SET_IDENTIFIER_KEY) @Parameter(
           description = PipelineResourceConstants.INPUT_SET_ID_PARAM_MESSAGE) String inputSetIdentifier,
       @BeanParam GitImportInfoDTO gitImportInfoDTO, InputSetImportRequestDTO inputSetImportRequestDTO);
+
+  @POST
+  @Path("/move-config/{inputSetIdentifier}")
+  @Hidden
+  @ApiOperation(
+      value = "Move Input Set YAML from inline to remote or remote to inline", nickname = "inputSetMoveConfig")
+  @Operation(operationId = "inputSetMoveConfig",
+      summary = "Move Input Set YAML from inline to remote or remote to inline",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description =
+                "Fetches Input Set YAML from Harness DB and creates a remote entity or Fetches Pipeline YAML from remote repository and creates a inline entity")
+      })
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  ResponseDTO<InputSetMoveConfigResponseDTO>
+  moveConfig(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                 NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @PathParam(NGCommonEntityConstants.INPUT_SET_IDENTIFIER_KEY) @Parameter(
+          description = PipelineResourceConstants.INPUT_SET_ID_PARAM_MESSAGE) String inputSetIdentifier,
+      @BeanParam InputSetMoveConfigRequestDTO inputSetMoveConfigRequestDTO);
 }

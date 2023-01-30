@@ -16,7 +16,7 @@ java_library(
         "//960-persistence:module",
         "//980-commons:module",
         "//999-annotations:module",
-        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:dev_morphia_morphia_core",
     ],
 )
 
@@ -33,9 +33,9 @@ java_library(
         "@maven//:com_google_code_findbugs_annotations",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_inject_guice",
+        "@maven//:dev_morphia_morphia_core",
         "@maven//:junit_junit",
         "@maven//:org_assertj_assertj_core",
-        "@maven//:org_mongodb_morphia_morphia",
         "@maven//:org_slf4j_slf4j_api",
     ],
 )

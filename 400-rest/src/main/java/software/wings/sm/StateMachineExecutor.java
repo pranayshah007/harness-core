@@ -62,6 +62,7 @@ import static software.wings.sm.StateType.ENV_STATE;
 import static software.wings.sm.StateType.FORK;
 import static software.wings.sm.StateType.PHASE;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
@@ -70,7 +71,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.alert.AlertData;
 import io.harness.annotations.dev.BreakDependencyOn;
@@ -164,6 +164,11 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -183,11 +188,6 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
 
 /**
  * Class responsible for executing state machine.
@@ -1724,7 +1724,7 @@ public class StateMachineExecutor implements StateInspectionListener {
         notNullCheck("context.getApp()", context.getApp());
         if (finalStatus == ABORTED) {
           try {
-            delegateService.abortTask(context.getApp().getAccountId(), delegateTaskId);
+            delegateService.abortTaskV2(context.getApp().getAccountId(), delegateTaskId);
           } catch (Exception e) {
             log.error(
                 "[AbortInstance] Error in ABORTING WorkflowExecution {}. Error in aborting delegate task : {}. Reason : {}",
@@ -1732,7 +1732,7 @@ public class StateMachineExecutor implements StateInspectionListener {
           }
         } else {
           try {
-            String errorMsg = delegateService.expireTask(context.getApp().getAccountId(), delegateTaskId);
+            String errorMsg = delegateService.expireTaskV2(context.getApp().getAccountId(), delegateTaskId);
             if (isNotBlank(errorMsg)) {
               errorMsgBuilder.append(errorMsg);
             }

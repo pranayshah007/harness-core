@@ -8,14 +8,11 @@
 package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.k8s.model.Kind.Namespace;
 import static io.harness.k8s.model.KubernetesResourceId.createKubernetesResourceIdsFromKindName;
 
 import static software.wings.beans.LogColor.GrayDark;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
-
-import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.k8s.DeleteResourcesType;
@@ -64,7 +61,9 @@ public class K8sDeleteBaseHandler {
         GrayDark, Bold));
     executionLogCallback.saveExecutionLog(
         "Delete Namespace is set to: " + k8sDeleteRequest.isDeleteNamespacesForRelease());
-    return getResourceIdsForDeletion(k8sDeleteRequest, kubernetesConfig, executionLogCallback);
+    return k8sTaskHelperBase.getResourceIdsForDeletion(k8sDeleteRequest.isUseDeclarativeRollback(),
+        k8sDeleteRequest.getReleaseName(), kubernetesConfig, executionLogCallback,
+        k8sDeleteRequest.isDeleteNamespacesForRelease());
   }
 
   public List<KubernetesResourceId> getResourceNameResourceIdsToDelete(String resources) {
@@ -77,22 +76,6 @@ public class K8sDeleteBaseHandler {
     }
 
     return createKubernetesResourceIdsFromKindName(resources);
-  }
-
-  private List<KubernetesResourceId> getResourceIdsForDeletion(K8sDeleteRequest k8sDeleteRequest,
-      KubernetesConfig kubernetesConfig, LogCallback executionLogCallback) throws IOException {
-    List<KubernetesResourceId> kubernetesResourceIds = k8sTaskHelperBase.fetchAllResourcesForRelease(
-        k8sDeleteRequest.getReleaseName(), kubernetesConfig, executionLogCallback);
-
-    // If namespace deletion is NOT selected,remove all Namespace resources from deletion list
-    if (!k8sDeleteRequest.isDeleteNamespacesForRelease()) {
-      kubernetesResourceIds =
-          kubernetesResourceIds.stream()
-              .filter(kubernetesResourceId -> !Namespace.name().equals(kubernetesResourceId.getKind()))
-              .collect(toList());
-    }
-
-    return k8sTaskHelperBase.arrangeResourceIdsInDeletionOrder(kubernetesResourceIds);
   }
 
   public K8sDeployResponse getSuccessResponse() {

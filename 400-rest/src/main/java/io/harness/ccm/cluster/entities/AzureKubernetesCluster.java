@@ -18,13 +18,13 @@ import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.settings.SettingValue;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.query.Query;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.query.Query;
 
 @Data
 @JsonTypeName("AZURE_KUBERNETES")

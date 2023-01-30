@@ -48,6 +48,10 @@ if [[ "" != "$NG_MANAGER_URL" ]]; then
   export NG_MANAGER_URL; yq -i '.ngManagerClientConfig.baseUrl=env(NG_MANAGER_URL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$OVERRIDE_EXEC_LIMIT_FOR_ACCOUNT" ]]; then
+  export OVERRIDE_EXEC_LIMIT_FOR_ACCOUNT; yq -i '.ciExecutionServiceConfig.executionLimits.overrideConfig[0]=env(OVERRIDE_EXEC_LIMIT_FOR_ACCOUNT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$ADDON_IMAGE" ]]; then
   export ADDON_IMAGE; yq -i '.ciExecutionServiceConfig.addonImage=env(ADDON_IMAGE)' $CONFIG_FILE
 fi
@@ -137,6 +141,10 @@ fi
 
 if [[ "" != "$HOSTED_VM_SPLIT_LINUX_ARM64_POOL" ]]; then
   export HOSTED_VM_SPLIT_LINUX_ARM64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxArm64Pool=env(HOSTED_VM_SPLIT_LINUX_ARM64_POOL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL" ]]; then
+  export HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxAmd64Pool=env(HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$VM_ARTIFACTORY_UPLOAD_IMAGE" ]]; then
@@ -435,6 +443,14 @@ if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
       INDEX=$(expr $INDEX + 1)
     done
   fi
+fi
+
+if [[ "" != "$HSQS_BASE_URL" ]]; then
+  export HSQS_BASE_URL; yq -i '.ciExecutionServiceConfig.queueServiceClient.queueServiceConfig.baseUrl=env(HSQS_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$HSQS_AUTH_TOKEN" ]]; then
+  export HSQS_AUTH_TOKEN; yq -i '.ciExecutionServiceConfig.queueServiceClient.authToken=env(HSQS_AUTH_TOKEN)' $CONFIG_FILE
 fi
 
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE

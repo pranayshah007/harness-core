@@ -132,7 +132,6 @@ public class VmInitializeTaskParamsBuilder {
     HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) initializeStepInfo.getInfrastructure();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId);
-
     CIVmInitializeTaskParams params = getVmInitializeParams(initializeStepInfo, ambiance, poolId);
     SetupVmRequest setupVmRequest = convertHostedSetupParams(params);
     List<ExecuteStepRequest> services = new ArrayList<>();
@@ -499,10 +498,15 @@ public class VmInitializeTaskParamsBuilder {
     }
     boolean isLinux = os == OSType.Linux && (arch == ArchType.Amd64 || arch == ArchType.Arm64);
     boolean isMacArm = os == OSType.MacOS && arch == ArchType.Arm64;
+    boolean isWindowsAmd = os == OSType.Windows && arch == ArchType.Amd64;
 
-    if (isLinux || isMacArm) {
+    if (isLinux || isMacArm || isWindowsAmd) {
       if (isMacArm && !featureFlagService.isEnabled(FeatureName.CIE_HOSTED_VMS_MAC, accountId)) {
         throw new CIStageExecutionException(format("Mac Arm64 platform is not enabled for accountId %s", accountId));
+      }
+      if (isWindowsAmd && !featureFlagService.isEnabled(FeatureName.CIE_HOSTED_VMS_WINDOWS, accountId)) {
+        throw new CIStageExecutionException(
+            format("Windows Amd64 platform is not enabled for accountId %s", accountId));
       }
       log.info(format("%s %s platform is supported for hosted builds", os, arch));
     } else {
@@ -510,7 +514,8 @@ public class VmInitializeTaskParamsBuilder {
     }
 
     String pool = format("%s-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
-    if (isLinux && isSplitLinuxPool(arch)) {
+
+    if ((isLinux && isSplitLinuxPool(arch)) || (isWindowsAmd && isSplitWindowsPool())) {
       LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
       if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
         pool = format("%s-free-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
@@ -527,6 +532,10 @@ public class VmInitializeTaskParamsBuilder {
       return ciExecutionServiceConfig.getHostedVmConfig().isSplitLinuxArm64Pool();
     }
     return false;
+  }
+
+  private boolean isSplitWindowsPool() {
+    return ciExecutionServiceConfig.getHostedVmConfig().isSplitWindowsAmd64Pool();
   }
 
   private SetupVmRequest convertHostedSetupParams(CIVmInitializeTaskParams params) {

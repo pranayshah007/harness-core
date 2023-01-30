@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OwnedBy(PL)
+// When adding new module the internal and ignore fields should be set to true unless all the services deploys these
+// changes.
 public enum ModuleType {
   @JsonProperty("CD") CD("Continuous Deployment"),
   @JsonProperty("CI") CI("Continuous Integration"),
@@ -36,8 +38,8 @@ public enum ModuleType {
   @JsonProperty("TEMPLATESERVICE") TEMPLATESERVICE("TemplateService", true, false),
   @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", true, true),
   @JsonProperty("IACM")
-  IACM("Infrastructure as Code Manager", true,
-      true); // TODO: This will be enabled once pipeline has consumed the code and can be safely enabled
+  IACM("Infrastructure as Code Manager", false,
+      false); // TODO: This will be enabled once pipeline has consumed the code and can be safely enabled
 
   String displayName;
   boolean internal;

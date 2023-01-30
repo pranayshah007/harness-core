@@ -112,7 +112,7 @@ public class AwsResourceServiceHelper {
             .taskSelectors(((AwsTaskParams) taskParameters).getAwsConnector().getDelegateSelectors())
             .build();
     try {
-      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      return delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }
@@ -131,7 +131,7 @@ public class AwsResourceServiceHelper {
             .taskSelectors(ecrRequest.getAwsConnectorDTO().getDelegateSelectors())
             .build();
     try {
-      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      return delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }

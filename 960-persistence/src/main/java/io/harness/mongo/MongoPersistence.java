@@ -13,10 +13,10 @@ import static io.harness.mongo.IndexManager.Mode.AUTO;
 import static io.harness.mongo.MongoUtils.setUnsetOnInsert;
 import static io.harness.persistence.HQuery.allChecks;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofSeconds;
 import static java.util.stream.Collectors.toList;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -29,12 +29,13 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.HQuery;
 import io.harness.persistence.HQuery.QueryChecks;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.Store;
+import io.harness.persistence.QueryFactory;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UpdatedByAware;
 import io.harness.persistence.UserProvider;
 import io.harness.persistence.UuidAccess;
 import io.harness.persistence.UuidAware;
+import io.harness.persistence.store.Store;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -45,6 +46,18 @@ import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoExecutionTimeoutException;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteResult;
+import com.mongodb.client.MongoClient;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.DatastoreImpl;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.InsertOptions;
+import dev.morphia.Morphia;
+import dev.morphia.mapping.MappedClass;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOpsImpl;
+import dev.morphia.query.UpdateResults;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,17 +74,6 @@ import java.util.stream.StreamSupport;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.DatastoreImpl;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.InsertOptions;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.mapping.MappedClass;
-import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateOpsImpl;
-import org.mongodb.morphia.query.UpdateResults;
 
 @Singleton
 @Slf4j
@@ -135,6 +137,7 @@ public class MongoPersistence implements HPersistence {
   private Map<String, Info> storeInfo = new ConcurrentHashMap<>();
   private Map<Class, Store> classStores = new ConcurrentHashMap<>();
   private Map<String, AdvancedDatastore> datastoreMap;
+  private Map<String, MongoClient> mongoClientMap;
   private final HarnessConnectionPoolListener harnessConnectionPoolListener;
   @Inject UserProvider userProvider;
 
@@ -142,6 +145,7 @@ public class MongoPersistence implements HPersistence {
   public MongoPersistence(@Named("primaryDatastore") AdvancedDatastore primaryDatastore,
       HarnessConnectionPoolListener harnessConnectionPoolListener) {
     datastoreMap = new HashMap<>();
+    mongoClientMap = new HashMap<>();
     datastoreMap.put(DEFAULT_STORE.getName(), primaryDatastore);
     this.harnessConnectionPoolListener = harnessConnectionPoolListener;
   }
@@ -182,6 +186,17 @@ public class MongoPersistence implements HPersistence {
         return getDatastore(DEFAULT_STORE);
       }
       return MongoModule.createDatastore(morphia, info.getUri(), store.getName(), harnessConnectionPoolListener);
+    });
+  }
+
+  @Override
+  public MongoClient getNewMongoClient(Store store) {
+    return mongoClientMap.computeIfAbsent(store.getName(), key -> {
+      Info info = storeInfo.get(store.getName());
+      if (info == null || isEmpty(info.getUri())) {
+        return getNewMongoClient(DEFAULT_STORE);
+      }
+      return MongoModule.createNewMongoCLient(info.getUri(), store.getName(), harnessConnectionPoolListener);
     });
   }
 

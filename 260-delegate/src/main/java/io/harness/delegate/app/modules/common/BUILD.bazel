@@ -16,7 +16,8 @@ java_library(
         "//420-delegate-agent/src/main/java/io/harness/managerclient:module",
         "//960-api-services/src/main/java/io/harness/delegate/configuration:module",
         "//970-grpc:module",
-        "//980-commons:module",
+        "//980-commons/src/main/java/io/harness/health:module",
+        "//980-commons/src/main/java/io/harness/security:module",
         "@maven//:com_google_inject_guice",
     ],
 )

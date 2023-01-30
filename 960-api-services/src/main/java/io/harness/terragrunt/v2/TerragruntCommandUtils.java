@@ -16,18 +16,19 @@ import static io.harness.provision.TerragruntConstants.TERRAGRUNT_OUTPUT_COMMAND
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_PLAN_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_PLAN_DESTROY_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_REFRESH_COMMAND_FORMAT;
-import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_APPLY_COMMAND_FORMAT;
+import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_APPLY_COMMAND_FORMAT_WITH_EXTERNAL_DEPENDENCY;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_DESTROY_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_INIT_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_OUTPUT_COMMAND_FORMAT;
-import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_PLAN_COMMAND_FORMAT;
-import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_PLAN_DESTROY_COMMAND_FORMAT;
+import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_PLAN_COMMAND_FORMAT_WITH_EXTERNAL_DEPENDENCY;
+import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_PLAN_DESTROY_COMMAND_FORMAT_WITH_EXTERNAL_DEPENDENCY;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_REFRESH_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_SHOW_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_SHOW_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_VERSION_COMMAND;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_WORKSPACE_LIST_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_WORKSPACE_NEW_COMMAND_FORMAT;
+import static io.harness.provision.TerragruntConstants.TERRAGRUNT_WORKSPACE_RUN_ALL_LIST_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_WORKSPACE_RUN_ALL_NEW_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_WORKSPACE_RUN_ALL_SELECT_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_WORKSPACE_SELECT_COMMAND_FORMAT;
@@ -44,14 +45,16 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(CDP)
 @UtilityClass
 public class TerragruntCommandUtils {
+  public static final String ECHO_YES_WITH_PLACEHOLDER = "echo \"y\" | %s";
   public String init(String backendConfigFilePath, TerragruntRunType runType) {
     File backendConfigFile = null;
     if (StringUtils.isNotBlank(backendConfigFilePath)) {
       backendConfigFile = new File(backendConfigFilePath);
     }
 
-    String initCommand =
-        runType == TerragruntRunType.RUN_ALL ? TERRAGRUNT_RUN_ALL_INIT_COMMAND_FORMAT : TERRAGRUNT_INIT_COMMAND_FORMAT;
+    String initCommand = runType == TerragruntRunType.RUN_ALL
+        ? format(ECHO_YES_WITH_PLACEHOLDER, TERRAGRUNT_RUN_ALL_INIT_COMMAND_FORMAT)
+        : TERRAGRUNT_INIT_COMMAND_FORMAT;
     return format(initCommand,
         backendConfigFile != null && backendConfigFile.exists() ? format(" -backend-config=%s", backendConfigFilePath)
                                                                 : "");
@@ -71,7 +74,8 @@ public class TerragruntCommandUtils {
   }
 
   public String runAllPlan(String targetArgs, String varParams, boolean destroy) {
-    return format(destroy ? TERRAGRUNT_RUN_ALL_PLAN_DESTROY_COMMAND_FORMAT : TERRAGRUNT_RUN_ALL_PLAN_COMMAND_FORMAT,
+    return format(destroy ? TERRAGRUNT_RUN_ALL_PLAN_DESTROY_COMMAND_FORMAT_WITH_EXTERNAL_DEPENDENCY
+                          : TERRAGRUNT_RUN_ALL_PLAN_COMMAND_FORMAT_WITH_EXTERNAL_DEPENDENCY,
         targetArgs.trim(), varParams.trim());
   }
 
@@ -80,7 +84,7 @@ public class TerragruntCommandUtils {
   }
 
   public String runAllApply(String targetArgs, String varParams) {
-    return format(TERRAGRUNT_RUN_ALL_APPLY_COMMAND_FORMAT, targetArgs, varParams);
+    return format(TERRAGRUNT_RUN_ALL_APPLY_COMMAND_FORMAT_WITH_EXTERNAL_DEPENDENCY, targetArgs, varParams);
   }
 
   public String destroy(String autoApproveArg, String targetArgs, String varParams) {
@@ -96,7 +100,8 @@ public class TerragruntCommandUtils {
   }
 
   public String runAllOutput(String outputFilePath) {
-    return format(TERRAGRUNT_RUN_ALL_OUTPUT_COMMAND_FORMAT, outputFilePath);
+    String runAllOutputWithFilePath = format(TERRAGRUNT_RUN_ALL_OUTPUT_COMMAND_FORMAT, outputFilePath);
+    return format(ECHO_YES_WITH_PLACEHOLDER, runAllOutputWithFilePath);
   }
 
   public String show(boolean json, String planName) {
@@ -115,8 +120,10 @@ public class TerragruntCommandUtils {
     return TERRAGRUNT_VERSION_COMMAND;
   }
 
-  public String workspaceList() {
-    return TERRAGRUNT_WORKSPACE_LIST_COMMAND_FORMAT;
+  public String workspaceList(TerragruntRunType type) {
+    return type == TerragruntRunType.RUN_ALL
+        ? format(ECHO_YES_WITH_PLACEHOLDER, TERRAGRUNT_WORKSPACE_RUN_ALL_LIST_COMMAND_FORMAT)
+        : TERRAGRUNT_WORKSPACE_LIST_COMMAND_FORMAT;
   }
 
   public String workspaceNew(String workspace, TerragruntRunType type) {

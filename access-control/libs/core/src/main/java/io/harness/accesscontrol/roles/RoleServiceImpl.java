@@ -85,8 +85,8 @@ public class RoleServiceImpl implements RoleService {
   }
 
   @Override
-  public PageResponse<Role> list(PageRequest pageRequest, RoleFilter roleFilter) {
-    return roleDao.list(pageRequest, roleFilter);
+  public PageResponse<Role> list(PageRequest pageRequest, RoleFilter roleFilter, boolean hideInternal) {
+    return roleDao.list(pageRequest, roleFilter, hideInternal);
   }
 
   @Override

@@ -28,7 +28,6 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
   CIStepConfig stepConfig;
   CICacheIntelligenceConfig cacheIntelligenceConfig;
   ExecutionLimits executionLimits;
-  String queueServiceToken;
   QueueServiceClient queueServiceClient;
   HostedVmConfig hostedVmConfig;
   STOStepConfig stoStepConfig;
@@ -41,8 +40,8 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
       String delegateServiceEndpointVariableValue, Integer defaultMemoryLimit, Integer defaultCPULimit,
       Integer pvcDefaultStorageSize, String addonImage, String liteEngineImage, boolean isLocal, String ciImageTag,
       CIStepConfig stepConfig, CICacheIntelligenceConfig cacheIntelligenceConfig, ExecutionLimits executionLimits,
-      String queueServiceToken, QueueServiceClient queueServiceClient, HostedVmConfig hostedVmConfig,
-      STOStepConfig stoStepConfig, Integer remoteDebugTimeout) {
+      QueueServiceClient queueServiceClient, HostedVmConfig hostedVmConfig, STOStepConfig stoStepConfig,
+      Integer remoteDebugTimeout) {
     super(addonImageTag, liteEngineImageTag, defaultInternalImageConnector, delegateServiceEndpointVariableValue,
         defaultMemoryLimit, defaultCPULimit, pvcDefaultStorageSize, addonImage, liteEngineImage, isLocal);
     this.ciImageTag = ciImageTag;
@@ -51,7 +50,6 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
     this.executionLimits = executionLimits;
     this.stoStepConfig = stoStepConfig;
     this.queueServiceClient = queueServiceClient;
-    this.queueServiceToken = queueServiceToken;
     this.hostedVmConfig = hostedVmConfig;
     this.remoteDebugTimeout = remoteDebugTimeout;
   }

@@ -40,6 +40,7 @@ import io.harness.rule.Owner;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
@@ -48,7 +49,6 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Query;
 
 public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends CvNextGenTestBase {
   @Inject private TemplateVerifyStepMonitoredServiceResolutionServiceImpl templateService;
@@ -98,6 +98,26 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
         templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
             .getMonitoredServiceIdentifier();
     assertThat(actualIdentifier).isNotBlank();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetMonitoredServiceTemplateIdentifier() {
+    String templateIdentifier =
+        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+            .getMonitoredServiceTemplateIdentifier();
+    assertThat(templateIdentifier).isNotBlank();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetMonitoredServiceTemplateVersionLabel() {
+    String versionLabel =
+        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+            .getMonitoredServiceTemplateVersionLabel();
+    assertThat(versionLabel).isNotBlank();
   }
 
   @Test

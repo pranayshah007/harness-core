@@ -114,6 +114,14 @@ public interface ClusterService {
       @NotEmpty String accountId, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier);
 
   /**
+   * Deletes all clusters linked to a particular harness org. Should be used when clusters are supported at org level
+   * @param accountId  the account id
+   * @param orgIdentifier the organization identifier
+   * @return boolean to indicate if deletion was successful
+   */
+  boolean deleteAllFromOrg(@NotEmpty String accountId, @NotEmpty String orgIdentifier);
+
+  /**
    * @param page page index starting from 0
    * @param size number of items to fetch in 1 page
    * @param accountIdentifier  the account id

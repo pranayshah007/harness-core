@@ -114,6 +114,7 @@ import software.wings.settings.SettingVariableTypes;
 
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -145,7 +146,6 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.Query;
 
 /**
  * Created by rsingh on 11/3/17.

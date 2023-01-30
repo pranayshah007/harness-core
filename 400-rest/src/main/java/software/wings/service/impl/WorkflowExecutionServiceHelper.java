@@ -69,6 +69,8 @@ import software.wings.sm.WorkflowStandardParams;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -84,8 +86,6 @@ import javax.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 @OwnedBy(CDC)

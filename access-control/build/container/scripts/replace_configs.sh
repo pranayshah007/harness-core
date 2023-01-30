@@ -6,6 +6,14 @@
 
 CONFIG_FILE=/opt/harness/config.yml
 
+replace_key_value () {
+  CONFIG_KEY="$1";
+  CONFIG_VALUE="$2";
+  if [[ "" != "$CONFIG_VALUE" ]]; then
+    yq write -i $CONFIG_FILE $CONFIG_KEY $CONFIG_VALUE
+  fi
+}
+
 yq -i 'del(.server.applicationConnectors.[] | select(.type == "https"))' $CONFIG_FILE
 
 yq -i '.server.adminConnectors=[]' $CONFIG_FILE
@@ -66,3 +74,16 @@ if [[ "" != "$ALLOWED_ORIGINS" ]]; then
 fi
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+
+replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
+replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
+replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
+replace_key_value cfClientConfig.analyticsEnabled "$CF_CLIENT_ANALYTICS_ENABLED"
+replace_key_value cfClientConfig.connectionTimeout "$CF_CLIENT_CONNECTION_TIMEOUT"
+replace_key_value cfClientConfig.readTimeout "$CF_CLIENT_READ_TIMEOUT"
+replace_key_value cfClientConfig.bufferSize "$CF_CLIENT_BUFFER_SIZE"
+replace_key_value cfClientConfig.retries "$CF_RETRIES"
+replace_key_value cfClientConfig.sleepInterval "$CF_SLEEP_INTERVAL"
+
+replace_key_value featureFlagConfig.featureFlagSystem "$FEATURE_FLAG_SYSTEM"
+replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"

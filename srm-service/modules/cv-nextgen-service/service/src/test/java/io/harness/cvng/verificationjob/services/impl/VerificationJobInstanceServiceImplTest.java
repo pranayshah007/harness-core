@@ -186,6 +186,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testProcessVerificationJobInstance_getEmbaddedCVConfig() {
     VerificationJobInstance verificationJobInstance = newVerificationJobInstance();
+    verificationJobInstance.getResolvedJob().setCvConfigs(null);
     cvConfigService.save(cvConfig);
     verificationJobInstanceService.create(Arrays.asList(verificationJobInstance));
 
@@ -773,7 +774,8 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
         VerificationJobInstanceKeys.dataCollectionDelay, VerificationJobInstanceKeys.oldVersionHosts,
         VerificationJobInstanceKeys.newVersionHosts, VerificationJobInstanceKeys.newHostsTrafficSplitPercentage,
         VerificationJobInstanceKeys.progressLogs, VerificationJobInstanceKeys.cvConfigMap,
-        VerificationJobInstanceKeys.verificationStatus, VerificationJobInstanceKeys.name);
+        VerificationJobInstanceKeys.appliedDeploymentAnalysisTypeMap, VerificationJobInstanceKeys.verificationStatus,
+        VerificationJobInstanceKeys.name);
     verificationJobInstances.forEach(verificationJobInstance -> {
       List<Field> fields = ReflectionUtils.getAllDeclaredAndInheritedFields(VerificationJobInstance.class);
       fields.stream().filter(field -> !nullableFields.contains(field.getName())).forEach(field -> {
@@ -869,6 +871,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testCreateDemoInstances() {
     VerificationJobInstance verificationJobInstance = newVerificationJobInstance();
+    verificationJobInstance.getResolvedJob().setCvConfigs(null);
     verificationJobInstance.setVerificationStatus(ActivityVerificationStatus.VERIFICATION_FAILED);
     cvConfigService.save(cvConfig);
     List<String> verificationJobInstanceIds =

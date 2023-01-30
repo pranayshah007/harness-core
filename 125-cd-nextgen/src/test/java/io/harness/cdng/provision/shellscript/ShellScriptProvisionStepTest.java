@@ -37,6 +37,7 @@ import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -80,8 +81,8 @@ public class ShellScriptProvisionStepTest extends CategoryTest {
             .spec(ShellScriptProvisionStepParameters.infoBuilder().environmentVariables(environmentVariables).build())
             .build();
     doReturn(script).when(sshCommandStepHelper).getShellScript(any(), any());
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenAnswer(invocation -> TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
@@ -89,8 +90,8 @@ public class ShellScriptProvisionStepTest extends CategoryTest {
         getAmbiance(), stepElementParameters, StepInputPackage.builder().build());
 
     assertThat(taskRequest).isNotNull();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
     TaskData taskData = taskDataArgumentCaptor.getValue();
     ShellScriptProvisionTaskNGRequest taskNGRequest = (ShellScriptProvisionTaskNGRequest) taskData.getParameters()[0];
     assertThat(taskNGRequest.getScriptBody()).isEqualTo(script);

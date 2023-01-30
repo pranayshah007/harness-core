@@ -56,7 +56,6 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -124,12 +123,14 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
     String stageId = ambiance.getStageExecutionId();
     List<TaskSelector> taskSelectors = new ArrayList<>();
 
-    TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, getTaskData(stepParameters, buildSetupTaskParams),
-        kryoSerializer, TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), true, null, taskSelectors,
-        Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
+    TaskData taskData = getTaskData(stepParameters, buildSetupTaskParams);
+    TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer,
+        TaskCategory.DELEGATE_TASK_V2, null, true, TaskType.valueOf(taskData.getTaskType()).getDisplayName(),
+        taskSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
+
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)
-        .passThroughData(ContainerStepPassThroughData.builder().build())
+        .passThroughData(ContainerStepPassThroughData.builder().initStepStartTime(System.currentTimeMillis()).build())
         .chainEnd(false)
         .build();
   }
@@ -166,9 +167,8 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
     String stageId = ambiance.getStageExecutionId();
 
     TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, runStepTaskData, kryoSerializer,
-        TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), true, null, new ArrayList<>(), Scope.PROJECT,
-        EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
-
+        TaskCategory.DELEGATE_TASK_V2, null, true, TaskType.valueOf(runStepTaskData.getTaskType()).getDisplayName(),
+        new ArrayList<>(), Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
     return TaskChainResponse.builder()
         .chainEnd(true)
         .taskRequest(taskRequest)
@@ -178,7 +178,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
 
   private long getTimeoutForDelegateTask(
       StepElementParameters stepParameters, ContainerStepPassThroughData passThroughData) {
-    long lastStepStartTime = passThroughData.getFirstStepStartTime();
+    long lastStepStartTime = passThroughData.getInitStepStartTime();
     long currentTime = System.currentTimeMillis();
     long timeoutInConfig =
         Timeout.fromString((String) stepParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis();

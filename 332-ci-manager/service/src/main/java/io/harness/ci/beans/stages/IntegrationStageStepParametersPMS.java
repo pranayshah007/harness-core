@@ -35,6 +35,7 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.yaml.registry.Registry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +57,7 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
   List<String> stepIdentifiers;
   String childNodeID;
   Caching caching;
+  Registry registry;
 
   public static IntegrationStageStepParametersPMS getStepParameters(IntegrationStageNode stageNode, String childNodeID,
       BuildStatusUpdateParameter buildStatusUpdateParameter, PlanCreationContext ctx) {

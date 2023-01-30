@@ -10,6 +10,7 @@ package io.harness.serializer.morphia;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.activity.entities.Activity;
+import io.harness.cvng.activity.entities.CustomChangeActivity;
 import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity;
 import io.harness.cvng.activity.entities.InternalChangeActivity;
@@ -80,6 +81,7 @@ import io.harness.cvng.core.entities.VerificationTaskExecutionInstance;
 import io.harness.cvng.core.entities.VerificationTaskIdAware;
 import io.harness.cvng.core.entities.Webhook;
 import io.harness.cvng.core.entities.changeSource.ChangeSource;
+import io.harness.cvng.core.entities.changeSource.CustomChangeSource;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource;
 import io.harness.cvng.core.entities.changeSource.HarnessCDCurrentGenChangeSource;
 import io.harness.cvng.core.entities.changeSource.KubernetesChangeSource;
@@ -87,6 +89,8 @@ import io.harness.cvng.core.entities.changeSource.PagerDutyChangeSource;
 import io.harness.cvng.core.entities.demo.CVNGDemoDataIndex;
 import io.harness.cvng.core.entities.demo.CVNGDemoPerpetualTask;
 import io.harness.cvng.dashboard.entities.HeatMap;
+import io.harness.cvng.downtime.entities.Downtime;
+import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.migration.beans.CVNGSchema;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.NotificationRule;
@@ -154,6 +158,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(BlueGreenVerificationJob.class);
     set.add(DeploymentDataCollectionTask.class);
     set.add(InternalChangeActivity.class);
+    set.add(CustomChangeActivity.class);
     set.add(AppDynamicsCVConfig.class);
     set.add(DeploymentLogAnalysis.class);
     set.add(TestVerificationJob.class);
@@ -195,6 +200,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(ErrorTrackingCVConfig.class);
     set.add(MonitoredService.class);
     set.add(HarnessCDChangeSource.class);
+    set.add(CustomChangeSource.class);
     set.add(ChangeSource.class);
     set.add(ServiceDependency.class);
     set.add(PagerDutyChangeSource.class);
@@ -234,6 +240,8 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(VerificationTaskBase.class);
     set.add(NextGenMetricCVConfig.class);
     set.add(NextGenLogCVConfig.class);
+    set.add(Downtime.class);
+    set.add(EntityUnavailabilityStatuses.class);
   }
 
   @Override

@@ -18,16 +18,19 @@ import io.harness.springdata.HMongoTemplate;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoClientURI;
 import com.mongodb.ReadPreference;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import java.util.concurrent.TimeUnit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
-import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
+import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
@@ -40,7 +43,7 @@ import org.springframework.guice.annotation.GuiceModule;
     includeFilters = @ComponentScan.Filter(HarnessRepo.class), mongoTemplateRef = "pipeline-outbox-secondary")
 @EnableMongoAuditing
 @OwnedBy(HarnessTeam.PIPELINE)
-public class PipelineOutboxPersistenceConfig extends AbstractMongoConfiguration {
+public class PipelineOutboxPersistenceConfig extends AbstractMongoClientConfiguration {
   protected final MongoConfig mongoConfig;
 
   @Inject
@@ -50,17 +53,23 @@ public class PipelineOutboxPersistenceConfig extends AbstractMongoConfiguration 
 
   @Override
   public MongoClient mongoClient() {
-    MongoClientOptions mongoClientOptions = MongoClientOptions.builder()
-                                                .retryWrites(true)
-                                                .connectTimeout(mongoConfig.getConnectTimeout())
-                                                .serverSelectionTimeout(mongoConfig.getServerSelectionTimeout())
-                                                .socketTimeout(mongoConfig.getSocketTimeout())
-                                                .maxConnectionIdleTime(mongoConfig.getMaxConnectionIdleTime())
-                                                .connectionsPerHost(mongoConfig.getConnectionsPerHost())
-                                                .readPreference(ReadPreference.secondary())
-                                                .build();
-    MongoClientURI uri = new MongoClientURI(mongoConfig.getUri(), MongoClientOptions.builder(mongoClientOptions));
-    return new MongoClient(uri);
+    MongoClientSettings mongoClientSettings =
+        MongoClientSettings.builder()
+            .applyConnectionString(new ConnectionString(mongoConfig.getUri()))
+            .retryWrites(true)
+            .applyToSocketSettings(
+                builder -> builder.connectTimeout(mongoConfig.getConnectTimeout(), TimeUnit.MILLISECONDS))
+            .applyToClusterSettings(builder
+                -> builder.serverSelectionTimeout(mongoConfig.getServerSelectionTimeout(), TimeUnit.MILLISECONDS))
+            .applyToSocketSettings(
+                builder -> builder.readTimeout(mongoConfig.getSocketTimeout(), TimeUnit.MILLISECONDS))
+            .applyToConnectionPoolSettings(
+                builder -> builder.maxConnectionIdleTime(mongoConfig.getMaxConnectionIdleTime(), TimeUnit.MILLISECONDS))
+            .applyToConnectionPoolSettings(builder -> builder.maxSize(mongoConfig.getConnectionsPerHost()))
+            .readPreference(ReadPreference.primary())
+            .build();
+
+    return MongoClients.create(mongoClientSettings);
   }
 
   @Override

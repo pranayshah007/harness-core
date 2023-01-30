@@ -13,8 +13,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.helpers.NGVaultTaskHelper.getVaultAppRoleLoginResult;
-import static io.harness.helpers.NGVaultTaskHelper.getVaultK8sAuthLoginResult;
+import static io.harness.helpers.vault.NGVaultTaskHelper.getVaultAppRoleLoginResult;
+import static io.harness.helpers.vault.NGVaultTaskHelper.getVaultK8sAuthLoginResult;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.time.Duration.ofMillis;

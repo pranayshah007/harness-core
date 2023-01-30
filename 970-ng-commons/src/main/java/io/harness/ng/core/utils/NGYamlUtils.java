@@ -40,6 +40,14 @@ public class NGYamlUtils {
           .enable(SerializationFeature.INDENT_OUTPUT);
 
   public static String getYamlString(YamlDTO yamlObject, ObjectMapper objectMapper) {
+    return getYamlString(yamlObject, objectMapper, YAML_MAPPER);
+  }
+
+  public static String getYamlString(YamlDTO yamlObject) {
+    return getYamlString(yamlObject, NG_DEFAULT_OBJECT_MAPPER);
+  }
+
+  public static String getYamlString(YamlDTO yamlObject, ObjectMapper objectMapper, ObjectMapper yamlMapper) {
     if (yamlObject == null) {
       return null;
     }
@@ -51,16 +59,12 @@ public class NGYamlUtils {
       internalMapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
       internalMapper.configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false);
       final JsonNode jsonNode = internalMapper.valueToTree(yamlObject);
-      yamlString = YAML_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
+      yamlString = yamlMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
     } catch (JsonProcessingException e) {
       throw new InvalidRequestException(
           String.format("Cannot create yaml from YamlObject %s", yamlObject.toString()), e);
     }
     yamlString = yamlString.replaceFirst("---\n", "");
     return yamlString;
-  }
-
-  public static String getYamlString(YamlDTO yamlObject) {
-    return getYamlString(yamlObject, NG_DEFAULT_OBJECT_MAPPER);
   }
 }

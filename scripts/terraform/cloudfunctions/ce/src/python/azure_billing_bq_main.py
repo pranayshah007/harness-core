@@ -307,7 +307,7 @@ def update_fx_rate_column_in_raw_table(jsonData, azure_column_mapping):
 def insert_currencies_with_unit_conversion_factors_in_bq(jsonData, azure_column_mapping):
     ds = "%s.%s" % (PROJECTID, jsonData["datasetName"])
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
 
     year, month = jsonData["reportYear"], jsonData["reportMonth"]
@@ -422,7 +422,7 @@ def fetch_default_conversion_factors_from_API(jsonData):
 
     # update currencyConversionFactorDefault table if reportMonth is current month
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
     if str(year) != str(currentYear) or str(month) != str(currentMonth):
         return
@@ -513,7 +513,7 @@ def fetch_default_conversion_factors_from_billing_export(jsonData):
     year, month = jsonData["reportYear"], jsonData["reportMonth"]
     date_start = "%s-%s-01" % (year, month)
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
     if str(year) != str(currentYear) or str(month) != str(currentMonth):
         return
@@ -825,6 +825,8 @@ def setAvailableColumns(jsonData):
         azure_column_mapping["currency"] = "billingcurrency"
     elif "currency" in columns:
         azure_column_mapping["currency"] = "currency"
+    elif "billingcurrencycode" in columns:
+        azure_column_mapping["currency"] = "billingcurrencycode"
     else:
         raise Exception("No mapping found for currency column")
 
@@ -1117,9 +1119,10 @@ def ingest_data_to_costagg(jsonData):
                INSERT INTO `%s` (day, cost, cloudProvider, accountId)
                 SELECT TIMESTAMP_TRUNC(startTime, DAY) AS day, SUM(cost) AS cost, "AZURE" AS cloudProvider, '%s' as accountId
                 FROM `%s`  
-                WHERE DATE(startTime) >= '%s' and cloudProvider = "AZURE" 
+                WHERE DATE(startTime) >= '%s' and DATE(startTime) <= '%s' and cloudProvider = "AZURE" 
                 GROUP BY day;
-     """ % (table_name, date_start, date_end, jsonData.get("accountId"), table_name, jsonData.get("accountId"), source_table, date_start)
+     """ % (table_name, date_start, date_end, jsonData.get("accountId"), table_name, jsonData.get("accountId"),
+            source_table, date_start, date_end)
 
     job_config = bigquery.QueryJobConfig(
         priority=bigquery.QueryPriority.BATCH

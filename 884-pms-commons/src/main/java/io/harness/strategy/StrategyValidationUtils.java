@@ -28,18 +28,19 @@ public class StrategyValidationUtils {
   public final String STRATEGY_IDENTIFIER_POSTFIX_ESCAPED = "<\\+strategy.identifierPostFix>";
 
   public void validateStrategyNode(StrategyConfig config) {
-    if (config.getMatrixConfig() != null) {
+    if (ParameterField.isNotNull(config.getMatrixConfig()) && config.getMatrixConfig().getValue() != null) {
       validateAxes(config);
       Set<String> validKeys = new HashSet<>();
-      Map<String, AxisConfig> axisConfig = ((MatrixConfig) config.getMatrixConfig()).getAxes();
+      Map<String, AxisConfig> axisConfig = ((MatrixConfig) config.getMatrixConfig().getValue()).getAxes();
       Map<String, ExpressionAxisConfig> expressionAxisConfig =
-          ((MatrixConfig) config.getMatrixConfig()).getExpressionAxes();
+          ((MatrixConfig) config.getMatrixConfig().getValue()).getExpressionAxes();
       validKeys.addAll(axisConfig.keySet());
       validKeys.addAll(expressionAxisConfig.keySet());
 
-      if (!ParameterField.isBlank(((MatrixConfig) config.getMatrixConfig()).getExclude())
-          && ((MatrixConfig) config.getMatrixConfig()).getExclude().getValue() != null) {
-        List<ExcludeConfig> excludeConfigs = ((MatrixConfig) config.getMatrixConfig()).getExclude().getValue();
+      if (!ParameterField.isBlank(((MatrixConfig) config.getMatrixConfig().getValue()).getExclude())
+          && ((MatrixConfig) config.getMatrixConfig().getValue()).getExclude().getValue() != null) {
+        List<ExcludeConfig> excludeConfigs =
+            ((MatrixConfig) config.getMatrixConfig().getValue()).getExclude().getValue();
         for (ExcludeConfig excludeConfig : excludeConfigs) {
           if (!validKeys.containsAll(excludeConfig.getExclude().keySet())) {
             throw new InvalidYamlException(
@@ -61,9 +62,9 @@ public class StrategyValidationUtils {
   }
 
   private void validateAxes(StrategyConfig config) {
-    Map<String, AxisConfig> axisConfig = ((MatrixConfig) config.getMatrixConfig()).getAxes();
+    Map<String, AxisConfig> axisConfig = ((MatrixConfig) config.getMatrixConfig().getValue()).getAxes();
     Map<String, ExpressionAxisConfig> expressionAxisConfig =
-        ((MatrixConfig) config.getMatrixConfig()).getExpressionAxes();
+        ((MatrixConfig) config.getMatrixConfig().getValue()).getExpressionAxes();
     int sizeOfAxis = axisConfig.size() + expressionAxisConfig.size();
     if (sizeOfAxis == 0) {
       throw new InvalidYamlException("No Axes defined in matrix. Please define at least one axis");

@@ -7,6 +7,7 @@
 
 package software.wings.service.impl.yaml;
 
+import static io.harness.beans.FeatureName.NOTIFY_GIT_SYNC_ERRORS_PER_APP;
 import static io.harness.beans.FeatureName.REMOVE_HINT_YAML_GIT_COMMITS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
@@ -84,7 +85,8 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.mongo.ProcessTimeLogContext;
+import io.harness.logging.ProcessTimeLogContext;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HIterator;
 import io.harness.rest.RestResponse;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -160,20 +162,22 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
 import javax.ws.rs.core.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
 /**
  * The type Yaml git sync service.
  */
@@ -688,7 +692,7 @@ public class YamlGitServiceImpl implements YamlGitService {
           new GitCommandCallback(accountId, yamlChangeSetId, GitCommandType.COMMIT_AND_PUSH,
               yamlGitConfig.getGitConnectorId(), yamlGitConfig.getRepositoryName(), yamlGitConfig.getBranchName()),
           waitId);
-      final String taskId = delegateService.queueTask(delegateTask);
+      final String taskId = delegateService.queueTaskV2(delegateTask);
       try (ProcessTimeLogContext ignore4 = new ProcessTimeLogContext(stopwatch.elapsed(MILLISECONDS), OVERRIDE_ERROR)) {
         log.info(GIT_YAML_LOG_PREFIX
                 + "Successfully queued harness->git change set for processing with delegate taskId=[{}]",
@@ -1020,7 +1024,7 @@ public class YamlGitServiceImpl implements YamlGitService {
           new GitCommandCallback(accountId, yamlChangeSet.getUuid(), GitCommandType.DIFF,
               yamlGitConfig.getGitConnectorId(), yamlGitConfig.getRepositoryName(), yamlGitConfig.getBranchName()),
           waitId);
-      final String taskId = delegateService.queueTask(delegateTask);
+      final String taskId = delegateService.queueTaskV2(delegateTask);
       try (ProcessTimeLogContext ignore2 = new ProcessTimeLogContext(stopwatch.elapsed(MILLISECONDS), OVERRIDE_ERROR)) {
         log.info(GIT_YAML_LOG_PREFIX
                 + "Successfully queued git->harness change set for processing with delegate taskId=[{}]",
@@ -1102,7 +1106,15 @@ public class YamlGitServiceImpl implements YamlGitService {
       failedYamlFileChangeMap.values().forEach(changeWithErrorMsg
           -> gitSyncErrorService.upsertGitSyncErrors(
               changeWithErrorMsg.getChange(), changeWithErrorMsg.getErrorMsg(), false, gitToHarness));
-      alertService.openAlert(accountId, GLOBAL_APP_ID, AlertType.GitSyncError, getGitSyncErrorAlert(accountId));
+      if (featureFlagService.isEnabled(NOTIFY_GIT_SYNC_ERRORS_PER_APP, accountId)) {
+        Set<String> uniqueAppIds = yamlHelper.getAppIdsFromYamlFilePaths(failedYamlFileChangeMap.keySet(), accountId);
+        uniqueAppIds.forEach(appId
+            -> alertService.openAlert(accountId, appId, AlertType.GitSyncError,
+                getGitSyncErrorAlert(accountId,
+                    format("Unable to process changes from Git to application: %s", appService.get(appId).getName()))));
+      } else {
+        alertService.openAlert(accountId, GLOBAL_APP_ID, AlertType.GitSyncError, getGitSyncErrorAlert(accountId));
+      }
     }
   }
 
@@ -1161,6 +1173,11 @@ public class YamlGitServiceImpl implements YamlGitService {
     query.filter("accountId", accountId);
     query.field(GitSyncErrorKeys.yamlFilePath).in(yamlFilePathList);
     wingsPersistence.delete(query);
+    if (featureFlagService.isEnabled(NOTIFY_GIT_SYNC_ERRORS_PER_APP, accountId)) {
+      Set<String> appIdsFromYamlFilePaths =
+          yamlHelper.getAppIdsFromYamlFilePaths(new HashSet<>(yamlFilePathList), accountId);
+      appIdsFromYamlFilePaths.forEach(appId -> closeAlertIfApplicable(accountId, appId));
+    }
     closeAlertIfApplicable(accountId);
   }
 
@@ -1180,7 +1197,11 @@ public class YamlGitServiceImpl implements YamlGitService {
     Query query = wingsPersistence.createAuthorizedQuery(GitSyncError.class);
     query.filter("accountId", accountId);
     query.filter("_id", errorId);
+    GitSyncError gitSyncError = wingsPersistence.get(GitSyncError.class, errorId);
     wingsPersistence.delete(query);
+    if (featureFlagService.isEnabled(NOTIFY_GIT_SYNC_ERRORS_PER_APP, accountId)) {
+      closeAlertIfApplicable(accountId, gitSyncError.getAppId());
+    }
     closeAlertIfApplicable(accountId);
     return RestResponse.Builder.aRestResponse().build();
   }
@@ -1191,6 +1212,9 @@ public class YamlGitServiceImpl implements YamlGitService {
     query.filter("accountId", accountId);
     query.filter(GitSyncErrorKeys.yamlFilePath, yamlFilePath);
     wingsPersistence.delete(query);
+    if (featureFlagService.isEnabled(NOTIFY_GIT_SYNC_ERRORS_PER_APP, accountId)) {
+      closeAlertIfApplicable(accountId, yamlHelper.getAppId(accountId, yamlFilePath));
+    }
     closeAlertIfApplicable(accountId);
     return RestResponse.Builder.aRestResponse().build();
   }
@@ -1201,6 +1225,11 @@ public class YamlGitServiceImpl implements YamlGitService {
     query.filter("accountId", accountId);
     query.field(GitSyncErrorKeys.yamlFilePath).in(yamlFilePaths);
     wingsPersistence.delete(query);
+    if (featureFlagService.isEnabled(NOTIFY_GIT_SYNC_ERRORS_PER_APP, accountId)) {
+      Set<String> appIdsFromYamlFilePaths =
+          yamlHelper.getAppIdsFromYamlFilePaths(new HashSet<>(yamlFilePaths), accountId);
+      appIdsFromYamlFilePaths.forEach(appId -> closeAlertIfApplicable(accountId, appId));
+    }
     closeAlertIfApplicable(accountId);
     return RestResponse.Builder.aRestResponse().build();
   }
@@ -1210,6 +1239,10 @@ public class YamlGitServiceImpl implements YamlGitService {
     Query query = wingsPersistence.createAuthorizedQuery(GitSyncError.class);
     query.filter("accountId", accountId);
     wingsPersistence.delete(query);
+    if (featureFlagService.isEnabled(NOTIFY_GIT_SYNC_ERRORS_PER_APP, accountId)) {
+      Set<String> appIds = appService.getAppIdsAsSetByAccountId(accountId);
+      appIds.forEach(appId -> closeAlertIfApplicable(accountId, appId));
+    }
     closeAlertIfApplicable(accountId);
     return RestResponse.Builder.aRestResponse().build();
   }
@@ -1221,6 +1254,9 @@ public class YamlGitServiceImpl implements YamlGitService {
     query.filter(GitSyncErrorKeys.fullSyncPath, true);
     query.filter(ApplicationKeys.appId, appId);
     wingsPersistence.delete(query);
+    if (featureFlagService.isEnabled(NOTIFY_GIT_SYNC_ERRORS_PER_APP, accountId)) {
+      closeAlertIfApplicable(accountId, appId);
+    }
     closeAlertIfApplicable(accountId);
     return RestResponse.Builder.aRestResponse().build();
   }
@@ -1228,6 +1264,18 @@ public class YamlGitServiceImpl implements YamlGitService {
   private void closeAlertIfApplicable(String accountId) {
     if (gitSyncErrorService.getGitSyncErrorCount(accountId, false) == 0) {
       alertService.closeAlert(accountId, GLOBAL_APP_ID, AlertType.GitSyncError, getGitSyncErrorAlert(accountId));
+    }
+  }
+  private void closeAlertIfApplicable(String accountId, String appId) {
+    if (gitSyncErrorService.getGitSyncErrorCount(accountId, false) == 0) {
+      if (featureFlagService.isEnabled(NOTIFY_GIT_SYNC_ERRORS_PER_APP, accountId)) {
+        alertService.closeAlert(accountId, appId, AlertType.GitSyncError,
+            getGitSyncErrorAlert(accountId,
+                String.format(
+                    "Unable to process changes from Git to application: %s", appService.get(appId).getName())));
+      } else {
+        alertService.closeAlert(accountId, appId, AlertType.GitSyncError, getGitSyncErrorAlert(accountId));
+      }
     }
   }
 
@@ -1359,7 +1407,8 @@ public class YamlGitServiceImpl implements YamlGitService {
 
     FindOptions findOptions = new FindOptions();
     if (featureFlagService.isNotEnabled(REMOVE_HINT_YAML_GIT_COMMITS, accountId)) {
-      findOptions.modifier("$hint", "gitCommitAccountIdStatusYgcLastUpdatedIdx");
+      findOptions.hint(
+          BasicDBUtils.getIndexObject(GitCommit.mongoIndexes(), "gitCommitAccountIdStatusYgcLastUpdatedIdx"));
     }
 
     GitCommit gitCommit = wingsPersistence.createQuery(GitCommit.class)
@@ -1374,7 +1423,8 @@ public class YamlGitServiceImpl implements YamlGitService {
     // This is to handle the old git commit records which doesn't have yamlGitConfigId
     if (gitCommit == null) {
       FindOptions findOptions_1 = new FindOptions();
-      findOptions_1.modifier("$hint", "gitCommitAccountIdStatusYgLastUpdatedIdx");
+      findOptions_1.hint(
+          BasicDBUtils.getIndexObject(GitCommit.mongoIndexes(), "gitCommitAccountIdStatusYgLastUpdatedIdx"));
 
       gitCommit = wingsPersistence.createQuery(GitCommit.class)
                       .filter(GitCommitKeys.accountId, accountId)
@@ -1409,6 +1459,12 @@ public class YamlGitServiceImpl implements YamlGitService {
     query.filter("accountId", accountId);
     query.field("_id").in(errorIds);
     wingsPersistence.delete(query);
+    if (featureFlagService.isEnabled(NOTIFY_GIT_SYNC_ERRORS_PER_APP, accountId)) {
+      List<String> appIds = errorIds.stream()
+                                .map(errorId -> wingsPersistence.get(GitSyncError.class, errorId).getAppId())
+                                .collect(toList());
+      appIds.forEach(appId -> closeAlertIfApplicable(accountId, appId));
+    }
     closeAlertIfApplicable(accountId);
     return RestResponse.Builder.aRestResponse().build();
   }

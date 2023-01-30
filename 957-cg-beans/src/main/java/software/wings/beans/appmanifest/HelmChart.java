@@ -27,14 +27,14 @@ import io.harness.persistence.UuidAware;
 import software.wings.beans.entityinterface.ApplicationAccess;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.Transient;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(HarnessTeam.CDC)
 @Data

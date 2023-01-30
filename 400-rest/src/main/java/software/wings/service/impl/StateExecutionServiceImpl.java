@@ -48,6 +48,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.ReadPreference;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Sort;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,8 +59,6 @@ import java.util.Map;
 import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
 import org.jetbrains.annotations.Nullable;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Sort;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton

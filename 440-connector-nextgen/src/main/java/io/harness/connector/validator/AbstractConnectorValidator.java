@@ -63,7 +63,7 @@ public abstract class AbstractConnectorValidator implements ConnectionValidator 
 
     DelegateResponseData responseData;
     try {
-      responseData = delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }

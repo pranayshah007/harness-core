@@ -294,6 +294,9 @@
                 "default"
               ]
             },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
+            },
             "imagePullPolicy": {
               "oneOf": [
                 {
@@ -627,6 +630,160 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "BackgroundStepInfoV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "run"
+          ],
+          "properties": {
+            "args": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "entrypoint": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "entrypointList": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "envs": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "image": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "network": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "ports": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "pull": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "always",
+                    "never",
+                    "if-not-exists"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "run": {
+              "type": "string"
+            },
+            "shell": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "sh",
+                    "bash",
+                    "powershell",
+                    "pwsh"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "user": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "BanditStepInfo": {
       "allOf": [
         {
@@ -786,7 +943,6 @@
         {
           "type": "object",
           "required": [
-            "auth",
             "config",
             "mode",
             "target"
@@ -1433,7 +1589,6 @@
         {
           "type": "object",
           "required": [
-            "auth",
             "config",
             "mode",
             "target"
@@ -2782,7 +2937,6 @@
         {
           "type": "object",
           "required": [
-            "auth",
             "config",
             "mode",
             "target"
@@ -3114,6 +3268,9 @@
                 "default"
               ]
             },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
+            },
             "imagePullPolicy": {
               "oneOf": [
                 {
@@ -3433,6 +3590,28 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "IACMStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "IACMTemplateInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "IACMTerraformPlanInfo": {
       "allOf": [
         {
@@ -3450,12 +3629,6 @@
                   "type": "string"
                 }
               ]
-            },
-            "mode": {
-              "type": "string"
-            },
-            "operation": {
-              "type": "string"
             },
             "tfVars": {
               "oneOf": [
@@ -4088,6 +4261,21 @@
         "harnessImageConnectorRef": {
           "type": "string"
         },
+        "hostNames": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
         "initTimeout": {
           "type": "string"
         },
@@ -4361,6 +4549,9 @@
             "advanced": {
               "$ref": "#/definitions/STOYamlAdvancedSettings"
             },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
             "baseImageConnectorRefs": {
               "$ref": "#/definitions/ParameterFieldListString"
             },
@@ -4369,6 +4560,9 @@
               "enum": [
                 "default"
               ]
+            },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
             },
             "imagePullPolicy": {
               "oneOf": [
@@ -4451,6 +4645,9 @@
             },
             "target": {
               "$ref": "#/definitions/STOYamlTarget"
+            },
+            "tool": {
+              "$ref": "#/definitions/STOYamlMendToolData"
             }
           }
         }
@@ -5139,7 +5336,8 @@
               "DelegateProvisioning",
               "PolicyEvaluationFailure",
               "InputTimeoutError",
-              "ApprovalRejection"
+              "ApprovalRejection",
+              "DelegateRestart"
             ]
           }
         }
@@ -5815,6 +6013,39 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ParameterFieldMatrixConfigInterface": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "$ref": "#/definitions/MatrixConfigInterface"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/MatrixConfigInterface"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ParameterFieldPlatform": {
       "type": "object",
       "properties": {
@@ -5844,6 +6075,51 @@
         },
         "value": {
           "$ref": "#/definitions/Platform"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldTILanguage": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "string",
+          "enum": [
+            "Java",
+            "Kotlin",
+            "Scala",
+            "Csharp"
+          ]
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "string",
+          "enum": [
+            "Java",
+            "Kotlin",
+            "Scala",
+            "Csharp"
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6064,7 +6340,7 @@
         {
           "type": "object",
           "properties": {
-            "env": {
+            "envs": {
               "oneOf": [
                 {
                   "type": "object",
@@ -6271,7 +6547,6 @@
         {
           "type": "object",
           "required": [
-            "auth",
             "config",
             "mode",
             "target"
@@ -7379,11 +7654,17 @@
             }
           ]
         },
-        "failOnSeverity": {
+        "fail_on_severity": {
           "oneOf": [
             {
-              "type": "integer",
-              "format": "int32"
+              "type": "string",
+              "enum": [
+                "critical",
+                "high",
+                "medium",
+                "low",
+                "none"
+              ]
             },
             {
               "type": "string",
@@ -7392,7 +7673,7 @@
             }
           ]
         },
-        "includeRaw": {
+        "include_raw": {
           "oneOf": [
             {
               "type": "boolean"
@@ -7415,18 +7696,6 @@
               "minLength": 1
             }
           ]
-        },
-        "ssl": {
-          "oneOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7435,28 +7704,10 @@
       "type": "object",
       "properties": {
         "cli": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "passthrough": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7464,37 +7715,22 @@
     "STOYamlAuth": {
       "type": "object",
       "required": [
-        "accessToken"
+        "access_token"
       ],
       "properties": {
-        "accessId": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "access_id": {
+          "type": "string"
         },
-        "accessToken": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "access_token": {
+          "type": "string"
         },
         "domain": {
+          "type": "string"
+        },
+        "ssl": {
           "oneOf": [
             {
-              "type": "string"
+              "type": "boolean"
             },
             {
               "type": "string",
@@ -7520,16 +7756,7 @@
           ]
         },
         "version": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7537,29 +7764,11 @@
     "STOYamlBlackduckToolData": {
       "type": "object",
       "properties": {
-        "projectName": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "project_name": {
+          "type": "string"
         },
-        "projectVersion": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "project_version": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7567,29 +7776,11 @@
     "STOYamlCheckmarxToolData": {
       "type": "object",
       "properties": {
-        "projectName": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "project_name": {
+          "type": "string"
         },
-        "teamName": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "team_name": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7597,137 +7788,38 @@
     "STOYamlFODToolData": {
       "type": "object",
       "properties": {
-        "appName": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "app_name": {
+          "type": "string"
         },
-        "auditType": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "audit_type": {
+          "type": "string"
         },
-        "dataCenter": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "data_center": {
+          "type": "string"
         },
         "entitlement": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
-        "loookupType": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "lookup_type": {
+          "type": "string"
         },
-        "ownerId": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "owner_id": {
+          "type": "string"
         },
-        "releaseName": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "release_name": {
+          "type": "string"
         },
-        "scanSettings": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "scan_settings": {
+          "type": "string"
         },
-        "scanType": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "scan_type": {
+          "type": "string"
         },
-        "targetLanguage": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "target_language": {
+          "type": "string"
         },
-        "targetLanguageVersion": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "target_language_version": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7738,77 +7830,23 @@
         "type"
       ],
       "properties": {
-        "accessId": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "access_id": {
+          "type": "string"
         },
-        "accessToken": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "access_token": {
+          "type": "string"
         },
         "domain": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "name": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "region": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "tag": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "type": {
           "oneOf": [
@@ -7835,16 +7873,7 @@
       "type": "object",
       "properties": {
         "file": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7852,53 +7881,17 @@
     "STOYamlInstance": {
       "type": "object",
       "properties": {
-        "accessId": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "access_id": {
+          "type": "string"
         },
-        "accessToken": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "access_token": {
+          "type": "string"
         },
         "domain": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "path": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "port": {
           "oneOf": [
@@ -7914,16 +7907,7 @@
           ]
         },
         "protocol": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7932,28 +7916,10 @@
       "type": "object",
       "properties": {
         "binaries": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "libraries": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7964,7 +7930,13 @@
         "level": {
           "oneOf": [
             {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "info",
+                "debug",
+                "warning",
+                "error"
+              ]
             },
             {
               "type": "string",
@@ -7976,7 +7948,14 @@
         "serializer": {
           "oneOf": [
             {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "simple",
+                "basic",
+                "bunyan",
+                "simple_onprem",
+                "onprem"
+              ]
             },
             {
               "type": "string",
@@ -7988,32 +7967,38 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "STOYamlMendToolData": {
+      "type": "object",
+      "properties": {
+        "exclude": {
+          "type": "string"
+        },
+        "include": {
+          "type": "string"
+        },
+        "product_name": {
+          "type": "string"
+        },
+        "product_token": {
+          "type": "string"
+        },
+        "project_name": {
+          "type": "string"
+        },
+        "project_token": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "STOYamlSonarqubeToolData": {
       "type": "object",
       "properties": {
         "exclude": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "include": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "java": {
           "oneOf": [
@@ -8039,28 +8024,7 @@
       ],
       "properties": {
         "name": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
-        },
-        "ssl": {
-          "oneOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "type": {
           "oneOf": [
@@ -8081,28 +8045,10 @@
           ]
         },
         "variant": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "workspace": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -8110,29 +8056,11 @@
     "STOYamlVeracodeToolData": {
       "type": "object",
       "properties": {
-        "appId": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "app_id": {
+          "type": "string"
         },
-        "projectName": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "project_name": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -8141,16 +8069,7 @@
       "type": "object",
       "properties": {
         "context": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "port": {
           "oneOf": [
@@ -8363,7 +8282,7 @@
             "run"
           ],
           "properties": {
-            "env": {
+            "envs": {
               "oneOf": [
                 {
                   "type": "object",
@@ -8377,7 +8296,16 @@
               ]
             },
             "image": {
-              "type": "string"
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "outputs": {
               "oneOf": [
@@ -8895,7 +8823,6 @@
         {
           "type": "object",
           "required": [
-            "auth",
             "config",
             "mode",
             "target"
@@ -9014,7 +8941,6 @@
         {
           "type": "object",
           "required": [
-            "auth",
             "config",
             "mode",
             "target"
@@ -9123,6 +9049,45 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "Splitting": {
+      "type": "object",
+      "properties": {
+        "concurrency": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "enabled": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "strategy": {
+          "type": "string",
+          "readOnly": true,
+          "enum": [
+            "class_timing",
+            "test_count"
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "StageRollbackFailureActionConfig": {
@@ -9573,6 +9538,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GrypeStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "IACM"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/IACMStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "IACMTemplate"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/IACMTemplateInfo"
               }
             }
           }
@@ -10077,6 +10074,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "background"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BackgroundStepInfoV1"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "plugin"
               }
             }
@@ -10104,114 +10117,94 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "test"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TestStepInfo"
+              }
+            }
+          }
         }
       ]
     },
     "StepGroupElementConfig": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "oneOf": [
-        {
-          "type": "object",
-          "required": [
-            "identifier",
-            "name",
-            "template"
-          ],
-          "properties": {
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "failureStrategies": {
+      "type": "object",
+      "required": [
+        "identifier",
+        "name"
+      ],
+      "properties": {
+        "delegateSelectors": {
+          "oneOf": [
+            {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/FailureStrategyConfig"
+                "type": "string"
               }
             },
-            "identifier": {
+            {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
-            },
-            "name": {
-              "type": "string",
-              "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
-            },
-            "strategy": {
-              "$ref": "#/definitions/StrategyConfig"
-            },
-            "template": {
-              "$ref": "#/definitions/TemplateLinkConfig"
-            },
-            "when": {
-              "$ref": "#/definitions/StepWhenCondition"
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
             }
-          },
-          "additionalProperties": false
+          ]
         },
+        "failureStrategies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FailureStrategyConfig"
+          }
+        },
+        "identifier": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExecutionWrapperConfig"
+          },
+          "maxItems": 2147483647,
+          "minItems": 1
+        },
+        "strategy": {
+          "$ref": "#/definitions/StrategyConfig"
+        },
+        "template": {
+          "$ref": "#/definitions/TemplateLinkConfig"
+        },
+        "when": {
+          "$ref": "#/definitions/StepWhenCondition"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
         {
-          "type": "object",
-          "required": [
-            "identifier",
-            "name",
-            "steps"
-          ],
-          "properties": {
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+          "oneOf": [
+            {
+              "required": [
+                "template"
               ]
             },
-            "failureStrategies": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/FailureStrategyConfig"
-              }
-            },
-            "identifier": {
-              "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
-            },
-            "name": {
-              "type": "string",
-              "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
-            },
-            "steps": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ExecutionWrapperConfig"
-              },
-              "maxItems": 2147483647,
-              "minItems": 1
-            },
-            "strategy": {
-              "$ref": "#/definitions/StrategyConfig"
-            },
-            "when": {
-              "$ref": "#/definitions/StepWhenCondition"
+            {
+              "required": [
+                "steps"
+              ]
             }
-          },
-          "additionalProperties": false
+          ]
         }
       ]
     },
@@ -10267,7 +10260,16 @@
       "type": "object",
       "properties": {
         "matrix": {
-          "$ref": "#/definitions/MatrixConfigInterface"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ParameterFieldMatrixConfigInterface"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "parallelism": {
           "oneOf": [
@@ -10617,6 +10619,161 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TestStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "envs": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "image": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "language": {
+              "$ref": "#/definitions/ParameterFieldTILanguage"
+            },
+            "outputs": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "pull": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "always",
+                    "never",
+                    "if-not-exists"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "shell": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "sh",
+                    "bash",
+                    "powershell",
+                    "pwsh"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "splitting": {
+              "$ref": "#/definitions/Splitting"
+            },
+            "user": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "uses": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "maven",
+                    "bazel",
+                    "gradle",
+                    "dotnet",
+                    "nunit_console",
+                    "sbt"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "with": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/definitions/JsonNode"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "Toleration": {
       "type": "object",
       "properties": {
@@ -10848,7 +11005,6 @@
         {
           "type": "object",
           "required": [
-            "auth",
             "config",
             "mode",
             "target"
@@ -11233,7 +11389,10 @@
             "config": {
               "type": "string",
               "enum": [
-                "default"
+                "default",
+                "quick",
+                "attack",
+                "standard"
               ]
             },
             "imagePullPolicy": {

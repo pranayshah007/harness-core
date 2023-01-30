@@ -8,12 +8,13 @@
 package io.harness.ccm.service.impl;
 
 import io.harness.aws.AwsClientImpl;
-import io.harness.aws.CloseableAmazonWebServiceClient;
 import io.harness.ccm.commons.beans.billing.CEBucketPolicyJson;
 import io.harness.ccm.commons.beans.billing.CEBucketPolicyStatement;
 import io.harness.ccm.service.intf.AWSBucketPolicyHelperService;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+
+import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3Client;

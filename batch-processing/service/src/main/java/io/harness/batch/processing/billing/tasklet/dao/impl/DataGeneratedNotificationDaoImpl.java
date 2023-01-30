@@ -13,8 +13,8 @@ import io.harness.ccm.commons.entities.batch.DataGeneratedNotification.DataGener
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 

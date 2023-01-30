@@ -11,11 +11,13 @@ import static io.harness.beans.SortOrder.Builder.aSortOrder;
 import static io.harness.beans.SortOrder.OrderType.DESC;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.NISHANT;
+import static io.harness.rule.OwnerRule.REETIKA;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -23,10 +25,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys;
 import io.harness.audit.entities.streaming.StreamingDestinationFilterProperties;
+import io.harness.audit.events.StreamingDestinationCreateEvent;
+import io.harness.audit.events.StreamingDestinationDeleteEvent;
+import io.harness.audit.events.StreamingDestinationUpdateEvent;
 import io.harness.audit.mapper.streaming.StreamingDestinationMapper;
 import io.harness.audit.repositories.streaming.StreamingDestinationRepository;
 import io.harness.category.element.UnitTests;
@@ -34,6 +43,7 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.ng.beans.PageRequest;
+import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.audit.v1.model.AwsS3StreamingDestinationSpecDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
@@ -42,6 +52,7 @@ import io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO;
 import io.harness.utils.PageUtils;
 
 import com.mongodb.BasicDBList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -62,13 +73,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 public class StreamingServiceImplTest extends CategoryTest {
   private static final int RANDOM_STRING_CHAR_COUNT_10 = 10;
   private static final int RANDOM_STRING_CHAR_COUNT_15 = 15;
   private String accountIdentifier;
   private String id;
-  private String slug;
+  private String identifier;
   private String name;
   private StatusEnum statusEnum;
   private String bucket;
@@ -77,6 +91,9 @@ public class StreamingServiceImplTest extends CategoryTest {
   @Mock private StreamingDestinationMapper streamingDestinationMapper;
   @Mock private StreamingDestinationRepository streamingDestinationRepository;
   private StreamingServiceImpl streamingService;
+  @Mock OutboxService outboxService;
+  @Mock TransactionTemplate transactionTemplate;
+  @Mock private AccessControlClient accessControlClient;
 
   @Rule public ExpectedException expectedException = ExpectedException.none();
   @Captor private ArgumentCaptor<StreamingDestination> streamingDestinationArgumentCaptor;
@@ -85,15 +102,20 @@ public class StreamingServiceImplTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    this.streamingService = new StreamingServiceImpl(streamingDestinationMapper, streamingDestinationRepository);
+    this.streamingService = new StreamingServiceImpl(streamingDestinationMapper, streamingDestinationRepository,
+        outboxService, transactionTemplate, accessControlClient);
 
     accountIdentifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     id = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
-    slug = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
+    identifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     name = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
     statusEnum = StatusEnum.values()[RandomUtils.nextInt(0, StatusEnum.values().length - 1)];
     bucket = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     connectorRef = "account." + randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
   }
 
   @Test
@@ -113,7 +135,7 @@ public class StreamingServiceImplTest extends CategoryTest {
     verify(streamingDestinationMapper, times(1))
         .toStreamingDestinationEntity(accountIdentifier, streamingDestinationDTO);
     verify(streamingDestinationRepository, times(1)).save(streamingDestinationArgumentCaptor.capture());
-
+    verify(outboxService, times(1)).save(any(StreamingDestinationCreateEvent.class));
     assertThat(streamingDestinationArgumentCaptor.getValue()).isEqualTo(streamingDestination);
     assertThat(savedStreamingDestination).isNotNull();
   }
@@ -129,8 +151,8 @@ public class StreamingServiceImplTest extends CategoryTest {
     when(streamingDestinationRepository.save(any())).thenThrow(new DuplicateKeyException("duplicate key error"));
 
     expectedException.expect(DuplicateFieldException.class);
-    expectedException.expectMessage(
-        String.format("Streaming destination with identifier [%s] already exists.", streamingDestinationDTO.getSlug()));
+    expectedException.expectMessage(String.format(
+        "Streaming destination with identifier [%s] already exists.", streamingDestinationDTO.getIdentifier()));
 
     streamingService.create(randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10), streamingDestinationDTO);
   }
@@ -141,7 +163,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   public void testList() {
     String searchTerm = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     StreamingDestinationDTO.StatusEnum statusEnum = StreamingDestinationDTO.StatusEnum.ACTIVE;
-    int page = 1;
+    int page = 0;
     int limit = 10;
     Pageable pageable = PageUtils.getPageRequest(new PageRequest(
         page, limit, List.of(aSortOrder().withField(StreamingDestinationKeys.lastModifiedDate, DESC).build())));
@@ -149,12 +171,22 @@ public class StreamingServiceImplTest extends CategoryTest {
         StreamingDestinationFilterProperties.builder().searchTerm(searchTerm).status(statusEnum).build();
 
     when(streamingDestinationRepository.findAll(any(), any()))
-        .thenReturn(new PageImpl<StreamingDestination>(List.of(AwsS3StreamingDestination.builder().build())));
+        .thenReturn(new PageImpl<StreamingDestination>(List.of(
+            AwsS3StreamingDestination.builder().accountIdentifier(accountIdentifier).identifier("sd1").build())));
+    when(accessControlClient.checkForAccessOrThrow(anyList()))
+        .thenReturn(AccessCheckResponseDTO.builder()
+                        .accessControlList(Collections.singletonList(
+                            AccessControlDTO.builder()
+                                .resourceIdentifier("sd1")
+                                .resourceScope(ResourceScope.of(accountIdentifier, null, null))
+                                .permitted(true)
+                                .build()))
+                        .build());
 
     Page<StreamingDestination> streamingDestinationsPage =
         streamingService.list(accountIdentifier, pageable, filterProperties);
 
-    verify(streamingDestinationRepository, times(1)).findAll(criteriaArgumentCaptor.capture(), eq(pageable));
+    verify(streamingDestinationRepository, times(1)).findAll(criteriaArgumentCaptor.capture(), eq(Pageable.unpaged()));
 
     assertThat(streamingDestinationsPage).isNotEmpty();
     assertCriteria(accountIdentifier, filterProperties, criteriaArgumentCaptor.getValue());
@@ -169,12 +201,39 @@ public class StreamingServiceImplTest extends CategoryTest {
     when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
         .thenReturn(Optional.of(streamingDestination));
 
-    StreamingDestination savedStreamingDestination = streamingService.getStreamingDestination(accountIdentifier, slug);
+    StreamingDestination savedStreamingDestination =
+        streamingService.getStreamingDestination(accountIdentifier, identifier);
 
     verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
 
     assertThat(savedStreamingDestination).isEqualTo(streamingDestination);
     assertThat(savedStreamingDestination).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void validateUniquenessOfValidStreamingDestination() {
+    StreamingDestination streamingDestination = getStreamingDestination();
+
+    when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
+        .thenReturn(Optional.of(streamingDestination));
+
+    boolean valid = streamingService.validateUniqueness(accountIdentifier, identifier);
+    verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
+    assertThat(valid).isFalse();
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void validateUniquenessOfInvalidStreamingDestination() {
+    when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
+        .thenReturn(Optional.empty());
+
+    boolean valid = streamingService.validateUniqueness(accountIdentifier, identifier);
+    verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
+    assertThat(valid).isTrue();
   }
 
   @Test
@@ -184,8 +243,8 @@ public class StreamingServiceImplTest extends CategoryTest {
     when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
         .thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> streamingService.getStreamingDestination(accountIdentifier, slug))
-        .hasMessage(String.format("Streaming destination with identifier [%s] not found.", slug))
+    assertThatThrownBy(() -> streamingService.getStreamingDestination(accountIdentifier, identifier))
+        .hasMessage(String.format("Streaming destination with identifier [%s] not found.", identifier))
         .isInstanceOf(NoResultFoundException.class);
   }
 
@@ -200,10 +259,11 @@ public class StreamingServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(streamingDestination));
     when(streamingDestinationRepository.deleteByCriteria(any())).thenReturn(Boolean.TRUE);
 
-    boolean isDeleted = streamingService.delete(accountIdentifier, slug);
+    boolean isDeleted = streamingService.delete(accountIdentifier, identifier);
 
     verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
     verify(streamingDestinationRepository, times(1)).deleteByCriteria(criteriaArgumentCaptor.capture());
+    verify(outboxService, times(1)).save(any(StreamingDestinationDeleteEvent.class));
 
     assertThat(isDeleted).isTrue();
   }
@@ -219,13 +279,14 @@ public class StreamingServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(streamingDestination));
     when(streamingDestinationRepository.deleteByCriteria(any())).thenReturn(Boolean.TRUE);
 
-    assertThatThrownBy(() -> streamingService.delete(accountIdentifier, slug))
-        .hasMessage(
-            String.format("Streaming destination with identifier [%s] cannot be deleted because it is active.", slug))
+    assertThatThrownBy(() -> streamingService.delete(accountIdentifier, identifier))
+        .hasMessage(String.format(
+            "Streaming destination with identifier [%s] cannot be deleted because it is active.", identifier))
         .isInstanceOf(InvalidRequestException.class);
 
     verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
     verify(streamingDestinationRepository, times(0)).deleteByCriteria(criteriaArgumentCaptor.capture());
+    verify(outboxService, times(0)).save(any(StreamingDestinationDeleteEvent.class));
   }
 
   @Test
@@ -253,10 +314,11 @@ public class StreamingServiceImplTest extends CategoryTest {
     when(streamingDestinationRepository.save(any())).thenReturn(newStreamingDestination);
 
     StreamingDestination responseStreamingDestination =
-        streamingService.update(slug, streamingDestinationDTO, accountIdentifier);
+        streamingService.update(identifier, streamingDestinationDTO, accountIdentifier);
 
     verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
     verify(streamingDestinationRepository, times(1)).save(any());
+    verify(outboxService, times(1)).save(any(StreamingDestinationUpdateEvent.class));
 
     assertThat(responseStreamingDestination).isEqualTo(newStreamingDestination);
   }
@@ -264,22 +326,23 @@ public class StreamingServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
-  public void testUpdateStreamingDestination_withInvalidRequestException_forUnmatchedSlugInApiArgument() {
+  public void testUpdateStreamingDestination_withInvalidRequestException_forUnmatchedIdentifierInApiArgument() {
     StreamingDestinationDTO streamingDestinationDTO = getStreamingDestinationDTO();
-    streamingDestinationDTO.setSlug(slug + " changed");
+    streamingDestinationDTO.setIdentifier(identifier + " changed");
 
     StreamingDestination currentStreamingDestination = getStreamingDestination();
     when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
         .thenReturn(Optional.of(currentStreamingDestination));
 
-    assertThatThrownBy(() -> streamingService.update(slug, streamingDestinationDTO, accountIdentifier))
+    assertThatThrownBy(() -> streamingService.update(identifier, streamingDestinationDTO, accountIdentifier))
         .hasMessage(String.format(
             "Streaming destination with identifier [%s] did not match with StreamingDestinationDTO identifier [%s]",
-            currentStreamingDestination.getIdentifier(), streamingDestinationDTO.getSlug()))
+            currentStreamingDestination.getIdentifier(), streamingDestinationDTO.getIdentifier()))
         .isInstanceOf(InvalidRequestException.class);
 
     verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
     verify(streamingDestinationRepository, times(0)).save(any());
+    verify(outboxService, times(0)).save(any(StreamingDestinationUpdateEvent.class));
   }
 
   @Test
@@ -293,7 +356,7 @@ public class StreamingServiceImplTest extends CategoryTest {
     when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
         .thenReturn(Optional.of(currentStreamingDestination));
 
-    assertThatThrownBy(() -> streamingService.update(slug, streamingDestinationDTO, accountIdentifier))
+    assertThatThrownBy(() -> streamingService.update(identifier, streamingDestinationDTO, accountIdentifier))
         .hasMessage(String.format(
             "Streaming destination with connectorRef [%s] did not match with StreamingDestinationDTO connectorRef [%s]",
             currentStreamingDestination.getConnectorRef(), streamingDestinationDTO.getConnectorRef()))
@@ -301,6 +364,7 @@ public class StreamingServiceImplTest extends CategoryTest {
 
     verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
     verify(streamingDestinationRepository, times(0)).save(any());
+    verify(outboxService, times(0)).save(any(StreamingDestinationUpdateEvent.class));
   }
 
   private void assertCriteria(
@@ -323,7 +387,7 @@ public class StreamingServiceImplTest extends CategoryTest {
         new AwsS3StreamingDestinationSpecDTO().bucket(bucket).type(StreamingDestinationSpecDTO.TypeEnum.AWS_S3);
 
     return new StreamingDestinationDTO()
-        .slug(slug)
+        .identifier(identifier)
         .name(name)
         .status(statusEnum)
         .connectorRef(connectorRef)
@@ -333,7 +397,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   private StreamingDestination getStreamingDestination() {
     StreamingDestination streamingDestination = AwsS3StreamingDestination.builder().bucket(bucket).build();
     streamingDestination.setId(id);
-    streamingDestination.setIdentifier(slug);
+    streamingDestination.setIdentifier(identifier);
     streamingDestination.setName(name);
     streamingDestination.setType(StreamingDestinationSpecDTO.TypeEnum.AWS_S3);
     streamingDestination.setStatus(statusEnum);

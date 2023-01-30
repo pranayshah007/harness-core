@@ -21,6 +21,7 @@ import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(CDC)
 @UtilityClass
@@ -39,7 +40,7 @@ public class NGServiceEntityMapper {
     if (isNotEmpty(serviceEntity.getYaml())) {
       try {
         final NGServiceConfig config = YamlPipelineUtils.read(serviceEntity.getYaml(), NGServiceConfig.class);
-        validateIdentifier(config.getNgServiceV2InfoConfig().getIdentifier(), serviceEntity.getIdentifier());
+        validateFieldsOrThrow(config.getNgServiceV2InfoConfig(), serviceEntity);
         sDef = config.getNgServiceV2InfoConfig().getServiceDefinition();
         gitOpsEnabled = config.getNgServiceV2InfoConfig().getGitOpsEnabled();
       } catch (IOException e) {
@@ -58,10 +59,19 @@ public class NGServiceEntityMapper {
         .build();
   }
 
-  private void validateIdentifier(String fromYaml, String fromEntity) {
-    if (isNotEmpty(fromYaml) && isNotEmpty(fromEntity) && !fromEntity.equals(fromYaml)) {
-      throw new InvalidRequestException(String.format(
-          "Identifier : %s in service request doesn't match with identifier : %s given in yaml", fromEntity, fromYaml));
+  private void validateFieldsOrThrow(NGServiceV2InfoConfig fromYaml, ServiceEntity requestedService) {
+    if (StringUtils.compare(requestedService.getIdentifier(), fromYaml.getIdentifier()) != 0) {
+      throw new InvalidRequestException(
+          String.format("Service Identifier : %s in service request doesn't match with identifier : %s given in yaml",
+              requestedService.getIdentifier(), fromYaml.getIdentifier()));
+    }
+
+    // not using StringUtils.compare() here as we replace service name with identifier when name field is empty
+    if (isNotEmpty(requestedService.getName()) && isNotEmpty(fromYaml.getName())
+        && !requestedService.getName().equals(fromYaml.getName())) {
+      throw new InvalidRequestException(
+          String.format("Service Name : %s in service request doesn't match with name : %s given in yaml",
+              requestedService.getName(), fromYaml.getName()));
     }
   }
 }

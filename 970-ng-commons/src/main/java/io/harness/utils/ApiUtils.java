@@ -72,8 +72,7 @@ public class ApiUtils {
     List<SortOrder> sortOrders = null;
     if (field != null) {
       switch (field) {
-        case "slug":
-          field = "identifier";
+        case "identifier":
           break;
         case "name":
           break;
@@ -85,7 +84,7 @@ public class ApiUtils {
           break;
         default:
           throw new InvalidRequestException(
-              "Field provided for sorting unidentified. Accepted values: slug / name / created / updated");
+              "Field provided for sorting unidentified. Accepted values: identifier / name / created / updated");
       }
       SortOrder sortOrder = new SortOrder(field + "," + order);
       sortOrders = Collections.singletonList(sortOrder);

@@ -702,7 +702,7 @@ if [[ "$GRAPHQL_ENABLED" == "false" ]]; then
 fi
 
 if [[ "$MONGO_DEBUGGING_ENABLED" == "true" ]]; then
-  yq -i '.logging.loggers.["org.mongodb.morphia.query"]="TRACE"' $CONFIG_FILE
+  yq -i '.logging.loggers.["dev.morphia.query"]="TRACE"' $CONFIG_FILE
   yq -i '.logging.loggers.connection="TRACE"' $CONFIG_FILE
 fi
 
@@ -716,6 +716,10 @@ fi
 if [[ "" != "$QUEUE_SERVICE_BASE_URL" ]]; then
   export QUEUE_SERVICE_BASE_URL; yq -i '.delegateQueueServiceConfig.queueServiceConfig.baseUrl=env(QUEUE_SERVICE_BASE_URL)' $CONFIG_FILE
 fi
+if [[ "" != "$ENABLE_TASK_QUEUE_DEQUEUE" ]]; then
+  export ENABLE_TASK_QUEUE_DEQUEUE; yq -i '.delegateQueueServiceConfig.enableQueueAndDequeue=env(ENABLE_TASK_QUEUE_DEQUEUE)' $CONFIG_FILE
+fi
+
 
 
 if [[ "" != "$WORKERS" ]]; then

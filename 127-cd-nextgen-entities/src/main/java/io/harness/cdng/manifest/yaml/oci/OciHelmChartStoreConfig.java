@@ -14,6 +14,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.core.intfc.OverrideConnectorRef;
 import io.harness.yaml.core.intfc.OverridesApplier;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -22,7 +23,8 @@ import java.io.Serializable;
 
 @OwnedBy(CDP)
 @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-public interface OciHelmChartStoreConfig extends OverridesApplier<OciHelmChartStoreConfig>, Serializable {
+public interface OciHelmChartStoreConfig
+    extends OverridesApplier<OciHelmChartStoreConfig>, OverrideConnectorRef, Serializable {
   @JsonIgnore String getKind();
   @JsonIgnore OciHelmChartStoreConfig cloneInternal();
   @JsonIgnore ParameterField<String> getConnectorReference();

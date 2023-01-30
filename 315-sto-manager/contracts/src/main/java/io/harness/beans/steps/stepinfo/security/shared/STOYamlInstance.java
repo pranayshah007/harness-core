@@ -16,36 +16,26 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-import org.codehaus.jackson.annotate.JsonProperty;
 
 @Data
 @OwnedBy(STO)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class STOYamlInstance {
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  @JsonProperty("access_id")
-  protected ParameterField<String> accessId;
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "access_id") protected ParameterField<String> accessId;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  @JsonProperty("access_token")
-  protected ParameterField<String> accessToken;
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "access_token") protected ParameterField<String> accessToken;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> domain;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> domain;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> protocol;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> protocol;
 
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   protected ParameterField<Integer> port;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> path;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> path;
 }

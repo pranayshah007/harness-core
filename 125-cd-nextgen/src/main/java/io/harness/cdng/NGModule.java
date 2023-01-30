@@ -8,6 +8,8 @@
 package io.harness.cdng;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.STAGE_EXEC_INFO;
 
 import io.harness.WalkTreeModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -45,6 +47,7 @@ import io.harness.cdng.envGroup.mappers.EnvironmentGroupFilterPropertiesMapper;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envGroup.services.EnvironmentGroupServiceImpl;
 import io.harness.cdng.environment.EnvironmentFilterPropertiesMapper;
+import io.harness.cdng.events.StageExecutionInfoEventListener;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.execution.service.StageExecutionInfoServiceImpl;
 import io.harness.cdng.gitops.ClusterServiceImpl;
@@ -79,6 +82,7 @@ import io.harness.migration.NGMigrationSdkModule;
 import io.harness.ng.core.NGCoreModule;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
+import io.harness.ng.core.event.MessageListener;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.infrastructure.services.impl.InfrastructureEntityServiceImpl;
 import io.harness.ng.core.service.services.ServiceEntityService;
@@ -154,6 +158,9 @@ public class NGModule extends AbstractModule {
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
     bind(StageExecutionInfoService.class).to(StageExecutionInfoServiceImpl.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(STAGE_EXEC_INFO + ENTITY_CRUD))
+        .to(StageExecutionInfoEventListener.class);
     bind(TerraformPlanExectionDetailsService.class).to(TerraformPlanExectionDetailsServiceImpl.class);
     bind(InstanceDeploymentInfoService.class).to(InstanceDeploymentInfoServiceImpl.class);
     bind(GARResourceService.class).to(GARResourceServiceImpl.class);

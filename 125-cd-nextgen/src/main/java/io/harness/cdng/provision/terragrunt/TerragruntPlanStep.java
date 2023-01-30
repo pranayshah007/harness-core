@@ -25,6 +25,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.provision.terragrunt.outcome.TerragruntPlanOutcome;
 import io.harness.cdng.provision.terragrunt.outcome.TerragruntPlanOutcome.TerragruntPlanOutcomeBuilder;
@@ -41,7 +42,6 @@ import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -55,10 +55,12 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -68,7 +70,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
-public class TerragruntPlanStep extends TaskExecutableWithRollbackAndRbac<TerragruntPlanTaskResponse> {
+public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskResponse> {
   public static final StepType STEP_TYPE =
       TerragruntStepHelper.addStepType(ExecutionNodeType.TERRAGRUNT_PLAN.getYamlType());
   public static final String DEFAULT_TIMEOUT = "10m";
@@ -76,7 +78,7 @@ public class TerragruntPlanStep extends TaskExecutableWithRollbackAndRbac<Terrag
   @Inject private TerragruntStepHelper helper;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public Class getStepParametersClass() {
@@ -174,7 +176,7 @@ public class TerragruntPlanStep extends TaskExecutableWithRollbackAndRbac<Terrag
     commandUnitsList.add(FETCH_CONFIG_FILES);
     commandUnitsList.add(PLAN);
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnitsList,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, commandUnitsList,
         TERRAGRUNT_PLAN_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(planStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
@@ -211,7 +213,7 @@ public class TerragruntPlanStep extends TaskExecutableWithRollbackAndRbac<Terrag
     boolean exportTgPlanJson = !ParameterField.isNull(exportTgPlanJsonField)
         && ParameterFieldHelper.getBooleanParameterFieldValue(exportTgPlanJsonField);
 
-    if (exportTgPlanJson) {
+    if (exportTgPlanJson && terragruntTaskNGResponse.getEncryptedPlan() != null) {
       helper.saveTerragruntPlanExecutionDetails(
           ambiance, terragruntTaskNGResponse, provisionerIdentifier, planStepParameters);
 

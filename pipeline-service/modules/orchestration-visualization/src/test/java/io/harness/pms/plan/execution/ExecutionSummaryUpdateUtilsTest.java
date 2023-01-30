@@ -300,42 +300,8 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
     assertThat(stringSet).containsOnly(prefixLayoutNodeMap + ".status", prefixLayoutNodeMap + ".startTs",
         prefixLayoutNodeMap + ".nodeRunInfo", prefixLayoutNodeMap + ".endTs", prefixLayoutNodeMap + ".failureInfo",
         prefixLayoutNodeMap + ".failureInfoDTO", prefixLayoutNodeMap + ".nodeExecutionId",
-        prefixLayoutNodeMap + ".executionInputConfigured");
-  }
-
-  @Test
-  @Owner(developers = SAHIL)
-  @Category(UnitTests.class)
-  public void testStageUpdateCriteriaStrategyNode() {
-    Ambiance stageAmbiance = Ambiance.newBuilder()
-                                 .setPlanExecutionId(generateUuid())
-                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), pipelinePlanNode))
-                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stagesPlanNode))
-                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), strategyPlanNode))
-                                 .build();
-    NodeExecution nodeExecution =
-        NodeExecution.builder()
-            .status(Status.FAILED)
-            .planNode(strategyPlanNode)
-            .endTs(System.currentTimeMillis())
-            .stepType(StepType.newBuilder().setType(STRATEGY).setStepCategory(StepCategory.STRATEGY).build())
-            .ambiance(stageAmbiance)
-            .failureInfo(FailureInfo.newBuilder()
-                             .setErrorMessage(TESTING)
-                             .addFailureData(FailureData.newBuilder()
-                                                 .addFailureTypes(FailureType.APPLICATION_FAILURE)
-                                                 .setLevel(Level.ERROR.name())
-                                                 .setCode(GENERAL_ERROR.name())
-                                                 .setMessage(TESTING)
-                                                 .build())
-                             .build())
-            .build();
-    Update update = new Update();
-    ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution);
-    String prefixLayoutNodeMap = PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyPlanNode.getUuid();
-    Set<String> stringSet = ((Document) update.getUpdateObject().get("$set")).keySet();
-    assertThat(stringSet).containsOnly(
-        prefixLayoutNodeMap + ".status", prefixLayoutNodeMap + ".moduleInfo.stepParameters");
+        prefixLayoutNodeMap + ".executionInputConfigured", prefixLayoutNodeMap + ".name",
+        prefixLayoutNodeMap + ".nodeIdentifier", prefixLayoutNodeMap + ".isRollbackStageNode");
   }
 
   @Test
@@ -408,7 +374,8 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
         prefixLayoutNodeMap + ".nodeRunInfo", prefixLayoutNodeMap + ".endTs", prefixLayoutNodeMap + ".failureInfo",
         prefixLayoutNodeMap + ".failureInfoDTO", prefixLayoutNodeMap + ".nodeExecutionId",
         prefixLayoutNodeMap + ".executionInputConfigured", prefixLayoutNodeMap + ".nodeIdentifier",
-        prefixLayoutNodeMap + ".name", prefixLayoutNodeMap + ".strategyMetadata");
+        prefixLayoutNodeMap + ".name", prefixLayoutNodeMap + ".strategyMetadata",
+        prefixLayoutNodeMap + ".isRollbackStageNode");
   }
 
   @Data

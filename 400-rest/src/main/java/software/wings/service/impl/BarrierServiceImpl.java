@@ -64,6 +64,7 @@ import software.wings.sm.StateExecutionInstance.StateExecutionInstanceKeys;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -74,7 +75,6 @@ import javax.validation.Valid;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(CDC)
 @Singleton

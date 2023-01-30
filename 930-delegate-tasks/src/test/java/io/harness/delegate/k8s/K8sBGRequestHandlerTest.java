@@ -13,6 +13,7 @@ import static io.harness.delegate.k8s.K8sTestHelper.service;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
@@ -24,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyListOf;
@@ -62,6 +64,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.KubernetesYamlException;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
@@ -76,11 +79,15 @@ import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
+import io.harness.k8s.releasehistory.K8SLegacyReleaseHistory;
 import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.K8sRelease;
 import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
+import io.kubernetes.client.openapi.models.V1Secret;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -105,6 +112,8 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
   @Mock ILogStreamingTaskClient logStreamingTaskClient;
   @Mock KubernetesConfig kubernetesConfig;
   @Mock K8sInfraDelegateConfig k8sInfraDelegateConfig;
+  @Mock K8sReleaseHandler releaseHandler;
+  @Mock IK8sReleaseHistory releaseHistory;
 
   @Spy @InjectMocks K8sBGBaseHandler k8sBGBaseHandler;
   @Spy @InjectMocks K8sBGRequestHandler k8sBGRequestHandler;
@@ -112,11 +121,13 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
   K8sDelegateTaskParams k8sDelegateTaskParams;
   CommandUnitsProgress commandUnitsProgress;
   final String workingDirectory = "/tmp";
+  private K8sRelease release;
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
 
+    release = K8sRelease.builder().releaseSecret(new V1Secret()).build();
     k8sDelegateTaskParams = K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
     commandUnitsProgress = CommandUnitsProgress.builder().build();
 
@@ -143,6 +154,12 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
         .createKubernetesConfig(any(K8sInfraDelegateConfig.class));
+
+    on(k8sBGRequestHandler).set("useDeclarativeRollback", true);
+    doReturn(releaseHandler).when(k8sTaskHelperBase).getReleaseHandler(anyBoolean());
+    doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), anyString());
+    doReturn(10).when(releaseHistory).getAndIncrementLastReleaseNumber();
+    doReturn(release).when(releaseHandler).createRelease(any(), anyInt());
   }
 
   @Test
@@ -156,6 +173,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
             .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
             .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
             .releaseName("releaseName")
+            .useDeclarativeRollback(true)
             .build();
     K8sClient k8sClient = mock(K8sClient.class);
     doReturn(k8sClient).when(k8sTaskHelperBase).getKubernetesClient(anyBoolean());
@@ -185,6 +203,57 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testExecuteTaskInternalLegacyReleaseImplementation() throws Exception {
+    final List<K8sPod> deployedPods = Collections.singletonList(K8sPod.builder().build());
+    final K8sBGDeployRequest k8sBGDeployRequest =
+        K8sBGDeployRequest.builder()
+            .skipResourceVersioning(true)
+            .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
+            .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
+            .releaseName("releaseName")
+            .useDeclarativeRollback(false)
+            .build();
+    K8SLegacyReleaseHistory releaseHistory = mock(K8SLegacyReleaseHistory.class);
+    ReleaseHistory releaseHistoryContent = mock(ReleaseHistory.class);
+    doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), any());
+    doReturn(1).when(releaseHistory).getAndIncrementLastReleaseNumber();
+    doReturn(releaseHistoryContent).when(releaseHistory).getReleaseHistory();
+    K8sLegacyRelease legacyRelease = mock(K8sLegacyRelease.class);
+    doReturn(legacyRelease).when(releaseHistoryContent).addReleaseToReleaseHistory(any());
+    doReturn(legacyRelease).when(releaseHandler).createRelease(any(), anyInt());
+    K8sClient k8sClient = mock(K8sClient.class);
+    doReturn(k8sClient).when(k8sTaskHelperBase).getKubernetesClient(anyBoolean());
+    doReturn(true).when(k8sClient).performSteadyStateCheck(any(K8sSteadyStateDTO.class));
+    doReturn(HarnessLabelValues.colorBlue)
+        .when(k8sBGBaseHandler)
+        .getPrimaryColor(any(KubernetesResource.class), eq(kubernetesConfig), eq(logCallback));
+    doReturn(new ArrayList<>(asList(deployment(), service())))
+        .when(k8sTaskHelperBase)
+        .readManifests(anyListOf(FileData.class), eq(logCallback), eq(true));
+    doReturn(deployedPods)
+        .when(k8sBGBaseHandler)
+        .getAllPods(anyLong(), eq(kubernetesConfig), any(KubernetesResource.class), eq(HarnessLabelValues.colorBlue),
+            eq(HarnessLabelValues.colorGreen), eq("releaseName"));
+
+    K8sDeployResponse response = k8sBGRequestHandler.executeTaskInternal(
+        k8sBGDeployRequest, k8sDelegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
+
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
+    assertThat(response.getK8sNGTaskResponse()).isNotNull();
+    K8sBGDeployResponse bgDeployResponse = (K8sBGDeployResponse) response.getK8sNGTaskResponse();
+    assertThat(bgDeployResponse.getPrimaryColor()).isEqualTo(HarnessLabelValues.colorBlue);
+    assertThat(bgDeployResponse.getStageColor()).isEqualTo(HarnessLabelValues.colorGreen);
+    assertThat(bgDeployResponse.getPrimaryServiceName()).isEqualTo("my-service");
+    assertThat(bgDeployResponse.getStageServiceName()).isEqualTo("my-service-stage");
+    assertThat(bgDeployResponse.getK8sPodList()).isEqualTo(deployedPods);
+
+    verify(legacyRelease).setManagedWorkload(any());
+    verify(legacyRelease, times(2)).setManagedWorkloadRevision(any());
+  }
+
+  @Test
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testExecuteTaskInternalFFPruneOn() throws Exception {
@@ -195,6 +264,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
             .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
             .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
             .pruningEnabled(true)
+            .useDeclarativeRollback(true)
             .releaseName("releaseName")
             .build();
     K8sClient k8sClient = mock(K8sClient.class);
@@ -281,7 +351,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     verify(k8sBGRequestHandler, never())
         .prepareForBlueGreen(any(K8sDelegateTaskParams.class), any(LogCallback.class), anyBoolean(), anyBoolean());
     verify(k8sTaskHelperBase, never())
-        .saveReleaseHistoryInConfigMap(any(KubernetesConfig.class), anyString(), anyString());
+        .saveRelease(anyBoolean(), anyBoolean(), any(KubernetesConfig.class), any(), any(), anyString());
   }
 
   @Test
@@ -303,7 +373,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
         .isSameAs(thrownException);
 
     verify(k8sTaskHelperBase, never())
-        .saveReleaseHistoryInConfigMap(any(KubernetesConfig.class), anyString(), anyString());
+        .saveRelease(anyBoolean(), anyBoolean(), any(KubernetesConfig.class), any(), any(), anyString());
     verify(k8sTaskHelperBase, never())
         .applyManifests(any(Kubectl.class), anyListOf(KubernetesResource.class), any(K8sDelegateTaskParams.class),
             any(LogCallback.class), anyBoolean(), eq(null));
@@ -319,6 +389,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
             .skipResourceVersioning(true)
             .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
             .releaseName("releaseName")
+            .useDeclarativeRollback(true)
             .build();
     final RuntimeException exception = new RuntimeException("failed");
 
@@ -343,7 +414,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
         .doesNotThrowAnyException();
 
     verify(k8sTaskHelperBase)
-        .saveReleaseHistoryInConfigMap(any(KubernetesConfig.class), eq("releaseName"), anyString());
+        .saveRelease(anyBoolean(), anyBoolean(), any(KubernetesConfig.class), any(), any(), eq("releaseName"));
     verify(k8sTaskHelperBase)
         .applyManifests(any(Kubectl.class), anyListOf(KubernetesResource.class), eq(k8sDelegateTaskParams),
             eq(logCallback), eq(true), eq(true), any());
@@ -359,6 +430,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
             .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
             .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
             .releaseName("releaseName")
+            .useDeclarativeRollback(true)
             .build();
     final RuntimeException thrownException = new RuntimeException();
     K8sClient k8sClient = mock(K8sClient.class);
@@ -385,7 +457,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
         .doesNotThrowAnyException();
 
     verify(k8sTaskHelperBase, times(2))
-        .saveReleaseHistoryInConfigMap(any(KubernetesConfig.class), eq("releaseName"), anyString());
+        .saveRelease(anyBoolean(), anyBoolean(), any(KubernetesConfig.class), any(), any(), eq("releaseName"));
   }
 
   @Test
@@ -447,7 +519,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     }
 
     verify(containerDeploymentDelegateBaseHelper).createKubernetesConfig(k8sInfraDelegateConfig);
-    verify(k8sTaskHelperBase).getReleaseHistoryDataFromConfigMap(kubernetesConfig, "releaseName");
+    verify(releaseHandler).getReleaseHistory(any(), eq("releaseName"));
 
     if (!throwException) {
       verify(k8sTaskHelperBase).setNamespaceToKubernetesResourcesIfRequired(resources, "default");
@@ -462,7 +534,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPrepareForBlueGreen() throws Exception {
     final List<KubernetesResource> resources = new ArrayList<>(asList(deployment(), service()));
-    final ReleaseHistory releaseHistory = ReleaseHistory.createNew();
+    final IK8sReleaseHistory releaseHistory = mock(IK8sReleaseHistory.class);
     final Kubectl client = Kubectl.client("", "");
 
     on(k8sBGRequestHandler).set("resources", resources);
@@ -473,8 +545,10 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     k8sBGRequestHandler.prepareForBlueGreen(k8sDelegateTaskParams, logCallback, false, false);
 
     verify(k8sBGBaseHandler)
-        .cleanupForBlueGreen(k8sDelegateTaskParams, releaseHistory, logCallback, HarnessLabelValues.colorGreen,
-            HarnessLabelValues.colorBlue, releaseHistory.getLatestRelease(), client);
+        .cleanupForBlueGreen(eq(k8sDelegateTaskParams), eq(releaseHistory), eq(logCallback),
+            eq(HarnessLabelValues.colorGreen), eq(HarnessLabelValues.colorBlue), any(), eq(client), any(),
+            eq("releaseName"), anyBoolean());
+
     KubernetesResource primaryService = on(k8sBGRequestHandler).get("primaryService");
     KubernetesResource stageService = on(k8sBGRequestHandler).get("stageService");
 
@@ -489,30 +563,26 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPrepareForBlueGreenFFPruneOn() throws Exception {
     final List<KubernetesResource> resources = new ArrayList<>(asList(deployment(), service()));
-    final ReleaseHistory releaseHistory = ReleaseHistory.createNew();
+    IK8sReleaseHistory releaseHistory = mock(IK8sReleaseHistory.class);
     final Kubectl client = Kubectl.client("", "");
-    // PrePruningInfo prePruningInfo = PrePruningInfo.builder().build();
 
     on(k8sBGRequestHandler).set("resources", resources);
     on(k8sBGRequestHandler).set("releaseName", "releaseName");
     on(k8sBGRequestHandler).set("releaseHistory", releaseHistory);
     on(k8sBGRequestHandler).set("client", client);
-    // on(k8sBGRequestHandler).set("prePruningInfo", prePruningInfo);
+
+    doReturn(release).when(releaseHandler).createRelease(any(), anyInt());
 
     k8sBGRequestHandler.prepareForBlueGreen(k8sDelegateTaskParams, logCallback, false, true);
 
     verify(k8sBGBaseHandler)
-        .cleanupForBlueGreen(k8sDelegateTaskParams, releaseHistory, logCallback, HarnessLabelValues.colorGreen,
-            HarnessLabelValues.colorBlue, releaseHistory.getLatestRelease(), client);
+        .cleanupForBlueGreen(eq(k8sDelegateTaskParams), eq(releaseHistory), eq(logCallback),
+            eq(HarnessLabelValues.colorGreen), eq(HarnessLabelValues.colorBlue), any(), eq(client), any(),
+            eq("releaseName"), anyBoolean());
 
     KubernetesResource primaryService = on(k8sBGRequestHandler).get("primaryService");
     KubernetesResource stageService = on(k8sBGRequestHandler).get("stageService");
-    K8sLegacyRelease currentRelease = on(k8sBGRequestHandler).get("currentRelease");
-    PrePruningInfo prePruningInfo = on(k8sBGRequestHandler).get("prePruningInfo");
 
-    assertThat(prePruningInfo.getReleaseHistoryBeforeStageCleanUp()).isEqualTo(releaseHistory);
-    assertThat(currentRelease.getResources().get(0).getKind()).isNotEqualTo("Deployment");
-    assertThat(currentRelease.getResources().get(1).getKind()).isNotEqualTo("Deployment");
     assertThat(primaryService.getResourceId().getName()).isEqualTo("my-service");
     assertResourceColor(primaryService, HarnessLabelValues.colorGreen);
     assertThat(stageService.getResourceId().getName()).isEqualTo("my-service-stage");

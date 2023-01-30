@@ -14,11 +14,19 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
+
 import static java.util.Arrays.asList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FileData;
+import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.K8sDelegateTaskParams;
@@ -27,6 +35,8 @@ import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 import io.harness.k8s.releasehistory.K8sLegacyRelease;
 import io.harness.k8s.releasehistory.K8sLegacyRelease.KubernetesResourceIdRevision;
 import io.harness.logging.CommandExecutionStatus;
@@ -42,6 +52,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -204,5 +215,44 @@ public class K8sRollingBaseHandler {
     } else {
       addLabelsInDeploymentSelectorForCanary(inCanaryWorkflow, managedWorkloads, false);
     }
+  }
+
+  public IK8sRelease getLastSuccessfulRelease(boolean useDeclarativeRollback, IK8sReleaseHistory currentReleaseHistory,
+      int currentReleaseNumber, KubernetesConfig kubernetesConfig, String releaseName) throws Exception {
+    IK8sRelease lastSuccessfulRelease = currentReleaseHistory.getLastSuccessfulRelease(currentReleaseNumber);
+    if (useDeclarativeRollback && lastSuccessfulRelease == null) {
+      // check old release history for a rollback eligible release
+      K8sReleaseHandler legacyReleaseHandler = k8sTaskHelperBase.getReleaseHandler(false);
+      IK8sReleaseHistory oldReleaseHistory = legacyReleaseHandler.getReleaseHistory(kubernetesConfig, releaseName);
+      Optional<IK8sRelease> lastSuccessfulLegacyReleaseOptional =
+          Optional.ofNullable(oldReleaseHistory.getLastSuccessfulRelease(Integer.MAX_VALUE));
+      return lastSuccessfulLegacyReleaseOptional.orElse(null);
+    }
+    return lastSuccessfulRelease;
+  }
+
+  public List<KubernetesResource> prepareResourcesAndRenderTemplate(K8sDeployRequest request,
+      K8sDelegateTaskParams k8sDelegateTaskParams, List<String> manifestOverrideFiles,
+      KubernetesConfig kubernetesConfig, String manifestFilesDirectory, String releaseName,
+      boolean isLocalOverrideFeatureFlag, boolean isErrorFrameworkSupported, boolean isInCanaryWorkflow,
+      LogCallback executionLogCallback) throws Exception {
+    k8sTaskHelperBase.deleteSkippedManifestFiles(manifestFilesDirectory, executionLogCallback);
+
+    List<FileData> manifestFiles = k8sTaskHelperBase.renderTemplate(k8sDelegateTaskParams,
+        request.getManifestDelegateConfig(), manifestFilesDirectory, manifestOverrideFiles, releaseName,
+        kubernetesConfig.getNamespace(), executionLogCallback, request.getTimeoutIntervalInMin());
+
+    List<KubernetesResource> resources = k8sTaskHelperBase.readManifestAndOverrideLocalSecrets(
+        manifestFiles, executionLogCallback, isLocalOverrideFeatureFlag, isErrorFrameworkSupported);
+    k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(resources, kubernetesConfig.getNamespace());
+
+    if (isInCanaryWorkflow) {
+      updateDestinationRuleWithSubsets(executionLogCallback, resources, kubernetesConfig);
+      updateVirtualServiceWithRoutes(executionLogCallback, resources, kubernetesConfig);
+    }
+
+    executionLogCallback.saveExecutionLog(color("\nManifests [Post template rendering] :\n", White, Bold));
+    executionLogCallback.saveExecutionLog(ManifestHelper.toYamlForLogs(resources));
+    return resources;
   }
 }

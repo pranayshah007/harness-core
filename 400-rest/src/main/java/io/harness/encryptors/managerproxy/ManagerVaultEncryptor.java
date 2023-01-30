@@ -112,7 +112,7 @@ public class ManagerVaultEncryptor implements VaultEncryptor {
             .build();
 
     try {
-      DelegateResponseData delegateResponseData = delegateService.executeTask(delegateTask);
+      DelegateResponseData delegateResponseData = delegateService.executeTaskV2(delegateTask);
       DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
       if (!(delegateResponseData instanceof UpsertSecretTaskResponse)) {
         throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
@@ -144,7 +144,7 @@ public class ManagerVaultEncryptor implements VaultEncryptor {
             .setupAbstractions(managerEncryptorHelper.buildAbstractions(parameters.getEncryptionConfig()))
             .build();
     try {
-      DelegateResponseData delegateResponseData = delegateService.executeTask(delegateTask);
+      DelegateResponseData delegateResponseData = delegateService.executeTaskV2(delegateTask);
       DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
       if (!(delegateResponseData instanceof DeleteSecretTaskResponse)) {
         throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);

@@ -142,7 +142,8 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .skipAddingTrackSelectorToDeployment(cdStepHelper.isSkipAddingTrackSelectorToDeployment(accountId))
-            .pruningEnabled(pruningEnabled);
+            .pruningEnabled(pruningEnabled)
+            .useDeclarativeRollback(cdStepHelper.useDeclarativeRollback(accountId));
 
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
       Map<String, String> k8sCommandFlag =

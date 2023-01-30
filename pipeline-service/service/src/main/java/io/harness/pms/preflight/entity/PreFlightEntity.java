@@ -14,7 +14,9 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.logging.AutoLogContext;
+import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.UuidAware;
 import io.harness.pms.preflight.PreFlightEntityErrorInfo;
@@ -22,6 +24,8 @@ import io.harness.pms.preflight.PreFlightStatus;
 import io.harness.pms.preflight.connector.ConnectorCheckResponse;
 import io.harness.pms.preflight.inputset.PipelineInputResponse;
 
+import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +34,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -45,7 +48,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = false)
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PreFlightEntity implements UuidAware {
-  @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Id @dev.morphia.annotations.Id String uuid;
 
   String accountIdentifier;
   String orgIdentifier;
@@ -58,6 +61,18 @@ public class PreFlightEntity implements UuidAware {
   PreFlightStatus preFlightStatus;
   PreFlightEntityErrorInfo errorInfo;
   @FdTtlIndex Date validUntil;
+
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_pipelineId_idx")
+                 .field(PreFlightEntityKeys.accountIdentifier)
+                 .field(PreFlightEntityKeys.orgIdentifier)
+                 .field(PreFlightEntityKeys.projectIdentifier)
+                 .field(PreFlightEntityKeys.pipelineIdentifier)
+                 .build())
+        .build();
+  }
 
   public AutoLogContext autoLogContext() {
     Map<String, String> logContext = new HashMap<>();

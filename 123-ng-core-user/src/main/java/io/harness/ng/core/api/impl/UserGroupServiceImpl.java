@@ -306,6 +306,11 @@ public class UserGroupServiceImpl implements UserGroupService {
     return userGroupRepository.findAll(criteria, pageable);
   }
 
+  @Override
+  public Long countUserGroups(String accountIdentifier) {
+    return userGroupRepository.countByAccountIdentifierAndDeletedIsFalse(accountIdentifier);
+  }
+
   private List<UserGroup> getPermittedUserGroups(List<UserGroup> userGroups) {
     if (isEmpty(userGroups)) {
       return Collections.emptyList();

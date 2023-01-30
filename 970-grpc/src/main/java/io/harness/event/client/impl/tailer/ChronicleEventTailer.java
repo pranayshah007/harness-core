@@ -27,6 +27,7 @@ import com.google.inject.name.Named;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import net.openhft.chronicle.queue.ExcerptTailer;
 import net.openhft.chronicle.queue.impl.RollingChronicleQueue;
@@ -63,7 +64,7 @@ public class ChronicleEventTailer extends AbstractScheduledService {
   private String accountId;
 
   @Inject
-  ChronicleEventTailer(EventPublisherBlockingStub blockingStub, EventPublisherClient eventPublisherClient,
+  ChronicleEventTailer(@Nullable EventPublisherBlockingStub blockingStub, EventPublisherClient eventPublisherClient,
       @Named("tailer") RollingChronicleQueue chronicleQueue, FileDeletionManager fileDeletionManager,
       @Named("tailer") BackoffScheduler backoffScheduler) {
     this.blockingStub = blockingStub;
@@ -172,6 +173,10 @@ public class ChronicleEventTailer extends AbstractScheduledService {
         } catch (IOException e) {
           log.error("Something wrong with publishing over rest", e);
           try {
+            if (blockingStub == null) {
+              log.info("::: blockingStub is not initialized :::: ");
+              return;
+            }
             log.info("Trying to publish over GRPC");
             blockingStub.withDeadlineAfter(30, TimeUnit.SECONDS).publish(publishRequest);
             log.info("Published {} messages successfully over grpc", batchToSend.size());

@@ -33,6 +33,11 @@ import io.harness.waiter.WaitInstance.WaitInstanceKeys;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.mongodb.WriteConcern;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.Key;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,11 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
@@ -154,10 +154,8 @@ public class MorphiaPersistenceWrapper implements PersistenceWrapper {
 
   @Override
   public WaitInstance fetchForProcessingWaitInstance(String waitInstanceId, long now) {
-    final Query<WaitInstance> waitInstanceQuery = hPersistence.createQuery(WaitInstance.class)
-                                                      .filter(WaitInstanceKeys.uuid, waitInstanceId)
-                                                      .field(WaitInstanceKeys.callbackProcessingAt)
-                                                      .lessThan(now);
+    final Query<WaitInstance> waitInstanceQuery =
+        hPersistence.createQuery(WaitInstance.class).filter(WaitInstanceKeys.uuid, waitInstanceId);
 
     final UpdateOperations<WaitInstance> updateOperations =
         hPersistence.createUpdateOperations(WaitInstance.class)

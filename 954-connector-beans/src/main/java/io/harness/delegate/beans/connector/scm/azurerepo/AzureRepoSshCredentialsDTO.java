@@ -10,6 +10,8 @@ package io.harness.delegate.beans.connector.scm.azurerepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.delegate.beans.connector.scm.azurerepo.outcome.AzureRepoCredentialsOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.outcome.AzureRepoSshCredentialsOutcomeDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
 
@@ -33,4 +35,8 @@ import lombok.experimental.FieldDefaults;
     description = "This contains details of the AzureRepo credentials used via SSH connections")
 public class AzureRepoSshCredentialsDTO implements AzureRepoCredentialsDTO, DecryptableEntity {
   @NotNull @SecretReference @ApiModelProperty(dataType = "string") SecretRefData sshKeyRef;
+
+  public AzureRepoCredentialsOutcomeDTO toOutcome() {
+    return AzureRepoSshCredentialsOutcomeDTO.builder().sshKeyRef(this.sshKeyRef).build();
+  }
 }

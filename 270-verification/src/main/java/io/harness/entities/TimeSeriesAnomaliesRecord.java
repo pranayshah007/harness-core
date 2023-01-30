@@ -25,6 +25,8 @@ import software.wings.service.impl.analysis.TimeSeriesMLHostSummary;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Transient;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +37,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Class representing entity for TimeSeries Analysis Record.

@@ -10,10 +10,14 @@ package io.harness.ng.core.resources.azure;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 
 import static java.lang.String.format;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.azure.resources.dtos.AzureTagsDTO;
@@ -31,11 +35,14 @@ import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureWebAppNamesDTO;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.EnvironmentValidationHelper;
+import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.pms.rbac.NGResourceType;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -72,6 +79,9 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class AzureResource {
   private final AzureResourceService azureResourceService;
   private final InfrastructureEntityService infrastructureEntityService;
+  private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
+  private final EnvironmentValidationHelper environmentValidationHelper;
+  private final AccessControlClient accessControlClient;
 
   @GET
   @Path("subscriptions")
@@ -79,8 +89,8 @@ public class AzureResource {
   public ResponseDTO<AzureSubscriptionsDTO> getAzureSubscriptions(
       @QueryParam("connectorRef") String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
       @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
@@ -126,6 +136,9 @@ public class AzureResource {
           NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
       @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
+    orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
+    environmentValidationHelper.checkThatEnvExists(accountId, orgIdentifier, projectIdentifier, envId);
+    checkForAccessOrThrow(accountId, orgIdentifier, projectIdentifier, envId, ENVIRONMENT_VIEW_PERMISSION, "view");
     Infrastructure spec = null;
     if (isEmpty(azureConnectorIdentifier) || isEmpty(subscriptionId) || isEmpty(resourceGroup)) {
       InfrastructureDefinitionConfig infrastructureDefinitionConfig =
@@ -167,7 +180,7 @@ public class AzureResource {
   }
 
   @GET
-  @Path("v2/slots")
+  @Path("v2/app-services/{webAppName}/slots")
   @ApiOperation(value = "Gets azure webApp deployment slots V2", nickname = "getAzureWebAppDeploymentSlotsV2")
   public ResponseDTO<AzureDeploymentSlotsDTO> getAppServiceDeploymentSlotNamesV2(
       @QueryParam("connectorRef") String azureConnectorIdentifier,
@@ -180,6 +193,9 @@ public class AzureResource {
       @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId,
       @NotNull @PathParam("webAppName") String webAppName) {
+    orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
+    environmentValidationHelper.checkThatEnvExists(accountId, orgIdentifier, projectIdentifier, envId);
+    checkForAccessOrThrow(accountId, orgIdentifier, projectIdentifier, envId, ENVIRONMENT_VIEW_PERMISSION, "view");
     Infrastructure spec = null;
     if (isEmpty(azureConnectorIdentifier) || isEmpty(subscriptionId) || isEmpty(resourceGroup)) {
       InfrastructureDefinitionConfig infrastructureDefinitionConfig =
@@ -210,8 +226,8 @@ public class AzureResource {
   public ResponseDTO<AzureResourceGroupsDTO>
   getResourceGroupsBySubscription(@NotNull @QueryParam("connectorRef") String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @PathParam("subscriptionId") String subscriptionId) {
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
         azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -275,8 +291,8 @@ public class AzureResource {
   @ApiOperation(value = "Gets azure k8s clusters by subscription ", nickname = "getAzureClusters")
   public ResponseDTO<AzureClustersDTO> getClusters(@NotNull @QueryParam("connectorRef") String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @PathParam("subscriptionId") String subscriptionId, @PathParam("resourceGroup") String resourceGroup) {
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
         azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -329,8 +345,8 @@ public class AzureResource {
   public ResponseDTO<AzureTagsDTO> getSubscriptionTags(
       @NotNull @QueryParam("connectorRef") String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @PathParam("subscriptionId") String subscriptionId) {
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
         azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -376,7 +392,7 @@ public class AzureResource {
       String accountId, String orgIdentifier, String projectIdentifier, String envId, String infraDefinitionId) {
     if (isEmpty(envId)) {
       throw new InvalidRequestException(
-          String.valueOf(format("%s must be provided", NGCommonEntityConstants.SUBSCRIPTION_ID)));
+          String.valueOf(format("%s must be provided", NGCommonEntityConstants.ENVIRONMENT_KEY)));
     }
 
     if (isEmpty(infraDefinitionId)) {
@@ -423,5 +439,12 @@ public class AzureResource {
         azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         azureResourceService.getLocations(connectorRef, orgIdentifier, projectIdentifier, subscriptionId));
+  }
+
+  private void checkForAccessOrThrow(String accountId, String orgIdentifier, String projectIdentifier,
+      String envIdentifier, String permission, String action) {
+    String exceptionMessage = format("unable to %s infrastructure(s)", action);
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+        Resource.of(NGResourceType.ENVIRONMENT, envIdentifier), permission, exceptionMessage);
   }
 }

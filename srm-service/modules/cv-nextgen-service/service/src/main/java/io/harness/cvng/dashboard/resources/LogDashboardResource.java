@@ -11,7 +11,7 @@ import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.analysis.beans.LiveMonitoringLogAnalysisRadarChartClusterDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.beans.params.filterParams.MonitoredServiceLogAnalysisFilter;
 import io.harness.cvng.dashboard.beans.AnalyzedRadarChartLogDataWithCountDTO;
 import io.harness.cvng.dashboard.services.api.LogDashboardService;
@@ -45,7 +45,7 @@ public class LogDashboardResource {
   @ApiOperation(
       value = "get all log cluster data for a time range and filters", nickname = "getAllRadarChartLogsClusterData")
   public RestResponse<List<LiveMonitoringLogAnalysisRadarChartClusterDTO>>
-  getLogsRadarChartClusterData(@NotNull @BeanParam ProjectParams projectParams,
+  getLogsRadarChartClusterData(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @BeanParam MonitoredServiceLogAnalysisFilter monitoredServiceLogAnalysisFilter) {
     MonitoredServiceParams monitoredServiceParams = MonitoredServiceParams.builder()
@@ -65,7 +65,7 @@ public class LogDashboardResource {
   @ExceptionMetered
   @ApiOperation(value = "get all log data for a time range and filters", nickname = "getAllRadarChartLogsData")
   public RestResponse<AnalyzedRadarChartLogDataWithCountDTO> getAllLogsRadarChartData(
-      @NotNull @BeanParam ProjectParams projectParams,
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @BeanParam MonitoredServiceLogAnalysisFilter monitoredServiceLogAnalysisFilter,
       @BeanParam PageParams pageParams) {

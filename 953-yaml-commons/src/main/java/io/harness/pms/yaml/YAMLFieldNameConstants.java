@@ -18,6 +18,7 @@ import lombok.experimental.UtilityClass;
 public class YAMLFieldNameConstants {
   public final String EXECUTION = "execution";
   public final String PIPELINE = "pipeline";
+  public final String POLICY_OUTPUT = "policyOutput";
   public final String CI_CODE_BASE = "codebase";
   public final String PROPERTIES = "properties";
   public final String CI = "ci";
@@ -98,4 +99,9 @@ public class YAMLFieldNameConstants {
   public final String REPOSITORY = "repository";
   public final String DEFAULT = "default";
   public final String REFERENCE = "reference";
+  public final String REGISTRY = "registry";
+
+  public final String VALUES_PATHS = "valuesPaths";
+  public final String PARAMS_PATHS = "paramsPaths";
+  public final String PATCHES_PATHS = "patchesPaths";
 }

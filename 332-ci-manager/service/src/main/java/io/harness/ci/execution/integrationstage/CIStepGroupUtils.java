@@ -367,7 +367,8 @@ public class CIStepGroupUtils {
     List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getEntrypoint();
 
     setCacheEnvVariables(envVariables, caching, accountId);
-    envVariables.put(PLUGIN_OVERRIDE, STRING_FALSE);
+    // We will override cache for cache intel for now. Might need to surface it as an option
+    envVariables.put(PLUGIN_OVERRIDE, STRING_TRUE);
     envVariables.put(PLUGIN_REBUILD, STRING_TRUE);
 
     PluginStepInfo step = PluginStepInfo.builder()

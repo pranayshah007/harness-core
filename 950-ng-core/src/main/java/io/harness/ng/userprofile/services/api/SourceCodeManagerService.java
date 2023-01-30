@@ -25,4 +25,6 @@ public interface SourceCodeManagerService {
   SourceCodeManagerDTO update(String sourceCodeManagerIdentifier, SourceCodeManagerDTO sourceCodeManagerDTO);
 
   boolean delete(String scmIdentifier, String accountIdentifier);
+
+  void deleteByAccount(String accountId);
 }

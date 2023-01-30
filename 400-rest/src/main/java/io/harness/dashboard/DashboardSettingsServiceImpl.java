@@ -36,6 +36,7 @@ import software.wings.service.impl.security.auth.DashboardAuthHandler;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,7 +45,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 @Singleton

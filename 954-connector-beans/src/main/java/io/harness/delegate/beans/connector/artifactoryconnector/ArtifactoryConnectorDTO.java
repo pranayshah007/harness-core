@@ -14,6 +14,9 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.artifactoryconnector.outcome.ArtifactoryAuthenticationOutcomeDTO;
+import io.harness.delegate.beans.connector.artifactoryconnector.outcome.ArtifactoryConnectorOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -55,5 +58,18 @@ public class ArtifactoryConnectorDTO extends ConnectorConfigDTO implements Deleg
       return null;
     }
     return Collections.singletonList(auth.getCredentials());
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return ArtifactoryConnectorOutcomeDTO.builder()
+        .auth(ArtifactoryAuthenticationOutcomeDTO.builder()
+                  .spec(this.auth.getCredentials())
+                  .type(this.auth.getAuthType())
+                  .build())
+        .artifactoryServerUrl(this.artifactoryServerUrl)
+        .delegateSelectors(this.delegateSelectors)
+        .executeOnDelegate(this.executeOnDelegate)
+        .build();
   }
 }

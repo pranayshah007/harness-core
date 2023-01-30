@@ -32,11 +32,11 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
+import io.harness.pms.inputset.*;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
-import io.harness.pms.inputset.OverlayInputSetErrorWrapperDTOPMS;
 import io.harness.pms.ngpipeline.inputset.api.InputSetsApiUtils;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
@@ -44,6 +44,8 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetMoveConfigRequestDTO;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetMoveConfigResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSanitiseResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponseDTOPMS;
@@ -51,7 +53,6 @@ import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateRequest
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlDiffDTO;
 import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
-import io.harness.pms.ngpipeline.inputset.exceptions.InvalidOverlayInputSetException;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
@@ -95,15 +96,10 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       String pipelineBranch, String pipelineRepoId, GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info(String.format("Retrieving input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-    Optional<InputSetEntity> optionalInputSetEntity;
-    try {
-      optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-          inputSetIdentifier, false, pipelineBranch, pipelineRepoId, false);
-    } catch (InvalidInputSetException e) {
-      return ResponseDTO.newResponse(PMSInputSetElementMapper.toInputSetResponseDTOPMSWithErrors(
-          e.getInputSetEntity(), (InputSetErrorWrapperDTOPMS) e.getMetadata()));
-    }
-    if (!optionalInputSetEntity.isPresent()) {
+    Optional<InputSetEntity> optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, pipelineBranch, pipelineRepoId, false);
+
+    if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
     }
@@ -121,15 +117,10 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     log.info(String.format(
         "Retrieving overlay input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-    Optional<InputSetEntity> optionalInputSetEntity;
-    try {
-      optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-          inputSetIdentifier, false, pipelineBranch, pipelineRepoId, false);
-    } catch (InvalidOverlayInputSetException e) {
-      return ResponseDTO.newResponse(PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(
-          e.getInputSetEntity(), true, ((OverlayInputSetErrorWrapperDTOPMS) e.getMetadata()).getInvalidReferences()));
-    }
-    if (!optionalInputSetEntity.isPresent()) {
+    Optional<InputSetEntity> optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, pipelineBranch, pipelineRepoId, false);
+
+    if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
     }
@@ -145,15 +136,13 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, String pipelineBranch, String pipelineRepoID,
       GitEntityCreateInfoDTO gitEntityCreateInfo, @NotNull String yaml) {
-    final String pipelineYaml = inputSetsApiUtils.getPipelineYaml(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, pipelineBranch, pipelineRepoID, pipelineService, gitSyncSdkService);
     String inputSetVersion = inputSetsApiUtils.inputSetVersion(accountId, yaml);
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntityFromVersion(accountId, orgIdentifier,
-        projectIdentifier, pipelineIdentifier, pipelineYaml, yaml, inputSetVersion, InputSetEntityType.INPUT_SET);
+        projectIdentifier, pipelineIdentifier, yaml, inputSetVersion, InputSetEntityType.INPUT_SET);
     log.info(String.format("Create input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         entity.getIdentifier(), pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
 
-    InputSetEntity createdEntity = pmsInputSetService.create(entity, pipelineBranch, pipelineRepoID, false);
+    InputSetEntity createdEntity = pmsInputSetService.create(entity, false);
     return ResponseDTO.newResponse(
         createdEntity.getVersion().toString(), PMSInputSetElementMapper.toInputSetResponseDTOPMS(createdEntity));
   }
@@ -170,7 +159,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
             entity.getIdentifier(), pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
 
     // overlay input set validation does not require pipeline branch and repo, hence sending null here
-    InputSetEntity createdEntity = pmsInputSetService.create(entity, null, null, false);
+    InputSetEntity createdEntity = pmsInputSetService.create(entity, false);
     return ResponseDTO.newResponse(
         createdEntity.getVersion().toString(), PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(createdEntity));
   }
@@ -182,14 +171,11 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       String pipelineBranch, String pipelineRepoID, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml) {
     log.info(String.format("Updating input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-    final String pipelineYaml = inputSetsApiUtils.getPipelineYaml(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, pipelineBranch, pipelineRepoID, pipelineService, gitSyncSdkService);
     String inputSetVersion = inputSetsApiUtils.inputSetVersion(accountId, yaml);
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntityFromVersion(accountId, orgIdentifier,
-        projectIdentifier, pipelineIdentifier, pipelineYaml, yaml, inputSetVersion, InputSetEntityType.INPUT_SET);
+        projectIdentifier, pipelineIdentifier, yaml, inputSetVersion, InputSetEntityType.INPUT_SET);
     InputSetEntity entityWithVersion = entity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
-    InputSetEntity updatedEntity =
-        pmsInputSetService.update(ChangeType.MODIFY, pipelineBranch, pipelineRepoID, entityWithVersion, false);
+    InputSetEntity updatedEntity = pmsInputSetService.update(ChangeType.MODIFY, entityWithVersion, false);
     return ResponseDTO.newResponse(
         updatedEntity.getVersion().toString(), PMSInputSetElementMapper.toInputSetResponseDTOPMS(updatedEntity));
   }
@@ -207,7 +193,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     InputSetEntity entityWithVersion = entity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
 
     // overlay input set validation does not require pipeline branch and repo, hence sending null here
-    InputSetEntity updatedEntity = pmsInputSetService.update(ChangeType.MODIFY, null, null, entityWithVersion, false);
+    InputSetEntity updatedEntity = pmsInputSetService.update(ChangeType.MODIFY, entityWithVersion, false);
     return ResponseDTO.newResponse(
         updatedEntity.getVersion().toString(), PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(updatedEntity));
   }
@@ -311,8 +297,10 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, String inputSetIdentifier, String pipelineBranch,
       String pipelineRepoID, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String invalidInputSetYaml) {
-    String pipelineYaml = validateAndMergeHelper.getPipelineYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false);
+    String pipelineYaml = validateAndMergeHelper
+                              .getPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+                                  pipelineBranch, pipelineRepoID, false)
+                              .getYaml();
     String newInputSetYaml = InputSetSanitizer.sanitizeInputSetAndUpdateInputSetYAML(pipelineYaml, invalidInputSetYaml);
     if (EmptyPredicate.isEmpty(newInputSetYaml)) {
       return ResponseDTO.newResponse(InputSetSanitiseResponseDTO.builder().shouldDeleteInputSet(true).build());
@@ -324,8 +312,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
 
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, newInputSetYaml);
-    InputSetEntity updatedEntity =
-        pmsInputSetService.update(ChangeType.MODIFY, pipelineBranch, pipelineRepoID, entity, false);
+    InputSetEntity updatedEntity = pmsInputSetService.update(ChangeType.MODIFY, entity, false);
     return ResponseDTO.newResponse(
         InputSetSanitiseResponseDTO.builder()
             .shouldDeleteInputSet(false)
@@ -353,5 +340,29 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
             inputSetIdentifier, inputSetImportRequestDTO, gitImportInfoDTO.getIsForceImport());
     return ResponseDTO.newResponse(
         InputSetImportResponseDTO.builder().identifier(inputSetEntity.getIdentifier()).build());
+  }
+
+  @Override
+  public ResponseDTO<InputSetMoveConfigResponseDTO> moveConfig(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String inputSetIdentifier, InputSetMoveConfigRequestDTO inputSetMoveConfigRequestDTO) {
+    if (!inputSetIdentifier.equals(inputSetMoveConfigRequestDTO.getInputSetIdentifier())) {
+      throw new InvalidRequestException("Identifiers given in path param and request body don't match.");
+    }
+    InputSetEntity movedInputSet =
+        pmsInputSetService.moveConfig(accountIdentifier, orgIdentifier, projectIdentifier, inputSetIdentifier,
+            InputSetMoveConfigOperationDTO.builder()
+                .connectorRef(inputSetMoveConfigRequestDTO.getConnectorRef())
+                .repoName(inputSetMoveConfigRequestDTO.getRepoName())
+                .branch(inputSetMoveConfigRequestDTO.getBranch())
+                .filePath(inputSetMoveConfigRequestDTO.getFilePath())
+                .baseBranch(inputSetMoveConfigRequestDTO.getBaseBranch())
+                .commitMessage(inputSetMoveConfigRequestDTO.getCommitMsg())
+                .isNewBranch(inputSetMoveConfigRequestDTO.getIsNewBranch())
+                .pipelineIdentifier(inputSetMoveConfigRequestDTO.getPipelineIdentifier())
+                .moveConfigOperationType(io.harness.gitaware.helper.MoveConfigOperationType.getMoveConfigType(
+                    inputSetMoveConfigRequestDTO.getMoveConfigOperationType()))
+                .build());
+    return ResponseDTO.newResponse(
+        InputSetMoveConfigResponseDTO.builder().identifier(movedInputSet.getIdentifier()).build());
   }
 }

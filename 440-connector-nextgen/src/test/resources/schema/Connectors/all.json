@@ -2018,7 +2018,8 @@
             "GcpSecretManager",
             "AzureArtifacts",
             "Tas",
-            "Spot"
+            "Spot",
+            "TerraformCloud"
           ]
         }
       },
@@ -2724,6 +2725,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/TasConnector"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TerraformCloud"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TerraformCloudConnector"
               }
             }
           }
@@ -5344,6 +5361,41 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ServiceNowADFSDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ServiceNowAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "adfsUrl",
+            "certificateRef",
+            "clientIdRef",
+            "privateKeyRef",
+            "resourceIdRef"
+          ],
+          "properties": {
+            "adfsUrl": {
+              "type": "string"
+            },
+            "certificateRef": {
+              "type": "string"
+            },
+            "clientIdRef": {
+              "type": "string"
+            },
+            "privateKeyRef": {
+              "type": "string"
+            },
+            "resourceIdRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ServiceNowAuthCredentialsDTO": {
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5358,12 +5410,29 @@
         "type": {
           "type": "string",
           "enum": [
-            "UsernamePassword"
+            "UsernamePassword",
+            "AdfsClientCredentialsWithCertificate"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AdfsClientCredentialsWithCertificate"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ServiceNowADFSDTO"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -5756,6 +5825,96 @@
           "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudConnector": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "credential",
+            "terraformCloudUrl"
+          ],
+          "properties": {
+            "credential": {
+              "$ref": "#/definitions/TerraformCloudCredential"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
+            },
+            "terraformCloudUrl": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudCredential": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "ApiToken"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ApiToken"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TerraformCloudTokenCredentials"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "TerraformCloudCredentialSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudTokenCredentials": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerraformCloudCredentialSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "apiToken"
+          ],
+          "properties": {
+            "apiToken": {
+              "type": "string",
+              "readOnly": true
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "VaultConnectorDTO": {

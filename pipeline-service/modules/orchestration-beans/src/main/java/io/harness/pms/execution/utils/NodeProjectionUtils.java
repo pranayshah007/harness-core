@@ -55,9 +55,10 @@ public class NodeProjectionUtils {
       Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.resolvedParams,
           NodeExecutionKeys.endTs, NodeExecutionKeys.oldRetry, NodeExecutionKeys.timeoutInstanceIds);
 
-  public static final Set<String> fieldsForResume = Sets.newHashSet(NodeExecutionKeys.status,
-      NodeExecutionKeys.ambiance, NodeExecutionKeys.executableResponses, NodeExecutionKeys.mode,
-      NodeExecutionKeys.resolvedParams, NodeExecutionKeys.module, NodeExecutionKeys.stepType);
+  public static final Set<String> fieldsForResume =
+      Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.ambiance, NodeExecutionKeys.executableResponses,
+          NodeExecutionKeys.mode, NodeExecutionKeys.resolvedParams, NodeExecutionKeys.module,
+          NodeExecutionKeys.stepType, NodeExecutionKeys.originalNodeExecutionId);
 
   public static final Set<String> fieldsForInterruptEventPublish = Sets.newHashSet(NodeExecutionKeys.status,
       NodeExecutionKeys.ambiance, NodeExecutionKeys.executableResponses, NodeExecutionKeys.mode,
@@ -85,4 +86,8 @@ public class NodeProjectionUtils {
   public static final Set<String> fieldsForIdentityStrategyStep = Sets.newHashSet(NodeExecutionKeys.identifier,
       NodeExecutionKeys.name, NodeExecutionKeys.nodeId, NodeExecutionKeys.status, NodeExecutionKeys.executableResponses,
       NodeExecutionKeys.ambiance, NodeExecutionKeys.oldRetry, NodeExecutionKeys.planNode, NodeExecutionKeys.parentId);
+
+  public static final Set<String> fieldsForNodeExecutionDelete =
+      Sets.newHashSet(NodeExecutionKeys.timeoutInstanceIds, NodeExecutionKeys.adviserTimeoutInstanceIds,
+          NodeExecutionKeys.nodeId, NodeExecutionKeys.notifyId, NodeExecutionKeys.stepType);
 }

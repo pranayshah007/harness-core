@@ -26,13 +26,13 @@ import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @OwnedBy(CDC)
 @Data

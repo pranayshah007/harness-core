@@ -295,7 +295,7 @@ components:
       description: Resource Group response body
       x-examples:
         example-resource-group:
-          slug: example_resource_group
+          identifier: example_resource_group
           name: Example_Resource Group
           color: '#0063F7'
           tags:
@@ -321,7 +321,7 @@ components:
           created: 1234567890
           updated: 1234567890
       properties:
-        slug:
+        identifier:
           type: string
           description: Resource Group Identifier
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
@@ -381,7 +381,7 @@ components:
           description: Last modification timestamp for Resource Group.
           format: int64
       required:
-        - slug
+        - identifier
         - name
     CreateResourceGroupRequest:
       title: Create Resource Group Request
@@ -391,7 +391,7 @@ components:
       description: Resource Group request body
       x-examples:
         resource-group-request:
-          slug: example_resource_group
+          identifier: example_resource_group
           name: Example_Resource Group
           color: '#0063F7'
           tags:
@@ -412,7 +412,7 @@ components:
                 - example_resource_attribute
           include_all_resources: false
       properties:
-        slug:
+        identifier:
           type: string
           minLength: 1
           maxLength: 64
@@ -451,7 +451,7 @@ components:
           type: boolean
           description: Boolean value for including all resources in Resource Group.
       required:
-        - slug
+        - identifier
         - name
     ResourceGroupScope:
       title: Resource Group Scope
@@ -537,12 +537,12 @@ components:
       x-examples:
         example-resource-selector-filter:
           resource_type: resource
-          resource_slug: example_resource
+          resource_identifier: example_resource
       properties:
         resource_type:
           type: string
           description: Filter by Resource type
-        resource_slug:
+        resource_identifier:
           type: string
           description: Filter by Resource identifier
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
@@ -566,7 +566,7 @@ components:
             - example_resource_group
           resource_selector_filter:
             - resource_type: RESOURCE
-              resource_slug: example_resource
+              resource_identifier: example_resource
           managed_filter: NO_FILTER
       properties:
         account:
@@ -670,7 +670,7 @@ components:
       required: false
       schema:
         type: string
-      description: 'Slug field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+      description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
     Sort:
       name: sort
       in: query
@@ -678,7 +678,7 @@ components:
       schema:
         type: string
         enum:
-          - slug
+          - identifier
           - name
           - created
           - updated
@@ -706,7 +706,7 @@ components:
           examples:
             resource-group-list-response:
               value:
-                - slug: example_resource_group
+                - identifier: example_resource_group
                   name: Example Resource Group
                   color: '#0063F7'
                   tags:
@@ -740,7 +740,7 @@ components:
           examples:
             resource-group-list-response:
               value: |
-                - slug: example_resource_group
+                - identifier: example_resource_group
                   name: Example Resource Group
                   color: '#0063F7'
                   tags:
@@ -782,7 +782,7 @@ components:
           examples:
             resource-group-response:
               value:
-                slug: example_resource_group
+                identifier: example_resource_group
                 name: Example Resource Group
                 color: '#0063F7'
                 tags:
@@ -813,7 +813,7 @@ components:
           examples:
             resource-group-response:
               value: |
-                slug: example_resource_group
+                identifier: example_resource_group
                 name: Example Resource Group
                 color: '#0063F7'
                 tags:
@@ -847,7 +847,7 @@ components:
           examples:
             resource-group-request:
               value:
-                slug: example_resource_group
+                identifier: example_resource_group
                 name: Example Resource Group
                 color: '#0063F7'
                 tags:
@@ -873,7 +873,7 @@ components:
           examples:
             resource-group-request:
               value: |
-                slug: example_resource_group
+                identifier: example_resource_group
                 name: Example Resource Group
                 color: '#0063F7'
                 tags:
@@ -911,7 +911,7 @@ components:
                   - example_resource_group
                 resource_selector_filter:
                   - resource_type: RESOURCE
-                    resource_slug: example_resource
+                    resource_identifier: example_resource
                 managed_filter: NO_FILTER
         application/yaml:
           schema:
@@ -927,7 +927,7 @@ components:
                   - example_resource_group
                 resource_selector_filter:
                   - resource_type: RESOURCE
-                    resource_slug: example_resource
+                    resource_identifier: example_resource
                 managed_filter: NO_FILTER
       description: Filter Resource Group request body
       required: true

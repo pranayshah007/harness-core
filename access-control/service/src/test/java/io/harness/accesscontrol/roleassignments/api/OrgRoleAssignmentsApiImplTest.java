@@ -165,13 +165,13 @@ public class OrgRoleAssignmentsApiImplTest extends AccessControlTestBase {
       Principal.TypeEnum principalType) {
     io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request =
         new io.harness.spec.server.accesscontrol.v1.model.RoleAssignment();
-    request.setSlug(randomAlphabetic(10));
+    request.setIdentifier(randomAlphabetic(10));
     request.setRole(randomAlphabetic(10));
     request.setResourceGroup(randomAlphabetic(10));
     request.setManaged(true);
     request.setDisabled(true);
     Principal principal = new Principal();
-    principal.setSlug(randomAlphabetic(10));
+    principal.setIdentifier(randomAlphabetic(10));
     principal.setScopeLevel("ACCOUNT");
     principal.setType(principalType);
     request.setPrincipal(principal);
@@ -363,7 +363,7 @@ public class OrgRoleAssignmentsApiImplTest extends AccessControlTestBase {
 
     try {
       orgRoleAssignmentsApi.getOrgScopedRoleAssignments(
-          org, account, pageRequest.getPageIndex(), pageRequest.getPageSize(), "slug", "DESC");
+          org, account, pageRequest.getPageIndex(), pageRequest.getPageSize(), "identifier", "DESC");
       fail();
     } catch (UnauthorizedException unauthorizedException) {
       verify(accessControlClient, times(3)).hasAccess(any(ResourceScope.class), any(), any());
@@ -391,7 +391,7 @@ public class OrgRoleAssignmentsApiImplTest extends AccessControlTestBase {
     verify(roleAssignmentService, times(1)).get(any(), any());
     RoleAssignmentResponse entity = (RoleAssignmentResponse) accountScopedRoleAssignments.getEntity();
     assertNotNull(entity.getRoleAssignment());
-    assertEquals(entity.getRoleAssignment().getSlug(), roleAssignment.getIdentifier());
+    assertEquals(entity.getRoleAssignment().getIdentifier(), roleAssignment.getIdentifier());
   }
 
   @Test
@@ -418,7 +418,7 @@ public class OrgRoleAssignmentsApiImplTest extends AccessControlTestBase {
             .build();
     when(transactionTemplate.execute(any())).thenReturn(roleAssignmentResponseDTO);
 
-    orgRoleAssignmentsApi.deleteOrgScopedRoleAssignment(request.getSlug(), org, account);
+    orgRoleAssignmentsApi.deleteOrgScopedRoleAssignment(request.getIdentifier(), org, account);
 
     verify(roleAssignmentService, times(1)).get(any(), any());
     assertCheckUpdatePermission(roleAssignmentDTO);
@@ -438,7 +438,7 @@ public class OrgRoleAssignmentsApiImplTest extends AccessControlTestBase {
     when(roleAssignmentService.get(roleAssignment.getIdentifier(), roleAssignment.getScopeIdentifier()))
         .thenReturn(Optional.empty());
     try {
-      orgRoleAssignmentsApi.deleteOrgScopedRoleAssignment(request.getSlug(), org, account);
+      orgRoleAssignmentsApi.deleteOrgScopedRoleAssignment(request.getIdentifier(), org, account);
       fail();
     } catch (NotFoundException notFoundException) {
       verify(roleAssignmentService, times(1)).get(any(), any());
@@ -458,7 +458,7 @@ public class OrgRoleAssignmentsApiImplTest extends AccessControlTestBase {
         .thenReturn(Optional.of(roleAssignment));
     preCheckUpdatePermission(roleAssignmentDTO);
     try {
-      orgRoleAssignmentsApi.deleteOrgScopedRoleAssignment(request.getSlug(), org, account);
+      orgRoleAssignmentsApi.deleteOrgScopedRoleAssignment(request.getIdentifier(), org, account);
       fail();
     } catch (InvalidRequestException invalidRequestException) {
       verify(roleAssignmentService, times(1)).get(any(), any());
@@ -482,7 +482,7 @@ public class OrgRoleAssignmentsApiImplTest extends AccessControlTestBase {
     ValidationResult invalidResult = ValidationResult.builder().valid(false).errorMessage("").build();
     when(actionValidator.canDelete(roleAssignment)).thenReturn(invalidResult);
     try {
-      orgRoleAssignmentsApi.deleteOrgScopedRoleAssignment(request.getSlug(), org, account);
+      orgRoleAssignmentsApi.deleteOrgScopedRoleAssignment(request.getIdentifier(), org, account);
       fail();
     } catch (InvalidRequestException invalidRequestException) {
       verify(roleAssignmentService, times(1)).get(any(), any());
