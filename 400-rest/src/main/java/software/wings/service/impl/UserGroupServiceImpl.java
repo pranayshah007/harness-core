@@ -1105,13 +1105,16 @@ public class UserGroupServiceImpl implements UserGroupService {
   public void removeAppIdsFromAppPermissions(UserGroup userGroup, Set<String> appIds) {
     boolean isModified = false;
     boolean hasEmptyPermission = false;
+    log.info("[USERGROUP-DEBUG]: appIds to be deleted {} from usergroup {} accountId {}", appIds, userGroup.getUuid(),
+        userGroup.getAccountId());
 
     if (isEmpty(appIds)) {
       return;
     }
 
     Set<AppPermission> groupAppPermissions = userGroup.getAppPermissions();
-
+    log.info("[USERGROUP-DEBUG]: group app permissions {} for usergroup {} accountId {}", groupAppPermissions,
+        userGroup.getUuid(), userGroup.getAccountId());
     if (isEmpty(groupAppPermissions)) {
       return;
     }
@@ -1124,6 +1127,9 @@ public class UserGroupServiceImpl implements UserGroupService {
       AppFilter filter = permission.getAppFilter();
       Set<String> ids = filter.getIds();
 
+      log.info("[USERGROUP-DEBUG]: permission filter ids {} for usergroup {} accountId {}", ids, userGroup.getUuid(),
+          userGroup.getAccountId());
+
       if (ids != null && ids.removeIf(appIds::contains)) {
         isModified = true;
       }
@@ -1132,11 +1138,15 @@ public class UserGroupServiceImpl implements UserGroupService {
         hasEmptyPermission = true;
       }
     }
+    log.info("[USERGROUP-DEBUG]: hasEmptyPermission {} for usergroup {} accountId {}", hasEmptyPermission,
+        userGroup.getUuid(), userGroup.getAccountId());
 
     if (hasEmptyPermission) {
       removeEmptyAppPermissions(userGroup);
       isModified = true;
     }
+    log.info("[USERGROUP-DEBUG]: isModified {} for usergroup {} accountId {}", isModified, userGroup.getUuid(),
+        userGroup.getAccountId());
 
     if (isModified) {
       log.info("Pruning app ids from user group: " + userGroup.getUuid());
@@ -1349,6 +1359,8 @@ public class UserGroupServiceImpl implements UserGroupService {
   public void pruneByApplication(String appId) {
     Set<String> deletedIds = new HashSet<>();
     deletedIds.add(appId);
+    log.info("[USERGROUP-DEBUG]: deleted appId {}", appId);
+
     String accountId = appService.getAccountIdByAppId(appId);
     try (HIterator<UserGroup> userGroupIterator = new HIterator<>(wingsPersistence.createQuery(UserGroup.class)
                                                                       .filter(UserGroupKeys.accountId, accountId)
