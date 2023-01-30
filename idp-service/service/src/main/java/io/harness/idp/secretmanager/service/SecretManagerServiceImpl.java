@@ -2,7 +2,7 @@ package io.harness.idp.secretmanager.service;
 
 import com.google.inject.Inject;
 import io.harness.idp.environmentvariable.service.EnvironmentVariableService;
-import io.harness.idp.environmentvariable.beans.EnvironmentVariableDTO;
+import io.harness.idp.environmentvariable.beans.dto.EnvironmentVariableDTO;
 
 import javax.ws.rs.NotFoundException;
 import java.util.Optional;

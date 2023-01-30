@@ -1,4 +1,4 @@
-package io.harness.beans.entity;
+package io.harness.idp.environmentvariable.beans.entity;
 
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;

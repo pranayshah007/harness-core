@@ -1,6 +1,6 @@
 package io.harness.idp.environmentvariable.service;
 
-import io.harness.idp.environmentvariable.beans.EnvironmentVariableDTO;
+import io.harness.idp.environmentvariable.beans.dto.EnvironmentVariableDTO;
 
 import java.util.Optional;
 

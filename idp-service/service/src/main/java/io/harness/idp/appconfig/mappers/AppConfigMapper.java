@@ -1,9 +1,9 @@
-package io.harness.mappers;
+package io.harness.idp.appconfig.mappers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.entity.AppConfig;
-import io.harness.idp.appconfig.beans.AppConfigDTO;
+import io.harness.idp.appconfig.beans.entity.AppConfig;
+import io.harness.idp.appconfig.beans.dto.AppConfigDTO;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.IDP)
