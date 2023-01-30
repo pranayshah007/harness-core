@@ -23,11 +23,16 @@ import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
 import io.harness.CategoryTest;
+import io.harness.audit.api.streaming.StreamingService;
+import io.harness.audit.mapper.streaming.StreamingDestinationMapper;
+import io.harness.audit.remote.v1.api.streaming.StreamingDestinationsApiUtils;
 import io.harness.audit.repositories.streaming.StreamingBatchRepository;
 import io.harness.audit.repositories.streaming.StreamingDestinationRepository;
 import io.harness.auditevent.streaming.beans.BatchStatus;
 import io.harness.auditevent.streaming.dto.StreamingBatchDTO;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.ConnectorResourceClient;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.spec.server.audit.v1.model.FailureInfoCard;
 import io.harness.spec.server.audit.v1.model.LastStreamedCard;
@@ -40,27 +45,36 @@ import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({NGRestUtils.class})
 public class AggregateStreamingServiceImplTest extends CategoryTest {
   public static final String ACCOUNT_IDENTIFIER = randomAlphabetic(10);
   @Mock private StreamingDestinationRepository streamingDestinationRepository;
   @Mock private StreamingBatchRepository streamingBatchRepository;
   private AggregateStreamingServiceImpl aggregateStreamingService;
-
+  @Mock private StreamingService streamingService;
+  @Mock private ConnectorResourceClient connectorResourceClient;
+  private StreamingDestinationMapper streamingDestinationMapper;
   @Captor private ArgumentCaptor<Criteria> criteriaArgumentCaptor;
   @Captor private ArgumentCaptor<Sort> sortArgumentCaptor;
+  @Mock private StreamingDestinationsApiUtils streamingDestinationsApiUtils;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
     this.aggregateStreamingService =
-        new AggregateStreamingServiceImpl(streamingDestinationRepository, streamingBatchRepository);
+        new AggregateStreamingServiceImpl(streamingDestinationRepository, streamingBatchRepository, streamingService,
+            connectorResourceClient, streamingDestinationMapper, streamingDestinationsApiUtils);
   }
 
   @Test
