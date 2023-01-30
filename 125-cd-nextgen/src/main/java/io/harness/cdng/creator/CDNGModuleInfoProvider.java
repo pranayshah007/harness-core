@@ -40,10 +40,10 @@ import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary;
 import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary.ArtifactsSummary;
 import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary.ArtifactsSummary.ArtifactsSummaryBuilder;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
-import io.harness.cdng.service.steps.ServiceConfigStep;
-import io.harness.cdng.service.steps.ServiceSectionStep;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
-import io.harness.cdng.service.steps.ServiceStepV3;
+import io.harness.cdng.service.steps.constants.ServiceConfigStepConstants;
+import io.harness.cdng.service.steps.constants.ServiceSectionStepConstants;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
@@ -137,9 +137,9 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
   }
 
   private boolean isServiceNodeAndCompleted(StepType stepType, Status status) {
-    return (Objects.equals(stepType, ServiceConfigStep.STEP_TYPE)
-               || Objects.equals(stepType, ServiceSectionStep.STEP_TYPE)
-               || Objects.equals(stepType, ServiceStepV3.STEP_TYPE))
+    return (Objects.equals(stepType, ServiceConfigStepConstants.STEP_TYPE)
+               || Objects.equals(stepType, ServiceSectionStepConstants.STEP_TYPE)
+               || Objects.equals(stepType, ServiceStepV3Constants.STEP_TYPE))
         && StatusUtils.isFinalStatus(status);
   }
 

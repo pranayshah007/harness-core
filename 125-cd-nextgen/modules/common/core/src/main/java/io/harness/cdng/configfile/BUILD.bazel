@@ -10,7 +10,11 @@ java_library(
     name = "module",
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
-    deps = ["//127-cd-nextgen-entities:module"],
+    deps = [
+        "//127-cd-nextgen-entities:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+    ],
 )
 
 run_analysis_per_module()

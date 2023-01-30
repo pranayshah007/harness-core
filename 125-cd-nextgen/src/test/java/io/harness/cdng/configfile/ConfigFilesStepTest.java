@@ -22,7 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesStep;
-import io.harness.cdng.service.steps.ServiceStepsHelper;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;

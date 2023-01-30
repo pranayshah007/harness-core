@@ -77,6 +77,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.service.steps.ServiceStepV3;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
@@ -372,7 +373,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
                  .build())
         .when(sweepingOutputService)
         .resolveOptional(
-            eq(ambiance), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_APP_SETTINGS_SWEEPING_OUTPUT)));
+            eq(ambiance), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_APP_SETTINGS_SWEEPING_OUTPUT)));
 
     doReturn(
         OptionalSweepingOutput.builder()
@@ -381,7 +382,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
             .build())
         .when(sweepingOutputService)
         .resolveOptional(eq(ambiance),
-            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT)));
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT)));
 
     final Map<String, StoreConfig> webAppConfigs = stepHelper.fetchWebAppConfig(ambiance);
 

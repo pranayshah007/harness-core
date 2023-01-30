@@ -5,8 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.cdng.service.steps;
+package io.harness.cdng.service.steps.helpers;
 
+import static io.harness.cdng.service.steps.constants.ServiceStepV3Constants.STEP_TYPE;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -15,9 +16,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.service.beans.ServiceDefinition;
-import io.harness.cdng.service.steps.ServiceConfigStep;
-import io.harness.cdng.service.steps.ServiceSectionStep;
-import io.harness.cdng.service.steps.ServiceStepV3;
+import io.harness.cdng.service.steps.constants.ServiceConfigStepConstants;
+import io.harness.cdng.service.steps.constants.ServiceSectionStepConstants;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.UnsupportedOperationException;
@@ -144,9 +145,9 @@ public class ServiceStepsHelper {
     List<Level> levels = ambiance.getLevelsList();
     for (int i = levels.size() - 1; i >= 0; i--) {
       Level level = levels.get(i);
-      if (ServiceConfigStep.STEP_TYPE.equals(level.getStepType())
-          || ServiceSectionStep.STEP_TYPE.equals(level.getStepType())
-          || ServiceStepV3.STEP_TYPE.equals(level.getStepType())) {
+      if (ServiceConfigStepConstants.STEP_TYPE.equals(level.getStepType())
+          || ServiceSectionStepConstants.STEP_TYPE.equals(level.getStepType())
+          || ServiceStepV3Constants.STEP_TYPE.equals(level.getStepType())) {
         return AmbianceUtils.clone(ambiance, i + 1);
       }
     }

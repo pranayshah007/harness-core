@@ -56,8 +56,8 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.service.steps.ServiceSweepingOutput;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.ssh.SshEntityHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.TasEntityHelper;
@@ -830,7 +830,7 @@ public class CDStepHelper {
   @Nonnull
   public Optional<NGServiceV2InfoConfig> fetchServiceConfigFromSweepingOutput(Ambiance ambiance) {
     final OptionalSweepingOutput resolveOptional = sweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT));
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT));
     NGServiceConfig ngServiceConfig = null;
     if (resolveOptional.isFound()) {
       try {
@@ -852,7 +852,7 @@ public class CDStepHelper {
   @Nonnull
   public String fetchServiceYamlFromSweepingOutput(Ambiance ambiance) {
     final OptionalSweepingOutput resolveOptional = sweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT));
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT));
     if (!resolveOptional.isFound()) {
       throw new InvalidRequestException(
           "Cannot find service. Make sure this is running in a CD stage with service configured");

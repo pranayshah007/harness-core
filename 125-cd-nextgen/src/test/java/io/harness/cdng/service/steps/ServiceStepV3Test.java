@@ -37,6 +37,8 @@ import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
@@ -539,7 +541,8 @@ public class ServiceStepV3Test extends CategoryTest {
     Environment environment = testEnvEntity();
     doReturn(ServiceSweepingOutput.builder().finalServiceYaml(service.getYaml()).build())
         .when(sweepingOutputService)
-        .resolve(any(Ambiance.class), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT)));
+        .resolve(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT)));
 
     StepResponse stepResponse = step.handleChildrenResponse(buildAmbiance(),
         ServiceStepV3Parameters.builder()
@@ -564,7 +567,8 @@ public class ServiceStepV3Test extends CategoryTest {
     Environment environment = testEnvEntity();
     doReturn(ServiceSweepingOutput.builder().finalServiceYaml(service.getYaml()).build())
         .when(sweepingOutputService)
-        .resolve(any(Ambiance.class), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT)));
+        .resolve(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT)));
 
     // outputs from children steps
     doReturn(OptionalSweepingOutput.builder().found(true).output(new ManifestsOutcome()).build())
@@ -609,7 +613,8 @@ public class ServiceStepV3Test extends CategoryTest {
     Environment environment = testEnvEntity();
     doReturn(ServiceSweepingOutput.builder().finalServiceYaml(service.getYaml()).build())
         .when(sweepingOutputService)
-        .resolve(any(Ambiance.class), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT)));
+        .resolve(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT)));
 
     StepResponse stepResponse = step.handleChildrenResponse(buildAmbiance(),
         ServiceStepV3Parameters.builder()
@@ -871,7 +876,7 @@ public class ServiceStepV3Test extends CategoryTest {
     levels.add(Level.newBuilder()
                    .setRuntimeId(UUIDGenerator.generateUuid())
                    .setSetupId(UUIDGenerator.generateUuid())
-                   .setStepType(ServiceStepV3.STEP_TYPE)
+                   .setStepType(ServiceStepV3Constants.STEP_TYPE)
                    .build());
     return Ambiance.newBuilder()
         .setPlanExecutionId(UUIDGenerator.generateUuid())

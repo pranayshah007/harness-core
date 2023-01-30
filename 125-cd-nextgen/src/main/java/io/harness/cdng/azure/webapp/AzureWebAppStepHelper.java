@@ -70,6 +70,7 @@ import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.service.steps.ServiceStepV3;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
@@ -242,14 +243,14 @@ public class AzureWebAppStepHelper {
 
   private NgConnectionStringsSweepingOutput fetchNgConnectionStringsMetadataFromSweepingOutput(Ambiance ambiance) {
     final OptionalSweepingOutput resolveOptional = sweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT));
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT));
     return resolveOptional.isFound() ? (NgConnectionStringsSweepingOutput) resolveOptional.getOutput()
                                      : NgConnectionStringsSweepingOutput.builder().build();
   }
 
   private NgAppSettingsSweepingOutput fetchNgAppSettingsMetadataFromSweepingOutput(Ambiance ambiance) {
     final OptionalSweepingOutput resolveOptional = sweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_APP_SETTINGS_SWEEPING_OUTPUT));
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_APP_SETTINGS_SWEEPING_OUTPUT));
     return resolveOptional.isFound() ? (NgAppSettingsSweepingOutput) resolveOptional.getOutput()
                                      : NgAppSettingsSweepingOutput.builder().build();
   }
