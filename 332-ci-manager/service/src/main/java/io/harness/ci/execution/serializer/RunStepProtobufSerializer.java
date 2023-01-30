@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.yaml.extended.CIShellType;
@@ -69,7 +70,8 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
     String command = null;
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()
-        && INFORMATICA_ACCOUNT_IDS.contains(ngAccess.getAccountIdentifier())) {
+        && (INFORMATICA_ACCOUNT_IDS.contains(ngAccess.getAccountIdentifier())
+            || featureFlagService.isEnabled(FeatureName.CI_REMOTE_DEBUG, accountId))) {
       command = SerializerUtils.getK8sDebugCommand(ciExecutionServiceConfig.getRemoteDebugTimeout())
           + System.lineSeparator()
           + RunTimeInputHandler.resolveStringParameter("Command", "Run", identifier, runStepInfo.getCommand(), true);

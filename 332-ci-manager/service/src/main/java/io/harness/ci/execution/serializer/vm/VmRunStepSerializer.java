@@ -10,6 +10,7 @@ package io.harness.ci.serializer.vm;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
@@ -17,12 +18,14 @@ import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.serializer.SerializerUtils;
 import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep.VmRunStepBuilder;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -44,6 +47,7 @@ public class VmRunStepSerializer {
   @Inject CIStepInfoUtils ciStepInfoUtils;
   @Inject ConnectorUtils connectorUtils;
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
+  @Inject private CIFeatureFlagService featureFlagService;
   private static List<String> INFORMATICA_ACCOUNT_IDS =
       new ArrayList<>(List.of("0imfjG07TR2hVBcS5AZpCQ", "z40YS0M5RCCOybahmyEVgQ"));
   public VmRunStep serialize(RunStepInfo runStepInfo, Ambiance ambiance, String identifier,
@@ -77,7 +81,8 @@ public class VmRunStepSerializer {
     String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runStepInfo.getShell());
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()
-        && INFORMATICA_ACCOUNT_IDS.contains(ngAccess.getAccountIdentifier())) {
+        && (INFORMATICA_ACCOUNT_IDS.contains(ngAccess.getAccountIdentifier())
+            || featureFlagService.isEnabled(FeatureName.CI_REMOTE_DEBUG, ngAccess.getAccountIdentifier()))) {
       command = earlyExitCommand + System.lineSeparator()
           + SerializerUtils.getVmDebugCommand(ciExecutionServiceConfig.getRemoteDebugTimeout()) + System.lineSeparator()
           + command;

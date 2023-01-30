@@ -39,6 +39,7 @@ import io.harness.pms.plan.execution.StagesExecutionHelper;
 import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.yaml.PipelineVersion;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -263,7 +264,8 @@ public class ValidateAndMergeHelper {
     return mergeInputSetIntoPipelineForGivenStages(pipelineYaml, mergedRuntimeInputYaml, false, stageIdentifiers);
   }
 
-  private void checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(
+  @VisibleForTesting
+  void checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(
       PipelineEntity pipelineEntity, InputSetEntity inputSetEntity) {
     if (pipelineEntity.getStoreType() == null || inputSetEntity.getStoreType() == null) {
       return;

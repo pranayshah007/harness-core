@@ -22,8 +22,8 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GitFileConfig;

@@ -1035,7 +1035,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     final DelegateResponseData delegateResponseData;
     String delegateDownErrorMessage = "Delegates are not available for performing operation.";
     try {
-      delegateResponseData = delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      delegateResponseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
       log.error("Error occurred while executing delegate task.", ex);
       throw new HintException(String.format(HintException.DELEGATE_NOT_AVAILABLE_FOR_GIT_SYNC,

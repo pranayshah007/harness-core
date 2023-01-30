@@ -455,8 +455,8 @@ public enum TaskType {
   TERRAFORM_CLOUD_TASK_NG(TaskGroup.TERRAFORM_CLOUD, "Terraform Cloud Task NG", true),
   GIT_TASK_NG(TaskGroup.GIT_NG, "Git Fetch Files Task"),
   GOOGLE_CLOUD_STORAGE_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Google Cloud Storage Artifact Task"),
-  GOOGLE_FUNCTION_COMMAND_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Task");
-
+  GOOGLE_FUNCTION_COMMAND_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Task"),
+  GOOGLE_CLOUD_SOURCE_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Google Cloud Source Artifact Task");
   private final TaskGroup taskGroup;
   private final String displayName;
   private final Class<? extends TaskParameters> request;

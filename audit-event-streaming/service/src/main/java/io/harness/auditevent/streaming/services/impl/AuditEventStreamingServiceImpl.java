@@ -10,9 +10,9 @@ package io.harness.auditevent.streaming.services.impl;
 import static io.harness.audit.entities.AuditEvent.AuditEventKeys.ACCOUNT_IDENTIFIER_KEY;
 import static io.harness.audit.entities.AuditEvent.AuditEventKeys.createdAt;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.JOB_START_TIME_PARAMETER_KEY;
-import static io.harness.auditevent.streaming.entities.BatchStatus.FAILED;
-import static io.harness.auditevent.streaming.entities.BatchStatus.IN_PROGRESS;
-import static io.harness.auditevent.streaming.entities.BatchStatus.SUCCESS;
+import static io.harness.auditevent.streaming.beans.BatchStatus.FAILED;
+import static io.harness.auditevent.streaming.beans.BatchStatus.IN_PROGRESS;
+import static io.harness.auditevent.streaming.beans.BatchStatus.SUCCESS;
 
 import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.streaming.StreamingDestination;
@@ -142,6 +142,7 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
 
   private StreamingBatch updateBatchByResult(
       StreamingBatch streamingBatch, List<AuditEvent> auditEvents, boolean result) {
+    streamingBatch.setLastStreamedAt(System.currentTimeMillis());
     if (result) {
       log.info(getFullLogMessage(String.format("Published [%s] messages.", auditEvents.size()), streamingBatch));
       Long lastSuccessfulRecordTimestamp = auditEvents.get(auditEvents.size() - 1).getCreatedAt();

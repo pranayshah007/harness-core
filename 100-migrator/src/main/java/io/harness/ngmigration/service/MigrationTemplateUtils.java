@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
-import io.harness.ngmigration.service.entity.WorkflowMigrationService;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
@@ -26,12 +25,12 @@ import org.apache.commons.lang3.StringUtils;
 public class MigrationTemplateUtils {
   @Inject private TemplateResourceClient templateResourceClient;
 
-  public JsonNode getTemplateInputs(NGYamlFile wfTemplate, String accountIdentifier) {
+  public JsonNode getTemplateInputs(NGYamlFile wfTemplate, String accountIdentifier, String versionLabel) {
     NgEntityDetail ngEntityDetail = wfTemplate.getNgEntityDetail();
     try {
-      String response = NGRestUtils.getResponse(templateResourceClient.getTemplateInputsYaml(
-          ngEntityDetail.getIdentifier(), accountIdentifier, ngEntityDetail.getOrgIdentifier(),
-          ngEntityDetail.getProjectIdentifier(), WorkflowMigrationService.VERSION, false));
+      String response = NGRestUtils.getResponse(
+          templateResourceClient.getTemplateInputsYaml(ngEntityDetail.getIdentifier(), accountIdentifier,
+              ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier(), versionLabel, false));
       if (response == null || StringUtils.isBlank(response)) {
         return null;
       }

@@ -119,8 +119,34 @@ paths:
         schema:
           type: string
         description: Streaming Destination identifier
+  /v1/streaming-destinations/cards:
+    get:
+      summary: Your GET endpoint
+      tags:
+        - Streaming Destinations
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamingDestinationCardsResponse'
+      operationId: get-streaming-destinations-cards
+      x-internal: true
+      description: Get the info for cards on streaming destination page
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
 components:
   schemas:
+    StreamingDestinationStatus:
+      title: StreamingDestinationStatus
+      x-stoplight:
+        id: 6k8zse7tcg5y0
+      type: string
+      x-extension-1: null
+      enum:
+        - ACTIVE
+        - INACTIVE
+      description: Streaming Destination Status enum
+      x-internal: false
     StreamingDestinationDTO:
       title: StreamingDestinationDTO
       x-stoplight:
@@ -135,11 +161,7 @@ components:
           type: string
           description: Streaming Destination name
         status:
-          type: string
-          description: Streaming Destination status
-          enum:
-            - ACTIVE
-            - INACTIVE
+          $ref: '#/components/schemas/StreamingDestinationStatus'
         connector_ref:
           type: string
           description: Streaming Destination scoped connector reference identifier
@@ -213,6 +235,55 @@ components:
           type: integer
           format: int64
           description: Last updated time of the Streaming Destination status
+    StreamingDestinationCards:
+      title: StreamingDestinationCards
+      x-stoplight:
+        id: 1dw4ls5voxwl2
+      type: object
+      description: Streaming Destination Cards model
+      properties:
+        countByStatusCard:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusWiseCount'
+        lastStreamedCard:
+          $ref: '#/components/schemas/LastStreamedCard'
+        failureInfoCard:
+          $ref: '#/components/schemas/FailureInfoCard'
+    StatusWiseCount:
+      title: StatusWiseCount
+      x-stoplight:
+        id: 2ad155c277a03
+      type: object
+      description: Streaming Destination count by status card
+      properties:
+        status:
+          $ref: '#/components/schemas/StreamingDestinationStatus'
+        count:
+          type: integer
+          description: Number of streaming destinations at the status
+    LastStreamedCard:
+      title: LastStreamedInfo
+      x-stoplight:
+        id: a35601e416967
+      type: object
+      description: Info about last successfull streaming attempt
+      properties:
+        lastStreamedAt:
+          type: integer
+          format: int64
+          description: Timestamp of last successfull streaming attempt
+    FailureInfoCard:
+      title: FailureCard
+      x-stoplight:
+        id: a2d05f2010784
+      type: object
+      description: Info about failure in streaming attempt
+      properties:
+        count:
+          type: integer
+          description: Number of streaming destinations that have failure
+          format: int64
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -340,6 +411,12 @@ components:
           schema:
             type: boolean
             description: It returns true if the Identifier is unique and false if the Identifier is not unique
+    StreamingDestinationCardsResponse:
+      description: Streaming Destination cards response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StreamingDestinationCards'
   requestBodies:
     CreateStreamingDestinationRequest:
       content:

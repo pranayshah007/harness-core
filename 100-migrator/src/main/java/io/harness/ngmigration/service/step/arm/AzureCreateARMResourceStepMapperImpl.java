@@ -9,10 +9,10 @@ package io.harness.ngmigration.service.step.arm;
 
 import static io.harness.azure.model.AzureDeploymentMode.INCREMENTAL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ngmigration.service.MigratorUtility.containsExpressions;
-import static io.harness.ngmigration.service.MigratorUtility.generateFileIdentifier;
-import static io.harness.ngmigration.service.MigratorUtility.getGitConnector;
-import static io.harness.ngmigration.service.MigratorUtility.getYamlConfigFile;
+import static io.harness.ngmigration.utils.MigratorUtility.containsExpressions;
+import static io.harness.ngmigration.utils.MigratorUtility.generateFileIdentifier;
+import static io.harness.ngmigration.utils.MigratorUtility.getGitConnector;
+import static io.harness.ngmigration.utils.MigratorUtility.getYamlConfigFile;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER;
@@ -48,7 +48,7 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.timeout.Timeout;

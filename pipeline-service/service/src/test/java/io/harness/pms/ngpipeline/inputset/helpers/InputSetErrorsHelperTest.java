@@ -132,19 +132,27 @@ public class InputSetErrorsHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetUuidToErrorResponseMap() {
-    String filename = "pipeline-extensive.yml";
-    String yaml = readFile(filename);
-
-    String runtimeInputWrongFile = "runtimeInputWrong1.yml";
-    String runtimeInputWrong = readFile(runtimeInputWrongFile);
-
-    Map<String, InputSetErrorResponseDTOPMS> uuidToErrorResponseMap =
-        InputSetErrorsHelper.getUuidToErrorResponseMap(yaml, runtimeInputWrong);
-    assertThat(uuidToErrorResponseMap).isNotNull();
-    assertThat(uuidToErrorResponseMap.size()).isEqualTo(2);
-    assertThat(uuidToErrorResponseMap.containsKey("pipeline.stages.qaStage.spec.execution.steps.httpStep1.spec.method"))
-        .isTrue();
-    assertThat(uuidToErrorResponseMap.containsKey("pipeline.stages.qaStage.absolutelyWrongKey")).isTrue();
+    String baseYaml = "pipeline:\n"
+        + "  field1: notRuntime\n"
+        + "  field2:\n"
+        + "    child1: <+input>.allowedValues(a,b,c)\n";
+    String correctYamlWithJunkFields = "pipeline:\n"
+        + "  field1: notRuntime\n"
+        + "  field2:\n"
+        + "    child1: a\n";
+    Map<String, InputSetErrorResponseDTOPMS> noErrors =
+        InputSetErrorsHelper.getUuidToErrorResponseMap(baseYaml, correctYamlWithJunkFields);
+    assertThat(noErrors).isNull();
+    String incorrectYaml = "pipeline:\n"
+        + "  field1: notRuntime\n"
+        + "  field2:\n"
+        + "    child1: d\n";
+    Map<String, InputSetErrorResponseDTOPMS> oneError =
+        InputSetErrorsHelper.getUuidToErrorResponseMap(baseYaml, incorrectYaml);
+    assertThat(oneError).hasSize(1);
+    assertThat(oneError).containsKey("pipeline.field2.child1");
+    assertThat(oneError.get("pipeline.field2.child1").getErrors().get(0).getMessage())
+        .isEqualTo("The value provided d does not match any of the allowed values [a,b,c]");
   }
 
   @Test

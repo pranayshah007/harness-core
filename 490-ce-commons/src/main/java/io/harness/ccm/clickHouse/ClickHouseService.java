@@ -12,10 +12,13 @@ import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Properties;
 
 public interface ClickHouseService {
   Connection getConnection(ClickHouseConfig clickHouseConfig) throws SQLException;
   Connection getConnection(ClickHouseConfig clickHouseConfig, Properties properties) throws SQLException;
   ResultSet getQueryResult(ClickHouseConfig clickHouseConfig, String query) throws SQLException;
+  List<String> executeClickHouseQuery(ClickHouseConfig clickHouseConfig, String query, boolean returnResult)
+      throws SQLException;
 }

@@ -416,9 +416,8 @@ public class VerifyStepMetricsAnalysisUtils {
 
   public static boolean isTransactionGroupIncluded(
       Set<String> requestedTransactionGroups, MetricCVConfig<? extends AnalysisInfo> cvConfig) {
-    return CollectionUtils.isEmpty(requestedTransactionGroups)
-        || (cvConfig.maybeGetGroupName().isPresent()
-            && requestedTransactionGroups.contains(cvConfig.maybeGetGroupName().get()));
+    return CollectionUtils.isEmpty(requestedTransactionGroups) || cvConfig.maybeGetGroupName().isEmpty()
+        || requestedTransactionGroups.contains(cvConfig.maybeGetGroupName().get());
   }
 
   public static boolean isHealthSourceIncluded(
@@ -440,6 +439,12 @@ public class VerifyStepMetricsAnalysisUtils {
 
   public static void removeMetricFromResult(Map<String, MetricsAnalysis> resultMap, String metricIdentifier) {
     resultMap.remove(metricIdentifier);
+  }
+
+  public static boolean isTransactionGroupExcluded(
+      DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter, String transactionGroup) {
+    return deploymentTimeSeriesAnalysisFilter.filterByTransactionNames()
+        && !deploymentTimeSeriesAnalysisFilter.getTransactionNames().contains(transactionGroup);
   }
 
   private VerifyStepMetricsAnalysisUtils() {}

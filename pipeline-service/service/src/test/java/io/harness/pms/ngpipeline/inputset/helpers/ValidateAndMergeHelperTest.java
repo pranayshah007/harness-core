@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.PipelineServiceTestBase;
@@ -393,6 +394,45 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     assertThatThrownBy(()
                            -> validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId, orgId, projectId,
                                pipelineId, List.of("overlaidIS1"), null, null, Collections.singletonList("s2")))
+        .isInstanceOf(WingsException.class)
+        .hasMessage("Please move the input-set from inline to remote.");
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testCheckAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferentWhenStoreTypeIsNull() {
+    PipelineEntity pipeline = PipelineEntity.builder().build();
+    InputSetEntity inputSet = InputSetEntity.builder().build();
+
+    assertDoesNotThrow(
+        ()
+            -> validateAndMergeHelper.checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(
+                pipeline, inputSet));
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testCheckAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferentWhenStoreTypesAreSame() {
+    PipelineEntity pipeline = PipelineEntity.builder().storeType(StoreType.REMOTE).build();
+    InputSetEntity inputSet = InputSetEntity.builder().storeType(StoreType.REMOTE).build();
+    assertDoesNotThrow(
+        ()
+            -> validateAndMergeHelper.checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(
+                pipeline, inputSet));
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testCheckAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferentWhenStoreTypesAreDifferent() {
+    PipelineEntity pipeline = PipelineEntity.builder().storeType(StoreType.INLINE).build();
+    InputSetEntity inputSet = InputSetEntity.builder().storeType(StoreType.REMOTE).build();
+    assertThatThrownBy(
+        ()
+            -> validateAndMergeHelper.checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(
+                pipeline, inputSet))
         .isInstanceOf(WingsException.class)
         .hasMessage("Please move the input-set from inline to remote.");
   }

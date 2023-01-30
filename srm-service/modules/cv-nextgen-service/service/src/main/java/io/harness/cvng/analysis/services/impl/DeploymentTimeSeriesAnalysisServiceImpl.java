@@ -18,6 +18,7 @@ import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getMetricType
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getThresholdsFromDefinition;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getTransactionGroupFromCVConfig;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.isAnalysisResultExcluded;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.isTransactionGroupExcluded;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.parseControlNodeIdentifiersFromDeploymentTimeSeriesAnalysis;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.parseTestNodeIdentifiersFromDeploymentTimeSeriesAnalysis;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.populateRawMetricDataInMetricAnalysis;
@@ -403,8 +404,10 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
       for (TransactionMetricHostData transactionMetricHostData : timeSeriesAnalysis.getTransactionMetricSummaries()) {
         // LE metricName is BE metricIdentifier
         String metricIdentifier = transactionMetricHostData.getMetricName();
+        String transactionGroup = transactionMetricHostData.getTransactionName();
         AnalysisResult analysisResult = AnalysisResult.fromRisk(transactionMetricHostData.getRisk());
-        if (isAnalysisResultExcluded(deploymentTimeSeriesAnalysisFilter, analysisResult)) {
+        if (isAnalysisResultExcluded(deploymentTimeSeriesAnalysisFilter, analysisResult)
+            || isTransactionGroupExcluded(deploymentTimeSeriesAnalysisFilter, transactionGroup)) {
           removeMetricFromResult(metricsForThisAnalysis, metricIdentifier);
         } else {
           MetricsAnalysis metricsAnalysis = metricsForThisAnalysis.get(metricIdentifier);
@@ -413,6 +416,7 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
             String deeplinkURLWithRange = setDeeplinkURLWithRange(timeSeriesAnalysis, metricsAnalysis.getDeeplinkURL());
             metricsAnalysis.setDeeplinkURL(deeplinkURLWithRange);
           }
+          metricsAnalysis.setTransactionGroup(transactionGroup);
           metricsAnalysis.setAnalysisResult(analysisResult);
           metricsAnalysis.setTestDataNodes(getFilteredAnalysedTestDataNodes(
               transactionMetricHostData, deploymentTimeSeriesAnalysisFilter, metricsAnalysis.getThresholds()));
@@ -434,35 +438,68 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
         getFilteredMetricCVConfigs(verificationJobInstance, deploymentTimeSeriesAnalysisFilter);
     Map<String, Map<String, MetricsAnalysis>> mapOfCvConfigIdAndFilteredMetrics = new HashMap<>();
     for (MetricCVConfig<? extends AnalysisInfo> metricCVConfig : filteredMetricCVConfigs) {
-      Map<String, MetricDefinition> metricDefinitions = metricCVConfig.getMetricPack().getMetrics().stream().collect(
-          Collectors.toMap(MetricDefinition::getIdentifier, metricDefinition -> metricDefinition, (u, v) -> v));
-      HealthSource healthSource = getHealthSourceFromCVConfig(metricCVConfig);
-      String transactionGroup = getTransactionGroupFromCVConfig(metricCVConfig);
-      Map<String, MetricsAnalysis> metricsAnalyses =
-          metricCVConfig.getMetricInfos()
-              .stream()
-              .filter(VerifyStepMetricsAnalysisUtils::isDeploymentVerificationEnabledForThisMetric)
-              .map(metric -> {
-                MetricsAnalysis metricsAnalysis =
-                    MetricsAnalysis.builder()
-                        .metricName(metric.getMetricName())
-                        .metricIdentifier(metric.getIdentifier())
-                        .healthSource(healthSource)
-                        .transactionGroup(transactionGroup)
-                        .metricType(getMetricTypeFromCvConfigAndMetricDefinition(
-                            metricCVConfig, metricDefinitions.get(metric.getIdentifier())))
-                        .thresholds(getThresholdsFromDefinition(metricDefinitions.get(metric.getIdentifier())))
-                        .build();
-
-                Optional<String> deeplinkURL = buildDeepLinkURL(metricCVConfig, metric);
-                deeplinkURL.ifPresent(metricsAnalysis::setDeeplinkURL);
-                return metricsAnalysis;
-              })
-              .collect(Collectors.toMap(MetricsAnalysis::getMetricIdentifier,
-                  metricsAnalysis -> metricsAnalysis, (existing, current) -> current));
-      mapOfCvConfigIdAndFilteredMetrics.put(metricCVConfig.getUuid(), metricsAnalyses);
+      Map<String, MetricsAnalysis> mapOfMetricIdAndMetricsAnalyses = getMetricsFromCvConfig(metricCVConfig);
+      mapOfCvConfigIdAndFilteredMetrics.put(metricCVConfig.getUuid(), mapOfMetricIdAndMetricsAnalyses);
     }
     return mapOfCvConfigIdAndFilteredMetrics;
+  }
+
+  private Map<String, MetricsAnalysis> getMetricsFromCvConfig(MetricCVConfig<? extends AnalysisInfo> metricCVConfig) {
+    HealthSource healthSource = getHealthSourceFromCVConfig(metricCVConfig);
+    String transactionGroup = getTransactionGroupFromCVConfig(metricCVConfig);
+    List<MetricsAnalysis> metricsAnalyses;
+    if (CollectionUtils.isEmpty(metricCVConfig.getMetricInfos())) {
+      metricsAnalyses = getMetricAnalysesFromMetricDefinitions(metricCVConfig, healthSource, transactionGroup);
+    } else {
+      metricsAnalyses = getMetricAnalysesFromMetricInfos(metricCVConfig, healthSource, transactionGroup);
+    }
+    return metricsAnalyses.stream().collect(Collectors.toMap(
+        MetricsAnalysis::getMetricIdentifier, metricsAnalysis -> metricsAnalysis, (existing, current) -> current));
+  }
+
+  private List<MetricsAnalysis> getMetricAnalysesFromMetricDefinitions(
+      MetricCVConfig<? extends AnalysisInfo> metricCVConfig, HealthSource healthSource, String transactionGroup) {
+    return metricCVConfig.getMetricPack()
+        .getMetrics()
+        .stream()
+        .filter(MetricDefinition::isIncluded)
+        .map(metricDefinition
+            -> MetricsAnalysis.builder()
+                   .metricName(metricDefinition.getName())
+                   .metricIdentifier(metricDefinition.getIdentifier())
+                   .healthSource(healthSource)
+                   .transactionGroup(transactionGroup)
+                   .metricType(getMetricTypeFromCvConfigAndMetricDefinition(metricCVConfig, metricDefinition))
+                   .thresholds(getThresholdsFromDefinition(metricDefinition))
+                   .build())
+        .collect(Collectors.toList());
+  }
+
+  private List<MetricsAnalysis> getMetricAnalysesFromMetricInfos(
+      MetricCVConfig<? extends AnalysisInfo> metricCVConfig, HealthSource healthSource, String transactionGroup) {
+    Map<String, MetricDefinition> metricDefinitions = metricCVConfig.getMetricPack().getMetrics().stream().collect(
+        Collectors.toMap(MetricDefinition::getIdentifier, metricDefinition -> metricDefinition, (u, v) -> v));
+    return metricCVConfig.getMetricInfos()
+        .stream()
+        .filter(VerifyStepMetricsAnalysisUtils::isDeploymentVerificationEnabledForThisMetric)
+        .map(metricInfo -> {
+          MetricsAnalysis metricsAnalysis =
+              MetricsAnalysis.builder()
+                  .metricName(metricInfo.getMetricName())
+                  .metricIdentifier(metricInfo.getIdentifier())
+                  .healthSource(healthSource)
+                  .transactionGroup(transactionGroup)
+                  .metricType(getMetricTypeFromCvConfigAndMetricDefinition(
+                      metricCVConfig, metricDefinitions.get(metricInfo.getIdentifier())))
+                  .thresholds(getThresholdsFromDefinition(metricDefinitions.get(metricInfo.getIdentifier())))
+                  .build();
+
+          Optional<String> deeplinkURL = buildDeepLinkURL(metricCVConfig, metricInfo);
+          deeplinkURL.ifPresent(metricsAnalysis::setDeeplinkURL);
+
+          return metricsAnalysis;
+        })
+        .collect(Collectors.toList());
   }
 
   private Optional<String> buildDeepLinkURL(MetricCVConfig metricCVConfig, AnalysisInfo metric) {

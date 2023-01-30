@@ -5,15 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ngmigration.service;
+package io.harness.ngmigration.service.async;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigrationAsyncTracker;
 import io.harness.beans.MigrationAsyncTracker.MigrationAsyncTrackerKeys;
 import io.harness.beans.MigrationAsyncTrackerStatus;
+import io.harness.beans.MigrationTrackReqPayload;
 import io.harness.beans.MigrationTrackRespPayload;
-import io.harness.ngmigration.beans.summary.DiscoverySummaryReqDTO;
 import io.harness.persistence.HPersistence;
 
 import com.google.common.cache.Cache;
@@ -37,11 +37,12 @@ public abstract class AsyncTaskHandler {
 
   abstract String getTaskType();
 
-  abstract MigrationTrackRespPayload processTask(String accountId, String appId, String requestId);
+  abstract MigrationTrackRespPayload processTask(
+      String apiKey, String accountId, String requestId, MigrationTrackReqPayload reqPayload);
 
   abstract HPersistence getHPersistence();
 
-  public synchronized String queue(String accountId, String appId) {
+  public synchronized String queue(String apiKey, String accountId, MigrationTrackReqPayload reqPayload) {
     HPersistence hPersistence = getHPersistence();
     String reqId = cache.getIfPresent(accountId);
     try {
@@ -52,12 +53,12 @@ public abstract class AsyncTaskHandler {
                                       .accountId(accountId)
                                       .requestType(getTaskType())
                                       .status(MigrationAsyncTrackerStatus.PROCESSING)
-                                      .requestPayload(DiscoverySummaryReqDTO.builder().accountId(accountId).build())
+                                      .requestPayload(reqPayload)
                                       .build());
       cache.put(accountId, reqId);
 
       final String trackerId = reqId;
-      service.submit(() -> process(accountId, appId, trackerId));
+      service.submit(() -> process(apiKey, accountId, trackerId, reqPayload));
     } catch (Exception e) {
       log.error(String.format("There was an error queuing the %s", getTaskType()), e);
       if (StringUtils.isNotBlank(reqId)) {
@@ -79,9 +80,9 @@ public abstract class AsyncTaskHandler {
         .get();
   }
 
-  void process(String accountId, String appId, String reqId) {
+  void process(String apiKey, String accountId, String reqId, MigrationTrackReqPayload reqPayload) {
     try {
-      MigrationTrackRespPayload respPayload = processTask(accountId, appId, reqId);
+      MigrationTrackRespPayload respPayload = processTask(apiKey, accountId, reqId, reqPayload);
       onComplete(accountId, reqId, respPayload);
     } catch (Exception e) {
       onError(accountId, reqId, e);

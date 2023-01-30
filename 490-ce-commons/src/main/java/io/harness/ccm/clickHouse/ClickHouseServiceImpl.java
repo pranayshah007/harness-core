@@ -11,12 +11,15 @@ import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 
 import com.clickhouse.jdbc.ClickHouseDataSource;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ClickHouseServiceImpl implements ClickHouseService {
   @Override
   public Connection getConnection(ClickHouseConfig clickHouseConfig) throws SQLException {
@@ -38,5 +41,26 @@ public class ClickHouseServiceImpl implements ClickHouseService {
         return resultSet;
       }
     }
+  }
+
+  @Override
+  public List<String> executeClickHouseQuery(ClickHouseConfig clickHouseConfig, String query, boolean returnResult)
+      throws SQLException {
+    log.info(query);
+    String url = clickHouseConfig.getUrl();
+    Properties properties = new Properties();
+    ClickHouseDataSource dataSource = new ClickHouseDataSource(url, properties);
+    try (Connection connection =
+             dataSource.getConnection(clickHouseConfig.getUsername(), clickHouseConfig.getPassword());
+         Statement statement = connection.createStatement(); ResultSet resultSet = statement.executeQuery(query)) {
+      if (returnResult) {
+        List<String> output = new ArrayList<>();
+        while (resultSet.next()) {
+          output.add(resultSet.getString(1));
+        }
+        return output;
+      }
+    }
+    return null;
   }
 }

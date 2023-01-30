@@ -5,27 +5,26 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ngmigration.service;
+package io.harness.ngmigration.service.async;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.MigrationTrackReqPayload;
 import io.harness.beans.MigrationTrackRespPayload;
-import io.harness.ngmigration.beans.summary.SimilarWorkflowResult;
-import io.harness.ngmigration.dto.SimilarWorkflowDetail;
+import io.harness.ngmigration.dto.ImportDTO;
+import io.harness.ngmigration.service.MigrationResourceService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
-import java.util.List;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
-public class AsyncSimilarWorkflowHandler extends AsyncTaskHandler {
+public class AsyncUpgradeHandler extends AsyncTaskHandler {
   @Inject MigrationResourceService migrationResourceService;
   @Inject private HPersistence hPersistence;
 
-  private static final String TASK_TYPE = "SIMILAR_WORKFLOWS";
+  private static final String TASK_TYPE = "MIGRATION";
 
   @Override
   String getTaskType() {
@@ -33,9 +32,10 @@ public class AsyncSimilarWorkflowHandler extends AsyncTaskHandler {
   }
 
   @Override
-  MigrationTrackRespPayload processTask(String accountId, String appId, String requestId) {
-    List<Set<SimilarWorkflowDetail>> similarWorkflows = migrationResourceService.listSimilarWorkflow(accountId);
-    return SimilarWorkflowResult.builder().similarWorkflows(similarWorkflows).build();
+  MigrationTrackRespPayload processTask(
+      String apiKey, String accountId, String requestId, MigrationTrackReqPayload reqPayload) {
+    ImportDTO importDTO = (ImportDTO) reqPayload;
+    return migrationResourceService.save(apiKey, importDTO);
   }
 
   @Override

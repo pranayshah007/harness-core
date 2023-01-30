@@ -159,22 +159,21 @@ public class AMIArtifactResource {
           && NGExpressionUtils.isRuntimeField(amiArtifactConfig.getFilters().getExpressionValue())) {
         amiFilters = amiRequestBody.getFilters();
       }
+
+      // Getting the resolved connectorRef  in case of expressions
+      awsConnectorRef = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+          pipelineIdentifier, amiRequestBody.getRuntimeInputYaml(), awsConnectorRef, fqnPath, null, serviceRef);
+
+      // Getting the resolved project  in case of expressions
+      region = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+          pipelineIdentifier, amiRequestBody.getRuntimeInputYaml(), region, fqnPath, null, serviceRef);
     }
 
-    // Getting the resolved connectorRef  in case of expressions
-    String resolvedAwsConnectorRef =
-        artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-            amiRequestBody.getRuntimeInputYaml(), awsConnectorRef, fqnPath, null, serviceRef);
-
-    // Getting the resolved project  in case of expressions
-    String resolvedRegion = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, amiRequestBody.getRuntimeInputYaml(), region, fqnPath, null, serviceRef);
-
     IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(resolvedAwsConnectorRef, accountId, orgIdentifier, projectIdentifier);
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountId, orgIdentifier, projectIdentifier);
 
     List<BuildDetails> builds = amiResourceService.listVersions(
-        connectorRef, accountId, orgIdentifier, projectIdentifier, resolvedRegion, amiTags, amiFilters, versionRegex);
+        connectorRef, accountId, orgIdentifier, projectIdentifier, region, amiTags, amiFilters, versionRegex);
 
     return ResponseDTO.newResponse(builds);
   }

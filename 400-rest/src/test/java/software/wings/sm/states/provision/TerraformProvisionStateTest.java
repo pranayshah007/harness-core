@@ -411,11 +411,11 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
                                                          .build();
 
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
-    doReturn("taskId").when(delegateService).queueTask(any(DelegateTask.class));
+    doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
     ExecutionResponse response = destroyProvisionState.execute(executionContext);
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     DelegateTask createdTask = taskCaptor.getValue();
     verify(gitConfigHelperService).convertToRepoGitConfig(any(GitConfig.class), anyString());
 
@@ -457,11 +457,11 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     doReturn("fileId").when(fileService).getLatestFileId(anyString(), eq(FileBucket.TERRAFORM_STATE));
     doReturn(fileMetadata).when(fileService).getFileMetadata("fileId", FileBucket.TERRAFORM_STATE);
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
-    doReturn("taskId").when(delegateService).queueTask(any(DelegateTask.class));
+    doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
     ExecutionResponse response = destroyProvisionState.execute(executionContext);
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     DelegateTask createdTask = taskCaptor.getValue();
 
     verify(gitConfigHelperService).convertToRepoGitConfig(any(GitConfig.class), anyString());
@@ -504,11 +504,11 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
         .thenReturn("fileId");
     doReturn(fileMetadata).when(fileService).getFileMetadata("fileId", FileBucket.TERRAFORM_STATE);
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
-    doReturn("taskId").when(delegateService).queueTask(any(DelegateTask.class));
+    doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
     ExecutionResponse response = destroyProvisionState.execute(executionContext);
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     DelegateTask createdTask = taskCaptor.getValue();
 
     verify(gitConfigHelperService).convertToRepoGitConfig(any(GitConfig.class), anyString());
@@ -558,14 +558,14 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
         .thenReturn("fileId");
     doReturn(fileMetadata).when(fileService).getFileMetadata("fileId", FileBucket.TERRAFORM_STATE);
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
-    doReturn("taskId").when(delegateService).queueTask(any(DelegateTask.class));
+    doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
     doAnswer(invocation -> invocation.getArgument(0, String.class) + "-rendered")
         .when(executionContext)
         .renderExpression(anyString());
     ExecutionResponse response = destroyProvisionState.execute(executionContext);
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     DelegateTask createdTask = taskCaptor.getValue();
     verify(gitConfigHelperService).convertToRepoGitConfig(any(GitConfig.class), anyString());
 
@@ -604,11 +604,11 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
                                                          .build();
 
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
-    doReturn("taskId").when(delegateService).queueTask(any(DelegateTask.class));
+    doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
     ExecutionResponse response = destroyProvisionState.execute(executionContext);
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     DelegateTask createdTask = taskCaptor.getValue();
     verify(gitConfigHelperService).convertToRepoGitConfig(any(GitConfig.class), anyString());
 
@@ -705,7 +705,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     verify(infrastructureProvisionerService, times(2)).extractUnresolvedTextVariables(anyList());
     verify(secretManager, times(2)).getEncryptionDetails(any(GitConfig.class), anyString(), anyString());
     verify(secretManagerConfigService, times(1)).getSecretManager(anyString(), anyString(), anyBoolean());
-    verify(delegateService, times(1)).queueTask(delegateTaskCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(delegateTaskCaptor.capture());
     assertThat(executionResponse.getCorrelationIds().get(0)).isEqualTo("uuid");
     assertThat(((ScriptStateExecutionData) executionResponse.getStateExecutionData()).getActivityId())
         .isEqualTo("uuid");
@@ -938,12 +938,12 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
                                                          .build();
     when(featureFlagService.isEnabled(CDS_TERRAFORM_S3_SUPPORT, ACCOUNT_ID)).thenReturn(true);
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
-    doReturn("taskId").when(delegateService).queueTask(any(DelegateTask.class));
+    doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
 
     ExecutionResponse response = state.execute(executionContext);
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     DelegateTask createdTask = taskCaptor.getValue();
 
     assertThat(response.isAsync()).isTrue();
@@ -1010,7 +1010,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
         .extractEncryptedTextVariables(anyList(), eq(APP_ID), anyString());
     verify(secretManager, times(1))
         .getEncryptionDetails(any(AwsConfig.class), eq(GLOBAL_APP_ID), eq(WORKFLOW_EXECUTION_ID));
-    verify(delegateService, times(1)).queueTask(delegateTaskCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(delegateTaskCaptor.capture());
     assertThat(executionResponse.getCorrelationIds().get(0)).isEqualTo("uuid");
     assertThat(((ScriptStateExecutionData) executionResponse.getStateExecutionData()).getActivityId())
         .isEqualTo("uuid");
@@ -1248,11 +1248,11 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
                                                          .build();
 
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
-    doReturn("taskId").when(delegateService).queueTask(any(DelegateTask.class));
+    doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
     ExecutionResponse response = state.execute(executionContext);
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     DelegateTask createdTask = taskCaptor.getValue();
     verify(gitConfigHelperService).convertToRepoGitConfig(any(GitConfig.class), anyString());
 
@@ -1293,14 +1293,14 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     settingAttribute.setValue(new AwsConfig());
 
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
-    doReturn("taskId").when(delegateService).queueTask(any(DelegateTask.class));
+    doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
     doReturn(true).when(featureFlagService).isEnabled(eq(TERRAFORM_AWS_CP_AUTHENTICATION), any());
     doReturn(settingAttribute).when(settingsService).get(any());
     doReturn(encryptionDetails).when(secretManager).getEncryptionDetails(any(), any(), any());
     ExecutionResponse response = state.execute(executionContext);
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     DelegateTask createdTask = taskCaptor.getValue();
     verify(gitConfigHelperService).convertToRepoGitConfig(any(GitConfig.class), anyString());
 
@@ -1347,7 +1347,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     settingAttribute.setValue(new AwsConfig());
 
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
-    doReturn("taskId").when(delegateService).queueTask(any(DelegateTask.class));
+    doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
 
     doReturn(true).when(featureFlagService).isEnabled(eq(TERRAFORM_AWS_CP_AUTHENTICATION), any());
     doReturn(encryptionDetails).when(secretManager).getEncryptionDetails(any(), any(), any());
@@ -1360,7 +1360,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     ExecutionResponse response = state.execute(executionContext);
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     DelegateTask createdTask = taskCaptor.getValue();
     verify(gitConfigHelperService).convertToRepoGitConfig(any(GitConfig.class), anyString());
 
@@ -1438,7 +1438,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     doReturn(encryptionDetails).when(secretManager).getEncryptionDetails(any(), any(), any());
     ExecutionResponse executionResponse = state.execute(executionContext);
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     DelegateTask createdTask = taskCaptor.getValue();
     TerraformProvisionParameters parameters = (TerraformProvisionParameters) createdTask.getData().getParameters()[0];
     verify(gitConfigHelperService, times(2)).convertToRepoGitConfig(any(GitConfig.class), anyString());
@@ -2267,11 +2267,11 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
                                                          .build();
 
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
-    doReturn("taskId").when(delegateService).queueTask(any(DelegateTask.class));
+    doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
     ExecutionResponse response = state.execute(executionContext);
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     DelegateTask createdTask = taskCaptor.getValue();
     verify(gitConfigHelperService).convertToRepoGitConfig(any(GitConfig.class), anyString());
 
@@ -2311,11 +2311,11 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
             .build();
 
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
-    doReturn("taskId").when(delegateService).queueTask(any(DelegateTask.class));
+    doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
     ExecutionResponse response = state.execute(executionContext);
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     DelegateTask createdTask = taskCaptor.getValue();
     verify(gitConfigHelperService).convertToRepoGitConfig(any(GitConfig.class), anyString());
 
@@ -2351,11 +2351,11 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
                                                          .build();
 
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
-    doReturn("taskId").when(delegateService).queueTask(any(DelegateTask.class));
+    doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
     ExecutionResponse response = state.execute(executionContext);
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     DelegateTask createdTask = taskCaptor.getValue();
     verify(gitConfigHelperService).convertToRepoGitConfig(any(GitConfig.class), anyString());
 
@@ -2391,11 +2391,11 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
                                                          .build();
 
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
-    doReturn("taskId").when(delegateService).queueTask(any(DelegateTask.class));
+    doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
     ExecutionResponse response = state.execute(executionContext);
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     DelegateTask createdTask = taskCaptor.getValue();
     verify(gitConfigHelperService).convertToRepoGitConfig(any(GitConfig.class), anyString());
 

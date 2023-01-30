@@ -721,3 +721,9 @@ io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepParameters
 io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepInfo
 io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceOutcome
 io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStartOutcome
+io.harness.ngpipeline.pipeline.executions.beans.GoogleCloudSourceArtifactSummary
+io.harness.cdng.artifact.bean.yaml.GoogleCloudSourceArtifactConfig
+io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig
+io.harness.ngpipeline.artifact.bean.GoogleCloudStorageArtifactOutcome
+io.harness.ngpipeline.artifact.bean.GoogleCloudSourceArtifactOutcome
+io.harness.ngpipeline.pipeline.executions.beans.GoogleCloudStorageArtifactSummary

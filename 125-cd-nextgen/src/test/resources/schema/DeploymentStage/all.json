@@ -625,6 +625,38 @@
           "if": {
             "properties": {
               "type": {
+                "const": "GoogleCloudSource"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudSourceArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudStorage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudStorageArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Jenkins"
               }
             }
@@ -5705,6 +5737,68 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GoogleCloudSourceArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "project",
+            "repository",
+            "sourceDirectory"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "project": {
+              "type": "string"
+            },
+            "repository": {
+              "type": "string"
+            },
+            "sourceDirectory": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GoogleCloudStorageArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "artifactPath",
+            "bucket",
+            "connectorRef",
+            "project"
+          ],
+          "properties": {
+            "artifactPath": {
+              "type": "string"
+            },
+            "bucket": {
+              "type": "string"
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "project": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HarnessFileStoreSource": {
       "allOf": [
         {
@@ -9943,6 +10037,38 @@
           "if": {
             "properties": {
               "type": {
+                "const": "GoogleCloudSource"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudSourceArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudStorage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudStorageArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Jenkins"
               }
             }
@@ -11303,6 +11429,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GoogleArtifactRegistryConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudSource"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudSourceArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudStorage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudStorageArtifactConfig"
               }
             }
           }

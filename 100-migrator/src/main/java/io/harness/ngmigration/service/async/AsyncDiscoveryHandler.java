@@ -5,13 +5,16 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ngmigration.service;
+package io.harness.ngmigration.service.async;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.MigrationTrackReqPayload;
 import io.harness.beans.MigrationTrackRespPayload;
 import io.harness.ngmigration.beans.summary.BaseSummary;
+import io.harness.ngmigration.beans.summary.DiscoverySummaryReqDTO;
 import io.harness.ngmigration.beans.summary.DiscoverySummaryResult;
+import io.harness.ngmigration.service.AccountAnalysisService;
 import io.harness.persistence.HPersistence;
 
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -34,8 +37,11 @@ public class AsyncDiscoveryHandler extends AsyncTaskHandler {
   }
 
   @Override
-  MigrationTrackRespPayload processTask(String accountId, String appId, String requestId) {
-    Map<NGMigrationEntityType, BaseSummary> summary = accountSummaryService.getSummary(accountId, appId);
+  MigrationTrackRespPayload processTask(
+      String apiKey, String accountId, String requestId, MigrationTrackReqPayload reqPayload) {
+    DiscoverySummaryReqDTO summaryReqDTO = (DiscoverySummaryReqDTO) reqPayload;
+    Map<NGMigrationEntityType, BaseSummary> summary =
+        accountSummaryService.getSummary(accountId, summaryReqDTO.getAppId());
     return DiscoverySummaryResult.builder().summary(summary).build();
   }
 

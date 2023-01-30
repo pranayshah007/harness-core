@@ -200,7 +200,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
     state.execute(executionContext);
 
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     ShellScriptProvisionParameters populatedParameters =
         (ShellScriptProvisionParameters) delegateTaskArgumentCaptor.getValue().getData().getParameters()[0];
     assertThat(populatedParameters.getWorkflowExecutionId()).isEqualTo("workflow-execution-id");
@@ -301,7 +301,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     verify(activityService, times(1)).save(activityCaptor.capture());
     assertCreatedActivity(activityCaptor.getValue(), GLOBAL_ENV_ID, GLOBAL_ENV_ID, ALL);
 
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     assertThat(delegateTaskArgumentCaptor.getValue().getData().getExpressionFunctorToken()).isNotNull();
 
     // When OrchestrationWorkflowType is other than BUILD
@@ -340,7 +340,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
     state.execute(executionContext);
 
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     ShellScriptProvisionParameters populatedParameters =
         (ShellScriptProvisionParameters) delegateTaskArgumentCaptor.getValue().getData().getParameters()[0];
     assertThat(populatedParameters.getDelegateSelectors()).isEqualTo(Collections.singletonList(runTimeValueAbc));

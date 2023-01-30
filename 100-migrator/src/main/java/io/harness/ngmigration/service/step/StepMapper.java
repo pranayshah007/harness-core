@@ -15,7 +15,7 @@ import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.MigrationTemplateUtils;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -76,8 +76,8 @@ public abstract class StepMapper {
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(template.getNgEntityDetail()));
     templateLinkConfig.setVersionLabel(templateConfig.getTemplateInfoConfig().getVersionLabel());
-    templateLinkConfig.setTemplateInputs(
-        migrationTemplateUtils.getTemplateInputs(template, context.getWorkflow().getAccountId()));
+    templateLinkConfig.setTemplateInputs(migrationTemplateUtils.getTemplateInputs(
+        template, context.getWorkflow().getAccountId(), templateConfig.getTemplateInfoConfig().getVersionLabel()));
 
     TemplateStepNode templateStepNode = new TemplateStepNode();
     templateStepNode.setIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()));

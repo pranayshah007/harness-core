@@ -598,7 +598,8 @@ public enum FeatureName {
   PL_REMOVE_EXTERNAL_USER_ORG_PROJECT(
       "Allow deletion of externally managed user from orgs and projects", HarnessTeam.PL),
   CDP_AWS_SAM("FF for enabling AWS SAM deployments", HarnessTeam.CDP),
-  TERRAFORM_CLOUD("Enable support of Terraform Cloud in the NG", HarnessTeam.CDP);
+  TERRAFORM_CLOUD("Enable support of Terraform Cloud in the NG", HarnessTeam.CDP),
+  CI_REMOTE_DEBUG("Enable the option for remote debug for CI users.", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {
