@@ -168,7 +168,7 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
     });
 
     try {
-      transactionHelper.performTransaction(() -> fireInformAndSendAudit(ambiance, planExecutionMetadata));
+      transactionHelper.performTransaction(() -> fireInformAndSendAuditOnStart(ambiance, planExecutionMetadata));
     } catch (Exception e) {
       // Marking the planExecution Errored if OrchestrationStartObservers failed.
       planExecutionService.markPlanExecutionErrored(ambiance.getPlanExecutionId());
@@ -178,7 +178,7 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
     return createdPlanExecution;
   }
 
-  private OutboxEvent fireInformAndSendAudit(Ambiance ambiance, PlanExecutionMetadata planExecutionMetadata) {
+  private OutboxEvent fireInformAndSendAuditOnStart(Ambiance ambiance, PlanExecutionMetadata planExecutionMetadata) {
     // Sending AuditEvent
     OutboxEvent outboxEvent = outboxService.save(new PipelineStartEvent());
     orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
