@@ -178,6 +178,7 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
   }
 
   private OutboxEvent fireInformAndSendAudit(Ambiance ambiance, PlanExecutionMetadata planExecutionMetadata) {
+    // Sending AuditEvent
     OutboxEvent outboxEvent = outboxService.save(new PipelineStartEvent());
     orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
         OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(planExecutionMetadata).build());
