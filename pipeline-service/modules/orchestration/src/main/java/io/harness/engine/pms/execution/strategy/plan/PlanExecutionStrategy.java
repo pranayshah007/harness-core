@@ -34,6 +34,8 @@ import io.harness.governance.GovernanceMetadata;
 import io.harness.logging.AutoLogContext;
 import io.harness.observer.Subject;
 import io.harness.opaclient.model.OpaConstants;
+import io.harness.outbox.OutboxEvent;
+import io.harness.outbox.api.OutboxService;
 import io.harness.plan.Node;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -41,6 +43,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.OrchestrationEvent;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
+import io.harness.pms.events.PipelineStartEvent;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.springdata.TransactionHelper;
@@ -74,6 +77,7 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
 
   @Getter private final Subject<OrchestrationStartObserver> orchestrationStartSubject = new Subject<>();
   @Getter private final Subject<OrchestrationEndObserver> orchestrationEndSubject = new Subject<>();
+  @Inject private OutboxService outboxService;
 
   @Override
   public PlanExecution runNode(@NonNull Ambiance ambiance, @NonNull Plan plan, PlanExecutionMetadata metadata) {
@@ -163,8 +167,7 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
     });
 
     try {
-      orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
-          OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(planExecutionMetadata).build());
+      transactionHelper.performTransaction(() -> fireInformAndSendAudit(ambiance, planExecutionMetadata));
     } catch (Exception e) {
       // Marking the planExecution Errored if OrchestrationStartObservers failed.
       planExecutionService.markPlanExecutionErrored(ambiance.getPlanExecutionId());
@@ -172,6 +175,13 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
       throw e;
     }
     return createdPlanExecution;
+  }
+
+  private OutboxEvent fireInformAndSendAudit(Ambiance ambiance, PlanExecutionMetadata planExecutionMetadata) {
+    OutboxEvent outboxEvent = outboxService.save(new PipelineStartEvent());
+    orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
+        OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(planExecutionMetadata).build());
+    return outboxEvent;
   }
 
   @Override
