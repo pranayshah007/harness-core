@@ -568,6 +568,7 @@ public class BudgetUtils {
         .budgetMonthlyBreakdown(budget.getBudgetMonthlyBreakdown())
         .isBudgetGroup(false)
         .parentId(budget.getParentBudgetGroupId())
+        .disableCurrencyWarning(budget.getDisableCurrencyWarning())
         .build();
   }
 }

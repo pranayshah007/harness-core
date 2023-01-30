@@ -737,7 +737,8 @@ public class InstanceHelper {
             infrastructureMapping.getUuid(), instanceSyncV2TaskDetails.getPerpetualTaskId(),
             instanceSyncV2TaskDetails.getUuid());
 
-        perpetualTaskService.deleteTask(infrastructureMapping.getAccountId(), perpetualTaskId);
+        instanceSyncPerpetualTaskService.deletePerpetualTask(
+            infrastructureMapping.getAccountId(), infrastructureMappingId, perpetualTaskId, true);
         log.info(
             "[INSTANCE_SYNC_V2_CG] Perpetual task with Id: [{}] deleted for infra mapping Id: [{}]. This is now migrated to new perpetual task: [{}], and instance sync task details: [{}]",
             perpetualTaskId, infrastructureMappingId, instanceSyncV2TaskDetails.getPerpetualTaskId(),

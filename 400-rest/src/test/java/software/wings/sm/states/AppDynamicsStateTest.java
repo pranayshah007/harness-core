@@ -801,7 +801,7 @@ public class AppDynamicsStateTest extends APMStateVerificationTestBase {
     spyAppDynamicsState.triggerAnalysisDataCollection(executionContext, AnalysisContext.builder().build(),
         VerificationStateAnalysisExecutionData.builder().build(), Collections.singletonMap("host", "groupName"));
     ArgumentCaptor<DelegateTask> argument = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(argument.capture());
+    verify(delegateService).queueTaskV2(argument.capture());
     TaskData taskData = argument.getValue().getData();
     Object parameters[] = taskData.getParameters();
     assertThat(1).isEqualTo(parameters.length);
@@ -863,7 +863,7 @@ public class AppDynamicsStateTest extends APMStateVerificationTestBase {
     spyAppDynamicsState.triggerAnalysisDataCollection(executionContext, AnalysisContext.builder().build(),
         VerificationStateAnalysisExecutionData.builder().build(), Collections.singletonMap("host", "groupName"));
     ArgumentCaptor<DelegateTask> argument = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(argument.capture());
+    verify(delegateService).queueTaskV2(argument.capture());
     TaskData taskData = argument.getValue().getData();
     Object parameters[] = taskData.getParameters();
     assertThat(1).isEqualTo(parameters.length);

@@ -177,6 +177,12 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
         ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier());
     TerragruntInheritOutput inheritOutput =
         helper.getSavedInheritOutput(provisionerIdentifier, TerragruntCommandType.DESTROY.name(), ambiance);
+
+    if (TerragruntTaskRunType.RUN_ALL == inheritOutput.getRunConfiguration().getRunType()) {
+      throw new InvalidRequestException(
+          "Inheriting from a plan which has used \"All Modules\" at Terragrunt PLan Step is not supported");
+    }
+
     TerragruntDestroyTaskParametersBuilder<?, ?> builder = TerragruntDestroyTaskParameters.builder();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);

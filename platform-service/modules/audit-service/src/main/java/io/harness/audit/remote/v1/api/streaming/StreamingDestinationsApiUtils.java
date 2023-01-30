@@ -23,9 +23,9 @@ import io.harness.exception.UnknownEnumTypeException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.spec.server.audit.v1.model.AwsS3StreamingDestinationSpecDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
-import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationResponse;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationStatus;
 import io.harness.utils.PageUtils;
 
 import java.util.List;
@@ -38,12 +38,12 @@ public class StreamingDestinationsApiUtils {
     return StreamingDestinationFilterProperties.builder().searchTerm(searchTerm).status(getStatusEnum(status)).build();
   }
 
-  private StatusEnum getStatusEnum(String status) {
+  private StreamingDestinationStatus getStatusEnum(String status) {
     if (isEmpty(status)) {
       return null;
     }
     try {
-      return StatusEnum.valueOf(status);
+      return StreamingDestinationStatus.valueOf(status);
     } catch (IllegalArgumentException exception) {
       throw new UnknownEnumTypeException("Streaming Destination status", status);
     }

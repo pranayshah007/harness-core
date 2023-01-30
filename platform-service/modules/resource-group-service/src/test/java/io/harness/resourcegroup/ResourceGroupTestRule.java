@@ -220,6 +220,7 @@ public class ResourceGroupTestRule implements MethodRule, InjectorRuleMixin, Mon
                                                       .ngManager(serviceConfig)
                                                       .templateService(serviceConfig)
                                                       .gitopsService(serviceConfig)
+                                                      .ceNextGen(serviceConfig)
                                                       .build();
     configuration.setResourceClientConfigs(resourceClientConfigs);
     return configuration;

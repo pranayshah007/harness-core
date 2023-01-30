@@ -10,8 +10,6 @@ package io.harness.gitsync.sdk;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.gitsync.interceptor.GitEntityInfo;
-import io.harness.gitsync.interceptor.GitSyncBranchContext;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
@@ -36,15 +34,4 @@ public class EntityGitDetails {
   @Schema(description = "Latest Commit ID") String commitId;
   @Schema(description = "File Url of the entity") String fileUrl;
   @Schema(description = "Repo url of the entity") String repoUrl;
-
-  public GitSyncBranchContext toGitSyncBranchContext() {
-    GitEntityInfo gitEntityInfo = GitEntityInfo.builder()
-                                      .branch(branch)
-                                      .yamlGitConfigId(repoIdentifier)
-                                      .lastObjectId(objectId)
-                                      .folderPath(rootFolder)
-                                      .filePath(filePath)
-                                      .build();
-    return GitSyncBranchContext.builder().gitBranchInfo(gitEntityInfo).build();
-  }
 }

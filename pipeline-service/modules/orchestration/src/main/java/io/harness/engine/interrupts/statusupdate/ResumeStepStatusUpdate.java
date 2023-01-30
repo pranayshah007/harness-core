@@ -40,7 +40,8 @@ public class ResumeStepStatusUpdate implements NodeStatusUpdateHandler {
       Status planStatus = planExecutionService.calculateStatusExcluding(
           nodeStatusUpdateInfo.getPlanExecutionId(), nodeStatusUpdateInfo.getNodeExecutionId());
       if (!StatusUtils.isFinalStatus(planStatus)) {
-        EnumSet<Status> allowedStartStatuses = EnumSet.of(RUNNING, DISCONTINUING, PAUSING, QUEUED, PAUSED);
+        EnumSet<Status> allowedStartStatuses =
+            EnumSet.of(RUNNING, DISCONTINUING, PAUSING, QUEUED, PAUSED, INPUT_WAITING);
         planExecutionService.updateStatusForceful(
             nodeStatusUpdateInfo.getPlanExecutionId(), planStatus, null, false, allowedStartStatuses);
       }
@@ -52,8 +53,13 @@ public class ResumeStepStatusUpdate implements NodeStatusUpdateHandler {
     if (nodeExecution.getParentId() == null) {
       return true;
     }
-    NodeExecution parentNodeExecution = nodeExecutionService.updateStatusWithOps(
-        nodeExecution.getParentId(), RUNNING, null, EnumSet.of(INPUT_WAITING, PAUSED));
+    Status currentPlanStatus = planExecutionService.getStatus(nodeExecution.getPlanExecutionId());
+    // If planStatus is InputWaiting then on resuming execution, planStatus needs to be updated. So returning true.
+    if (currentPlanStatus == INPUT_WAITING) {
+      return true;
+    }
+    NodeExecution parentNodeExecution =
+        nodeExecutionService.updateStatusWithOps(nodeExecution.getParentId(), RUNNING, null, EnumSet.of(PAUSED));
     return parentNodeExecution != null && resumeParents(parentNodeExecution);
   }
 }

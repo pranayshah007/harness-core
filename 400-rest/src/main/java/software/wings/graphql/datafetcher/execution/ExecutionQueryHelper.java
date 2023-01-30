@@ -11,6 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING_GRAPHQL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_ENVIDS;
+import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_SERVICEIDS;
+import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_WORKFLOWID;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -18,6 +22,8 @@ import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.mongo.index.BasicDBUtils;
+import io.harness.mongo.index.MongoIndex;
 
 import software.wings.beans.Application;
 import software.wings.beans.EntityType;
@@ -47,6 +53,7 @@ import software.wings.graphql.schema.type.aggregation.tag.QLTagInput;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.BasicDBObject;
 import dev.morphia.query.FieldEnd;
 import dev.morphia.query.Query;
 import java.util.HashMap;
@@ -336,6 +343,24 @@ public class ExecutionQueryHelper {
     final QLIdFilter newAppFilter =
         QLIdFilter.builder().values(appIds.toArray(new String[0])).operator(filter.getOperator()).build();
     utils.setIdFilter(appField, newAppFilter);
+  }
+
+  public BasicDBObject getIndexHint(List<QLExecutionFilter> filters) {
+    final List<MongoIndex> wfIndexes = WorkflowExecution.mongoIndexes();
+    for (QLBaseExecutionFilter filter : filters) {
+      if (filter.getEnvironment() != null) {
+        return BasicDBUtils.getIndexObject(wfIndexes, WFE_EXECUTIONS_SEARCH_ENVIDS);
+      }
+
+      if (filter.getPipeline() != null || filter.getWorkflow() != null) {
+        return BasicDBUtils.getIndexObject(wfIndexes, WFE_EXECUTIONS_SEARCH_WORKFLOWID);
+      }
+
+      if (filter.getService() != null) {
+        return BasicDBUtils.getIndexObject(wfIndexes, WFE_EXECUTIONS_SEARCH_SERVICEIDS);
+      }
+    }
+    return null;
   }
 
   public void setQuery(List<QLExecutionFilter> filters, Query query, String accountId) {

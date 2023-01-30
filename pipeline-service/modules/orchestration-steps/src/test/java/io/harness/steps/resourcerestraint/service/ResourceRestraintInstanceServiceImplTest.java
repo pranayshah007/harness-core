@@ -12,6 +12,7 @@ import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
 import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
 import static io.harness.distribution.constraint.Consumer.State.FINISHED;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
@@ -90,6 +91,42 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
 
     ResourceRestraintInstance savedInstance = resourceRestraintInstanceService.save(instance);
     assertThat(savedInstance).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestDeleteInstancesForGivenReleaseType() {
+    String releaseEntityId1 = generateUuid();
+    savePipelineActiveInstance(releaseEntityId1, "keyA");
+    savePipelineActiveInstance(releaseEntityId1, "keyA");
+    savePipelineActiveInstance(releaseEntityId1, "keyB");
+
+    String releaseEntityId2 = generateUuid();
+    savePipelineActiveInstance(releaseEntityId2, "keyA");
+    savePipelineActiveInstance(releaseEntityId2, "keyC");
+
+    String releaseEntityId3 = generateUuid();
+    savePipelineActiveInstance(releaseEntityId3, "keyA");
+
+    List<ResourceRestraintInstance> allActiveAndBlockedByReleaseEntityId1 =
+        resourceRestraintInstanceService.findAllActiveAndBlockedByReleaseEntityId(releaseEntityId1);
+    assertThat(allActiveAndBlockedByReleaseEntityId1.size()).isEqualTo(3);
+    List<ResourceRestraintInstance> allActiveAndBlockedByReleaseEntityId2 =
+        resourceRestraintInstanceService.findAllActiveAndBlockedByReleaseEntityId(releaseEntityId2);
+    assertThat(allActiveAndBlockedByReleaseEntityId2.size()).isEqualTo(2);
+
+    resourceRestraintInstanceService.deleteInstancesForGivenReleaseType(
+        Set.of(releaseEntityId1, releaseEntityId2), HoldingScope.PIPELINE);
+    allActiveAndBlockedByReleaseEntityId1 =
+        resourceRestraintInstanceService.findAllActiveAndBlockedByReleaseEntityId(releaseEntityId1);
+    assertThat(allActiveAndBlockedByReleaseEntityId1.size()).isZero();
+    allActiveAndBlockedByReleaseEntityId2 =
+        resourceRestraintInstanceService.findAllActiveAndBlockedByReleaseEntityId(releaseEntityId2);
+    assertThat(allActiveAndBlockedByReleaseEntityId2.size()).isZero();
+    List<ResourceRestraintInstance> allActiveAndBlockedByReleaseEntityId3 =
+        resourceRestraintInstanceService.findAllActiveAndBlockedByReleaseEntityId(releaseEntityId3);
+    assertThat(allActiveAndBlockedByReleaseEntityId3.size()).isEqualTo(1);
   }
 
   @Test
@@ -284,8 +321,8 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Category(UnitTests.class)
   public void shouldGetAllCurrentlyAcquiredPermits() {
     String releaseEntityId = generateUuid();
-    ResourceRestraintInstance instance = saveInstance(releaseEntityId, RESOURCE_UNIT);
-    saveInstance(releaseEntityId, RESOURCE_UNIT);
+    ResourceRestraintInstance instance = savePipelineActiveInstance(releaseEntityId, RESOURCE_UNIT);
+    savePipelineActiveInstance(releaseEntityId, RESOURCE_UNIT);
 
     int maxOrder = resourceRestraintInstanceService.getAllCurrentlyAcquiredPermits(
         HoldingScope.valueOf(instance.getReleaseEntityType()), instance.getReleaseEntityId(),
@@ -320,16 +357,16 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Category(UnitTests.class)
   public void shouldGetAllCurrentlyAcquiredPermitsForDifferentKeys() {
     String releaseEntityId = generateUuid();
-    saveInstance(releaseEntityId, "keyA");
-    saveInstance(releaseEntityId, "keyA");
-    saveInstance(releaseEntityId, "keyB");
+    savePipelineActiveInstance(releaseEntityId, "keyA");
+    savePipelineActiveInstance(releaseEntityId, "keyA");
+    savePipelineActiveInstance(releaseEntityId, "keyB");
 
     int permits =
         resourceRestraintInstanceService.getAllCurrentlyAcquiredPermits(HoldingScope.PIPELINE, releaseEntityId, "keyB");
     assertThat(permits).isEqualTo(1);
   }
 
-  private ResourceRestraintInstance saveInstance(String releaseEntityId, String resourceUnit) {
+  private ResourceRestraintInstance savePipelineActiveInstance(String releaseEntityId, String resourceUnit) {
     return saveInstance(generateUuid(), ACTIVE, HoldingScope.PIPELINE, releaseEntityId, 1, resourceUnit);
   }
 

@@ -320,7 +320,7 @@ public class YamlGitServiceImplTest extends WingsBaseTest {
     persistence.save(settingAttribute);
     persistence.save(yamlGitConfig);
     yamlGitService.handleGitChangeSet(yamlChangeSet, ACCOUNT_ID);
-    verify(delegateService, times(1)).queueTask(any(DelegateTask.class));
+    verify(delegateService, times(1)).queueTaskV2(any(DelegateTask.class));
     verify(waitNotifyEngine, times(1)).waitForAllOn(eq(GENERAL), any(GitCommandCallback.class), anyString());
     verify(yamlChangeSetService, times(0))
         .updateStatus(eq(ACCOUNT_ID), eq("changesetId"), any(YamlChangeSet.Status.class));

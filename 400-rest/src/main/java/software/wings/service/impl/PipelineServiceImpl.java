@@ -41,6 +41,7 @@ import static software.wings.beans.VariableType.TEXT;
 import static software.wings.expression.ManagerExpressionEvaluator.getName;
 import static software.wings.expression.ManagerExpressionEvaluator.matchesVariablePattern;
 import static software.wings.service.impl.pipeline.PipelineServiceValidator.checkUniqueApprovalPublishedVariable;
+import static software.wings.service.impl.pipeline.PipelineServiceValidator.validateStageName;
 import static software.wings.service.impl.pipeline.PipelineServiceValidator.validateTemplateExpressions;
 import static software.wings.service.impl.pipeline.PipelineServiceValidator.validateUserGroupExpression;
 import static software.wings.sm.StateType.APPROVAL;
@@ -242,6 +243,8 @@ public class PipelineServiceImpl implements PipelineService {
     validateTemplateExpressions(pipeline);
 
     validateUserGroupExpression(pipeline);
+
+    validateStageName(pipeline, featureFlagService);
 
     Pipeline savedPipeline = wingsPersistence.getWithAppId(Pipeline.class, pipeline.getAppId(), pipeline.getUuid());
     notNullCheck("Pipeline not saved", savedPipeline, USER);

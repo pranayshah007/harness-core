@@ -9,12 +9,16 @@ package io.harness.repositories.pipeline.validation.async;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 
+import java.util.Optional;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PipelineValidationEventRepositoryCustom {
+  Optional<PipelineValidationEvent> findLatestValidEvent(String fqn, Action action);
+
   PipelineValidationEvent update(Criteria criteria, Update update);
 }

@@ -148,8 +148,8 @@ public class PipelineEntity implements GitAware, GitSyncableEntity, PersistentEn
   @Wither @NotEmpty @NonFinal @Setter String yaml;
 
   // Used by PipelineTelemetryPublisher
-  @Setter @NonFinal @SchemaIgnore @CreatedDate Long createdAt;
-  @Wither @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate Long lastUpdatedAt;
+  @Setter @NonFinal @SchemaIgnore @CreatedDate @Builder.Default Long createdAt = 0L;
+  @Wither @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate @Builder.Default Long lastUpdatedAt = 0L;
   @Wither @Default Boolean deleted = Boolean.FALSE;
 
   @Wither @EntityName String name;
@@ -165,9 +165,9 @@ public class PipelineEntity implements GitAware, GitSyncableEntity, PersistentEn
    * lastExecutionTs move out from this dto to first class in pipelineEntity for sort filter
    */
   @Deprecated ExecutionSummaryInfo executionSummaryInfo;
-  Integer runSequence;
+  @Builder.Default Integer runSequence = 0;
 
-  @Wither Integer stageCount;
+  @Wither @Builder.Default Integer stageCount = 0;
   @Wither @Singular List<String> stageNames;
 
   @Wither Boolean allowStageExecutions;

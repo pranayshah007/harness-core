@@ -7,6 +7,9 @@
 
 package io.harness.delegate.beans.connector.scm.awscodecommit;
 
+import io.harness.delegate.beans.connector.scm.awscodecommit.outcome.AwsCodeCommitCredentialsOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.awscodecommit.outcome.AwsCodeCommitHttpsCredentialsOutcomeDTO;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -41,5 +44,9 @@ public class AwsCodeCommitHttpsCredentialsDTO implements AwsCodeCommitCredential
       AwsCodeCommitHttpsAuthType type, AwsCodeCommitHttpsCredentialsSpecDTO httpCredentialsSpec) {
     this.type = type;
     this.httpCredentialsSpec = httpCredentialsSpec;
+  }
+
+  public AwsCodeCommitCredentialsOutcomeDTO toOutcome() {
+    return AwsCodeCommitHttpsCredentialsOutcomeDTO.builder().type(this.type).spec(this.httpCredentialsSpec).build();
   }
 }

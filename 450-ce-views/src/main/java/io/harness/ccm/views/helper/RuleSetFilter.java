@@ -8,6 +8,7 @@
 package io.harness.ccm.views.helper;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.ccm.commons.entities.CCMSort;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -34,10 +35,11 @@ public class RuleSetFilter {
   @Schema(description = "search") String search;
   @Schema(description = "limit") int limit;
   @Schema(description = "offset") int offset;
+  @Schema(description = "The order by condition for Rule Set query") List<CCMSort> orderBy;
 
   @Builder
   public RuleSetFilter(String accountId, String cloudProvider, Boolean isOOTB, List<String> ruleSetIds, String search,
-      int limit, int offset) {
+      int limit, int offset, List<CCMSort> orderBy) {
     this.accountId = accountId;
     this.cloudProvider = cloudProvider;
     this.isOOTB = isOOTB;
@@ -45,5 +47,6 @@ public class RuleSetFilter {
     this.search = search;
     this.limit = limit;
     this.offset = offset;
+    this.orderBy = orderBy;
   }
 }

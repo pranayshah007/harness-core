@@ -18,6 +18,7 @@ public enum AuthorizationServiceHeader {
   MANAGER("Manager"),
   NG_MANAGER("NextGenManager"),
   BATCH_PROCESSING("BatchProcessing"),
+  AUDIT_EVENT_STREAMING("AuditEventStreaming"),
   CI_MANAGER("CIManager"),
 
   STO_MANAGER("STOManager"),

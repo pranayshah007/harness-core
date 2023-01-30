@@ -44,25 +44,21 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
 
   @Override
   public void consumeUpdateEvent(String id, RoleAssignmentDBO updatedRoleAssignmentDBO) {
-    log.info("[DEBUG]: Start consuming update event: {} for roleassignment: {}", id, updatedRoleAssignmentDBO);
     if (!StringUtils.isEmpty(updatedRoleAssignmentDBO.getRoleIdentifier())
         || !StringUtils.isEmpty(updatedRoleAssignmentDBO.getResourceGroupIdentifier())
         || !StringUtils.isEmpty(updatedRoleAssignmentDBO.getPrincipalIdentifier())
         || updatedRoleAssignmentDBO.getDisabled() != null) {
-      log.info("[DEBUG]: Number of ACLs deleted: {} for roleassignment: {}", deleteACLs(id), id);
+      log.info("Number of ACLs deleted: {} for roleassignment: {}", deleteACLs(id), id);
       Optional<RoleAssignmentDBO> roleAssignment = roleAssignmentRepository.findById(id);
       if (roleAssignment.isPresent()) {
         long createdCount = createACLs(roleAssignment.get());
-        log.info("[DEBUG]: Number of ACLs created: {} for roleassignment: {}", createdCount, id);
-      } else {
-        log.info("[DEBUG]: Roleassignment not found in DB for id: {}", id);
+        log.info("Number of ACLs created: {} for roleassignment: {}", createdCount, id);
       }
     }
   }
 
   @Override
   public void consumeDeleteEvent(String id) {
-    log.info("[DEBUG]: Start consuming delete event: {}", id);
     long startTime = System.currentTimeMillis();
     roleAssignmentCRUDEventHandler.handleRoleAssignmentDelete(id);
     long numberOfACLsDeleted = deleteACLs(id);
@@ -86,7 +82,6 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
 
   @Override
   public void consumeCreateEvent(String id, RoleAssignmentDBO newRoleAssignmentDBO) {
-    log.info("Start consuming event: {} for roleassignment: {}", id, newRoleAssignmentDBO);
     long startTime = System.currentTimeMillis();
     Optional<RoleAssignmentDBO> roleAssignmentOptional = roleAssignmentRepository.findByIdentifierAndScopeIdentifier(
         newRoleAssignmentDBO.getIdentifier(), newRoleAssignmentDBO.getScopeIdentifier());

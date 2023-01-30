@@ -7,6 +7,12 @@
 
 package io.harness.delegate.service.intfc;
 
+import io.harness.delegate.beans.DelegateEntityOwner;
+
+import java.io.IOException;
+
 public interface DelegateInstallationCommandService {
-  String getCommand(String commandType, String managerUrl, String accountId);
+  String getCommand(String commandType, String managerUrl, String accountId, DelegateEntityOwner owner);
+  String getTerraformExampleModuleFile(String managerUrl, String accountId, DelegateEntityOwner owner)
+      throws IOException;
 }

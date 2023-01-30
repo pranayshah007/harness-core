@@ -27,9 +27,13 @@ import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.DelegateNotAvailableException;
+import io.harness.exception.DelegateServiceDriverException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ServiceNowException;
 import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -49,7 +53,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ServiceNowResourceServiceImpl implements ServiceNowResourceService {
   private static final Duration TIMEOUT = Duration.ofSeconds(30);
 
@@ -135,7 +141,14 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
             .build();
 
     final DelegateTaskRequest delegateTaskRequest = createDelegateTaskRequest(baseNGAccess, taskParameters);
-    DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+    DelegateResponseData responseData;
+    try {
+      responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+    } catch (DelegateServiceDriverException ex) {
+      log.warn("Exception while executing servicenow task", ex);
+      throw buildDelegateNotAvailableHintException("Delegates are not available for performing servicenow operation.");
+    }
+
     if (responseData instanceof ErrorNotifyResponseData) {
       ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
       throw new ServiceNowException(
@@ -199,5 +212,11 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
         .executionTimeout(TIMEOUT)
         .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
         .build();
+  }
+
+  private HintException buildDelegateNotAvailableHintException(String delegateDownErrorMessage) {
+    return new HintException(
+        String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
+        new DelegateNotAvailableException(delegateDownErrorMessage, WingsException.USER));
   }
 }

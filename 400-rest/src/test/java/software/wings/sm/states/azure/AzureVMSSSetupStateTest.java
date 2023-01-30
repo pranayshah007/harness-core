@@ -148,7 +148,7 @@ public class AzureVMSSSetupStateTest extends WingsBaseTest {
         .when(azureVMSSStateHelper)
         .fixNamePrefix(any(), anyString(), anyString(), anyString(), anyString());
     doReturn(numberOfInstances).when(azureVMSSStateHelper).renderExpressionOrGetDefault(anyString(), any(), anyInt());
-    doReturn(delegateResult).when(delegateService).queueTask(any());
+    doReturn(delegateResult).when(delegateService).queueTaskV2(any());
     doReturn(10)
         .when(azureVMSSStateHelper)
         .renderExpressionOrGetDefault(eq("10"), eq(context), eq(AzureConstants.DEFAULT_AZURE_VMSS_TIMEOUT_MIN));

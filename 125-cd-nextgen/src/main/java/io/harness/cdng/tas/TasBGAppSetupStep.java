@@ -178,7 +178,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
               .inActiveAppName(response.getNewApplicationInfo().getApplicationName())
               .newAppGuid(response.getNewApplicationInfo().getApplicationGuid())
               .finalRoutes(routeMaps)
-              .tempRoutes(getParameterFieldValue(tasBGAppSetupStepParameters.getTempRoutes()));
+              .tempRoutes(response.getNewApplicationInfo().getAttachedRoutes());
       if (!isNull(response.getActiveApplicationInfo())) {
         tasSetupVariablesOutcome.activeAppName(response.getActiveApplicationInfo().getApplicationName())
             .activeAppName(response.getActiveApplicationInfo().getApplicationName())

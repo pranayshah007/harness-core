@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -29,8 +29,10 @@ public class PipelineExecutionSummaryCd implements Serializable {
   private String moduleinfoType;
   private Long startts;
   private Long endts;
+  private String planexecutionid;
   private String triggerType;
   private String authorName;
+  private String moduleinfoAuthorId;
   private String authorAvatar;
   private String moduleinfoRepository;
   private String moduleinfoBranchName;
@@ -38,8 +40,9 @@ public class PipelineExecutionSummaryCd implements Serializable {
   private String moduleinfoEvent;
   private String moduleinfoBranchCommitId;
   private String moduleinfoBranchCommitMessage;
-  private String moduleinfoAuthorId;
-  private String planexecutionid;
+  private String originalExecutionId;
+  private Long meanTimeToRestore;
+  private Boolean isRevertExecution;
 
   public PipelineExecutionSummaryCd() {}
 
@@ -54,8 +57,10 @@ public class PipelineExecutionSummaryCd implements Serializable {
     this.moduleinfoType = value.moduleinfoType;
     this.startts = value.startts;
     this.endts = value.endts;
+    this.planexecutionid = value.planexecutionid;
     this.triggerType = value.triggerType;
     this.authorName = value.authorName;
+    this.moduleinfoAuthorId = value.moduleinfoAuthorId;
     this.authorAvatar = value.authorAvatar;
     this.moduleinfoRepository = value.moduleinfoRepository;
     this.moduleinfoBranchName = value.moduleinfoBranchName;
@@ -63,15 +68,17 @@ public class PipelineExecutionSummaryCd implements Serializable {
     this.moduleinfoEvent = value.moduleinfoEvent;
     this.moduleinfoBranchCommitId = value.moduleinfoBranchCommitId;
     this.moduleinfoBranchCommitMessage = value.moduleinfoBranchCommitMessage;
-    this.moduleinfoAuthorId = value.moduleinfoAuthorId;
-    this.planexecutionid = value.planexecutionid;
+    this.originalExecutionId = value.originalExecutionId;
+    this.meanTimeToRestore = value.meanTimeToRestore;
+    this.isRevertExecution = value.isRevertExecution;
   }
 
   public PipelineExecutionSummaryCd(String id, String accountid, String orgidentifier, String projectidentifier,
       String pipelineidentifier, String name, String status, String moduleinfoType, Long startts, Long endts,
-      String triggerType, String authorName, String authorAvatar, String moduleinfoRepository,
-      String moduleinfoBranchName, String sourceBranch, String moduleinfoEvent, String moduleinfoBranchCommitId,
-      String moduleinfoBranchCommitMessage, String moduleinfoAuthorId, String planexecutionid) {
+      String planexecutionid, String triggerType, String authorName, String moduleinfoAuthorId, String authorAvatar,
+      String moduleinfoRepository, String moduleinfoBranchName, String sourceBranch, String moduleinfoEvent,
+      String moduleinfoBranchCommitId, String moduleinfoBranchCommitMessage, String originalExecutionId,
+      Long meanTimeToRestore, Boolean isRevertExecution) {
     this.id = id;
     this.accountid = accountid;
     this.orgidentifier = orgidentifier;
@@ -82,8 +89,10 @@ public class PipelineExecutionSummaryCd implements Serializable {
     this.moduleinfoType = moduleinfoType;
     this.startts = startts;
     this.endts = endts;
+    this.planexecutionid = planexecutionid;
     this.triggerType = triggerType;
     this.authorName = authorName;
+    this.moduleinfoAuthorId = moduleinfoAuthorId;
     this.authorAvatar = authorAvatar;
     this.moduleinfoRepository = moduleinfoRepository;
     this.moduleinfoBranchName = moduleinfoBranchName;
@@ -91,8 +100,9 @@ public class PipelineExecutionSummaryCd implements Serializable {
     this.moduleinfoEvent = moduleinfoEvent;
     this.moduleinfoBranchCommitId = moduleinfoBranchCommitId;
     this.moduleinfoBranchCommitMessage = moduleinfoBranchCommitMessage;
-    this.moduleinfoAuthorId = moduleinfoAuthorId;
-    this.planexecutionid = planexecutionid;
+    this.originalExecutionId = originalExecutionId;
+    this.meanTimeToRestore = meanTimeToRestore;
+    this.isRevertExecution = isRevertExecution;
   }
 
   /**
@@ -246,6 +256,21 @@ public class PipelineExecutionSummaryCd implements Serializable {
   }
 
   /**
+   * Getter for <code>public.pipeline_execution_summary_cd.planexecutionid</code>.
+   */
+  public String getPlanexecutionid() {
+    return this.planexecutionid;
+  }
+
+  /**
+   * Setter for <code>public.pipeline_execution_summary_cd.planexecutionid</code>.
+   */
+  public PipelineExecutionSummaryCd setPlanexecutionid(String planexecutionid) {
+    this.planexecutionid = planexecutionid;
+    return this;
+  }
+
+  /**
    * Getter for <code>public.pipeline_execution_summary_cd.trigger_type</code>.
    */
   public String getTriggerType() {
@@ -272,6 +297,21 @@ public class PipelineExecutionSummaryCd implements Serializable {
    */
   public PipelineExecutionSummaryCd setAuthorName(String authorName) {
     this.authorName = authorName;
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.pipeline_execution_summary_cd.moduleinfo_author_id</code>.
+   */
+  public String getModuleinfoAuthorId() {
+    return this.moduleinfoAuthorId;
+  }
+
+  /**
+   * Setter for <code>public.pipeline_execution_summary_cd.moduleinfo_author_id</code>.
+   */
+  public PipelineExecutionSummaryCd setModuleinfoAuthorId(String moduleinfoAuthorId) {
+    this.moduleinfoAuthorId = moduleinfoAuthorId;
     return this;
   }
 
@@ -381,32 +421,47 @@ public class PipelineExecutionSummaryCd implements Serializable {
   }
 
   /**
-   * Getter for <code>public.pipeline_execution_summary_cd.moduleinfo_author_id</code>.
+   * Getter for <code>public.pipeline_execution_summary_cd.original_execution_id</code>.
    */
-  public String getModuleinfoAuthorId() {
-    return this.moduleinfoAuthorId;
+  public String getOriginalExecutionId() {
+    return this.originalExecutionId;
   }
 
   /**
-   * Setter for <code>public.pipeline_execution_summary_cd.moduleinfo_author_id</code>.
+   * Setter for <code>public.pipeline_execution_summary_cd.original_execution_id</code>.
    */
-  public PipelineExecutionSummaryCd setModuleinfoAuthorId(String moduleinfoAuthorId) {
-    this.moduleinfoAuthorId = moduleinfoAuthorId;
+  public PipelineExecutionSummaryCd setOriginalExecutionId(String originalExecutionId) {
+    this.originalExecutionId = originalExecutionId;
     return this;
   }
 
   /**
-   * Getter for <code>public.pipeline_execution_summary_cd.planexecutionid</code>.
+   * Getter for <code>public.pipeline_execution_summary_cd.mean_time_to_restore</code>.
    */
-  public String getPlanexecutionid() {
-    return this.planexecutionid;
+  public Long getMeanTimeToRestore() {
+    return this.meanTimeToRestore;
   }
 
   /**
-   * Setter for <code>public.pipeline_execution_summary_cd.planexecutionid</code>.
+   * Setter for <code>public.pipeline_execution_summary_cd.mean_time_to_restore</code>.
    */
-  public PipelineExecutionSummaryCd setPlanexecutionid(String planexecutionid) {
-    this.planexecutionid = planexecutionid;
+  public PipelineExecutionSummaryCd setMeanTimeToRestore(Long meanTimeToRestore) {
+    this.meanTimeToRestore = meanTimeToRestore;
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.pipeline_execution_summary_cd.is_revert_execution</code>.
+   */
+  public Boolean getIsRevertExecution() {
+    return this.isRevertExecution;
+  }
+
+  /**
+   * Setter for <code>public.pipeline_execution_summary_cd.is_revert_execution</code>.
+   */
+  public PipelineExecutionSummaryCd setIsRevertExecution(Boolean isRevertExecution) {
+    this.isRevertExecution = isRevertExecution;
     return this;
   }
 
@@ -469,6 +524,11 @@ public class PipelineExecutionSummaryCd implements Serializable {
         return false;
     } else if (!endts.equals(other.endts))
       return false;
+    if (planexecutionid == null) {
+      if (other.planexecutionid != null)
+        return false;
+    } else if (!planexecutionid.equals(other.planexecutionid))
+      return false;
     if (triggerType == null) {
       if (other.triggerType != null)
         return false;
@@ -478,6 +538,11 @@ public class PipelineExecutionSummaryCd implements Serializable {
       if (other.authorName != null)
         return false;
     } else if (!authorName.equals(other.authorName))
+      return false;
+    if (moduleinfoAuthorId == null) {
+      if (other.moduleinfoAuthorId != null)
+        return false;
+    } else if (!moduleinfoAuthorId.equals(other.moduleinfoAuthorId))
       return false;
     if (authorAvatar == null) {
       if (other.authorAvatar != null)
@@ -514,15 +579,20 @@ public class PipelineExecutionSummaryCd implements Serializable {
         return false;
     } else if (!moduleinfoBranchCommitMessage.equals(other.moduleinfoBranchCommitMessage))
       return false;
-    if (moduleinfoAuthorId == null) {
-      if (other.moduleinfoAuthorId != null)
+    if (originalExecutionId == null) {
+      if (other.originalExecutionId != null)
         return false;
-    } else if (!moduleinfoAuthorId.equals(other.moduleinfoAuthorId))
+    } else if (!originalExecutionId.equals(other.originalExecutionId))
       return false;
-    if (planexecutionid == null) {
-      if (other.planexecutionid != null)
+    if (meanTimeToRestore == null) {
+      if (other.meanTimeToRestore != null)
         return false;
-    } else if (!planexecutionid.equals(other.planexecutionid))
+    } else if (!meanTimeToRestore.equals(other.meanTimeToRestore))
+      return false;
+    if (isRevertExecution == null) {
+      if (other.isRevertExecution != null)
+        return false;
+    } else if (!isRevertExecution.equals(other.isRevertExecution))
       return false;
     return true;
   }
@@ -541,8 +611,10 @@ public class PipelineExecutionSummaryCd implements Serializable {
     result = prime * result + ((this.moduleinfoType == null) ? 0 : this.moduleinfoType.hashCode());
     result = prime * result + ((this.startts == null) ? 0 : this.startts.hashCode());
     result = prime * result + ((this.endts == null) ? 0 : this.endts.hashCode());
+    result = prime * result + ((this.planexecutionid == null) ? 0 : this.planexecutionid.hashCode());
     result = prime * result + ((this.triggerType == null) ? 0 : this.triggerType.hashCode());
     result = prime * result + ((this.authorName == null) ? 0 : this.authorName.hashCode());
+    result = prime * result + ((this.moduleinfoAuthorId == null) ? 0 : this.moduleinfoAuthorId.hashCode());
     result = prime * result + ((this.authorAvatar == null) ? 0 : this.authorAvatar.hashCode());
     result = prime * result + ((this.moduleinfoRepository == null) ? 0 : this.moduleinfoRepository.hashCode());
     result = prime * result + ((this.moduleinfoBranchName == null) ? 0 : this.moduleinfoBranchName.hashCode());
@@ -551,8 +623,9 @@ public class PipelineExecutionSummaryCd implements Serializable {
     result = prime * result + ((this.moduleinfoBranchCommitId == null) ? 0 : this.moduleinfoBranchCommitId.hashCode());
     result = prime * result
         + ((this.moduleinfoBranchCommitMessage == null) ? 0 : this.moduleinfoBranchCommitMessage.hashCode());
-    result = prime * result + ((this.moduleinfoAuthorId == null) ? 0 : this.moduleinfoAuthorId.hashCode());
-    result = prime * result + ((this.planexecutionid == null) ? 0 : this.planexecutionid.hashCode());
+    result = prime * result + ((this.originalExecutionId == null) ? 0 : this.originalExecutionId.hashCode());
+    result = prime * result + ((this.meanTimeToRestore == null) ? 0 : this.meanTimeToRestore.hashCode());
+    result = prime * result + ((this.isRevertExecution == null) ? 0 : this.isRevertExecution.hashCode());
     return result;
   }
 
@@ -570,8 +643,10 @@ public class PipelineExecutionSummaryCd implements Serializable {
     sb.append(", ").append(moduleinfoType);
     sb.append(", ").append(startts);
     sb.append(", ").append(endts);
+    sb.append(", ").append(planexecutionid);
     sb.append(", ").append(triggerType);
     sb.append(", ").append(authorName);
+    sb.append(", ").append(moduleinfoAuthorId);
     sb.append(", ").append(authorAvatar);
     sb.append(", ").append(moduleinfoRepository);
     sb.append(", ").append(moduleinfoBranchName);
@@ -579,8 +654,9 @@ public class PipelineExecutionSummaryCd implements Serializable {
     sb.append(", ").append(moduleinfoEvent);
     sb.append(", ").append(moduleinfoBranchCommitId);
     sb.append(", ").append(moduleinfoBranchCommitMessage);
-    sb.append(", ").append(moduleinfoAuthorId);
-    sb.append(", ").append(planexecutionid);
+    sb.append(", ").append(originalExecutionId);
+    sb.append(", ").append(meanTimeToRestore);
+    sb.append(", ").append(isRevertExecution);
 
     sb.append(")");
     return sb.toString();

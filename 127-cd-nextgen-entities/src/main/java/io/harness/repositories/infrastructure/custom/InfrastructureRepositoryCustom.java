@@ -9,6 +9,7 @@ package io.harness.repositories.infrastructure.custom;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 
 import com.mongodb.client.result.DeleteResult;
@@ -33,6 +34,10 @@ public interface InfrastructureRepositoryCustom {
 
   List<InfrastructureEntity> findAllFromEnvIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier);
+
+  List<InfrastructureEntity> findAllFromEnvIdentifierAndDeploymentType(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String envIdentifier, ServiceDefinitionType deploymentType);
+
   UpdateResult batchUpdateInfrastructure(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String envIdentifier, List<String> infraIdentifierList, Update update);
 

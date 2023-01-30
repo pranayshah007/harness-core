@@ -7,7 +7,10 @@
 
 package io.harness.plancreator.strategy;
 
+import static io.harness.plancreator.strategy.StrategyConstants.CURRENT_GLOBAL_ITERATION;
+import static io.harness.plancreator.strategy.StrategyConstants.TOTAL_GLOBAL_ITERATIONS;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,6 +44,7 @@ import org.mockito.MockitoAnnotations;
 
 public class StrategyUtilsV1Test extends PmsSdkCoreTestBase {
   @Mock KryoSerializer kryoSerializer;
+
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
@@ -178,5 +182,53 @@ public class StrategyUtilsV1Test extends PmsSdkCoreTestBase {
         dependenciesMap, metadataMap, new ArrayList<>());
     assertThat(metadataMap.size()).isEqualTo(1);
     assertThat(dependenciesMap.size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testFetchGlobalIterationsVariablesForStrategyObjectMap() {
+    Map<String, Object> strategyObjectMap = new HashMap<>();
+    List<IterationVariables> levels = new ArrayList<>();
+    levels.add(IterationVariables.builder().currentIteration(1).totalIterations(3).build());
+    levels.add(IterationVariables.builder().currentIteration(1).totalIterations(3).build());
+    levels.add(IterationVariables.builder().currentIteration(1).totalIterations(3).build());
+
+    StrategyUtils.fetchGlobalIterationsVariablesForStrategyObjectMap(strategyObjectMap, levels);
+
+    assertThat(strategyObjectMap.get(CURRENT_GLOBAL_ITERATION)).isEqualTo(13);
+    assertThat(strategyObjectMap.get(TOTAL_GLOBAL_ITERATIONS)).isEqualTo(27);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testFetchGlobalIterationsVariablesForStrategyObjectMapFirstItr() {
+    Map<String, Object> strategyObjectMap = new HashMap<>();
+    List<IterationVariables> levels = new ArrayList<>();
+    levels.add(IterationVariables.builder().currentIteration(0).totalIterations(3).build());
+    levels.add(IterationVariables.builder().currentIteration(0).totalIterations(3).build());
+    levels.add(IterationVariables.builder().currentIteration(0).totalIterations(3).build());
+
+    StrategyUtils.fetchGlobalIterationsVariablesForStrategyObjectMap(strategyObjectMap, levels);
+
+    assertThat(strategyObjectMap.get(CURRENT_GLOBAL_ITERATION)).isEqualTo(0);
+    assertThat(strategyObjectMap.get(TOTAL_GLOBAL_ITERATIONS)).isEqualTo(27);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testFetchGlobalIterationsVariablesForStrategyObjectMapRandomItr() {
+    Map<String, Object> strategyObjectMap = new HashMap<>();
+    List<IterationVariables> levels = new ArrayList<>();
+    levels.add(IterationVariables.builder().currentIteration(0).totalIterations(3).build());
+    levels.add(IterationVariables.builder().currentIteration(1).totalIterations(3).build());
+    levels.add(IterationVariables.builder().currentIteration(2).totalIterations(3).build());
+
+    StrategyUtils.fetchGlobalIterationsVariablesForStrategyObjectMap(strategyObjectMap, levels);
+
+    assertThat(strategyObjectMap.get(CURRENT_GLOBAL_ITERATION)).isEqualTo(5);
+    assertThat(strategyObjectMap.get(TOTAL_GLOBAL_ITERATIONS)).isEqualTo(27);
   }
 }

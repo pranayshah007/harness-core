@@ -10,10 +10,12 @@ package io.harness.ng.core.artifacts.resources;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -216,6 +218,21 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     assertThat(imagePath).isEqualTo("library/nginx");
     verify(pipelineServiceClient)
         .getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testGetResolvedPathWithImagePathWhenPipelineUnderConstruction() throws IOException {
+    assertThatThrownBy(
+        ()
+            -> artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, "-1", "",
+                "<+pipeline.variables.image_path>",
+                "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+                GitEntityFindInfoDTO.builder().build(), ""))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(
+            "Couldn't resolve artifact image path expression <+pipeline.variables.image_path>, as pipeline has not been saved yet.");
   }
 
   @Test

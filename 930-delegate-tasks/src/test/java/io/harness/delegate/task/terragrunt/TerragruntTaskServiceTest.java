@@ -108,7 +108,7 @@ public class TerragruntTaskServiceTest extends CategoryTest {
                         .files(List.of("test-be-123.tfVars"))
                         .build());
 
-    when(terragruntClientFactory.getClient(any(), anyLong(), any(), any()))
+    when(terragruntClientFactory.getClient(any(), anyLong(), any(), any(), any()))
         .thenReturn(TerragruntClientImpl.builder()
                         .cliHelper(cliHelper)
                         .terragruntInfoJson("{ \"WorkingDir\": \"workingDir/\" }")
@@ -166,7 +166,7 @@ public class TerragruntTaskServiceTest extends CategoryTest {
                         .files(List.of("test-be-123.tfVars"))
                         .build());
 
-    when(terragruntClientFactory.getClient(any(), anyLong(), any(), any()))
+    when(terragruntClientFactory.getClient(any(), anyLong(), any(), any(), any()))
         .thenReturn(TerragruntClientImpl.builder()
                         .cliHelper(cliHelper)
                         .terragruntInfoJson("{ \"WorkingDir\": \"workingDir/\" }")

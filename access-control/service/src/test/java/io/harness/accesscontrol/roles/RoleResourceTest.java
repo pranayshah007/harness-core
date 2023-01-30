@@ -50,6 +50,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 
 import java.util.Optional;
+import javax.ws.rs.NotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -131,7 +132,7 @@ public class RoleResourceTest extends AccessControlTestBase {
     verify(roleDTOMapper, times(1)).toResponseDTO(any());
   }
 
-  @Test(expected = InvalidRequestException.class)
+  @Test(expected = NotFoundException.class)
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
   public void testGetNotFound() {

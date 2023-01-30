@@ -152,7 +152,7 @@ public class EcsSteadyStateCheckTest extends WingsBaseTest {
     ExecutionResponse response = check.execute(mockContext);
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockDelegateService).queueTask(captor.capture());
+    verify(mockDelegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
     assertThat(delegateTask.getData().getParameters()).isNotNull();

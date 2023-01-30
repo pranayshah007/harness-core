@@ -13,11 +13,10 @@ import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
 
-import static java.lang.Boolean.TRUE;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -86,6 +85,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import javax.ws.rs.NotFoundException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -123,6 +124,7 @@ public class NGTemplateResourceTest extends CategoryTest {
 
   TemplateEntity entity;
   TemplateEntity entityWithMongoVersion;
+  private AutoCloseable mocks;
 
   private final VariablesServiceGrpc.VariablesServiceImplBase serviceImpl =
       mock(VariablesServiceGrpc.VariablesServiceImplBase.class,
@@ -144,7 +146,7 @@ public class NGTemplateResourceTest extends CategoryTest {
 
   @Before
   public void setUp() throws IOException {
-    MockitoAnnotations.initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
 
     // Generate a unique in-process server name.
     String serverName = InProcessServerBuilder.generateName();
@@ -194,10 +196,17 @@ public class NGTemplateResourceTest extends CategoryTest {
                                  .build();
   }
 
+  @After
+  public void tearDown() throws Exception {
+    if (mocks != null) {
+      mocks.close();
+    }
+  }
+
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  public void testCreateTemplate() throws IOException {
+  public void testCreateTemplate() {
     doReturn(entityWithMongoVersion).when(templateService).create(entity, false, "");
     ResponseDTO<TemplateWrapperResponseDTO> responseDTO =
         templateResource.create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, yaml, false, "");
@@ -240,7 +249,7 @@ public class NGTemplateResourceTest extends CategoryTest {
     assertThatThrownBy(()
                            -> templateResource.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, false, null, null, false))
-        .isInstanceOf(InvalidRequestException.class);
+        .isInstanceOf(NotFoundException.class);
   }
 
   @Test
@@ -297,7 +306,7 @@ public class NGTemplateResourceTest extends CategoryTest {
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "", false);
     ResponseDTO<Boolean> responseDTO = templateResource.deleteTemplate(
         "", ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "", false);
-    assertThat(responseDTO.getData()).isEqualTo(true);
+    assertThat(responseDTO.getData()).isTrue();
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
             Resource.of(TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_DELETE_PERMISSION);
@@ -317,7 +326,7 @@ public class NGTemplateResourceTest extends CategoryTest {
         ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
         TemplateDeleteListRequestDTO.builder().templateVersionLabels(new ArrayList<>(templateVersions)).build(), null,
         "", false);
-    assertThat(responseDTO.getData()).isEqualTo(true);
+    assertThat(responseDTO.getData()).isTrue();
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
             Resource.of(TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_DELETE_PERMISSION);
@@ -333,7 +342,7 @@ public class NGTemplateResourceTest extends CategoryTest {
             Scope.ORG, TEMPLATE_VERSION_LABEL, false);
     ResponseDTO<Boolean> responseDTO = templateResource.updateTemplateSettings(ACCOUNT_ID, ORG_IDENTIFIER,
         PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, Scope.PROJECT, Scope.ORG, null, false);
-    assertThat(responseDTO.getData()).isEqualTo(true);
+    assertThat(responseDTO.getData()).isTrue();
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
             Resource.of(TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_DELETE_PERMISSION);
@@ -379,7 +388,7 @@ public class NGTemplateResourceTest extends CategoryTest {
     ResponseDTO<Boolean> responseDTO = templateResource.validateTheIdentifierIsUnique(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL);
 
-    assertThat(responseDTO.getData()).isEqualTo(TRUE);
+    assertThat(responseDTO.getData()).isTrue();
     verify(templateService)
         .validateIdentifierIsUnique(
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL);

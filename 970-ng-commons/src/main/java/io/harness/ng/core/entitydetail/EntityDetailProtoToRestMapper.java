@@ -14,11 +14,11 @@ import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.INPU
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
 
 import io.harness.EntityType;
+import io.harness.beans.EntityReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.InfraDefReference;
 import io.harness.beans.InputSetReference;
 import io.harness.beans.NGTemplateReference;
-import io.harness.common.EntityReference;
 import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;

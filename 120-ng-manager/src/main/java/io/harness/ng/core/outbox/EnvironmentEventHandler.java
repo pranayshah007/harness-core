@@ -28,6 +28,7 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.events.EnvironmentCreateEvent;
 import io.harness.ng.core.events.EnvironmentDeleteEvent;
+import io.harness.ng.core.events.EnvironmentForceDeleteEvent;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.events.EnvironmentUpsertEvent;
 import io.harness.ng.core.events.OutboxEventConstants;
@@ -200,6 +201,32 @@ public class EnvironmentEventHandler implements OutboxEventHandler {
     return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
   }
 
+  private boolean handlerEnvironmentForceDeleted(OutboxEvent outboxEvent) throws IOException {
+    GlobalContext globalContext = outboxEvent.getGlobalContext();
+    EnvironmentForceDeleteEvent environmentForceDeleteEvent =
+        objectMapper.readValue(outboxEvent.getEventData(), EnvironmentForceDeleteEvent.class);
+    final Environment environment = environmentForceDeleteEvent.getEnvironment();
+    AuditEntry auditEntry = AuditEntry.builder()
+                                .action(Action.FORCE_DELETE)
+                                .module(ModuleType.CORE)
+                                .insertId(outboxEvent.getId())
+                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+                                .timestamp(outboxEvent.getCreatedAt())
+                                .oldYaml(isNotEmpty(environment.getYaml())
+                                        ? environment.getYaml()
+                                        : getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment)))
+                                .build();
+
+    Principal principal = null;
+    if (globalContext.get(PRINCIPAL_CONTEXT) == null) {
+      principal = new ServicePrincipal(NG_MANAGER.getServiceId());
+    } else if (globalContext.get(PRINCIPAL_CONTEXT) != null) {
+      principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
+    }
+    return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
+  }
+
   @Override
   public boolean handle(OutboxEvent outboxEvent) {
     try {
@@ -212,6 +239,8 @@ public class EnvironmentEventHandler implements OutboxEventHandler {
           return handlerEnvironmentUpdated(outboxEvent);
         case OutboxEventConstants.ENVIRONMENT_DELETED:
           return handlerEnvironmentDeleted(outboxEvent);
+        case OutboxEventConstants.ENVIRONMENT_FORCE_DELETED:
+          return handlerEnvironmentForceDeleted(outboxEvent);
         default:
           return false;
       }

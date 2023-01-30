@@ -8,6 +8,7 @@
 package software.wings.graphql.datafetcher.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -39,6 +40,7 @@ import software.wings.security.annotations.AuthRule;
 import software.wings.service.intfc.AppService;
 
 import com.google.inject.Inject;
+import com.mongodb.BasicDBObject;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import graphql.schema.DataFetchingEnvironment;
@@ -88,8 +90,13 @@ public class ExecutionConnectionDataFetcher
       query.field(WorkflowExecutionKeys.pipelineExecutionId).doesNotExist();
     }
 
+    BasicDBObject hint = null;
+    if (featureFlagService.isEnabled(SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING, getAccountId())) {
+      hint = executionQueryHelper.getIndexHint(filters);
+    }
+
     QLExecutionConnectionBuilder connectionBuilder = QLExecutionConnection.builder();
-    connectionBuilder.pageInfo(utils.populate(pageQueryParameters, query, execution -> {
+    connectionBuilder.pageInfo(utils.populate(pageQueryParameters, query, hint, execution -> {
       if (execution.getWorkflowType() == WorkflowType.PIPELINE) {
         final QLPipelineExecutionBuilder builder = QLPipelineExecution.builder();
         pipelineExecutionController.populatePipelineExecution(execution, builder);

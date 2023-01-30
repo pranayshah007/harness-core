@@ -163,7 +163,7 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
     Map<String, Object> apiParamOptions = null;
 
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.GITOPS_API_PARAMS_MERGE_PR)) {
-      apiParamOptions = gitOpsSpecParams.getVariables().getValue();
+      apiParamOptions = gitOpsSpecParams.getVariables();
     }
 
     IdentifierRef identifierRef =

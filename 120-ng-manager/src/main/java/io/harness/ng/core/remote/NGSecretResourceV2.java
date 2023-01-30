@@ -83,6 +83,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -353,14 +354,18 @@ public class NGSecretResourceV2 {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
-    SecretResponseWrapper secret =
-        ngSecretService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier).orElse(null);
-    secretPermissionValidator.checkForAccessOrThrow(
-        ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(SECRET_RESOURCE_TYPE, identifier), SECRET_VIEW_PERMISSION,
-        secret != null ? secret.getSecret().getOwner() : null);
+    Optional<SecretResponseWrapper> secret =
+        ngSecretService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    if (secret.isPresent()) {
+      secretPermissionValidator.checkForAccessOrThrow(
+          ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+          Resource.of(SECRET_RESOURCE_TYPE, identifier), SECRET_VIEW_PERMISSION, secret.get().getSecret().getOwner());
 
-    return ResponseDTO.newResponse(secret);
+      return ResponseDTO.newResponse(secret.get());
+    } else {
+      throw new NotFoundException(
+          String.format("Secret with identifier [%s] is not found in the given scope", identifier));
+    }
   }
 
   @DELETE

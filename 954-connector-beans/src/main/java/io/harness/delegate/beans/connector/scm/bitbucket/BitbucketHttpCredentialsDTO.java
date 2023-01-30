@@ -7,6 +7,9 @@
 
 package io.harness.delegate.beans.connector.scm.bitbucket;
 
+import io.harness.delegate.beans.connector.scm.bitbucket.outcome.BitbucketCredentialsOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.outcome.BitbucketHttpCredentialsOutcomeDTO;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -41,5 +44,9 @@ public class BitbucketHttpCredentialsDTO implements BitbucketCredentialsDTO {
       BitbucketHttpAuthenticationType type, BitbucketHttpCredentialsSpecDTO httpCredentialsSpec) {
     this.type = type;
     this.httpCredentialsSpec = httpCredentialsSpec;
+  }
+
+  public BitbucketCredentialsOutcomeDTO toOutcome() {
+    return BitbucketHttpCredentialsOutcomeDTO.builder().type(this.type).spec(this.httpCredentialsSpec).build();
   }
 }

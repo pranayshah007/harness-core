@@ -124,7 +124,7 @@ public class AzureKubernetesInfraMappingYamlHandlerTest extends YamlHandlerTestB
     when(appService.getAppByName(anyString(), anyString())).thenReturn(getApplication());
     when(environmentService.getEnvironmentByName(anyString(), anyString())).thenReturn(getEnvironment());
     when(containerService.validate(any(), anyBoolean())).thenReturn(true);
-    when(delegateProxyFactory.get(any(), any())).thenReturn(containerService);
+    when(delegateProxyFactory.getV2(any(), any())).thenReturn(containerService);
     when(serviceResourceService.getServiceByName(anyString(), anyString())).thenReturn(getService());
     when(serviceResourceService.getWithDetails(anyString(), anyString())).thenReturn(getService());
     when(serviceTemplateService.getTemplateRefKeysByService(anyString(), anyString(), anyString()))

@@ -98,6 +98,8 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
 
     AsgCanaryDeployStepParameters asgSpecParameters = (AsgCanaryDeployStepParameters) stepElementParameters.getSpec();
 
+    String amiImageId = asgStepCommonHelper.getAmiImageId(ambiance);
+
     AsgCanaryDeployRequest asgCanaryDeployRequest =
         AsgCanaryDeployRequest.builder()
             .commandName(ASG_CANARY_DEPLOY_COMMAND_NAME)
@@ -109,6 +111,7 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
             .serviceNameSuffix(CANARY_SUFFIX)
             .unitValue(asgSpecParameters.getInstanceSelection().getSpec().getInstances())
             .unitType(asgSpecParameters.getInstanceSelection().getSpec().getType())
+            .amiImageId(amiImageId)
             .build();
 
     return asgStepCommonHelper.queueAsgTask(stepElementParameters, asgCanaryDeployRequest, ambiance,

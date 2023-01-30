@@ -9,6 +9,7 @@ package io.harness.repositories.envGroup;
 
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 
+import com.mongodb.client.result.DeleteResult;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,7 +24,9 @@ public interface EnvironmentGroupRepositoryCustom {
   Page<EnvironmentGroupEntity> list(
       Criteria criteria, Pageable pageRequest, String projectIdentifier, String orgIdentifier, String accountId);
 
-  boolean deleteEnvGroup(EnvironmentGroupEntity environmentGroupEntity);
+  boolean deleteEnvGroup(EnvironmentGroupEntity environmentGroupEntity, boolean forceDelete);
+
+  DeleteResult delete(Criteria criteria);
 
   EnvironmentGroupEntity update(
       EnvironmentGroupEntity updatedEntity, EnvironmentGroupEntity originalEntity, Criteria criteria);

@@ -29,7 +29,6 @@ import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
-import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitsync.beans.StoreType;
@@ -108,6 +107,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -216,7 +216,7 @@ public class NGTemplateResource {
     }
     TemplateResponseDTO templateResponseDTO = NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity.orElseThrow(
         ()
-            -> new InvalidRequestException(String.format(
+            -> new NotFoundException(String.format(
                 "Template with the given Identifier: %s and %s does not exist or has been deleted", templateIdentifier,
                 EmptyPredicate.isEmpty(versionLabel) ? "stable versionLabel" : "versionLabel: " + versionLabel))));
     return ResponseDTO.newResponse(version, templateResponseDTO);

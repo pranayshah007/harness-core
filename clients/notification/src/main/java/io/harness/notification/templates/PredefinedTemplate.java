@@ -78,8 +78,11 @@ public enum PredefinedTemplate {
   PIPELINE_REJECTED_PD_ALERT(
       "notification_templates/pipeline_rejected_pd_test.txt", "pipeline_rejected_pagerduty_alert"),
   PIPELINE_REJECTED_MSTEAMS_ALERT(
-      "notification_templates/pipeline_rejected_msteams_test.txt", "pipeline_rejected_msteams_alert");
-
+      "notification_templates/pipeline_rejected_msteams_test.txt", "pipeline_rejected_msteams_alert"),
+  HARNESS_APPROVAL_NOTIFICATION_MSTEAMS(
+      "notification_templates/approval/msteams/plain_text.txt", "harness_approval_msteams"),
+  HARNESS_APPROVAL_EXECUTION_NOTIFICATION_MSTEAMS(
+      "notification_templates/approval/msteams/plain_text_execution.txt", "harness_approval_execution_msteams");
   private String path;
   private String identifier;
 

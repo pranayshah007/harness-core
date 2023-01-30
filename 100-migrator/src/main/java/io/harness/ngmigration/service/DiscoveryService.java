@@ -35,6 +35,7 @@ import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigratedDetails;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.remote.client.ServiceHttpClientConfig;
 
@@ -119,7 +120,12 @@ public class DiscoveryService {
       // TODO: check if child already discovered, if yes, no need to rediscover. Just create a link in parent.
       for (CgEntityId child : chilldren) {
         NgMigrationService ngMigrationService = migrationFactory.getMethod(child.getType());
-        DiscoveryNode node = ngMigrationService.discover(accountId, appId, child.getId());
+        DiscoveryNode node = null;
+        try {
+          node = ngMigrationService.discover(accountId, appId, child.getId());
+        } catch (Exception e) {
+          log.error("error when fetching entity", e);
+        }
         travel(accountId, appId, entities, graph, currentNode.getEntityId(), node);
       }
     }

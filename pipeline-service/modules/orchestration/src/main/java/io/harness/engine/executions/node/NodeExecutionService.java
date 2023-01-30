@@ -303,6 +303,12 @@ public interface NodeExecutionService {
   boolean markRetried(String nodeExecutionId);
 
   /**
+   * Deletes the nodeExecutions and its related metadata
+   * @param planExecutionId Id of to be deleted planExecution
+   */
+  void deleteAllNodeExecutionAndMetadata(String planExecutionId);
+
+  /**
    * Update Nodes for which the previousId was failed node execution and replace it with the
    * note execution which is being retried
    * Uses - previous_id_idx

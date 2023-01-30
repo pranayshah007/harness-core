@@ -19,6 +19,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.PipelineServiceTestHelper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -852,8 +853,8 @@ public class RetryExecuteHelperTest extends CategoryTest {
         Collections.singletonList(PipelineExecutionSummaryEntity.builder().build());
 
     // entities are <=1. Checking error message
-    when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentId(rootExecutionId))
-        .thenReturn(pipelineExecutionSummaryEntities);
+    when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentIdUsingSecondaryMongo(rootExecutionId))
+        .thenReturn(PipelineServiceTestHelper.createCloseableIterator(pipelineExecutionSummaryEntities.iterator()));
     RetryHistoryResponseDto retryHistory = retryExecuteHelper.getRetryHistory(rootExecutionId);
     assertThat(retryHistory.getErrorMessage()).isNotNull();
 
@@ -876,8 +877,8 @@ public class RetryExecuteHelperTest extends CategoryTest {
             .status(ExecutionStatus.ABORTED)
             .build());
 
-    when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentId(rootExecutionId))
-        .thenReturn(pipelineExecutionSummaryEntities);
+    when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentIdUsingSecondaryMongo(rootExecutionId))
+        .thenReturn(PipelineServiceTestHelper.createCloseableIterator(pipelineExecutionSummaryEntities.iterator()));
     retryHistory = retryExecuteHelper.getRetryHistory(rootExecutionId);
     assertThat(retryHistory.getErrorMessage()).isNull();
     assertThat(retryHistory.getLatestExecutionId()).isEqualTo("uuid1");
@@ -893,8 +894,8 @@ public class RetryExecuteHelperTest extends CategoryTest {
         Collections.singletonList(PipelineExecutionSummaryEntity.builder().build());
 
     // entities are <=1. Checking error message
-    when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentId(rootExecutionId))
-        .thenReturn(pipelineExecutionSummaryEntities);
+    when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentIdUsingSecondaryMongo(rootExecutionId))
+        .thenReturn(PipelineServiceTestHelper.createCloseableIterator(pipelineExecutionSummaryEntities.iterator()));
     RetryLatestExecutionResponseDto retryLatestExecutionResponse =
         retryExecuteHelper.getRetryLatestExecutionId(rootExecutionId);
     assertThat(retryLatestExecutionResponse.getErrorMessage()).isNotNull();
@@ -918,8 +919,8 @@ public class RetryExecuteHelperTest extends CategoryTest {
             .status(ExecutionStatus.ABORTED)
             .build());
 
-    when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentId(rootExecutionId))
-        .thenReturn(pipelineExecutionSummaryEntities);
+    when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentIdUsingSecondaryMongo(rootExecutionId))
+        .thenReturn(PipelineServiceTestHelper.createCloseableIterator(pipelineExecutionSummaryEntities.iterator()));
     retryLatestExecutionResponse = retryExecuteHelper.getRetryLatestExecutionId(rootExecutionId);
     assertThat(retryLatestExecutionResponse.getErrorMessage()).isNull();
     assertThat(retryLatestExecutionResponse.getLatestExecutionId()).isEqualTo("uuid1");

@@ -40,6 +40,7 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.custom.CustomApprovalHelperService;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
@@ -78,8 +79,9 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
   private final StepHelper stepHelper;
 
   @Inject
-  public CustomApprovalHelperServiceImpl(NgDelegate2TaskExecutor ngDelegate2TaskExecutor, KryoSerializer kryoSerializer,
-      WaitNotifyEngine waitNotifyEngine, LogStreamingStepClientFactory logStreamingStepClientFactory,
+  public CustomApprovalHelperServiceImpl(NgDelegate2TaskExecutor ngDelegate2TaskExecutor,
+      @Named("referenceFalseKryoSerializer") KryoSerializer kryoSerializer, WaitNotifyEngine waitNotifyEngine,
+      LogStreamingStepClientFactory logStreamingStepClientFactory,
       @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName, PmsGitSyncHelper pmsGitSyncHelper,
       ShellScriptHelperService shellScriptHelperService, ApprovalInstanceService approvalInstanceService,
       StepHelper stepHelper) {
@@ -181,7 +183,7 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
                             .timeout(instance.getScriptTimeout().getValue().getTimeoutInMillis())
                             .build();
     List<TaskSelector> selectors = TaskSelectorYaml.toTaskSelector(instance.getDelegateSelectors());
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
             StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))),
         null, null, selectors, stepHelper.getEnvironmentType(ambiance));
@@ -198,7 +200,7 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
 
     List<TaskSelector> selectors = TaskSelectorYaml.toTaskSelector(instance.getDelegateSelectors());
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         Arrays.asList(WinRmShellScriptTaskNG.INIT_UNIT, WinRmShellScriptTaskNG.COMMAND_UNIT), null, selectors,
         stepHelper.getEnvironmentType(ambiance));
   }

@@ -52,10 +52,12 @@ public class CEViewFolderDao {
         .count();
   }
 
-  public List<CEViewFolder> getFolders(String accountId) {
+  public List<CEViewFolder> getFolders(String accountId, String folderNamePattern) {
     return hPersistence.createQuery(CEViewFolder.class)
         .field(CEViewFolderKeys.accountId)
         .equal(accountId)
+        .field(CEViewFolderKeys.name)
+        .containsIgnoreCase(folderNamePattern)
         .order(Sort.descending(CEViewFolderKeys.pinned), Sort.ascending(CEViewFolderKeys.name))
         .asList();
   }
