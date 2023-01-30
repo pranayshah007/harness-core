@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.executorlib;
+package io.harness.delegate.executor;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -13,11 +13,11 @@ import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.configuration.DelegateConfiguration;
-import io.harness.delegate.executorlib.config.Configuration;
-import io.harness.delegate.executorlib.config.ConfigurationProvider;
-import io.harness.delegate.executorlib.shutdownhook.ShutdownHook;
-import io.harness.delegate.executorlib.bundle.BootstrapBundle;
-import io.harness.delegate.executorlib.taskloader.TaskPackageReader;
+import io.harness.delegate.executor.config.Configuration;
+import io.harness.delegate.executor.config.ConfigurationProvider;
+import io.harness.delegate.executor.shutdownhook.ShutdownHook;
+import io.harness.delegate.executor.bundle.BootstrapBundle;
+import io.harness.delegate.executor.taskloader.TaskPackageReader;
 import io.harness.delegate.task.common.DelegateRunnableTask;
 import io.harness.serializer.KryoSerializer;
 import lombok.extern.slf4j.Slf4j;

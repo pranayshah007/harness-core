@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.executorlib.config;
+package io.harness.delegate.executor.config;
 
 import lombok.Builder;
 import lombok.Data;
@@ -14,10 +14,9 @@ import lombok.Value;
 
 @Value
 @Builder
-@ToString
 public class Configuration {
     @Builder.Default
-    private String taskFilePath = "/opt/harness/taskfile";
+    private String taskInputPath = "/opt/harness/taskfile";
     // TODO: (not implemented) there should be a limit on threads to limit cpu utilization and avoid memory leak
     // This helps product stability as well, because if a task pod exceeds cpu limit, it will be evicted.
     @Builder.Default

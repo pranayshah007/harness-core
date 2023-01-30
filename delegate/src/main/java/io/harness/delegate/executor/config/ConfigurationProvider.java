@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.executorlib.config;
+package io.harness.delegate.executor.config;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import io.harness.exception.WingsException;
@@ -22,11 +22,11 @@ import javax.annotation.Nullable;
 
 @Slf4j
 public class ConfigurationProvider {
-  private static Configuration configuration;
+  private static io.harness.delegate.executor.config.Configuration configuration;
 
   private static final String CONFIG_PATH = "executor_config.yaml";
 
-  public static Configuration getExecutorConfiguration(@Nullable String path) {
+  public static io.harness.delegate.executor.config.Configuration getExecutorConfiguration(@Nullable String path) {
     log.info("Working Directory = " + System.getProperty("user.dir"));
     if (!Objects.isNull(configuration)) {
       return configuration;
@@ -34,7 +34,7 @@ public class ConfigurationProvider {
     final File configFile = new File(Objects.isNull(path) ? CONFIG_PATH : path);
     if (!configFile.exists()) {
       log.info("Runner config not exist, using default config settings.");
-      return Configuration.builder().build();
+      return io.harness.delegate.executor.config.Configuration.builder().build();
     }
     try {
       return new YamlUtils().read(FileUtils.readFileToString(configFile, UTF_8), Configuration.class);

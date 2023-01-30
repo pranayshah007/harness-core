@@ -5,13 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.executorlib.bundle;
+package io.harness.delegate.executor.bundle;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
-import io.harness.delegate.executorlib.serviceproviders.ServiceProvidersModule;
+import io.harness.delegate.executor.serviceproviders.ServiceProvidersModule;
 import io.harness.delegate.task.common.DelegateRunnableTask;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.KryoSerializer;

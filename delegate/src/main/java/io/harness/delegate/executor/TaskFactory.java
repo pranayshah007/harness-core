@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.executorlib;
+package io.harness.delegate.executor;
 
 import static org.joor.Reflect.on;
 
@@ -15,9 +15,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
-import io.harness.delegate.executorlib.config.Configuration;
-import io.harness.delegate.executorlib.response.ResponseSender;
-import io.harness.delegate.executorlib.taskloader.TaskPackageReader;
+import io.harness.delegate.executor.taskloader.TaskPackageReader;
+import io.harness.delegate.executor.config.Configuration;
+import io.harness.delegate.executor.response.ResponseSender;
 import io.harness.delegate.task.common.DelegateRunnableTask;
 import io.harness.delegate.taskagent.client.delegate.DelegateCoreClientFactory;
 import io.harness.delegate.taskagent.servicediscovery.ServiceDiscovery;
