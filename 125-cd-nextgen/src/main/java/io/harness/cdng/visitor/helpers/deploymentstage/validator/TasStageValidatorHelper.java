@@ -7,6 +7,7 @@
 
 package io.harness.cdng.visitor.helpers.deploymentstage.validator;
 
+import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.executions.steps.StepSpecTypeConstants.DEPLOYMENT_STAGE;
 import static io.harness.executions.steps.StepSpecTypeConstants.SWAP_ROLLBACK;
@@ -37,6 +38,8 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.remote.TemplateResourceClient;
 
@@ -66,6 +69,7 @@ public class TasStageValidatorHelper implements StageValidatorHelper {
     Map<Scope, List<String>> stepTemplateScopeToIds = new EnumMap<>(Scope.class);
     allSteps.addAll(executionElementConfig.getSteps());
     allSteps.addAll(executionElementConfig.getRollbackSteps());
+    SecurityContextBuilder.setContext(new ServicePrincipal(TEMPLATE_SERVICE.getServiceId()));
     getCountByStepType(
         accountIdentifier, orgIdentifier, projectIdentifier, allSteps, stepTypeToCount, stepTemplateScopeToIds);
     getTemplateResponseDTO(
