@@ -12,10 +12,11 @@ import static io.harness.audit.entities.AuditEvent.AuditEventKeys.createdAt;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.ACCOUNT_IDENTIFIER_PARAMETER_KEY;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.AWS_S3_STREAMING_PUBLISHER;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.JOB_START_TIME_PARAMETER_KEY;
-import static io.harness.auditevent.streaming.entities.BatchStatus.FAILED;
-import static io.harness.auditevent.streaming.entities.BatchStatus.IN_PROGRESS;
-import static io.harness.auditevent.streaming.entities.BatchStatus.READY;
-import static io.harness.auditevent.streaming.entities.BatchStatus.SUCCESS;
+import static io.harness.auditevent.streaming.beans.BatchStatus.FAILED;
+import static io.harness.auditevent.streaming.beans.BatchStatus.IN_PROGRESS;
+import static io.harness.auditevent.streaming.beans.BatchStatus.READY;
+import static io.harness.auditevent.streaming.beans.BatchStatus.SUCCESS;
+import static io.harness.auditevent.streaming.entities.StreamingBatch.StreamingBatchKeys.lastStreamedAt;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO.TypeEnum.AWS_S3;
 
@@ -33,7 +34,7 @@ import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.auditevent.streaming.AuditEventRepository;
 import io.harness.auditevent.streaming.BatchConfig;
-import io.harness.auditevent.streaming.entities.BatchStatus;
+import io.harness.auditevent.streaming.beans.BatchStatus;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
 import io.harness.auditevent.streaming.entities.outgoing.OutgoingAuditMessage;
 import io.harness.auditevent.streaming.publishers.StreamingPublisher;
@@ -224,7 +225,8 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
     StreamingBatch streamingBatchExpected = getStreamingBatch(streamingDestination, FAILED, now);
     streamingBatchExpected.setLastSuccessfulRecordTimestamp(streamingBatch.getStartTime() + MINUTES_15_IN_MILLS);
     StreamingBatch streamingBatchCaptured = streamingBatchArgumentCaptor.getValue();
-    assertThat(streamingBatchCaptured).isEqualToComparingFieldByField(streamingBatchExpected);
+    assertThat(streamingBatchCaptured).isEqualToIgnoringGivenFields(streamingBatchExpected, lastStreamedAt);
+    assertThat(streamingBatchCaptured.getLastStreamedAt()).isNotNull();
   }
 
   @Test
@@ -250,7 +252,8 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
     streamingBatchExpected.setLastSuccessfulRecordTimestamp(streamingBatch.getStartTime() + MINUTES_15_IN_MILLS);
     streamingBatchExpected.setRetryCount(1);
     StreamingBatch streamingBatchCaptured = streamingBatchArgumentCaptor.getValue();
-    assertThat(streamingBatchCaptured).isEqualToComparingFieldByField(streamingBatchExpected);
+    assertThat(streamingBatchCaptured).isEqualToIgnoringGivenFields(streamingBatchExpected, lastStreamedAt);
+    assertThat(streamingBatchCaptured.getLastStreamedAt()).isNotNull();
   }
 
   private void setupReturnsForAuditRecordsPublishFailureCase(

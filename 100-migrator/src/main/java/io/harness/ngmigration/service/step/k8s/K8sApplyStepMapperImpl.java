@@ -12,8 +12,8 @@ import io.harness.cdng.k8s.K8sApplyStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
-public class K8sApplyStepMapperImpl implements StepMapper {
+public class K8sApplyStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
     return WorkflowStepSupportStatus.SUPPORTED;
@@ -39,7 +39,7 @@ public class K8sApplyStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     K8sApplyState state = new K8sApplyState(stepYaml.getName());
     state.parseProperties(properties);
     return state;

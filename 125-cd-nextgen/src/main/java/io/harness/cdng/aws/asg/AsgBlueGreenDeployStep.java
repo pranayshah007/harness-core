@@ -128,6 +128,7 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgName(asgBlueGreenExecutionPassThroughData.getAsgName())
+            .firstDeployment(asgBlueGreenExecutionPassThroughData.isFirstDeployment())
             .asgLoadBalancerConfig(asgBlueGreenExecutionPassThroughData.getLoadBalancerConfig())
             .amiImageId(amiImageId)
             .build();
@@ -199,7 +200,7 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
 
     AsgBlueGreenDeployOutcome asgBlueGreenDeployOutcome =
         AsgBlueGreenDeployOutcome.builder()
-            .asgName(asgBlueGreenDeployResult.getAutoScalingGroupContainer().getAutoScalingGroupName())
+            .autoScalingGroupContainer(asgBlueGreenDeployResult.getAutoScalingGroupContainer())
             .build();
 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_BLUE_GREEN_DEPLOY_OUTCOME,
@@ -240,7 +241,8 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
           AsgBlueGreenPrepareRollbackDataOutcome.builder()
               .prodAsgName(asgPrepareRollbackDataResult.getProdAsgName())
               .asgName(asgPrepareRollbackDataResult.getAsgName())
-              .asgManifestsDataForRollback(asgPrepareRollbackDataResult.getAsgManifestsDataForRollback())
+              .prodAsgManifestDataForRollback(asgPrepareRollbackDataResult.getProdAsgManifestsDataForRollback())
+              .stageAsgManifestDataForRollback(asgPrepareRollbackDataResult.getStageAsgManifestsDataForRollback())
               .loadBalancer(loadBalancerConfig.getLoadBalancer())
               .stageListenerArn(loadBalancerConfig.getStageListenerArn())
               .stageListenerRuleArn(loadBalancerConfig.getStageListenerRuleArn())
@@ -260,6 +262,7 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
               .lastActiveUnitProgressData(asgPrepareRollbackDataResponse.getUnitProgressData())
               .asgName(asgPrepareRollbackDataResult.getAsgName())
               .loadBalancerConfig(loadBalancerConfig)
+              .firstDeployment(asgPrepareRollbackDataResult.getProdAsgName() == null)
               .build();
 
       Map<String, List<String>> asgStoreManifestsContent = asgStepPassThroughData.getAsgStoreManifestsContent();

@@ -26,8 +26,8 @@ WORKDIR /opt/harness-delegate
 
 ARG TARGETARCH=amd64
 
-RUN mkdir -m 777 -p client-tools/scm/1658d03e \
-  && curl -s -L -o client-tools/scm/1658d03e/scm https://app.harness.io/public/shared/tools/scm/release/1658d03e/bin/linux/$TARGETARCH/scm
+RUN mkdir -m 777 -p client-tools/scm/a2e9e35c \
+  && curl -s -L -o client-tools/scm/a2e9e35c/scm https://app.harness.io/public/shared/tools/scm/release/a2e9e35c/bin/linux/$TARGETARCH/scm
 
 RUN chmod -R 755 /opt/harness-delegate \
     && chgrp -R 0 /opt/harness-delegate  \

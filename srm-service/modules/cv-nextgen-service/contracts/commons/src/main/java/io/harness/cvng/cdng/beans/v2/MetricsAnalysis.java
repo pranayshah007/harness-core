@@ -27,4 +27,5 @@ public class MetricsAnalysis {
   List<MetricThreshold> thresholds;
   AnalysisResult analysisResult;
   List<AnalysedDeploymentTestDataNode> testDataNodes;
+  String deeplinkURL;
 }

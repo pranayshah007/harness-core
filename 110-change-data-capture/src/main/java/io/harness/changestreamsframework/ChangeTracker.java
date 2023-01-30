@@ -132,8 +132,8 @@ public class ChangeTracker {
 
     ChangeStreamSubscriber changeStreamSubscriber = getChangeStreamSubscriber(changeTrackingInfo);
     String token = getResumeToken(changeTrackingInfo.getMorphiaClass());
-    return new ChangeTrackingTask(
-        changeStreamSubscriber, collection, clientSession, token, changeTrackingInfo.getMorphiaClass());
+    return new ChangeTrackingTask(changeStreamSubscriber, collection, clientSession, token,
+        changeTrackingInfo.getMorphiaClass(), mainConfiguration.getChangeStreamBatchSize());
   }
 
   private void openChangeStreams(Set<ChangeTrackingInfo<?>> changeTrackingInfos) {

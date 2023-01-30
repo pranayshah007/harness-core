@@ -76,7 +76,7 @@ public class CfSdkClientImplTest extends CategoryTest {
       fail("Should not reach here.");
     } catch (Exception e) {
       assertThat(e.getMessage())
-          .isEqualTo("Exception occurred while fetching Organizations, Error: Unknown Cloud Foundry Exception");
+          .isEqualTo("Exception occurred while fetching Organizations, Error: unauthorized: Bad credentials");
     }
   }
 
@@ -132,7 +132,7 @@ public class CfSdkClientImplTest extends CategoryTest {
     } catch (Exception e) {
       assertThat(e.getMessage())
           .isEqualTo(
-              "Exception occurred while getting routeMaps for Application: app, Error: Unknown Cloud Foundry Exception");
+              "Exception occurred while getting routeMaps for Application: app, Error: unauthorized: Bad credentials");
     }
   }
 
@@ -167,7 +167,7 @@ public class CfSdkClientImplTest extends CategoryTest {
       fail("Should not reach here.");
     } catch (Exception e) {
       assertThat(e.getMessage())
-          .isEqualTo("Exception occurred while fetching Spaces, Error: Unknown Cloud Foundry Exception");
+          .isEqualTo("Exception occurred while fetching Spaces, Error: unauthorized: Bad credentials");
     }
   }
 

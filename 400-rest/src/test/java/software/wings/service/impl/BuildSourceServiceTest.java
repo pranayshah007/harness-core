@@ -161,7 +161,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(BambooConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
     when(bambooBuildService.getJobs(any(), any(), any()))
         .thenReturn(asList(new JobDetails("USERDEFINEDPROJECTKEY-RIS", false), new JobDetails("SAM-BUIL", false),
             new JobDetails("SAM-SAM", false), new JobDetails("TOD-TODIR", false),
@@ -184,7 +184,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(GcpConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(gcsService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(gcsService);
     when(gcsService.getProject(any(), any())).thenReturn("exploration-161417");
     assertThat(buildSourceService.getProject(APP_ID, SETTING_ID)).isEqualTo("exploration-161417");
   }
@@ -206,7 +206,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(GcpConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
 
     when(gcsService.getProject(any(), any())).thenReturn("exploration-161417");
     assertThat(buildSourceService.getProject(SETTING_ID)).isEqualTo("exploration-161417");
@@ -229,7 +229,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(GcpConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(gcsBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(gcsBuildService);
     Map<String, String> map = new HashMap<>();
     map.put("functional-test", "functional-test");
     map.put("playground", "playground");
@@ -250,7 +250,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(GcpConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(gcsBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(gcsBuildService);
 
     Map<String, String> map = new HashMap<>();
     map.put("functional-test", "functional-test");
@@ -272,7 +272,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(NexusConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     List<String> groupIds = new ArrayList<>();
     groupIds.add("group1");
     groupIds.add("group2");
@@ -293,7 +293,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(NexusConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     List<String> groupIds = new ArrayList<>();
     groupIds.add("group1");
     groupIds.add("group2");
@@ -313,7 +313,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(SmbConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(smbBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(smbBuildService);
     when(smbBuildService.getSmbPaths(any(), any())).thenReturn(asList("path1", "path2"));
     List<String> smbPaths = buildSourceService.getSmbPaths(APP_ID, SETTING_ID);
     assertThat(smbPaths).isNotEmpty();
@@ -331,7 +331,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .build();
     doReturn(settingAttribute).when(settingsService).get(SETTING_ID);
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(smbBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(smbBuildService);
     when(smbBuildService.getSmbPaths(any(), any())).thenReturn(asList("path1", "path2"));
     List<String> smbPaths = buildSourceService.getSmbPaths(SETTING_ID);
     assertThat(smbPaths).isNotEmpty();
@@ -348,7 +348,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(SftpConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(sftpBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(sftpBuildService);
     when(sftpBuildService.getArtifactPathsByStreamType(any(), any(), anyString()))
         .thenReturn(asList("sftp1", "sftp2", "sftp3"));
     List<String> sftpPaths =
@@ -367,7 +367,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(SftpConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(sftpBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(sftpBuildService);
     when(sftpBuildService.getArtifactPathsByStreamType(any(), any(), anyString()))
         .thenReturn(asList("sftp1", "sftp2", "sftp3"));
     List<String> sftpPaths =
@@ -386,7 +386,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(NexusConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     List<String> groupIds = new ArrayList<>();
     groupIds.add("group1");
     groupIds.add("group2");
@@ -406,7 +406,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(NexusConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     List<String> groupIds = new ArrayList<>();
     groupIds.add("group1");
     groupIds.add("group2");
@@ -426,7 +426,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(NexusConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     Map<String, String> map = new HashMap<>();
     map.put("Todolist_Snapshots", "Todolist Snapshots");
     map.put("releases", "Releases");
@@ -448,7 +448,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(NexusConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     Map<String, String> map = new HashMap<>();
     map.put("Todolist_Snapshots", "Todolist Snapshots");
     map.put("releases", "Releases");
@@ -471,7 +471,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(NexusConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     Map<String, String> map = new HashMap<>();
     map.put("Todolist_Snapshots", "Todolist Snapshots");
     map.put("releases", "Releases");
@@ -494,7 +494,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(NexusConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     Map<String, String> map = new HashMap<>();
     map.put("Todolist_Snapshots", "Todolist Snapshots");
     map.put("releases", "Releases");
@@ -516,7 +516,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(NexusConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     Map<String, String> map = new HashMap<>();
     map.put("Todolist_Snapshots", "Todolist Snapshots");
     map.put("releases", "Releases");
@@ -540,7 +540,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(AwsConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(amazonS3BuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(amazonS3BuildService);
     when(amazonS3BuildService.getArtifactPaths(any(), any(), any(), anyList()))
         .thenReturn(asList("todolist.war", "todolist.jar"));
     Set<String> artifactPaths = buildSourceService.getArtifactPaths(
@@ -559,7 +559,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(NexusConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     when(nexusBuildService.getArtifactPaths(anyString(), anyString(), any(), anyList(), anyString()))
         .thenReturn(asList("myartifact"));
     Set<String> artifactPaths = buildSourceService.getArtifactPaths(APP_ID, "maven-releases", SETTING_ID, "mygroup",
@@ -584,7 +584,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                                         .build();
     when(artifactStreamService.get(anyString())).thenReturn(amazonS3ArtifactStream);
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(amazonS3BuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(amazonS3BuildService);
     when(amazonS3BuildService.getLastSuccessfulBuild(anyString(), any(), any(), anyList())).thenReturn(null);
     BuildDetails buildDetails = buildSourceService.getLastSuccessfulBuild(ARTIFACT_STREAM_ID, SETTING_ID);
     assertThat(buildDetails).isNull();
@@ -607,7 +607,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
         .thenReturn(Service.builder().artifactType(ArtifactType.WAR).build());
     when(artifactStreamService.get(anyString())).thenReturn(amazonS3ArtifactStream);
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(amazonS3BuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(amazonS3BuildService);
     when(amazonS3BuildService.getLastSuccessfulBuild(anyString(), any(), any(), anyList())).thenReturn(null);
     BuildDetails buildDetails = buildSourceService.getLastSuccessfulBuild(APP_ID, ARTIFACT_STREAM_ID, SETTING_ID);
     assertThat(buildDetails).isNull();
@@ -628,7 +628,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                                       .build();
     when(artifactStreamService.get(anyString())).thenReturn(jenkinsArtifactStream);
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(jenkinsBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(jenkinsBuildService);
     Map<String, String> map = new HashMap<>();
     map.put("url", "https://jenkinsint.harness.io/job/harness-samples/5/");
     map.put("buildNo", "5");
@@ -664,7 +664,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
     when(artifactStreamServiceBindingService.getService(any(), any(), anyBoolean()))
         .thenReturn(Service.builder().artifactType(ArtifactType.JAR).build());
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(jenkinsBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(jenkinsBuildService);
     Map<String, String> map = new HashMap<>();
     map.put("url", "https://jenkinsint.harness.io/job/harness-samples/5/");
     map.put("buildNo", "5");
@@ -698,7 +698,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                                     .build();
     when(artifactStreamService.get(anyString())).thenReturn(bambooArtifactStream);
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "210");
     map.put("url", "http://ec2-18-208-86-222.compute-1.amazonaws.com:8085/rest/api/latest/result/TOD-TOD-210");
@@ -732,7 +732,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(BambooConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
     when(bambooBuildService.getJobs(any(), any(), any()))
         .thenReturn(asList(new JobDetails("USERDEFINEDPROJECTKEY-RIS", false), new JobDetails("SAM-BUIL", false),
             new JobDetails("SAM-SAM", false), new JobDetails("TOD-TODIR", false),
@@ -755,7 +755,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(AwsConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(amazonS3BuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(amazonS3BuildService);
     when(amazonS3BuildService.getArtifactPaths(any(), any(), any(), anyList()))
         .thenReturn(asList("todolist.war", "todolist.jar"));
     Set<String> artifactPaths = buildSourceService.getArtifactPaths(
@@ -774,7 +774,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(NexusConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     when(nexusBuildService.getArtifactPaths(anyString(), anyString(), any(), anyList(), anyString()))
         .thenReturn(asList("myartifact"));
     Set<String> artifactPaths = buildSourceService.getArtifactPathsForRepositoryFormat(
@@ -797,7 +797,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                                            .build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(jenkinsBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(jenkinsBuildService);
     JobDetails.JobParameter jobParameter = new JobDetails.JobParameter();
     jobParameter.setName("branch");
     jobParameter.setDefaultValue("release");
@@ -819,7 +819,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(NexusConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     List<String> groupIds = new ArrayList<>();
     groupIds.add("group1");
     groupIds.add("group2");
@@ -839,7 +839,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(NexusConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     List<String> groupIds = new ArrayList<>();
     groupIds.add("group1");
     groupIds.add("group2");
@@ -880,7 +880,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                                     .build();
     when(artifactStreamService.get(anyString())).thenReturn(bambooArtifactStream);
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "210");
     map.put("url", "http://ec2-18-208-86-222.compute-1.amazonaws.com:8085/rest/api/latest/result/TOD-TOD-210");
@@ -922,7 +922,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .withValue(NexusConfig.builder().build())
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     ArtifactStreamAttributes nexusArtifactStream = ArtifactStreamAttributes.builder().extension("jar").build();
     when(nexusService.existsVersion(any(), anyString(), anyString(), anyString(), anyString(), anyString()))
         .thenReturn(false);
@@ -954,7 +954,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                               .tags(asList())
                                               .accountId(ACCOUNT_ID)
                                               .build();
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(customBuildSourceService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(customBuildSourceService);
     when(customBuildSourceService.validateArtifactSource(any())).thenReturn(true);
     assertThat(buildSourceService.validateArtifactSource(customArtifactStream)).isTrue();
   }
@@ -969,7 +969,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .build();
 
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(azureArtifactsBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(azureArtifactsBuildService);
 
     AzureDevopsProject project = new AzureDevopsProject();
     project.setId("id1");
@@ -990,7 +990,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .build();
 
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
 
     List<AzureDevopsProject> projects = buildSourceService.getProjects(SETTING_ID);
     assertThat(projects).isEmpty();
@@ -1006,7 +1006,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .build();
 
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(azureArtifactsBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(azureArtifactsBuildService);
 
     AzureArtifactsFeed feed = new AzureArtifactsFeed();
     feed.setId("id1");
@@ -1027,7 +1027,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .build();
 
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
 
     List<AzureArtifactsFeed> feeds = buildSourceService.getFeeds(SETTING_ID, null);
     assertThat(feeds).isEmpty();
@@ -1043,7 +1043,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .build();
 
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(azureArtifactsBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(azureArtifactsBuildService);
 
     AzureArtifactsPackage aPackage = new AzureArtifactsPackage();
     aPackage.setId("id1");
@@ -1066,7 +1066,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .build();
 
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
 
     List<AzureArtifactsPackage> packages =
         buildSourceService.getPackages(SETTING_ID, null, "FEED", AzureArtifactsArtifactStreamProtocolType.maven.name());
@@ -1122,7 +1122,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
     runtimeValues.put("group", "mygroup");
     runtimeValues.put("path", "todolist");
     runtimeValues.put("buildNo", "1.0");
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     when(evaluator.evaluate(eq("repo"), eq(runtimeValues))).thenReturn("releases");
     when(evaluator.evaluate(eq("group"), eq(runtimeValues))).thenReturn("mygroup");
     when(evaluator.evaluate(eq("path"), eq(runtimeValues))).thenReturn("todolist");
@@ -1161,7 +1161,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
     runtimeValues.put("repo", "releases");
     runtimeValues.put("packageName", "abbrev");
     runtimeValues.put("buildNo", "1.0.0");
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     when(evaluator.evaluate(eq("repo"), eq(runtimeValues))).thenReturn("releases");
     when(evaluator.evaluate(eq("packageName"), eq(runtimeValues))).thenReturn("abbrev");
     when(artifactStreamServiceBindingService.getService(anyString(), anyString(), anyBoolean()))
@@ -1200,7 +1200,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
         SettingAttribute.Builder.aSettingAttribute().withAccountId(ACCOUNT_ID).withValue(gcpConfig).build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
     when(gcbService.getAllTriggers(any(), any())).thenReturn(triggers);
-    when(delegateService.executeTask(any(DelegateTask.class))).thenReturn(delegateResponse);
+    when(delegateService.executeTaskV2(any(DelegateTask.class))).thenReturn(delegateResponse);
 
     List<String> actualTriggerNames = buildSourceService.getGcbTriggers(SETTING_ID);
     assertThat(actualTriggerNames).hasSize(1);
@@ -1220,7 +1220,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
         SettingAttribute.Builder.aSettingAttribute().withAccountId(ACCOUNT_ID).withValue(gcpConfig).build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
     when(gcbService.getAllTriggers(any(), any())).thenReturn(triggers);
-    when(delegateService.executeTask(any(DelegateTask.class))).thenReturn(null);
+    when(delegateService.executeTaskV2(any(DelegateTask.class))).thenReturn(null);
 
     buildSourceService.getGcbTriggers(SETTING_ID);
   }
@@ -1241,7 +1241,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
         SettingAttribute.Builder.aSettingAttribute().withAccountId(ACCOUNT_ID).withValue(gcpConfig).build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
     when(gcbService.getAllTriggers(any(), any())).thenReturn(triggers);
-    when(delegateService.executeTask(any(DelegateTask.class))).thenReturn(delegateResponse);
+    when(delegateService.executeTaskV2(any(DelegateTask.class))).thenReturn(delegateResponse);
 
     buildSourceService.getGcbTriggers(SETTING_ID);
   }
@@ -1277,7 +1277,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                            .delegateSelectors(Collections.singletonList(DELEGATE_SELECTOR))
                            .build())
             .build());
-    verify(delegateProxyFactory).get(any(), syncTaskContextArgumentCaptor.capture());
+    verify(delegateProxyFactory).getV2(any(), syncTaskContextArgumentCaptor.capture());
     assertThat(syncTaskContextArgumentCaptor.getValue().getTags()).contains(DELEGATE_SELECTOR);
   }
 
@@ -1295,7 +1295,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                            .delegateSelectors(Collections.singletonList(DELEGATE_SELECTOR))
                            .build())
             .build());
-    verify(delegateProxyFactory).get(any(), syncTaskContextArgumentCaptor.capture());
+    verify(delegateProxyFactory).getV2(any(), syncTaskContextArgumentCaptor.capture());
     assertThat(syncTaskContextArgumentCaptor.getValue().getTags()).isNull();
   }
 
@@ -1314,7 +1314,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                            .delegateSelectors(Collections.singletonList(DELEGATE_SELECTOR))
                            .build())
             .build());
-    verify(delegateProxyFactory).get(any(), syncTaskContextArgumentCaptor.capture());
+    verify(delegateProxyFactory).getV2(any(), syncTaskContextArgumentCaptor.capture());
     assertThat(syncTaskContextArgumentCaptor.getValue().getTags()).isNotEmpty();
     assertThat(syncTaskContextArgumentCaptor.getValue().getTags())
         .isEqualTo(Collections.singletonList(DELEGATE_SELECTOR));
@@ -1335,7 +1335,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                            .delegateSelectors(Collections.singletonList(DELEGATE_SELECTOR))
                            .build())
             .build());
-    verify(delegateProxyFactory).get(any(), syncTaskContextArgumentCaptor.capture());
+    verify(delegateProxyFactory).getV2(any(), syncTaskContextArgumentCaptor.capture());
     assertThat(syncTaskContextArgumentCaptor.getValue().getTags()).isNotEmpty();
     assertThat(syncTaskContextArgumentCaptor.getValue().getTags())
         .isEqualTo(Collections.singletonList(DELEGATE_SELECTOR));
@@ -1356,7 +1356,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                            .delegateSelectors(Collections.singletonList(DELEGATE_SELECTOR))
                            .build())
             .build());
-    verify(delegateProxyFactory).get(any(), syncTaskContextArgumentCaptor.capture());
+    verify(delegateProxyFactory).getV2(any(), syncTaskContextArgumentCaptor.capture());
     assertThat(syncTaskContextArgumentCaptor.getValue().getTags()).isNotEmpty();
     assertThat(syncTaskContextArgumentCaptor.getValue().getTags())
         .isEqualTo(Collections.singletonList(DELEGATE_SELECTOR));
@@ -1370,7 +1370,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
     ArgumentCaptor<SyncTaskContext> syncTaskContextArgumentCaptor = ArgumentCaptor.forClass(SyncTaskContext.class);
     buildSourceService.getBuildService(
         SettingAttribute.Builder.aSettingAttribute().withValue(AwsConfig.builder().build()).build());
-    verify(delegateProxyFactory).get(any(), syncTaskContextArgumentCaptor.capture());
+    verify(delegateProxyFactory).getV2(any(), syncTaskContextArgumentCaptor.capture());
     assertThat(syncTaskContextArgumentCaptor.getValue().getTags()).isNull();
   }
 
@@ -1384,7 +1384,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
     SettingAttribute settingAttribute =
         SettingAttribute.Builder.aSettingAttribute().withAccountId(ACCOUNT_ID).withValue(bambooConfig).build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
     when(bambooBuildService.getJobs(any(), any(), any()))
         .thenReturn(asList(new JobDetails("USERDEFINEDPROJECTKEY-RIS", false), new JobDetails("SAM-BUIL", false),
             new JobDetails("SAM-SAM", false), new JobDetails("TOD-TODIR", false),
@@ -1407,7 +1407,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
     SettingAttribute settingAttribute =
         SettingAttribute.Builder.aSettingAttribute().withAccountId(ACCOUNT_ID).withValue(nexusConfig).build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
     ArtifactStreamAttributes nexusArtifactStream = ArtifactStreamAttributes.builder().extension("jar").build();
     when(nexusService.existsVersion(any(), anyString(), anyString(), anyString(), anyString(), anyString()))
         .thenReturn(false);

@@ -103,7 +103,7 @@ public class SumoLogicAnalysisStateTest extends APMStateVerificationTestBase {
     sumoLogicAnalysisState.triggerAnalysisDataCollection(executionContext, executionData, hosts);
 
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(delegateTaskArgumentCaptor.capture());
 
     DelegateTask task = delegateTaskArgumentCaptor.getValue();
     SumoDataCollectionInfo dataCollectionInfo = (SumoDataCollectionInfo) task.getData().getParameters()[0];
@@ -130,7 +130,7 @@ public class SumoLogicAnalysisStateTest extends APMStateVerificationTestBase {
     sumoLogicAnalysisState.triggerAnalysisDataCollection(executionContext, executionData, hosts);
 
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(delegateTaskArgumentCaptor.capture());
 
     DelegateTask task = delegateTaskArgumentCaptor.getValue();
     SumoDataCollectionInfo dataCollectionInfo = (SumoDataCollectionInfo) task.getData().getParameters()[0];
@@ -145,7 +145,7 @@ public class SumoLogicAnalysisStateTest extends APMStateVerificationTestBase {
     sumoLogicAnalysisState.triggerAnalysisDataCollection(executionContext, executionData, hosts);
 
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(delegateTaskArgumentCaptor.capture());
 
     DelegateTask task = delegateTaskArgumentCaptor.getValue();
     SumoDataCollectionInfo dataCollectionInfo = (SumoDataCollectionInfo) task.getData().getParameters()[0];
@@ -161,7 +161,7 @@ public class SumoLogicAnalysisStateTest extends APMStateVerificationTestBase {
     sumoLogicAnalysisState.triggerAnalysisDataCollection(executionContext, executionData, hosts);
 
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(delegateTaskArgumentCaptor.capture());
 
     DelegateTask task = delegateTaskArgumentCaptor.getValue();
     SumoDataCollectionInfo dataCollectionInfo = (SumoDataCollectionInfo) task.getData().getParameters()[0];

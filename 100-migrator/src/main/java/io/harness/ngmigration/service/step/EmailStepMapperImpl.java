@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
-public class EmailStepMapperImpl implements StepMapper {
+public class EmailStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
     return WorkflowStepSupportStatus.SUPPORTED;
@@ -36,7 +36,7 @@ public class EmailStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     EmailState state = new EmailState(stepYaml.getName());
     state.parseProperties(properties);
     return state;

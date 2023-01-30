@@ -20,7 +20,7 @@ import software.wings.sm.states.BarrierState;
 
 import java.util.Map;
 
-public class BarrierStepMapperImpl implements StepMapper {
+public class BarrierStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
     return WorkflowStepSupportStatus.SUPPORTED;
@@ -33,7 +33,7 @@ public class BarrierStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     BarrierState state = new BarrierState(stepYaml.getName());
     state.parseProperties(properties);
     return state;

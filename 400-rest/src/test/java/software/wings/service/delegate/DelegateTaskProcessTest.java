@@ -135,7 +135,7 @@ import software.wings.jre.JreConfig;
 import software.wings.licensing.LicenseService;
 import software.wings.service.impl.AssignDelegateServiceImpl;
 import software.wings.service.impl.AuditServiceHelper;
-import software.wings.service.impl.DelegateConnectionDao;
+import software.wings.service.impl.DelegateDao;
 import software.wings.service.impl.DelegateObserver;
 import software.wings.service.impl.DelegateServiceImpl;
 import software.wings.service.impl.DelegateTaskBroadcastHelper;
@@ -234,7 +234,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
   private LoadingCache<ImmutablePair<String, String>, Optional<DelegateConnectionResult>> delegateConnectionResultCache;
 
   @Inject private FeatureTestHelper featureTestHelper;
-  @Inject private DelegateConnectionDao delegateConnectionDao;
+  @Inject private DelegateDao delegateDao;
   @Inject private KryoSerializer kryoSerializer;
 
   private final int port = LocalhostUtils.findFreePort();

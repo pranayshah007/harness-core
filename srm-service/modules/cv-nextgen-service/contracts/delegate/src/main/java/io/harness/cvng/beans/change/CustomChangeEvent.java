@@ -15,5 +15,5 @@ import lombok.Value;
 public class CustomChangeEvent {
   String description;
   String changeEventDetailsLink;
-  String internalLinkToEntity;
+  String externalLinkToEntity;
 }

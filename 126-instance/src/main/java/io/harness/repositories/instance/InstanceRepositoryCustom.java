@@ -17,7 +17,9 @@ import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.EnvironmentInstanceCountModel;
+import io.harness.models.InstanceGroupedByPipelineExecution;
 import io.harness.models.InstancesByBuildId;
+import io.harness.ng.core.environment.beans.EnvironmentType;
 
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
@@ -82,6 +84,10 @@ public interface InstanceRepositoryCustom {
   List<Instance> getActiveInstanceDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String serviceId, String envId, String infraId, String clusterIdentifier, String pipelineExecutionId,
       String buildId, int limit);
+
+  AggregationResults<InstanceGroupedByPipelineExecution> getActiveInstanceGroupedByPipelineExecution(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, String envId,
+      EnvironmentType environmentType, String infraId, String clusterIdentifier, String displayName);
 
   AggregationResults<CountByServiceIdAndEnvType> getActiveServiceInstanceCountBreakdown(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs);

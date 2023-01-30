@@ -11,9 +11,9 @@ import static io.harness.audit.entities.streaming.StreamingDestination.Streaming
 import static io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys.identifier;
 import static io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys.name;
 import static io.harness.rule.OwnerRule.NISHANT;
-import static io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum.ACTIVE;
-import static io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum.INACTIVE;
 import static io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO.TypeEnum.AWS_S3;
+import static io.harness.spec.server.audit.v1.model.StreamingDestinationStatus.ACTIVE;
+import static io.harness.spec.server.audit.v1.model.StreamingDestinationStatus.INACTIVE;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,7 +37,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.UnexpectedException;
 import io.harness.rule.Owner;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
-import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationStatus;
 
 import com.mongodb.BasicDBList;
 import java.io.IOException;
@@ -136,7 +136,7 @@ public class StreamingDestinationServiceImplTest extends CategoryTest {
                 streamingDestination.getIdentifier(), ACCOUNT_IDENTIFIER));
   }
 
-  private void assertListCriteria(Criteria criteria, StatusEnum status, String searchTerm) {
+  private void assertListCriteria(Criteria criteria, StreamingDestinationStatus status, String searchTerm) {
     Document document = criteria.getCriteriaObject();
     assertThat(document).containsEntry(accountIdentifier, ACCOUNT_IDENTIFIER);
     assertThat(document).containsAllEntriesOf(Map.ofEntries(

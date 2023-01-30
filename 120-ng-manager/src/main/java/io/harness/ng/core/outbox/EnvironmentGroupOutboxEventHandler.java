@@ -24,6 +24,7 @@ import io.harness.audit.client.api.AuditClientService;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.events.EnvironmentGroupCreateEvent;
 import io.harness.cdng.events.EnvironmentGroupDeleteEvent;
+import io.harness.cdng.events.EnvironmentGroupForceDeleteEvent;
 import io.harness.cdng.events.EnvironmentGroupUpdateEvent;
 import io.harness.context.GlobalContext;
 import io.harness.ng.core.events.OutboxEventConstants;
@@ -57,6 +58,8 @@ public class EnvironmentGroupOutboxEventHandler implements OutboxEventHandler {
           return handleUpdated(outboxEvent);
         case OutboxEventConstants.ENVIRONMENT_GROUP_DELETED:
           return handleDeleted(outboxEvent);
+        case OutboxEventConstants.ENVIRONMENT_GROUP_FORCE_DELETED:
+          return handleForceDeleted(outboxEvent);
         default:
           return false;
       }
@@ -109,6 +112,22 @@ public class EnvironmentGroupOutboxEventHandler implements OutboxEventHandler {
         objectMapper.readValue(outboxEvent.getEventData(), EnvironmentGroupDeleteEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.DELETE)
+                                .module(ModuleType.CORE)
+                                .insertId(outboxEvent.getId())
+                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+                                .timestamp(outboxEvent.getCreatedAt())
+                                .oldYaml(deleteEvent.getEnvironmentGroupEntity().getYaml())
+                                .build();
+
+    return publishEntry(globalContext, auditEntry);
+  }
+  private boolean handleForceDeleted(OutboxEvent outboxEvent) throws IOException {
+    GlobalContext globalContext = outboxEvent.getGlobalContext();
+    EnvironmentGroupForceDeleteEvent deleteEvent =
+        objectMapper.readValue(outboxEvent.getEventData(), EnvironmentGroupForceDeleteEvent.class);
+    AuditEntry auditEntry = AuditEntry.builder()
+                                .action(Action.FORCE_DELETE)
                                 .module(ModuleType.CORE)
                                 .insertId(outboxEvent.getId())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))

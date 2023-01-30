@@ -14,7 +14,7 @@ import static io.harness.utils.PageUtils.getPageRequest;
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.common.EntityReference;
+import io.harness.beans.EntityReference;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.common.beans.GitFileLocation;

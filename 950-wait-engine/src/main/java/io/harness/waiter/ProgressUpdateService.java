@@ -88,10 +88,14 @@ public class ProgressUpdateService implements Runnable {
       } catch (Exception e) {
         log.error("Exception occurred while running progress service", e);
       } finally {
-        if (progressUpdate != null) {
-          log.debug(String.format(
-              "Deleting progressUpdate record for correlationId: [%s]", progressUpdate.getCorrelationId()));
-          persistenceWrapper.delete(progressUpdate);
+        try {
+          if (progressUpdate != null) {
+            log.debug(String.format(
+                "Deleting progressUpdate record for correlationId: [%s]", progressUpdate.getCorrelationId()));
+            persistenceWrapper.delete(progressUpdate);
+          }
+        } catch (Exception e) {
+          log.debug("Exception occurred while deleting progressUpdateService", e);
         }
       }
     }

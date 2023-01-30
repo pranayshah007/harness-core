@@ -133,7 +133,6 @@ public class GcsHelperService {
     Map<String, String> artifactMetaDataMap = new HashMap<>();
 
     artifactMetaDataMap.put(ArtifactMetadataKeys.url, blob.getSelfLink());
-    artifactMetaDataMap.put(ArtifactMetadataKeys.mediaLink, blob.getMediaLink());
     artifactMetaDataMap.put(ArtifactMetadataKeys.artifactName, blob.getName());
     artifactMetaDataMap.put(ArtifactMetadataKeys.bucket, blob.getBucket());
     artifactMetaDataMap.put(ArtifactMetadataKeys.artifactFileSize, String.valueOf(blob.getSize()));

@@ -9,11 +9,11 @@ package io.harness;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EntityReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.InputSetReference;
 import io.harness.beans.NGTemplateReference;
 import io.harness.beans.TriggerReference;
-import io.harness.common.EntityReference;
 import io.harness.common.EntityTypeConstants;
 import io.harness.common.EntityYamlRootNames;
 

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.mongo.MongoUtils.setUnset;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DelegateHeartbeatParams;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.persistence.HPersistence;
@@ -30,11 +31,16 @@ public class DelegateHeartbeatDao {
   @Inject private HPersistence persistence;
   @Inject private DelegateCache delegateCache;
 
-  public void updateDelegateWithHeartbeatTime(@NotNull final String accountId, @NotNull final String delegateId,
-      @NotNull final long lastHeartbeatTimestamp, @NotNull final Date validUntil) {
+  public void updateDelegateWithHeartbeatAndConnectionInfo(@NotNull final String accountId,
+      @NotNull final String delegateId, @NotNull final long lastHeartbeatTimestamp, @NotNull final Date validUntil,
+      @NotNull final @NotNull DelegateHeartbeatParams params) {
     final UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
     setUnset(updateOperations, DelegateKeys.lastHeartBeat, lastHeartbeatTimestamp);
     setUnset(updateOperations, DelegateKeys.validUntil, validUntil);
+    setUnset(updateOperations, DelegateKeys.version, params.getVersion());
+    setUnset(updateOperations, DelegateKeys.location, params.getLocation());
+    setUnset(updateOperations, DelegateKeys.delegateConnectionId, params.getDelegateConnectionId());
+
     persistence.update(persistence.createQuery(Delegate.class)
                            .filter(DelegateKeys.accountId, accountId)
                            .filter(DelegateKeys.uuid, delegateId),

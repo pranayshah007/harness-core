@@ -51,7 +51,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 
@@ -63,10 +62,6 @@ public class WinRmSession implements AutoCloseable {
   @VisibleForTesting static final String FILE_CACHE_TYPE = "FILE";
   @VisibleForTesting static final String KERBEROS_CACHE_NAME_ENV = "KRB5CCNAME";
   @VisibleForTesting static final String COMMAND_PLACEHOLDER = "%s %s";
-  private static final String START_OF_ERROR_TAG = "<S S=\"Error\">";
-  private static final String END_OF_ERROR_TAG = "</S>";
-  private static final Pattern ERROR_PATTERN = Pattern.compile(START_OF_ERROR_TAG + ".*?" + END_OF_ERROR_TAG);
-  private static final String START_OF_XML_RESPONSE = "#< CLIXML";
 
   private final ShellCommand shell;
   private final WinRmTool winRmTool;
@@ -238,9 +233,7 @@ public class WinRmSession implements AutoCloseable {
       if (authenticationScheme == AuthenticationScheme.KERBEROS) {
         return executeCommandWithKerberos(scriptExecCommand, output, false);
       } else {
-        WinRmToolResponse winRmToolResponse = winRmTool.executeCommand(scriptExecCommand);
-        writeLogs(winRmToolResponse, output, error);
-        return winRmToolResponse.getStatusCode();
+        return shell.execute(scriptExecCommand, output, error);
       }
     } catch (Exception e) {
       ResponseMessage details = buildErrorDetailsFromWinRmClientException(e);
@@ -260,9 +253,7 @@ public class WinRmSession implements AutoCloseable {
               fileLength, PARTITION_SIZE_IN_BYTES),
           INFO, RUNNING);
       for (String command : commandList) {
-        WinRmToolResponse winRmToolResponse = winRmTool.executeCommand(command);
-        writeLogs(winRmToolResponse, output, error);
-        statusCode = winRmToolResponse.getStatusCode();
+        statusCode = shell.execute(command, output, error);
         if (statusCode != 0) {
           logCallback.saveExecutionLog("Transferring encoded script data to remote file FAILED.", INFO, RUNNING);
           return statusCode;
@@ -273,10 +264,6 @@ public class WinRmSession implements AutoCloseable {
         chunkNumber++;
       }
       return statusCode;
-    } catch (IOException e) {
-      log.error("Transferring encoded script data to remote file FAILED.", e);
-      logCallback.saveExecutionLog("Transferring encoded script data to remote file FAILED.", INFO, RUNNING);
-      return 1;
     } catch (Exception e) {
       ResponseMessage details = buildErrorDetailsFromWinRmClientException(e);
       log.error("Transferring encoded script data to remote file FAILED.", e);

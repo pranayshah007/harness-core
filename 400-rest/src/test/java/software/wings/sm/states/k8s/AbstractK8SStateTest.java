@@ -599,7 +599,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     K8sTaskExecutionResponse response = K8sTaskExecutionResponse.builder().build();
     when(infrastructureMappingService.get(nullable(String.class), nullable(String.class)))
         .thenReturn(infrastructureMapping);
-    when(delegateService.executeTask(any())).thenReturn(response);
+    when(delegateService.executeTaskV2(any())).thenReturn(response);
     when(serviceTemplateHelper.fetchServiceTemplateId(any())).thenReturn(SETTING_ID);
     when(evaluator.substitute(nullable(String.class), any(), any(), nullable(String.class))).thenReturn("default");
     when(serviceResourceService.getHelmVersionWithDefault(nullable(String.class), nullable(String.class)))
@@ -612,21 +612,21 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     K8sRollingDeployTaskParameters taskParameters = K8sRollingDeployTaskParameters.builder().build();
     abstractK8SState.queueK8sDelegateTask(context, taskParameters, applicationManifestMap);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask.getData().getTimeout()).isEqualTo(10 * 60 * 1000);
 
     taskParameters.setTimeoutIntervalInMin(300);
     abstractK8SState.queueK8sDelegateTask(context, taskParameters, applicationManifestMap);
     captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(2)).queueTask(captor.capture());
+    verify(delegateService, times(2)).queueTaskV2(captor.capture());
     delegateTask = captor.getValue();
     assertThat(delegateTask.getData().getTimeout()).isEqualTo(300 * 60 * 1000);
 
     taskParameters.setTimeoutIntervalInMin(0);
     abstractK8SState.queueK8sDelegateTask(context, taskParameters, applicationManifestMap);
     captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(3)).queueTask(captor.capture());
+    verify(delegateService, times(3)).queueTaskV2(captor.capture());
     delegateTask = captor.getValue();
     assertThat(delegateTask.getData().getTimeout()).isEqualTo(60 * 1000);
   }
@@ -643,7 +643,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
                                             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                             .k8sTaskResponse(K8sInstanceSyncResponse.builder().build())
                                             .build();
-    when(delegateService.executeTask(any())).thenReturn(response);
+    when(delegateService.executeTaskV2(any())).thenReturn(response);
     when(serviceTemplateHelper.fetchServiceTemplateId(any())).thenReturn(SETTING_ID);
     when(infrastructureMappingService.get(nullable(String.class), nullable(String.class)))
         .thenReturn(infrastructureMapping);
@@ -669,7 +669,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
         context, K8sRollingDeployTaskParameters.builder().build(), applicationManifestMap);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask.getTags()).isEmpty();
 
@@ -679,7 +679,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     abstractK8SState.queueK8sDelegateTask(
         context, K8sRollingDeployTaskParameters.builder().build(), applicationManifestMap);
     captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(2)).queueTask(captor.capture());
+    verify(delegateService, times(2)).queueTaskV2(captor.capture());
     delegateTask = captor.getValue();
     assertThat(delegateTask.getTags()).isEmpty();
 
@@ -695,7 +695,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     abstractK8SState.queueK8sDelegateTask(
         context, K8sRollingDeployTaskParameters.builder().build(), applicationManifestMap);
     captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(3)).queueTask(captor.capture());
+    verify(delegateService, times(3)).queueTaskV2(captor.capture());
     delegateTask = captor.getValue();
 
     K8sRollingDeployTaskParameters taskParameters =
@@ -1148,7 +1148,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     verify(applicationManifestUtils, times(1)).populateRemoteGitConfigFilePathList(context, appManifestMap);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask.getSetupAbstractions().get(Cd1SetupFields.APP_ID_FIELD)).isEqualTo(APP_ID);
     assertThat(delegateTask.getSetupAbstractions().get(Cd1SetupFields.ENV_ID_FIELD)).isEqualTo(ENV_ID);
@@ -1234,7 +1234,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     verify(helmChartConfigHelperService, times(1)).getHelmChartConfigTaskParams(context, appManifest);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask.getSetupAbstractions().get(Cd1SetupFields.APP_ID_FIELD)).isEqualTo(APP_ID);
     assertThat(delegateTask.getSetupAbstractions().get(Cd1SetupFields.ENV_ID_FIELD)).isEqualTo(ENV_ID);
@@ -1249,7 +1249,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     abstractK8SState.executeHelmValuesFetchTask(
         context, ACTIVITY_ID, "commandName", 10 * 60 * 1000L, mapK8sValuesLocationToApplicationManifest);
     captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(2)).queueTask(captor.capture());
+    verify(delegateService, times(2)).queueTaskV2(captor.capture());
     assertThat(captor.getValue().getSetupAbstractions().get(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD))
         .isEqualTo(null);
     assertThat(captor.getValue().getSetupAbstractions().get(Cd1SetupFields.SERVICE_ID_FIELD)).isEqualTo(null);
@@ -1307,7 +1307,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     verify(containerDeploymentManagerHelper, times(1)).getContainerServiceParams(infrastructureMapping, "", context);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     HelmValuesFetchTaskParameters helmValuesFetchTaskParameters =
         (HelmValuesFetchTaskParameters) delegateTask.getData().getParameters()[0];
@@ -1342,7 +1342,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     abstractK8SState.executeWrapperWithManifest(k8sStateExecutor, context, 90000);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(captor.capture());
+    verify(delegateService, times(1)).queueTaskV2(captor.capture());
     DelegateTask queuedTask = captor.getValue();
     assertThat(queuedTask.isSelectionLogsTrackingEnabled())
         .isEqualTo(abstractK8SState.isSelectionLogsTrackingForTasksEnabled());
@@ -1383,7 +1383,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     ExecutionResponse executionResponse = abstractK8SState.executeWrapperWithManifest(k8sStateExecutor, context, 90000);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(captor.capture());
+    verify(delegateService, times(1)).queueTaskV2(captor.capture());
     DelegateTask queuedTask = captor.getValue();
     assertThat(queuedTask.isSelectionLogsTrackingEnabled())
         .isEqualTo(abstractK8SState.isSelectionLogsTrackingForTasksEnabled());
@@ -1874,7 +1874,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     abstractK8SState.queueK8sDelegateTask(executionContext, K8sRollingDeployTaskParameters.builder().build(), null);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(captor.capture());
+    verify(delegateService, times(1)).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     K8sTaskParameters taskParams = (K8sTaskParameters) delegateTask.getData().getParameters()[0];
 

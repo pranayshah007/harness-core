@@ -242,7 +242,7 @@ public class CloudWatchState extends AbstractMetricAnalysisState {
             .executionData(executionData)
             .build(),
         waitId);
-    return delegateService.queueTask(delegateTask);
+    return delegateService.queueTaskV2(delegateTask);
   }
 
   private Map<String, List<CloudWatchMetric>> createECSMetrics(

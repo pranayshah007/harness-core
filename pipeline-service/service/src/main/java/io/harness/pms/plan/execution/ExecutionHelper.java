@@ -290,36 +290,29 @@ public class ExecutionHelper {
     return builder.build();
   }
 
-  @VisibleForTesting
-  TemplateMergeResponseDTO getPipelineYamlAndValidate(String mergedRuntimeInputYaml, PipelineEntity pipelineEntity)
-      throws IOException {
-    YamlConfig pipelineYamlConfig;
-    YamlConfig pipelineYamlConfigForSchemaValidations;
-
-    long start = System.currentTimeMillis();
-    if (isEmpty(mergedRuntimeInputYaml)) {
-      pipelineYamlConfig = new YamlConfig(pipelineEntity.getYaml());
-      pipelineYamlConfigForSchemaValidations = pipelineYamlConfig;
-    } else {
-      YamlConfig pipelineEntityYamlConfig = new YamlConfig(pipelineEntity.getYaml());
-      YamlConfig runtimeInputYamlConfig = new YamlConfig(mergedRuntimeInputYaml);
-      pipelineYamlConfig = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
-          pipelineEntityYamlConfig, runtimeInputYamlConfig, true, true);
-
-      /*
+  /*
       For schema validations, we don't want input set validators to be appended. For example, if some timeout field in
       the pipeline is <+input>.allowedValues(12h, 1d), and the runtime input gives a value 12h, the value for this field
       in pipelineYamlConfig will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
       give an error in schema validation. That's why we need a value that doesn't have this validator appended.
        */
-      pipelineYamlConfigForSchemaValidations =
-          MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(pipelineEntityYamlConfig, runtimeInputYamlConfig, false);
+  @VisibleForTesting
+  TemplateMergeResponseDTO getPipelineYamlAndValidate(String mergedRuntimeInputYaml, PipelineEntity pipelineEntity)
+      throws IOException {
+    YamlConfig pipelineYamlConfig;
+
+    long start = System.currentTimeMillis();
+    if (isEmpty(mergedRuntimeInputYaml)) {
+      pipelineYamlConfig = new YamlConfig(pipelineEntity.getYaml());
+    } else {
+      YamlConfig pipelineEntityYamlConfig = new YamlConfig(pipelineEntity.getYaml());
+      YamlConfig runtimeInputYamlConfig = new YamlConfig(mergedRuntimeInputYaml);
+      pipelineYamlConfig = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+          pipelineEntityYamlConfig, runtimeInputYamlConfig, true, true);
     }
     pipelineYamlConfig = InputSetSanitizer.trimValues(pipelineYamlConfig);
-    pipelineYamlConfigForSchemaValidations = InputSetSanitizer.trimValues(pipelineYamlConfigForSchemaValidations);
 
     String pipelineYaml = pipelineYamlConfig.getYaml();
-    String pipelineYamlForSchemaValidations = pipelineYamlConfigForSchemaValidations.getYaml();
     log.info("[PMS_EXECUTE] Pipeline input set merge total time took {}ms", System.currentTimeMillis() - start);
 
     String unresolvedPipelineYaml = pipelineYaml;
@@ -336,7 +329,7 @@ public class ExecutionHelper {
           ? pipelineYaml
           : templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
     }
-    String yamlWithoutRuntimeInputs = YamlUtils.getYamlWithoutInputs(pipelineYaml);
+    String yamlWithoutRuntimeInputs = YamlUtils.getYamlWithoutInputs(new YamlConfig(pipelineYaml));
     pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
         pipelineEntity.getProjectIdentifier(), yamlWithoutRuntimeInputs);
     if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType() == StoreType.INLINE) {

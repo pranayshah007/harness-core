@@ -43,7 +43,7 @@ public class GoogleCloudStorageArtifactTaskHelper {
     try {
       switch (artifactTaskParameters.getArtifactTaskType()) {
         case GET_LAST_SUCCESSFUL_BUILD:
-          saveLogs(executionLogCallback, "Fetching S3 Artifact details");
+          saveLogs(executionLogCallback, "Fetching Google Cloud Storage Artifact details");
           artifactTaskResponse =
               getSuccessTaskResponse(googleCloudStorageArtifactTaskHandler.getLastSuccessfulBuild(attributes));
           GoogleCloudStorageArtifactDelegateResponse artifactDelegateResponse =

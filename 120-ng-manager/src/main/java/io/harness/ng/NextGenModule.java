@@ -221,6 +221,8 @@ import io.harness.ng.core.user.service.impl.UserEntityCrudStreamListener;
 import io.harness.ng.eventsframework.EventsFrameworkModule;
 import io.harness.ng.feedback.services.FeedbackService;
 import io.harness.ng.feedback.services.impls.FeedbackServiceImpl;
+import io.harness.ng.moduleversioninfo.ModuleVersionInfoServiceImpl;
+import io.harness.ng.moduleversioninfo.service.ModuleVersionInfoService;
 import io.harness.ng.opa.OpaService;
 import io.harness.ng.opa.OpaServiceImpl;
 import io.harness.ng.opa.entities.connector.OpaConnectorService;
@@ -616,6 +618,7 @@ public class NextGenModule extends AbstractModule {
     bind(WebhookEventService.class).to(WebhookServiceImpl.class);
     bind(ScimUserService.class).to(NGScimUserServiceImpl.class);
     bind(ScimGroupService.class).to(NGScimGroupServiceImpl.class);
+    bind(ModuleVersionInfoService.class).to(ModuleVersionInfoServiceImpl.class);
 
     install(new ValidationModule(getValidatorFactory()));
     install(new AbstractMongoModule() {

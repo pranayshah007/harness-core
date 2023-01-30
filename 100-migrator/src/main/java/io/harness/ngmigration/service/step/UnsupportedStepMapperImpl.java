@@ -15,7 +15,7 @@ import io.harness.plancreator.steps.AbstractStepNode;
 import software.wings.beans.GraphNode;
 import software.wings.sm.State;
 
-public class UnsupportedStepMapperImpl implements StepMapper {
+public class UnsupportedStepMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     throw new InvalidRequestException(

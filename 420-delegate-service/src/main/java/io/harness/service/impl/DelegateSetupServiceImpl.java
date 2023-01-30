@@ -55,7 +55,7 @@ import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateSetupService;
 
 import software.wings.beans.SelectorType;
-import software.wings.service.impl.DelegateConnectionDao;
+import software.wings.service.impl.DelegateDao;
 import software.wings.service.intfc.ownership.OwnedByAccount;
 
 import com.google.inject.Inject;
@@ -93,7 +93,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAccount {
   @Inject private HPersistence persistence;
   @Inject private DelegateCache delegateCache;
-  @Inject private DelegateConnectionDao delegateConnectionDao;
+  @Inject private DelegateDao delegateDao;
   @Inject private FilterService filterService;
   @Inject private OutboxService outboxService;
   // grpc heartbeat thread is scheduled at 5 mins, hence we are allowing a gap of 15 mins
@@ -490,19 +490,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
         .lastHeartBeat(lastHeartBeat)
         .delegateInstanceDetails(delegateInstanceDetails)
         .connectivityStatus(connectivityStatus)
-        .grpcActive(delegateId.get() == null || isGrpcActive(accountId, delegateId.get()))
         .activelyConnected(!connectivityStatus.equals(GROUP_STATUS_DISCONNECTED))
         .tokenActive(isDelegateTokenActiveAtGroupLevel.get())
         .immutable(immutableDelegate)
         .groupVersion(groupVersion)
         .build();
-  }
-
-  private boolean isGrpcActive(String accountId, String delegateId) {
-    return delegateConnectionDao.list(accountId, delegateId)
-        .stream()
-        .anyMatch(delegateConnection
-            -> delegateConnection.getLastGrpcHeartbeat() > System.currentTimeMillis() - MAX_GRPC_HB_TIMEOUT);
   }
 
   @Override

@@ -24,6 +24,7 @@ import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
 import com.amazonaws.services.autoscaling.model.LifecycleHookSpecification;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,7 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
     String minSize = "minSize";
     String maxSize = "maxSize";
     String desiredCapacity = "desiredCapacity";
+    String targetGroupARNs = "targetGroupARNs";
   }
 
   public AsgConfigurationManifestHandler(AsgSdkManager asgSdkManager, ManifestRequest manifestRequest) {
@@ -59,6 +61,9 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
           break;
         case OverrideProperties.desiredCapacity:
           createAutoScalingGroupRequest.setDesiredCapacity((Integer) entry.getValue());
+          break;
+        case OverrideProperties.targetGroupARNs:
+          createAutoScalingGroupRequest.setTargetGroupARNs((Collection<String>) entry.getValue());
           break;
         default:
           // do nothing
@@ -101,23 +106,23 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
     CreateAutoScalingGroupRequest createAutoScalingGroupRequest = manifests.get(0);
     createAutoScalingGroupRequest.setAutoScalingGroupName(asgName);
 
+    String operationName;
     if (autoScalingGroup == null) {
-      String operationName = format("Create Asg %s", asgName);
+      operationName = format("Create Asg %s", asgName);
       asgSdkManager.info("Operation `%s` has started", operationName);
       asgSdkManager.createASG(asgName, chainState.getLaunchTemplateVersion(), createAutoScalingGroupRequest);
       asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAllInstancesInReadyState, operationName);
-      asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
     } else {
-      String operationName = format("Update Asg %s", asgName);
+      operationName = format("Update Asg %s", asgName);
       asgSdkManager.info("Operation `%s` has started", operationName);
       asgSdkManager.updateASG(asgName, chainState.getLaunchTemplateVersion(), createAutoScalingGroupRequest);
-      if (createAutoScalingGroupRequest.getDesiredCapacity() == 0) {
+      if (Integer.valueOf(0).equals(createAutoScalingGroupRequest.getDesiredCapacity())) {
         asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAsgDownsizedToZero, operationName);
       } else {
         asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAllInstancesInReadyState, operationName);
       }
-      asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
     }
+    asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
 
     AutoScalingGroup finalAutoScalingGroup = asgSdkManager.getASG(asgName);
     chainState.setAutoScalingGroup(finalAutoScalingGroup);
@@ -167,7 +172,7 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
         AsgContentParser.parseJson(autoScalingGroupContent, CreateAutoScalingGroupRequest.class, false);
     createAutoScalingGroupRequest.setLifecycleHookSpecificationList(lifecycleHookSpecificationList);
     createAutoScalingGroupRequest.setServiceLinkedRoleARN(null);
-    if ((createAutoScalingGroupRequest.getVPCZoneIdentifier()).equals("")) {
+    if ("".equals(createAutoScalingGroupRequest.getVPCZoneIdentifier())) {
       createAutoScalingGroupRequest.setVPCZoneIdentifier(null);
     }
 

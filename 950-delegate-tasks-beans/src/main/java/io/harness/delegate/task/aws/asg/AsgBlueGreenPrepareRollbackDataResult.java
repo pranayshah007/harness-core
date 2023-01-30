@@ -20,8 +20,9 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class AsgBlueGreenPrepareRollbackDataResult {
-  Map<String, List<String>> asgManifestsDataForRollback;
   String prodAsgName;
   String asgName;
   AsgLoadBalancerConfig asgLoadBalancerConfig;
+  Map<String, List<String>> prodAsgManifestsDataForRollback;
+  Map<String, List<String>> stageAsgManifestsDataForRollback;
 }

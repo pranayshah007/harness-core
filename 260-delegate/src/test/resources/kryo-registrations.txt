@@ -2442,6 +2442,11 @@
 673570:io.harness.delegate.task.scm.ConnectorDecryptionParams
 673571:io.harness.delegate.task.scm.GitFileLocationDetails
 673572:io.harness.delegate.task.scm.ScmBatchGetFileTaskResponseData
+680000:io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskParams
+680001:io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskType
+680002:io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse
+680003:io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse
+680004:io.harness.delegate.beans.connector.terraformcloud.TerraformCloudValidationParams
 930001:io.harness.licensing.beans.modules.CDModuleLicenseDTO
 930002:io.harness.licensing.beans.modules.CEModuleLicenseDTO
 930003:io.harness.licensing.beans.modules.CFModuleLicenseDTO
@@ -2617,3 +2622,10 @@
 10000264:io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG
 10000265:io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG
 10000266:io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG
+10000300:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO
+10000301:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialDTO
+10000302:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialSpecDTO
+10000303:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO
+10000304:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType
+
+10000401:io.harness.delegate.beans.executioncapability.AwsSamInstallationCapability

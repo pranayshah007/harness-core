@@ -10,20 +10,21 @@ package io.harness.ng.overview.dto;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
 public class InstanceGroupedByEnvironmentList {
-  List<InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList;
+  @NotNull List<InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList;
 
   @Value
   @Builder
   public static class InstanceGroupedByEnvironment {
-    String envId;
+    @NotNull String envId;
     String envName;
-    List<InstanceGroupedByEnvironmentType> instanceGroupedByEnvironmentTypeList;
+    @NotNull List<InstanceGroupedByEnvironmentType> instanceGroupedByEnvironmentTypeList;
     long lastDeployedAt;
   }
 
@@ -31,7 +32,7 @@ public class InstanceGroupedByEnvironmentList {
   @Builder
   public static class InstanceGroupedByEnvironmentType {
     EnvironmentType environmentType;
-    List<InstanceGroupedByInfrastructure> instanceGroupedByInfrastructureList;
+    @NotNull List<InstanceGroupedByInfrastructure> instanceGroupedByInfrastructureList;
     long lastDeployedAt;
   }
 
@@ -42,7 +43,7 @@ public class InstanceGroupedByEnvironmentList {
     String infrastructureName;
     String clusterId;
     String agentId;
-    List<InstanceGroupedByArtifact> instanceGroupedByArtifactList;
+    @NotNull List<InstanceGroupedByArtifact> instanceGroupedByArtifactList;
     long lastDeployedAt;
   }
 

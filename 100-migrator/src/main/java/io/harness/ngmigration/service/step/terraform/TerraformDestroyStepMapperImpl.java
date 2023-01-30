@@ -15,7 +15,7 @@ import io.harness.cdng.provision.terraform.TerraformStepConfiguration;
 import io.harness.cdng.provision.terraform.TerraformStepConfigurationType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 
 import software.wings.beans.GraphNode;

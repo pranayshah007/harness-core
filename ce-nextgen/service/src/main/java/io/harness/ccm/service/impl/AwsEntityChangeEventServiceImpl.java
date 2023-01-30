@@ -28,6 +28,7 @@ import io.harness.ccm.commons.entities.billing.CECloudAccount;
 import io.harness.ccm.service.intf.AWSBucketPolicyHelperService;
 import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.ccm.service.intf.AwsEntityChangeEventService;
+import io.harness.configuration.DeployMode;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
@@ -186,6 +187,9 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
   }
 
   private String getDestinationBucketName(AwsConfig awsConfig) {
+    if (DeployMode.isOnPrem(configuration.getDeployMode().name())) {
+      return awsConfig.getDestinationBucket();
+    }
     return String.format("%s-%s", awsConfig.getDestinationBucket(), awsConfig.getDestinationBucketsCount());
   }
 

@@ -13,6 +13,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 
+import io.harness.cvng.activity.entities.CustomChangeActivity;
 import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.entities.DeploymentActivity.DeploymentActivityBuilder;
 import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity;
@@ -42,6 +43,8 @@ import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeEventDTO.ChangeEventDTOBuilder;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.beans.change.CustomChangeEvent;
+import io.harness.cvng.beans.change.CustomChangeEventMetadata;
 import io.harness.cvng.beans.change.DeepLink;
 import io.harness.cvng.beans.change.HarnessCDCurrentGenEventMetadata;
 import io.harness.cvng.beans.change.HarnessCDEventMetadata;
@@ -93,6 +96,7 @@ import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.Monitored
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.ServiceDependencyDTO;
 import io.harness.cvng.core.beans.monitoredService.RiskCategoryDTO;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.CustomChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.HarnessCDChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.HarnessCDCurrentGenChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.KubernetesChangeSourceSpec;
@@ -149,6 +153,7 @@ import io.harness.cvng.core.entities.StackdriverCVConfig.StackdriverCVConfigBuil
 import io.harness.cvng.core.entities.StackdriverLogCVConfig;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig.StackdriverLogCVConfigBuilder;
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
+import io.harness.cvng.core.entities.changeSource.CustomChangeSource;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource.HarnessCDChangeSourceBuilder;
 import io.harness.cvng.core.entities.changeSource.HarnessCDCurrentGenChangeSource;
@@ -905,6 +910,19 @@ public class BuilderFactory {
         .type(ChangeSourceType.HARNESS_CD_CURRENT_GEN);
   }
 
+  public CustomChangeSource.CustomChangeSourceBuilder getCustomChangeSourceBuilder(
+      ChangeSourceType customChangeSourceType) {
+    return CustomChangeSource.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .enabled(true)
+        .name(randomAlphabetic(20))
+        .type(customChangeSourceType)
+        .identifier("customIdentifier");
+  }
+
   public ChangeSourceDTOBuilder getHarnessCDChangeSourceDTOBuilder() {
     return getChangeSourceDTOBuilder(ChangeSourceType.HARNESS_CD).spec(new HarnessCDChangeSourceSpec());
   }
@@ -928,6 +946,14 @@ public class BuilderFactory {
                   .harnessApplicationId(randomAlphabetic(20))
                   .harnessServiceId(randomAlphabetic(20))
                   .harnessEnvironmentId(randomAlphabetic(20))
+                  .build());
+  }
+
+  public ChangeSourceDTOBuilder getCustomChangeSourceDTOBuilder(ChangeSourceType customChangeSourceType) {
+    return getChangeSourceDTOBuilder(customChangeSourceType)
+        .spec(CustomChangeSourceSpec.builder()
+                  .name(randomAlphabetic(20))
+                  .type(customChangeSourceType.getChangeCategory())
                   .build());
   }
 
@@ -977,6 +1003,26 @@ public class BuilderFactory {
                 .eventDescriptions(Arrays.asList("eventDesc1", "eventDesc2"))
                 .build())
         .eventEndTime(clock.instant().toEpochMilli());
+  }
+
+  public CustomChangeActivity.CustomChangeActivityBuilder getCustomChangeActivity(
+      ChangeSourceType customChangeSourceType) {
+    return CustomChangeActivity.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceParams().getMonitoredServiceIdentifier())
+        .eventTime(clock.instant())
+        .changeSourceIdentifier("changeSourceID")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .type(customChangeSourceType.getActivityType())
+        .activityType(customChangeSourceType.getActivityType())
+        .user("user")
+        .customChangeEvent(CustomChangeEvent.builder()
+                               .description("description")
+                               .changeEventDetailsLink("changeEventDetailsLink")
+                               .externalLinkToEntity("externalLinkToEntity")
+                               .build());
   }
 
   public HarnessCDCurrentGenActivityBuilder getHarnessCDCurrentGenActivityBuilder() {
@@ -1122,6 +1168,21 @@ public class BuilderFactory {
                                   DeepLink.builder().action(DeepLink.Action.REDIRECT_URL).url("internalUrl").build())
                               .eventDescriptions(Arrays.asList("eventDesc1", "eventDesc2"))
                               .build())
+                      .build());
+  }
+
+  public ChangeEventDTOBuilder getCustomChangeEventBuilder(ChangeSourceType customChangeSourceType) {
+    return getChangeEventDTOBuilder()
+        .type(customChangeSourceType)
+        .metadata(CustomChangeEventMetadata.builder()
+                      .user("user")
+                      .startTime(1000l)
+                      .endTime(2000l)
+                      .customChangeEvent(CustomChangeEvent.builder()
+                                             .description("description")
+                                             .changeEventDetailsLink("changeEventDetailsLink")
+                                             .externalLinkToEntity("externalLinkToEntity")
+                                             .build())
                       .build());
   }
 
@@ -1709,9 +1770,7 @@ public class BuilderFactory {
         .metricName("metricName")
         .metricType(MetricType.ERROR)
         .metricIdentifier("metricIdentifier")
-        .healthSource(io.harness.cvng.cdng.beans.v2.HealthSource.builder()
-                          .healthSourceIdentifier("healthSourceIdentifier")
-                          .build())
+        .healthSource(io.harness.cvng.cdng.beans.v2.HealthSource.builder().identifier("healthSourceIdentifier").build())
         .transactionGroup("transactionGroup")
         .thresholds(Collections.singletonList(getMetricThreshold()))
         .analysisResult(AnalysisResult.NO_ANALYSIS)

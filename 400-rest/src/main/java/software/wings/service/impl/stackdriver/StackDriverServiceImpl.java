@@ -119,14 +119,14 @@ public class StackDriverServiceImpl implements StackDriverService {
                                             .build();
 
       if (DelegateStateType.STACK_DRIVER_LOG == setupTestNodeData.getStateType()) {
-        return delegateProxyFactory.get(StackDriverDelegateService.class, syncTaskContext)
+        return delegateProxyFactory.getV2(StackDriverDelegateService.class, syncTaskContext)
             .getLogWithDataForNode(StackdriverLogGcpConfigTaskParams.builder()
                                        .gcpConfig((GcpConfig) settingAttribute.getValue())
                                        .encryptedDataDetails(encryptionDetails)
                                        .build(),
                 setupTestNodeData.getGuid(), hostName, setupTestNodeData);
       } else {
-        return delegateProxyFactory.get(StackDriverDelegateService.class, syncTaskContext)
+        return delegateProxyFactory.getV2(StackDriverDelegateService.class, syncTaskContext)
             .getMetricsWithDataForNode(StackdriverGcpConfigTaskParams.builder()
                                            .gcpConfig((GcpConfig) settingAttribute.getValue())
                                            .encryptedDataDetails(encryptionDetails)
@@ -152,7 +152,7 @@ public class StackDriverServiceImpl implements StackDriverService {
                                             .timeout(TaskData.DEFAULT_SYNC_CALL_TIMEOUT * 3)
                                             .build();
 
-      return delegateProxyFactory.get(StackDriverDelegateService.class, syncTaskContext)
+      return delegateProxyFactory.getV2(StackDriverDelegateService.class, syncTaskContext)
           .getLogSample(StackdriverLogGcpConfigTaskParams.builder()
                             .gcpConfig((GcpConfig) settingAttribute.getValue())
                             .encryptedDataDetails(encryptionDetails)
@@ -184,7 +184,7 @@ public class StackDriverServiceImpl implements StackDriverService {
                                           .appId(GLOBAL_APP_ID)
                                           .timeout(TaskData.DEFAULT_SYNC_CALL_TIMEOUT * 3)
                                           .build();
-    return delegateProxyFactory.get(StackDriverDelegateService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(StackDriverDelegateService.class, syncTaskContext)
         .listRegions(StackdriverGcpConfigTaskParams.builder()
                          .gcpConfig((GcpConfig) settingAttribute.getValue())
                          .encryptedDataDetails(encryptionDetails)
@@ -205,7 +205,7 @@ public class StackDriverServiceImpl implements StackDriverService {
                                           .appId(GLOBAL_APP_ID)
                                           .timeout(TaskData.DEFAULT_SYNC_CALL_TIMEOUT * 3)
                                           .build();
-    return delegateProxyFactory.get(StackDriverDelegateService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(StackDriverDelegateService.class, syncTaskContext)
         .listForwardingRules(StackdriverGcpConfigTaskParams.builder()
                                  .gcpConfig((GcpConfig) settingAttribute.getValue())
                                  .encryptedDataDetails(encryptionDetails)
@@ -239,7 +239,7 @@ public class StackDriverServiceImpl implements StackDriverService {
             .isServiceLevel(true)
             .build();
     VerificationNodeDataSetupResponse nodeDataSetupResponse =
-        delegateProxyFactory.get(StackDriverDelegateService.class, syncTaskContext)
+        delegateProxyFactory.getV2(StackDriverDelegateService.class, syncTaskContext)
             .getLogWithDataForNode(StackdriverLogGcpConfigTaskParams.builder()
                                        .gcpConfig((GcpConfig) settingAttribute.getValue())
                                        .encryptedDataDetails(encryptionDetails)
