@@ -7,8 +7,6 @@
 
 package io.harness.auditevent.streaming.beans;
 
-import io.harness.auditevent.streaming.entities.BatchFailureInfo;
-
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
