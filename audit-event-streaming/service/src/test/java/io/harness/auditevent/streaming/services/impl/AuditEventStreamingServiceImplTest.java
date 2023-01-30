@@ -136,6 +136,7 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
 
     verify(streamingBatchService, times(1)).update(eq(ACCOUNT_IDENTIFIER), streamingBatchArgumentCaptor.capture());
     assertThat(streamingBatchArgumentCaptor.getValue().getStatus()).isEqualTo(BatchStatus.SUCCESS);
+    assertThat(streamingBatchArgumentCaptor.getValue().getLastStreamedAt()).isGreaterThan(0);
   }
 
   @Test

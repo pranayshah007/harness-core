@@ -79,6 +79,7 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
         getCriteriaToFetchAuditEvents(streamingBatch, streamingDestination), Sorts.ascending(createdAt));
     if (!auditEventMongoCursor.hasNext()) {
       log.info(getFullLogMessage("No more records found.", streamingBatch));
+      streamingBatch.setLastStreamedAt(System.currentTimeMillis());
       streamingBatch.setStatus(SUCCESS);
       return streamingBatchService.update(streamingBatch.getAccountIdentifier(), streamingBatch);
     } else {
