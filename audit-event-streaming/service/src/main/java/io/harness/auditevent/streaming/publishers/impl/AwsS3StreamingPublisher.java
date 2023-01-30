@@ -14,7 +14,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
-import static io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO.TypeEnum.AWS_S3;
 
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 
@@ -95,9 +94,9 @@ public class AwsS3StreamingPublisher implements StreamingPublisher {
     String identifier = connectorIdentifierRef.getIdentifier();
     Optional<ConnectorDTO> connectorDTO =
         NGRestUtils.getResponse(connectorResourceClient.get(identifier, accountIdentifier, null, null));
-    if (!connectorDTO.isPresent() || !isAAwsConnector(connectorDTO.get())) {
+    if (connectorDTO.isEmpty() || !isAAwsConnector(connectorDTO.get())) {
       throw new InvalidRequestException(
-          String.format("Connector not found for identifier : [%s] with scope: [%s]", identifier, Scope.ACCOUNT),
+          String.format("AWS connector not found for identifier : [%s] with scope: [%s]", identifier, Scope.ACCOUNT),
           WingsException.USER);
     }
     ConnectorInfoDTO connectors = connectorDTO.get().getConnectorInfo();
@@ -129,33 +128,9 @@ public class AwsS3StreamingPublisher implements StreamingPublisher {
     if (isEmpty(outgoingAuditMessages)) {
       return PublishResponse.builder().status(SUCCESS).build();
     }
-    if (AWS_S3 == streamingDestination.getType()) {
-      AwsConnectorDTO connector =
-          getAwsConnector(streamingDestination.getAccountIdentifier(), streamingDestination.getConnectorRef());
-
-      BaseNGAccess baseNGAccess = BaseNGAccess.builder()
-                                      .accountIdentifier(streamingDestination.getAccountIdentifier())
-                                      .identifier(streamingDestination.getConnectorRef())
-                                      .build();
-
-      List<EncryptedDataDetail> encryptionDetails = getAwsEncryptionDetails(connector, baseNGAccess);
+    try {
       AwsPutAuditBatchToBucketTaskParamsRequest awsTaskRequestParam =
-          AwsPutAuditBatchToBucketTaskParamsRequest.builder()
-              .awsTaskType(AwsTaskType.PUT_AUDIT_BATCH_TO_BUCKET)
-              .awsConnector(connector)
-              .encryptionDetails(encryptionDetails)
-              .region(AWS_DEFAULT_REGION)
-              .bucketName(((AwsS3StreamingDestination) streamingDestination).getBucket())
-              .auditBatch(AuditBatchDTO.builder()
-                              .batchId(streamingBatch.getId())
-                              .accountIdentifier(streamingBatch.getAccountIdentifier())
-                              .streamingDestinationIdentifier(streamingDestination.getIdentifier())
-                              .startTime(streamingBatch.getStartTime())
-                              .endTime(streamingBatch.getEndTime())
-                              .numberOfRecords(outgoingAuditMessages.size())
-                              .outgoingAuditMessages(outgoingAuditMessages)
-                              .build())
-              .build();
+          getAwsPutAuditBatchToBucketTaskParams(streamingDestination, streamingBatch, outgoingAuditMessages);
       final DelegateTaskRequest delegateTaskRequest =
           DelegateTaskRequest.builder()
               .accountId(streamingDestination.getAccountIdentifier())
@@ -165,25 +140,52 @@ public class AwsS3StreamingPublisher implements StreamingPublisher {
               .taskSetupAbstractions(buildAbstractions(streamingDestination.getAccountIdentifier(), null, null))
               .taskSelectors(awsTaskRequestParam.getAwsConnector().getDelegateSelectors())
               .build();
-      try {
-        DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
-        return getResponse(responseData, streamingBatch);
-      } catch (Exception exception) {
-        log.error(getFullLogMessage("Error publishing batch.", streamingBatch), exception);
-        return PublishResponse.builder()
-            .status(FAILED)
-            .failureInfo(BatchFailureInfo.builder().message(exception.getMessage()).build())
-            .build();
-      }
-    } else {
+
+      DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+      return getResponse(responseData, streamingBatch);
+    } catch (Exception exception) {
+      log.error(getFullLogMessage("Error publishing batch.", streamingBatch), exception);
       return PublishResponse.builder()
           .status(FAILED)
-          .failureInfo(
-              BatchFailureInfo.builder()
-                  .message(String.format("Unsupported streaming destination [%s].", streamingDestination.getType()))
-                  .build())
+          .failureInfo(BatchFailureInfo.builder().message(exception.getMessage()).build())
           .build();
     }
+  }
+
+  private AwsPutAuditBatchToBucketTaskParamsRequest getAwsPutAuditBatchToBucketTaskParams(
+      StreamingDestination streamingDestination, StreamingBatch streamingBatch,
+      List<OutgoingAuditMessage> outgoingAuditMessages) {
+    AwsConnectorDTO connector =
+        getAwsConnector(streamingDestination.getAccountIdentifier(), streamingDestination.getConnectorRef());
+    if (!connector.getExecuteOnDelegate()) {
+      throw new InvalidRequestException(String.format(
+          "Ensure that the connectivity mode for the connector [%s] should be: Connect through harness delegate.",
+          streamingDestination.getConnectorRef()));
+    }
+
+    BaseNGAccess baseNGAccess = BaseNGAccess.builder()
+                                    .accountIdentifier(streamingDestination.getAccountIdentifier())
+                                    .identifier(streamingDestination.getConnectorRef())
+                                    .build();
+
+    List<EncryptedDataDetail> encryptionDetails = getAwsEncryptionDetails(connector, baseNGAccess);
+
+    return AwsPutAuditBatchToBucketTaskParamsRequest.builder()
+        .awsTaskType(AwsTaskType.PUT_AUDIT_BATCH_TO_BUCKET)
+        .awsConnector(connector)
+        .encryptionDetails(encryptionDetails)
+        .region(AWS_DEFAULT_REGION)
+        .bucketName(((AwsS3StreamingDestination) streamingDestination).getBucket())
+        .auditBatch(AuditBatchDTO.builder()
+                        .batchId(streamingBatch.getId())
+                        .accountIdentifier(streamingBatch.getAccountIdentifier())
+                        .streamingDestinationIdentifier(streamingDestination.getIdentifier())
+                        .startTime(streamingBatch.getStartTime())
+                        .endTime(streamingBatch.getEndTime())
+                        .numberOfRecords(outgoingAuditMessages.size())
+                        .outgoingAuditMessages(outgoingAuditMessages)
+                        .build())
+        .build();
   }
 
   private String getFullLogMessage(String message, StreamingBatch streamingBatch) {
