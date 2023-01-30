@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 24
+version: 25
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -122,3 +122,5 @@ resourceTypes:
     permissionKey: deploymentfreeze
   - identifier: IAC_STACK
     permissionKey: stack
+  - identifier: STREAMING_DESTINATION
+    permissionKey: streamingDestination

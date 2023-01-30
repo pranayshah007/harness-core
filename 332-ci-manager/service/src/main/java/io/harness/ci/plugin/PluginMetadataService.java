@@ -24,7 +24,10 @@ import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -48,18 +51,18 @@ public class PluginMetadataService {
     int version = pluginMetadataStatus.getVersion();
     Criteria criteria = Criteria.where(PluginMetadataConfigKeys.version).is(version);
     if (!StringUtils.isEmpty(searchTerm)) {
-      criteria = criteria.orOperator(Criteria.where(PluginMetadataConfigKeys.metadata + ".name")
-                                         .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
+      criteria = criteria.andOperator(Criteria.where(PluginMetadataConfigKeys.metadata + ".name")
+                                          .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
     }
+
+    List<SortOrder> sortOrders = Arrays.asList(
+        SortOrder.Builder.aSortOrder().withField(PluginMetadataConfigKeys.priority, SortOrder.OrderType.ASC).build(),
+        SortOrder.Builder.aSortOrder()
+            .withField(PluginMetadataConfigKeys.metadata + ".name", SortOrder.OrderType.ASC)
+            .build());
+
     Pageable pageable =
-        getPageRequest(PageRequest.builder()
-                           .pageIndex(page)
-                           .pageSize(size)
-                           .sortOrders(Collections.singletonList(
-                               SortOrder.Builder.aSortOrder()
-                                   .withField(PluginMetadataConfigKeys.metadata + ".name", SortOrder.OrderType.ASC)
-                                   .build()))
-                           .build());
+        getPageRequest(PageRequest.builder().pageIndex(page).pageSize(size).sortOrders(sortOrders).build());
     Page<PluginMetadataConfig> pluginMetadataConfigs = pluginMetadataRepository.findAll(criteria, pageable);
     return PageUtils.getNGPageResponse(pluginMetadataConfigs,
         pluginMetadataConfigs.getContent().stream().map(this::metadataMapper).collect(Collectors.toList()));

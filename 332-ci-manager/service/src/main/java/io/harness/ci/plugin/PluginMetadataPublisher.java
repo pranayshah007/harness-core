@@ -85,8 +85,12 @@ public class PluginMetadataPublisher {
   }
 
   private void writeToDb(PluginMetadata pluginMetadata, int version) {
+    int priority = 0;
+    if (!pluginMetadata.getKind().equals("harness")) {
+      priority = 1;
+    }
     PluginMetadataConfig pluginMetadataConfig =
-        PluginMetadataConfig.builder().metadata(pluginMetadata).version(version).build();
+        PluginMetadataConfig.builder().metadata(pluginMetadata).version(version).priority(priority).build();
     pluginMetadataRepository.save(pluginMetadataConfig);
   }
 

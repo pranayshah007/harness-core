@@ -44,10 +44,12 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -62,7 +64,7 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
       TerragruntStepHelper.addStepType(ExecutionNodeType.TERRAGRUNT_DESTROY.getYamlType());
 
   @Inject private TerragruntStepHelper helper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
   @Inject public TerragruntConfigDAL terragruntConfigDAL;
@@ -175,6 +177,12 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
         ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier());
     TerragruntInheritOutput inheritOutput =
         helper.getSavedInheritOutput(provisionerIdentifier, TerragruntCommandType.DESTROY.name(), ambiance);
+
+    if (TerragruntTaskRunType.RUN_ALL == inheritOutput.getRunConfiguration().getRunType()) {
+      throw new InvalidRequestException(
+          "Inheriting from a plan which has used \"All Modules\" at Terragrunt PLan Step is not supported");
+    }
+
     TerragruntDestroyTaskParametersBuilder<?, ?> builder = TerragruntDestroyTaskParameters.builder();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);
@@ -274,7 +282,7 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
     commandUnitsList.add(FETCH_CONFIG_FILES);
     commandUnitsList.add(DESTROY);
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnitsList,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, commandUnitsList,
         TERRAGRUNT_DESTROY_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(stepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));

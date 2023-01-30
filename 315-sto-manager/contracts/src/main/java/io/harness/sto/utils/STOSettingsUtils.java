@@ -13,10 +13,13 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.steps.stepinfo.security.AquaTrivyStepInfo;
 import io.harness.beans.steps.stepinfo.security.BlackDuckStepInfo;
 import io.harness.beans.steps.stepinfo.security.BurpStepInfo;
 import io.harness.beans.steps.stepinfo.security.CheckmarxStepInfo;
 import io.harness.beans.steps.stepinfo.security.FortifyOnDemandStepInfo;
+import io.harness.beans.steps.stepinfo.security.GrypeStepInfo;
+import io.harness.beans.steps.stepinfo.security.MendStepInfo;
 import io.harness.beans.steps.stepinfo.security.PrismaCloudStepInfo;
 import io.harness.beans.steps.stepinfo.security.SnykStepInfo;
 import io.harness.beans.steps.stepinfo.security.SonarqubeStepInfo;
@@ -34,6 +37,7 @@ import io.harness.beans.steps.stepinfo.security.shared.STOYamlIngestion;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlInstance;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlJavaParameters;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlLog;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlMendToolData;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlSonarqubeToolData;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlTarget;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlVeracodeToolData;
@@ -45,6 +49,7 @@ import io.harness.yaml.sto.variables.STOYamlFailOnSeverity;
 import io.harness.yaml.sto.variables.STOYamlGenericConfig;
 import io.harness.yaml.sto.variables.STOYamlImageType;
 import io.harness.yaml.sto.variables.STOYamlLogLevel;
+import io.harness.yaml.sto.variables.STOYamlLogSerializer;
 import io.harness.yaml.sto.variables.STOYamlScanMode;
 import io.harness.yaml.sto.variables.STOYamlTargetType;
 
@@ -62,7 +67,18 @@ public final class STOSettingsUtils {
   public static final String SECURITY_ENV_PREFIX = "SECURITY_";
   public static final String PRODUCT_PROJECT_VERSION = "product_project_version";
   public static final String PRODUCT_PROJECT_NAME = "product_project_name";
+  public static final String PRODUCT_PROJECT_TOKEN = "product_project_token";
+  public static final String PRODUCT_PRODUCT_NAME = "product_product_name";
+  public static final String PRODUCT_PRODUCT_TOKEN = "product_product_token";
+
+  public static final String PRODUCT_EXCLUDE = "product_exclude";
+  public static final String PRODUCT_INCLUDE = "product_include";
   public static final String TOOL_PROJECT_NAME = "tool.project_name";
+  public static final String TOOL_PROJECT_TOKEN = "tool.project_token";
+  public static final String TOOL_PRODUCT_NAME = "tool.product_name";
+  public static final String TOOL_PRODUCT_TOKEN = "tool.product_token";
+  public static final String TOOL_EXCLUDE = "tool.exclude";
+  public static final String TOOL_INCLUDE = "tool.include";
   public static final Integer ZAP_DEFAULT_PORT = 8080;
   public static final Integer DEFAULT_INSTANCE_PORT = 80;
 
@@ -168,9 +184,9 @@ public final class STOSettingsUtils {
           resolveStringParameter("image.access_id", stepType, identifier, imageData.getAccessId(), false));
       map.put(getSTOKey("container_access_token"),
           resolveStringParameter("image.access_token", stepType, identifier, imageData.getAccessToken(), false));
-      map.put(getSTOKey("container_image_name"),
+      map.put(getSTOKey("container_project"),
           resolveStringParameter("image.name", stepType, identifier, imageData.getName(), false));
-      map.put(getSTOKey("container_image_tag"),
+      map.put(getSTOKey("container_tag"),
           resolveStringParameter("image.tag", stepType, identifier, imageData.getTag(), false));
     }
 
@@ -188,12 +204,15 @@ public final class STOSettingsUtils {
           resolveStringParameter("instance.path", stepType, identifier, instanceData.getPath(), false));
       map.put(getSTOKey("instance_protocol"),
           resolveStringParameter("instance.protocol", stepType, identifier, instanceData.getProtocol(), false));
-      map.put(getSTOKey("instance_port"),
-          String.valueOf(resolveIntegerParameter(instanceData.getPort(), DEFAULT_INSTANCE_PORT)));
       map.put(getSTOKey("instance_access_id"),
           resolveStringParameter("instance.access_id", stepType, identifier, instanceData.getAccessId(), false));
       map.put(getSTOKey("instance_access_token"),
           resolveStringParameter("instance.access_token", stepType, identifier, instanceData.getAccessToken(), false));
+
+      Integer port = resolveIntegerParameter(instanceData.getPort(), null);
+      if (port != null) {
+        map.put(getSTOKey("instance_port"), String.valueOf(port));
+      }
     }
 
     return map;
@@ -224,10 +243,6 @@ public final class STOSettingsUtils {
           map.put(getSTOKey("repository_project"), targetName);
           map.put(getSTOKey("repository_branch"), targetVariant);
           break;
-        case CONTAINER:
-          map.put(getSTOKey("container_project"), targetName);
-          map.put(getSTOKey("container_tag"), targetVariant);
-          break;
         case CONFIGURATION:
           map.put(getSTOKey("configuration_type"), targetName);
           map.put(getSTOKey("configuration_environment"), targetVariant);
@@ -248,10 +263,11 @@ public final class STOSettingsUtils {
       STOYamlLog logData = advancedSettings.getLog();
       if (logData != null) {
         STOYamlLogLevel logLevel = logData.getLevel();
+        STOYamlLogSerializer logSerializer = logData.getSerializer();
 
         map.put(getSTOKey("log_level"), logLevel != null ? logLevel.getYamlName() : STOYamlLogLevel.INFO.getYamlName());
         map.put(getSTOKey("log_serializer"),
-            resolveStringParameter("log.serializer", stepType, identifier, logData.getSerializer(), false));
+            logSerializer != null ? logSerializer.getYamlName() : STOYamlLogSerializer.SIMPLE_ONPREM.getYamlName());
       }
 
       STOYamlArgs argsData = advancedSettings.getArgs();
@@ -348,7 +364,7 @@ public final class STOSettingsUtils {
       map.put(getSTOKey("product_data_center"),
           resolveStringParameter("tool.data_center", stepType, identifier, toolData.getDataCenter(), false));
       map.put(getSTOKey("product_lookup_type"),
-          resolveStringParameter("tool.lookup_type", stepType, identifier, toolData.getLoookupType(), false));
+          resolveStringParameter("tool.lookup_type", stepType, identifier, toolData.getLookupType(), false));
       map.put(getSTOKey("product_release_name"),
           resolveStringParameter("tool.release_name", stepType, identifier, toolData.getReleaseName(), false));
       map.put(getSTOKey("product_entitlement"),
@@ -388,10 +404,10 @@ public final class STOSettingsUtils {
     STOYamlSonarqubeToolData toolData = stepInfo.getTool();
 
     if (toolData != null) {
-      map.put(getSTOKey("product_exclude"),
-          resolveStringParameter("tool.exclude", stepType, identifier, toolData.getExclude(), false));
-      map.put(getSTOKey("product_include"),
-          resolveStringParameter("tool.include", stepType, identifier, toolData.getInclude(), false));
+      map.put(getSTOKey(PRODUCT_EXCLUDE),
+          resolveStringParameter(TOOL_EXCLUDE, stepType, identifier, toolData.getExclude(), false));
+      map.put(getSTOKey(PRODUCT_INCLUDE),
+          resolveStringParameter(TOOL_INCLUDE, stepType, identifier, toolData.getInclude(), false));
 
       STOYamlJavaParameters javaParameters = toolData.getJava();
 
@@ -411,6 +427,49 @@ public final class STOSettingsUtils {
 
     map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
     map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOAquaTrivyFields(
+      AquaTrivyStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOGrypeFields(GrypeStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOMendFields(MendStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
+
+    STOYamlMendToolData toolData = stepInfo.getTool();
+
+    if (toolData != null) {
+      map.put(getSTOKey(PRODUCT_PROJECT_NAME),
+          resolveStringParameter(TOOL_PROJECT_NAME, stepType, identifier, toolData.getProjectName(), false));
+      map.put(getSTOKey(PRODUCT_PROJECT_TOKEN),
+          resolveStringParameter(TOOL_PROJECT_TOKEN, stepType, identifier, toolData.getProjectToken(), false));
+      map.put(getSTOKey(PRODUCT_PRODUCT_NAME),
+          resolveStringParameter(TOOL_PRODUCT_NAME, stepType, identifier, toolData.getProductName(), false));
+      map.put(getSTOKey(PRODUCT_PRODUCT_TOKEN),
+          resolveStringParameter(TOOL_PRODUCT_TOKEN, stepType, identifier, toolData.getProductToken(), false));
+
+      map.put(getSTOKey(PRODUCT_EXCLUDE),
+          resolveStringParameter(TOOL_EXCLUDE, stepType, identifier, toolData.getExclude(), false));
+      map.put(getSTOKey(PRODUCT_INCLUDE),
+          resolveStringParameter(TOOL_INCLUDE, stepType, identifier, toolData.getInclude(), false));
+    }
 
     return map;
   }
@@ -443,19 +502,25 @@ public final class STOSettingsUtils {
     if (toolData != null) {
       map.put(getSTOKey("product_context"),
           resolveStringParameter("tool.context", stepType, identifier, toolData.getContext(), false));
-      map.put(
-          getSTOKey("zap_custom_port"), String.valueOf(resolveIntegerParameter(toolData.getPort(), ZAP_DEFAULT_PORT)));
+
+      Integer port = resolveIntegerParameter(toolData.getPort(), null);
+      if (port != null) {
+        map.put(getSTOKey("zap_custom_port"), String.valueOf(port));
+      }
     }
 
     return map;
   }
 
-  private static String getProductConfigName(STOYamlGenericConfig config) {
-    if (config != null) {
-      config.getYamlName();
-    }
+  public static String getProductConfigName(STOGenericStepInfo stepInfo) {
+    String defaultConfig = STOYamlGenericConfig.DEFAULT.getYamlName();
 
-    return STOYamlGenericConfig.DEFAULT.getYamlName();
+    switch (stepInfo.getSTOStepType()) {
+      case ZAP:
+        return ((ZapStepInfo) stepInfo).getConfig().getYamlName();
+      default:
+        return defaultConfig;
+    }
   }
 
   private static String getPolicyType(STOYamlScanMode scanMode) {
@@ -469,11 +534,10 @@ public final class STOSettingsUtils {
     Map<String, String> map = new HashMap<>();
     String stepType = stepInfo.getStepType().getType();
 
-    STOYamlGenericConfig config = stepInfo.getConfig();
     STOYamlScanMode scanMode = stepInfo.getMode();
 
     map.put(getSTOKey("product_name"), stepInfo.getProductName());
-    map.put(getSTOKey("product_config_name"), getProductConfigName(config));
+    map.put(getSTOKey("product_config_name"), getProductConfigName(stepInfo));
     map.put(getSTOKey("policy_type"), getPolicyType(scanMode));
 
     map.putAll(processSTOTargetFields(stepInfo.getTarget(), stepType, identifier));
@@ -481,6 +545,9 @@ public final class STOSettingsUtils {
     map.putAll(processSTOIngestionFields(stepInfo.getIngestion(), stepType, identifier));
 
     switch (stepInfo.getSTOStepType()) {
+      case AQUA_TRIVY:
+        map.putAll(processSTOAquaTrivyFields((AquaTrivyStepInfo) stepInfo, stepType, identifier));
+        break;
       case BLACKDUCK:
         map.putAll(processSTOBlackDuckFields((BlackDuckStepInfo) stepInfo, stepType, identifier));
         break;
@@ -490,8 +557,14 @@ public final class STOSettingsUtils {
       case CHECKMARX:
         map.putAll(processSTOCheckmarxFields((CheckmarxStepInfo) stepInfo, stepType, identifier));
         break;
+      case GRYPE:
+        map.putAll(processSTOGrypeFields((GrypeStepInfo) stepInfo, stepType, identifier));
+        break;
       case FORTIFY_ON_DEMAND:
         map.putAll(processSTOFODFields((FortifyOnDemandStepInfo) stepInfo, stepType, identifier));
+        break;
+      case MEND:
+        map.putAll(processSTOMendFields((MendStepInfo) stepInfo, stepType, identifier));
         break;
       case PRISMA_CLOUD:
         map.putAll(processSTOPrismaCloudFields((PrismaCloudStepInfo) stepInfo, stepType, identifier));

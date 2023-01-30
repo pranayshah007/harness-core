@@ -41,4 +41,8 @@ public class PMSPipelineResponseDTO {
   YamlSchemaErrorWrapperDTO yamlSchemaErrorWrapper;
   ValidateTemplateInputsResponseDTO validateTemplateInputsResponse;
   CacheResponseMetadataDTO cacheResponse;
+  // if validateAsync is true, then this ID wil be of the event started for the async validation process, which can be
+  // queried on using another API to get the result of the async validation. If validateAsync is false, then this ID
+  // is not needed and will be null
+  String validationUuid;
 }

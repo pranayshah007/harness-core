@@ -1079,7 +1079,7 @@ public abstract class TerraformProvisionState extends State {
                                                       .build();
     renderDelegateTask(executionContext, delegateTask, stateExecutionContext);
 
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(executionContext, delegateTask);
 
     return ExecutionResponse.builder()

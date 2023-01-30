@@ -65,6 +65,7 @@ public final class Budget implements PersistentEntity, UuidAware, AccountAccess,
   long createdAt;
   long lastUpdatedAt;
   HashMap<Long, BudgetCostData> budgetHistory;
+  Boolean disableCurrencyWarning;
 
   public Budget toDTO() {
     return Budget.builder()
@@ -87,6 +88,7 @@ public final class Budget implements PersistentEntity, UuidAware, AccountAccess,
         .endTime(getEndTime())
         .createdAt(getCreatedAt())
         .lastUpdatedAt(getLastUpdatedAt())
+        .disableCurrencyWarning(getDisableCurrencyWarning())
         .build();
   }
 }

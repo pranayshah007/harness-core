@@ -12,6 +12,7 @@ import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.AuthenticationScheme.SSH_KEY;
 import static io.harness.shell.KerberosConfig.KerberosConfigBuilder;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
+import static io.harness.utils.SecretUtils.validateDecryptedValue;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.helper.DecryptionHelper;
@@ -64,9 +65,11 @@ public class SshSessionConfigMapper {
         SSHPasswordCredentialDTO sshPasswordCredentialDTO = (SSHPasswordCredentialDTO) sshConfigDTO.getSpec();
         SSHPasswordCredentialDTO passwordCredentialDTO =
             (SSHPasswordCredentialDTO) decryptionHelper.decrypt(sshPasswordCredentialDTO, encryptionDetails);
+        char[] decryptedValue = passwordCredentialDTO.getPassword().getDecryptedValue();
+        validateDecryptedValue(decryptedValue, passwordCredentialDTO.getPassword().getIdentifier());
         builder.withAccessType(AccessType.USER_PASSWORD)
             .withUserName(passwordCredentialDTO.getUserName())
-            .withSshPassword(passwordCredentialDTO.getPassword().getDecryptedValue());
+            .withSshPassword(decryptedValue);
         break;
       case KeyReference:
         SSHKeyReferenceCredentialDTO sshKeyReferenceCredentialDTO =
@@ -75,6 +78,7 @@ public class SshSessionConfigMapper {
         SSHKeyReferenceCredentialDTO keyReferenceCredentialDTO =
             (SSHKeyReferenceCredentialDTO) decryptionHelper.decrypt(sshKeyReferenceCredentialDTO, encryptionDetails);
         char[] fileData = keyReferenceCredentialDTO.getKey().getDecryptedValue();
+        validateDecryptedValue(fileData, keyReferenceCredentialDTO.getKey().getIdentifier());
         keyReferenceCredentialDTO.getKey().setDecryptedValue(new String(fileData).toCharArray());
         builder.withAccessType(AccessType.KEY)
             .withKeyName("Key")
@@ -113,7 +117,9 @@ public class SshSessionConfigMapper {
           TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosConfigDTO.getSpec();
           TGTPasswordSpecDTO passwordSpecDTO =
               (TGTPasswordSpecDTO) decryptionHelper.decrypt(tgtPasswordSpecDTO, encryptionDetails);
-          builder.withPassword(passwordSpecDTO.getPassword().getDecryptedValue());
+          char[] decryptedValue = passwordSpecDTO.getPassword().getDecryptedValue();
+          validateDecryptedValue(decryptedValue, passwordSpecDTO.getPassword().getIdentifier());
+          builder.withPassword(decryptedValue);
           break;
         case KeyTabFilePath:
           TGTKeyTabFilePathSpecDTO tgtKeyTabFilePathSpecDTO = (TGTKeyTabFilePathSpecDTO) kerberosConfigDTO.getSpec();

@@ -16,7 +16,10 @@ import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.merger.YamlConfig;
+import io.harness.pms.merger.fqn.FQN;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
+import io.harness.yaml.utils.YamlConstants;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -35,13 +38,16 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import io.serializer.jackson.NGHarnessJacksonModule;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import lombok.experimental.UtilityClass;
 
@@ -49,6 +55,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 public class YamlUtils {
   public final String STRATEGY_IDENTIFIER_POSTFIX = "<+strategy.identifierPostFix>";
+  private final List<String> VALIDATORS = Lists.newArrayList("allowedValues", "regex", "default");
 
   private static final List<String> ignorableStringForQualifiedName = Arrays.asList("step", "parallel");
 
@@ -94,6 +101,15 @@ public class YamlUtils {
   public YamlField readTree(String content) throws IOException {
     return readTreeInternal(content, mapper);
   }
+
+  public YamlField tryReadTree(String content) {
+    try {
+      return readTreeInternal(content, mapper);
+    } catch (Exception ex) {
+      throw new InvalidRequestException("Invalid yaml", ex);
+    }
+  }
+
   public YamlField readTreeWithDefaultObjectMapper(String content) throws IOException {
     return readTreeInternal(content, NG_DEFAULT_OBJECT_MAPPER);
   }
@@ -578,6 +594,31 @@ public class YamlUtils {
     } else if (node.isArray()) {
       removeUuidInArray(node);
     }
+  }
+
+  public String getYamlWithoutInputs(YamlConfig config) throws IOException {
+    Map<FQN, Object> fqnToValueMap = config.getFqnToValueMap();
+    Map<FQN, Object> fqnObjectMap = new HashMap<>();
+    for (FQN fqn : fqnToValueMap.keySet()) {
+      Object value = fqnToValueMap.get(fqn);
+      if (value instanceof TextNode) {
+        String trimValue = ((TextNode) value).textValue().trim();
+        String valueWithoutValidators = trimValue;
+        for (String validator : VALIDATORS) {
+          if (trimValue.contains(validator)) {
+            ParameterField<?> parameterField = YamlUtils.read(trimValue, ParameterField.class);
+            valueWithoutValidators = parameterField.fetchFinalValue().toString();
+            break;
+          }
+        }
+        if (!valueWithoutValidators.equals(YamlConstants.INPUT)) {
+          fqnObjectMap.put(fqn, new TextNode(valueWithoutValidators));
+        }
+      } else {
+        fqnObjectMap.put(fqn, value);
+      }
+    }
+    return new YamlConfig(fqnObjectMap, config.getYamlMap()).getYaml();
   }
 
   private void removeUuidInObject(JsonNode node) {

@@ -7,15 +7,22 @@
 
 package io.harness.repositories.orchestrationEventLog;
 
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.OrchestrationEventLog;
 import io.harness.beans.OrchestrationEventLog.OrchestrationEventLogKeys;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -41,5 +48,19 @@ public class OrchestrationEventLogRepositoryCustomImpl implements OrchestrationE
     criteria.andOperator(Criteria.where(OrchestrationEventLogKeys.createdAt).gt(lastUpdatedAt));
     Query query = new Query(criteria);
     return mongoTemplate.exists(query, OrchestrationEventLog.class);
+  }
+
+  @Override
+  public void deleteAllOrchestrationLogEvents(Set<String> planExecutionIds) {
+    if (EmptyPredicate.isEmpty(planExecutionIds)) {
+      return;
+    }
+    // Uses - planExecutionId_createdAt idx
+    Criteria criteria = where(OrchestrationEventLogKeys.planExecutionId).in(planExecutionIds);
+    Query query = new Query(criteria);
+    RetryPolicy<Object> retryPolicy =
+        PersistenceUtils.getRetryPolicy("[Retrying]: Failed deleting OrchestrationEventLog; attempt: {}",
+            "[Failed]: Failed deleting OrchestrationEventLog; attempt: {}");
+    Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, OrchestrationEventLog.class));
   }
 }

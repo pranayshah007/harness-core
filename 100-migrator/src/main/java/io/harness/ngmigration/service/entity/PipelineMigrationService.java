@@ -30,6 +30,7 @@ import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
+import io.harness.ngmigration.service.MigrationTemplateUtils;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
@@ -65,7 +66,6 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.PipelineService;
 import software.wings.sm.StateType;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -85,6 +85,7 @@ public class PipelineMigrationService extends NgMigrationService {
   @Inject private PipelineService pipelineService;
   @Inject private WorkflowMigrationService workflowMigrationService;
   @Inject private TemplateResourceClient templateResourceClient;
+  @Inject private MigrationTemplateUtils migrationTemplateUtils;
   @Inject PipelineServiceClient pipelineServiceClient;
   @Inject ApprovalStepMapperImpl approvalStepMapper;
 
@@ -193,20 +194,24 @@ public class PipelineMigrationService extends NgMigrationService {
 
     List<StageElementWrapperConfig> ngStages = new ArrayList<>();
 
-    // TODO: Handle Approval Stages
-    pipeline.getPipelineStages()
-        .stream()
-        .flatMap(stage -> stage.getPipelineStageElements().stream())
-        .forEach(stageElement -> {
-          if (StateType.ENV_STATE.name().equals(stageElement.getType())) {
-            String workflowId = (String) stageElement.getProperties().get("workflowId");
-            if (isNotEmpty(workflowId)) {
-              ngStages.add(buildWorkflowStage(pipeline.getAccountId(), stageElement, migratedEntities));
-            }
-          } else {
-            ngStages.add(buildApprovalStage(stageElement, migratedEntities));
+    for (PipelineStage pipelineStage : pipeline.getPipelineStages()) {
+      for (PipelineStageElement stageElement : pipelineStage.getPipelineStageElements()) {
+        StageElementWrapperConfig stage = null;
+        if (StateType.ENV_STATE.name().equals(stageElement.getType())) {
+          String workflowId = (String) stageElement.getProperties().get("workflowId");
+          if (isNotEmpty(workflowId)) {
+            stage = buildWorkflowStage(pipeline.getAccountId(), stageElement, migratedEntities);
           }
-        });
+        } else {
+          stage = buildApprovalStage(stageElement, migratedEntities);
+        }
+        // If the stage cannot be migrated then we skip building the pipeline.
+        if (stage == null) {
+          return new ArrayList<>();
+        }
+        ngStages.add(stage);
+      }
+    }
 
     if (EmptyPredicate.isEmpty(ngStages)) {
       return new ArrayList<>();
@@ -256,22 +261,6 @@ public class PipelineMigrationService extends NgMigrationService {
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(approvalStageNode)).build();
   }
 
-  private JsonNode getTemplateInputs(NGYamlFile wfTemplate, String accountIdentifier) {
-    NgEntityDetail ngEntityDetail = wfTemplate.getNgEntityDetail();
-    try {
-      String response = NGRestUtils.getResponse(templateResourceClient.getTemplateInputsYaml(
-          ngEntityDetail.getIdentifier(), accountIdentifier, ngEntityDetail.getOrgIdentifier(),
-          ngEntityDetail.getProjectIdentifier(), WorkflowMigrationService.VERSION, false));
-      if (response == null || StringUtils.isBlank(response)) {
-        return null;
-      }
-      return YamlUtils.read(response, JsonNode.class);
-    } catch (Exception ex) {
-      log.error("Error when getting workflow templates input - ", ex);
-      return null;
-    }
-  }
-
   private StageElementWrapperConfig buildWorkflowStage(
       String accountId, PipelineStageElement stageElement, Map<CgEntityId, NGYamlFile> migratedEntities) {
     // TODO: Handle Skip condition
@@ -280,19 +269,19 @@ public class PipelineMigrationService extends NgMigrationService {
     NGYamlFile wfTemplate = migratedEntities.get(CgEntityId.builder().id(workflowId).type(WORKFLOW).build());
     if (wfTemplate == null) {
       log.error("The workflow was not migrated, aborting pipeline migration {}", workflowId);
-      throw new InvalidRequestException("Could not find migrated template for WF used in the pipeline");
+      return null;
     }
 
     NGTemplateConfig wfTemplateConfig = (NGTemplateConfig) wfTemplate.getYaml();
     if (TemplateEntityType.PIPELINE_TEMPLATE.equals(wfTemplateConfig.getTemplateInfoConfig().getType())) {
-      throw new InvalidRequestException(
-          "Cannot link a canary/multi-service WFs as they are created as pipeline templates");
+      log.warn("Cannot link a multi-service WFs as they are created as pipeline templates");
+      return null;
     }
 
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(wfTemplate.getNgEntityDetail()));
     templateLinkConfig.setVersionLabel(wfTemplateConfig.getTemplateInfoConfig().getVersionLabel());
-    templateLinkConfig.setTemplateInputs(getTemplateInputs(wfTemplate, accountId));
+    templateLinkConfig.setTemplateInputs(migrationTemplateUtils.getTemplateInputs(wfTemplate, accountId));
 
     TemplateStageNode templateStageNode = new TemplateStageNode();
     templateStageNode.setName(stageElement.getName());

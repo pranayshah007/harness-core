@@ -176,7 +176,7 @@ public class DynatraceState extends AbstractMetricAnalysisState {
             .executionData(executionData)
             .build(),
         waitId);
-    return delegateService.queueTask(delegateTask);
+    return delegateService.queueTaskV2(delegateTask);
   }
 
   protected Map<String, String> getLastExecutionNodes(ExecutionContext context) {

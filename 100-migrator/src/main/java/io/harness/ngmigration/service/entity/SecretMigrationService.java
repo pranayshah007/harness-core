@@ -107,7 +107,11 @@ public class SecretMigrationService extends NgMigrationService {
 
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
-    return discover(secretService.getSecretById(accountId, entityId).orElse(null));
+    try {
+      return discover(secretService.getSecretById(accountId, entityId).orElse(null));
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   @Override

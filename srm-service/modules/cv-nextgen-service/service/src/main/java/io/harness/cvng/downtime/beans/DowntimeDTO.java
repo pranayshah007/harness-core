@@ -15,12 +15,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Map;
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import javax.ws.rs.DefaultValue;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
@@ -31,16 +34,17 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(name = "Downtime", description = "This is the Downtime entity defined in Harness")
+@EqualsAndHashCode()
 public class DowntimeDTO implements YamlDTO {
-  @ApiModelProperty(required = true) @EntityIdentifier String orgIdentifier;
-  @ApiModelProperty(required = true) @EntityIdentifier String projectIdentifier;
+  @ApiModelProperty(required = true) @NotNull @EntityIdentifier String orgIdentifier;
+  @ApiModelProperty(required = true) @NotNull @EntityIdentifier String projectIdentifier;
   @ApiModelProperty(required = true) @NotNull @EntityIdentifier String identifier;
   @ApiModelProperty(required = true) @NotNull String name;
   String description;
   @Size(max = 128) Map<String, String> tags;
   @ApiModelProperty(required = true) @NotNull DowntimeCategory category;
-  @ApiModelProperty(required = true) @NotNull DowntimeScope scope;
+  @ApiModelProperty(required = true) @DefaultValue("Project") DowntimeScope scope;
   @Valid @NotNull DowntimeSpecDTO spec;
-  @ApiModelProperty(required = true) @NotNull List<EntityDetails> entityRefs;
+  @ApiModelProperty(required = true) @NotNull @NotEmpty List<EntityDetails> entityRefs;
   boolean enabled;
 }

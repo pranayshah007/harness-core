@@ -10,6 +10,7 @@ package io.harness.service.instancesync;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.dtos.DeploymentSummaryDTO;
@@ -43,6 +44,7 @@ import io.harness.service.instancesynchandlerfactory.InstanceSyncHandlerFactoryS
 import io.harness.service.instancesyncperpetualtask.InstanceSyncPerpetualTaskService;
 import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoService;
 import io.harness.util.logging.InstanceSyncLogContext;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -57,6 +59,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.DX)
 @Singleton
@@ -250,6 +253,9 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
       InfrastructureMappingDTO infrastructureMappingDTO, List<ServerInstanceInfo> serverInstanceInfoList,
       AbstractInstanceSyncHandler instanceSyncHandler, boolean isNewDeploymentSync) {
     log.info("isNewDeploymentSync: {}", isNewDeploymentSync);
+
+    // get active instances by infra mapping id. this can span across projects, orgs in case
+    // multiple pipelines deploy service, env of org and account level
     List<InstanceDTO> instancesInDB = instanceService.getActiveInstancesByInfrastructureMappingId(
         infrastructureMappingDTO.getAccountIdentifier(), infrastructureMappingDTO.getOrgIdentifier(),
         infrastructureMappingDTO.getProjectIdentifier(), infrastructureMappingDTO.getId());
@@ -380,12 +386,16 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
           getDeploymentSummaryFromDB(instanceSyncKey, infrastructureMappingDTO);
       instancesToBeUpdated.forEach(instanceKey -> {
         InstanceDTO instanceDTO = instancesInDBMap.get(instanceKey);
+
         instanceDTO.setLastDeployedAt(deploymentSummaryFromDB.getDeployedAt());
         instanceDTO.setLastDeployedById(deploymentSummaryFromDB.getDeployedById());
         instanceDTO.setLastPipelineExecutionId(deploymentSummaryFromDB.getPipelineExecutionId());
         instanceDTO.setPrimaryArtifact(deploymentSummaryFromDB.getArtifactDetails());
         instanceDTO.setLastDeployedByName(deploymentSummaryFromDB.getDeployedByName());
         instanceDTO.setLastPipelineExecutionName(deploymentSummaryFromDB.getPipelineExecutionName());
+
+        // instance will be owned by the org/project which last deployed with the infra mapping, instance sync key
+        updateOrgProjectIdentifiers(instanceDTO, deploymentSummaryFromDB);
         // known corner limitation for optimisations: We don't update Service name and environment name in case it is
         // updated.
       });
@@ -395,6 +405,21 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
         -> instancesToBeModified.get(OperationsOnInstances.UPDATE)
                .add(instanceSyncHandler.updateInstance(
                    instancesInDBMap.get(instanceKey), instanceInfosFromServerMap.get(instanceKey))));
+  }
+
+  private void updateOrgProjectIdentifiers(InstanceDTO instanceDTO, DeploymentSummaryDTO deploymentSummaryFromDB) {
+    if (EmptyPredicate.isNotEmpty(instanceDTO.getOrgIdentifier())
+        && EmptyPredicate.isNotEmpty(deploymentSummaryFromDB.getOrgIdentifier())
+        && StringUtils.compare(instanceDTO.getOrgIdentifier(), deploymentSummaryFromDB.getOrgIdentifier()) != 0) {
+      instanceDTO.setOrgIdentifier(deploymentSummaryFromDB.getOrgIdentifier());
+    }
+
+    if (EmptyPredicate.isNotEmpty(instanceDTO.getProjectIdentifier())
+        && EmptyPredicate.isNotEmpty(deploymentSummaryFromDB.getProjectIdentifier())
+        && StringUtils.compare(instanceDTO.getProjectIdentifier(), deploymentSummaryFromDB.getProjectIdentifier())
+            != 0) {
+      instanceDTO.setProjectIdentifier(deploymentSummaryFromDB.getProjectIdentifier());
+    }
   }
 
   // Update instance sync perpetual task info record with updated deployment info details list
@@ -506,12 +531,14 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
         InstanceDTO.builder()
             .accountIdentifier(deploymentSummaryDTO.getAccountIdentifier())
             .orgIdentifier(deploymentSummaryDTO.getOrgIdentifier())
-            .envIdentifier(environment.getIdentifier())
+            .envIdentifier(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(environment.getAccountId(),
+                environment.getOrgIdentifier(), environment.getProjectIdentifier(), environment.getIdentifier()))
             .envType(environment.getType())
             .envName(environment.getName())
             .envGroupRef(deploymentSummaryDTO.getEnvGroupRef())
             .serviceName(serviceEntity.getName())
-            .serviceIdentifier(serviceEntity.getIdentifier())
+            .serviceIdentifier(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(serviceEntity.getAccountId(),
+                serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier()))
             .projectIdentifier(deploymentSummaryDTO.getProjectIdentifier())
             .infrastructureMappingId(infrastructureMappingDTO.getId())
             .instanceType(abstractInstanceSyncHandler.getInstanceType())

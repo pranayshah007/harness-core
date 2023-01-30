@@ -1,4 +1,4 @@
-summary: Pipeline Execution Rejected - ${WORKFLOW_NAME}> triggered by ${USER_NAME} has been rejected due to active deployment freeze ${BLACKOUT_WINDOW_NAME} in ${ACCOUNT_ID} Account|| ${WORKFLOW_NAME} started at ${START_DATE} and rejected due to deployment freeze at ${END_DATE}
+summary: Pipeline Execution Rejected - ${WORKFLOW_NAME}> triggered by ${USER_NAME} has been rejected due to active deployment freeze ${BLACKOUT_WINDOW_NAME} in ${ACCOUNT_ID} Account|| ${WORKFLOW_NAME} started at ${START_TIME} and rejected due to deployment freeze at ${END_TIME}
 link:
   href: ${WORKFLOW_URL}
-  text: ${WORKFLOW_NAME} - Started ${START_DATE}
+  text: ${WORKFLOW_NAME} - Started ${START_TIME}

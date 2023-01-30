@@ -9,6 +9,7 @@ package io.harness.repositories.deploymentsummary;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.entities.DeploymentSummary;
 import io.harness.entities.DeploymentSummary.DeploymentSummaryKeys;
@@ -72,15 +73,22 @@ public class DeploymentSummaryCustomImpl implements DeploymentSummaryCustom {
     if (infrastructureMappingDTO == null) {
       throw new InvalidArgumentsException("InfrastructureMappingDTO is null for instanceKey: {}" + instanceSyncKey);
     }
-    return Criteria.where(DeploymentSummaryKeys.instanceSyncKey)
-        .is(instanceSyncKey)
-        .and(DeploymentSummaryKeys.accountIdentifier)
-        .is(infrastructureMappingDTO.getAccountIdentifier())
-        .and(DeploymentSummaryKeys.orgIdentifier)
-        .is(infrastructureMappingDTO.getOrgIdentifier())
-        .and(DeploymentSummaryKeys.projectIdentifier)
-        .is(infrastructureMappingDTO.getProjectIdentifier())
-        .and(DeploymentSummaryKeys.infrastructureMappingId)
-        .is(infrastructureMappingDTO.getId());
+
+    // use org/project if provided
+    Criteria criteria = Criteria.where(DeploymentSummaryKeys.instanceSyncKey)
+                            .is(instanceSyncKey)
+                            .and(DeploymentSummaryKeys.accountIdentifier)
+                            .is(infrastructureMappingDTO.getAccountIdentifier());
+
+    if (EmptyPredicate.isNotEmpty(infrastructureMappingDTO.getOrgIdentifier())) {
+      criteria.and(DeploymentSummaryKeys.orgIdentifier).is(infrastructureMappingDTO.getOrgIdentifier());
+    }
+    if (EmptyPredicate.isNotEmpty(infrastructureMappingDTO.getProjectIdentifier())) {
+      criteria.and(DeploymentSummaryKeys.projectIdentifier).is(infrastructureMappingDTO.getProjectIdentifier());
+    }
+
+    criteria.and(DeploymentSummaryKeys.infrastructureMappingId).is(infrastructureMappingDTO.getId());
+
+    return criteria;
   }
 }

@@ -62,7 +62,7 @@ public class InstanaServiceImpl implements InstanaService {
     InstanaConfig instanaConfig = (InstanaConfig) settingAttribute.getValue();
     List<EncryptedDataDetail> encryptionDetails = secretManager.getEncryptionDetails(instanaConfig);
     InstanaDelegateService instanaDelegateService =
-        delegateProxyFactory.get(InstanaDelegateService.class, syncTaskContext);
+        delegateProxyFactory.getV2(InstanaDelegateService.class, syncTaskContext);
     VerificationNodeDataSetupResponse verificationNodeDataSetupResponse =
         VerificationNodeDataSetupResponse.builder().build();
     VerificationNodeDataSetupResponse.VerificationLoadResponse verificationLoadResponse =

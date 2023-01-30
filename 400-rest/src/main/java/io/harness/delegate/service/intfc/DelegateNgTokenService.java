@@ -25,10 +25,29 @@ public interface DelegateNgTokenService extends OwnedByAccount {
 
   List<DelegateTokenDetails> getDelegateTokens(String accountId, DelegateEntityOwner owner, DelegateTokenStatus status);
 
+  /**
+   * Get delegate token detailed information
+   * @param accountId
+   * @param name
+   * @param includeValue whether to include delegate token based64 encoded value
+   * @return
+   */
   DelegateTokenDetails getDelegateToken(String accountId, String name, boolean includeValue);
 
+  /**
+   * Get delegate token detailed information, exclude delegate token value
+   * @param accountId
+   * @param name
+   * @return
+   */
   DelegateTokenDetails getDelegateToken(String accountId, String name);
 
+  /**
+   * Get delegate token value that is NOT base64 encoded
+   * @param accountId
+   * @param name
+   * @return
+   */
   String getDelegateTokenValue(String accountId, String name);
 
   DelegateTokenDetails upsertDefaultToken(String accountIdentifier, DelegateEntityOwner owner, boolean skipIfExists);

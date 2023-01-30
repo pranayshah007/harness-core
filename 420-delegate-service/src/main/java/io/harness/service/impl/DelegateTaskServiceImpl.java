@@ -171,30 +171,39 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
     }
   }
 
+  private void copyTaskDataToTaskDataV2(DelegateTask delegateTask) {
+    if (delegateTask != null && delegateTask.getData() != null) {
+      TaskData data = delegateTask.getData();
+
+      TaskDataV2 taskDataV2 =
+          TaskDataV2.builder()
+              .data(data.getData())
+              .taskType(data.getTaskType())
+              .async(data.isAsync())
+              .parked(data.isParked())
+              .parameters(data.getParameters())
+              .timeout(data.getTimeout())
+              .expressionFunctorToken(data.getExpressionFunctorToken())
+              .expressions(data.getExpressions())
+              .serializationFormat(io.harness.beans.SerializationFormat.valueOf(data.getSerializationFormat().name()))
+              .build();
+      delegateTask.setTaskDataV2(taskDataV2);
+    }
+  }
+
   private String getVersion() {
     return versionInfoManager.getVersionInfo().getVersion();
   }
 
   @Override
   public void handleResponse(DelegateTask delegateTask, Query<DelegateTask> taskQuery, DelegateTaskResponse response) {
-    copyTaskDataV2ToTaskData(delegateTask);
-
-    if (delegateTask.getDriverId() == null) {
-      handleInprocResponse(delegateTask, response);
-    } else {
-      handleDriverResponse(delegateTask, response);
-    }
-
-    if (taskQuery != null) {
-      persistence.deleteOnServer(taskQuery);
-    }
-
-    delegateMetricsService.recordDelegateTaskResponseMetrics(delegateTask, response, DELEGATE_TASK_RESPONSE);
+    handleResponseV2(delegateTask, taskQuery, response);
   }
 
   @Override
   public void handleResponseV2(
       DelegateTask delegateTask, Query<DelegateTask> taskQuery, DelegateTaskResponse response) {
+    copyTaskDataToTaskDataV2(delegateTask);
     if (delegateTask.getDriverId() == null) {
       handleInprocResponseV2(delegateTask, response);
     } else {
@@ -216,7 +225,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
       return;
     }
     delegateCallbackService.publishTaskProgressResponse(
-        delegateTaskId, generateUuid(), kryoSerializer.asDeflatedBytes(responseData));
+        delegateTaskId, generateUuid(), referenceFalseKryoSerializer.asDeflatedBytes(responseData));
   }
 
   @Override
@@ -280,10 +289,10 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
                                                            : delegateTask.getData().isAsync();
       if (async) {
         delegateCallbackService.publishAsyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()));
       } else {
         delegateCallbackService.publishSyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()));
       }
     } catch (Exception ex) {
       log.error("Failed publishing task response", ex);
@@ -319,8 +328,8 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
     } else {
       persistence.save(DelegateSyncTaskResponse.builder()
                            .uuid(delegateTask.getUuid())
-                           .usingKryoWithoutReference(false)
-                           .responseData(kryoSerializer.asDeflatedBytes(response.getResponse()))
+                           .usingKryoWithoutReference(true)
+                           .responseData(referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()))
                            .build());
     }
   }

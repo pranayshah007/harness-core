@@ -41,13 +41,14 @@ import io.harness.service.intfc.DelegateTaskService;
 import io.harness.threading.Morpheus;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Arrays;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class DelegateTaskServiceTest extends DelegateServiceTestBase {
   @Inject HPersistence persistence;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject DelegateTaskService delegateTaskService;
 
   @Inject DelegateCache delegateCache;
@@ -137,10 +138,8 @@ public class DelegateTaskServiceTest extends DelegateServiceTestBase {
     delegateTaskService.handleResponseV2(delegateTask, null, delegateTaskResponse);
     DelegateSyncTaskResponse delegateSyncTaskResponse =
         persistence.get(DelegateSyncTaskResponse.class, delegateTask.getUuid());
-    // TODO: Once we migrate response handling to referenceFalseKryoSerializer
-    //  fix this test by replacing kryoSerializer with referenceFalseKryoSerializer
-    Object responseData = kryoSerializer.asInflatedObject(delegateSyncTaskResponse.getResponseData());
-    assertThat(delegateSyncTaskResponse.isUsingKryoWithoutReference()).isFalse();
+    Object responseData = referenceFalseKryoSerializer.asInflatedObject(delegateSyncTaskResponse.getResponseData());
+    assertThat(delegateSyncTaskResponse.isUsingKryoWithoutReference()).isTrue();
     assertThat(responseData).isInstanceOf(ErrorNotifyResponseData.class);
   }
 }

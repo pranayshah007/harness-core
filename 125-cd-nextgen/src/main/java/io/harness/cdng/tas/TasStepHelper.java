@@ -22,6 +22,7 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GITHUB_PACKAGES_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS2_REGISTRY_NAME;
@@ -49,7 +50,6 @@ import static io.harness.pcf.model.PcfConstants.PROCESSES_TYPE_MANIFEST_YML_ELEM
 import static io.harness.pcf.model.PcfConstants.ROUTES_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.ROUTE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import static software.wings.beans.LogHelper.color;
 
@@ -75,6 +75,7 @@ import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GithubPackagesArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
@@ -92,7 +93,7 @@ import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.ManifestStoreType;
-import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
@@ -183,6 +184,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
@@ -226,7 +228,7 @@ public class TasStepHelper {
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private FileStoreService fileStoreService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
@@ -644,7 +646,7 @@ public class TasStepHelper {
       String stageName =
           AmbianceUtils.getStageLevelFromAmbiance(ambiance).map(Level::getIdentifier).orElse("Deployment stage");
       String stepType =
-          Optional.ofNullable(AmbianceUtils.getCurrentStepType(ambiance)).map(StepType::getType).orElse("Kubernetes");
+          Optional.ofNullable(AmbianceUtils.getCurrentStepType(ambiance)).map(StepType::getType).orElse("TAS");
       throw new GeneralException(format(
           "No manifests found in stage %s. %s step requires at least one manifest defined in stage service definition",
           stageName, stepType));
@@ -772,10 +774,13 @@ public class TasStepHelper {
   }
 
   public CfCliVersion cfCliVersionNGMapper(CfCliVersionNG cfCliVersionNG) {
+    if (isNull(cfCliVersionNG)) {
+      throw new InvalidRequestException("CF CLI Version can't be null");
+    }
     if (cfCliVersionNG == CfCliVersionNG.V7) {
       return CfCliVersion.V7;
     }
-    throw new InvalidRequestException(format("Invalid CF CLI Version: %s", cfCliVersionNG.toString()));
+    throw new InvalidRequestException(format("Invalid CF CLI Version: %s", cfCliVersionNG));
   }
 
   private TaskChainResponse handleCustomFetchResponse(ResponseData responseData, TasStepExecutor tasStepExecutor,
@@ -935,10 +940,10 @@ public class TasStepHelper {
 
     String taskName = TaskType.CUSTOM_MANIFEST_VALUES_FETCH_TASK_NG.getDisplayName();
 
-    final TaskRequest taskRequest =
-        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, tasStepPassThroughData.getCommandUnits(), taskName,
-            TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(delegateSelectors)),
-            stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, tasStepPassThroughData.getCommandUnits(), taskName,
+        TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(delegateSelectors)),
+        stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder()
         .chainEnd(false)
@@ -947,7 +952,8 @@ public class TasStepHelper {
         .build();
   }
 
-  private CustomManifestFetchConfig buildCustomManifestFetchConfig(String identifier, boolean required,
+  @VisibleForTesting
+  protected CustomManifestFetchConfig buildCustomManifestFetchConfig(String identifier, boolean required,
       boolean defaultSource, List<String> filePaths, String script, String accountId) {
     return CustomManifestFetchConfig.builder()
         .key(identifier)
@@ -988,10 +994,11 @@ public class TasStepHelper {
       stepLevelSelectors = ((TasBGAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
     }
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        tasStepPassThroughData.getCommandUnits(), TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
-        TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(getParameterFieldValue(stepLevelSelectors))),
-        stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest =
+        TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+            tasStepPassThroughData.getCommandUnits(), TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
+            TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(getParameterFieldValue(stepLevelSelectors))),
+            stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder()
         .chainEnd(false)
@@ -1222,26 +1229,6 @@ public class TasStepHelper {
     return tasManifestsPackage;
   }
 
-  public TasManifestsPackage resolveExpressionsInManifests(Ambiance ambiance, TasManifestsPackage tasManifestsPackage) {
-    TasManifestsPackage resolvedTasManifestsPackage = TasManifestsPackage.builder().build();
-    if (!isNull(tasManifestsPackage.getAutoscalarManifestYml())) {
-      resolvedTasManifestsPackage.setAutoscalarManifestYml(
-          engineExpressionService.renderExpression(ambiance, tasManifestsPackage.getAutoscalarManifestYml()));
-    }
-    if (!isEmpty(tasManifestsPackage.getVariableYmls())) {
-      List<String> resolvedVarsYaml = new ArrayList<>();
-      for (String varsYaml : tasManifestsPackage.getVariableYmls()) {
-        resolvedVarsYaml.add(engineExpressionService.renderExpression(ambiance, varsYaml));
-      }
-      resolvedTasManifestsPackage.setVariableYmls(resolvedVarsYaml);
-    }
-    if (!isNull(tasManifestsPackage.getManifestYml())) {
-      resolvedTasManifestsPackage.setManifestYml(
-          engineExpressionService.renderExpression(ambiance, tasManifestsPackage.getManifestYml()));
-    }
-    return resolvedTasManifestsPackage;
-  }
-
   public void addToPcfManifestPackageByType(
       TasManifestsPackage tasManifestsPackage, String fileContent, String filePath, LogCallback executionLogCallback) {
     if (isEmpty(fileContent)) {
@@ -1288,6 +1275,9 @@ public class TasStepHelper {
     if (isNull(manifestOutcome)) {
       return;
     }
+    if (isNull(manifestOutcome.getStore())) {
+      throw new InvalidRequestException(format("Store is null for manifest: %s", manifestOutcome.getIdentifier()));
+    }
     if (ManifestStoreType.CUSTOM_REMOTE.equals(manifestOutcome.getStore().getKind())) {
       tasStepPassThroughData.setShouldExecuteCustomFetch(true);
     } else if (ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
@@ -1296,7 +1286,7 @@ public class TasStepHelper {
       tasStepPassThroughData.setShouldExecuteHarnessStoreFetch(true);
     } else {
       throw new InvalidRequestException(
-          format("Manifest store type: %s not supported yet", manifestOutcome.getStore().getKind()));
+          format("Manifest store type: %s is not supported yet", manifestOutcome.getStore().getKind()));
     }
   }
 
@@ -1478,6 +1468,7 @@ public class TasStepHelper {
       case JENKINS_NAME:
       case AZURE_ARTIFACTS_NAME:
       case CUSTOM_ARTIFACT_NAME:
+      case GITHUB_PACKAGES_NAME:
         if (isPackageArtifactType(artifactOutcome)) {
           return getTasPackageArtifactConfig(ambiance, artifactOutcome);
         } else {
@@ -1530,6 +1521,13 @@ public class TasStepHelper {
         artifactConfigBuilder.image(acrArtifactOutcome.getImage());
         artifactConfigBuilder.tag(acrArtifactOutcome.getTag());
         artifactConfigBuilder.registryHostname(acrArtifactOutcome.getRegistry());
+        break;
+      case GITHUB_PACKAGES_NAME:
+        GithubPackagesArtifactOutcome githubPackagesArtifactOutcome = (GithubPackagesArtifactOutcome) artifactOutcome;
+        connectorInfo = cdStepHelper.getConnector(githubPackagesArtifactOutcome.getConnectorRef(), ambiance);
+        artifactConfigBuilder.registryType(TasArtifactRegistryType.GITHUB_PACKAGE_REGISTRY);
+        artifactConfigBuilder.image(githubPackagesArtifactOutcome.getImage());
+        artifactConfigBuilder.tag(githubPackagesArtifactOutcome.getTag());
         break;
       case ECR_NAME:
         EcrArtifactOutcome ecrArtifactOutcome = (EcrArtifactOutcome) artifactOutcome;
@@ -1704,9 +1702,11 @@ public class TasStepHelper {
         .encryptedDataDetails(encryptedDataDetails)
         .build();
   }
+
   public static String getErrorMessage(CfCommandResponseNG cfCommandResponseNG) {
     return cfCommandResponseNG.getErrorMessage() == null ? "" : cfCommandResponseNG.getErrorMessage();
   }
+
   public UnitProgressData completeUnitProgressData(
       UnitProgressData currentProgressData, Ambiance ambiance, String exceptionMessage) {
     if (currentProgressData == null) {
@@ -1755,7 +1755,7 @@ public class TasStepHelper {
     try {
       map = mapper.readValue(content, Map.class);
     } catch (Exception e) {
-      log.warn(getParseErrorMessage(fileName), e);
+      log.warn(getParseErrorMessage(fileName, e.getMessage()));
       logCallback.saveExecutionLog(getParseErrorMessage(fileName), LogLevel.WARN);
       logCallback.saveExecutionLog("Error: " + e.getMessage(), LogLevel.WARN);
       return null;
@@ -1778,6 +1778,11 @@ public class TasStepHelper {
   private String getParseErrorMessage(String fileName) {
     return "Failed to parse file" + (isNotEmpty(fileName) ? " " + fileName : "") + ".";
   }
+
+  private String getParseErrorMessage(String fileName, String errorMessage) {
+    return String.format("Failed to parse file [%s]. Error - [%s]", isEmpty(fileName) ? "" : fileName, errorMessage);
+  }
+
   private boolean isAutoscalarManifest(Map<String, Object> map) {
     return map.containsKey(PCF_AUTOSCALAR_MANIFEST_INSTANCE_LIMITS_ELE)
         && map.containsKey(PCF_AUTOSCALAR_MANIFEST_RULES_ELE);

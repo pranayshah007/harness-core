@@ -47,7 +47,13 @@ java_library(
         "//960-persistence/src/main/java/io/harness/mongo/index/annotation:module",
         "//960-persistence/src/main/java/io/harness/ng:module",
         "//960-persistence/src/main/java/io/harness/persistence/api:module",
-        "//970-api-services-beans:module",
+        "//970-api-services-beans/src/main/java/io/harness/beans:module",
+        "//970-api-services-beans/src/main/java/io/harness/delegate/beans/artifact:module",
+        "//970-api-services-beans/src/main/java/io/harness/jira:module",
+        "//970-api-services-beans/src/main/java/io/harness/logging:module",
+        "//970-api-services-beans/src/main/java/io/harness/security/encryption:module",
+        "//970-api-services-beans/src/main/java/software/wings/helpers/ext/gcb/models:module",
+        "//970-api-services-beans/src/main/java/software/wings/settings:module",
         "//970-rbac-core:module",
         "//980-commons/src/main/java/io/harness/annotations:module",
         "//980-commons/src/main/java/io/harness/beans/user:module",
@@ -66,6 +72,7 @@ java_library(
         "//980-commons/src/main/java/software/wings/beans:module",
         "//980-commons/src/main/java/software/wings/beans/artifact:module",
         "//999-annotations:module",
+        "@maven//:org_apache_commons_commons_compress",
     ],
 )
 

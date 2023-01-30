@@ -24,15 +24,18 @@ import io.harness.accesscontrol.scopes.harness.OrganizationClientConfiguration;
 import io.harness.accesscontrol.scopes.harness.ProjectClientConfiguration;
 import io.harness.aggregator.AggregatorConfiguration;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cf.CfClientConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.ff.FeatureFlagClientConfiguration;
+import io.harness.ff.FeatureFlagConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
 import io.harness.outbox.OutboxPollConfiguration;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.secret.ConfigSecret;
 import io.harness.telemetry.segment.SegmentConfiguration;
 
 import ch.qos.logback.access.spi.IAccessEvent;
@@ -116,6 +119,8 @@ public class AccessControlConfiguration extends Configuration {
   @JsonProperty("basePathPrefix") private String basePathPrefix = "";
   @JsonProperty("segmentConfiguration") private SegmentConfiguration segmentConfiguration;
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
+  @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
+  @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
 
   public static final Collection<Class<?>> ALL_ACCESS_CONTROL_RESOURCES = getResourceClasses();
 

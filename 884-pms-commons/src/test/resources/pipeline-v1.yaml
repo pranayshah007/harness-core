@@ -28,3 +28,8 @@ stages:
             image: alpine
             run: echo <+steps.one_test.output.outputVariables.foo>
             pull: always
+registry:
+  credentials:
+    - account.docker
+    - name: account.dockerhub
+      match: docker.io

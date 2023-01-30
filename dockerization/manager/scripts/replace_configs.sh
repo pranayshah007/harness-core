@@ -717,7 +717,7 @@ if [[ "" != "$QUEUE_SERVICE_BASE_URL" ]]; then
   export QUEUE_SERVICE_BASE_URL; yq -i '.delegateQueueServiceConfig.queueServiceConfig.baseUrl=env(QUEUE_SERVICE_BASE_URL)' $CONFIG_FILE
 fi
 if [[ "" != "$ENABLE_TASK_QUEUE_DEQUEUE" ]]; then
-  export ENABLE_TASK_QUEUE_DEQUEUE; yq -i '.delegateQueueServiceConfig.queueServiceConfig.enableQueueAndDequeue=env(ENABLE_TASK_QUEUE_DEQUEUE)' $CONFIG_FILE
+  export ENABLE_TASK_QUEUE_DEQUEUE; yq -i '.delegateQueueServiceConfig.enableQueueAndDequeue=env(ENABLE_TASK_QUEUE_DEQUEUE)' $CONFIG_FILE
 fi
 
 

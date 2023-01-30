@@ -49,7 +49,7 @@ paths:
       tags:
         - Streaming Destinations
       x-internal: true
-  /v1/streaming-destinations/{streaming-destination}:
+  '/v1/streaming-destinations/{streaming-destination}':
     parameters:
       - $ref: '#/components/parameters/StreamingDestinationParam'
     put:
@@ -96,6 +96,29 @@ paths:
       x-internal: true
       tags:
         - Streaming Destinations
+  '/v1/streaming-destinations/{streaming-destination}/validate-unique-identifier':
+    get:
+      summary: Validate Uniqueness of Identifier
+      tags:
+        - Streaming Destinations
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamingDestinationValidateResponse'
+          headers: {}
+      operationId: validateUniqueIdentifier
+      description: Validate uniqueness of identifier for Streaming Destination
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      x-internal: true
+    parameters:
+      - name: streaming-destination
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Streaming Destination identifier
 components:
   schemas:
     StreamingDestinationDTO:
@@ -122,6 +145,16 @@ components:
           description: Streaming Destination scoped connector reference identifier
         spec:
           $ref: '#/components/schemas/StreamingDestinationSpecDTO'
+        description:
+          type: string
+          maxLength: 1024
+          description: Description for Streaming Destination
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          maxProperties: 128
+          description: Tags for Streaming Destination
       required:
         - identifier
         - name
@@ -300,6 +333,13 @@ components:
           schema:
             type: string
           description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.'
+    StreamingDestinationValidateResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: boolean
+            description: It returns true if the Identifier is unique and false if the Identifier is not unique
   requestBodies:
     CreateStreamingDestinationRequest:
       content:

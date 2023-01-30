@@ -51,11 +51,13 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.assertj.core.api.Assertions;
@@ -115,9 +117,9 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
             githubStore, connectorInfoDTO, manifestOutcome, Collections.singletonList("path"), ambiance);
     doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
-    Mockito.mockStatic(StepUtils.class);
+    Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito
-        .when(StepUtils.prepareCDTaskRequest(
+        .when(TaskRequestsUtils.prepareCDTaskRequest(
             eq(ambiance), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
@@ -192,8 +194,8 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
     GitOpsFetchAppTaskResponse taskResponse =
         GitOpsFetchAppTaskResponse.builder().taskStatus(TaskStatus.SUCCESS).build();
     ThrowingSupplier<GitOpsFetchAppTaskResponse> throwingSupplier = () -> taskResponse;
-    GitopsClustersOutcome gitopsClustersOutcome =
-        new GitopsClustersOutcome(Collections.singletonList(GitopsClustersOutcome.ClusterData.builder().build()));
+    GitopsClustersOutcome gitopsClustersOutcome = new GitopsClustersOutcome(Collections.singletonList(
+        GitopsClustersOutcome.ClusterData.builder().clusterId("c1").scope("project").build()));
     doReturn(OptionalSweepingOutput.builder().found(true).output(gitopsClustersOutcome).build())
         .when(executionSweepingOutputService)
         .resolveOptional(any(), any());
@@ -219,8 +221,8 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
     GitOpsFetchAppTaskResponse taskResponse =
         GitOpsFetchAppTaskResponse.builder().taskStatus(TaskStatus.SUCCESS).build();
     ThrowingSupplier<GitOpsFetchAppTaskResponse> throwingSupplier = () -> taskResponse;
-    GitopsClustersOutcome gitopsClustersOutcome =
-        new GitopsClustersOutcome(Collections.singletonList(GitopsClustersOutcome.ClusterData.builder().build()));
+    GitopsClustersOutcome gitopsClustersOutcome = new GitopsClustersOutcome(Collections.singletonList(
+        GitopsClustersOutcome.ClusterData.builder().clusterId("c1").scope("project").build()));
     doReturn(OptionalSweepingOutput.builder().found(true).output(gitopsClustersOutcome).build())
         .when(executionSweepingOutputService)
         .resolveOptional(any(), any());
@@ -254,8 +256,8 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
     GitOpsFetchAppTaskResponse taskResponse =
         GitOpsFetchAppTaskResponse.builder().taskStatus(TaskStatus.SUCCESS).build();
     ThrowingSupplier<GitOpsFetchAppTaskResponse> throwingSupplier = () -> taskResponse;
-    GitopsClustersOutcome gitopsClustersOutcome =
-        new GitopsClustersOutcome(Collections.singletonList(GitopsClustersOutcome.ClusterData.builder().build()));
+    GitopsClustersOutcome gitopsClustersOutcome = new GitopsClustersOutcome(Collections.singletonList(
+        GitopsClustersOutcome.ClusterData.builder().clusterId("c1").scope("project").build()));
     doReturn(OptionalSweepingOutput.builder().found(true).output(gitopsClustersOutcome).build())
         .when(executionSweepingOutputService)
         .resolveOptional(any(), any());
@@ -276,5 +278,24 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
         .putSetupAbstractions("orgIdentifier", "ORG_ID")
         .putSetupAbstractions("projectIdentifier", "PROJ_ID")
         .build();
+  }
+
+  @Test
+  @Owner(developers = VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void shouldReturnScopedClusterIds() {
+    assertThat(fetchLinkedAppsStep.getScopedClusterIds(null)).isEmpty();
+    assertThat(fetchLinkedAppsStep.getScopedClusterIds(new GitopsClustersOutcome(null))).isEmpty();
+
+    GitopsClustersOutcome.ClusterData cluster1 =
+        GitopsClustersOutcome.ClusterData.builder().clusterId("cid1").scope("project").build();
+    GitopsClustersOutcome.ClusterData cluster2 =
+        GitopsClustersOutcome.ClusterData.builder().clusterId("cid2").scope("account").build();
+    GitopsClustersOutcome.ClusterData cluster3 =
+        GitopsClustersOutcome.ClusterData.builder().clusterId("cid3").scope("ACCOUNT").build();
+
+    assertThat(
+        fetchLinkedAppsStep.getScopedClusterIds(new GitopsClustersOutcome(Arrays.asList(cluster1, cluster2, cluster3))))
+        .isEqualTo(Arrays.asList("cid1", "account.cid2", "account.cid3"));
   }
 }

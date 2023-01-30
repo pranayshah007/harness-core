@@ -339,6 +339,8 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
                                                                    .envGroupName(clustersDatum.getEnvGroupName())
                                                                    .envGroupId(clustersDatum.getEnvGroupId())
                                                                    .envId(clustersDatum.getEnvId())
+                                                                   .agentId(clustersDatum.getAgentId())
+                                                                   .scope(clustersDatum.getScope())
                                                                    .build())
                                                         .collect(Collectors.toList());
     gitOpsExecutionSummary.setClusters(clusters);

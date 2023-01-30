@@ -112,6 +112,8 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
 
     AsgRollingDeployStepParameters asgSpecParameters = (AsgRollingDeployStepParameters) stepElementParameters.getSpec();
 
+    String amiImageId = asgStepCommonHelper.getAmiImageId(ambiance);
+
     AsgRollingDeployRequest asgRollingDeployRequest =
         AsgRollingDeployRequest.builder()
             .commandName(ASG_ROLLING_DEPLOY_COMMAND_NAME)
@@ -125,6 +127,7 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
                 Boolean.TRUE.equals(asgSpecParameters.getUseAlreadyRunningInstances().getValue()))
             .instanceWarmup(asgSpecParameters.getInstanceWarmup().getValue())
             .minimumHealthyPercentage(asgSpecParameters.getMinimumHealthyPercentage().getValue())
+            .amiImageId(amiImageId)
             .build();
 
     return asgStepCommonHelper.queueAsgTask(stepElementParameters, asgRollingDeployRequest, ambiance,

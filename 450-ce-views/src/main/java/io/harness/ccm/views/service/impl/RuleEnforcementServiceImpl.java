@@ -18,7 +18,11 @@ import io.harness.ccm.views.helper.EnforcementCountRequest;
 import io.harness.ccm.views.helper.ExecutionDetailRequest;
 import io.harness.ccm.views.helper.ExecutionDetails;
 import io.harness.ccm.views.helper.ExecutionEnforcementDetails;
+import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleEnforcementService;
+import io.harness.ccm.views.service.RuleSetService;
+import io.harness.exception.InvalidRequestException;
+import io.harness.remote.GovernanceConfig;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -35,6 +39,8 @@ public class RuleEnforcementServiceImpl implements RuleEnforcementService {
   @Inject private RuleEnforcementDAO ruleEnforcementDAO;
   @Inject private RuleDAO rulesDAO;
   @Inject private RuleSetDAO ruleSetDAO;
+  @Inject private GovernanceRuleService ruleService;
+  @Inject private RuleSetService ruleSetService;
 
   @Override
   public RuleEnforcement get(String uuid) {
@@ -60,6 +66,31 @@ public class RuleEnforcementServiceImpl implements RuleEnforcementService {
   @Override
   public RuleEnforcement listName(String accountId, String name, boolean create) {
     return ruleEnforcementDAO.fetchByName(accountId, name, create);
+  }
+
+  @Override
+  public void checkLimitsAndValidate(RuleEnforcement ruleEnforcement, GovernanceConfig governanceConfig) {
+    if (ruleEnforcement.getRuleIds() != null
+        && ruleEnforcement.getRuleIds().size() > governanceConfig.getPoliciesInEnforcement()) {
+      throw new InvalidRequestException("Limit of number of rules in an enforcement is exceeded ");
+    }
+    if (ruleEnforcement.getRuleSetIDs() != null
+        && ruleEnforcement.getRuleSetIDs().size() > governanceConfig.getPacksInEnforcement()) {
+      throw new InvalidRequestException("Limit of number of Rule Sets in an enforcement is exceeded ");
+    }
+    if (ruleEnforcement.getTargetAccounts().size() > governanceConfig.getAccountLimit()) {
+      throw new InvalidRequestException("Limit of number of target accounts allowed per enforcement is exceeded ");
+    }
+
+    if (ruleEnforcement.getTargetRegions().size() > governanceConfig.getRegionLimit()) {
+      throw new InvalidRequestException("Limit of target regions allowed per enforcement is exceeded ");
+    }
+    if (ruleEnforcement.getRuleIds() != null) {
+      ruleService.check(ruleEnforcement.getAccountId(), ruleEnforcement.getRuleIds());
+    }
+    if (ruleEnforcement.getRuleSetIDs() != null) {
+      ruleSetService.check(ruleEnforcement.getAccountId(), ruleEnforcement.getRuleSetIDs());
+    }
   }
 
   @Override

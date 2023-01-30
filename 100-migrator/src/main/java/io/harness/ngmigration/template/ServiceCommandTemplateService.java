@@ -32,6 +32,7 @@ import io.harness.cdng.ssh.TailFilePattern;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.shell.ScriptType;
 import io.harness.steps.shellscript.ShellScriptBaseSource;
@@ -96,7 +97,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
         variables.add(StringNGVariable.builder()
                           .name(variable.getName())
                           .type(NGVariableType.STRING)
-                          .value(valueOrDefaultEmpty(variable.getValue()))
+                          .value(valueOrDefaultRuntime(variable.getValue()))
                           .build());
       });
     }
@@ -165,6 +166,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.SCRIPT)
         .name(name)
+        .identifier(MigratorUtility.generateIdentifier(name))
         .spec(ScriptCommandUnitSpec.builder()
                   .shell(ScriptType.POWERSHELL.equals(scriptType) ? ShellType.PowerShell : ShellType.Bash)
                   .tailFiles(Collections.emptyList())
@@ -187,6 +189,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.COPY)
         .name(commandUnit.getName())
+        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName()))
         .spec(CopyCommandUnitSpec.builder()
                   .destinationPath(valueOrDefaultEmpty(configCommandUnit.getDestinationParentPath()))
                   .sourceType(CommandUnitSourceType.Config)
@@ -199,6 +202,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.DOWNLOAD_ARTIFACT)
         .name(commandUnit.getName())
+        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName()))
         .spec(DownloadArtifactCommandUnitSpec.builder()
                   .destinationPath(valueOrDefaultEmpty(downloadCommandUnit.getCommandPath()))
                   .build())
@@ -210,6 +214,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.COPY)
         .name(commandUnit.getName())
+        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName()))
         .spec(CopyCommandUnitSpec.builder()
                   .destinationPath(valueOrDefaultEmpty(scpCommandUnit.getDestinationDirectoryPath()))
                   .sourceType(CommandUnitSourceType.Artifact)
@@ -235,6 +240,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.SCRIPT)
         .name(commandUnit.getName())
+        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName()))
         .spec(
             ScriptCommandUnitSpec.builder()
                 .shell(execCommandUnit.getScriptType().equals(ScriptType.BASH) ? ShellType.Bash : ShellType.PowerShell)
@@ -252,5 +258,9 @@ public class ServiceCommandTemplateService implements NgTemplateService {
 
   static ParameterField<String> valueOrDefaultEmpty(String val) {
     return ParameterField.createValueField(StringUtils.isNotBlank(val) ? val : "");
+  }
+
+  static ParameterField<String> valueOrDefaultRuntime(String val) {
+    return ParameterField.createValueField(StringUtils.isNotBlank(val) ? val : "<+input>");
   }
 }

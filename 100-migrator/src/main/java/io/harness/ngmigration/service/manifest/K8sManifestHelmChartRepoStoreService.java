@@ -79,8 +79,8 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
         HelmChartManifest.builder()
             .identifier(identifier)
             .helmVersion(service.getHelmVersion())
-            .skipResourceVersioning(
-                ParameterField.createValueField(applicationManifest.getSkipVersioningForAllK8sObjects()))
+            .skipResourceVersioning(ParameterField.createValueField(
+                Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
             .chartName(ParameterField.createValueField(helmChartConfig.getChartName()))
             .chartVersion(ParameterField.createValueField("<+input>"));
 

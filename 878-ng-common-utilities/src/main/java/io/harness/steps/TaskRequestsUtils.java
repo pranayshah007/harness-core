@@ -36,6 +36,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.DelegateTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.SerializationFormat;
@@ -222,6 +223,37 @@ public class TaskRequestsUtils {
         .setUseReferenceFalseKryoSerializer(true)
         .setDelegateTaskRequest(delegateTaskRequest)
         .setTaskCategory(taskCategory)
+        .build();
+  }
+
+  public static TaskRequest prepareTaskRequest(Ambiance ambiance, TaskDetails taskDetails, List<String> units,
+      List<TaskSelector> selectors, String taskName, boolean withLogs) {
+    SubmitTaskRequest submitTaskRequest =
+        SubmitTaskRequest.newBuilder()
+            .setAccountId(AccountId.newBuilder().setId(AmbianceUtils.getAccountId(ambiance)).build())
+            .setDetails(taskDetails)
+            .setSetupAbstractions(TaskSetupAbstractions.newBuilder()
+                                      .putAllValues(StepUtils.buildAbstractions(ambiance, Scope.PROJECT))
+                                      .build())
+            .addAllSelectors(CollectionUtils.emptyIfNull(selectors))
+            .setLogAbstractions(
+                TaskLogAbstractions.newBuilder()
+                    .putAllValues(withLogs ? StepUtils.generateLogAbstractions(ambiance) : Collections.emptyMap())
+                    .build())
+            .setSelectionTrackingLogEnabled(true)
+            .build();
+    DelegateTaskRequest delegateTaskRequest =
+        DelegateTaskRequest.newBuilder()
+            .setRequest(submitTaskRequest)
+            .addAllUnits(withLogs ? CollectionUtils.emptyIfNull(units) : Collections.emptyList())
+            .addAllLogKeys(withLogs ? CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(ambiance, units))
+                                    : Collections.emptyList())
+            .setTaskName(taskName == null ? taskDetails.getType().getType() : taskName)
+            .build();
+    return TaskRequest.newBuilder()
+        .setDelegateTaskRequest(delegateTaskRequest)
+        .setUseReferenceFalseKryoSerializer(true)
+        .setTaskCategory(TaskCategory.DELEGATE_TASK_V2)
         .build();
   }
 

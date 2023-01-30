@@ -52,6 +52,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
@@ -59,6 +60,7 @@ import software.wings.beans.TaskType;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -72,7 +74,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CloudformationRollbackStep extends CdTaskExecutable<CloudformationTaskNGResponse> {
   @Inject CloudformationStepHelper cloudformationStepHelper;
   @Inject CloudformationConfigDAL cloudformationConfigDAL;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private CDStepHelper cdStepHelper;
@@ -174,7 +176,7 @@ public class CloudformationRollbackStep extends CdTaskExecutable<CloudformationT
                             .parameters(new Object[] {cloudformationTaskNGParameters})
                             .build();
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         Collections.singletonList(cloudformationTaskNGParameters.getCfCommandUnit().name()),
         TaskType.CLOUDFORMATION_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(

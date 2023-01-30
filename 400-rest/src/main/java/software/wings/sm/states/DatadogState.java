@@ -256,7 +256,7 @@ public class DatadogState extends AbstractMetricAnalysisState {
             .build(),
         waitId);
 
-    return delegateService.queueTask(delegateTask);
+    return delegateService.queueTaskV2(delegateTask);
   }
 
   @Override

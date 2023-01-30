@@ -210,7 +210,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     // mock delegateGrpcClientWrapper
     doAnswer(invocationOnMock -> UUIDGenerator.generateUuid())
         .when(delegateGrpcClientWrapper)
-        .submitAsyncTask(any(DelegateTaskRequest.class), any(Duration.class));
+        .submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));
 
     doCallRealMethod().when(cdStepHelper).mapTaskRequestToDelegateTaskRequest(any(), any(), anySet());
 
@@ -275,7 +275,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
     verify(delegateGrpcClientWrapper, times(1))
-        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
 
     verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(ambiance, listEntityDetail, true);
 
@@ -308,7 +308,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
-    verify(delegateGrpcClientWrapper, never()).submitAsyncTask(any(DelegateTaskRequest.class), any(Duration.class));
+    verify(delegateGrpcClientWrapper, never()).submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));
 
     ArtifactsStepV2SweepingOutput output = captor.getValue();
 
@@ -417,7 +417,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
     verify(delegateGrpcClientWrapper, times(3))
-        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -530,7 +530,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
     verify(delegateGrpcClientWrapper, times(3))
-        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -593,7 +593,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
     verify(delegateGrpcClientWrapper, times(2))
-        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -625,7 +625,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
-    verify(delegateGrpcClientWrapper, never()).submitAsyncTask(any(DelegateTaskRequest.class), any(Duration.class));
+    verify(delegateGrpcClientWrapper, never()).submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -883,7 +883,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
     // 1 primary and 1 sidecar
     verify(delegateGrpcClientWrapper, times(2))
-        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 

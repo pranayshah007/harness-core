@@ -179,7 +179,7 @@ public class AzureHelperService {
             .logStreamingAbstractions(createLogStreamingAbstractions(ngAccess, ambiance))
             .build();
     try {
-      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      return delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }

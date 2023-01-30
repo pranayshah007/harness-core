@@ -8,6 +8,8 @@
 package io.harness.delegate.beans.connector.scm.bitbucket;
 
 import io.harness.beans.DecryptableEntity;
+import io.harness.delegate.beans.connector.scm.bitbucket.outcome.BitbucketCredentialsOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.outcome.BitbucketSshCredentialsOutcomeDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
 
@@ -30,4 +32,8 @@ import lombok.experimental.FieldDefaults;
     description = "This contains details of the Bitbucket credentials used via SSH connections")
 public class BitbucketSshCredentialsDTO implements BitbucketCredentialsDTO, DecryptableEntity {
   @NotNull @SecretReference @ApiModelProperty(dataType = "string") SecretRefData sshKeyRef;
+
+  public BitbucketCredentialsOutcomeDTO toOutcome() {
+    return BitbucketSshCredentialsOutcomeDTO.builder().sshKeyRef(this.sshKeyRef).build();
+  }
 }

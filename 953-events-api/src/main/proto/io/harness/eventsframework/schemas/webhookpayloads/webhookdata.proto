@@ -34,6 +34,7 @@ enum WebhookEventType {
   ISSUE_COMMENT = 2;
   CREATE_BRANCH = 3;
   DELETE_BRANCH = 4;
+  RELEASE = 5;
 }
 
 enum WebhookTriggerType {

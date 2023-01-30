@@ -629,7 +629,7 @@ public abstract class TerragruntProvisionState extends State {
     renderDelegateTask(executionContext, delegateTask, stateExecutionContext);
 
     appendDelegateTaskDetails(executionContext, delegateTask);
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
     return ExecutionResponse.builder()
         .async(true)
         .correlationIds(singletonList(activityId))

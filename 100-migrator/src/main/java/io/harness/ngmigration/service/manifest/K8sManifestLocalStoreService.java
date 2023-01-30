@@ -62,8 +62,8 @@ public class K8sManifestLocalStoreService implements NgManifestService {
     K8sManifest k8sManifest =
         K8sManifest.builder()
             .identifier(MigratorUtility.generateManifestIdentifier(applicationManifest.getUuid()))
-            .skipResourceVersioning(
-                ParameterField.createValueField(applicationManifest.getSkipVersioningForAllK8sObjects()))
+            .skipResourceVersioning(ParameterField.createValueField(
+                Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
             .valuesPaths(MigratorUtility.getFileStorePaths(valuesFiles))
             .store(ParameterField.createValueField(StoreConfigWrapper.builder()
                                                        .type(StoreConfigType.HARNESS)

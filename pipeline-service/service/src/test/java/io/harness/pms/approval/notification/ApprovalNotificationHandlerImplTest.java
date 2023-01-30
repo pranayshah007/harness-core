@@ -35,10 +35,13 @@ import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.notification.EmailConfigDTO;
+import io.harness.ng.core.notification.MicrosoftTeamsConfigDTO;
 import io.harness.ng.core.notification.NotificationSettingConfigDTO;
 import io.harness.ng.core.notification.SlackConfigDTO;
+import io.harness.notification.Team;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.notificationclient.NotificationClient;
+import io.harness.notification.templates.PredefinedTemplate;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.approval.notification.ApprovalSummary.ApprovalSummaryKeys;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -182,6 +185,7 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
     List<NotificationSettingConfigDTO> notificationSettingConfigDTOS = new ArrayList<>();
     notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
     notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
+    notificationSettingConfigDTOS.add(MicrosoftTeamsConfigDTO.builder().build());
 
     List<UserGroupDTO> userGroupDTOS =
         new ArrayList<>(Arrays.asList(UserGroupDTO.builder()
@@ -216,13 +220,20 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
     approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
     ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor =
         ArgumentCaptor.forClass(NotificationChannel.class);
-    verify(notificationClient, times(6)).sendNotificationAsync(notificationChannelArgumentCaptor.capture());
-    NotificationChannel notificationChannel = notificationChannelArgumentCaptor.getValue();
-    assertThat(notificationChannel.getTemplateData().get(ApprovalSummaryKeys.pipelineName)).isEqualTo(pipelineName);
-    assertThat(notificationChannel.getTemplateData().get(ApprovalSummaryKeys.orgName)).isEqualTo(orgName);
-    assertThat(notificationChannel.getTemplateData().get(ApprovalSummaryKeys.projectName)).isEqualTo(projectName);
+    verify(notificationClient, times(9)).sendNotificationAsync(notificationChannelArgumentCaptor.capture());
+    List<NotificationChannel> notificationChannels = notificationChannelArgumentCaptor.getAllValues();
+    assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.pipelineName))
+        .isEqualTo(pipelineName);
+    assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.orgName)).isEqualTo(orgName);
+    assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.projectName))
+        .isEqualTo(projectName);
     // get userId in triggeredBy because email is not present
-    assertThat(notificationChannel.getTemplateData().get(ApprovalSummaryKeys.triggeredBy)).isEqualTo(userId);
+    assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.triggeredBy)).isEqualTo(userId);
+    assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.pipelineExecutionLink))
+        .isEqualTo(url);
+    assertThat(notificationChannels.get(8).getTemplateId())
+        .isEqualTo(PredefinedTemplate.HARNESS_APPROVAL_NOTIFICATION_MSTEAMS.getIdentifier());
+    assertThat(notificationChannels.get(8).getTeam()).isEqualTo(Team.PIPELINE);
     verify(pmsExecutionService, times(1))
         .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
     verify(ngLogCallback, times(2)).saveExecutionLog(anyString());

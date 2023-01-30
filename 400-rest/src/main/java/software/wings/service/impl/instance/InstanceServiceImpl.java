@@ -192,7 +192,8 @@ public class InstanceServiceImpl implements InstanceService {
     } else if (instance.getPodInstanceKey() != null) {
       PodInstanceKey podInstanceKey = instance.getPodInstanceKey();
       query.filter("podInstanceKey.podName", podInstanceKey.getPodName())
-          .filter("podInstanceKey.namespace", podInstanceKey.getNamespace());
+          .filter("podInstanceKey.namespace", podInstanceKey.getNamespace())
+          .filter(InstanceKeys.infraMappingId, instance.getInfraMappingId());
       return podInstanceKey;
     } else {
       String msg = "Either host or container or pcf instance key needs to be set";

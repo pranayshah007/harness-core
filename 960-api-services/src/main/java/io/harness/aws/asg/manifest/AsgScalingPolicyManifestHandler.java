@@ -22,6 +22,7 @@ import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.PutScalingPolicyRequest;
 import com.amazonaws.services.autoscaling.model.ScalingPolicy;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,10 +41,13 @@ public class AsgScalingPolicyManifestHandler extends AsgManifestHandler<PutScali
 
   @Override
   public AsgManifestHandlerChainState upsert(AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
-    List<PutScalingPolicyRequest> manifests =
-        manifestRequest.getManifests().stream().map(this::parseContentToManifest).collect(Collectors.toList());
+    List<PutScalingPolicyRequest> manifests = new ArrayList<>();
+    if (manifestRequest.getManifests() != null) {
+      manifests =
+          manifestRequest.getManifests().stream().map(this::parseContentToManifest).collect(Collectors.toList());
+    }
     String asgName = chainState.getAsgName();
-    String operationName = format("Attach required scaling policies to Asg %s", asgName);
+    String operationName = format("Modify scaling policies of autoscaling group %s", asgName);
     asgSdkManager.info("Operation `%s` has started", operationName);
     asgSdkManager.clearAllScalingPoliciesForAsg(asgName);
     asgSdkManager.attachScalingPoliciesToAsg(asgName, manifests);

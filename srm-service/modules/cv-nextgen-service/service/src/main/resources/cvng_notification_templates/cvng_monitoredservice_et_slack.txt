@@ -19,7 +19,7 @@
                "type" : "section",
                "text" : {
                 "type" : "mrkdwn",
-                "text": "Events appeared on the deployment version(s)\n${SLACK_FORMATTED_VERSION_LIST}"
+                "text": "${SLACK_FORMATTED_VERSION_LIST}"
                 }
             },
             {

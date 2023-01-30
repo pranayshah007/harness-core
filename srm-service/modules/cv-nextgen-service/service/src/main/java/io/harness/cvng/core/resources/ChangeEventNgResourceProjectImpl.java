@@ -20,6 +20,7 @@ import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ProjectPathParams;
 import io.harness.cvng.core.services.api.ChangeEventService;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.rest.RestResponse;
@@ -27,7 +28,6 @@ import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
-import com.cronutils.utils.Preconditions;
 import com.google.inject.Inject;
 import io.fabric8.utils.Lists;
 import io.swagger.annotations.Api;
@@ -44,6 +44,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import retrofit2.http.Body;
 
 @Path(CHANGE_EVENT_NG_PROJECT_PATH)
@@ -108,8 +110,7 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
       List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, String searchText, @NotNull long startTime, @NotNull long endTime,
       PageRequest pageRequest) {
-    Preconditions.checkArgument(Lists.isNullOrEmpty(scopedMonitoredServiceIdentifiers),
-        "Monitored Service or Service and Env Identifiers without any scope needs to be sent for project");
+    validate(scopedMonitoredServiceIdentifiers, projectPathParams, startTime, endTime);
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(projectPathParams.getAccountIdentifier())
                                       .orgIdentifier(projectPathParams.getOrgIdentifier())
@@ -130,8 +131,7 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
       List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, String searchText, @NotNull long startTime, @NotNull long endTime,
       Integer pointCount) {
-    Preconditions.checkArgument(Lists.isNullOrEmpty(scopedMonitoredServiceIdentifiers),
-        "Monitored Service or Service and Env Identifiers without any scope needs to be sent for project");
+    validate(scopedMonitoredServiceIdentifiers, projectPathParams, startTime, endTime);
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(projectPathParams.getAccountIdentifier())
                                       .orgIdentifier(projectPathParams.getOrgIdentifier())
@@ -153,8 +153,7 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
       List<String> monitoredServiceIdentifiers, List<String> scopedMonitoredServiceIdentifiers,
       List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, @NotNull long startTime,
       @NotNull long endTime) {
-    Preconditions.checkArgument(Lists.isNullOrEmpty(scopedMonitoredServiceIdentifiers),
-        "Monitored Service or Service and Env Identifiers without any scope needs to be sent for project");
+    validate(scopedMonitoredServiceIdentifiers, projectPathParams, startTime, endTime);
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(projectPathParams.getAccountIdentifier())
                                       .orgIdentifier(projectPathParams.getOrgIdentifier())
@@ -163,5 +162,28 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
     return new RestResponse<>(changeEventService.getChangeSummary(projectParams, monitoredServiceIdentifier,
         monitoredServiceIdentifiers, false, changeCategories, changeSourceTypes, Instant.ofEpochMilli(startTime),
         Instant.ofEpochMilli(endTime)));
+  }
+
+  private void validate(List<String> scopedMonitoredServiceIdentifiers, ProjectPathParams projectPathParams,
+      long startTime, long endTime) {
+    if (StringUtils.isEmpty(projectPathParams.getAccountIdentifier())) {
+      throw new InvalidArgumentsException(Pair.of("accountId", "should not be null or empty"));
+    }
+    if (projectPathParams.getOrgIdentifier().isEmpty() || projectPathParams.getOrgIdentifier().equals(null)) {
+      throw new InvalidArgumentsException(Pair.of("orgIdentifier", "should not be null or empty"));
+    }
+    if (projectPathParams.getProjectIdentifier().isEmpty() || projectPathParams.getProjectIdentifier().equals(null)) {
+      throw new InvalidArgumentsException(Pair.of("projectIdentifier", "should not be null or empty"));
+    }
+    if (startTime == 0) {
+      throw new InvalidArgumentsException(Pair.of("startTime", "should not be null or empty"));
+    }
+    if (endTime == 0) {
+      throw new InvalidArgumentsException(Pair.of("endTime", "should not be null or empty"));
+    }
+    if (!Lists.isNullOrEmpty(scopedMonitoredServiceIdentifiers)) {
+      throw new InvalidArgumentsException(
+          Pair.of("scopedMonitoredServiceIdentifiers", "should not be present for project"));
+    }
   }
 }

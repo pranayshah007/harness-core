@@ -8,6 +8,7 @@
 package io.harness.connector.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.security.encryption.EncryptionType.VAULT;
@@ -68,6 +69,7 @@ import io.harness.secretmanagerclient.dto.LocalConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerMetadataDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerMetadataRequestDTO;
+import io.harness.secretmanagerclient.dto.VaultAuthTokenCredentialDTO;
 import io.harness.secretmanagerclient.dto.VaultAwsIamRoleCredentialDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigDTO;
 import io.harness.secretmanagerclient.dto.VaultMetadataRequestSpecDTO;
@@ -184,6 +186,31 @@ public class NGVaultServiceImplTest extends CategoryTest {
     assertThat(secretRefData.getDecryptedValue())
         .isEqualTo(taskParameters.getEncryptionConfig().getXVaultAwsIamServerId().toCharArray());
     assertEquals(vaultAwsIamRole, taskParameters.getEncryptionConfig().getVaultAwsIamRole());
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void test_ListSecretEngines_withANonExistingSecret_authToken() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    SecretRefData secretRefData =
+        SecretRefData.builder().identifier("authtoken").decryptedValue(randomAlphabetic(10).toCharArray()).build();
+    SecretManagerMetadataRequestDTO requestDTO =
+        SecretManagerMetadataRequestDTO.builder()
+            .encryptionType(VAULT)
+            .identifier(secretManagerIdentifier)
+            .spec(VaultMetadataRequestSpecDTO.builder()
+                      .url(HTTP_VAULT_URL)
+                      .accessType(AccessType.TOKEN)
+                      .spec(VaultAuthTokenCredentialDTO.builder().authToken(secretRefData).build())
+                      .build())
+            .build();
+    when(ngConnectorSecretManagerService.getUsingIdentifier(ACCOUNT_IDENTIFIER, null, null, "authtoken", false))
+        .thenReturn(LocalConfigDTO.builder().build());
+    when(ngEncryptedDataService.get(any(), any(), any(), any())).thenReturn(null);
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage("Secret [authtoken] not found or has been deleted.");
+    ngVaultService.getListOfEngines(ACCOUNT_IDENTIFIER, requestDTO);
   }
 
   @Test
@@ -336,6 +363,34 @@ public class NGVaultServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void processTokenLookup_vaultConnectorWithTokenBasedAuth_nonExistentSecret() {
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(VaultConnector.builder()
+                                                                                  .accessType(AccessType.TOKEN)
+                                                                                  .authTokenRef("authToken")
+                                                                                  .renewalIntervalMinutes(10L)
+                                                                                  .build());
+    ConnectorDTO inputConnector = ConnectorDTO.builder()
+                                      .connectorInfo(ConnectorInfoDTO.builder()
+                                                         .name(CONNECTOR_NAME)
+                                                         .identifier(CONNECTOR_ID)
+                                                         .orgIdentifier(ORG_IDENTIFIER)
+                                                         .projectIdentifier(PROJECT_IDENTIFIER)
+                                                         .connectorType(ConnectorType.VAULT)
+                                                         .connectorConfig(vaultConnectorDTO)
+                                                         .build())
+                                      .build();
+    when(delegateService.isTaskTypeSupported(any(), any())).thenReturn(true);
+    when(ngEncryptedDataService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "authToken"))
+        .thenReturn(null);
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage("Secret [authToken] not found or has been deleted.");
+
+    ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
+  }
+
+  @Test
   @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
   public void
@@ -485,6 +540,28 @@ public class NGVaultServiceImplTest extends CategoryTest {
     SecretDTOV2 secretDTOV2 = argumentCaptor.getValue();
     assertNotNull(secretDTOV2);
     assertThat(secretDTOV2.getIdentifier()).isEqualTo(CONNECTOR_ID + "_" + VaultConnectorKeys.authTokenRef);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void processAppRole_withNonExistentAppRoleSecret() {
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(buildAppRoleVaultConnector());
+    vaultConnectorDTO.setRenewAppRoleToken(true);
+    ConnectorDTO inputConnector = ConnectorDTO.builder()
+                                      .connectorInfo(ConnectorInfoDTO.builder()
+                                                         .name(CONNECTOR_NAME)
+                                                         .identifier(CONNECTOR_ID)
+                                                         .orgIdentifier(ORG_IDENTIFIER)
+                                                         .projectIdentifier(PROJECT_IDENTIFIER)
+                                                         .connectorType(ConnectorType.VAULT)
+                                                         .connectorConfig(vaultConnectorDTO)
+                                                         .build())
+                                      .build();
+    when(ngEncryptedDataService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "test")).thenReturn(null);
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage("Secret [test] not found or has been deleted.");
+    ngVaultService.processAppRole(inputConnector, null, ACCOUNT_IDENTIFIER, true);
   }
 
   @Test

@@ -378,7 +378,8 @@ public class AzureArtifactsServiceImpl implements AzureArtifactsService {
     }
   }
 
-  private InputStream downloadArtifactByUrl(String artifactDownloadUrl, String authHeader) throws IOException {
+  @Override
+  public InputStream downloadArtifactByUrl(String artifactDownloadUrl, String authHeader) throws IOException {
     OkHttpClient okHttpClient = getAzureArtifactsDownloadClient(artifactDownloadUrl);
     Request request = new Request.Builder().url(artifactDownloadUrl).addHeader("Authorization", authHeader).build();
     Response response = okHttpClient.newCall(request).execute();

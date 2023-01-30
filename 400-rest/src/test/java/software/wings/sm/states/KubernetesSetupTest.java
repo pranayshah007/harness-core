@@ -404,7 +404,7 @@ public class KubernetesSetupTest extends WingsBaseTest {
     kubernetesSetup.execute(context);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     CommandExecutionContext executionContext = (CommandExecutionContext) delegateTask.getData().getParameters()[1];

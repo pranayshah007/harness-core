@@ -45,10 +45,18 @@ public class DockerArtifactDelegateResponse extends ArtifactDelegateResponse {
     String metadataKeys = (getBuildDetails() != null && getBuildDetails().getMetadata() != null)
         ? String.valueOf(getBuildDetails().getMetadata().keySet())
         : null;
+    String sha256Digest =
+        (getBuildDetails() != null && getBuildDetails().getMetadata() != null
+            && getBuildDetails().getMetadata().containsKey(ArtifactMetadataKeys.SHAV2)
+            && EmptyPredicate.isNotEmpty(getBuildDetails().getMetadata().get(ArtifactMetadataKeys.SHAV2)))
+        ? "\nV1 SHA256 Digest: " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.SHA)
+            + "\nV2 SHA256 Digest: " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.SHAV2)
+        : null;
 
     return "type: " + (getSourceType() != null ? getSourceType().getDisplayName() : null)
         + "\nimagePath: " + getImagePath() + "\ntag: " + getTag()
         + "\nMetadata keys: " + (EmptyPredicate.isNotEmpty(metadataKeys) ? metadataKeys : "")
-        + (EmptyPredicate.isNotEmpty(dockerPullCommand) ? dockerPullCommand : "");
+        + (EmptyPredicate.isNotEmpty(dockerPullCommand) ? dockerPullCommand : "")
+        + (EmptyPredicate.isNotEmpty(sha256Digest) ? sha256Digest : "");
   }
 }

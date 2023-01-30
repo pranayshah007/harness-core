@@ -333,6 +333,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   public void setup() throws Exception {
     HTimeLimiterMocker.mockCallInterruptible(mockTimeLimiter)
         .thenAnswer(invocation -> invocation.getArgument(0, Callable.class).call());
+    doReturn(-1).when(helmTaskHelperBase).skipDefaultHelmValuesYaml(anyString(), any(), anyBoolean(), any());
   }
 
   @Test

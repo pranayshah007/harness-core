@@ -53,7 +53,7 @@ public class WaitInstance implements WaitEngineEntity {
   String publisher;
 
   NotifyCallback callback;
-  long callbackProcessingAt;
+  @Builder.Default Long callbackProcessingAt = 0L;
 
   ProgressCallback progressCallback;
 

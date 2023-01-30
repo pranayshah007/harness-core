@@ -224,7 +224,7 @@ commons-digester:commons-digester:jar:2.1
 commons-io:commons-io:jar:2.7
 commons-lang:commons-lang:jar:2.3
 commons-logging:commons-logging:jar:1.1.1
-commons-net:commons-net:jar:3.6
+commons-net:commons-net:jar:3.9.0
 commons-pool:commons-pool:jar:1.5.4
 commons-validator:commons-validator:jar:1.7
 de.bwaldvogel:mongo-java-server-core:jar:1.34.0:test

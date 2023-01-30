@@ -168,7 +168,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
                   .stream()
                   .map(TaskSelectorYaml::getDelegateSelectors)
                   .collect(Collectors.toSet()));
-      String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+      String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
       return AsyncExecutableResponse.newBuilder()
           .addCallbackIds(taskId)
           .addAllLogKeys(StepUtils.generateLogKeys(ambiance, List.of(LOG_SUFFIX)))
@@ -495,7 +495,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     }
     Map<String, Object> inputMap = new HashMap<>();
     inputMap.put(YamlTypes.INFRASTRUCTURE_DEF, inputs);
-    return MergeHelper.mergeInputSetFormatYamlToOriginYaml(originalYaml, YamlPipelineUtils.writeYamlString(inputMap));
+    return MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
+        originalYaml, YamlPipelineUtils.writeYamlString(inputMap), true);
   }
 
   @Override

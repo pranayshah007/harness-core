@@ -437,7 +437,9 @@
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
             "AzureArtifacts",
-            "AmazonMachineImage"
+            "AmazonMachineImage",
+            "GoogleCloudStorage",
+            "GoogleCloudSource"
           ]
         }
       },
@@ -623,6 +625,38 @@
           "if": {
             "properties": {
               "type": {
+                "const": "GoogleCloudSource"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudSourceArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudStorage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudStorageArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Jenkins"
               }
             }
@@ -753,6 +787,127 @@
             },
             "repositoryName": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgBlueGreenDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "loadBalancer",
+            "prodListener",
+            "prodListenerRuleArn",
+            "stageListener",
+            "stageListenerRuleArn"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "loadBalancer": {
+              "type": "string"
+            },
+            "prodListener": {
+              "type": "string"
+            },
+            "prodListenerRuleArn": {
+              "type": "string"
+            },
+            "stageListener": {
+              "type": "string"
+            },
+            "stageListenerRuleArn": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgBlueGreenRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgBlueGreenSwapServiceStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "downsizeOldAsg"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "downsizeOldAsg": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -3557,7 +3712,52 @@
           "$ref": "#/definitions/ServicesYaml"
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "serviceConfig"
+              ]
+            },
+            {
+              "required": [
+                "service"
+              ]
+            },
+            {
+              "required": [
+                "services"
+              ]
+            }
+          ]
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "environment"
+              ]
+            },
+            {
+              "required": [
+                "environmentGroup"
+              ]
+            },
+            {
+              "required": [
+                "environments"
+              ]
+            },
+            {
+              "required": [
+                "infrastructure"
+              ]
+            }
+          ]
+        }
+      ]
     },
     "DeploymentStageNode": {
       "type": "object",
@@ -3678,6 +3878,9 @@
           ],
           "properties": {
             "connectorRef": {
+              "type": "string"
+            },
+            "digest": {
               "type": "string"
             },
             "imagePath": {
@@ -5534,6 +5737,68 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GoogleCloudSourceArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "project",
+            "repository",
+            "sourceDirectory"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "project": {
+              "type": "string"
+            },
+            "repository": {
+              "type": "string"
+            },
+            "sourceDirectory": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GoogleCloudStorageArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "artifactPath",
+            "bucket",
+            "connectorRef",
+            "project"
+          ],
+          "properties": {
+            "artifactPath": {
+              "type": "string"
+            },
+            "bucket": {
+              "type": "string"
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "project": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HarnessFileStoreSource": {
       "allOf": [
         {
@@ -5837,6 +6102,32 @@
           "type": "string"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HelmRepoOverrideManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "type"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "HelmRollbackStepInfo": {
@@ -7583,6 +7874,7 @@
           "type": "string",
           "enum": [
             "HelmChart",
+            "HelmRepoOverride",
             "K8sManifest",
             "Kustomize",
             "KustomizePatches",
@@ -7781,6 +8073,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/HelmChartManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "HelmRepoOverride"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HelmRepoOverrideManifest"
               }
             }
           }
@@ -8826,7 +9134,8 @@
               "DelegateProvisioning",
               "PolicyEvaluationFailure",
               "InputTimeoutError",
-              "ApprovalRejection"
+              "ApprovalRejection",
+              "DelegateRestart"
             ]
           }
         }
@@ -9540,7 +9849,9 @@
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
             "AzureArtifacts",
-            "AmazonMachineImage"
+            "AmazonMachineImage",
+            "GoogleCloudStorage",
+            "GoogleCloudSource"
           ]
         }
       },
@@ -9718,6 +10029,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GoogleArtifactRegistryConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudSource"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudSourceArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudStorage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudStorageArtifactConfig"
               }
             }
           }
@@ -10906,7 +11249,9 @@
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
             "AzureArtifacts",
-            "AmazonMachineImage"
+            "AmazonMachineImage",
+            "GoogleCloudStorage",
+            "GoogleCloudSource"
           ]
         }
       },
@@ -11084,6 +11429,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GoogleArtifactRegistryConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudSource"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudSourceArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudStorage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudStorageArtifactConfig"
               }
             }
           }
@@ -11453,6 +11830,54 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/TasRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgBlueGreenDeploy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgBlueGreenDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgBlueGreenRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgBlueGreenRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgBlueGreenSwapService"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgBlueGreenSwapServiceStepInfo"
               }
             }
           }
@@ -13174,8 +13599,7 @@
           "type": "object",
           "required": [
             "existingVersionToKeep",
-            "tasInstanceCountType",
-            "tempRoutes"
+            "tasInstanceCountType"
           ],
           "properties": {
             "additionalRoutes": {

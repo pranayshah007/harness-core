@@ -75,6 +75,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
@@ -82,6 +83,7 @@ import io.harness.utils.IdentifierRefHelper;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -102,7 +104,7 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
                                                .build();
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Inject private StepHelper stepHelper;
 
@@ -243,11 +245,11 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
             .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), AzureCommonHelper.DEFAULT_TIMEOUT))
             .parameters(new Object[] {parameters})
             .build();
-    final TaskRequest taskRequest =
-        StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, getCommandUnits(false), "Azure Blueprint",
-            TaskSelectorYaml.toTaskSelector(
-                ((AzureCreateBPStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
-            stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, getCommandUnits(false), "Azure Blueprint",
+        TaskSelectorYaml.toTaskSelector(
+            ((AzureCreateBPStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
+        stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder().taskRequest(taskRequest).passThroughData(passThroughData).chainEnd(true).build();
   }

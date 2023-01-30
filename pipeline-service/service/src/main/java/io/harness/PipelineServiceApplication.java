@@ -100,6 +100,7 @@ import io.harness.pms.async.plan.PlanNotifyEventPublisher;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.event.PMSEventConsumerService;
 import io.harness.pms.event.overviewLandingPage.PipelineExecutionSummaryRedisEventConsumer;
+import io.harness.pms.event.overviewLandingPage.PipelineExecutionSummaryRedisEventConsumerSnapshot;
 import io.harness.pms.event.pollingevent.PollingEventStreamConsumer;
 import io.harness.pms.event.webhookevent.WebhookEventStreamConsumer;
 import io.harness.pms.events.base.PipelineEventConsumerController;
@@ -161,6 +162,7 @@ import io.harness.steps.barriers.BarrierInitializer;
 import io.harness.steps.barriers.event.BarrierDropper;
 import io.harness.steps.barriers.event.BarrierPositionHelperEventHandler;
 import io.harness.steps.barriers.service.BarrierServiceImpl;
+import io.harness.steps.common.NodeExecutionMetadataDeleteObserver;
 import io.harness.steps.resourcerestraint.ResourceRestraintInitializer;
 import io.harness.steps.resourcerestraint.ResourceRestraintObserver;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintPersistenceMonitor;
@@ -478,6 +480,10 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(TimeoutInstanceRemover.class)));
 
+    // NodeExecutionDeleteObserver
+    nodeExecutionService.getNodeDeleteObserverSubject().register(
+        injector.getInstance(NodeExecutionMetadataDeleteObserver.class));
+
     // NodeExecutionStartObserver
     nodeStartHelper.getNodeExecutionStartSubject().register(
         injector.getInstance(Key.get(StageStartNotificationHandler.class)));
@@ -702,6 +708,9 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         pipelineServiceConsumersConfig.getGraphUpdate().getThreads());
     pipelineEventConsumerController.register(injector.getInstance(PipelineExecutionSummaryRedisEventConsumer.class),
         pipelineServiceConsumersConfig.getPipelineExecutionEvent().getThreads());
+    pipelineEventConsumerController.register(
+        injector.getInstance(PipelineExecutionSummaryRedisEventConsumerSnapshot.class),
+        pipelineServiceConsumersConfig.getPipelineExecutionEventSnapshot().getThreads());
     //    pipelineEventConsumerController.register(injector.getInstance(PartialPlanResponseRedisConsumer.class),
     //        pipelineServiceConsumersConfig.getPartialPlanResponse().getThreads());
     //    pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class),

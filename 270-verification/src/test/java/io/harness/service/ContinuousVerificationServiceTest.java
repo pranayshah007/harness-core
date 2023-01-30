@@ -302,7 +302,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     writeField(timeSeriesAnalysisService, "managerClient", verificationManagerClient, true);
     writeField(continuousVerificationService, "timeSeriesAnalysisService", timeSeriesAnalysisService, true);
     writeField(continuousVerificationService, "executorService", executorService, true);
-    when(delegateService.queueTask(anyObject()))
+    when(delegateService.queueTaskV2(anyObject()))
         .then(invocation -> wingsPersistence.save((DelegateTask) invocation.getArguments()[0]));
     when(settingsService.get(connectorId)).thenReturn(aSettingAttribute().withValue(sumoConfig).build());
     when(settingsService.get(datadogConnectorId)).thenReturn(aSettingAttribute().withValue(datadogConfig).build());
@@ -779,7 +779,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     continuousVerificationService.triggerAPMDataCollection(accountId);
-    verify(delegateService, never()).queueTask(taskCaptor.capture());
+    verify(delegateService, never()).queueTaskV2(taskCaptor.capture());
   }
 
   @Test
@@ -2009,7 +2009,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     long expectedStart = expectedEnd - TimeUnit.MINUTES.toMillis(PREDECTIVE_HISTORY_MINUTES * 2);
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     continuousVerificationService.triggerAPMDataCollection(accountId);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     APMDataCollectionInfo info = (APMDataCollectionInfo) taskCaptor.getValue().getData().getParameters()[0];
     assertThat(info.getStartTime()).isEqualTo(expectedStart);
   }
@@ -2040,7 +2040,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     long expectedStart = TimeUnit.MINUTES.toMillis(TimeUnit.MILLISECONDS.toMinutes(currentTime) - 60);
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     continuousVerificationService.triggerAPMDataCollection(accountId);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     APMDataCollectionInfo info = (APMDataCollectionInfo) taskCaptor.getValue().getData().getParameters()[0];
     assertThat(info.getStartTime()).isEqualTo(expectedStart);
   }
@@ -2060,7 +2060,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     long expectedStart = TimeUnit.MINUTES.toMillis(expectedStartMin);
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     continuousVerificationService.triggerAPMDataCollection(accountId);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     APMDataCollectionInfo info = (APMDataCollectionInfo) taskCaptor.getValue().getData().getParameters()[0];
     assertThat(info.getStartTime()).isEqualTo(expectedStart);
   }
@@ -2106,7 +2106,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
 
     continuousVerificationService.triggerLogDataCollection(accountId);
 
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     SumoDataCollectionInfo info = (SumoDataCollectionInfo) taskCaptor.getValue().getData().getParameters()[0];
     assertThat(TimeUnit.MINUTES.toMillis(sumoConfig.getBaselineStartMinute())).isEqualTo(info.getStartTime());
     assertThat(expectedEnd).isEqualTo(info.getEndTime());
@@ -2189,7 +2189,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
 
     continuousVerificationService.triggerLogDataCollection(accountId);
 
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     SumoDataCollectionInfo info = (SumoDataCollectionInfo) taskCaptor.getValue().getData().getParameters()[0];
     assertThat(expectedStart).isEqualTo(info.getStartTime());
     assertThat(expectedEnd).isEqualTo(info.getEndTime());
@@ -2220,7 +2220,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
 
     continuousVerificationService.triggerLogDataCollection(accountId);
 
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     SumoDataCollectionInfo info = (SumoDataCollectionInfo) taskCaptor.getValue().getData().getParameters()[0];
     assertThat(TimeUnit.MINUTES.toMillis(sumoConfig.getBaselineStartMinute())).isEqualTo(info.getStartTime());
   }
@@ -2247,7 +2247,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
 
     continuousVerificationService.triggerLogDataCollection(accountId);
 
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     SumoDataCollectionInfo info = (SumoDataCollectionInfo) taskCaptor.getValue().getData().getParameters()[0];
     assertThat(TimeUnit.MINUTES.toMillis(sumoConfig.getBaselineStartMinute())).isEqualTo(info.getStartTime());
     assertThat(expectedEnd).isEqualTo(info.getEndTime());
@@ -3737,7 +3737,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     continuousVerificationService.triggerAPMDataCollection(accountId);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     APMDataCollectionInfo info = (APMDataCollectionInfo) taskCaptor.getValue().getData().getParameters()[0];
     assertThat(info.getCvConfigId()).isEqualTo(cvConfigId);
   }
@@ -3764,7 +3764,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     continuousVerificationService.triggerAPMDataCollection(accountId);
-    verify(delegateService, times(0)).queueTask(any());
+    verify(delegateService, times(0)).queueTaskV2(any());
   }
 
   @Test
@@ -3789,7 +3789,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     continuousVerificationService.triggerAPMDataCollection(accountId);
-    verify(delegateService, times(1)).queueTask(taskCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(taskCaptor.capture());
     APMDataCollectionInfo info = (APMDataCollectionInfo) taskCaptor.getValue().getData().getParameters()[0];
     assertThat(info.getCvConfigId()).isEqualTo(cvConfigId);
   }
@@ -3802,7 +3802,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     when(cvConfigurationService.listConfigurations(accountId)).thenReturn(Lists.newArrayList(cvConfig));
     continuousVerificationService.triggerLogDataCollection(accountId);
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(taskCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(taskCaptor.capture());
     SumoDataCollectionInfo info = (SumoDataCollectionInfo) taskCaptor.getValue().getData().getParameters()[0];
     assertThat(info.getCvConfigId()).isEqualTo(cvConfigId);
   }
@@ -3838,7 +3838,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
 
     continuousVerificationService.triggerLogDataCollection(accountId);
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(0)).queueTask(taskCaptor.capture());
+    verify(delegateService, times(0)).queueTaskV2(taskCaptor.capture());
   }
 
   @Test
@@ -3858,7 +3858,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
 
     continuousVerificationService.triggerLogDataCollection(accountId);
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(taskCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(taskCaptor.capture());
     SumoDataCollectionInfo info = (SumoDataCollectionInfo) taskCaptor.getValue().getData().getParameters()[0];
     assertThat(info.getCvConfigId()).isEqualTo(cvConfigId);
   }
@@ -3880,7 +3880,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
 
     continuousVerificationService.triggerLogDataCollection(accountId);
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(taskCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(taskCaptor.capture());
     SumoDataCollectionInfo info = (SumoDataCollectionInfo) taskCaptor.getValue().getData().getParameters()[0];
     assertThat(info.getCvConfigId()).isEqualTo(cvConfigId);
   }
@@ -3902,7 +3902,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
 
     continuousVerificationService.triggerLogDataCollection(accountId);
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(0)).queueTask(taskCaptor.capture());
+    verify(delegateService, times(0)).queueTaskV2(taskCaptor.capture());
   }
 
   @Test

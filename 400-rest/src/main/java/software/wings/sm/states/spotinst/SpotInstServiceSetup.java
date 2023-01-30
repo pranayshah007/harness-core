@@ -124,7 +124,7 @@ public class SpotInstServiceSetup extends State {
         spotinstSetupStateExecutionData.getEnvironmentType(), spotinstSetupStateExecutionData.getServiceId(),
         isSelectionLogsTrackingForTasksEnabled());
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
 
     return ExecutionResponse.builder()

@@ -11,7 +11,6 @@ import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_O
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -33,6 +32,7 @@ import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.gitops.GitOpsFetchAppTaskParams;
 import io.harness.delegate.task.gitops.GitOpsFetchAppTaskResponse;
+import io.harness.encryption.Scope;
 import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -66,12 +66,15 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -81,6 +84,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.GITOPS)
@@ -99,7 +103,7 @@ public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResp
 
   @Inject private CDStepHelper cdStepHelper;
   @Inject private StepHelper stepHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private BaseUrls baseUrls;
 
@@ -142,10 +146,7 @@ public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResp
       }
 
       GitopsClustersOutcome gitopsClustersOutcome = (GitopsClustersOutcome) optionalGitOpsSweepingOutput.getOutput();
-      List<String> clusterIds = gitopsClustersOutcome.getClustersData()
-                                    .stream()
-                                    .map(GitopsClustersOutcome.ClusterData::getClusterId)
-                                    .collect(Collectors.toList());
+      List<String> scopedClusterIds = getScopedClusterIds(gitopsClustersOutcome);
 
       IdentifierRef identifierRef = IdentifierRef.builder()
                                         .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
@@ -154,7 +155,7 @@ public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResp
                                         .build();
 
       List<Application> applications =
-          fetchLinkedApps(gitOpsFetchAppTaskResponse.getAppName(), clusterIds, identifierRef);
+          fetchLinkedApps(gitOpsFetchAppTaskResponse.getAppName(), scopedClusterIds, identifierRef);
       populateAppUrls(applications, identifierRef);
 
       StepResponse.StepOutcome stepOutcome = null;
@@ -197,6 +198,25 @@ public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResp
     }
   }
 
+  @VisibleForTesting
+  @NotNull
+  List<String> getScopedClusterIds(GitopsClustersOutcome gitopsClustersOutcome) {
+    if (gitopsClustersOutcome == null || gitopsClustersOutcome.getClustersData() == null) {
+      log.debug("No Gitops Clusters found");
+      return Collections.emptyList();
+    }
+    List<IdentifierRef> clusterIds = gitopsClustersOutcome.getClustersData()
+                                         .stream()
+                                         .map(clusterdata
+                                             -> IdentifierRef.builder()
+                                                    .identifier(clusterdata.getClusterId())
+                                                    .scope(Scope.fromString(clusterdata.getScope()))
+                                                    .build())
+                                         .collect(Collectors.toList());
+
+    return clusterIds.stream().map(IdentifierRef::buildScopedIdentifier).collect(Collectors.toList());
+  }
+
   private void populateAppUrls(List<Application> applications, IdentifierRef identifierRef) {
     if (EmptyPredicate.isEmpty(applications)) {
       return;
@@ -237,7 +257,7 @@ public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResp
                                     .parameters(new Object[] {fetchAppTaskParams})
                                     .build();
 
-      return prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+      return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
           StepUtils.generateLogKeys(ambiance, Collections.singletonList(LOG_KEY_SUFFIX)), Collections.emptyList(),
           TaskType.GITOPS_FETCH_APP_TASK.getDisplayName(),
           TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),

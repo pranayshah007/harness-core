@@ -282,7 +282,7 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
     }
 
     VmStepInfo vmStepInfo = vmStepSerializer.serialize(ambiance, ciStepInfo, stageInfraDetails, stepIdentifier,
-        ParameterField.createValueField(Timeout.fromString(stringTimeout)));
+        ParameterField.createValueField(Timeout.fromString(stringTimeout)), stageDetails.getRegistries());
     Set<String> secrets = vmStepSerializer.getStepSecrets(vmStepInfo, ambiance);
     CIExecuteStepTaskParams params = getVmTaskParams(ambiance, vmStepInfo, secrets, stageInfraDetails, stageDetails,
         vmDetailsOutcome, runtimeId, stepIdentifier, logKey);

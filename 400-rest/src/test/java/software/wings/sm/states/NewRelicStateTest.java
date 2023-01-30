@@ -359,7 +359,7 @@ public class NewRelicStateTest extends APMStateVerificationTestBase {
     spyState.triggerAnalysisDataCollection(executionContext, AnalysisContext.builder().build(), executionData, hosts);
 
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(delegateTaskArgumentCaptor.capture());
 
     DelegateTask task = delegateTaskArgumentCaptor.getValue();
     NewRelicDataCollectionInfo dataCollectionInfo = (NewRelicDataCollectionInfo) task.getData().getParameters()[0];

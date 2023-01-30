@@ -30,10 +30,10 @@ import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -134,17 +134,17 @@ public class PipelineExpressionHelperTest extends CategoryTest {
                    .setPlanExecutionId("PLAN_EXECUTION_ID")
                    .setMetadata(ExecutionMetadata.newBuilder().build())
                    .build();
-    when(pmsExecutionSummaryService.getPipelineExecutionSummary(
-             "__ACCOUNT_ID__", "org_test", "project_test", "PLAN_EXECUTION_ID"))
-        .thenReturn(Optional.empty());
+    when(pmsExecutionSummaryService.getPipelineExecutionSummaryWithProjections(
+             "PLAN_EXECUTION_ID", Sets.newHashSet(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.modules)))
+        .thenReturn(null);
     assertEquals(pipelineExpressionHelper.getModuleName(ambiance), "cd");
     List<String> modules = new ArrayList<>();
     modules.add("pms");
     modules.add("ci");
     modules.add("cd");
-    when(pmsExecutionSummaryService.getPipelineExecutionSummary(
-             "__ACCOUNT_ID__", "org_test", "project_test", "PLAN_EXECUTION_ID"))
-        .thenReturn(Optional.of(PipelineExecutionSummaryEntity.builder().modules(modules).build()));
+    when(pmsExecutionSummaryService.getPipelineExecutionSummaryWithProjections(
+             "PLAN_EXECUTION_ID", Sets.newHashSet(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.modules)))
+        .thenReturn(PipelineExecutionSummaryEntity.builder().modules(modules).build());
     assertEquals(pipelineExpressionHelper.getModuleName(ambiance), "ci");
   }
 

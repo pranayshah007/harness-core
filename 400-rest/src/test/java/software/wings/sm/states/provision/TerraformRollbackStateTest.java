@@ -277,7 +277,7 @@ public class TerraformRollbackStateTest extends WingsBaseTest {
     verifyResponse(executionResponse, "sourceRepoBranch", true, 1, TerraformCommand.DESTROY);
     verify(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(captor.capture());
+    verify(delegateService, times(1)).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask.getData().getParameters().length).isEqualTo(1);
     TerraformProvisionParameters parameters = (TerraformProvisionParameters) delegateTask.getData().getParameters()[0];
@@ -424,7 +424,7 @@ public class TerraformRollbackStateTest extends WingsBaseTest {
         .isEqualTo(ACTIVITY_ID);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(i)).queueTask(captor.capture());
+    verify(delegateService, times(i)).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask.getData().getParameters().length).isEqualTo(1);
     TerraformProvisionParameters parameters = (TerraformProvisionParameters) delegateTask.getData().getParameters()[0];

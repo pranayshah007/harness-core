@@ -50,6 +50,7 @@ import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.executable.CiAsyncExecutable;
 import io.harness.ci.execution.BackgroundTaskUtility;
+import io.harness.ci.execution.QueueExecutionUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
@@ -83,6 +84,7 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.hsqs.client.HsqsServiceClient;
 import io.harness.hsqs.client.model.EnqueueRequest;
+import io.harness.hsqs.client.model.EnqueueResponse;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logging.CommandExecutionStatus;
@@ -139,6 +141,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(CI)
@@ -169,6 +172,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
 
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
+  @Inject QueueExecutionUtils queueExecutionUtils;
   private static final String DEPENDENCY_OUTCOME = "dependencies";
 
   @Override
@@ -199,10 +203,15 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
                                           .payload(payload)
                                           .build();
       try {
-        hsqsServiceClient.enqueue(enqueueRequest, ciExecutionServiceConfig.getQueueServiceClient().getAuthToken())
-            .execute();
+        Response<EnqueueResponse> execute = hsqsServiceClient.enqueue(enqueueRequest).execute();
+        if (execute.code() == 200) {
+          log.info("build queued. message id: {}", execute.body().getItemId());
+        } else {
+          log.info("build queue failed. response code {}", execute.code());
+        }
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        throw new CIStageExecutionException(format("failed to process execution, queuing failed. runtime Id: {}",
+            AmbianceUtils.getStageRuntimeIdAmbiance(ambiance)));
       }
     } else {
       taskId = executeBuild(ambiance, stepParameters);
@@ -267,6 +276,12 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(
         accountId, taskData, abstractions, generateLogAbstractions(ambiance));
+
+    try {
+      queueExecutionUtils.addActiveExecutionBuild(initializeStepInfo, accountId, stageExecutionId);
+    } catch (Exception ex) {
+      log.error("Failed to add Execution record for {}", stageExecutionId, ex);
+    }
 
     return ciDelegateTaskExecutor.queueTask(abstractions, task,
         taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()), new ArrayList<>(),

@@ -57,8 +57,6 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
   ConsumerMode mode = ConsumerMode.SNAPSHOT;
   private static final EventsFrameworkChangeConsumerStreaming EVENTS_FRAMEWORK_CHANGE_CONSUMER_STREAMING =
       new EventsFrameworkChangeConsumerStreaming(ChangeConsumerConfig.builder()
-                                                     .sleepInterval(10)
-                                                     .producingCountPerBatch(10)
                                                      .redisStreamSize(10)
                                                      .consumerType(ConsumerType.EVENTS_FRAMEWORK)
                                                      .eventsFrameworkConfiguration(null)
@@ -109,8 +107,6 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
   public void testHandleBatch() throws InterruptedException, InvalidProtocolBufferException {
     EventsFrameworkChangeConsumerStreaming eventsFrameworkChangeConsumerStreaming =
         new EventsFrameworkChangeConsumerStreaming(ChangeConsumerConfig.builder()
-                                                       .sleepInterval(10)
-                                                       .producingCountPerBatch(10)
                                                        .redisStreamSize(10)
                                                        .consumerType(ConsumerType.EVENTS_FRAMEWORK)
                                                        .eventsFrameworkConfiguration(null)
