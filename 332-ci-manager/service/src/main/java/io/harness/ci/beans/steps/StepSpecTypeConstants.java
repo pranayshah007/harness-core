@@ -17,6 +17,8 @@ public interface StepSpecTypeConstants {
   String BACKGROUND = "Background";
   String RUN_TEST = "RunTests";
   String PLUGIN = "Plugin";
+  String SSCSGeneration = "SSCSGeneration";
+
   String SECURITY = "Security";
   String RESTORE_CACHE_GCS = "RestoreCacheGCS";
   String RESTORE_CACHE_S3 = "RestoreCacheS3";
@@ -30,6 +32,7 @@ public interface StepSpecTypeConstants {
   String BUILD_AND_PUSH_GCR = "BuildAndPushGCR";
   String BUILD_AND_PUSH_ECR = "BuildAndPushECR";
   String BUILD_AND_PUSH_ACR = "BuildAndPushACR";
+  String SSCS_GENERATION = "SSCSGeneration";
   String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
   String CI_STAGE = "CI";
   String SECURITY_STAGE = "SecurityTests";

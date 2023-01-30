@@ -22,6 +22,7 @@ public class VmImageConfig {
   String buildAndPushDockerRegistry;
   String buildAndPushECR;
   String buildAndPushACR;
+  String sscsGeneration;
   String buildAndPushGCR;
   String gcsUpload;
   String s3Upload;

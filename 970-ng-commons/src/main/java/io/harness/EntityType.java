@@ -213,6 +213,8 @@ public enum EntityType {
   RUN_TEST(ModuleType.CI, EntityTypeConstants.RUN_TEST, IdentifierRef.class, EntityYamlRootNames.RUN_TEST),
   @JsonProperty(EntityTypeConstants.PLUGIN)
   PLUGIN(ModuleType.CI, EntityTypeConstants.PLUGIN, IdentifierRef.class, EntityYamlRootNames.PLUGIN),
+  @JsonProperty(EntityTypeConstants.SSCSGeneration)
+  SSCSGeneration(ModuleType.CI, EntityTypeConstants.SSCSGeneration, IdentifierRef.class, EntityYamlRootNames.SSCSGeneration),
   @JsonProperty(EntityTypeConstants.RESTORE_CACHE_GCS)
   RESTORE_CACHE_GCS(
       ModuleType.CI, EntityTypeConstants.RESTORE_CACHE_GCS, IdentifierRef.class, EntityYamlRootNames.RESTORE_CACHE_GCS),

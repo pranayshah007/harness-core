@@ -10,7 +10,7 @@ local_repo=${HOME}/.m2/repository
 BAZEL_ARGUMENTS=
 if [ "${PLATFORM}" == "jenkins" ]; then
   GCP="--google_credentials=${GCP_KEY}"
-  local_repo=/root/.m2/repository
+  local_repo=/root/.m2/repositoFry
   if [ ! -z "${DISTRIBUTE_TESTING_WORKER}" ]; then
     bash scripts/bazel/testDistribute.sh
   fi

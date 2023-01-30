@@ -15,48 +15,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.steps.StepSpecTypeConstants;
-import io.harness.ci.creator.variables.ArtifactoryUploadStepVariableCreator;
-import io.harness.ci.creator.variables.BackgroundStepVariableCreator;
-import io.harness.ci.creator.variables.BuildAndPushACRStepVariableCreator;
-import io.harness.ci.creator.variables.BuildAndPushECRStepVariableCreator;
-import io.harness.ci.creator.variables.BuildAndPushGCRStepVariableCreator;
-import io.harness.ci.creator.variables.CIStageVariableCreator;
-import io.harness.ci.creator.variables.CIStepVariableCreator;
-import io.harness.ci.creator.variables.DockerStepVariableCreator;
-import io.harness.ci.creator.variables.GCSUploadStepVariableCreator;
-import io.harness.ci.creator.variables.GitCloneStepVariableCreator;
-import io.harness.ci.creator.variables.PluginStepVariableCreator;
-import io.harness.ci.creator.variables.RestoreCacheGCSStepVariableCreator;
-import io.harness.ci.creator.variables.RestoreCacheS3StepVariableCreator;
-import io.harness.ci.creator.variables.RunStepVariableCreator;
-import io.harness.ci.creator.variables.RunTestStepVariableCreator;
-import io.harness.ci.creator.variables.S3UploadStepVariableCreator;
-import io.harness.ci.creator.variables.SaveCacheGCSStepVariableCreator;
-import io.harness.ci.creator.variables.SaveCacheS3StepVariableCreator;
-import io.harness.ci.creator.variables.SecurityStepVariableCreator;
+import io.harness.ci.creator.variables.*;
 import io.harness.ci.plan.creator.filter.CIStageFilterJsonCreatorV2;
 import io.harness.ci.plan.creator.stage.IntegrationStagePMSPlanCreatorV2;
 import io.harness.ci.plan.creator.step.CIPMSStepFilterJsonCreator;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreator;
 import io.harness.ci.plan.creator.step.CIStepFilterJsonCreatorV2;
-import io.harness.ci.plancreator.ArtifactoryUploadStepPlanCreator;
-import io.harness.ci.plancreator.BackgroundStepPlanCreator;
-import io.harness.ci.plancreator.BuildAndPushACRStepPlanCreator;
-import io.harness.ci.plancreator.BuildAndPushECRStepPlanCreator;
-import io.harness.ci.plancreator.BuildAndPushGCRStepPlanCreator;
-import io.harness.ci.plancreator.DockerStepPlanCreator;
-import io.harness.ci.plancreator.GCSUploadStepPlanCreator;
-import io.harness.ci.plancreator.GitCloneStepPlanCreator;
-import io.harness.ci.plancreator.InitializeStepPlanCreator;
-import io.harness.ci.plancreator.PluginStepPlanCreator;
-import io.harness.ci.plancreator.RestoreCacheGCSStepPlanCreator;
-import io.harness.ci.plancreator.RestoreCacheS3StepPlanCreator;
-import io.harness.ci.plancreator.RunStepPlanCreator;
-import io.harness.ci.plancreator.RunTestStepPlanCreator;
-import io.harness.ci.plancreator.S3UploadStepPlanCreator;
-import io.harness.ci.plancreator.SaveCacheGCSStepPlanCreator;
-import io.harness.ci.plancreator.SaveCacheS3StepPlanCreator;
-import io.harness.ci.plancreator.SecurityStepPlanCreator;
+import io.harness.ci.plancreator.*;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.filters.ExecutionPMSFilterJsonCreator;
@@ -119,6 +84,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new StrategyConfigPlanCreator());
     planCreators.add(new GitCloneStepPlanCreator());
     planCreators.add(new InitializeStepPlanCreator());
+    planCreators.add(new SSCSGenerationStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -161,6 +127,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     variableCreators.add(new SecurityStepVariableCreator());
     variableCreators.add(new GitCloneStepVariableCreator());
     variableCreators.add(new StrategyVariableCreator());
+    variableCreators.add(new SSCSGenerationStepVariableCreator());
     variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS)));
     variableCreators.add(new EmptyVariableCreator(STEP, Set.of(LITE_ENGINE_TASK)));
 
@@ -232,6 +199,14 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
                                     .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Security").build())
                                     .build();
 
+    StepInfo sscsGenerationStepInfo = StepInfo.newBuilder()
+            .setName("SSCS SBOM Generation")
+            .setType(StepSpecTypeConstants.SSCSGeneration)
+            //.setFeatureFlag(FeatureName.SECURITY.name())
+            //.setFeatureRestrictionName(FeatureRestrictionName.SECURITY.name())
+            .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("SSCS").build())
+            .build();
+
     StepInfo ecrPushBuilds =
         StepInfo.newBuilder()
             .setName("Build and Push to ECR")
@@ -298,6 +273,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     stepInfos.add(saveCacheToGCS);
     stepInfos.add(gitCloneStepInfo);
     stepInfos.add(saveCacheToS3);
+    stepInfos.add(sscsGenerationStepInfo);
 
     return stepInfos;
   }

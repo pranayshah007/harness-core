@@ -27,6 +27,7 @@ import io.harness.ci.states.RunTestsStep;
 import io.harness.ci.states.SaveCacheGCSStep;
 import io.harness.ci.states.SaveCacheS3Step;
 import io.harness.ci.states.SecurityStep;
+import io.harness.ci.states.SSCSGenerationStep;
 import io.harness.ci.states.UploadToArtifactoryStep;
 import io.harness.ci.states.UploadToGCSStep;
 import io.harness.ci.states.UploadToS3Step;
@@ -67,6 +68,7 @@ public class ExecutionRegistrar {
     engineSteps.put(CodeBaseStep.STEP_TYPE, CodeBaseStep.class);
     engineSteps.put(CodeBaseTaskStep.STEP_TYPE, CodeBaseTaskStep.class);
     engineSteps.put(CISpecStep.STEP_TYPE, CISpecStep.class);
+    engineSteps.put(SSCSGenerationStep.STEP_TYPE, SSCSGenerationStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     return engineSteps;
   }

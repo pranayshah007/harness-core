@@ -28,6 +28,7 @@ public class CIExecutionImages {
   @NotBlank String buildAndPushDockerRegistryTag;
   @NotBlank String buildAndPushECRTag;
   @NotBlank String buildAndPushACRTag;
+  @NotBlank String sscsGenerationTag;
   @NotBlank String buildAndPushGCRTag;
   @NotBlank String gcsUploadTag;
   @NotBlank String s3UploadTag;

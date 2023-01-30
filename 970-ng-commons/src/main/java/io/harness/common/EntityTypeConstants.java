@@ -64,6 +64,7 @@ public interface EntityTypeConstants {
   String BACKGROUND_STEP = "Background";
   String RUN_TEST = "RunTests";
   String PLUGIN = "Plugin";
+  String SSCSGeneration = "SSCSGeneration";
   String RESTORE_CACHE_GCS = "RestoreCacheGCS";
   String RESTORE_CACHE_S3 = "RestoreCacheS3";
   String SAVE_CACHE_GCS = "SaveCacheGCS";

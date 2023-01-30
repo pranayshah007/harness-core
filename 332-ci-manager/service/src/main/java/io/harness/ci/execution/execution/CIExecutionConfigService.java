@@ -103,6 +103,9 @@ public class CIExecutionConfigService {
       case BUILD_PUSH_ACR:
         executionConfig.setBuildAndPushACRImage(value);
         break;
+      case SSCS_Generation:
+        executionConfig.setSscsGenerationImage(value);
+        break;
       case BUILD_PUSH_GCR:
         executionConfig.setBuildAndPushGCRImage(value);
         break;
@@ -229,6 +232,9 @@ public class CIExecutionConfigService {
     }
     if (Strings.isNotBlank(overriddenConfig.getBuildAndPushACRTag())) {
       defaultConfig.setBuildAndPushACRTag(overriddenConfig.getBuildAndPushACRTag());
+    }
+    if (Strings.isNotBlank(overriddenConfig.getSscsGenerationTag())) {
+      defaultConfig.setSscsGenerationTag(overriddenConfig.getSscsGenerationTag());
     }
     if (Strings.isNotBlank(overriddenConfig.getBuildAndPushECRTag())) {
       defaultConfig.setBuildAndPushECRTag(overriddenConfig.getBuildAndPushECRTag());
@@ -427,6 +433,11 @@ public class CIExecutionConfigService {
           image = ciExecutionConfig.getBuildAndPushACRImage();
         }
         break;
+      case SSCSGeneration:
+        if (Strings.isNotBlank(ciExecutionConfig.getSscsGenerationImage())) {
+          image = ciExecutionConfig.getSscsGenerationImage();
+        }
+        break;
       case RESTORE_CACHE_S3:
       case SAVE_CACHE_S3:
         if (Strings.isNotBlank(ciExecutionConfig.getCacheS3Tag())) {
@@ -485,6 +496,8 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getBuildAndPushECRConfig();
       case ACR:
         return ciExecutionServiceConfig.getStepConfig().getBuildAndPushACRConfig();
+      case SSCSGeneration:
+        return ciExecutionServiceConfig.getStepConfig().getSscsGenerationConfig();
       case RESTORE_CACHE_S3:
       case SAVE_CACHE_S3:
         return ciExecutionServiceConfig.getStepConfig().getCacheS3Config();

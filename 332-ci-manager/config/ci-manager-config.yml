@@ -96,7 +96,8 @@ scmConnectionConfig:
 
 logServiceConfig:
   internalUrl: http://localhost:8079
-  baseUrl: https://qa.harness.io/log-service/
+  baseUrl: https://9202-122-171-21-106.in.ngrok.io
+
   globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
 
 tiServiceConfig:
@@ -131,10 +132,10 @@ ciExecutionServiceConfig:
   defaultCPULimit: 400
   defaultInternalImageConnector: ''
   pvcDefaultStorageSize: 25600
-  delegateServiceEndpointVariableValue: "delegate-service:8080"
+  delegateServiceEndpointVariableValue: "tcp://0.tcp.in.ngrok.io:18944"
   addonImage: harness/ci-addon:1.14.19
   liteEngineImage: harness/ci-lite-engine:1.14.20
-  isLocal: false
+  isLocal: true
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
     serviceKey: "gcp_service_key"
@@ -164,6 +165,10 @@ ciExecutionServiceConfig:
       image: plugins/kaniko-acr:1.6.7
       entrypoint:
         - /kaniko/kaniko-acr
+    sscsGenerationConfig:
+      image: deep232/plugins
+      entrypoint:
+        - /bin/drone-download
     gcsUploadConfig:
       image: plugins/gcs:1.3.0
       entrypoint:
@@ -243,7 +248,7 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
+shouldConfigureWithPMS: true
 
 enableDashboardTimescale: false
 

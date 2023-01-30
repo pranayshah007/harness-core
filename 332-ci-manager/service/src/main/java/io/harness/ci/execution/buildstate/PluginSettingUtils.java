@@ -15,6 +15,7 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveListParamet
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
+import static io.harness.beans.steps.CIStepInfoType.SSCSGeneration;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_SHA;
@@ -54,19 +55,7 @@ import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.CIStepInfoType;
-import io.harness.beans.steps.stepinfo.ACRStepInfo;
-import io.harness.beans.steps.stepinfo.DockerStepInfo;
-import io.harness.beans.steps.stepinfo.ECRStepInfo;
-import io.harness.beans.steps.stepinfo.GCRStepInfo;
-import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
-import io.harness.beans.steps.stepinfo.RestoreCacheGCSStepInfo;
-import io.harness.beans.steps.stepinfo.RestoreCacheS3StepInfo;
-import io.harness.beans.steps.stepinfo.SaveCacheGCSStepInfo;
-import io.harness.beans.steps.stepinfo.SaveCacheS3StepInfo;
-import io.harness.beans.steps.stepinfo.SecurityStepInfo;
-import io.harness.beans.steps.stepinfo.UploadToArtifactoryStepInfo;
-import io.harness.beans.steps.stepinfo.UploadToGCSStepInfo;
-import io.harness.beans.steps.stepinfo.UploadToS3StepInfo;
+import io.harness.beans.steps.stepinfo.*;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.beans.yaml.extended.ArchiveFormat;
 import io.harness.ci.integrationstage.BuildEnvironmentUtils;
@@ -172,6 +161,8 @@ public class PluginSettingUtils {
         return getRestoreCacheS3StepInfoEnvVariables((RestoreCacheS3StepInfo) stepInfo, identifier, timeout);
       case GIT_CLONE:
         return getGitCloneStepInfoEnvVariables((GitCloneStepInfo) stepInfo, ambiance, identifier);
+      case SSCSGeneration:
+        return getACRStepInfoEnvVariables((SSCSGenerationStepInfo) stepInfo, identifier, infraType);
       default:
         throw new IllegalStateException("Unexpected value: " + stepInfo.getNonYamlInfo().getStepInfoType());
     }
@@ -227,6 +218,9 @@ public class PluginSettingUtils {
         map.put(EnvVariableEnum.ARTIFACTORY_ENDPOINT, PLUGIN_URL);
         map.put(EnvVariableEnum.ARTIFACTORY_USERNAME, PLUGIN_USERNAME);
         map.put(EnvVariableEnum.ARTIFACTORY_PASSWORD, PLUGIN_PASSW);
+        return map;
+      case SSCSGeneration:
+        map.put(EnvVariableEnum.GCP_KEY, PLUGIN_JSON_KEY);
         return map;
       case GIT_CLONE:
         return map;
@@ -299,6 +293,41 @@ public class PluginSettingUtils {
     } else if (infraType == Type.VM) {
       setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
     }
+
+    return map;
+  }
+  private static Map<String, String> getACRStepInfoEnvVariables(
+          SSCSGenerationStepInfo stepInfo, String identifier, Type infraType) {
+    Map<String, String> map = new HashMap<>();
+
+    String SSCSGeneration = " SSCSGeneration";
+
+    String sbomSource = resolveStringParameter(
+            "SbomSource", SSCSGeneration, identifier, stepInfo.getSbomSource(), false);
+    setMandatoryEnvironmentVariable(map, "PLUGIN_SBOMSOURCE", sbomSource);
+
+    String sbomDestination = resolveStringParameter(
+            "SbomDestination", SSCSGeneration, identifier, stepInfo.getSbomDestination(), false);
+    setMandatoryEnvironmentVariable(map, "PLUGIN_SBOMDESTINATION", sbomDestination);
+    String sbomFormat = resolveStringParameter(
+            "SbomFormat", SSCSGeneration, identifier, stepInfo.getSbomFormat(), false);
+    setMandatoryEnvironmentVariable(map, "SbomFormat", sbomFormat);
+    String sbomGenerationTool = resolveStringParameter(
+            "SbomFormat", SSCSGeneration, identifier, stepInfo.getSbomGenerationTool(), false);
+    setMandatoryEnvironmentVariable(map, "SbomGenerationTool", sbomGenerationTool);
+
+    String target = null;
+    String stepInfoBucket = resolveStringParameter("bucket", SSCSGeneration, identifier, stepInfo.getBucket(), true);
+    String stepInfoTarget = resolveStringParameter("target", SSCSGeneration, identifier, stepInfo.getTarget(), false);
+
+    if (stepInfoTarget != null && !stepInfoTarget.equals(UNRESOLVED_PARAMETER)) {
+      target = format("%s/%s", trimTrailingCharacter(stepInfoBucket, '/'), trimLeadingCharacter(stepInfoTarget, '/'));
+    } else {
+      target = format("%s", trimTrailingCharacter(stepInfoBucket, '/'));
+    }
+    setMandatoryEnvironmentVariable(map, PLUGIN_TARGET, target);
+
+    setMandatoryEnvironmentVariable(map, PLUGIN_TAGS,"latest");
 
     return map;
   }

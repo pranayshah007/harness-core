@@ -280,6 +280,7 @@ public class K8InitializeStepUtils {
       case DOCKER:
       case ECR:
       case ACR:
+      case SSCSGeneration:
       case GCR:
       case SAVE_CACHE_S3:
       case RESTORE_CACHE_S3:
@@ -314,6 +315,7 @@ public class K8InitializeStepUtils {
       case DOCKER:
       case ECR:
       case ACR:
+      case SSCSGeneration:
       case GCR:
         throw new CIStageExecutionException(format("%s step not allowed in windows kubernetes builds", stepType));
       default:
@@ -373,6 +375,7 @@ public class K8InitializeStepUtils {
       switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
         case ECR:
         case ACR:
+        case SSCSGeneration:
         case GCR:
         case DOCKER:
           envVarMap.put("container", "docker");
@@ -935,6 +938,7 @@ public class K8InitializeStepUtils {
       case GCR:
       case ECR:
       case ACR:
+      case SSCSGeneration:
       case DOCKER:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
@@ -983,6 +987,7 @@ public class K8InitializeStepUtils {
       case GCR:
       case ECR:
       case ACR:
+      case SSCSGeneration:
       case DOCKER:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
@@ -1187,6 +1192,7 @@ public class K8InitializeStepUtils {
       case DOCKER:
       case ECR:
       case ACR:
+      case SSCSGeneration:
       case GCR:
       case SAVE_CACHE_S3:
       case RESTORE_CACHE_S3:

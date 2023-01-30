@@ -176,4 +176,5 @@ public class EntityYamlRootNames {
   public static final String CHAOS_STEP = "Chaos";
   public static final String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   public static final String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
+  public static final String SSCSGeneration = "SSCSGeneration";
 }

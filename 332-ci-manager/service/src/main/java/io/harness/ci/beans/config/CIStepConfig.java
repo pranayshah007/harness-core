@@ -23,6 +23,7 @@ public class CIStepConfig {
   StepImageConfig buildAndPushECRConfig;
   StepImageConfig buildAndPushGCRConfig;
   StepImageConfig buildAndPushACRConfig;
+  StepImageConfig sscsGenerationConfig;
   StepImageConfig gcsUploadConfig;
   StepImageConfig s3UploadConfig;
   StepImageConfig artifactoryUploadConfig;
