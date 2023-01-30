@@ -583,7 +583,8 @@ public enum FeatureName {
       "To enable pipeline-settings and limits in Project Default Settings in UI", HarnessTeam.PIPELINE),
   ENABLE_K8_BUILDS("FF for enabling kubernetes builds as an option", HarnessTeam.CI),
   PL_USER_DELETION_V2("Modularising user deletion flows separately for CG and NG ", HarnessTeam.PL),
-  DISABLE_INSTANCE_STATS_JOB_CG("Disable Instance Stats Job from CG", HarnessTeam.CDP);
+  DISABLE_INSTANCE_STATS_JOB_CG("Disable Instance Stats Job from CG", HarnessTeam.CDP),
+  CI_REMOTE_DEBUG("Enable the option for remote debug for CI users.", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {
