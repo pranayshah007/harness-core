@@ -30,6 +30,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -64,10 +65,10 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
     final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
     log.info("Running s3ToCH for account: " + jobConstants.getAccountId());
     String accountId = jobConstants.getAccountId();
-    Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
-    Instant endTime = Instant.ofEpochMilli(jobConstants.getJobEndTime());
-    // Instant endTime = Instant.now();
-    // Instant startTime = endTime.minus(15, ChronoUnit.HOURS);
+//    Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
+//    Instant endTime = Instant.ofEpochMilli(jobConstants.getJobEndTime());
+    Instant endTime = Instant.now();
+    Instant startTime = endTime.minus(15, ChronoUnit.HOURS);
 
     createDBAndTables();
 
