@@ -43,6 +43,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.OrchestrationEvent;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
+import io.harness.pms.events.PipelineEndEvent;
 import io.harness.pms.events.PipelineStartEvent;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
@@ -204,7 +205,7 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
 
   private OutboxEvent fireInformAndSendAuditOnEnd(Ambiance ambiance) {
     // Sending AuditEvent
-    OutboxEvent outboxEvent = outboxService.save(new PipelineStartEvent());
+    OutboxEvent outboxEvent = outboxService.save(new PipelineEndEvent());
     orchestrationEndSubject.fireInform(OrchestrationEndObserver::onEnd, ambiance);
     return outboxEvent;
   }
