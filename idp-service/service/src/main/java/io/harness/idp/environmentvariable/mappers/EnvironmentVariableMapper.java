@@ -1,9 +1,9 @@
-package io.harness.mappers;
+package io.harness.idp.environmentvariable.mappers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.entity.EnvironmentVariable;
-import io.harness.idp.environmentvariable.beans.EnvironmentVariableDTO;
+import io.harness.idp.environmentvariable.beans.entity.EnvironmentVariable;
+import io.harness.idp.environmentvariable.beans.dto.EnvironmentVariableDTO;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.IDP)

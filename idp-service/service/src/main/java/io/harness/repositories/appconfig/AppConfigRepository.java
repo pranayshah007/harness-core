@@ -3,7 +3,7 @@ package io.harness.repositories.appconfig;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.entity.AppConfig;
+import io.harness.idp.appconfig.beans.entity.AppConfig;
 import org.springframework.data.repository.CrudRepository;
 
 @HarnessRepo

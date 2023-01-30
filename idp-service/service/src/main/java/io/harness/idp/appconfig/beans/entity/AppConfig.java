@@ -1,4 +1,4 @@
-package io.harness.beans.entity;
+package io.harness.idp.appconfig.beans.entity;
 
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;

@@ -1,4 +1,4 @@
-package io.harness.idp.appconfig.beans;
+package io.harness.idp.environmentvariable.beans.dto;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -8,7 +8,9 @@ import lombok.Getter;
 @OwnedBy(HarnessTeam.IDP)
 @Getter
 @Builder
-public class AppConfigDTO {
+public class EnvironmentVariableDTO {
+    private String envName;
+    private String secretIdentifier;
     private String accountIdentifier;
     private Long createdAt;
     private Long lastModifiedAt;

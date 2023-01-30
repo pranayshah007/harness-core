@@ -9,8 +9,8 @@ package io.harness.serializer.morphia;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.entity.AppConfig;
-import io.harness.beans.entity.EnvironmentVariable;
+import io.harness.idp.appconfig.beans.entity.AppConfig;
+import io.harness.idp.environmentvariable.beans.entity.EnvironmentVariable;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 

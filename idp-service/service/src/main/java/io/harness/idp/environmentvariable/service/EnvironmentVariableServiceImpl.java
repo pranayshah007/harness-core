@@ -2,9 +2,9 @@ package io.harness.idp.environmentvariable.service;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.harness.beans.entity.EnvironmentVariable;
-import io.harness.idp.environmentvariable.beans.EnvironmentVariableDTO;
-import io.harness.mappers.EnvironmentVariableMapper;
+import io.harness.idp.environmentvariable.beans.entity.EnvironmentVariable;
+import io.harness.idp.environmentvariable.beans.dto.EnvironmentVariableDTO;
+import io.harness.idp.environmentvariable.mappers.EnvironmentVariableMapper;
 import io.harness.repositories.environmentvariable.EnvironmentVariableRepository;
 import lombok.AllArgsConstructor;
 
