@@ -8,7 +8,6 @@
 package io.harness.polling.service.intfc;
 
 import static io.harness.rule.OwnerRule.INDER;
-import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -41,7 +40,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -51,7 +49,7 @@ public class PollingServiceTest extends CategoryTest {
   private static final String ORG_ID = "orgId";
   private static final String PROJECT_ID = "projectId";
   private static final String SIGNATURE_1 = "signature1";
-  @InjectMocks @Spy PollingServiceImpl pollingService;
+  @InjectMocks PollingServiceImpl pollingService;
   @Mock PollingRepository pollingRepository;
   @Mock PollingDocumentMapper pollingDocumentMapper;
 
@@ -106,7 +104,6 @@ public class PollingServiceTest extends CategoryTest {
     verify(pollingDocumentMapper).toPollingDocument(pollingItem);
     verify(pollingRepository, never()).save(pollingDocument);
     verify(pollingRepository).findByUuidAndAccountIdAndSignature(anyString(), anyString(), any());
-    verify(pollingService).resetPerpetualTask(pollingDocument);
   }
 
   @Test
@@ -129,30 +126,6 @@ public class PollingServiceTest extends CategoryTest {
     verify(pollingRepository).findByUuidAndAccountIdAndSignature(anyString(), anyString(), any());
     verify(pollingRepository).removeDocumentIfOnlySubscriber(anyString(), anyString(), any());
     verify(pollingRepository).save(newPollingDocument);
-  }
-
-  @Test
-  @Owner(developers = VINICIUS)
-  @Category(UnitTests.class)
-  public void testSubscribeWithUpdateToExistingPollingDocument() {
-    PollingItem pollingItem = PollingItem.newBuilder().build();
-    PollingDocument newPollingDocument = getArtifactPollingDocument("id1");
-    PollingDocument existingPollingDocument = getArtifactPollingDocument("id2");
-    when(pollingDocumentMapper.toPollingDocument(pollingItem)).thenReturn(newPollingDocument);
-    when(pollingRepository.findByUuidAndAccountIdAndSignature(
-             newPollingDocument.getUuid(), newPollingDocument.getAccountId(), newPollingDocument.getSignatures()))
-        .thenReturn(null);
-    when(pollingRepository.addSubscribersToExistingPollingDoc(newPollingDocument.getAccountId(),
-             newPollingDocument.getOrgIdentifier(), newPollingDocument.getProjectIdentifier(),
-             newPollingDocument.getPollingType(), newPollingDocument.getPollingInfo(),
-             newPollingDocument.getSignatures()))
-        .thenReturn(existingPollingDocument);
-
-    assertThat(pollingService.subscribe(pollingItem)).isEqualTo("id2");
-    verify(pollingDocumentMapper).toPollingDocument(pollingItem);
-    verify(pollingRepository).findByUuidAndAccountIdAndSignature(anyString(), anyString(), any());
-    verify(pollingRepository, never()).save(any());
-    verify(pollingService).resetPerpetualTask(existingPollingDocument);
   }
 
   @Test

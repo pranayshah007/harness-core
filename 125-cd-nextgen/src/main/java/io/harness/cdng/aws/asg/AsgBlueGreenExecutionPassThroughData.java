@@ -28,13 +28,15 @@ import org.springframework.data.annotation.TypeAlias;
 public class AsgBlueGreenExecutionPassThroughData extends AsgExecutionPassThroughData {
   AsgLoadBalancerConfig loadBalancerConfig;
   String asgName;
+  boolean firstDeployment;
 
   @Builder(builderMethodName = "blueGreenBuilder")
   public AsgBlueGreenExecutionPassThroughData(InfrastructureOutcome infrastructure,
       UnitProgressData lastActiveUnitProgressData, AsgManifestFetchData asgManifestFetchData,
-      AsgLoadBalancerConfig loadBalancerConfig, String asgName) {
+      AsgLoadBalancerConfig loadBalancerConfig, String asgName, boolean firstDeployment) {
     super(infrastructure, lastActiveUnitProgressData, asgManifestFetchData);
     this.loadBalancerConfig = loadBalancerConfig;
     this.asgName = asgName;
+    this.firstDeployment = firstDeployment;
   }
 }

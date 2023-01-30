@@ -12,9 +12,11 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
+import static io.harness.logging.LogLevel.WARN;
 import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
@@ -114,9 +116,13 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Action;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ActionTypeEnum;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersRequest;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersResponse;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeLoadBalancersResponse;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeRulesRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeRulesResponse;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ForwardActionConfig;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyListenerRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyRuleRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Rule;
@@ -246,11 +252,8 @@ public class AsgSdkManager {
     asgCall(asgClient -> asgClient.updateAutoScalingGroup(updateAutoScalingGroupRequest));
 
     updateTags(asgName, createAutoScalingGroupRequest);
-
     updateLifecyleHooks(asgName, createAutoScalingGroupRequest);
-
     updateLoadBalancers(asgName, createAutoScalingGroupRequest);
-
     updateLoadBalancerTargetGroups(asgName, createAutoScalingGroupRequest);
   }
 
@@ -714,6 +717,77 @@ public class AsgSdkManager {
     asgCall(asgClient -> asgClient.createOrUpdateTags(createOrUpdateTagsRequest));
   }
 
+  public String getDefaultListenerRuleForListener(
+      AwsInternalConfig awsInternalConfig, String region, String listenerArn) {
+    List<Rule> rules = getListenerRulesForListener(awsInternalConfig, region, listenerArn);
+    for (Rule rule : rules) {
+      if (rule.isDefault()) {
+        return rule.ruleArn();
+      }
+    }
+
+    // throw error if default listener rule not found
+    String errorMessage = format("Default listener rule not found for listener %s", listenerArn);
+    throw new InvalidRequestException(errorMessage);
+  }
+
+  public List<Rule> getListenerRulesForListener(
+      AwsInternalConfig awsInternalConfig, String region, String listenerArn) {
+    List<Rule> rules = newArrayList();
+    String nextToken = null;
+    do {
+      DescribeRulesRequest describeRulesRequest =
+          DescribeRulesRequest.builder().listenerArn(listenerArn).marker(nextToken).pageSize(10).build();
+      DescribeRulesResponse describeRulesResponse =
+          elbV2Client.describeRules(awsInternalConfig, describeRulesRequest, region);
+      rules.addAll(describeRulesResponse.rules());
+      nextToken = describeRulesResponse.nextMarker();
+    } while (nextToken != null);
+
+    return rules;
+  }
+
+  public List<String> getTargetGroupArnsFromLoadBalancer(String region, String listenerArn, String listenerRuleArn,
+      String loadBalancer, AwsInternalConfig awsInternalConfig) {
+    software.amazon.awssdk.services.elasticloadbalancingv2.model
+        .DescribeLoadBalancersRequest describeLoadBalancersRequest =
+        software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeLoadBalancersRequest.builder()
+            .names(loadBalancer)
+            .build();
+    DescribeLoadBalancersResponse describeLoadBalancersResponse =
+        elbV2Client.describeLoadBalancer(awsInternalConfig, describeLoadBalancersRequest, region);
+    if (EmptyPredicate.isEmpty(describeLoadBalancersResponse.loadBalancers())) {
+      throw new InvalidRequestException(
+          "load balancer with name:" + loadBalancer + "is not present in this aws account");
+    }
+    String loadBalancerArn = describeLoadBalancersResponse.loadBalancers().get(0).loadBalancerArn();
+    List<Listener> listeners = newArrayList();
+    String nextToken = null;
+    do {
+      DescribeListenersRequest describeListenersRequest =
+          DescribeListenersRequest.builder().loadBalancerArn(loadBalancerArn).marker(nextToken).pageSize(10).build();
+      DescribeListenersResponse describeListenersResponse =
+          elbV2Client.describeListener(awsInternalConfig, describeListenersRequest, region);
+      listeners.addAll(describeListenersResponse.listeners());
+      nextToken = describeLoadBalancersResponse.nextMarker();
+    } while (nextToken != null);
+
+    if (EmptyPredicate.isNotEmpty(listeners)) {
+      return listeners.stream()
+          .filter(
+              listener -> isNotEmpty(listener.listenerArn()) && listenerArn.equalsIgnoreCase(listener.listenerArn()))
+          .map(listener -> getListenerRulesForListener(awsInternalConfig, region, listener.listenerArn()))
+          .flatMap(Collection::stream)
+          .filter(rule -> rule.ruleArn().equalsIgnoreCase(listenerRuleArn))
+          .map(Rule::actions)
+          .flatMap(Collection::stream)
+          .map(Action::targetGroupArn)
+          .collect(Collectors.toList());
+    }
+    throw new InvalidRequestException(
+        "listener with arn:" + listenerArn + "is not present in load balancer: " + loadBalancer);
+  }
+
   public void info(String msg, Object... params) {
     info(msg, false, params);
   }
@@ -730,6 +804,12 @@ public class AsgSdkManager {
     } else {
       logCallback.saveExecutionLog(formatted);
     }
+  }
+
+  public void warn(String msg, Object... params) {
+    String formatted = format(msg, params);
+    log.warn(formatted);
+    logCallback.saveExecutionLog(color(formatted, Yellow, Bold), WARN);
   }
 
   public void error(String msg, String... params) {

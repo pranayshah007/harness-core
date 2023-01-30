@@ -7,6 +7,10 @@
 
 package io.harness.service.infrastructuremapping;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static com.google.common.base.Preconditions.checkArgument;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InfrastructureMappingDTO;
@@ -61,5 +65,22 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
         infrastructureMappingRepository.findAllByAccountIdentifierAndInfrastructureKey(
             accountIdentifier, infrastructureKey);
     return infrastructureMappings.stream().map(InfrastructureMappingMapper::toDTO).collect(Collectors.toList());
+  }
+
+  @Override
+  public boolean deleteAllFromProj(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    checkArgument(isNotEmpty(accountIdentifier), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
+    try {
+      infrastructureMappingRepository.deleteAll(
+          infrastructureMappingRepository.findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifier(
+              accountIdentifier, orgIdentifier, projectIdentifier));
+    } catch (Exception e) {
+      log.error("Error while deleting infrastructure mappings present in a project {}, org {}, account {}",
+          projectIdentifier, orgIdentifier, accountIdentifier);
+      return false;
+    }
+    return true;
   }
 }

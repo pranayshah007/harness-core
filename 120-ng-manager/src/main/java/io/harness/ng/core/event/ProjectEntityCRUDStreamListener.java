@@ -29,6 +29,8 @@ import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.services.ProjectService;
+import io.harness.service.infrastructuremapping.InfrastructureMappingService;
+import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -52,10 +54,15 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
   private final ClusterService clusterService;
   private final EnvironmentGroupService environmentGroupService;
 
+  private final InstanceSyncPerpetualTaskInfoService instanceSyncPerpetualTaskInfoService;
+  private final InfrastructureMappingService infrastructureMappingService;
+
   @Inject
   public ProjectEntityCRUDStreamListener(ProjectService projectService, EnvironmentService environmentService,
       ServiceOverrideService serviceOverrideService, InfrastructureEntityService infraService,
       ServiceEntityService serviceEntityService, ClusterService clusterService,
+      InfrastructureMappingService infrastructureMappingService,
+      InstanceSyncPerpetualTaskInfoService instanceSyncPerpetualTaskInfoService,
       EnvironmentGroupService environmentGroupService) {
     this.projectService = projectService;
     this.environmentService = environmentService;
@@ -64,6 +71,8 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
     this.infraService = infraService;
     this.clusterService = clusterService;
     this.environmentGroupService = environmentGroupService;
+    this.infrastructureMappingService = infrastructureMappingService;
+    this.instanceSyncPerpetualTaskInfoService = instanceSyncPerpetualTaskInfoService;
   }
 
   @Override
@@ -138,8 +147,13 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
         () -> serviceEntityService.forceDeleteAllInProject(accountIdentifier, orgIdentifier, projIdentifier));
     boolean serviceOverridesDeleted = processQuietly(
         () -> serviceOverrideService.deleteAllInProject(accountIdentifier, orgIdentifier, projIdentifier));
+    boolean infraMappingDeleted = processQuietly(
+        () -> infrastructureMappingService.deleteAllFromProj(accountIdentifier, orgIdentifier, projIdentifier));
+    boolean instanceSyncPerpetualTaskInfoDeleted =
+        processQuietly(() -> instanceSyncPerpetualTaskInfoService.deleteAllInstanceSyncPTs(accountIdentifier));
 
-    return envDeleted && infraDeleted && serviceDeleted && clustersDeleted && serviceOverridesDeleted;
+    return envDeleted && infraDeleted && serviceDeleted && clustersDeleted && serviceOverridesDeleted
+        && infraMappingDeleted && instanceSyncPerpetualTaskInfoDeleted;
   }
 
   boolean processQuietly(BooleanSupplier b) {

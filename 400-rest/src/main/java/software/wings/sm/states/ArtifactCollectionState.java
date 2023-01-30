@@ -303,7 +303,7 @@ public class ArtifactCollectionState extends State {
     String waitId = generateUuid();
 
     // if collection enabled and buildno is empty, get last collected artifact from db and return.
-    if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled()) && isBlank(evaluatedBuildNo)) {
+    if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled()) && (isBlank(evaluatedBuildNo) || isRegex())) {
       Artifact lastCollectedArtifact =
           artifactService.fetchLastCollectedApprovedArtifactForArtifactStream(artifactStream);
       if (lastCollectedArtifact != null) {

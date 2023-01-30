@@ -245,9 +245,9 @@ public class PipelineStageHelper {
         ambiance, resolvedMap, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
   }
 
-  public void validateFailureStrategy(List<FailureStrategyConfig> failureStrategies) {
-    if (isNotEmpty(failureStrategies)) {
-      for (FailureStrategyConfig failureStrategyConfig : failureStrategies) {
+  public void validateFailureStrategy(ParameterField<List<FailureStrategyConfig>> failureStrategies) {
+    if (ParameterField.isNotNull(failureStrategies) && isNotEmpty(failureStrategies.getValue())) {
+      for (FailureStrategyConfig failureStrategyConfig : failureStrategies.getValue()) {
         if (actionTypeNotSupported.contains(failureStrategyConfig.getOnFailure().getAction().getType().getYamlName())) {
           throw new InvalidRequestException(String.format("Action %s is not supported in pipeline stage",
               failureStrategyConfig.getOnFailure().getAction().getType()));

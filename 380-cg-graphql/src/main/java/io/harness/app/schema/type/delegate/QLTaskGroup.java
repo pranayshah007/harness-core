@@ -105,7 +105,8 @@ public enum QLTaskGroup implements QLEnum {
   TAS,
   GITOPS,
   CONTAINER_PMS,
-  TERRAFORM_CLOUD;
+  TERRAFORM_CLOUD,
+  GOOGLE_FUNCTION;
 
   @Override
   public String getStringValue() {

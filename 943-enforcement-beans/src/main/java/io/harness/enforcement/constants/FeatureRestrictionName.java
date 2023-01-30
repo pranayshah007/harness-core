@@ -53,6 +53,7 @@ public enum FeatureRestrictionName {
   ACTIVE_COMMITTERS,
   TEST_INTELLIGENCE,
   TEMPLATE_SERVICE,
+  CACHE_SIZE_ALLOWANCE,
 
   // CV Features
   SRM_SERVICES,
@@ -86,6 +87,7 @@ public enum FeatureRestrictionName {
   AZURE_ROLLBACK_ARM_RESOURCE,
   SHELL_SCRIPT_PROVISION,
   K8S_DRY_RUN,
+  TERRAFORM_CLOUD_RUN,
 
   // STO Features
   SECURITY,

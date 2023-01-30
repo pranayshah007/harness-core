@@ -254,7 +254,7 @@ public class HelmChartServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testFetchChartsFromRepo() throws InterruptedException {
     HelmChart helmChart2 = generateHelmChartWithVersion("2.1");
-    when(delegateService.executeTask(any()))
+    when(delegateService.executeTaskV2(any()))
         .thenReturn(HelmCollectChartResponse.builder().helmCharts(asList(helmChart, helmChart2)).build());
     when(manifestCollectionUtils.prepareCollectTaskParamsWithChartVersion(
              APPLICATION_MANIFEST_ID, APP_ID, HelmChartCollectionType.ALL, null))
@@ -267,7 +267,7 @@ public class HelmChartServiceTest extends WingsBaseTest {
         helmChartService.fetchChartsFromRepo(ACCOUNT_ID, APP_ID, SERVICE_ID, APPLICATION_MANIFEST_ID, true);
     assertThat(helmCharts).containsExactly(helmChart, helmChart2);
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).executeTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).executeTaskV2(delegateTaskArgumentCaptor.capture());
 
     assertThat(delegateTaskArgumentCaptor.getValue().getAccountId()).isEqualTo(ACCOUNT_ID);
     TaskData taskData = delegateTaskArgumentCaptor.getValue().getData();
@@ -283,7 +283,7 @@ public class HelmChartServiceTest extends WingsBaseTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testFetchChartsEmptyFromRepo() throws InterruptedException {
-    when(delegateService.executeTask(any())).thenReturn(null);
+    when(delegateService.executeTaskV2(any())).thenReturn(null);
     when(manifestCollectionUtils.prepareCollectTaskParamsWithChartVersion(
              APPLICATION_MANIFEST_ID, APP_ID, HelmChartCollectionType.ALL, null))
         .thenReturn(HelmChartCollectionParams.builder()
@@ -300,7 +300,7 @@ public class HelmChartServiceTest extends WingsBaseTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testFetchChartByVersion() throws InterruptedException {
-    when(delegateService.executeTask(any()))
+    when(delegateService.executeTaskV2(any()))
         .thenReturn(HelmCollectChartResponse.builder().helmCharts(asList(helmChart)).build());
     when(manifestCollectionUtils.prepareCollectTaskParamsWithChartVersion(
              APPLICATION_MANIFEST_ID, APP_ID, HelmChartCollectionType.SPECIFIC_VERSION, helmChart.getVersion()))
@@ -317,7 +317,7 @@ public class HelmChartServiceTest extends WingsBaseTest {
         ACCOUNT_ID, APP_ID, SERVICE_ID, APPLICATION_MANIFEST_ID, helmChart.getVersion());
     assertThat(helmChartReturned).isEqualTo(helmChart);
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).executeTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).executeTaskV2(delegateTaskArgumentCaptor.capture());
 
     assertThat(delegateTaskArgumentCaptor.getValue().getAccountId()).isEqualTo(ACCOUNT_ID);
     TaskData taskData = delegateTaskArgumentCaptor.getValue().getData();
@@ -333,7 +333,7 @@ public class HelmChartServiceTest extends WingsBaseTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testFetchChartsEmptyByVersion() throws InterruptedException {
-    when(delegateService.executeTask(any())).thenReturn(null);
+    when(delegateService.executeTaskV2(any())).thenReturn(null);
     when(manifestCollectionUtils.prepareCollectTaskParamsWithChartVersion(
              APPLICATION_MANIFEST_ID, APP_ID, HelmChartCollectionType.ALL, null))
         .thenReturn(HelmChartCollectionParams.builder()

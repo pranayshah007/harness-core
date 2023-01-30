@@ -27,8 +27,8 @@ import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.timeout.Timeout;
@@ -41,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class ElastigroupSetupStepMapperImpl implements StepMapper {
+public class ElastigroupSetupStepMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     // Fix: This is incorrect as this mapper can generate 2 types of steps.
@@ -62,7 +62,7 @@ public class ElastigroupSetupStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     SpotInstServiceSetup state = new SpotInstServiceSetup(stepYaml.getName());
     state.parseProperties(properties);
     return state;

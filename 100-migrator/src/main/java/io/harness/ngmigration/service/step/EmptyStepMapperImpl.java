@@ -14,7 +14,7 @@ import io.harness.plancreator.steps.AbstractStepNode;
 import software.wings.beans.GraphNode;
 import software.wings.sm.State;
 
-public class EmptyStepMapperImpl implements StepMapper {
+public class EmptyStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
     return WorkflowStepSupportStatus.IGNORE;

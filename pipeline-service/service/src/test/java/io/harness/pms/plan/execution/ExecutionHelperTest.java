@@ -601,8 +601,8 @@ public class ExecutionHelperTest extends CategoryTest {
     TemplateMergeResponseDTO response = executionHelper.getPipelineYamlAndValidate(runtimeInputYaml, pipelineEntity);
     assertThat(response.getMergedPipelineYaml()).isEqualTo(mergedYamlWithValidators);
     assertThat(response.getMergedPipelineYamlWithTemplateRef()).isEqualTo(mergedYamlWithValidators);
-    verify(pmsYamlSchemaService, times(1)).validateYamlSchema(accountId, orgId, projectId, mergedYamlWithValidators);
-    verify(pmsYamlSchemaService, times(0)).validateYamlSchema(accountId, orgId, projectId, mergedYamlWithoutValidators);
+    verify(pmsYamlSchemaService, times(0)).validateYamlSchema(accountId, orgId, projectId, mergedYamlWithValidators);
+    verify(pmsYamlSchemaService, times(1)).validateYamlSchema(accountId, orgId, projectId, mergedYamlWithoutValidators);
   }
 
   @Test

@@ -107,7 +107,7 @@ public class NewRelicServiceImplTest extends WingsBaseTest {
                                             .build();
 
     when(settingsService.get(settingId)).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any())).thenReturn(newRelicDelegateService);
+    when(delegateProxyFactory.getV2(any(), any())).thenReturn(newRelicDelegateService);
   }
 
   @Test

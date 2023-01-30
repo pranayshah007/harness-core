@@ -9,14 +9,12 @@ package io.harness.delegate.task.aws.asg;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.aws.beans.AsgLoadBalancerConfig;
-import io.harness.delegate.aws.asg.AsgPrepareRollbackDataCommandTaskHandler;
+import io.harness.delegate.aws.asg.AsgBlueGreenPrepareRollbackCommandTaskHandler;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
 
 import com.google.inject.Inject;
@@ -27,7 +25,7 @@ import org.apache.commons.lang3.NotImplementedException;
 @OwnedBy(HarnessTeam.CDP)
 public class AsgBlueGreenPrepareRollbackDataTaskNG extends AbstractDelegateRunnableTask {
   @Inject private AsgDelegateTaskHelper asgDelegateTaskHelper;
-  @Inject private AsgPrepareRollbackDataCommandTaskHandler asgPrepareRollbackDataCommandTaskHandler;
+  @Inject private AsgBlueGreenPrepareRollbackCommandTaskHandler taskHandler;
   public AsgBlueGreenPrepareRollbackDataTaskNG(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
       BooleanSupplier preExecute) {
@@ -44,14 +42,7 @@ public class AsgBlueGreenPrepareRollbackDataTaskNG extends AbstractDelegateRunna
   @Override
   public AsgCommandResponse run(TaskParameters parameters) {
     AsgCommandRequest asgCommandRequest = (AsgCommandRequest) parameters;
-    // TODO
-    return AsgBlueGreenPrepareRollbackDataResponse.builder()
-        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-        .asgBlueGreenPrepareRollbackDataResult(
-            AsgBlueGreenPrepareRollbackDataResult.builder()
-                .asgLoadBalancerConfig(AsgLoadBalancerConfig.builder().loadBalancer("loadBalancer").build())
-                .build())
-        .build();
+    return asgDelegateTaskHelper.getAsgCommandResponse(taskHandler, asgCommandRequest, getLogStreamingTaskClient());
   }
 
   @Override

@@ -140,6 +140,7 @@ import org.apache.commons.lang3.tuple.Pair;
 public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   private static final Set<StoreDelegateConfigType> HELM_SUPPORTED_STORE_TYPES =
       ImmutableSet.of(GIT, HTTP_HELM, S3_HELM, GCS_HELM, OCI_HELM);
+  private static final String SUB_CHARTS_FOLDER = "charts";
   @Inject private HelmClient helmClient;
   @Inject private HelmTaskHelperBase helmTaskHelperBase;
   @Inject private ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
@@ -784,9 +785,16 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
             sshSessionConfig, gitConfigDTO);
       }
 
-      commandRequest.setWorkingDir(manifestFilesDirectory);
       commandRequest.getLogCallback().saveExecutionLog(color("Successfully fetched following files:", White, Bold));
       commandRequest.getLogCallback().saveExecutionLog(getManifestFileNamesInLogFormat(manifestFilesDirectory));
+
+      HelmChartManifestDelegateConfig helmChartManifest =
+          (HelmChartManifestDelegateConfig) commandRequest.getManifestDelegateConfig();
+      if (isNotEmpty(helmChartManifest.getSubChartName())) {
+        manifestFilesDirectory =
+            Paths.get(manifestFilesDirectory, SUB_CHARTS_FOLDER, helmChartManifest.getSubChartName()).toString();
+      }
+      commandRequest.setWorkingDir(manifestFilesDirectory);
 
     } catch (Exception e) {
       String errorMsg = "Failed to download manifest files from git. ";
@@ -808,7 +816,15 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       downloadFilesFromChartRepo(
           commandRequestNG.getManifestDelegateConfig(), workingDir, commandRequestNG.getLogCallback(), timeoutInMillis);
     }
-    commandRequestNG.setWorkingDir(getChartDirectory(workingDir, chartName));
+    if (isNotEmpty(helmChartManifestDelegateConfig.getSubChartName())) {
+      String finalWorkingDir = Paths
+                                   .get(getChartDirectory(workingDir, chartName), SUB_CHARTS_FOLDER,
+                                       helmChartManifestDelegateConfig.getSubChartName())
+                                   .toString();
+      commandRequestNG.setWorkingDir(finalWorkingDir);
+    } else {
+      commandRequestNG.setWorkingDir(getChartDirectory(workingDir, chartName));
+    }
     commandRequestNG.getLogCallback().saveExecutionLog("Helm Chart Repo checked-out locally");
   }
 
@@ -1033,7 +1049,17 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     HelmCliResponse cliResponse = helmClient.renderChart(
         HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest), chartLocation, namespace, valueOverrides, true);
 
-    return new HelmCommandResponseNG(cliResponse.getCommandExecutionStatus(), cliResponse.getOutput());
+    HelmChartManifestDelegateConfig helmManifest =
+        (HelmChartManifestDelegateConfig) commandRequest.getManifestDelegateConfig();
+
+    // sub-chart name will be non-empty only if FF is on and some value has been set
+    int index = isEmpty(helmManifest.getSubChartName())
+        ? -1
+        : helmTaskHelperBase.checkForDependencyUpdateFlag(
+            helmManifest.getHelmCommandFlag().getValueMap(), cliResponse.getOutput());
+
+    return new HelmCommandResponseNG(cliResponse.getCommandExecutionStatus(),
+        index == -1 ? cliResponse.getOutput() : cliResponse.getOutput().substring(index));
   }
 
   private LogCallback markDoneAndStartNew(

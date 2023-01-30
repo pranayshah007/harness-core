@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
-public class CommandStepMapperImpl implements StepMapper {
+public class CommandStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
     String templateId = graphNode.getTemplateUuid();
@@ -52,7 +52,7 @@ public class CommandStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     CommandState state = new CommandState(stepYaml.getName());
     state.parseProperties(properties);
     return state;
@@ -60,7 +60,7 @@ public class CommandStepMapperImpl implements StepMapper {
 
   @Override
   public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
-    return defaultTemplateSpecMapper(context.getMigratedEntities(), graphNode);
+    return defaultTemplateSpecMapper(context, graphNode);
   }
 
   @Override

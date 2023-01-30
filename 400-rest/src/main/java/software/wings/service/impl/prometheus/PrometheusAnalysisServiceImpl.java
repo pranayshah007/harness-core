@@ -191,8 +191,8 @@ public class PrometheusAnalysisServiceImpl implements PrometheusAnalysisService 
           secretManager.getEncryptionDetails((EncryptableSetting) settingAttribute.getValue(), null, null);
       apmValidateCollectorConfig.setEncryptedDataDetails(encryptionDetails);
 
-      final String validateResponseJson =
-          delegateProxyFactory.get(APMDelegateService.class, taskContext).fetch(apmValidateCollectorConfig, apiCallLog);
+      final String validateResponseJson = delegateProxyFactory.getV2(APMDelegateService.class, taskContext)
+                                              .fetch(apmValidateCollectorConfig, apiCallLog);
       PrometheusMetricDataResponse response =
           JsonUtils.asObject(validateResponseJson, PrometheusMetricDataResponse.class);
       metricDataResponseByTimeSeries.put(timeSeries, response);

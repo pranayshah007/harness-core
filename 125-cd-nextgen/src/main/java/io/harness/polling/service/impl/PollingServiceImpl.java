@@ -49,8 +49,6 @@ public class PollingServiceImpl implements PollingService {
     if (savedPollingDoc == null) {
       savedPollingDoc = pollingRepository.save(pollingDocument);
       createPerpetualTask(savedPollingDoc);
-    } else {
-      resetPerpetualTask(savedPollingDoc);
     }
     return savedPollingDoc.getUuid();
   }
@@ -121,7 +119,6 @@ public class PollingServiceImpl implements PollingService {
     }
 
     if (existingPollingDoc.getPollingInfo().equals(pollingDocument.getPollingInfo())) {
-      resetPerpetualTask(existingPollingDoc);
       return existingPollingDoc.getUuid();
     } else {
       delete(pollingDocument);
@@ -163,8 +160,7 @@ public class PollingServiceImpl implements PollingService {
     }
   }
 
-  @Override
-  public void resetPerpetualTask(@NotNull PollingDocument pollingDocument) {
+  private void resetPerpetualTask(@NotNull PollingDocument pollingDocument) {
     try {
       subject.fireInform(PollingServiceObserver::onUpdated, pollingDocument);
     } catch (Exception e) {

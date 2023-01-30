@@ -27,7 +27,7 @@ import software.wings.sm.states.spotinst.SpotInstDeployState;
 
 import java.util.Map;
 
-public class ElastigroupDeployStepMapperImpl implements StepMapper {
+public class ElastigroupDeployStepMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.ELASTIGROUP_DEPLOY;
@@ -35,7 +35,7 @@ public class ElastigroupDeployStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     SpotInstDeployState state = new SpotInstDeployState(stepYaml.getName());
     state.parseProperties(properties);
     return state;

@@ -36,6 +36,9 @@ import org.redisson.config.SingleServerConfig;
 @Slf4j
 public class RedissonClientFactory {
   private static final int DEFAULT_MIN_CONNECTION_IDLE_SIZE = 5;
+
+  private static final int DEFAULT_RETRY_ATTEMPTS = 3;
+  private static final int DEFAULT_RETRY_INTERVAL = 500;
   private static final int NUM_OF_RETRIES = 3;
   private static final int WAIT_TIME_BETWEEN_RETRIES = 1000;
 
@@ -75,12 +78,16 @@ public class RedissonClientFactory {
         }
         if (redisConfig.getRetryInterval() != 0) {
           serverConfig.setRetryInterval(redisConfig.getRetryInterval());
+        } else {
+          serverConfig.setRetryInterval(DEFAULT_RETRY_INTERVAL);
         }
         if (redisConfig.getTimeout() != 0) {
           serverConfig.setTimeout(redisConfig.getTimeout());
         }
         if (redisConfig.getRetryAttempts() != 0) {
           serverConfig.setRetryAttempts(redisConfig.getRetryAttempts());
+        } else {
+          serverConfig.setRetryAttempts(DEFAULT_RETRY_ATTEMPTS);
         }
 
         serverConfig.setConnectionMinimumIdleSize(
@@ -114,6 +121,8 @@ public class RedissonClientFactory {
           config.useSentinelServers().setSubscriptionConnectionPoolSize(redisConfig.getConnectionPoolSize());
         }
         if (redisConfig.getRetryInterval() != 0) {
+          config.useSentinelServers().setRetryInterval(redisConfig.getRetryInterval());
+        } else {
           config.useSentinelServers().setRetryInterval(redisConfig.getRetryInterval());
         }
         if (redisConfig.getTimeout() != 0) {

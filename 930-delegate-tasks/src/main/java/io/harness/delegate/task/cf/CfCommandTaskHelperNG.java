@@ -60,7 +60,6 @@ import io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
-import io.harness.delegate.beans.pcf.CfAppRenameInfo;
 import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
@@ -127,7 +126,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Deque;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -159,10 +157,6 @@ public class CfCommandTaskHelperNG {
   @Inject private NexusMapper nexusMapper;
   @Inject private JenkinsUtils jenkinsUtil;
   @Inject private AzureArtifactsRegistryService azureArtifactsRegistryService;
-
-  public int getRevisionFromReleaseName(String name) {
-    return pcfCommandTaskBaseHelper.getRevisionFromReleaseName(name);
-  }
 
   public File generateWorkingDirectoryForDeployment() throws IOException {
     String workingDirecotry = UUIDGenerator.generateUuid();
@@ -285,9 +279,18 @@ public class CfCommandTaskHelperNG {
 
   private InputStream downloadFromJenkins(TasPackageArtifactConfig artifactConfig,
       TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
+    if (!(artifactConfig.getArtifactDetails() instanceof JenkinsTasArtifactRequestDetails)) {
+      throw NestedExceptionUtils.hintWithExplanationException("Please contact harness support team",
+          format("Unexpected artifact configuration of type '%s'",
+              artifactConfig.getArtifactDetails().getClass().getSimpleName()),
+          new InvalidArgumentsException(Pair.of("artifactDetails",
+              format(
+                  "Invalid artifact details, expected '%s'", JenkinsTasArtifactRequestDetails.class.getSimpleName()))));
+    }
+
     JenkinsTasArtifactRequestDetails jenkinsTasArtifactRequestDetails =
         (JenkinsTasArtifactRequestDetails) artifactConfig.getArtifactDetails();
-    validateJenkinsArtifact(artifactConfig, jenkinsTasArtifactRequestDetails, logCallback);
+    validateJenkinsArtifact(jenkinsTasArtifactRequestDetails, logCallback);
     Pair<String, InputStream> pair = null;
 
     try {
@@ -353,10 +356,18 @@ public class CfCommandTaskHelperNG {
 
   private InputStream downloadFromAzureArtifacts(TasPackageArtifactConfig artifactConfig,
       TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
+    if (!(artifactConfig.getArtifactDetails() instanceof AzureDevOpsTasArtifactRequestDetails)) {
+      throw NestedExceptionUtils.hintWithExplanationException("Please contact harness support team",
+          format("Unexpected artifact configuration of type '%s'",
+              artifactConfig.getArtifactDetails().getClass().getSimpleName()),
+          new InvalidArgumentsException(Pair.of("artifactDetails",
+              format("Invalid artifact details, expected '%s'",
+                  AzureDevOpsTasArtifactRequestDetails.class.getSimpleName()))));
+    }
     AzureDevOpsTasArtifactRequestDetails azureArtifactsRequestDetails =
         (AzureDevOpsTasArtifactRequestDetails) artifactConfig.getArtifactDetails();
 
-    validateAzureDevOpsArtifact(artifactConfig, azureArtifactsRequestDetails, logCallback);
+    validateAzureDevOpsArtifact(azureArtifactsRequestDetails, logCallback);
     AzureArtifactsConnectorDTO azureArtifactsConnectorDTO =
         (AzureArtifactsConnectorDTO) artifactConfig.getConnectorConfig();
     decryptEntity(decryptionHelper, azureArtifactsConnectorDTO.getDecryptableEntities(),
@@ -406,9 +417,17 @@ public class CfCommandTaskHelperNG {
 
   private InputStream downloadFromAwsS3(TasPackageArtifactConfig s3ArtifactConfig,
       TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
+    if (!(s3ArtifactConfig.getArtifactDetails() instanceof AwsS3TasArtifactRequestDetails)) {
+      throw NestedExceptionUtils.hintWithExplanationException("Please contact harness support team",
+          format("Unexpected artifact configuration of type '%s'",
+              s3ArtifactConfig.getArtifactDetails().getClass().getSimpleName()),
+          new InvalidArgumentsException(Pair.of("artifactDetails",
+              format(
+                  "Invalid artifact details, expected '%s'", AwsS3TasArtifactRequestDetails.class.getSimpleName()))));
+    }
     AwsS3TasArtifactRequestDetails artifactRequestDetails =
         (AwsS3TasArtifactRequestDetails) s3ArtifactConfig.getArtifactDetails();
-    validateAwsS3Artifact(s3ArtifactConfig, artifactRequestDetails, logCallback);
+    validateAwsS3Artifact(artifactRequestDetails, logCallback);
     logCallback.saveExecutionLog(color(format("Downloading %s artifact with identifier: %s",
                                            s3ArtifactConfig.getSourceType(), artifactRequestDetails.getIdentifier()),
         White, Bold));
@@ -458,17 +477,7 @@ public class CfCommandTaskHelperNG {
     return artifactInputStream;
   }
 
-  private void validateAwsS3Artifact(TasPackageArtifactConfig s3ArtifactConfig,
-      AwsS3TasArtifactRequestDetails artifactRequestDetails, LogCallback logCallback) {
-    if (!(s3ArtifactConfig.getArtifactDetails() instanceof AwsS3TasArtifactRequestDetails)) {
-      throw NestedExceptionUtils.hintWithExplanationException("Please contact harness support team",
-          format("Unexpected artifact configuration of type '%s'",
-              s3ArtifactConfig.getArtifactDetails().getClass().getSimpleName()),
-          new InvalidArgumentsException(Pair.of("artifactDetails",
-              format(
-                  "Invalid artifact details, expected '%s'", AwsS3TasArtifactRequestDetails.class.getSimpleName()))));
-    }
-
+  private void validateAwsS3Artifact(AwsS3TasArtifactRequestDetails artifactRequestDetails, LogCallback logCallback) {
     if (EmptyPredicate.isEmpty(artifactRequestDetails.getFilePath())) {
       logCallback.saveExecutionLog("artifact Path is blank", ERROR, CommandExecutionStatus.FAILURE);
       throw NestedExceptionUtils.hintWithExplanationException(BLANK_ARTIFACT_PATH_HINT,
@@ -477,17 +486,8 @@ public class CfCommandTaskHelperNG {
     }
   }
 
-  private void validateJenkinsArtifact(TasPackageArtifactConfig jenkinsArtifactConfig,
+  private void validateJenkinsArtifact(
       JenkinsTasArtifactRequestDetails artifactRequestDetails, LogCallback logCallback) {
-    if (!(jenkinsArtifactConfig.getArtifactDetails() instanceof JenkinsTasArtifactRequestDetails)) {
-      throw NestedExceptionUtils.hintWithExplanationException("Please contact harness support team",
-          format("Unexpected artifact configuration of type '%s'",
-              jenkinsArtifactConfig.getArtifactDetails().getClass().getSimpleName()),
-          new InvalidArgumentsException(Pair.of("artifactDetails",
-              format(
-                  "Invalid artifact details, expected '%s'", JenkinsTasArtifactRequestDetails.class.getSimpleName()))));
-    }
-
     if (EmptyPredicate.isEmpty(artifactRequestDetails.getArtifactName())) {
       logCallback.saveExecutionLog("artifact Path is blank", ERROR, CommandExecutionStatus.FAILURE);
       throw NestedExceptionUtils.hintWithExplanationException(BLANK_ARTIFACT_PATH_HINT,
@@ -496,17 +496,8 @@ public class CfCommandTaskHelperNG {
     }
   }
 
-  private void validateAzureDevOpsArtifact(TasPackageArtifactConfig tasPackageArtifactConfig,
+  private void validateAzureDevOpsArtifact(
       AzureDevOpsTasArtifactRequestDetails azureDevOpsTasArtifactRequestDetails, LogCallback logCallback) {
-    if (!(tasPackageArtifactConfig.getArtifactDetails() instanceof AzureDevOpsTasArtifactRequestDetails)) {
-      throw NestedExceptionUtils.hintWithExplanationException("Please contact harness support team",
-          format("Unexpected artifact configuration of type '%s'",
-              tasPackageArtifactConfig.getArtifactDetails().getClass().getSimpleName()),
-          new InvalidArgumentsException(Pair.of("artifactDetails",
-              format("Invalid artifact details, expected '%s'",
-                  AzureDevOpsTasArtifactRequestDetails.class.getSimpleName()))));
-    }
-
     if (EmptyPredicate.isEmpty(azureDevOpsTasArtifactRequestDetails.getArtifactName())) {
       logCallback.saveExecutionLog("artifact Path is blank", ERROR, CommandExecutionStatus.FAILURE);
       throw NestedExceptionUtils.hintWithExplanationException(BLANK_ARTIFACT_PATH_HINT,
@@ -758,7 +749,7 @@ public class CfCommandTaskHelperNG {
     pcfCommandTaskBaseHelper.createYamlFileLocally(filePath, autoscalarManifestYml);
   }
 
-  private void configureAutoscalarIfNeeded(CfDeployCommandRequestNG cfCommandDeployRequest,
+  public void configureAutoscalarIfNeeded(CfDeployCommandRequestNG cfCommandDeployRequest,
       ApplicationDetail applicationDetail, CfAppAutoscalarRequestData appAutoscalarRequestData,
       LogCallback executionLogCallback) throws PivotalClientApiException, IOException {
     if (cfCommandDeployRequest.isUseAppAutoScalar() && cfCommandDeployRequest.getTasManifestsPackage() != null
@@ -812,16 +803,6 @@ public class CfCommandTaskHelperNG {
       List<CfInternalInstanceElement> cfInstanceElements) throws PivotalClientApiException {
     pcfCommandTaskBaseHelper.upsizeListOfInstances(executionLogCallback, cfDeploymentManager, cfServiceDataUpdated,
         cfRequestConfig, upsizeList, cfInstanceElements);
-  }
-
-  public List<String> getAppNameBasedOnGuid(CfRequestConfig cfRequestConfig, String cfAppNamePrefix, String appGuid)
-      throws PivotalClientApiException {
-    List<ApplicationSummary> previousReleases =
-        cfDeploymentManager.getPreviousReleasesBasicAndCanaryNG(cfRequestConfig, cfAppNamePrefix);
-    return previousReleases.stream()
-        .filter(app -> app.getId().equalsIgnoreCase(appGuid))
-        .map(ApplicationSummary::getName)
-        .collect(toList());
   }
 
   public List<String> getAppNameBasedOnGuidForBlueGreenDeployment(
@@ -887,12 +868,6 @@ public class CfCommandTaskHelperNG {
         executionLogCallback, cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRequestConfig);
   }
 
-  public ApplicationSummary findActiveApplication(LogCallback logCallback, boolean standardBlueGreenWorkflow,
-      CfRequestConfig cfRequestConfig, List<ApplicationSummary> releases) throws PivotalClientApiException {
-    return pcfCommandTaskBaseHelper.findActiveApplication(
-        logCallback, standardBlueGreenWorkflow, cfRequestConfig, releases);
-  }
-
   public void mapRouteMaps(String applicationName, List<String> urls, CfRequestConfig cfRequestConfig,
       LogCallback executionLogCallback) throws PivotalClientApiException {
     pcfCommandTaskBaseHelper.mapRouteMaps(applicationName, urls, cfRequestConfig, executionLogCallback);
@@ -903,43 +878,9 @@ public class CfCommandTaskHelperNG {
     pcfCommandTaskBaseHelper.unmapRouteMaps(applicationName, urls, cfRequestConfig, executionLogCallback);
   }
 
-  public ApplicationSummary getMostRecentInactiveApplication(LogCallback logCallback, boolean standardBlueGreenWorkflow,
-      ApplicationSummary activeApplication, List<ApplicationSummary> releases, CfRequestConfig cfRequestConfig)
-      throws PivotalClientApiException {
-    return pcfCommandTaskBaseHelper.getMostRecentInactiveApplication(
-        logCallback, standardBlueGreenWorkflow, activeApplication, releases, cfRequestConfig);
-  }
-
-  public void resetState(List<ApplicationSummary> releases, ApplicationSummary activeApplication,
-      ApplicationSummary inactiveApplication, String cfAppNamePrefix, CfRequestConfig cfRequestConfig, boolean b,
-      Object o, Integer activeAppRevision, LogCallback logCallback, CfInBuiltVariablesUpdateValues updateValues)
-      throws PivotalClientApiException {
-    pcfCommandTaskBaseHelper.resetState(releases, activeApplication, inactiveApplication, cfAppNamePrefix,
-        cfRequestConfig, b, (Deque<CfAppRenameInfo>) o, activeAppRevision, logCallback, updateValues);
-  }
-
   public boolean disableAutoscalar(CfAppAutoscalarRequestData pcfAppAutoscalarRequestData,
       LogCallback executionLogCallback) throws PivotalClientApiException {
     return cfDeploymentManager.changeAutoscalarState(pcfAppAutoscalarRequestData, executionLogCallback, false);
-  }
-
-  public boolean disableAutoscalarSafe(
-      CfAppAutoscalarRequestData pcfAppAutoscalarRequestData, LogCallback executionLogCallback) {
-    boolean autoscalarStateChanged = false;
-    try {
-      autoscalarStateChanged = disableAutoscalar(pcfAppAutoscalarRequestData, executionLogCallback);
-    } catch (PivotalClientApiException e) {
-      executionLogCallback.saveExecutionLog(
-          new StringBuilder()
-              .append("# Error while disabling autoscaling for: ")
-              .append(encodeColor(pcfAppAutoscalarRequestData.getApplicationName()))
-              .append(", ")
-              .append(e)
-              .append(", Continuing with the deployment, please disable autoscaler from the pcf portal\n")
-              .toString(),
-          ERROR);
-    }
-    return autoscalarStateChanged;
   }
 
   public CfInBuiltVariablesUpdateValues performAppRenaming(AppRenamingOperator.NamingTransition transition,

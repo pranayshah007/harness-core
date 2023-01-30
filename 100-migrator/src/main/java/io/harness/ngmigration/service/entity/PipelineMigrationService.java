@@ -30,10 +30,11 @@ import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
+import io.harness.ngmigration.service.MigrationTemplateUtils;
 import io.harness.ngmigration.service.MigratorMappingService;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.step.ApprovalStepMapperImpl;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -65,7 +66,6 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.PipelineService;
 import software.wings.sm.StateType;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -85,6 +85,7 @@ public class PipelineMigrationService extends NgMigrationService {
   @Inject private PipelineService pipelineService;
   @Inject private WorkflowMigrationService workflowMigrationService;
   @Inject private TemplateResourceClient templateResourceClient;
+  @Inject private MigrationTemplateUtils migrationTemplateUtils;
   @Inject PipelineServiceClient pipelineServiceClient;
   @Inject ApprovalStepMapperImpl approvalStepMapper;
 
@@ -260,22 +261,6 @@ public class PipelineMigrationService extends NgMigrationService {
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(approvalStageNode)).build();
   }
 
-  private JsonNode getTemplateInputs(NGYamlFile wfTemplate, String accountIdentifier) {
-    NgEntityDetail ngEntityDetail = wfTemplate.getNgEntityDetail();
-    try {
-      String response = NGRestUtils.getResponse(templateResourceClient.getTemplateInputsYaml(
-          ngEntityDetail.getIdentifier(), accountIdentifier, ngEntityDetail.getOrgIdentifier(),
-          ngEntityDetail.getProjectIdentifier(), WorkflowMigrationService.VERSION, false));
-      if (response == null || StringUtils.isBlank(response)) {
-        return null;
-      }
-      return YamlUtils.read(response, JsonNode.class);
-    } catch (Exception ex) {
-      log.error("Error when getting workflow templates input - ", ex);
-      return null;
-    }
-  }
-
   private StageElementWrapperConfig buildWorkflowStage(
       String accountId, PipelineStageElement stageElement, Map<CgEntityId, NGYamlFile> migratedEntities) {
     // TODO: Handle Skip condition
@@ -296,7 +281,8 @@ public class PipelineMigrationService extends NgMigrationService {
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(wfTemplate.getNgEntityDetail()));
     templateLinkConfig.setVersionLabel(wfTemplateConfig.getTemplateInfoConfig().getVersionLabel());
-    templateLinkConfig.setTemplateInputs(getTemplateInputs(wfTemplate, accountId));
+    templateLinkConfig.setTemplateInputs(
+        migrationTemplateUtils.getTemplateInputs(wfTemplate, accountId, WorkflowMigrationService.VERSION));
 
     TemplateStageNode templateStageNode = new TemplateStageNode();
     templateStageNode.setName(stageElement.getName());

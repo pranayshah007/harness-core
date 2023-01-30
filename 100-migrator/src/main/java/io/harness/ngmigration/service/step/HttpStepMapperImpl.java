@@ -12,7 +12,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.http.HttpHeaderConfig;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.http.HttpStepInfo;
 import io.harness.plancreator.steps.http.HttpStepInfo.HttpStepInfoBuilder;
@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
-public class HttpStepMapperImpl implements StepMapper {
+public class HttpStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
     return WorkflowStepSupportStatus.SUPPORTED;
@@ -53,7 +53,7 @@ public class HttpStepMapperImpl implements StepMapper {
 
   @Override
   public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
-    return defaultTemplateSpecMapper(context.getMigratedEntities(), graphNode);
+    return defaultTemplateSpecMapper(context, graphNode);
   }
 
   @Override
@@ -63,7 +63,7 @@ public class HttpStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     HttpState state = new HttpState(stepYaml.getName());
     state.parseProperties(properties);
     return state;

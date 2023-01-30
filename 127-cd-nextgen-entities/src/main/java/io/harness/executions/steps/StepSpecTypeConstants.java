@@ -104,4 +104,6 @@ public interface StepSpecTypeConstants {
 
   String K8S_DRY_RUN_MANIFEST = "K8sDryRun";
   String ASG_BLUE_GREEN_SWAP_SERVICE = "AsgBlueGreenSwapService";
+
+  String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
 }

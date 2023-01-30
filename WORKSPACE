@@ -1322,8 +1322,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:HE9ukdqJZAtwBzA5fc66Fnc8XNOZmfPLxbucmf3/8SQ=",
-    version = "v1.27.1-0.20221116132008-1949a8eb7407",
+    sum = "h1:TB0fL4RpUrIngifmZ6CWFOJQpVKtKJGjLGGj00TLqYE=",
+    version = "v1.28.2-0.20230130112242-4428a9bf64df",
 )
 
 go_repository(
@@ -4857,7 +4857,7 @@ plain_artifacts = [
     "commons-io:commons-io:2.7",
     "commons-lang:commons-lang:2.3",
     "commons-logging:commons-logging:1.1.1",
-    "commons-net:commons-net:3.6",
+    "commons-net:commons-net:3.9.0",
     "commons-pool:commons-pool:1.5.4",
     "commons-validator:commons-validator:1.7",
     "de.danielbechler:java-object-diff:0.94",
@@ -4955,7 +4955,7 @@ plain_artifacts = [
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
     "io.harness.cv:data-collection-dsl:0.42-RELEASE",
-    "io.harness:ff-java-server-sdk:1.1.9",
+    "io.harness:ff-java-server-sdk:1.1.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:16.0.0",
     "io.kubernetes:client-java-extended:16.0.0",
@@ -5065,7 +5065,7 @@ plain_artifacts = [
     "org.apache.cxf:cxf-rt-databinding-jaxb:3.5.5",
     "org.apache.cxf:cxf-rt-frontend-jaxws:3.5.5",
     "org.apache.cxf:cxf-rt-frontend-simple:3.5.5",
-    "org.apache.cxf:cxf-rt-transports-http-hc:3.5.4",
+    "org.apache.cxf:cxf-rt-transports-http-hc:3.5.5",
     "org.apache.cxf:cxf-rt-transports-http:3.5.5",
     "org.apache.cxf:cxf-rt-ws-addr:3.5.5",
     "org.apache.cxf:cxf-rt-ws-policy:3.5.5",
@@ -5267,7 +5267,7 @@ plain_artifacts = [
     "org.projectlombok:lombok:1.18.18",
     "org.quartz-scheduler:quartz:2.3.2",
     "org.reactivestreams:reactive-streams:1.0.2",
-    "org.redisson:redisson:3.13.3",
+    "org.redisson:redisson:3.17.7",
     "org.reflections:reflections:0.9.12-SNAPSHOT",
     "org.slf4j:jcl-over-slf4j:1.7.30",
     "org.slf4j:jul-to-slf4j:1.7.30",

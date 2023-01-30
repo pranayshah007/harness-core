@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
-public class K8sSwapServiceSelectorsStepMapperImpl implements StepMapper {
+public class K8sSwapServiceSelectorsStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
     return WorkflowStepSupportStatus.SUPPORTED;
@@ -37,7 +37,7 @@ public class K8sSwapServiceSelectorsStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     KubernetesSwapServiceSelectors state = new KubernetesSwapServiceSelectors(stepYaml.getName());
     state.parseProperties(properties);
     return state;

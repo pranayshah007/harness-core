@@ -8,14 +8,20 @@
 package io.harness.delegate.task.cf;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.cf.CfTestConstants.ACCOUNT_ID;
 import static io.harness.delegate.cf.CfTestConstants.APP_ID;
 import static io.harness.delegate.cf.CfTestConstants.APP_NAME;
+import static io.harness.delegate.cf.CfTestConstants.STOPPED;
 import static io.harness.rule.OwnerRule.RISHABH;
+
+import static software.wings.utils.ArtifactType.ZIP;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -52,12 +58,15 @@ import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthenticationDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusAuthenticationDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
+import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
+import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.cf.PcfCommandTaskBaseHelper;
@@ -73,10 +82,14 @@ import io.harness.delegate.task.pcf.artifact.JenkinsTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.NexusTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.TasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
+import io.harness.delegate.task.pcf.request.CfCommandDeployRequest;
+import io.harness.delegate.task.pcf.request.CfCommandRollbackRequest;
 import io.harness.delegate.task.pcf.request.CfDeployCommandRequestNG;
+import io.harness.delegate.task.pcf.request.TasManifestsPackage;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.HintException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.LogCallback;
 import io.harness.nexus.NexusRequest;
@@ -113,6 +126,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -135,7 +149,7 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
   @Mock private ArtifactoryNgService artifactoryNgService;
   @Mock private ArtifactoryRequestMapper artifactoryRequestMapper;
   @Mock private AzureLogCallbackProvider logCallbackProvider;
-  @Mock private LogCallback logCallback;
+  @Mock LogCallback logCallback;
   @Mock private SecretDecryptionService secretDecryptionService;
   @Mock private AwsApiHelperService awsApiHelperService;
   @Mock private AwsNgConfigMapper awsNgConfigMapper;
@@ -145,9 +159,9 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
   @Mock Jenkins jenkins;
   @Mock private DecryptionHelper decryptionHelper;
   @Mock private AzureArtifactsRegistryService azureArtifactsRegistryService;
-  @Spy PcfCommandTaskBaseHelper pcfCommandTaskHelper;
+  @InjectMocks @Spy PcfCommandTaskBaseHelper pcfCommandTaskHelper;
   @Mock CfDeploymentManager cfDeploymentManager;
-  @InjectMocks private CfCommandTaskHelperNG cfCommandTaskHelperNG;
+  @InjectMocks @Spy private CfCommandTaskHelperNG cfCommandTaskHelperNG;
 
   @Before
   public void setup() {
@@ -185,7 +199,75 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
           cfCommandTaskHelperNG.downloadPackageArtifact(downloadContext, logCallback);
       List<String> fileContent = Files.readAllLines(downloadResponse.getArtifactFile().toPath());
       assertThat(fileContent).containsOnly(ARTIFACT_FILE_CONTENT);
-      assertThat(downloadResponse.getArtifactType()).isEqualTo(ArtifactType.ZIP);
+      assertThat(downloadResponse.getArtifactType()).isEqualTo(ZIP);
+    } finally {
+      FileIo.deleteDirectoryAndItsContentIfExists(downloadContext.getWorkingDirectory().getAbsolutePath());
+    }
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testDownloadCustomArtifact() throws Exception {
+    final ArtifactoryConnectorDTO connector =
+        ArtifactoryConnectorDTO.builder()
+            .auth(ArtifactoryAuthenticationDTO.builder()
+                      .credentials(ArtifactoryUsernamePasswordAuthDTO.builder().build())
+                      .build())
+            .build();
+    final ArtifactoryTasArtifactRequestDetails requestDetails = ArtifactoryTasArtifactRequestDetails.builder()
+                                                                    .repository("test")
+                                                                    .repository("repository")
+                                                                    .artifactPaths(singletonList("test/artifact.zip"))
+                                                                    .build();
+    final TasArtifactDownloadContext downloadContext =
+        createDownloadContext(ArtifactSourceType.CUSTOM_ARTIFACT, requestDetails, connector);
+    final ArtifactoryConfigRequest configRequest = ArtifactoryConfigRequest.builder().build();
+
+    try (InputStream artifactStream = new ByteArrayInputStream(ARTIFACT_FILE_CONTENT.getBytes())) {
+      doReturn(configRequest).when(artifactoryRequestMapper).toArtifactoryRequest(connector);
+      doReturn(artifactStream)
+          .when(artifactoryNgService)
+          .downloadArtifacts(configRequest, "repository", requestDetails.toMetadata(),
+              ArtifactMetadataKeys.artifactPath, ArtifactMetadataKeys.artifactName);
+
+      TasArtifactDownloadResponse downloadResponse =
+          cfCommandTaskHelperNG.downloadPackageArtifact(downloadContext, logCallback);
+      assertThat(downloadResponse.getArtifactFile()).isNull();
+      assertThat(downloadResponse.getArtifactType()).isEqualTo(ZIP);
+    } finally {
+      FileIo.deleteDirectoryAndItsContentIfExists(downloadContext.getWorkingDirectory().getAbsolutePath());
+    }
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testDownloadAMIArtifact() throws Exception {
+    final ArtifactoryConnectorDTO connector =
+        ArtifactoryConnectorDTO.builder()
+            .auth(ArtifactoryAuthenticationDTO.builder()
+                      .credentials(ArtifactoryUsernamePasswordAuthDTO.builder().build())
+                      .build())
+            .build();
+    final ArtifactoryTasArtifactRequestDetails requestDetails = ArtifactoryTasArtifactRequestDetails.builder()
+                                                                    .repository("test")
+                                                                    .repository("repository")
+                                                                    .artifactPaths(singletonList("test/artifact.zip"))
+                                                                    .build();
+    final TasArtifactDownloadContext downloadContext =
+        createDownloadContext(ArtifactSourceType.AMI, requestDetails, connector);
+    final ArtifactoryConfigRequest configRequest = ArtifactoryConfigRequest.builder().build();
+
+    try (InputStream artifactStream = new ByteArrayInputStream(ARTIFACT_FILE_CONTENT.getBytes())) {
+      doReturn(configRequest).when(artifactoryRequestMapper).toArtifactoryRequest(connector);
+      doReturn(artifactStream)
+          .when(artifactoryNgService)
+          .downloadArtifacts(configRequest, "repository", requestDetails.toMetadata(),
+              ArtifactMetadataKeys.artifactPath, ArtifactMetadataKeys.artifactName);
+
+      assertThatThrownBy(() -> cfCommandTaskHelperNG.downloadPackageArtifact(downloadContext, logCallback))
+          .hasMessage("Use supported artifact registry");
     } finally {
       FileIo.deleteDirectoryAndItsContentIfExists(downloadContext.getWorkingDirectory().getAbsolutePath());
     }
@@ -307,6 +389,59 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
                                        .username("testUsername")
                                        .passwordRef(SecretRefData.builder().build())
                                        .build())
+                      .build())
+            .build();
+
+    final JenkinsTasArtifactRequestDetails requestDetails = JenkinsTasArtifactRequestDetails.builder()
+                                                                .jobName("testJobName")
+                                                                .build("testBuild-123")
+                                                                .artifactPath("testArtifactPath.war")
+                                                                .identifier("PACKAGE")
+                                                                .build();
+
+    final TasArtifactDownloadContext downloadContext =
+        createDownloadContext(ArtifactSourceType.JENKINS, requestDetails, jenkinsConnectorDTO);
+
+    try {
+      TasArtifactDownloadResponse downloadResponse =
+          cfCommandTaskHelperNG.downloadPackageArtifact(downloadContext, logCallback);
+      List<String> fileContent = Files.readAllLines(downloadResponse.getArtifactFile().toPath());
+      assertThat(fileContent).containsOnly(ARTIFACT_FILE_CONTENT);
+      assertThat(downloadResponse.getArtifactFile().toString()).contains("testArtifactPath.war");
+      assertThat(downloadResponse.getArtifactType()).isEqualTo(ArtifactType.WAR);
+    } finally {
+      FileIo.deleteDirectoryAndItsContentIfExists(downloadContext.getWorkingDirectory().getAbsolutePath());
+    }
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testDownloadJenkinsArtifactToken() throws Exception {
+    InputStream is = new ByteArrayInputStream(ARTIFACT_FILE_CONTENT.getBytes());
+
+    when(jenkinsUtil.getJenkins(any())).thenReturn(jenkins);
+    when(jenkins.downloadArtifact(any(), any(), any())).thenReturn(new Pair<String, InputStream>() {
+      @Override
+      public String getLeft() {
+        return "result";
+      }
+      @Override
+      public InputStream getRight() {
+        return is;
+      }
+      @Override
+      public InputStream setValue(InputStream value) {
+        return value;
+      }
+    });
+
+    final JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("testJenkinsUrl")
+            .auth(JenkinsAuthenticationDTO.builder()
+                      .authType(JenkinsAuthType.BEARER_TOKEN)
+                      .credentials(JenkinsBearerTokenDTO.builder().tokenRef(SecretRefData.builder().build()).build())
                       .build())
             .build();
 
@@ -496,6 +631,49 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
   @Test
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
+  public void testDownloadAzureDevopsArtifactAndInvalidVersionExceptionIsThrown() throws Exception {
+    when(azureArtifactsRegistryService.downloadArtifact(any(), any(), any(), any(), any(), any()))
+        .thenThrow(new RuntimeException());
+
+    final AzureArtifactsConnectorDTO azureArtifactsConnectorDTO =
+        AzureArtifactsConnectorDTO.builder()
+            .azureArtifactsUrl("dummyDevopsAzureURL")
+            .auth(AzureArtifactsAuthenticationDTO.builder()
+                      .credentials(
+                          AzureArtifactsCredentialsDTO.builder()
+                              .type(AzureArtifactsAuthenticationType.PERSONAL_ACCESS_TOKEN)
+                              .credentialsSpec(
+                                  AzureArtifactsTokenDTO.builder()
+                                      .tokenRef(SecretRefData.builder().decryptedValue("secret".toCharArray()).build())
+                                      .build())
+                              .build())
+                      .build())
+            .build();
+
+    AzureDevOpsTasArtifactRequestDetails requestDetails = AzureDevOpsTasArtifactRequestDetails.builder()
+                                                              .feed("testFeed")
+                                                              .scope("org")
+                                                              .packageType("maven")
+                                                              .packageName("test.package.name:package-test")
+                                                              .version("")
+                                                              .identifier("PACKAGE")
+                                                              .build();
+
+    final TasArtifactDownloadContext downloadContext =
+        createDownloadContext(ArtifactSourceType.AZURE_ARTIFACTS, requestDetails, azureArtifactsConnectorDTO);
+
+    try {
+      assertThatThrownBy(() -> cfCommandTaskHelperNG.downloadPackageArtifact(downloadContext, logCallback))
+          .isInstanceOf(InvalidRequestException.class)
+          .hasMessageContaining("Artifact version is invalid");
+    } finally {
+      FileIo.deleteDirectoryAndItsContentIfExists(downloadContext.getWorkingDirectory().getAbsolutePath());
+    }
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
   public void testDownloadArtifactoryArtifactInvalidRequestDetails() throws Exception {
     final ArtifactoryConnectorDTO connector = ArtifactoryConnectorDTO.builder().build();
     final TasArtifactRequestDetails artifactRequestDetails = mock(TasArtifactRequestDetails.class);
@@ -526,8 +704,8 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
   public void testDownloadNexusMavenArtifact() throws Exception {
-    testDownloadNexusRequest(NEXUS2_MAVEN_DOWNLOAD_URL, RepositoryFormat.maven.name(), NEXUS_MAVEN_ARTIFACT_NAME,
-        ArtifactType.ZIP, ArtifactSourceType.NEXUS2_REGISTRY);
+    testDownloadNexusRequest(NEXUS2_MAVEN_DOWNLOAD_URL, RepositoryFormat.maven.name(), NEXUS_MAVEN_ARTIFACT_NAME, ZIP,
+        ArtifactSourceType.NEXUS2_REGISTRY);
     testDownloadNexusRequest(NEXUS_MAVEN_DOWNLOAD_URL, RepositoryFormat.maven.name(), NEXUS_MAVEN_ARTIFACT_NAME,
         ArtifactType.JAR, ArtifactSourceType.NEXUS3_REGISTRY);
   }
@@ -573,6 +751,61 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
     }
   }
 
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testDownloadWrongArtifactDetails() throws Exception {
+    testDownloadNexusRequestWrongArtifactDetails(ArtifactSourceType.NEXUS3_REGISTRY);
+    testDownloadNexusRequestWrongArtifactDetails(ArtifactSourceType.AMAZONS3);
+    testDownloadNexusRequestWrongArtifactDetails(ArtifactSourceType.JENKINS);
+    testDownloadNexusRequestWrongArtifactDetails(ArtifactSourceType.AZURE_ARTIFACTS);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testDownloadWrongConnector() throws Exception {
+    final JenkinsConnectorDTO connectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("testJenkinsUrl")
+            .auth(JenkinsAuthenticationDTO.builder()
+                      .authType(JenkinsAuthType.USER_PASSWORD)
+                      .credentials(JenkinsUserNamePasswordDTO.builder()
+                                       .username("testUsername")
+                                       .passwordRef(SecretRefData.builder().build())
+                                       .build())
+                      .build())
+            .build();
+    final NexusTasArtifactRequestDetails artifactRequestDetails =
+        NexusTasArtifactRequestDetails.builder()
+            .certValidationRequired(false)
+            .artifactUrl(NEXUS2_MAVEN_DOWNLOAD_URL)
+            .repositoryFormat(RepositoryFormat.maven.name())
+            .identifier("test")
+            .metadata(ImmutableMap.of("url", NEXUS2_MAVEN_DOWNLOAD_URL, "package", "test-nuget", "version", "1.0.0"))
+            .build();
+    final TasArtifactDownloadContext downloadContext =
+        createDownloadContext(ArtifactSourceType.NEXUS2_REGISTRY, artifactRequestDetails, connectorDTO);
+    assertThatThrownBy(() -> cfCommandTaskHelperNG.downloadPackageArtifact(downloadContext, logCallback))
+        .isInstanceOf(HintException.class)
+        .hasMessageContaining("Configure nexus connector for nexus configuration");
+  }
+
+  private void testDownloadNexusRequestWrongArtifactDetails(ArtifactSourceType artifactSourceType) throws Exception {
+    final NexusConnectorDTO connectorDTO =
+        NexusConnectorDTO.builder()
+            .version("3.x")
+            .auth(NexusAuthenticationDTO.builder().credentials(NexusUsernamePasswordAuthDTO.builder().build()).build())
+            .build();
+    final ArtifactoryTasArtifactRequestDetails requestDetails =
+        ArtifactoryTasArtifactRequestDetails.builder().artifactPaths(singletonList("test")).build();
+    final TasArtifactDownloadContext downloadContext =
+        createDownloadContext(artifactSourceType, requestDetails, connectorDTO);
+    assertThatThrownBy(() -> cfCommandTaskHelperNG.downloadPackageArtifact(downloadContext, logCallback))
+        .isInstanceOf(HintException.class)
+        .hasMessageContaining("Please contact harness support team");
+  }
+
   private TasArtifactDownloadContext createDownloadContext(ArtifactSourceType sourceType,
       TasArtifactRequestDetails requestDetails, ConnectorConfigDTO connector) throws Exception {
     return TasArtifactDownloadContext.builder()
@@ -582,7 +815,7 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
                             .connectorConfig(connector)
                             .encryptedDataDetails(singletonList(EncryptedDataDetail.builder().build()))
                             .build())
-        .workingDirectory(new File(Files.createTempDirectory("testAzureArtifact").toString()))
+        .workingDirectory(new File(Files.createTempDirectory("testArtifact").toString()))
         .build();
   }
 
@@ -726,6 +959,509 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
         cfRequestConfig, applicationDetail, pcfInstanceElements, autoscalarRequestData);
 
     assertThat(pcfInstanceElements.size()).isEqualTo(previousCount);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testEnableAutoscalerIfNeeded() throws PivotalClientApiException {
+    ArgumentCaptor<CfAppAutoscalarRequestData> cfAppAutoscalarRequestDataArgumentCaptor =
+        ArgumentCaptor.forClass(CfAppAutoscalarRequestData.class);
+    doReturn(true)
+        .when(cfDeploymentManager)
+        .changeAutoscalarState(cfAppAutoscalarRequestDataArgumentCaptor.capture(), any(), anyBoolean());
+    String path = "./test" + System.currentTimeMillis();
+    CfAppAutoscalarRequestData autoscalarRequestData = CfAppAutoscalarRequestData.builder()
+                                                           .applicationName(APP_NAME)
+                                                           .applicationGuid(APP_ID)
+                                                           .configPathVar(path)
+                                                           .build();
+
+    cfCommandTaskHelperNG.enableAutoscalerIfNeeded(ApplicationDetail.builder()
+                                                       .id("1")
+                                                       .diskQuota(1)
+                                                       .instances(0)
+                                                       .memoryLimit(1)
+                                                       .name("test-app")
+                                                       .stack("")
+                                                       .requestedState("STOPPED")
+                                                       .runningInstances(0)
+                                                       .urls(Arrays.asList("1.com", "2.com"))
+                                                       .build(),
+        autoscalarRequestData, logCallback);
+    CfAppAutoscalarRequestData cfAppAutoscalarRequestData = cfAppAutoscalarRequestDataArgumentCaptor.getValue();
+    assertThat(cfAppAutoscalarRequestData.getApplicationName()).isEqualTo("test-app");
+    assertThat(cfAppAutoscalarRequestData.getApplicationGuid()).isEqualTo("1");
+    assertThat(cfAppAutoscalarRequestData.isExpectedEnabled()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testUnmapRoutesFromNewAppAfterDownsize() throws PivotalClientApiException {
+    CfRequestConfig cfRequestConfig = CfRequestConfig.builder().build();
+
+    // no new applications
+    cfCommandTaskHelperNG.unmapRoutesFromNewAppAfterDownsize(logCallback, null, cfRequestConfig);
+    verify(pcfCommandTaskHelper, never()).unmapExistingRouteMaps(any(), any(), any());
+
+    // empty name of new application details
+    cfCommandTaskHelperNG.unmapRoutesFromNewAppAfterDownsize(
+        logCallback, TasApplicationInfo.builder().build(), cfRequestConfig);
+    verify(pcfCommandTaskHelper, never()).unmapExistingRouteMaps(any(), any(), any());
+
+    String appName = "appName";
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .id("10")
+                                              .diskQuota(1)
+                                              .instances(0)
+                                              .memoryLimit(1)
+                                              .name("app1")
+                                              .requestedState(STOPPED)
+                                              .stack("")
+                                              .urls(Collections.singletonList("url1"))
+                                              .runningInstances(1)
+                                              .build();
+    when(cfDeploymentManager.getApplicationByName(any())).thenReturn(applicationDetail);
+    cfCommandTaskHelperNG.unmapRoutesFromNewAppAfterDownsize(
+        logCallback, TasApplicationInfo.builder().applicationName(appName).build(), cfRequestConfig);
+    assertThat(cfRequestConfig.getApplicationName()).isEqualTo("app1");
+    verify(pcfCommandTaskHelper).unmapExistingRouteMaps(applicationDetail, cfRequestConfig, logCallback);
+  }
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testEnableAutoscalerIfNeededTasApplicationInfo() throws PivotalClientApiException {
+    ArgumentCaptor<CfAppAutoscalarRequestData> cfAppAutoscalarRequestDataArgumentCaptor =
+        ArgumentCaptor.forClass(CfAppAutoscalarRequestData.class);
+    doReturn(true)
+        .when(cfDeploymentManager)
+        .changeAutoscalarState(cfAppAutoscalarRequestDataArgumentCaptor.capture(), any(), anyBoolean());
+    String path = "./test" + System.currentTimeMillis();
+    CfAppAutoscalarRequestData autoscalarRequestData = CfAppAutoscalarRequestData.builder()
+                                                           .applicationName(APP_NAME)
+                                                           .applicationGuid(APP_ID)
+                                                           .configPathVar(path)
+                                                           .build();
+
+    cfCommandTaskHelperNG.enableAutoscalerIfNeeded(
+        TasApplicationInfo.builder().applicationName("old-app").applicationGuid("1234").build(), autoscalarRequestData,
+        logCallback);
+    CfAppAutoscalarRequestData cfAppAutoscalarRequestData = cfAppAutoscalarRequestDataArgumentCaptor.getValue();
+    assertThat(cfAppAutoscalarRequestData.getApplicationName()).isEqualTo("old-app");
+    assertThat(cfAppAutoscalarRequestData.getApplicationGuid()).isEqualTo("1234");
+    assertThat(cfAppAutoscalarRequestData.isExpectedEnabled()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testRestoreRoutesForOldApplication() throws PivotalClientApiException {
+    String appName = APP_NAME;
+    List<String> urls = Collections.singletonList("url1");
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .id("10")
+                                              .diskQuota(1)
+                                              .instances(1)
+                                              .memoryLimit(1)
+                                              .name("app1")
+                                              .requestedState(STOPPED)
+                                              .stack("")
+                                              .runningInstances(1)
+                                              .build();
+    when(cfDeploymentManager.getApplicationByName(any())).thenReturn(applicationDetail);
+    CfRequestConfig cfRequestConfig = CfRequestConfig.builder().build();
+
+    // map route maps
+    cfCommandTaskHelperNG.restoreRoutesForOldApplication(
+        TasApplicationInfo.builder().applicationName(appName).attachedRoutes(urls).build(), cfRequestConfig,
+        logCallback, CfRollbackCommandResult.builder().build());
+    assertThat(cfRequestConfig.getApplicationName()).isEqualTo(appName);
+    verify(pcfCommandTaskHelper).mapRouteMaps(appName, urls, cfRequestConfig, logCallback);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testconfigureAutoscalarIfNeeded() throws PivotalClientApiException, IOException {
+    CfDeployCommandRequestNG cfDeployCommandRequestNG =
+        CfDeployCommandRequestNG.builder().tasInfraConfig(TasInfraConfig.builder().build()).build();
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .id("10")
+                                              .diskQuota(1)
+                                              .instances(0)
+                                              .memoryLimit(1)
+                                              .name("app1")
+                                              .requestedState("STOPPED")
+                                              .stack("")
+                                              .urls(Arrays.asList("url1"))
+                                              .runningInstances(1)
+                                              .build();
+    CfAppAutoscalarRequestData pcfAppAutoscalarRequestData = CfAppAutoscalarRequestData.builder().build();
+
+    // don't use autoscalar
+    cfDeployCommandRequestNG.setUseAppAutoScalar(false);
+    cfCommandTaskHelperNG.configureAutoscalarIfNeeded(
+        cfDeployCommandRequestNG, applicationDetail, pcfAppAutoscalarRequestData, logCallback);
+    verify(cfDeploymentManager, never()).performConfigureAutoscalar(any(), any());
+
+    // empty PcfManifestsPackage
+    cfDeployCommandRequestNG.setUseAppAutoScalar(true);
+    cfDeployCommandRequestNG.setTasManifestsPackage(null);
+    cfCommandTaskHelperNG.configureAutoscalarIfNeeded(
+        cfDeployCommandRequestNG, applicationDetail, pcfAppAutoscalarRequestData, logCallback);
+    verify(cfDeploymentManager, never()).performConfigureAutoscalar(any(), any());
+
+    // empty autoscalarManifestsYaml
+    cfDeployCommandRequestNG.setTasManifestsPackage(TasManifestsPackage.builder().build());
+    cfCommandTaskHelperNG.configureAutoscalarIfNeeded(
+        cfDeployCommandRequestNG, applicationDetail, pcfAppAutoscalarRequestData, logCallback);
+    verify(cfDeploymentManager, never()).performConfigureAutoscalar(any(), any());
+
+    // max count bigger than update count
+    cfDeployCommandRequestNG.setTasManifestsPackage(
+        TasManifestsPackage.builder().autoscalarManifestYml("autoscalarManifestYml").build());
+    cfDeployCommandRequestNG.setMaxCount(2);
+    cfDeployCommandRequestNG.setUpsizeCount(1);
+    cfCommandTaskHelperNG.configureAutoscalarIfNeeded(
+        cfDeployCommandRequestNG, applicationDetail, pcfAppAutoscalarRequestData, logCallback);
+    verify(cfDeploymentManager, never()).performConfigureAutoscalar(any(), any());
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testRestoreRoutesForOldApplicationNoAppsToDownsize() throws PivotalClientApiException {
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .id("10")
+                                              .diskQuota(1)
+                                              .instances(1)
+                                              .memoryLimit(1)
+                                              .name("app1")
+                                              .requestedState(STOPPED)
+                                              .stack("")
+                                              .runningInstances(1)
+                                              .build();
+    when(cfDeploymentManager.getApplicationByName(any())).thenReturn(applicationDetail);
+    CfRequestConfig cfRequestConfig = CfRequestConfig.builder().build();
+
+    cfCommandTaskHelperNG.restoreRoutesForOldApplication(
+        null, cfRequestConfig, logCallback, CfRollbackCommandResult.builder().build());
+    verify(pcfCommandTaskHelper, never())
+        .mapRouteMaps(anyString(), anyList(), any(CfRequestConfig.class), any(LogCallback.class));
+  }
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testDownsizePreviousReleases() throws Exception {
+    CfCommandDeployRequest request =
+        CfCommandDeployRequest.builder().accountId(ACCOUNT_ID).downsizeAppDetail(null).build();
+
+    CfRequestConfig cfRequestConfig = CfRequestConfig.builder().build();
+    List<CfServiceData> cfServiceDataList = new ArrayList<>();
+    List<CfInternalInstanceElement> pcfInstanceElements = new ArrayList<>();
+
+    // No old app exists
+    pcfCommandTaskHelper.downsizePreviousReleases(request, cfRequestConfig, logCallback, cfServiceDataList, 0,
+        pcfInstanceElements, CfAppAutoscalarRequestData.builder().build());
+    verify(cfDeploymentManager, never()).getApplicationByName(any());
+
+    InstanceDetail instanceDetail0 = InstanceDetail.builder()
+                                         .cpu(0.0)
+                                         .index("0")
+                                         .diskQuota(0l)
+                                         .diskUsage(0l)
+                                         .memoryQuota(0l)
+                                         .memoryUsage(0l)
+                                         .state("RUNNING")
+                                         .build();
+
+    InstanceDetail instanceDetail1 = InstanceDetail.builder()
+                                         .cpu(0.0)
+                                         .index("1")
+                                         .diskQuota(0l)
+                                         .diskUsage(0l)
+                                         .memoryQuota(0l)
+                                         .memoryUsage(0l)
+                                         .state("RUNNING")
+                                         .build();
+    // old app exists, but downsize is not required.
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .diskQuota(1)
+                                              .id("id")
+                                              .name("app")
+                                              .instanceDetails(instanceDetail0, instanceDetail1)
+                                              .instances(2)
+                                              .memoryLimit(1)
+                                              .stack("stack")
+                                              .runningInstances(2)
+                                              .requestedState("RUNNING")
+                                              .build();
+
+    ApplicationDetail applicationDetailAfterDownsize = ApplicationDetail.builder()
+                                                           .diskQuota(1)
+                                                           .id("id")
+                                                           .name("app")
+                                                           .instanceDetails(instanceDetail0)
+                                                           .instances(1)
+                                                           .memoryLimit(1)
+                                                           .stack("stack")
+                                                           .runningInstances(1)
+                                                           .requestedState("RUNNING")
+                                                           .build();
+
+    request.setDownsizeAppDetail(
+        CfAppSetupTimeDetails.builder().applicationGuid("1").applicationName("app").initialInstanceCount(1).build());
+    doReturn(applicationDetail).when(cfDeploymentManager).getApplicationByName(any());
+
+    // For BG, downsize should never happen.
+    request.setStandardBlueGreen(true);
+    pcfCommandTaskHelper.downsizePreviousReleases(request, cfRequestConfig, logCallback, cfServiceDataList, 2,
+        pcfInstanceElements, CfAppAutoscalarRequestData.builder().build());
+    verify(cfDeploymentManager, never()).getApplicationByName(any());
+
+    // exptectedCount = cuurrentCount, no downsize should be called.
+    request.setStandardBlueGreen(false);
+    pcfCommandTaskHelper.downsizePreviousReleases(request, cfRequestConfig, logCallback, cfServiceDataList, 2,
+        pcfInstanceElements, CfAppAutoscalarRequestData.builder().applicationGuid("id").applicationName("app").build());
+    verify(cfDeploymentManager, times(1)).getApplicationByName(any());
+    assertThat(cfServiceDataList.size()).isEqualTo(1);
+    assertThat(cfServiceDataList.get(0).getDesiredCount()).isEqualTo(2);
+    assertThat(cfServiceDataList.get(0).getPreviousCount()).isEqualTo(2);
+    assertThat(cfServiceDataList.get(0).getId()).isEqualTo("id");
+    assertThat(cfServiceDataList.get(0).getName()).isEqualTo("app");
+
+    // Downsize application from 2 to 1
+    doReturn(applicationDetailAfterDownsize).when(cfDeploymentManager).resizeApplication(any());
+    pcfInstanceElements.clear();
+    cfServiceDataList.clear();
+    pcfCommandTaskHelper.downsizePreviousReleases(request, cfRequestConfig, logCallback, cfServiceDataList, 1,
+        pcfInstanceElements, CfAppAutoscalarRequestData.builder().build());
+    verify(cfDeploymentManager, times(2)).getApplicationByName(any());
+    assertThat(cfServiceDataList.size()).isEqualTo(1);
+    assertThat(cfServiceDataList.get(0).getDesiredCount()).isEqualTo(1);
+    assertThat(cfServiceDataList.get(0).getPreviousCount()).isEqualTo(2);
+    assertThat(cfServiceDataList.get(0).getId()).isEqualTo("id");
+    assertThat(cfServiceDataList.get(0).getName()).isEqualTo("app");
+
+    assertThat(pcfInstanceElements.size()).isEqualTo(1);
+    assertThat(pcfInstanceElements.get(0).getApplicationId()).isEqualTo("id");
+    assertThat(pcfInstanceElements.get(0).getDisplayName()).isEqualTo("app");
+    assertThat(pcfInstanceElements.get(0).getInstanceIndex()).isEqualTo("0");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testDownsizePreviousReleases_autoscalar() throws Exception {
+    CfCommandDeployRequest request =
+        CfCommandDeployRequest.builder().accountId(ACCOUNT_ID).downsizeAppDetail(null).useAppAutoscalar(true).build();
+
+    CfRequestConfig cfRequestConfig = CfRequestConfig.builder().build();
+    List<CfServiceData> cfServiceDataList = new ArrayList<>();
+    List<CfInternalInstanceElement> pcfInstanceElements = new ArrayList<>();
+
+    InstanceDetail instanceDetail0 = InstanceDetail.builder()
+                                         .cpu(0.0)
+                                         .index("0")
+                                         .diskQuota(0l)
+                                         .diskUsage(0l)
+                                         .memoryQuota(0l)
+                                         .memoryUsage(0l)
+                                         .state("RUNNING")
+                                         .build();
+
+    InstanceDetail instanceDetail1 = InstanceDetail.builder()
+                                         .cpu(0.0)
+                                         .index("1")
+                                         .diskQuota(0l)
+                                         .diskUsage(0l)
+                                         .memoryQuota(0l)
+                                         .memoryUsage(0l)
+                                         .state("RUNNING")
+                                         .build();
+    // old app exists, but downsize is not required.
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .diskQuota(1)
+                                              .id("id")
+                                              .name("app")
+                                              .instanceDetails(instanceDetail0, instanceDetail1)
+                                              .instances(2)
+                                              .memoryLimit(1)
+                                              .stack("stack")
+                                              .runningInstances(2)
+                                              .requestedState("RUNNING")
+                                              .build();
+
+    ApplicationDetail applicationDetailAfterDownsize = ApplicationDetail.builder()
+                                                           .diskQuota(1)
+                                                           .id("id")
+                                                           .name("app")
+                                                           .instanceDetails(instanceDetail0)
+                                                           .instances(1)
+                                                           .memoryLimit(1)
+                                                           .stack("stack")
+                                                           .runningInstances(1)
+                                                           .requestedState("RUNNING")
+                                                           .build();
+
+    request.setDownsizeAppDetail(
+        CfAppSetupTimeDetails.builder().applicationGuid("1").applicationName("app").initialInstanceCount(1).build());
+    doReturn(applicationDetail).when(cfDeploymentManager).getApplicationByName(any());
+
+    // Downsize application from 2 to 1
+    doReturn(applicationDetailAfterDownsize).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(true).when(cfDeploymentManager).changeAutoscalarState(any(), any(), anyBoolean());
+    pcfInstanceElements.clear();
+    cfServiceDataList.clear();
+    pcfCommandTaskHelper.downsizePreviousReleases(request, cfRequestConfig, logCallback, cfServiceDataList, 1,
+        pcfInstanceElements,
+        CfAppAutoscalarRequestData.builder()
+            .applicationName(applicationDetail.getName())
+            .applicationGuid(applicationDetail.getId())
+            .build());
+    verify(cfDeploymentManager, times(1)).getApplicationByName(any());
+    verify(cfDeploymentManager, times(1)).changeAutoscalarState(any(), any(), anyBoolean());
+    assertThat(cfServiceDataList.size()).isEqualTo(1);
+    assertThat(cfServiceDataList.get(0).getDesiredCount()).isEqualTo(1);
+    assertThat(cfServiceDataList.get(0).getPreviousCount()).isEqualTo(2);
+    assertThat(cfServiceDataList.get(0).getId()).isEqualTo("id");
+    assertThat(cfServiceDataList.get(0).getName()).isEqualTo("app");
+    assertThat(cfServiceDataList.get(0).isDisableAutoscalarPerformed()).isTrue();
+
+    assertThat(pcfInstanceElements.size()).isEqualTo(1);
+    assertThat(pcfInstanceElements.get(0).getApplicationId()).isEqualTo("id");
+    assertThat(pcfInstanceElements.get(0).getDisplayName()).isEqualTo("app");
+    assertThat(pcfInstanceElements.get(0).getInstanceIndex()).isEqualTo("0");
+  }
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testRestoreRoutesForOldApplicationEmptyUrls() throws PivotalClientApiException {
+    String appName = APP_NAME;
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .id("10")
+                                              .diskQuota(1)
+                                              .instances(1)
+                                              .memoryLimit(1)
+                                              .name("app1")
+                                              .requestedState(STOPPED)
+                                              .stack("")
+                                              .runningInstances(1)
+                                              .build();
+    when(cfDeploymentManager.getApplicationByName(any())).thenReturn(applicationDetail);
+    CfRequestConfig cfRequestConfig = CfRequestConfig.builder().build();
+
+    cfCommandTaskHelperNG.restoreRoutesForOldApplication(TasApplicationInfo.builder().applicationName(appName).build(),
+        cfRequestConfig, logCallback, CfRollbackCommandResult.builder().build());
+    assertThat(cfRequestConfig.getApplicationName()).isEqualTo(appName);
+    verify(pcfCommandTaskHelper, never())
+        .mapRouteMaps(anyString(), anyList(), any(CfRequestConfig.class), any(LogCallback.class));
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testRestoreRoutesForOldApplication2() throws PivotalClientApiException {
+    String appName = "appName";
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .id("10")
+                                              .diskQuota(1)
+                                              .instances(1)
+                                              .memoryLimit(1)
+                                              .name("app1")
+                                              .requestedState(STOPPED)
+                                              .stack("")
+                                              .urls(Collections.singletonList("url1"))
+                                              .runningInstances(1)
+                                              .build();
+    when(cfDeploymentManager.getApplicationByName(any())).thenReturn(applicationDetail);
+    CfRequestConfig cfRequestConfig = CfRequestConfig.builder().build();
+
+    List<String> urls = Collections.singletonList("url2");
+    cfCommandTaskHelperNG.restoreRoutesForOldApplication(
+        TasApplicationInfo.builder().applicationName(appName).attachedRoutes(urls).build(), cfRequestConfig,
+        logCallback, CfRollbackCommandResult.builder().build());
+    assertThat(cfRequestConfig.getApplicationName()).isEqualTo(appName);
+    verify(pcfCommandTaskHelper).mapRouteMaps(appName, urls, cfRequestConfig, logCallback);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testDownSizeListOfInstances() throws Exception {
+    ApplicationDetail detail = ApplicationDetail.builder()
+                                   .diskQuota(1)
+                                   .id("id")
+                                   .name("app")
+                                   .instances(0)
+                                   .memoryLimit(1)
+                                   .stack("stack")
+                                   .runningInstances(2)
+                                   .requestedState("RUNNING")
+                                   .build();
+
+    doReturn(detail).when(cfDeploymentManager).getApplicationByName(any());
+    doReturn(detail).when(cfDeploymentManager).resizeApplication(any());
+
+    List<CfServiceData> cfServiceDataListToBeUpdated = new ArrayList<>();
+    List<CfServiceData> cfServiceDataList = new ArrayList<>();
+    CfRequestConfig cfRequestConfig = CfRequestConfig.builder().build();
+    cfServiceDataList.add(CfServiceData.builder().name("test").desiredCount(2).build());
+
+    doReturn(true).when(cfDeploymentManager).changeAutoscalarState(any(), any(), anyBoolean());
+    cfCommandTaskHelperNG.downSizeListOfInstances(logCallback, cfServiceDataListToBeUpdated, cfRequestConfig,
+        cfServiceDataList, true,
+        CfAppAutoscalarRequestData.builder().applicationName(detail.getName()).applicationGuid(detail.getId()).build());
+    verify(cfDeploymentManager, times(1)).changeAutoscalarState(any(), any(), anyBoolean());
+    assertThat(cfServiceDataListToBeUpdated.size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testDownSizeListOfInstancesFailAutoscaler() throws Exception {
+    ApplicationDetail detail = ApplicationDetail.builder()
+                                   .diskQuota(1)
+                                   .id("id")
+                                   .name("app")
+                                   .instances(0)
+                                   .memoryLimit(1)
+                                   .stack("stack")
+                                   .runningInstances(2)
+                                   .requestedState("RUNNING")
+                                   .build();
+
+    doReturn(detail).when(cfDeploymentManager).getApplicationByName(any());
+    doReturn(detail).when(cfDeploymentManager).resizeApplication(any());
+
+    List<CfServiceData> cfServiceDataListToBeUpdated = new ArrayList<>();
+    List<CfServiceData> cfServiceDataList = new ArrayList<>();
+    CfRequestConfig cfRequestConfig = CfRequestConfig.builder().build();
+    cfServiceDataList.add(CfServiceData.builder().name("test").desiredCount(2).build());
+
+    doThrow(new PivotalClientApiException("#Throwing exception to test if flow stops or not"))
+        .when(pcfCommandTaskHelper)
+        .disableAutoscalar(any(), any());
+
+    cfCommandTaskHelperNG.downSizeListOfInstances(logCallback, cfServiceDataListToBeUpdated, cfRequestConfig,
+        cfServiceDataList, true,
+        CfAppAutoscalarRequestData.builder().applicationName(detail.getName()).applicationGuid(detail.getId()).build());
+    verify(cfDeploymentManager, times(0)).changeAutoscalarState(any(), any(), anyBoolean());
+    verify(pcfCommandTaskHelper, times(1)).disableAutoscalar(any(), any());
+    verify(pcfCommandTaskHelper, times(1)).disableAutoscalarSafe(any(), any());
+    assertThat(cfServiceDataListToBeUpdated.size()).isEqualTo(1);
+  }
+
+  private CfCommandRollbackRequest createPcfCommandRollbackRequest(
+      boolean downsizeApps, String appName, List<String> urls) {
+    return CfCommandRollbackRequest.builder()
+        .isStandardBlueGreenWorkflow(false)
+        .appsToBeDownSized(downsizeApps
+                ? Collections.singletonList(
+                    CfAppSetupTimeDetails.builder().applicationName(appName).initialInstanceCount(1).urls(urls).build())
+                : null)
+        .build();
   }
 
   private ApplicationDetail getApplicationDetail(List<InstanceDetail> instances) {

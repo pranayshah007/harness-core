@@ -397,7 +397,7 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
                                     .build();
 
     appendDelegateTaskDetails(context, delegateTask);
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
 
     Map<K8sValuesLocation, Collection<String>> valuesFiles = new HashMap<>();
     K8sStateExecutionData stateExecutionData = (K8sStateExecutionData) context.getStateExecutionData();
@@ -513,7 +513,7 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
     }
 
     prepareDelegateTask(context, stateExecutionData, delegateTask, expressionFunctorToken);
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
     k8sStateExecutor.handleDelegateTask(context, delegateTask);
 
     return ExecutionResponse.builder()
@@ -739,7 +739,7 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
         expressionEvaluator.substitute(k8sTaskParameters.getReleaseName(), Collections.emptyMap()));
 
     appendDelegateTaskDetails(context, delegateTask);
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
 
     return ExecutionResponse.builder()
         .async(true)
@@ -1236,7 +1236,7 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
     prepareDelegateTask(context, stateExecutionData, delegateTask, expressionFunctorToken);
 
     appendDelegateTaskDetails(context, delegateTask);
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
 
     return ExecutionResponse.builder()
         .async(true)

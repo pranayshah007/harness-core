@@ -189,7 +189,7 @@ public class NewRelicState extends AbstractMetricAnalysisState {
             .isDataCollectionPerMinuteTask(false)
             .build(),
         waitId);
-    return delegateService.queueTask(delegateTask);
+    return delegateService.queueTaskV2(delegateTask);
   }
 
   @Override

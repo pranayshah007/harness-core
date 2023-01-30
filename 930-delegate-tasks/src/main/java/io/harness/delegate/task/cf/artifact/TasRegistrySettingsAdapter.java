@@ -8,6 +8,7 @@
 package io.harness.delegate.task.cf.artifact;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -35,6 +36,11 @@ public class TasRegistrySettingsAdapter {
   @Inject DecryptionHelper decryptionHelper;
 
   public TasArtifactCreds getContainerSettings(TasContainerArtifactConfig artifactConfig) {
+    if (isNull(artifactConfig.getRegistryType())) {
+      throw NestedExceptionUtils.hintWithExplanationException("Please contact Harness support team",
+          format("Unexpected null artifact configuration for TAS containers"),
+          new InvalidArgumentsException(Pair.of("artifactConfig", "Null artifact config")));
+    }
     switch (artifactConfig.getRegistryType()) {
       case DOCKER_HUB_PUBLIC:
         return dockerHubPublicRegistrySettingsProvider.getContainerSettings(artifactConfig, decryptionHelper);

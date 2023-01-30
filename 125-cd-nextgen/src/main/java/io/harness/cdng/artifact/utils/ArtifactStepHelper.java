@@ -25,6 +25,8 @@ import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleCloudSourceArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
@@ -342,6 +344,42 @@ public class ArtifactStepHelper {
               customArtifactConfig, ambiance, delegateMetricsService, ngSecretService);
         }
         return ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, ambiance);
+      case GOOGLE_CLOUD_STORAGE_ARTIFACT:
+        GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
+            (GoogleCloudStorageArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(googleCloudStorageArtifactConfig.getConnectorRef().getValue(), ambiance);
+        if (!(connectorDTO.getConnectorConfig() instanceof GcpConnectorDTO)) {
+          throw new InvalidConnectorTypeException("Provided Connector "
+                  + googleCloudStorageArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
+                  + googleCloudStorageArtifactConfig.getSourceType() + " Artifact",
+              WingsException.USER);
+        }
+        gcpConnectorDTO = (GcpConnectorDTO) connectorDTO.getConnectorConfig();
+        if (gcpConnectorDTO.getCredential() != null && gcpConnectorDTO.getCredential().getConfig() != null) {
+          encryptedDataDetails =
+              secretManagerClientService.getEncryptionDetails(ngAccess, gcpConnectorDTO.getCredential().getConfig());
+        }
+        return ArtifactConfigToDelegateReqMapper.getGoogleCloudStorageArtifactDelegateRequest(
+            googleCloudStorageArtifactConfig, gcpConnectorDTO, encryptedDataDetails,
+            googleCloudStorageArtifactConfig.getConnectorRef().getValue());
+      case GOOGLE_CLOUD_SOURCE_ARTIFACT:
+        GoogleCloudSourceArtifactConfig googleCloudSourceArtifactConfig =
+            (GoogleCloudSourceArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(googleCloudSourceArtifactConfig.getConnectorRef().getValue(), ambiance);
+        if (!(connectorDTO.getConnectorConfig() instanceof GcpConnectorDTO)) {
+          throw new InvalidConnectorTypeException("Provided Connector "
+                  + googleCloudSourceArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
+                  + googleCloudSourceArtifactConfig.getSourceType() + " Artifact",
+              WingsException.USER);
+        }
+        gcpConnectorDTO = (GcpConnectorDTO) connectorDTO.getConnectorConfig();
+        if (gcpConnectorDTO.getCredential() != null && gcpConnectorDTO.getCredential().getConfig() != null) {
+          encryptedDataDetails =
+              secretManagerClientService.getEncryptionDetails(ngAccess, gcpConnectorDTO.getCredential().getConfig());
+        }
+        return ArtifactConfigToDelegateReqMapper.getGoogleCloudSourceArtifactDelegateRequest(
+            googleCloudSourceArtifactConfig, gcpConnectorDTO, encryptedDataDetails,
+            googleCloudSourceArtifactConfig.getConnectorRef().getValue());
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -444,6 +482,10 @@ public class ArtifactStepHelper {
         return TaskType.AZURE_ARTIFACT_TASK_NG;
       case AMI:
         return TaskType.AMI_ARTIFACT_TASK_NG;
+      case GOOGLE_CLOUD_STORAGE_ARTIFACT:
+        return TaskType.GOOGLE_CLOUD_STORAGE_ARTIFACT_TASK_NG;
+      case GOOGLE_CLOUD_SOURCE_ARTIFACT:
+        return TaskType.GOOGLE_CLOUD_SOURCE_ARTIFACT_TASK_NG;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -562,6 +604,26 @@ public class ArtifactStepHelper {
         connectorDTO = getConnector(amiArtifactConfig.getConnectorRef().getValue(), ambiance);
 
         return TaskSelectorYaml.toTaskSelector(((AwsConnectorDTO) connectorDTO.getConnectorConfig())
+                                                   .getDelegateSelectors()
+                                                   .stream()
+                                                   .map(TaskSelectorYaml::new)
+                                                   .collect(Collectors.toList()));
+      case GOOGLE_CLOUD_STORAGE_ARTIFACT:
+        GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
+            (GoogleCloudStorageArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(googleCloudStorageArtifactConfig.getConnectorRef().getValue(), ambiance);
+
+        return TaskSelectorYaml.toTaskSelector(((GcpConnectorDTO) connectorDTO.getConnectorConfig())
+                                                   .getDelegateSelectors()
+                                                   .stream()
+                                                   .map(TaskSelectorYaml::new)
+                                                   .collect(Collectors.toList()));
+      case GOOGLE_CLOUD_SOURCE_ARTIFACT:
+        GoogleCloudSourceArtifactConfig googleCloudSourceArtifactConfig =
+            (GoogleCloudSourceArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(googleCloudSourceArtifactConfig.getConnectorRef().getValue(), ambiance);
+
+        return TaskSelectorYaml.toTaskSelector(((GcpConnectorDTO) connectorDTO.getConnectorConfig())
                                                    .getDelegateSelectors()
                                                    .stream()
                                                    .map(TaskSelectorYaml::new)

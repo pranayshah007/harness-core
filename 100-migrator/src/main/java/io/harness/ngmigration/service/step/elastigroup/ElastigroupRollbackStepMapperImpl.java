@@ -21,7 +21,7 @@ import software.wings.sm.states.spotinst.SpotInstRollbackState;
 
 import java.util.Map;
 
-public class ElastigroupRollbackStepMapperImpl implements StepMapper {
+public class ElastigroupRollbackStepMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.ELASTIGROUP_ROLLBACK;
@@ -29,7 +29,7 @@ public class ElastigroupRollbackStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     SpotInstRollbackState state = new SpotInstRollbackState(stepYaml.getName());
     state.parseProperties(properties);
     return state;

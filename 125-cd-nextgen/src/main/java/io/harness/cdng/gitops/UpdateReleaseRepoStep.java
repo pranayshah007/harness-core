@@ -299,7 +299,7 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
     return GitFetchFilesConfig.builder()
         .identifier(manifestOutcome.getIdentifier())
         .manifestType(manifestOutcome.getType())
-        .succeedIfFileNotFound(false)
+        .succeedIfFileNotFound(true)
         .gitStoreDelegateConfig(rebuiltGitStoreDelegateConfig)
         .build();
   }

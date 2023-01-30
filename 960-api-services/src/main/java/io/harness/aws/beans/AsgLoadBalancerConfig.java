@@ -29,6 +29,6 @@ public class AsgLoadBalancerConfig {
   @NonFinal @Expression(ALLOW_SECRETS) String stageListenerRuleArn;
   @NonFinal @Expression(ALLOW_SECRETS) String prodListenerArn;
   @NonFinal @Expression(ALLOW_SECRETS) String prodListenerRuleArn;
-  List<String> prodTargetGroupArnsList;
-  List<String> stageTargetGroupArnsList;
+  @NonFinal List<String> prodTargetGroupArnsList;
+  @NonFinal List<String> stageTargetGroupArnsList;
 }

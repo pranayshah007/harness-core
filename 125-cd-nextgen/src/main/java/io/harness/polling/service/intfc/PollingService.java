@@ -17,7 +17,6 @@ import io.harness.polling.contracts.PollingItem;
 
 import java.util.List;
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface PollingService {
@@ -40,8 +39,6 @@ public interface PollingService {
   boolean unsubscribe(PollingItem pollingItem);
 
   void deleteAtAllScopes(Scope scope);
-
-  void resetPerpetualTask(@NotNull PollingDocument pollingDocument);
 
   void resetPerpetualTasksForConnector(String accountId, String connectorRef);
 }

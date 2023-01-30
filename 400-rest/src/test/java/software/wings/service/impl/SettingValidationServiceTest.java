@@ -194,15 +194,16 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     FieldUtils.writeField(settingValidationService, "secretManager", secretManager, true);
 
     spySplunkDelegateService = spy(splunkDelegateService);
-    when(delegateProxyFactory.get(eq(SplunkDelegateService.class), any())).thenReturn(spySplunkDelegateService);
-    when(delegateProxyFactory.get(eq(ElkDelegateService.class), any())).thenReturn(elkDelegateService);
-    when(delegateProxyFactory.get(eq(LogzDelegateService.class), any())).thenReturn(logzDelegateService);
-    when(delegateProxyFactory.get(eq(SumoDelegateService.class), any())).thenReturn(sumoDelegateService);
-    when(delegateProxyFactory.get(eq(InstanaDelegateService.class), any())).thenReturn(instanaDelegateService);
-    when(delegateProxyFactory.get(eq(NewRelicDelegateService.class), any())).thenReturn(newRelicDelegateService);
-    when(delegateProxyFactory.get(eq(AppdynamicsDelegateService.class), any())).thenReturn(appdynamicsDelegateService);
-    when(delegateProxyFactory.get(eq(DynaTraceDelegateService.class), any())).thenReturn(dynaTraceDelegateService);
-    when(delegateProxyFactory.get(eq(APMDelegateService.class), any())).thenReturn(apmDelegateService);
+    when(delegateProxyFactory.getV2(eq(SplunkDelegateService.class), any())).thenReturn(spySplunkDelegateService);
+    when(delegateProxyFactory.getV2(eq(ElkDelegateService.class), any())).thenReturn(elkDelegateService);
+    when(delegateProxyFactory.getV2(eq(LogzDelegateService.class), any())).thenReturn(logzDelegateService);
+    when(delegateProxyFactory.getV2(eq(SumoDelegateService.class), any())).thenReturn(sumoDelegateService);
+    when(delegateProxyFactory.getV2(eq(InstanaDelegateService.class), any())).thenReturn(instanaDelegateService);
+    when(delegateProxyFactory.getV2(eq(NewRelicDelegateService.class), any())).thenReturn(newRelicDelegateService);
+    when(delegateProxyFactory.getV2(eq(AppdynamicsDelegateService.class), any()))
+        .thenReturn(appdynamicsDelegateService);
+    when(delegateProxyFactory.getV2(eq(DynaTraceDelegateService.class), any())).thenReturn(dynaTraceDelegateService);
+    when(delegateProxyFactory.getV2(eq(APMDelegateService.class), any())).thenReturn(apmDelegateService);
     when(featureFlagService.isEnabled(NEW_KUBECTL_VERSION, ACCOUNT_ID)).thenReturn(false);
   }
 
@@ -1145,7 +1146,7 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     attribute.setValue(repoConfig);
 
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    doReturn(validationResponse).when(delegateService).executeTask(delegateTaskArgumentCaptor.capture());
+    doReturn(validationResponse).when(delegateService).executeTaskV2(delegateTaskArgumentCaptor.capture());
     doReturn(true).when(featureFlagService).isEnabled(any(), any());
 
     settingValidationService.validate(attribute);
@@ -1175,7 +1176,7 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     FieldUtils.writeField(settingValidationService, "delegateService", delegateService, true);
 
     when(settingsService.get(any(), any())).thenReturn(connectorAttribute);
-    when(delegateService.executeTask(any()))
+    when(delegateService.executeTaskV2(any()))
         .thenReturn(
             HelmRepoConfigValidationResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
 
@@ -1185,7 +1186,7 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     settingValidationService.validate(attribute);
 
     ArgumentCaptor<DelegateTask> taskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(2)).executeTask(taskArgumentCaptor.capture());
+    verify(delegateService, times(2)).executeTaskV2(taskArgumentCaptor.capture());
     List<DelegateTask> delegateTaskList = taskArgumentCaptor.getAllValues();
 
     List<String> delegateSelectors =
@@ -1220,10 +1221,10 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(null);
     ConnectivityValidationDelegateResponse response =
         ConnectivityValidationDelegateResponse.builder().valid(true).build();
-    when(delegateService.executeTask(any(DelegateTask.class))).thenReturn(response);
+    when(delegateService.executeTaskV2(any(DelegateTask.class))).thenReturn(response);
     assertThat(settingValidationService.validateConnectivity(settingAttribute).isValid()).isEqualTo(true);
     ArgumentCaptor<DelegateTask> taskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).executeTask(taskArgumentCaptor.capture());
+    verify(delegateService, times(1)).executeTaskV2(taskArgumentCaptor.capture());
     DelegateTask delegateTask = taskArgumentCaptor.getValue();
     Map<String, String> setupAbstractions = new HashMap<>();
     setupAbstractions.put("ng", "true");
@@ -1241,7 +1242,7 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     settingAttribute.setValue(createSmtpConfig());
     settingAttribute.setName(NG_SMTP_SETTINGS_PREFIX + "dummy");
     when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(null);
-    when(delegateService.executeTask(any(DelegateTask.class)))
+    when(delegateService.executeTaskV2(any(DelegateTask.class)))
         .thenThrow(new NoEligibleDelegatesInAccountException(NO_ELIGIBLE_DELEGATES));
     try {
       settingValidationService.validateConnectivity(settingAttribute);
@@ -1250,7 +1251,7 @@ public class SettingValidationServiceTest extends WingsBaseTest {
       assertThat(e.getMessage()).isEqualTo("No eligible delegate(s) in account to execute task. ");
     }
     ArgumentCaptor<DelegateTask> taskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).executeTask(taskArgumentCaptor.capture());
+    verify(delegateService, times(1)).executeTaskV2(taskArgumentCaptor.capture());
     DelegateTask delegateTask = taskArgumentCaptor.getValue();
     Map<String, String> setupAbstractions = new HashMap<>();
     setupAbstractions.put("ng", "true");

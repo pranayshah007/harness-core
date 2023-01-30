@@ -179,7 +179,7 @@ public abstract class IntegrationTestBase extends WingsBaseTest implements Wings
 
   @Before
   public void setUp() throws Exception {
-    when(delegateProxyFactory.get(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))
+    when(delegateProxyFactory.getV2(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))
         .thenReturn(delegateService);
     FieldUtils.writeField(kmsService, "delegateProxyFactory", delegateProxyFactory, true);
     FieldUtils.writeField(secretManager, "kmsService", kmsService, true);

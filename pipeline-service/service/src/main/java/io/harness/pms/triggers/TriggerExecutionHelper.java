@@ -73,6 +73,7 @@ import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
+import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -343,7 +344,7 @@ public class TriggerExecutionHelper {
         executionMetaDataBuilder.setIsNotificationConfigured(EmptyPredicate.isNotEmpty(notificationRules));
         // Set Principle user as pipeline service.
         SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
-        String yamlWithoutInputs = YamlUtils.getYamlWithoutInputs(pipelineYaml);
+        String yamlWithoutInputs = YamlUtils.getYamlWithoutInputs(new YamlConfig(pipelineYaml));
         pmsYamlSchemaService.validateYamlSchema(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
             ngTriggerEntity.getProjectIdentifier(), yamlWithoutInputs);
 

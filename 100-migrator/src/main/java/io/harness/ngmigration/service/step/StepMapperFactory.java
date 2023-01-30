@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.ngmigration.service.step.arm.AzureCreateARMResourceStepMapperImpl;
+import io.harness.ngmigration.service.step.arm.AzureRollbackARMResourceStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupDeployStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupListenerRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupRollbackStepMapperImpl;
@@ -96,6 +98,8 @@ public class StepMapperFactory {
   @Inject InstanaStepMapperImpl instanaStepMapper;
   @Inject ResourceConstraintStepMapperImpl resourceConstraintStepMapper;
   @Inject ElastigroupSwapRouteStepMapperImpl elastigroupSwapRouteStepMapper;
+  @Inject AzureCreateARMResourceStepMapperImpl azureCreateARMResourceStepMapper;
+  @Inject AzureRollbackARMResourceStepMapperImpl azureRollbackARMResourceStepMapper;
   @Inject UnsupportedStepMapperImpl unsupportedStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
@@ -193,6 +197,10 @@ public class StepMapperFactory {
         return elastigroupListenerRollbackStepMapper;
       case "SPOTINST_ROLLBACK":
         return elastigroupRollbackStepMapper;
+      case "ARM_CREATE_RESOURCE":
+        return azureCreateARMResourceStepMapper;
+      case "ARM_ROLLBACK":
+        return azureRollbackARMResourceStepMapper;
       default:
         return unsupportedStepMapper;
     }

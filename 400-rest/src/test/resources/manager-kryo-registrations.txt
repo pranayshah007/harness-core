@@ -2846,6 +2846,8 @@
 680002:io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse
 680003:io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse
 680004:io.harness.delegate.beans.connector.terraformcloud.TerraformCloudValidationParams
+680005:io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse
+680006:io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse
 878001:io.harness.steps.matrix.StrategyMetadata
 878018:io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultAdviserParameters
 878019:io.harness.pms.sdk.core.execution.AsyncTimeoutResponseData
@@ -3030,3 +3032,5 @@
 10000302:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialSpecDTO
 10000303:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO
 10000304:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType
+
+10000401:io.harness.delegate.beans.executioncapability.AwsSamInstallationCapability

@@ -56,7 +56,7 @@ import io.harness.cdng.k8s.K8sDryRunManifestStepNode;
 import io.harness.cdng.k8s.K8sRollingRollbackStepNode;
 import io.harness.cdng.k8s.K8sRollingStepNode;
 import io.harness.cdng.k8s.K8sScaleStepNode;
-import io.harness.cdng.pipeline.CDAbstractStepInfo;
+import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.provision.azure.AzureARMRollbackStepNode;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepNode;
 import io.harness.cdng.provision.azure.AzureCreateBPStepNode;
@@ -68,6 +68,7 @@ import io.harness.cdng.provision.terraform.TerraformApplyStepNode;
 import io.harness.cdng.provision.terraform.TerraformDestroyStepNode;
 import io.harness.cdng.provision.terraform.TerraformPlanStepNode;
 import io.harness.cdng.provision.terraform.TerraformRollbackStepNode;
+import io.harness.cdng.provision.terraformcloud.TerraformCloudRunStepNode;
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStepNode;
 import io.harness.cdng.provision.terragrunt.TerragruntDestroyStepNode;
 import io.harness.cdng.provision.terragrunt.TerragruntPlanStepNode;
@@ -1018,6 +1019,18 @@ public class CDNGRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(AsgBlueGreenSwapServiceStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.TERRAFORM_CLOUD_RUN)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(TerraformCloudRunStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))

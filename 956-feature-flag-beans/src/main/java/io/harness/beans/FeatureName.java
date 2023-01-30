@@ -24,9 +24,6 @@ public enum FeatureName {
   SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE("Enables refresh pipeline when trigger "
           + "continue pipeline execution",
       HarnessTeam.SPG),
-  SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE("Enables the use of workflow variables to skip"
-          + " pipeline stage",
-      HarnessTeam.SPG),
   SPG_WFE_PROJECTIONS_DEPLOYMENTS_PAGE("Enable projection on deployments page and executions", HarnessTeam.SPG),
   SPG_ENABLE_NOTIFICATION_RULES("Enables notification rules and approvals notifications by usergroup", HarnessTeam.SPG),
   SPG_ENABLE_VALIDATION_WORKFLOW_PIPELINE_STAGE(
@@ -98,6 +95,7 @@ public enum FeatureName {
   FFM_4117_INTEGRATE_SRM("Enable Feature Flags to send events to the SRM module", HarnessTeam.CF),
   FFM_3959_FF_MFE_Environment_Detail("Enable Feature Flag MFE Environment page", HarnessTeam.CF),
   FFM_3961_ENHANCED_ONBOARDING("Enable new onboarding experience for FeatureFlags", HarnessTeam.CF),
+  FFM_6610_ENABLE_METRICS_ENDPOINT("Enable fetching feature flag metrics from new metrics endpoint", HarnessTeam.CF),
   WINRM_COPY_CONFIG_OPTIMIZE,
   ECS_MULTI_LBS,
   ENTITY_AUDIT_RECORD,
@@ -597,7 +595,12 @@ public enum FeatureName {
       HarnessTeam.CDP),
   SPG_SIDENAV_COLLAPSE("FF for enabling collapse and expand of side nav", HarnessTeam.SPG),
   PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS("Enable removal of user level viewer role assignments", HarnessTeam.PL),
-  TERRAFORM_CLOUD("Enable support of Terraform Cloud in the NG", HarnessTeam.CDP);
+  PL_REMOVE_EXTERNAL_USER_ORG_PROJECT(
+      "Allow deletion of externally managed user from orgs and projects", HarnessTeam.PL),
+  CDP_AWS_SAM("FF for enabling AWS SAM deployments", HarnessTeam.CDP),
+  TERRAFORM_CLOUD("Enable support of Terraform Cloud in the NG", HarnessTeam.CDP),
+  CI_REMOTE_DEBUG("Enable the option for remote debug for CI users.", HarnessTeam.CI),
+  NG_CDS_HELM_SUB_CHARTS("Support for helm sub charts", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.audit.api.streaming.StreamingService;
+import io.harness.audit.api.streaming.impl.AggregateStreamingServiceImpl;
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys;
@@ -35,10 +36,11 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.rule.Owner;
 import io.harness.spec.server.audit.v1.model.AwsS3StreamingDestinationSpecDTO;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationCards;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
-import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationResponse;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationStatus;
 import io.harness.utils.PageUtils.SortFields;
 
 import java.util.List;
@@ -64,25 +66,27 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
   private String identifier;
   private String name;
   private String bucket;
-  private StatusEnum statusEnum;
+  private StreamingDestinationStatus statusEnum;
   private String connectorRef;
 
   @Mock private StreamingService streamingService;
   @Mock private StreamingDestinationsApiUtils streamingDestinationsApiUtils;
+  @Mock private AggregateStreamingServiceImpl aggregateStreamingService;
   private StreamingDestinationsApiImpl streamingDestinationsApi;
   @Mock private AccessControlClient accessControlClient;
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.openMocks(this).close();
-    this.streamingDestinationsApi =
-        new StreamingDestinationsApiImpl(streamingService, streamingDestinationsApiUtils, accessControlClient);
+    this.streamingDestinationsApi = new StreamingDestinationsApiImpl(
+        streamingService, aggregateStreamingService, streamingDestinationsApiUtils, accessControlClient);
 
     harnessAccount = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     identifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     name = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
     bucket = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
-    statusEnum = StatusEnum.values()[RandomUtils.nextInt(0, StatusEnum.values().length - 1)];
+    statusEnum =
+        StreamingDestinationStatus.values()[RandomUtils.nextInt(0, StreamingDestinationStatus.values().length - 1)];
     connectorRef = "account." + randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
   }
 
@@ -142,6 +146,17 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
     assertThat(response).isNotNull();
     assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
     assertThat(response.getHeaders()).containsKey("Link");
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetStreamingDestinationsCards() {
+    String accountIdentifier = randomAlphabetic(10);
+    when(aggregateStreamingService.getStreamingDestinationCards(accountIdentifier))
+        .thenReturn(new StreamingDestinationCards());
+    streamingDestinationsApi.getStreamingDestinationsCards(accountIdentifier);
+    verify(aggregateStreamingService, times(1)).getStreamingDestinationCards(accountIdentifier);
   }
 
   @Test

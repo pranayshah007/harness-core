@@ -9,11 +9,13 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.service.MigrationTemplateUtils;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -29,48 +31,53 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 
+import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
-public interface StepMapper {
-  default List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
+public abstract class StepMapper {
+  @Inject MigrationTemplateUtils migrationTemplateUtils;
+
+  public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
     return Collections.emptyList();
   }
 
-  String getStepType(GraphNode stepYaml);
+  public abstract String getStepType(GraphNode stepYaml);
 
-  State getState(GraphNode stepYaml);
+  public abstract State getState(GraphNode stepYaml);
 
-  default List<StepExpressionFunctor> getExpressionFunctor(
+  public List<StepExpressionFunctor> getExpressionFunctor(
       WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
     return Collections.emptyList();
   }
 
-  AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode);
+  public abstract AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode);
 
-  default Set<String> getExpressions(GraphNode graphNode) {
+  public Set<String> getExpressions(GraphNode graphNode) {
     return Collections.emptySet();
   }
 
-  default TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     return null;
   }
 
-  default TemplateStepNode defaultTemplateSpecMapper(
-      Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public TemplateStepNode defaultTemplateSpecMapper(WorkflowMigrationContext context, GraphNode graphNode) {
     String templateId = graphNode.getTemplateUuid();
     if (StringUtils.isBlank(templateId)) {
       return null;
     }
-    NGYamlFile template =
-        migratedEntities.get(CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
+    NGYamlFile template = context.getMigratedEntities().get(
+        CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
     NGTemplateConfig templateConfig = (NGTemplateConfig) template.getYaml();
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(template.getNgEntityDetail()));
     templateLinkConfig.setVersionLabel(templateConfig.getTemplateInfoConfig().getVersionLabel());
+    templateLinkConfig.setTemplateInputs(migrationTemplateUtils.getTemplateInputs(
+        template, context.getWorkflow().getAccountId(), templateConfig.getTemplateInfoConfig().getVersionLabel()));
 
     TemplateStepNode templateStepNode = new TemplateStepNode();
     templateStepNode.setIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()));
@@ -80,13 +87,13 @@ public interface StepMapper {
     return templateStepNode;
   }
 
-  boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2);
+  public abstract boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2);
 
-  default ParameterField<Timeout> getTimeout(GraphNode stepYaml) {
+  public ParameterField<Timeout> getTimeout(GraphNode stepYaml) {
     Map<String, Object> properties = getProperties(stepYaml);
 
     String timeoutString = "10m";
-    if (properties.containsKey("timeoutMillis")) {
+    if (properties.containsKey("timeoutMillis") && properties.get("timeoutMillis") != null) {
       long t = Long.parseLong(properties.get("timeoutMillis").toString()) / 1000;
       if (t > 60) {
         timeoutString = (t / 60) + "m";
@@ -97,20 +104,20 @@ public interface StepMapper {
     return ParameterField.createValueField(Timeout.builder().timeoutString(timeoutString).build());
   }
 
-  default ParameterField<Timeout> getTimeout(State state) {
+  public ParameterField<Timeout> getTimeout(State state) {
     return MigratorUtility.getTimeout(state.getTimeoutMillis());
   }
 
-  default String getDescription(GraphNode stepYaml) {
+  public String getDescription(GraphNode stepYaml) {
     Map<String, Object> properties = getProperties(stepYaml);
     return properties.getOrDefault("description", "").toString();
   }
 
-  default Map<String, Object> getProperties(GraphNode stepYaml) {
+  public Map<String, Object> getProperties(GraphNode stepYaml) {
     return CollectionUtils.emptyIfNull(stepYaml.getProperties());
   }
 
-  default void baseSetup(GraphNode graphNode, AbstractStepNode stepNode) {
+  public void baseSetup(GraphNode graphNode, AbstractStepNode stepNode) {
     stepNode.setIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()));
     stepNode.setName(MigratorUtility.generateName(graphNode.getName()));
     stepNode.setDescription(getDescription(graphNode));
@@ -124,7 +131,7 @@ public interface StepMapper {
     }
   }
 
-  default void baseSetup(State state, AbstractStepNode stepNode) {
+  public void baseSetup(State state, AbstractStepNode stepNode) {
     stepNode.setIdentifier(MigratorUtility.generateIdentifier(state.getName()));
     stepNode.setName(MigratorUtility.generateName(state.getName()));
     if (stepNode instanceof PmsAbstractStepNode) {
@@ -137,5 +144,9 @@ public interface StepMapper {
     }
   }
 
-  WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode);
+  public abstract WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode);
+
+  public List<NGYamlFile> getChildNGYamlFiles(MigrationInputDTO inputDTO, GraphNode graphNode, String name) {
+    return new ArrayList<>();
+  }
 }

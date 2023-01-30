@@ -13,7 +13,7 @@ import static io.harness.ng.NextGenModule.CONNECTOR_DECORATOR_SERVICE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.common.EntityReference;
+import io.harness.beans.EntityReference;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;

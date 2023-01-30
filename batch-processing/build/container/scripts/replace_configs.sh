@@ -282,3 +282,8 @@ replace_key_value gcpConfig.gcpProjectId "$GCP_PROJECT_ID"
 replace_key_value gcpConfig.gcpAwsConnectorCrudPubSubTopic "$GCP_AWS_CONNECTOR_CRUD_PUBSUB_TOPIC"
 
 replace_key_value currencyPreferences.historicalUpdateMonthsCount "$CURRENCY_PREFERENCE_HISTORICAL_UPDATE_MONTHS_COUNT"
+replace_key_value deployMode "$DEPLOY_MODE"
+
+replace_key_value clickHouseConfig.url "$CLICKHOUSE_URL"
+replace_key_value clickHouseConfig.username "$CLICKHOUSE_USERNAME"
+replace_key_value clickHouseConfig.password "$CLICKHOUSE_PASSWORD"

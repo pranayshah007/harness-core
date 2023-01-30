@@ -331,7 +331,7 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
                         .timeout(defaultIfNullTimeout(DEFAULT_ASYNC_CALL_TIMEOUT))
                         .build())
               .build();
-      String delegateTaskId = delegateService.queueTask(delegateTask);
+      String delegateTaskId = delegateService.queueTaskV2(delegateTask);
       return ExecutionResponse.builder()
           .async(true)
           .correlationIds(Collections.singletonList(activityId))
@@ -461,7 +461,7 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
                         .build())
               .build();
     }
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
     return ExecutionResponse.builder()
         .async(true)
         .correlationIds(Collections.singletonList(activityId))

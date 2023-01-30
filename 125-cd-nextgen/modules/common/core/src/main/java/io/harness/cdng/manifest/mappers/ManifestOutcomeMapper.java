@@ -227,6 +227,7 @@ public class ManifestOutcomeMapper {
         .valuesPaths(helmChartManifest.getValuesPaths())
         .skipResourceVersioning(helmChartManifest.getSkipResourceVersioning())
         .commandFlags(helmChartManifest.getCommandFlags())
+        .subChartName(helmChartManifest.getSubChartName())
         .build();
   }
 

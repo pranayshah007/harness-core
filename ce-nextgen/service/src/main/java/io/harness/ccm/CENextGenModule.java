@@ -48,6 +48,8 @@ import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.bigQuery.BigQueryServiceImpl;
 import io.harness.ccm.budgetGroup.service.BudgetGroupService;
 import io.harness.ccm.budgetGroup.service.BudgetGroupServiceImpl;
+import io.harness.ccm.clickHouse.ClickHouseService;
+import io.harness.ccm.clickHouse.ClickHouseServiceImpl;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.commons.service.impl.ClusterRecordServiceImpl;
 import io.harness.ccm.commons.service.impl.EntityMetadataServiceImpl;
@@ -369,6 +371,8 @@ public class CENextGenModule extends AbstractModule {
     bind(CCMJiraHelper.class).to(CCMJiraHelperImpl.class);
     bind(CurrencyPreferenceService.class).to(CurrencyPreferenceServiceImpl.class);
     bind(BudgetGroupService.class).to(BudgetGroupServiceImpl.class);
+    bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
+
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
