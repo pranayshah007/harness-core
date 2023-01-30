@@ -15,14 +15,21 @@ import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.inject.Singleton;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -237,8 +244,21 @@ public class ClickHouseClusterDataService {
     prepareStatement.setBigDecimal(67, BigDecimal.valueOf(billingData.getMaxstoragerequest()));
     prepareStatement.setString(68, (String) billingData.getOrgIdentifier());
     prepareStatement.setString(69, (String) billingData.getProjectIdentifier());
-    prepareStatement.setObject(70, billingData.getLabels());
+    prepareStatement.setObject(70, getLabelMapFromLabelsArray(billingData));
 
     prepareStatement.addBatch();
+  }
+
+  @NotNull
+  private static Map<String, String> getLabelMapFromLabelsArray(ClusterBillingData billingData) {
+    List<Object> labels = billingData.getLabels();
+    List<JsonObject> jsonLabels = labels.stream()
+                                      .map(label -> new JsonParser().parse(label.toString()).getAsJsonObject())
+                                      .collect(Collectors.toList());
+
+    Map<String, String> labelMap = jsonLabels.stream().collect(Collectors.toMap(
+        label -> label.get("key").getAsString(), label -> label.get("value").getAsString(), (a, b) -> b));
+    log.info("labelMap size :: {} \n labelMap: {}", labelMap.size(), labelMap);
+    return labelMap;
   }
 }
