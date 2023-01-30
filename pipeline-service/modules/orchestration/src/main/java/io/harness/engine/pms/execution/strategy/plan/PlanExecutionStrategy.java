@@ -199,7 +199,14 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
     if (planExecution != null) {
       eventEmitter.emitEvent(buildEndEvent(ambiance, planExecution.getStatus()));
     }
+    transactionHelper.performTransaction(() -> fireInformAndSendAuditOnEnd(ambiance));
+  }
+
+  private OutboxEvent fireInformAndSendAuditOnEnd(Ambiance ambiance) {
+    // Sending AuditEvent
+    OutboxEvent outboxEvent = outboxService.save(new PipelineStartEvent());
     orchestrationEndSubject.fireInform(OrchestrationEndObserver::onEnd, ambiance);
+    return outboxEvent;
   }
 
   private OrchestrationEvent buildEndEvent(Ambiance ambiance, Status status) {
