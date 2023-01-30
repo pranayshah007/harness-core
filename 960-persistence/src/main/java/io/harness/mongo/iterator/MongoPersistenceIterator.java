@@ -32,22 +32,21 @@ import io.harness.iterator.PersistentIterable;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
+import io.harness.logging.DelayLogContext;
+import io.harness.logging.ProcessTimeLogContext;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.impl.PersistenceMetricsServiceImpl;
-import io.harness.mongo.DelayLogContext;
 import io.harness.mongo.EntityLogContext;
 import io.harness.mongo.EntityProcessController;
-import io.harness.mongo.ProcessTimeLogContext;
 import io.harness.mongo.iterator.filter.FilterExpander;
 import io.harness.mongo.iterator.provider.PersistenceProvider;
 import io.harness.queue.QueueController;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import com.mongodb.BulkWriteResult;
-import dev.morphia.query.MorphiaIterator;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
@@ -309,12 +308,21 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
     // Set the batchSize to fetch documents as 2x number of worker threads.
     // The main thread is fetching documents so worker thread count is N-1.
     int batchSize = Math.max(BATCH_SIZE_MULTIPLY_FACTOR * (threadPoolExecutor.getCorePoolSize() - 1), 1);
+    long movingAverage = 0;
+    long previous = 0;
 
     while (docsAvailable) {
       // Check if iterators should run or not.
       if (!shouldProcess()) {
         return;
       }
+
+      long base = currentTimeMillis();
+      if (previous != 0) {
+        base = movingAvg(previous + movingAverage, base);
+        movingAverage = movingAvg(movingAverage, base - previous);
+      }
+      previous = base;
 
       // Compute a limit value that takes into account the number of unprocessed
       // docs in the jobQ to ensure that the Q doesn't overflow.
@@ -349,12 +357,12 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         acquiredLock = acquireLock();
 
         processTime = currentTimeMillis() - startTime;
-        log.info("Redis Batch Iterator Mode - time to acquire Redis lock {}", processTime);
+        log.debug("Redis Batch Iterator Mode - time to acquire Redis lock {}", processTime);
 
         startTime = currentTimeMillis();
-        MorphiaIterator<T, T> docItr = persistenceProvider.obtainNextInstances(clazz, fieldName, filterExpander, limit);
+        Iterator<T> docItr = persistenceProvider.obtainNextInstances(clazz, fieldName, filterExpander, limit);
         processTime = currentTimeMillis() - startTime;
-        log.info("Redis Batch Iterator Mode - time to acquire {} docs is {}", limit, processTime);
+        log.debug("Redis Batch Iterator Mode - time to acquire {} docs is {}", limit, processTime);
 
         // Iterate over the fetched documents - submit it to workers and prepare bulkWrite operations
         List<String> docIds = new ArrayList<>();
@@ -365,7 +373,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         }
 
         // Update the documents next iteration field
-        updateDocumentNextIteration(docIds);
+        updateDocumentNextIteration(docIds, base);
 
         // If there were no documents available to process then break from loop
         docsAvailable = !docIds.isEmpty();
@@ -377,7 +385,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         // Release the semaphore
         semaphore.release();
         processTime = currentTimeMillis() - totalTimeStart;
-        log.info("Redis Batch Iterator Mode - time to carryout the entire processing is {}", processTime);
+        log.debug("Redis Batch Iterator Mode - time to carryout the entire processing is {}", processTime);
       }
     }
   }
@@ -475,20 +483,20 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
    * Method to carryout bulk find and update operation.
    * @param docIds List of document Ids
    */
-  private void updateDocumentNextIteration(List<String> docIds) {
+  private void updateDocumentNextIteration(List<String> docIds, long base) {
     // If the docIds list is empty then return
     if (docIds.isEmpty()) {
       return;
     }
 
-    long base = currentTimeMillis();
     int size = docIds.size();
     try {
       long startTime = currentTimeMillis();
-      BulkWriteResult writeResults =
+      BulkWriteOpsResults writeResults =
           persistenceProvider.bulkWriteDocumentsMatchingIds(clazz, docIds, fieldName, base, targetInterval);
       long processTime = currentTimeMillis() - startTime;
-      log.info("Redis Batch Iterator Mode - time to carryout bulk write for {} docs is {}", docIds.size(), processTime);
+      log.debug(
+          "Redis Batch Iterator Mode - time to carryout bulk write for {} docs is {}", docIds.size(), processTime);
 
       // Do not do any further time-consuming processing here because
       // the distributed lock has to be released in the finally block for safety.

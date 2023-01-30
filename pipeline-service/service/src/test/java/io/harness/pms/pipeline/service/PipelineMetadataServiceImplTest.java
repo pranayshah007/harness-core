@@ -7,6 +7,8 @@
 
 package io.harness.pms.pipeline.service;
 
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.NAMAN;
 
@@ -22,6 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.lock.AcquiredLock;
@@ -46,6 +49,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@OwnedBy(PIPELINE)
 public class PipelineMetadataServiceImplTest extends CategoryTest {
   PipelineMetadataServiceImpl pipelineMetadataService;
   @Mock PipelineMetadataV2Repository pipelineMetadataRepository;
@@ -189,5 +193,23 @@ public class PipelineMetadataServiceImplTest extends CategoryTest {
 
     int result = pipelineMetadataService.incrementExecutionCounter("A", "B", "C", "D");
     assertThat(result).isEqualTo(-1);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testDeletePipelineMetadata() {
+    Criteria metadataFindCriteria = Criteria.where(PipelineMetadataV2.PipelineMetadataV2Keys.accountIdentifier)
+                                        .is(ACCOUNT_ID)
+                                        .and(PipelineMetadataV2.PipelineMetadataV2Keys.orgIdentifier)
+                                        .is(ORG_IDENTIFIER)
+                                        .and(PipelineMetadataV2.PipelineMetadataV2Keys.projectIdentifier)
+                                        .is(PROJ_IDENTIFIER)
+                                        .and(PipelineMetadataV2.PipelineMetadataV2Keys.identifier)
+                                        .is(PIPE_IDENTIFIER);
+    doReturn(true).when(pipelineMetadataRepository).delete(metadataFindCriteria);
+    boolean pipelineMetadataDelete =
+        pipelineMetadataService.deletePipelineMetadata(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPE_IDENTIFIER);
+    assertThat(pipelineMetadataDelete).isTrue();
   }
 }

@@ -135,7 +135,8 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
     assertThat(rollbackHandlerConfig.getClient()).isNotNull();
     verify(k8sRollingRollbackBaseHandler).init(rollbackHandlerConfig, releaseName, logCallback);
     verify(k8sRollingRollbackBaseHandler, never())
-        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), true, null);
+        .legacyRollback(
+            rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), true, null);
     verify(k8sRollingRollbackBaseHandler, never())
         .steadyStateCheck(rollbackHandlerConfig, k8sDelegateTaskParams, timeoutIntervalInMin, logCallback);
     verify(k8sRollingRollbackBaseHandler, never()).postProcess(rollbackHandlerConfig, releaseName);

@@ -53,25 +53,13 @@ public class PushCliCommand extends CfCliCommand {
     @Option(value = "--vars-file") List<String> variableFilePaths;
     @Option(value = "--var") List<String> variableKeyValuePairs;
     @Option(value = "-t") String appStartTimeout;
-  }
-
-  @Value
-  @SuperBuilder
-  @EqualsAndHashCode(callSuper = true)
-  public static class PushOptionsV6 extends PushOptions {
-    @Option(value = "-d") String customDomain;
-    @Option(value = "--hostname") String hostname;
-    @Flag(value = "--no-hostname") boolean noHostname;
-    @Option(value = "--route-path") String routePath;
-  }
-
-  @Value
-  @SuperBuilder
-  @EqualsAndHashCode(callSuper = true)
-  public static class PushOptionsV7 extends PushOptions {
     @Option(value = "--endpoint") String healthCheckEndpoint;
     @Flag(value = "--no-wait") boolean noWait;
     @Option(value = "--strategy") String strategy;
     @Option(value = "--task") String task;
+    @Option(value = "-d") String customDomain;
+    @Option(value = "--hostname") String hostname;
+    @Flag(value = "--no-hostname") boolean noHostname;
+    @Option(value = "--route-path") String routePath;
   }
 }

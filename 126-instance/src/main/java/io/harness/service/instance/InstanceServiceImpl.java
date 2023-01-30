@@ -20,9 +20,14 @@ import io.harness.entities.Instance.InstanceKeysAdditional;
 import io.harness.mappers.InstanceMapper;
 import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.ActiveServiceInstanceInfoV2;
+import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
+import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
+import io.harness.models.EnvironmentInstanceCountModel;
+import io.harness.models.InstanceGroupedByPipelineExecution;
 import io.harness.models.InstancesByBuildId;
+import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.repositories.instance.InstanceRepository;
 
 import com.google.inject.Inject;
@@ -218,6 +223,13 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
+  public AggregationResults<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier,
+      String serviceIdentifier, String displayName, boolean isGitOps) {
+    return instanceRepository.getActiveServiceInstanceInfoWithEnvType(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, displayName, isGitOps);
+  }
+  @Override
   public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     return instanceRepository.getActiveServiceGitOpsInstanceInfo(
@@ -229,6 +241,13 @@ public class InstanceServiceImpl implements InstanceService {
       String buildIdentifier) {
     return instanceRepository.getActiveServiceGitOpsInstanceInfo(
         accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, buildIdentifier);
+  }
+
+  public AggregationResults<EnvironmentInstanceCountModel> getInstanceCountForEnvironmentFilteredByService(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
+      boolean isGitOps) {
+    return instanceRepository.getInstanceCountForEnvironmentFilteredByService(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isGitOps);
   }
 
   /*
@@ -244,11 +263,27 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
+  public AggregationResults<ArtifactDeploymentDetailModel> getLastDeployedInstance(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean isEnvironmentCard,
+      boolean isGitOps) {
+    return instanceRepository.getLastDeployedInstance(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isEnvironmentCard, isGitOps);
+  }
+
+  @Override
   public List<Instance> getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, String infraId, String clusterIdentifier,
       String pipelineExecutionId, String buildId, int limit) {
     return instanceRepository.getActiveInstanceDetails(accountIdentifier, orgIdentifier, projectIdentifier, serviceId,
         envId, infraId, clusterIdentifier, pipelineExecutionId, buildId, limit);
+  }
+
+  @Override
+  public AggregationResults<InstanceGroupedByPipelineExecution> getActiveInstanceGroupedByPipelineExecution(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, String envId,
+      EnvironmentType environmentType, String infraId, String clusterIdentifier, String displayName) {
+    return instanceRepository.getActiveInstanceGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
+        projectIdentifier, serviceId, envId, environmentType, infraId, clusterIdentifier, displayName);
   }
 
   /*
@@ -318,14 +353,18 @@ public class InstanceServiceImpl implements InstanceService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String agentIdentifier) {
     Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
                             .is(accountIdentifier)
-                            .and(InstanceKeys.orgIdentifier)
-                            .is(orgIdentifier)
-                            .and(InstanceKeys.projectIdentifier)
-                            .is(projectIdentifier)
                             .and(InstanceKeysAdditional.instanceInfoAgentIdentifier)
                             .is(agentIdentifier)
                             .and(InstanceKeys.isDeleted)
                             .is(false);
+
+    if (isNotEmpty(orgIdentifier)) {
+      criteria.and(InstanceKeys.orgIdentifier);
+    }
+    if (isNotEmpty(projectIdentifier)) {
+      criteria.and(InstanceKeys.projectIdentifier);
+    }
+
     Update update =
         new Update().set(InstanceKeys.isDeleted, true).set(InstanceKeys.deletedAt, System.currentTimeMillis());
     UpdateResult updateResult = instanceRepository.updateMany(criteria, update);

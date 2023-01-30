@@ -7,9 +7,13 @@
 
 package io.harness.delegate.service;
 
+import static io.harness.filesystem.FileIo.acquireLock;
+import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
+import static java.time.Duration.ofMinutes;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.times;
@@ -31,8 +35,10 @@ import io.harness.security.encryption.EncryptionConfig;
 import software.wings.beans.KmsConfig;
 
 import com.google.inject.Inject;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -40,6 +46,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import retrofit2.Call;
@@ -52,6 +59,7 @@ public class DelegateAgentServiceImplTest extends CategoryTest {
   @Mock private DelegateDecryptionService delegateDecryptionService;
 
   @InjectMocks @Inject DelegateAgentServiceImpl delegateService;
+  private final AtomicBoolean executingProfile = Mockito.mock(AtomicBoolean.class);
 
   @Before
   public void setUp() {
@@ -146,5 +154,17 @@ public class DelegateAgentServiceImplTest extends CategoryTest {
     assertThatThrownBy(() -> delegateService.applyDelegateSecretFunctor(delegateTaskPackage))
         .isInstanceOf(NullPointerException.class)
         .hasStackTraceContaining("applyDelegateSecretFunctor");
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testReleaseProfileLock() {
+    File profileFile = new File("profile");
+    acquireLock(profileFile, ofMinutes(1));
+    File lockFile = new File(profileFile.getPath() + ".lock");
+    assertThat(lockFile).exists();
+    delegateService.checkForProfile();
+    assertThat(lockFile).doesNotExist();
   }
 }

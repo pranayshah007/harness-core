@@ -26,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgCommandUnitConstants;
 import io.harness.aws.asg.AsgContentParser;
 import io.harness.aws.asg.AsgSdkManager;
+import io.harness.aws.asg.manifest.AsgLaunchTemplateManifestHandler;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
@@ -53,6 +54,7 @@ import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
 import com.google.inject.Inject;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.NoArgsConstructor;
@@ -85,9 +87,11 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
 
     try {
       AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback);
+      asgSdkManager.info(format("Starting Rolling Deployment", Bold));
 
       AutoScalingGroupContainer autoScalingGroupContainer = executeRollingDeployWithInstanceRefresh(asgSdkManager,
-          asgStoreManifestsContent, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage);
+          asgStoreManifestsContent, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage,
+          asgRollingDeployRequest.getAmiImageId());
 
       AsgRollingDeployResult asgRollingDeployResult = AsgRollingDeployResult.builder()
                                                           .autoScalingGroupContainer(autoScalingGroupContainer)
@@ -95,7 +99,7 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
                                                           .build();
 
       logCallback.saveExecutionLog(
-          color("Deployment Finished Successfully", Green, Bold), INFO, CommandExecutionStatus.SUCCESS);
+          color("Rolling Deployment Finished Successfully", Green, Bold), INFO, CommandExecutionStatus.SUCCESS);
 
       return AsgRollingDeployResponse.builder()
           .asgRollingDeployResult(asgRollingDeployResult)
@@ -111,7 +115,7 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
 
   private AutoScalingGroupContainer executeRollingDeployWithInstanceRefresh(AsgSdkManager asgSdkManager,
       Map<String, List<String>> asgStoreManifestsContent, Boolean skipMatching, Boolean useAlreadyRunningInstances,
-      Integer instanceWarmup, Integer minimumHealthyPercentage) {
+      Integer instanceWarmup, Integer minimumHealthyPercentage, String amiImageId) {
     // Get the content of all required manifest files
     String asgLaunchTemplateContent = asgTaskHelper.getAsgLaunchTemplateContent(asgStoreManifestsContent);
     String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
@@ -125,6 +129,9 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
     }
 
+    Map<String, Object> asgLaunchTemplateOverrideProperties =
+        Collections.singletonMap(AsgLaunchTemplateManifestHandler.OverrideProperties.amiImageId, amiImageId);
+
     // Chain factory code to handle each manifest one by one in a chain
     AsgManifestHandlerChainState chainState =
         AsgManifestHandlerChainFactory.builder()
@@ -132,7 +139,10 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
             .asgSdkManager(asgSdkManager)
             .build()
             .addHandler(AsgLaunchTemplate,
-                AsgLaunchTemplateManifestRequest.builder().manifests(Arrays.asList(asgLaunchTemplateContent)).build())
+                AsgLaunchTemplateManifestRequest.builder()
+                    .manifests(Arrays.asList(asgLaunchTemplateContent))
+                    .overrideProperties(asgLaunchTemplateOverrideProperties)
+                    .build())
             .addHandler(AsgConfiguration,
                 AsgConfigurationManifestRequest.builder()
                     .manifests(Arrays.asList(asgConfigurationContent))

@@ -7,11 +7,13 @@
 
 package io.harness.ng.core.environment.resources;
 
+import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.core.environment.mappers.EnvironmentMapper.checkDuplicateConfigFilesIdentifiersWithIn;
-import static io.harness.ng.core.environment.mappers.EnvironmentMapper.checkDuplicateManifestIdentifiersWithIn;
 import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
+import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.checkDuplicateConfigFilesIdentifiersWithIn;
+import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.checkDuplicateManifestIdentifiersWithIn;
+import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.validateNoMoreThanOneHelmOverridePresent;
 import static io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.pms.rbac.NGResourceType.SERVICE;
@@ -187,6 +189,9 @@ public class EnvironmentResourceV2 {
 
   public static final String ENVIRONMENT_PARAM_MESSAGE = "Environment Identifier for the entity";
 
+  private static final String TOO_MANY_HELM_OVERRIDES_PRESENT_ERROR_MESSAGE =
+      "You cannot configure multiple Helm Repo Overrides for the service. Overrides provided: [%s]";
+
   @GET
   @Path("{environmentIdentifier}")
   @NGAccessControlCheck(resourceType = ENVIRONMENT, permission = "core_environment_view")
@@ -251,6 +256,9 @@ public class EnvironmentResourceV2 {
         Resource.of(ENVIRONMENT, null, environmentAttributes), ENVIRONMENT_CREATE_PERMISSION);
     environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    if (isEmpty(environmentRequestDTO.getYaml())) {
+      environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentEntity.getYaml());
+    }
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(environmentEntity.getOrgIdentifier(),
         environmentEntity.getProjectIdentifier(), environmentEntity.getAccountId());
     Environment createdEnvironment = environmentService.create(environmentEntity);
@@ -281,9 +289,11 @@ public class EnvironmentResourceV2 {
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
+          "false") boolean forceDelete) {
     return ResponseDTO.newResponse(environmentService.delete(accountId, orgIdentifier, projectIdentifier,
-        environmentIdentifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null));
+        environmentIdentifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null, forceDelete));
   }
 
   @PUT
@@ -308,6 +318,9 @@ public class EnvironmentResourceV2 {
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
     environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    if (isEmpty(environmentRequestDTO.getYaml())) {
+      environmentEntityYamlSchemaHelper.validateSchema(accountId, requestEnvironment.getYaml());
+    }
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment updatedEnvironment = environmentService.update(requestEnvironment);
     return ResponseDTO.newResponse(
@@ -337,6 +350,9 @@ public class EnvironmentResourceV2 {
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
     environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    if (isEmpty(environmentRequestDTO.getYaml())) {
+      environmentEntityYamlSchemaHelper.validateSchema(accountId, requestEnvironment.getYaml());
+    }
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(requestEnvironment.getOrgIdentifier(),
         requestEnvironment.getProjectIdentifier(), requestEnvironment.getAccountId());
@@ -656,6 +672,8 @@ public class EnvironmentResourceV2 {
       }
 
       checkDuplicateManifestIdentifiersWithIn(serviceOverrideInfoConfig.getManifests());
+      validateNoMoreThanOneHelmOverridePresent(
+          serviceOverrideInfoConfig.getManifests(), TOO_MANY_HELM_OVERRIDES_PRESENT_ERROR_MESSAGE);
       checkDuplicateConfigFilesIdentifiersWithIn(serviceOverrideInfoConfig.getConfigFiles());
     }
   }
@@ -764,9 +782,9 @@ public class EnvironmentResourceV2 {
           "environmentIdentifier") @ResourceIdentifier String environmentIdentifier,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
-      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
     String environmentInputsYaml = environmentService.createEnvironmentInputsYaml(
         accountId, orgIdentifier, projectIdentifier, environmentIdentifier);
@@ -784,9 +802,9 @@ public class EnvironmentResourceV2 {
           NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @ResourceIdentifier String environmentIdentifier,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
-      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = NGCommonEntityConstants.SERVICE_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY) @ResourceIdentifier String serviceIdentifier) {

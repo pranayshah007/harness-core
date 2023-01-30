@@ -543,7 +543,7 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .deleted(true)
                                         .build();
     doReturn(templateEntity).when(mongoTemplate).findAndRemove(any(), any());
-    ngTemplateRepositoryCustom.deleteTemplate(templateEntity, "");
+    ngTemplateRepositoryCustom.deleteTemplate(templateEntity, "", false);
     verify(mongoTemplate, times(1)).findAndRemove(any(), any());
     verify(outboxService, times(1)).save(any());
   }

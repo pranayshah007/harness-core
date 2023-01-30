@@ -13,6 +13,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.polling.bean.ArtifactInfo;
 
 import lombok.Builder;
 import lombok.Value;

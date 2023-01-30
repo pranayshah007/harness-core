@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import java.util.List;
 import lombok.Builder;
+import lombok.Singular;
 import lombok.Value;
 
 @Value
@@ -20,7 +21,7 @@ import lombok.Value;
 public class CDStageMetaDataDTO {
   String environmentRef;
   String serviceRef;
-  List<ServiceEnvRef> serviceEnvRefList;
+  @Singular("serviceEnvRef") List<ServiceEnvRef> serviceEnvRefList;
 
   @Value
   @Builder

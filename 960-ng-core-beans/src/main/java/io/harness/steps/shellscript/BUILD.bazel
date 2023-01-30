@@ -11,7 +11,7 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//970-api-services-beans:module",
+        "//970-api-services-beans/src/main/java/io/harness/shell:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
     ],
 )

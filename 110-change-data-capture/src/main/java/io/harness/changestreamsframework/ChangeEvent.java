@@ -30,6 +30,7 @@ public class ChangeEvent<T extends PersistentEntity> {
   @NonNull private String uuid;
   private DBObject fullDocument;
   private DBObject changes;
+  private String handler;
 
   public boolean isChangeFor(Class<? extends PersistentEntity> entityClass) {
     return this.entityType.isAssignableFrom(entityClass);

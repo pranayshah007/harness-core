@@ -21,6 +21,7 @@ public enum NGMigrationEntityType {
   PIPELINE("pipelines"),
   ARTIFACT_STREAM,
   CONNECTOR("connectors"),
+  INFRA_PROVISIONER,
   SERVICE,
   ENVIRONMENT,
   SECRET("secrets"),
@@ -31,7 +32,10 @@ public enum NGMigrationEntityType {
   CONFIG_FILE,
   ECS_SERVICE_SPEC,
   CONTAINER_TASK,
-  MANIFEST;
+  TRIGGER,
+  MANIFEST,
+  AMI_STARTUP_SCRIPT,
+  ELASTIGROUP_CONFIGURATION;
 
   private String yamlFolderName;
 

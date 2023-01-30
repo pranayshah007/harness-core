@@ -12,6 +12,7 @@ import io.harness.ccm.views.helper.EnforcementCount;
 import io.harness.ccm.views.helper.EnforcementCountRequest;
 import io.harness.ccm.views.helper.ExecutionDetailRequest;
 import io.harness.ccm.views.helper.ExecutionDetails;
+import io.harness.remote.GovernanceConfig;
 
 import java.util.List;
 
@@ -21,6 +22,7 @@ public interface RuleEnforcementService {
   boolean delete(String accountId, String uuid);
   RuleEnforcement update(RuleEnforcement ruleEnforcement);
   RuleEnforcement listName(String accountId, String name, boolean create);
+  void checkLimitsAndValidate(RuleEnforcement ruleEnforcement, GovernanceConfig governanceConfig);
   RuleEnforcement listId(String accountId, String uuid, boolean create);
   List<RuleEnforcement> list(String accountId);
   EnforcementCount getCount(String accountId, EnforcementCountRequest enforcementCountRequest);

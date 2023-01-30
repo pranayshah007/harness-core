@@ -47,10 +47,8 @@ import io.harness.artifact.ArtifactCollectionResponseHandler;
 import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateTaskEventsResponse;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateConfiguration;
-import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateProfileParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
@@ -219,21 +217,6 @@ public class DelegateAgentResourceTest extends CategoryTest {
     assertThat(restResponse.getResource()).isInstanceOf(DelegateConfiguration.class).isNotNull();
     assertThat(restResponse.getResource().getAction()).isEqualTo(SELF_DESTRUCT);
     assertThat(restResponse.getResource().getDelegateVersions()).isNull();
-  }
-
-  @Test
-  @Owner(developers = ROHITKARELIA)
-  @Category(UnitTests.class)
-  public void shouldGetConnectionHeartbeat() {
-    DelegateConnectionHeartbeat delegateConnectionHeartbeat = DelegateConnectionHeartbeat.builder().build();
-    RESOURCES.client()
-        .target("/agent/delegates/connectionHeartbeat/" + DELEGATE_ID + "?delegateId=" + DELEGATE_ID
-            + "&accountId=" + ACCOUNT_ID)
-        .request()
-        .post(entity(delegateConnectionHeartbeat, MediaType.APPLICATION_JSON),
-            new GenericType<RestResponse<String>>() {});
-    verify(delegateService, atLeastOnce())
-        .registerHeartbeat(ACCOUNT_ID, DELEGATE_ID, delegateConnectionHeartbeat, ConnectionMode.POLLING);
   }
 
   @Test

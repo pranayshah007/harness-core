@@ -268,7 +268,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     }
     PageResponse<UserGroup> res = wingsPersistence.query(UserGroup.class, req);
 
-    log.info("[SAML_SYNC]: Page response for user groups list: {}", res);
+    log.info("[SSO_SYNC]: Page response for user groups list: {}", res);
 
     // Using a custom comparator since our mongo apis don't support alphabetical sorting with case insensitivity.
     // Currently, it only supports ASC and DSC.
@@ -338,7 +338,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     Map<String, User> userMap = allUsersList.stream().collect(Collectors.toMap(User::getUuid, identity()));
     userGroups.forEach(userGroup -> {
       List<String> memberIds = userGroup.getMemberIds();
-      log.info("[SAML_SYNC]: Member IDs in user group: {}", memberIds);
+      log.info("[SAML_SYNC]: User group: {}, has member IDs: {}", userGroup, memberIds);
       if (isEmpty(memberIds)) {
         userGroup.setMembers(new ArrayList<>());
         log.info("[SAML_SYNC]: User group has empty memberIDs: {}", userGroup);
@@ -453,10 +453,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   @Override
   public UserGroup get(String accountId, String userGroupId, boolean loadUsers) {
-    UserGroup userGroup = wingsPersistence.createQuery(UserGroup.class)
-                              .filter(UserGroupKeys.accountId, accountId)
-                              .filter(UserGroup.ID_KEY2, userGroupId)
-                              .get();
+    UserGroup userGroup = wingsPersistence.createQuery(UserGroup.class).filter(UserGroup.ID_KEY2, userGroupId).get();
     if (userGroup == null) {
       return null;
     }
@@ -623,9 +620,6 @@ public class UserGroupServiceImpl implements UserGroupService {
     }
     List<User> groupMembers = userGroup.getMembers();
     log.info("[SAML_SYNC]: Group members in the user group- {} are: {}", userGroup.getName(), groupMembers);
-    if (isEmpty(groupMembers)) {
-      return userGroup;
-    }
 
     userGroup.getMemberIds().removeAll(members.stream().map(User::getUuid).collect(toList()));
     return updateMembers(userGroup, sendNotification, toBeAudited);

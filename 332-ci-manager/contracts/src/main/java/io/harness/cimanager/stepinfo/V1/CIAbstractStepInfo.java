@@ -12,6 +12,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.stepinfo.TestStepInfo;
 import io.harness.beans.yaml.extended.volumes.V1.Volume;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -25,7 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import lombok.Getter;
 
-@ApiModel(subTypes = {ScriptStepInfo.class, PluginStepInfoV1.class})
+@ApiModel(subTypes = {ScriptStepInfo.class, PluginStepInfoV1.class, TestStepInfo.class, BackgroundStepInfoV1.class})
 @OwnedBy(CI)
 public abstract class CIAbstractStepInfo implements CIStepInfo {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)

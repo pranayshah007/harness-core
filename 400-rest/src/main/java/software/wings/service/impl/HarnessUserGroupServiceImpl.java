@@ -91,6 +91,9 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
 
   @Override
   public List<Account> listAllowedSupportAccounts(Set<String> excludeAccountIds, Set<String> fieldsToBeIncluded) {
+    if (isNotEmpty(fieldsToBeIncluded)) {
+      fieldsToBeIncluded.add("accountName");
+    }
     List<Account> supportedAccounts = accountService.listHarnessSupportAccounts(excludeAccountIds, fieldsToBeIncluded);
     supportedAccounts.sort(new AccountComparator());
     return supportedAccounts;
@@ -99,6 +102,13 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
   private static class AccountComparator implements Comparator<Account>, Serializable {
     @Override
     public int compare(Account lhs, Account rhs) {
+      if (lhs.getAccountName() == null && rhs.getAccountName() == null) {
+        return 0;
+      } else if (lhs.getAccountName() == null) {
+        return 1;
+      } else if (rhs.getAccountName() == null) {
+        return -1;
+      }
       return lhs.getAccountName().compareToIgnoreCase(rhs.getAccountName());
     }
   }
@@ -126,7 +136,7 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
 
     SetView<String> membersAffected = symmetricDifference(updatedUserGroup.getMemberIds(), oldMemberIds);
 
-    Set<String> accountsAffected = listAllowedSupportAccounts(Collections.emptySet(), Set.of(AccountKeys.uuid))
+    Set<String> accountsAffected = listAllowedSupportAccounts(Collections.emptySet(), newHashSet(AccountKeys.uuid))
                                        .stream()
                                        .map(Account::getUuid)
                                        .collect(Collectors.toSet());

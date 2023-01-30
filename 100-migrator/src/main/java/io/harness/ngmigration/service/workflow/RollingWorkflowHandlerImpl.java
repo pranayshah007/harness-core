@@ -9,12 +9,13 @@ package io.harness.ngmigration.service.workflow;
 
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.step.StepMapperFactory;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.RollingOrchestrationWorkflow;
 import software.wings.beans.Workflow;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.service.impl.yaml.handler.workflow.RollingWorkflowYamlHandler;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,7 +25,6 @@ import java.util.Map;
 
 public class RollingWorkflowHandlerImpl extends WorkflowHandler {
   @Inject RollingWorkflowYamlHandler rollingWorkflowYamlHandler;
-  @Inject private StepMapperFactory stepMapperFactory;
 
   @Override
   public List<GraphNode> getSteps(Workflow workflow) {
@@ -42,13 +42,9 @@ public class RollingWorkflowHandlerImpl extends WorkflowHandler {
   //      .build())
   //      .build()))
 
-  @Override
-  public boolean areSimilar(Workflow workflow1, Workflow workflow2) {
-    return areSimilar(stepMapperFactory, workflow1, workflow2);
-  }
-
-  public JsonNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
-    return getDeploymentStageTemplateSpec(migratedEntities, workflow, stepMapperFactory);
+  public JsonNode getTemplateSpec(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
+    return getDeploymentStageTemplateSpec(WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow));
   }
 
   @Override

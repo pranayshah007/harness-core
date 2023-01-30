@@ -141,7 +141,7 @@ public class FreezeRBACHelper {
     return Optional.ofNullable(result);
   }
 
-  private Principal getPrincipalInfoFromSecurityContext() {
+  protected Principal getPrincipalInfoFromSecurityContext() {
     Principal principalInContext = SecurityContextBuilder.getPrincipal();
     if (principalInContext == null || principalInContext.getName() == null || principalInContext.getType() == null) {
       throw new AccessDeniedException("Principal cannot be null", ErrorCode.NG_ACCESS_DENIED, WingsException.USER);

@@ -7,19 +7,14 @@
 
 package io.harness.template.services;
 
-import static java.lang.String.format;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.Scope.ScopeBuilder;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.DuplicateFileImportException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.InvalidFieldsDTO;
-import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
-import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
@@ -30,17 +25,13 @@ import io.harness.gitsync.scm.SCMGitSyncHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YAMLMetadataFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.entity.TemplateEntity;
-import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.template.utils.TemplateUtils;
-import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,7 +45,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TemplateGitXServiceImpl implements TemplateGitXService {
   SCMGitSyncHelper scmGitSyncHelper;
-  NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
   GitSyncSdkService gitSyncSdkService;
 
   NGTemplateRepository templateRepository;
@@ -123,14 +113,11 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
 
   @Override
   public boolean isNewGitXEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    if (ngTemplateFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_TEMPLATE_GITX)) {
-      if (projectIdentifier != null) {
-        return isGitSimplificationEnabledForAProject(accountIdentifier, orgIdentifier, projectIdentifier);
-      } else {
-        return true;
-      }
+    if (projectIdentifier != null) {
+      return isGitSimplificationEnabledForAProject(accountIdentifier, orgIdentifier, projectIdentifier);
+    } else {
+      return true;
     }
-    return false;
   }
 
   public String checkForFileUniquenessAndGetRepoURL(String accountIdentifier, String orgIdentifier,
@@ -163,26 +150,8 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
 
   public void performImportFlowYamlValidations(String orgIdentifier, String projectIdentifier,
       String templateIdentifier, TemplateImportRequestDTO templateImportRequest, String importedTemplate) {
-    if (EmptyPredicate.isEmpty(importedTemplate)) {
-      String errorMessage =
-          format("Empty YAML found on Git in branch [%s] for template [%s] under Project[%s], Organization [%s].",
-              GitAwareContextHelper.getBranchInRequest(), templateIdentifier, projectIdentifier, orgIdentifier);
-      throw buildInvalidYamlException(errorMessage, importedTemplate);
-    }
-    YamlField templateYamlField;
-    try {
-      templateYamlField = YamlUtils.readTree(importedTemplate);
-    } catch (IOException e) {
-      String errorMessage = format("File found on Git in branch [%s] for filepath [%s] is not a YAML.",
-          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
-      throw buildInvalidYamlException(errorMessage, importedTemplate);
-    }
-    YamlField templateInnerField = templateYamlField.getNode().getField(YAMLFieldNameConstants.TEMPLATE);
-    if (templateInnerField == null) {
-      String errorMessage = format("File found on Git in branch [%s] for filepath [%s] is not a Template YAML.",
-          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
-      throw buildInvalidYamlException(errorMessage, importedTemplate);
-    }
+    YamlField templateInnerField = TemplateUtils.getTemplateYamlFieldElseThrow(
+        orgIdentifier, projectIdentifier, templateIdentifier, importedTemplate);
 
     Map<String, String> changedFields = new HashMap<>();
 
@@ -245,14 +214,5 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
   private boolean isAlreadyImported(String accountIdentifier, String repoURL, String filePath) {
     Long totalInstancesOfYAML = templateRepository.countFileInstances(accountIdentifier, repoURL, filePath);
     return totalInstancesOfYAML > 0;
-  }
-
-  private InvalidYamlException buildInvalidYamlException(String errorMessage, String pipelineYaml) {
-    YamlSchemaErrorWrapperDTO errorWrapperDTO =
-        YamlSchemaErrorWrapperDTO.builder()
-            .schemaErrors(
-                Collections.singletonList(YamlSchemaErrorDTO.builder().message(errorMessage).fqn("$.template").build()))
-            .build();
-    return new InvalidYamlException(errorMessage, errorWrapperDTO, pipelineYaml);
   }
 }

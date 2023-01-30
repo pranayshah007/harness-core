@@ -10,9 +10,18 @@ package io.harness.iacmserviceclient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.entities.IACMServiceConfig;
+import io.harness.beans.entities.Stack;
+import io.harness.beans.entities.StackVariables;
+import io.harness.beans.entities.TerraformEndpointsData;
 import io.harness.exception.GeneralException;
+import io.harness.ng.core.NGAccess;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 
-import com.google.gson.JsonElement;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -39,16 +48,17 @@ public class IACMServiceUtils {
     this.iacmServiceConfig = iacmServiceConfig;
   }
 
-  public String getIACMConnector(String stackID) {
+  public Stack getIACMStackInfo(String org, String projectId, String accountId, String stackID) {
     log.info("Initiating token request to IACM service: {}", this.iacmServiceConfig.getBaseUrl());
-    Call<JsonObject> connectorCall = iacmServiceClient.getStackInfo(stackID, this.iacmServiceConfig.getGlobalToken());
-    Response<JsonObject> response = null;
+    String globalToken = this.iacmServiceConfig.getGlobalToken();
+    Call<JsonObject> connectorCall = iacmServiceClient.getStackInfo(org, projectId, stackID, globalToken, accountId);
+    Response<JsonObject> response;
 
     try {
       response = connectorCall.execute();
     } catch (Exception e) {
       log.error("Error while trying to execute the query in the IACM Service: ", e);
-      throw new GeneralException("Connector request to IACM service call failed", e);
+      throw new GeneralException("Stack Info request to IACM service call failed", e);
     }
     if (!response.isSuccessful()) {
       String errorBody = null;
@@ -59,19 +69,26 @@ public class IACMServiceUtils {
       }
 
       throw new GeneralException(String.format(
-          "Could not retrieve IACM Connector from the IACM service. status code = %s, message = %s, response = %s",
+          "Could not retrieve IACM stack info from the IACM service. status code = %s, message = %s, response = %s",
           response.code(), response.message(), response.errorBody() == null ? "null" : errorBody));
     }
 
     if (response.body() == null) {
-      throw new GeneralException("Could not retrieve IACM Connector from the IACM service. Response body is null");
+      throw new GeneralException("Could not retrieve IACM stack info from the IACM service. Response body is null");
     }
-    JsonElement providerConnector = response.body().get("provider_connector");
-    if (providerConnector == null) {
-      throw new GeneralException("Could not retrieve IACM Connector from the IACM service. The StackID: " + stackID
-          + " doesn't have a connector reference");
+    ObjectMapper objectMapper = new ObjectMapper();
+    Stack stack;
+    try {
+      stack = objectMapper.readValue(response.body().toString(), Stack.class);
+    } catch (JsonProcessingException ex) {
+      log.error("Could not parse json body {}", response.body().toString());
+      throw new GeneralException("Could not parse stack response. Please contact Harness Support for more information");
     }
-    return providerConnector.getAsString();
+    if (stack.getProvider_connector() == null) {
+      throw new GeneralException("Could not retrieve IACM Connector from the IACM service. The StackID: "
+          + stack.getSlug() + " doesn't have a connector reference");
+    }
+    return stack;
   }
 
   @NotNull
@@ -103,5 +120,73 @@ public class IACMServiceUtils {
       throw new GeneralException("Could not fetch token from IACM service. Response body is null");
     }
     return response.body().get("token").getAsString();
+  }
+
+  public StackVariables[] getIacmStackEnvs(String org, String projectId, String accountId, String stackID) {
+    log.info("Initiating request to IACM service for env retrieval: {}", this.iacmServiceConfig.getBaseUrl());
+    Call<JsonArray> connectorCall = iacmServiceClient.getStackVariables(
+        org, projectId, stackID, this.iacmServiceConfig.getGlobalToken(), accountId);
+    Response<JsonArray> response;
+
+    try {
+      response = connectorCall.execute();
+    } catch (Exception e) {
+      log.error("Error while trying to execute the query in the IACM Service: ", e);
+      throw new GeneralException("Error retrieving the variables from the IACM service. Call failed", e);
+    }
+    if (!response.isSuccessful()) {
+      String errorBody = null;
+      try {
+        errorBody = response.errorBody().string();
+      } catch (IOException e) {
+        log.error("Could not read error body {}", response.errorBody());
+      }
+
+      throw new GeneralException(
+          String.format("Could not parse body for the env retrieval response = %s, message = %s, response = %s",
+              response.code(), response.message(), response.errorBody() == null ? "null" : errorBody));
+    }
+
+    if (response.body() == null) {
+      throw new GeneralException("Could not retrieve IACM variables from the IACM service. Response body is null");
+    }
+    ObjectMapper objectMapper = new ObjectMapper();
+    StackVariables[] vars;
+    try {
+      vars = objectMapper.readValue(response.body().toString(), StackVariables[].class);
+    } catch (JsonProcessingException ex) {
+      log.error("Could not parse json body {}", response.body().toString());
+      throw new GeneralException(
+          "Could not parse variables response. Please contact Harness Support for more information");
+    }
+    if (vars.length == 0) {
+      log.info("Could not retrieve IACM variables from the IACM service.");
+    }
+    return vars;
+  }
+
+  public String GetTerraformEndpointsData(Ambiance ambiance, String stackId) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    String executionId = ambiance.getPlanExecutionId();
+    TerraformEndpointsData tfEndpointsData =
+        TerraformEndpointsData.builder()
+            .org_id(ngAccess.getOrgIdentifier())
+            .account_id(ngAccess.getAccountIdentifier())
+            .base_url(iacmServiceConfig.getBaseUrl())
+            .execution_id(executionId)
+            .project_id(ngAccess.getProjectIdentifier())
+            .stack_id(stackId)
+            .stage_execution_id(ambiance.getStageExecutionId())
+            //            .token(getIACMServiceToken(ngAccess.getAccountIdentifier())) //TODO: When we have a token
+            //            generation in place, use this one
+            .token("TODO TOKEN")
+            .build();
+    ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+    try {
+      return ow.writeValueAsString(tfEndpointsData);
+    } catch (Exception ex) {
+      throw new GeneralException(
+          "Could not parse Endpoint information. Please contact Harness Support for more information");
+    }
   }
 }

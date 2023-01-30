@@ -36,4 +36,5 @@ public interface ServiceAccountService {
 
   ServiceAccountAggregateDTO getServiceAccountAggregateDTO(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
+  Long countServiceAccounts(String accountIdentifier);
 }

@@ -8,6 +8,7 @@
 package io.harness.cdng.manifest.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +18,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Collections;
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
@@ -38,4 +40,11 @@ public class KustomizeManifestOutcome implements ManifestOutcome {
   ParameterField<String> pluginPath;
   ParameterField<Boolean> skipResourceVersioning;
   ParameterField<List<String>> patchesPaths;
+
+  public ParameterField<List<String>> getPatchesPaths() {
+    if (!(getParameterFieldValue(this.patchesPaths) instanceof List)) {
+      return ParameterField.createValueField(Collections.emptyList());
+    }
+    return this.patchesPaths;
+  }
 }

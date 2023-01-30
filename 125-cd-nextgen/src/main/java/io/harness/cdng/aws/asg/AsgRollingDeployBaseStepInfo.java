@@ -19,6 +19,8 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -49,10 +51,13 @@ public class AsgRollingDeployBaseStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH)
   @JsonProperty("instanceWarmup")
+  @Min(0)
   ParameterField<Integer> instanceWarmup;
 
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH)
   @JsonProperty("minimumHealthyPercentage")
+  @Min(0)
+  @Max(100)
   ParameterField<Integer> minimumHealthyPercentage;
 }

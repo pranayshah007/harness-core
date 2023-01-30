@@ -9,6 +9,8 @@ package io.harness.event.reconciliation.service;
 
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 
+import static java.time.Duration.ofMinutes;
+
 import io.harness.beans.FeatureName;
 import io.harness.dataretention.LongerDataRetentionService;
 import io.harness.event.reconciliation.ReconciliationStatus;
@@ -44,11 +46,16 @@ public class DeploymentReconTask implements Runnable {
   @Inject private Set<ExecutionEntity<?>> executionEntities;
   @Inject private ConfigurationController configurationController;
   @Inject private LongerDataRetentionService longerDataRetentionService;
+  private long reconDuration;
+
+  public DeploymentReconTask(long reconDuration) {
+    this.reconDuration = reconDuration;
+  }
 
   private static final Integer DATA_MIGRATION_INTERVAL_IN_HOURS = 24;
   // On safe side, cron cycle is around 15 minutes, so lock expiry set to 16 min
   // Allowing 2 cycles to complete the migration task in case it takes longer
-  private static final long DATA_MIGRATION_CRON_LOCK_EXPIRY_IN_SECONDS = 960; // 60 * 16
+  private static long DATA_MIGRATION_CRON_LOCK_EXPIRY_IN_SECONDS = 960; // 60 * 16
   private static final String DATA_MIGRATION_CRON_LOCK_PREFIX = "DEPLOYMENT_DATA_MIGRATION_CRON:";
 
   /**
@@ -60,8 +67,13 @@ public class DeploymentReconTask implements Runnable {
     if (!shouldRun()) {
       return;
     }
+    DATA_MIGRATION_CRON_LOCK_EXPIRY_IN_SECONDS = reconDuration + 60;
 
-    try {
+    try (AcquiredLock<?> jobLock = persistentLocker.tryToAcquireLock("DeploymentReconciliationJob", ofMinutes(5))) {
+      if (jobLock == null) {
+        log.warn("Couldn't acquire lock for DeploymentReconciliationJob");
+        return;
+      }
       long startTime = System.currentTimeMillis();
       List<Account> accountList = accountService.getAccountsWithBasicInfo(true);
       for (Account account : accountList) {
@@ -77,7 +89,7 @@ public class DeploymentReconTask implements Runnable {
           }
 
           executorService.submit(() -> {
-            final long durationStartTs = startTime - 45 * 60 * 1000;
+            final long durationStartTs = startTime - (2 * reconDuration + 900) * 1000;
             final long durationEndTs = startTime - 5 * 60 * 1000;
             try {
               ReconciliationStatus reconciliationStatus = executionEntity.getReconService().performReconciliation(

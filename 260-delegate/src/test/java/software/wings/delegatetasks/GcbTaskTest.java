@@ -12,10 +12,10 @@ import static io.harness.logging.LogLevel.INFO;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.VGLIJIN;
 
-import static software.wings.beans.Log.Builder.aLog;
 import static software.wings.beans.TaskType.GCB;
 import static software.wings.beans.command.GcbTaskParams.GcbTaskType.POLL;
 import static software.wings.beans.command.GcbTaskParams.GcbTaskType.START;
+import static software.wings.beans.dto.Log.Builder.aLog;
 import static software.wings.delegatetasks.GcbDelegateResponse.gcbDelegateResponseOf;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.BRANCH_NAME;

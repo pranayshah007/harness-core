@@ -115,35 +115,39 @@ public class NGGitServiceImpl implements NGGitService {
   @Override
   public FetchFilesResult fetchFilesByPath(GitStoreDelegateConfig gitStoreDelegateConfig, String accountId,
       SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException {
-    FetchFilesByPathRequest fetchFilesByPathRequest = FetchFilesByPathRequest.builder()
-                                                          .authRequest(getAuthRequest(gitConfigDTO, sshSessionConfig))
-                                                          .filePaths(gitStoreDelegateConfig.getPaths())
-                                                          .recursive(true)
-                                                          .accountId(accountId)
-                                                          .branch(gitStoreDelegateConfig.getBranch())
-                                                          .commitId(gitStoreDelegateConfig.getCommitId())
-                                                          .connectorId(gitStoreDelegateConfig.getConnectorName())
-                                                          .repoType(YAML)
-                                                          .repoUrl(gitConfigDTO.getUrl())
-                                                          .build();
+    FetchFilesByPathRequest fetchFilesByPathRequest =
+        FetchFilesByPathRequest.builder()
+            .authRequest(getAuthRequest(gitConfigDTO, sshSessionConfig))
+            .filePaths(gitStoreDelegateConfig.getPaths())
+            .recursive(true)
+            .accountId(accountId)
+            .branch(gitStoreDelegateConfig.getBranch())
+            .commitId(gitStoreDelegateConfig.getCommitId())
+            .connectorId(gitStoreDelegateConfig.getConnectorId() == null ? gitStoreDelegateConfig.getConnectorName()
+                                                                         : gitStoreDelegateConfig.getConnectorId())
+            .repoType(YAML)
+            .repoUrl(gitConfigDTO.getUrl())
+            .build();
     return gitClientV2.fetchFilesByPath(fetchFilesByPathRequest);
   }
 
   @Override
   public void downloadFiles(GitStoreDelegateConfig gitStoreDelegateConfig, String destinationDirectory,
       String accountId, SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException {
-    DownloadFilesRequest downloadFilesRequest = DownloadFilesRequest.builder()
-                                                    .authRequest(getAuthRequest(gitConfigDTO, sshSessionConfig))
-                                                    .filePaths(gitStoreDelegateConfig.getPaths())
-                                                    .recursive(true)
-                                                    .accountId(accountId)
-                                                    .branch(gitStoreDelegateConfig.getBranch())
-                                                    .commitId(gitStoreDelegateConfig.getCommitId())
-                                                    .connectorId(gitStoreDelegateConfig.getConnectorName())
-                                                    .repoType(YAML)
-                                                    .repoUrl(gitConfigDTO.getUrl())
-                                                    .destinationDirectory(destinationDirectory)
-                                                    .build();
+    DownloadFilesRequest downloadFilesRequest =
+        DownloadFilesRequest.builder()
+            .authRequest(getAuthRequest(gitConfigDTO, sshSessionConfig))
+            .filePaths(gitStoreDelegateConfig.getPaths())
+            .recursive(true)
+            .accountId(accountId)
+            .branch(gitStoreDelegateConfig.getBranch())
+            .commitId(gitStoreDelegateConfig.getCommitId())
+            .connectorId(gitStoreDelegateConfig.getConnectorId() == null ? gitStoreDelegateConfig.getConnectorName()
+                                                                         : gitStoreDelegateConfig.getConnectorId())
+            .repoType(YAML)
+            .repoUrl(gitConfigDTO.getUrl())
+            .destinationDirectory(destinationDirectory)
+            .build();
     gitClientV2.downloadFiles(downloadFilesRequest);
   }
 }

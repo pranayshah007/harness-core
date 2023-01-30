@@ -10,10 +10,13 @@ package io.harness.k8s.releasehistory;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 
@@ -24,7 +27,7 @@ public class K8sReleaseHistory implements IK8sReleaseHistory {
   List<K8sRelease> releaseHistory;
 
   @Override
-  public int getCurrentReleaseNumber() {
+  public int getAndIncrementLastReleaseNumber() {
     Optional<K8sRelease> lastReleaseOptional =
         releaseHistory.stream().max(Comparator.comparing(K8sRelease::getReleaseNumber));
 
@@ -52,5 +55,32 @@ public class K8sReleaseHistory implements IK8sReleaseHistory {
   public IK8sRelease getLatestRelease() {
     Optional<K8sRelease> lastRelease = releaseHistory.stream().max(Comparator.comparing(K8sRelease::getReleaseNumber));
     return lastRelease.orElse(null);
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return EmptyPredicate.isEmpty(releaseHistory);
+  }
+
+  @Override
+  public int size() {
+    if (releaseHistory != null) {
+      return releaseHistory.size();
+    }
+    return 0;
+  }
+
+  @Override
+  public IK8sReleaseHistory cloneInternal() {
+    return K8sReleaseHistory.builder().releaseHistory(new ArrayList<>(releaseHistory)).build();
+  }
+
+  @Override
+  public List<IK8sRelease> getReleasesMatchingColor(String color, int currentReleaseNumber) {
+    return releaseHistory.stream()
+        .filter(release -> currentReleaseNumber != release.getReleaseNumber())
+        .map(K8sRelease.class ::cast)
+        .filter(release -> K8sReleaseSecretHelper.checkReleaseColor(release.getReleaseSecret(), color))
+        .collect(Collectors.toList());
   }
 }

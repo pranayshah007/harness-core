@@ -9,7 +9,6 @@ package io.harness.ng.core.api.impl;
 
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -671,8 +670,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
           String projectIdentifier = getProjectIdentifier(ngAccess.getProjectIdentifier(), secretScope);
 
           NGEncryptedData encryptedData = null;
-          if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH)
-              && isSecretIdentifierAPathReference(secretIdentifier)) {
+          if (isSecretIdentifierAPathReference(secretIdentifier)) {
             encryptedData =
                 getFromReferenceExpression(accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier);
           } else {

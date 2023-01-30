@@ -8,6 +8,7 @@
 package io.harness.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
@@ -24,9 +25,13 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.InvalidPathException;
 import java.nio.file.StandardOpenOption;
+import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import javax.net.ssl.X509KeyManager;
 import javax.xml.bind.DatatypeConverter;
 import org.apache.commons.lang3.StringUtils;
@@ -405,6 +410,100 @@ public class X509KeyManagerBuilderTest extends CategoryTest {
 
     X509KeyManagerBuilder builder = new X509KeyManagerBuilder(mockFileReader);
     builder.withClientCertificateFromFile(FILE_PATH_CERT, FILE_PATH_KEY).build();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMANG)
+  @Category(UnitTests.class)
+  public void testLoadCertificatesFromPemString() throws Exception {
+    Certificate[] certs = X509KeyManagerBuilder.loadCertificatesFromPemString(PEM_CERT_CHAIN_VALID);
+    assertThat(certs).isNotNull();
+    assertThat(certs.length).isEqualTo(2);
+    Certificate clientCert = certs[0];
+    Certificate caCert = certs[1];
+    assertThat(DatatypeConverter.printHexBinary(MessageDigest.getInstance("SHA-256").digest(clientCert.getEncoded())))
+        .isEqualTo("32DD4D30482A06426B4BD498DBDE6774F4C17884BF42F0A9637021F224905F19");
+    // ca cert
+    assertThat(DatatypeConverter.printHexBinary(MessageDigest.getInstance("SHA-256").digest(caCert.getEncoded())))
+        .isEqualTo("3B12A7C945BEE25E8350BB418D9D07CE199A1BBCA7EAED07E682BB48D46154F6");
+
+    assertThat(((X509Certificate) clientCert).getIssuerDN().getName())
+        .isEqualTo(((X509Certificate) caCert).getSubjectDN().getName());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMANG)
+  @Category(UnitTests.class)
+  public void testLoadCertificatesFromPemStringInvalidCertContent() {
+    assertThatThrownBy(() -> X509KeyManagerBuilder.loadCertificatesFromPemString(null))
+        .isInstanceOf(KeyManagerBuilderException.class);
+
+    assertThatThrownBy(() -> X509KeyManagerBuilder.loadCertificatesFromPemString("Not a PEM"))
+        .isInstanceOf(KeyManagerBuilderException.class);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMANG)
+  @Category(UnitTests.class)
+  public void testLoadPkcs8EncodedPrivateKeySpecFromPem() throws Exception {
+    PKCS8EncodedKeySpec pkcs8EncodedKeySpec =
+        X509KeyManagerBuilder.loadPkcs8EncodedPrivateKeySpecFromPem(PEM_KEY_VALID);
+    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+    assertThat(pkcs8EncodedKeySpec).isNotNull();
+    assertThat(keyFactory.generatePrivate(pkcs8EncodedKeySpec)).isNotNull();
+
+    // case with key containing spaces, newline, windows
+    pkcs8EncodedKeySpec = X509KeyManagerBuilder.loadPkcs8EncodedPrivateKeySpecFromPem(
+        StringUtils.join(PKCS8_KEY_HEADER + "\r\n    \r\n" + PKCS8_KEY_BASE64 + "\r\n    \r\n" + PKCS8_KEY_FOOTER));
+    assertThat(pkcs8EncodedKeySpec).isNotNull();
+    assertThat(keyFactory.generatePrivate(pkcs8EncodedKeySpec)).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMANG)
+  @Category(UnitTests.class)
+  public void testLoadPkcs8EncodedPrivateKeySpecFromPemWithNoBase64() throws Exception {
+    PKCS8EncodedKeySpec pkcs8EncodedKeySpec = X509KeyManagerBuilder.loadPkcs8EncodedPrivateKeySpecFromPem(
+        StringUtils.joinWith("\n", PKCS8_KEY_HEADER, PKCS8_KEY_FOOTER));
+    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+    assertThat(pkcs8EncodedKeySpec).isNotNull();
+    assertThatThrownBy(() -> keyFactory.generatePrivate(pkcs8EncodedKeySpec))
+        .isInstanceOf(InvalidKeySpecException.class);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMANG)
+  @Category(UnitTests.class)
+  public void testLoadPkcs8EncodedPrivateKeySpecFromPemInvalidKeyContent() {
+    assertThatThrownBy(() -> X509KeyManagerBuilder.loadPkcs8EncodedPrivateKeySpecFromPem(null))
+        .isInstanceOf(KeyManagerBuilderException.class);
+    assertThatThrownBy(() -> X509KeyManagerBuilder.loadPkcs8EncodedPrivateKeySpecFromPem(" "))
+        .isInstanceOf(KeyManagerBuilderException.class);
+    // no header
+    assertThatThrownBy(()
+                           -> X509KeyManagerBuilder.loadPkcs8EncodedPrivateKeySpecFromPem(
+                               StringUtils.joinWith("\n", PKCS8_KEY_BASE64, PKCS8_KEY_FOOTER)))
+        .isInstanceOf(KeyManagerBuilderException.class);
+    // no footer
+    assertThatThrownBy(()
+                           -> X509KeyManagerBuilder.loadPkcs8EncodedPrivateKeySpecFromPem(
+                               StringUtils.joinWith("\n", PKCS8_KEY_HEADER, PKCS8_KEY_BASE64)))
+        .isInstanceOf(KeyManagerBuilderException.class);
+    // invalid header
+    assertThatThrownBy(()
+                           -> X509KeyManagerBuilder.loadPkcs8EncodedPrivateKeySpecFromPem(
+                               StringUtils.joinWith("\n", "-----BEGIN KEY-----", PKCS8_KEY_BASE64, PKCS8_KEY_FOOTER)))
+        .isInstanceOf(KeyManagerBuilderException.class);
+    // invalid footer
+    assertThatThrownBy(()
+                           -> X509KeyManagerBuilder.loadPkcs8EncodedPrivateKeySpecFromPem(
+                               StringUtils.joinWith("\n", PKCS8_KEY_HEADER, PKCS8_KEY_BASE64, "-----END KEY-----")))
+        .isInstanceOf(KeyManagerBuilderException.class);
+    // invalid base64
+    assertThatThrownBy(()
+                           -> X509KeyManagerBuilder.loadPkcs8EncodedPrivateKeySpecFromPem(
+                               StringUtils.joinWith("\n", PKCS8_KEY_HEADER, " x ", PKCS8_KEY_FOOTER)))
+        .isInstanceOf(KeyManagerBuilderException.class);
   }
 
   /**

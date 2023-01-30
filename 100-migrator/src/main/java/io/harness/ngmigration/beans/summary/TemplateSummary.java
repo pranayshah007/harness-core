@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.Map;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,10 +23,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TemplateSummary extends BaseSummary {
   Map<String, Long> typeSummary;
+  Set<String> expressions;
 
   @Builder
-  public TemplateSummary(int count, Map<String, Long> typeSummary) {
+  public TemplateSummary(int count, Map<String, Long> typeSummary, Set<String> expressions) {
     super(count);
     this.typeSummary = typeSummary;
+    this.expressions = expressions;
   }
 }

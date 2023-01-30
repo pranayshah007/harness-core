@@ -206,6 +206,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       prepareRepoAndCharts(commandRequest, commandRequest.getTimeoutInMillis(), logCallback);
 
+      skipApplyDefaultValuesYaml(commandRequest);
+
       resources = printHelmChartKubernetesResources(commandRequest);
 
       List<KubernetesResourceId> workloads = readResources(resources);
@@ -305,6 +307,19 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       if (isNotEmpty(commandRequest.getGcpKeyPath())) {
         deleteDirectoryAndItsContentIfExists(Paths.get(commandRequest.getGcpKeyPath()).getParent().toString());
       }
+    }
+  }
+
+  public void skipApplyDefaultValuesYaml(HelmInstallCommandRequestNG commandRequest) {
+    HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
+        (HelmChartManifestDelegateConfig) commandRequest.getManifestDelegateConfig();
+    int index = helmTaskHelperBase.skipDefaultHelmValuesYaml(commandRequest.getWorkingDir(),
+        commandRequest.getValuesYamlList(), helmChartManifestDelegateConfig.isSkipApplyHelmDefaultValues(),
+        helmChartManifestDelegateConfig.getHelmVersion());
+    if (index != -1) {
+      List<String> valuesYamlList = commandRequest.getValuesYamlList();
+      valuesYamlList.remove(index);
+      commandRequest.setValuesYamlList(valuesYamlList);
     }
   }
 

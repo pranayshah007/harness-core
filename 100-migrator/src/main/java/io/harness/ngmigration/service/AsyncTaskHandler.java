@@ -37,11 +37,11 @@ public abstract class AsyncTaskHandler {
 
   abstract String getTaskType();
 
-  abstract MigrationTrackRespPayload processTask(String accountId, String requestId);
+  abstract MigrationTrackRespPayload processTask(String accountId, String appId, String requestId);
 
   abstract HPersistence getHPersistence();
 
-  public synchronized String queue(String accountId) {
+  public synchronized String queue(String accountId, String appId) {
     HPersistence hPersistence = getHPersistence();
     String reqId = cache.getIfPresent(accountId);
     try {
@@ -57,7 +57,7 @@ public abstract class AsyncTaskHandler {
       cache.put(accountId, reqId);
 
       final String trackerId = reqId;
-      service.submit(() -> process(accountId, trackerId));
+      service.submit(() -> process(accountId, appId, trackerId));
     } catch (Exception e) {
       log.error(String.format("There was an error queuing the %s", getTaskType()), e);
       if (StringUtils.isNotBlank(reqId)) {
@@ -79,9 +79,9 @@ public abstract class AsyncTaskHandler {
         .get();
   }
 
-  void process(String accountId, String reqId) {
+  void process(String accountId, String appId, String reqId) {
     try {
-      MigrationTrackRespPayload respPayload = processTask(accountId, reqId);
+      MigrationTrackRespPayload respPayload = processTask(accountId, appId, reqId);
       onComplete(accountId, reqId, respPayload);
     } catch (Exception e) {
       onError(accountId, reqId, e);

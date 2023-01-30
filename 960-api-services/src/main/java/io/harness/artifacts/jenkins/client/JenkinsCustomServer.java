@@ -47,6 +47,18 @@ public class JenkinsCustomServer extends JenkinsServer {
     }
   }
 
+  public String getJenkinsConsoleLogs(FolderJob folder, String jobName, String jobId) throws IOException {
+    try {
+      String consoleLogs = client.get(toConsoleLogs(folder, jobName, jobId));
+      return consoleLogs;
+    } catch (HttpResponseException e) {
+      if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+        return null;
+      }
+      throw e;
+    }
+  }
+
   public Job createJob(FolderJob folder, String jobName, JenkinsInternalConfig jenkinsInternalConfig)
       throws IOException {
     try {
@@ -108,6 +120,10 @@ public class JenkinsCustomServer extends JenkinsServer {
    */
   private String toJobUrl(FolderJob folder, String jobName) {
     return toBaseJobUrl(folder) + "job/" + EncodingUtils.encode(jobName);
+  }
+
+  private String toConsoleLogs(FolderJob folder, String jobName, String jobId) {
+    return toBaseJobUrl(folder) + "job/" + EncodingUtils.encode(jobName) + "/" + jobId + "/logText/progressiveText";
   }
 
   /**

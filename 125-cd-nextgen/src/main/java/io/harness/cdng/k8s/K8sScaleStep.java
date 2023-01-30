@@ -15,6 +15,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.K8sScaleBaseStepInfo.K8sScaleBaseStepInfoKeys;
@@ -30,7 +31,6 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -50,7 +50,7 @@ import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(CDP)
-public class K8sScaleStep extends TaskExecutableWithRollbackAndRbac<K8sDeployResponse> {
+public class K8sScaleStep extends CdTaskExecutable<K8sDeployResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.K8S_SCALE.getYamlType())
                                                .setStepCategory(StepCategory.STEP)

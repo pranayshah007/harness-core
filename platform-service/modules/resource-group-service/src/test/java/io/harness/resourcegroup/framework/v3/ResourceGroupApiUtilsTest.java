@@ -48,7 +48,7 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(PL)
 public class ResourceGroupApiUtilsTest extends CategoryTest {
-  String slug = randomAlphabetic(10);
+  String identifier = randomAlphabetic(10);
   String name = randomAlphabetic(10);
   String account = randomAlphabetic(10);
   String org = randomAlphabetic(10);
@@ -74,7 +74,7 @@ public class ResourceGroupApiUtilsTest extends CategoryTest {
     resourceFilter.setAttributeValues(Collections.singletonList("resource1"));
 
     CreateResourceGroupRequest createResourceGroupRequest = new CreateResourceGroupRequest();
-    createResourceGroupRequest.setSlug(slug);
+    createResourceGroupRequest.setIdentifier(identifier);
     createResourceGroupRequest.setName(name);
     createResourceGroupRequest.setIncludedScope(includedScopes);
     createResourceGroupRequest.setResourceFilter(Collections.singletonList(resourceFilter));
@@ -84,7 +84,7 @@ public class ResourceGroupApiUtilsTest extends CategoryTest {
         ResourceGroupApiUtils.getResourceGroupRequestAcc(createResourceGroupRequest, account);
 
     assertEquals(account, resourceGroupRequest.getResourceGroup().getAccountIdentifier());
-    assertEquals(slug, resourceGroupRequest.getResourceGroup().getIdentifier());
+    assertEquals(identifier, resourceGroupRequest.getResourceGroup().getIdentifier());
     assertEquals(name, resourceGroupRequest.getResourceGroup().getName());
     assertTrue(resourceGroupRequest.getResourceGroup().getAllowedScopeLevels().contains("account"));
     assertEquals(account, resourceGroupRequest.getResourceGroup().getIncludedScopes().get(0).getAccountIdentifier());
@@ -112,7 +112,7 @@ public class ResourceGroupApiUtilsTest extends CategoryTest {
     resourceFilter.setAttributeValues(Collections.singletonList("resource1"));
 
     CreateResourceGroupRequest createResourceGroupRequest = new CreateResourceGroupRequest();
-    createResourceGroupRequest.setSlug(slug);
+    createResourceGroupRequest.setIdentifier(identifier);
     createResourceGroupRequest.setName(name);
     createResourceGroupRequest.setIncludedScope(includedScopes);
     createResourceGroupRequest.setResourceFilter(Collections.singletonList(resourceFilter));
@@ -122,7 +122,7 @@ public class ResourceGroupApiUtilsTest extends CategoryTest {
         ResourceGroupApiUtils.getResourceGroupRequestOrg(org, createResourceGroupRequest, account);
 
     assertEquals(org, resourceGroupRequest.getResourceGroup().getOrgIdentifier());
-    assertEquals(slug, resourceGroupRequest.getResourceGroup().getIdentifier());
+    assertEquals(identifier, resourceGroupRequest.getResourceGroup().getIdentifier());
     assertEquals(name, resourceGroupRequest.getResourceGroup().getName());
     assertTrue(resourceGroupRequest.getResourceGroup().getAllowedScopeLevels().contains("organization"));
     assertEquals(org, resourceGroupRequest.getResourceGroup().getIncludedScopes().get(0).getOrgIdentifier());
@@ -155,7 +155,7 @@ public class ResourceGroupApiUtilsTest extends CategoryTest {
     resourceFilter.setAttributeValues(Collections.singletonList("resource1"));
 
     CreateResourceGroupRequest createResourceGroupRequest = new CreateResourceGroupRequest();
-    createResourceGroupRequest.setSlug(slug);
+    createResourceGroupRequest.setIdentifier(identifier);
     createResourceGroupRequest.setName(name);
     createResourceGroupRequest.setIncludedScope(includedScopes);
     createResourceGroupRequest.setResourceFilter(Collections.singletonList(resourceFilter));
@@ -165,7 +165,7 @@ public class ResourceGroupApiUtilsTest extends CategoryTest {
         ResourceGroupApiUtils.getResourceGroupRequestProject(org, project, createResourceGroupRequest, account);
 
     assertEquals(project, resourceGroupRequest.getResourceGroup().getProjectIdentifier());
-    assertEquals(slug, resourceGroupRequest.getResourceGroup().getIdentifier());
+    assertEquals(identifier, resourceGroupRequest.getResourceGroup().getIdentifier());
     assertEquals(name, resourceGroupRequest.getResourceGroup().getName());
     assertTrue(resourceGroupRequest.getResourceGroup().getAllowedScopeLevels().contains("project"));
     assertEquals(project, resourceGroupRequest.getResourceGroup().getIncludedScopes().get(0).getProjectIdentifier());
@@ -183,7 +183,7 @@ public class ResourceGroupApiUtilsTest extends CategoryTest {
         ResourceGroupResponse.builder()
             .resourceGroup(
                 ResourceGroupDTO.builder()
-                    .identifier(slug)
+                    .identifier(identifier)
                     .name(name)
                     .accountIdentifier(account)
                     .orgIdentifier(org)
@@ -206,7 +206,7 @@ public class ResourceGroupApiUtilsTest extends CategoryTest {
             .harnessManaged(false)
             .build();
     ResourceGroupsResponse resourceGroupsResponse = ResourceGroupApiUtils.getResourceGroupResponse(response);
-    assertEquals(slug, resourceGroupsResponse.getSlug());
+    assertEquals(identifier, resourceGroupsResponse.getIdentifier());
     assertEquals(name, resourceGroupsResponse.getName());
     assertEquals(AllowedScopeLevelsEnum.PROJECT, resourceGroupsResponse.getAllowedScopeLevels().get(0));
     assertEquals(FilterEnum.EXCLUDING_CHILD_SCOPES, resourceGroupsResponse.getIncludedScope().get(0).getFilter());
@@ -222,7 +222,7 @@ public class ResourceGroupApiUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetResourceFilterDTO() {
     ResourceSelectorFilter resourceSelectorFilter = new ResourceSelectorFilter();
-    resourceSelectorFilter.setResourceSlug("resourceSlug");
+    resourceSelectorFilter.setResourceIdentifier("resourceIdentifier");
     resourceSelectorFilter.setResourceType("RESOURCE");
     ResourceGroupFilterRequestBody requestBody = new ResourceGroupFilterRequestBody();
     requestBody.setAccount(account);
@@ -242,7 +242,7 @@ public class ResourceGroupApiUtilsTest extends CategoryTest {
     assertTrue(filterDTO.getResourceSelectorFilterList().contains(
         io.harness.resourcegroup.v1.remote.dto.ResourceSelectorFilter.builder()
             .resourceType("RESOURCE")
-            .resourceIdentifier("resourceSlug")
+            .resourceIdentifier("resourceIdentifier")
             .build()));
   }
 

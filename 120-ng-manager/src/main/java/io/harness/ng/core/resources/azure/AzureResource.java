@@ -142,7 +142,7 @@ public class AzureResource {
     Infrastructure spec = null;
     if (isEmpty(azureConnectorIdentifier) || isEmpty(subscriptionId) || isEmpty(resourceGroup)) {
       InfrastructureDefinitionConfig infrastructureDefinitionConfig =
-              getInfrastructureDefinitionConfig(accountId, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+          getInfrastructureDefinitionConfig(accountId, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
       spec = infrastructureDefinitionConfig.getSpec();
     }
     if (isEmpty(azureConnectorIdentifier) && spec != null) {
@@ -157,9 +157,9 @@ public class AzureResource {
       resourceGroup = azureInfrastructure.getResourceGroup().getValue();
     }
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
-            azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(azureResourceService.getWebAppNames(
-            connectorRef, orgIdentifier, projectIdentifier, subscriptionId, resourceGroup));
+        connectorRef, orgIdentifier, projectIdentifier, subscriptionId, resourceGroup));
   }
 
   @GET
@@ -199,7 +199,7 @@ public class AzureResource {
     Infrastructure spec = null;
     if (isEmpty(azureConnectorIdentifier) || isEmpty(subscriptionId) || isEmpty(resourceGroup)) {
       InfrastructureDefinitionConfig infrastructureDefinitionConfig =
-              getInfrastructureDefinitionConfig(accountId, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+          getInfrastructureDefinitionConfig(accountId, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
       spec = infrastructureDefinitionConfig.getSpec();
     }
     if (isEmpty(azureConnectorIdentifier) && spec != null) {
@@ -214,9 +214,9 @@ public class AzureResource {
       resourceGroup = azureInfrastructure.getResourceGroup().getValue();
     }
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
-            azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(azureResourceService.getAppServiceDeploymentSlots(
-            connectorRef, orgIdentifier, projectIdentifier, subscriptionId, resourceGroup, webAppName));
+        connectorRef, orgIdentifier, projectIdentifier, subscriptionId, resourceGroup, webAppName));
   }
 
   @GET

@@ -306,4 +306,11 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
     log.info(
         "Updated the status of [{}] YamlChangeSets to Skipped. Max retry count exceeded", status.getModifiedCount());
   }
+
+  @Override
+  public void deleteByAccount(String accountId) {
+    Criteria criteria = new Criteria();
+    criteria.and(YamlChangeSetKeys.accountId).is(accountId);
+    yamlChangeSetRepository.deleteAll(yamlChangeSetRepository.findAllByAccountId(accountId));
+  }
 }

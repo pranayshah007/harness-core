@@ -10,10 +10,30 @@ package io.harness.k8s.releasehistory;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate.IsEmpty;
+
+import java.util.List;
 
 @OwnedBy(CDP)
-public interface IK8sReleaseHistory {
-  int getCurrentReleaseNumber();
+public interface IK8sReleaseHistory extends IsEmpty {
+  int getAndIncrementLastReleaseNumber();
   IK8sRelease getLastSuccessfulRelease(int currentReleaseNumber);
   IK8sRelease getLatestRelease();
+  boolean isEmpty();
+  int size();
+  IK8sReleaseHistory cloneInternal();
+
+  List<IK8sRelease> getReleasesMatchingColor(String color, int currentReleaseNumber);
+
+  default int getNextReleaseNumber(boolean inCanaryWorkflow) {
+    if (!inCanaryWorkflow) {
+      return getAndIncrementLastReleaseNumber();
+    }
+
+    IK8sRelease latestRelease = getLatestRelease();
+    if (latestRelease == null) {
+      return 1;
+    }
+    return latestRelease.getReleaseNumber();
+  }
 }

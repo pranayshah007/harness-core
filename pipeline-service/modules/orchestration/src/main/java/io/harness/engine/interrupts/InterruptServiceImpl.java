@@ -35,16 +35,21 @@ import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.repositories.InterruptRepository;
+import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -234,6 +239,16 @@ public class InterruptServiceImpl implements InterruptService {
       String planExecutionId, String nodeExecutionId, InterruptType interruptType) {
     return interruptRepository.findByPlanExecutionIdAndNodeExecutionIdAndTypeAndStateInOrderByCreatedAtDesc(
         planExecutionId, nodeExecutionId, interruptType, EnumSet.of(REGISTERED, PROCESSING));
+  }
+
+  @Override
+  public void deleteAllInterrupts(Set<String> planExecutionIds) {
+    Criteria criteria = where(InterruptKeys.planExecutionId).in(planExecutionIds);
+    Query query = new Query(criteria);
+    RetryPolicy<Object> retryPolicy =
+        PersistenceUtils.getRetryPolicy("[Retrying]: Failed deleting Interrupt entity; attempt: {}",
+            "[Failed]: Failed deleting Interrupt entity; attempt: {}");
+    Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, Interrupt.class));
   }
 
   private void updatePlanStatus(String planExecutionId, String excludingNodeExecutionId) {

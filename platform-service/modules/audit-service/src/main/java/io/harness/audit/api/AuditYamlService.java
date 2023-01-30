@@ -20,4 +20,5 @@ public interface AuditYamlService {
   YamlDiffRecord save(YamlDiffRecord yamlDiffRecord);
   void purgeYamlDiffOlderThanTimestamp(String accountIdentifier, Instant timestamp);
   boolean delete(String auditId);
+  void deleteByAccount(String accountId);
 }

@@ -8,12 +8,13 @@
 package io.harness.ccm.service.impl;
 
 import io.harness.aws.AwsClientImpl;
-import io.harness.aws.CloseableAmazonWebServiceClient;
 import io.harness.ccm.commons.beans.billing.CEBucketPolicyJson;
 import io.harness.ccm.commons.beans.billing.CEBucketPolicyStatement;
 import io.harness.ccm.service.intf.AWSBucketPolicyHelperService;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+
+import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3Client;
@@ -98,7 +99,9 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
             .Statement(List.of(CEBucketPolicyStatement.builder()
                                    .Sid("DelegateS3Access")
                                    .Effect("Allow")
-                                   .Principal(new HashMap<>() {{put("AWS", new ArrayList<>());}})
+                                   .Principal(new HashMap<>() {
+                                     { put("AWS", new ArrayList<>()); }
+                                   })
                                    .Action(List.of("s3:PutObject", "s3:PutObjectAcl"))
                                    .Resource(List.of(String.format("arn:aws:s3:::%s/${aws:userid}", awsS3BucketName),
                                        String.format("arn:aws:s3:::%s/${aws:userid}/*", awsS3BucketName)))
@@ -106,7 +109,9 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
                 CEBucketPolicyStatement.builder()
                     .Sid("AllowStatement3")
                     .Effect("Allow")
-                    .Principal(new HashMap<>() {{put("AWS", new ArrayList<>());}})
+                    .Principal(new HashMap<>() {
+                      { put("AWS", new ArrayList<>()); }
+                    })
                     .Action("s3:ListBucket")
                     .Resource(String.format("arn:aws:s3:::%s", awsS3BucketName))
                     .Condition(Map.of("StringLike", Map.of("s3:prefix", "${aws:userid}/*")))

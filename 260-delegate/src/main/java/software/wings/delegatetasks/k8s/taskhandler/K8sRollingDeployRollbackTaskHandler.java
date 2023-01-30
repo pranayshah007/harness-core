@@ -33,6 +33,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.CommandExecutionStatus;
 
 import software.wings.beans.command.ExecutionLogCallback;
@@ -45,7 +46,6 @@ import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import java.io.IOException;
 import java.util.List;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -85,26 +85,19 @@ public class K8sRollingDeployRollbackTaskHandler extends K8sTaskHandler {
 
     if (((K8sRollingDeployRollbackTaskParameters) k8sTaskParameters).isPruningEnabled()) {
       ExecutionLogCallback pruneLogCallback = k8sTaskHelper.getExecutionLogCallback(request, RecreatePrunedResource);
-      try {
-        resourceRecreationStatus = k8sRollingRollbackBaseHandler.recreatePrunedResources(rollbackHandlerConfig,
-            request.getReleaseNumber(), request.getPrunedResourcesIds(), pruneLogCallback, k8sDelegateTaskParams, null);
-        k8sRollingRollbackBaseHandler.logResourceRecreationStatus(resourceRecreationStatus, pruneLogCallback);
-      } catch (Exception ex) {
-        resourceRecreationStatus = ResourceRecreationStatus.RESOURCE_CREATION_FAILED;
-        pruneLogCallback.saveExecutionLog("Failed to recreate pruned resources.", WARN, RUNNING);
-        pruneLogCallback.saveExecutionLog(getMessage(ex), WARN, SUCCESS);
-      }
+      resourceRecreationStatus = recreatePrunedResources(
+          rollbackHandlerConfig, request.getPrunedResourcesIds(), pruneLogCallback, k8sDelegateTaskParams);
     }
 
     if (((K8sRollingDeployRollbackTaskParameters) k8sTaskParameters).isPruningEnabled()) {
       ExecutionLogCallback deleteLogCallback =
           k8sTaskHelper.getExecutionLogCallback(request, DeleteFailedReleaseResources);
-      k8sRollingRollbackBaseHandler.deleteNewResourcesForCurrentFailedRelease(
-          rollbackHandlerConfig, request.getReleaseNumber(), deleteLogCallback, k8sDelegateTaskParams);
+      k8sRollingRollbackBaseHandler.deleteNewResourcesForCurrentFailedRelease(rollbackHandlerConfig,
+          rollbackHandlerConfig.getCurrentReleaseNumber(), deleteLogCallback, k8sDelegateTaskParams);
     }
 
     boolean success = k8sRollingRollbackBaseHandler.rollback(rollbackHandlerConfig, k8sDelegateTaskParams,
-        request.getReleaseNumber(), k8sTaskHelper.getExecutionLogCallback(request, Rollback),
+        rollbackHandlerConfig.getCurrentReleaseNumber(), k8sTaskHelper.getExecutionLogCallback(request, Rollback),
         k8sRollingRollbackBaseHandler.getResourcesRecreated(request.getPrunedResourcesIds(), resourceRecreationStatus),
         false, null);
     if (!success) {
@@ -118,9 +111,7 @@ public class K8sRollingDeployRollbackTaskHandler extends K8sTaskHandler {
           rollbackHandlerConfig, k8sDelegateTaskParams, timeoutInMin, waitForSteadyStateLogCallback);
 
       List<K8sPod> pods =
-          k8sRollingRollbackBaseHandler.getPods(timeoutInMin, rollbackHandlerConfig.getPreviousManagedWorkloads(),
-              rollbackHandlerConfig.getPreviousCustomManagedWorkloads(), rollbackHandlerConfig.getKubernetesConfig(),
-              request.getReleaseName());
+          k8sRollingRollbackBaseHandler.getPods(timeoutInMin, rollbackHandlerConfig, request.getReleaseName());
 
       K8sRollingDeployRollbackResponse rollbackResponse =
           K8sRollingDeployRollbackResponse.builder().k8sPodList(pods).build();
@@ -137,16 +128,43 @@ public class K8sRollingDeployRollbackTaskHandler extends K8sTaskHandler {
   }
 
   private void init(K8sRollingDeployRollbackTaskParameters k8sRollingDeployRollbackTaskParameters,
-      K8sDelegateTaskParams k8sDelegateTaskParams, ExecutionLogCallback executionLogCallback) throws IOException {
+      K8sDelegateTaskParams k8sDelegateTaskParams, ExecutionLogCallback executionLogCallback) throws Exception {
     executionLogCallback.saveExecutionLog("Initializing..\n");
 
     rollbackHandlerConfig.setKubernetesConfig(containerDeploymentDelegateHelper.getKubernetesConfig(
         k8sRollingDeployRollbackTaskParameters.getK8sClusterConfig(), false));
     rollbackHandlerConfig.setClient(
         Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
+    rollbackHandlerConfig.setUseDeclarativeRollback(k8sRollingDeployRollbackTaskParameters.isUseDeclarativeRollback());
+    rollbackHandlerConfig.setK8sDelegateTaskParams(k8sDelegateTaskParams);
+    rollbackHandlerConfig.setCurrentReleaseNumber(k8sRollingDeployRollbackTaskParameters.getReleaseNumber());
 
     k8sRollingRollbackBaseHandler.init(
         rollbackHandlerConfig, k8sRollingDeployRollbackTaskParameters.getReleaseName(), executionLogCallback);
+  }
+
+  private ResourceRecreationStatus recreatePrunedResources(K8sRollingRollbackHandlerConfig rollbackHandlerConfig,
+      List<KubernetesResourceId> prunedResourcesIds, ExecutionLogCallback pruneLogCallback,
+      K8sDelegateTaskParams k8sDelegateTaskParams) {
+    ResourceRecreationStatus resourceRecreationStatus = ResourceRecreationStatus.NO_RESOURCE_CREATED;
+    try {
+      if (rollbackHandlerConfig.isUseDeclarativeRollback()) {
+        pruneLogCallback.saveExecutionLog(
+            "Declarative rollback is enabled. Pruned resources will be recreated when applying older manifests during rollback.",
+            INFO, SUCCESS);
+        return resourceRecreationStatus;
+      }
+      resourceRecreationStatus = k8sRollingRollbackBaseHandler.recreatePrunedResources(rollbackHandlerConfig,
+          rollbackHandlerConfig.getCurrentReleaseNumber(), prunedResourcesIds, pruneLogCallback, k8sDelegateTaskParams,
+          null);
+      k8sRollingRollbackBaseHandler.logResourceRecreationStatus(resourceRecreationStatus, pruneLogCallback);
+    } catch (Exception ex) {
+      resourceRecreationStatus = ResourceRecreationStatus.RESOURCE_CREATION_FAILED;
+      pruneLogCallback.saveExecutionLog("Failed to recreate pruned resources.", WARN, RUNNING);
+      pruneLogCallback.saveExecutionLog(getMessage(ex), WARN, SUCCESS);
+    }
+
+    return resourceRecreationStatus;
   }
 
   @VisibleForTesting

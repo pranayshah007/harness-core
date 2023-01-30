@@ -9,6 +9,7 @@ package io.harness.cdng.jenkins.jenkinsstep;
 
 import io.harness.EntityType;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest.JenkinsArtifactDelegateRequestBuilder;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
@@ -17,7 +18,6 @@ import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -34,7 +34,7 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JenkinsBuildStep extends TaskExecutableWithRollbackAndRbac<ArtifactTaskResponse> {
+public class JenkinsBuildStep extends CdTaskExecutable<ArtifactTaskResponse> {
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(StepSpecTypeConstants.JENKINS_BUILD).setStepCategory(StepCategory.STEP).build();
   public String COMMAND_UNIT = "Execute";

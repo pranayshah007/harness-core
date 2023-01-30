@@ -16,6 +16,7 @@ import io.harness.pms.pipeline.ClonePipelineDTO;
 import io.harness.pms.pipeline.DestinationPipelineConfig;
 import io.harness.pms.pipeline.SourceIdentifierConfig;
 import io.harness.pms.rbac.PipelineRbacPermissions;
+import io.harness.pms.yaml.YamlUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -122,5 +123,45 @@ public class PipelineCloneHelper {
           e);
     }
     return modifiedSourceYaml;
+  }
+
+  public String updatePipelineMetadataInSourceYamlV1(ClonePipelineDTO clonePipelineDTO, String sourcePipelineYaml) {
+    String destPipelineName = clonePipelineDTO.getDestinationConfig().getPipelineName();
+    JsonNode jsonNode;
+    try {
+      jsonNode = YamlUtils.readTree(sourcePipelineYaml).getNode().getCurrJsonNode();
+    } catch (IOException e) {
+      throw new InvalidRequestException(
+          String.format("Generic Backend Error occurred for pipeline [%s] org [%s] project [%s]",
+              clonePipelineDTO.getSourceConfig().getPipelineIdentifier(),
+              clonePipelineDTO.getSourceConfig().getOrgIdentifier(),
+              clonePipelineDTO.getSourceConfig().getProjectIdentifier()),
+          e);
+    }
+
+    if (destPipelineName != null) {
+      JsonNodeUtils.updatePropertyInObjectNode(jsonNode, "name", destPipelineName);
+    } else {
+      log.error(String.format("Error destination pipeline name is null for pipeline [%s]",
+          clonePipelineDTO.getDestinationConfig().getPipelineIdentifier()));
+      throw new InvalidRequestException(String.format("Destination pipeline name should not be null for pipeline [%s]",
+          clonePipelineDTO.getDestinationConfig().getPipelineIdentifier()));
+    }
+
+    try {
+      return new YAMLMapper().writeValueAsString(jsonNode);
+    } catch (IOException e) {
+      log.error(String.format("Unable to convert json to yaml for pipeline [%s] org [%s] project [%s]",
+                    clonePipelineDTO.getSourceConfig().getPipelineIdentifier(),
+                    clonePipelineDTO.getSourceConfig().getOrgIdentifier(),
+                    clonePipelineDTO.getSourceConfig().getProjectIdentifier()),
+          e);
+      throw new InvalidRequestException(
+          String.format("Generic Backend Error occurred for pipeline [%s] org [%s] project [%s]",
+              clonePipelineDTO.getSourceConfig().getPipelineIdentifier(),
+              clonePipelineDTO.getSourceConfig().getOrgIdentifier(),
+              clonePipelineDTO.getSourceConfig().getProjectIdentifier()),
+          e);
+    }
   }
 }

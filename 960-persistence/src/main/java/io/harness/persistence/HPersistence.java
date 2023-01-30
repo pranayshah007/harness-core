@@ -12,7 +12,6 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.health.HealthMonitor;
-import io.harness.mongo.QueryFactory;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.HQuery.QueryChecks;
 import io.harness.persistence.store.Store;
@@ -24,6 +23,7 @@ import com.mongodb.MongoSocketReadException;
 import com.mongodb.ReadPreference;
 import com.mongodb.Tag;
 import com.mongodb.TagSet;
+import com.mongodb.client.MongoClient;
 import dev.morphia.AdvancedDatastore;
 import dev.morphia.FindAndModifyOptions;
 import dev.morphia.query.CountOptions;
@@ -67,6 +67,8 @@ public interface HPersistence extends HealthMonitor {
    * @return         the datastore
    */
   AdvancedDatastore getDatastore(Store store);
+
+  MongoClient getNewMongoClient(Store store);
 
   /**
    * Gets the datastore.

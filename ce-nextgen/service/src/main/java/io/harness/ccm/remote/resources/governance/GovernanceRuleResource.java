@@ -20,6 +20,7 @@ import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPL
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
+import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,7 +29,6 @@ import io.harness.ccm.audittrails.events.RuleCreateEvent;
 import io.harness.ccm.audittrails.events.RuleDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleUpdateEvent;
 import io.harness.ccm.governance.faktory.FaktoryProducer;
-// import io.harness.ccm.rbac.CCMRbacHelper
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreateRuleDTO;
 import io.harness.ccm.views.dto.GovernanceEnqueueResponseDTO;
@@ -56,6 +56,7 @@ import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.FilterType;
 import io.harness.ng.beans.PageResponse;
@@ -63,14 +64,18 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
+import io.harness.remote.GovernanceConfig;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.InternalApi;
-import io.harness.security.annotations.PublicApi;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
+import io.harness.yaml.schema.YamlSchemaProvider;
+import io.harness.yaml.validator.YamlSchemaValidator;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
@@ -98,6 +103,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -134,8 +140,8 @@ import org.springframework.transaction.support.TransactionTemplate;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-@PublicApi
-// @NextGenManagerAuth
+
+@NextGenManagerAuth
 public class GovernanceRuleResource {
   private final GovernanceRuleService governanceRuleService;
   private final RuleSetService ruleSetService;
@@ -146,7 +152,9 @@ public class GovernanceRuleResource {
   private final TelemetryReporter telemetryReporter;
   private final TransactionTemplate transactionTemplate;
   private final OutboxService outboxService;
-  @Inject CENextGenConfiguration configuration;
+  private final CENextGenConfiguration configuration;
+  @Inject private YamlSchemaProvider yamlSchemaProvider;
+  @Inject private YamlSchemaValidator yamlSchemaValidator;
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   public static final String MALFORMED_ERROR = "Request payload is malformed";
   private static final RetryPolicy<Object> transactionRetryRule = DEFAULT_RETRY_POLICY;
@@ -156,7 +164,8 @@ public class GovernanceRuleResource {
       RuleEnforcementService ruleEnforcementService, RuleSetService ruleSetService,
       ConnectorResourceClient connectorResourceClient, RuleExecutionService ruleExecutionService,
       TelemetryReporter telemetryReporter, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
-      OutboxService outboxService) {
+      OutboxService outboxService, YamlSchemaProvider yamlSchemaProvider, YamlSchemaValidator yamlSchemaValidator,
+      CENextGenConfiguration configuration) {
     this.governanceRuleService = governanceRuleService;
     //    this rbacHelper rbacHelper
     this.ruleEnforcementService = ruleEnforcementService;
@@ -166,6 +175,9 @@ public class GovernanceRuleResource {
     this.telemetryReporter = telemetryReporter;
     this.transactionTemplate = transactionTemplate;
     this.outboxService = outboxService;
+    this.yamlSchemaProvider = yamlSchemaProvider;
+    this.yamlSchemaValidator = yamlSchemaValidator;
+    this.configuration = configuration;
   }
 
   // Internal API for OOTB rule creation
@@ -187,24 +199,30 @@ public class GovernanceRuleResource {
       @RequestBody(
           required = true, description = "Request body containing Rule object") @Valid CreateRuleDTO createRuleDTO) {
     // rbacHelper checkRuleEditPermission(accountId, null, null)
-    // move size to config; seperate config variables
     if (createRuleDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
-    governanceRuleService.customRuleLimit(accountId);
     Rule rule = createRuleDTO.getRule();
-    if (governanceRuleService.fetchByName(accountId, rule.getName(), true) != null) {
-      throw new InvalidRequestException("Rule with given name already exits");
-    }
     if (!rule.getIsOOTB()) {
       rule.setAccountId(accountId);
     } else {
       rule.setAccountId(GLOBAL_ACCOUNT_ID);
     }
+    if (governanceRuleService.fetchByName(accountId, rule.getName(), true) != null) {
+      throw new InvalidRequestException("Rule with the given name already exits");
+    }
+    GovernanceRuleFilter governancePolicyFilter = GovernanceRuleFilter.builder().build();
+    RuleList ruleList = governanceRuleService.list(governancePolicyFilter);
+    GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
+    if (ruleList.getRule().size() >= governanceConfig.getPolicyPerAccountLimit()) {
+      throw new InvalidRequestException("You have exceeded the limit for rules creation");
+    }
     // TO DO: Handle this for custom rules and git connectors
     rule.setStoreType(RuleStoreType.INLINE);
     rule.setVersionLabel("0.0.1");
     rule.setDeleted(false);
+    governanceRuleService.validateAWSSchema(rule);
+    governanceRuleService.custodianValidate(rule);
     governanceRuleService.save(rule);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
@@ -219,7 +237,6 @@ public class GovernanceRuleResource {
         })));
   }
 
-  // Update a rule already made
   @PUT
   @Path("rule")
   @Consumes(MediaType.APPLICATION_JSON)
@@ -243,15 +260,18 @@ public class GovernanceRuleResource {
     }
     Rule rule = createRuleDTO.getRule();
     rule.toDTO();
-    governanceRuleService.fetchById(accountId, rule.getUuid(), true);
+    Rule oldRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
-    properties.put(RULE_NAME, rule.getName());
+    properties.put(RULE_NAME, oldRule.getName());
+    oldRule.setRulesYaml(rule.getRulesYaml());
+    governanceRuleService.validateAWSSchema(oldRule);
+    governanceRuleService.custodianValidate(oldRule);
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new RuleUpdateEvent(accountId, rule.toDTO()));
+      outboxService.save(new RuleUpdateEvent(accountId, rule.toDTO(), oldRule.toDTO()));
       return governanceRuleService.update(rule, accountId);
     })));
   }
@@ -342,12 +362,13 @@ public class GovernanceRuleResource {
           required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid) {
     // rbacHelper checkRuleDeletePermission(accountId, null, null)
     HashMap<String, Object> properties = new HashMap<>();
+    Rule rule = governanceRuleService.fetchById(accountId, uuid, false);
     properties.put(MODULE, MODULE_NAME);
-    properties.put(RULE_NAME, governanceRuleService.fetchById(accountId, uuid, false).getName());
+    properties.put(RULE_NAME, rule.getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_DELETE, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new RuleDeleteEvent(accountId, governanceRuleService.fetchById(accountId, uuid, false)));
+      outboxService.save(new RuleDeleteEvent(accountId, rule.toDTO()));
       return governanceRuleService.delete(accountId, uuid);
     })));
   }
@@ -515,6 +536,7 @@ public class GovernanceRuleResource {
                                                 .targetRegions(Arrays.asList(region))
                                                 .executionLogBucketType("")
                                                 .ruleName(rule.getName())
+                                                .OOTB(rule.getIsOOTB())
                                                 .executionStatus(RuleExecutionStatusType.ENQUEUED)
                                                 .build();
               enqueuedRuleExecutionIds.add(ruleExecutionService.save(ruleExecution));
@@ -574,6 +596,7 @@ public class GovernanceRuleResource {
                                           .executionLogBucketType("")
                                           .resourceCount(0)
                                           .ruleName(rulesList.get(0).getName())
+                                          .OOTB(rulesList.get(0).getIsOOTB())
                                           .executionStatus(RuleExecutionStatusType.ENQUEUED)
                                           .build();
         enqueuedRuleExecutionIds.add(ruleExecutionService.save(ruleExecution));
@@ -585,5 +608,26 @@ public class GovernanceRuleResource {
     }
     return ResponseDTO.newResponse(
         GovernanceEnqueueResponseDTO.builder().ruleExecutionId(enqueuedRuleExecutionIds).build());
+  }
+
+  @GET
+  @Path("entitySchema")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Get Schema for entity", nickname = "getSchemaForEntity")
+  @Operation(operationId = "getSchemaForEntity", description = "Get Schema for entity",
+      summary = "Get Schema for entity",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Schema", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<JsonNode>
+  getEntityYamlSchema(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.ENTITY_TYPE) EntityType entityType, Scope scope) {
+    return ResponseDTO.newResponse(
+        yamlSchemaProvider.getYamlSchema(entityType, orgIdentifier, projectIdentifier, scope));
   }
 }

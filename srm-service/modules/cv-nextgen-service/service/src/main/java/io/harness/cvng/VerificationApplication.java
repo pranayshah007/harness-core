@@ -7,6 +7,7 @@
 
 package io.harness.cvng;
 
+import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
 import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
@@ -23,6 +24,7 @@ import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.AccessControlClientModule;
+import io.harness.Microservice;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -64,6 +66,7 @@ import io.harness.cvng.core.entities.demo.CVNGDemoPerpetualTask.CVNGDemoPerpetua
 import io.harness.cvng.core.jobs.CVNGDemoPerpetualTaskHandler;
 import io.harness.cvng.core.jobs.ChangeSourceDemoHandler;
 import io.harness.cvng.core.jobs.CompositeSLODataExecutorTaskHandler;
+import io.harness.cvng.core.jobs.CustomChangeEventConsumer;
 import io.harness.cvng.core.jobs.DataCollectionTasksPerpetualTaskStatusUpdateHandler;
 import io.harness.cvng.core.jobs.DeploymentChangeEventConsumer;
 import io.harness.cvng.core.jobs.EntityCRUDStreamConsumer;
@@ -86,6 +89,7 @@ import io.harness.cvng.governance.services.SLOPolicyExpansionHandler;
 import io.harness.cvng.licenserestriction.MaxServiceRestrictionUsageImpl;
 import io.harness.cvng.metrics.services.impl.CVNGMetricsPublisher;
 import io.harness.cvng.migration.CVNGSchemaHandler;
+import io.harness.cvng.migration.SRMCoreMigrationProvider;
 import io.harness.cvng.migration.beans.CVNGSchema;
 import io.harness.cvng.migration.beans.CVNGSchema.CVNGSchemaKeys;
 import io.harness.cvng.migration.service.CVNGMigrationService;
@@ -102,6 +106,7 @@ import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator.AnalysisOrchestratorKeys;
 import io.harness.cvng.statemachine.jobs.AnalysisOrchestrationJob;
+import io.harness.cvng.utils.SRMServiceAuthIfHasApiKey;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.ExecutionStatus;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceKeys;
@@ -133,6 +138,9 @@ import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.metrics.MetricRegistryModule;
 import io.harness.metrics.jobs.RecordMetricsJob;
 import io.harness.metrics.service.api.MetricService;
+import io.harness.migration.NGMigrationSdkInitHelper;
+import io.harness.migration.NGMigrationSdkModule;
+import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -153,6 +161,7 @@ import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.pms.annotations.PipelineServiceAuthIfHasApiKey;
 import io.harness.pms.contracts.plan.ExpansionRequestType;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -172,6 +181,7 @@ import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEvent
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
 import io.harness.reflection.HarnessReflections;
@@ -305,6 +315,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     new Thread(injector.getInstance(EntityCRUDStreamConsumer.class)).start();
     new Thread(injector.getInstance(DeploymentChangeEventConsumer.class)).start();
     new Thread(injector.getInstance(InternalChangeEventFFConsumer.class)).start();
+    new Thread(injector.getInstance(CustomChangeEventConsumer.class)).start();
     new Thread(injector.getInstance(StatemachineEventConsumer.class)).start();
   }
 
@@ -450,7 +461,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     PmsSdkConfiguration pmsSdkConfiguration = getPmsSdkConfiguration(configuration);
     modules.add(PmsSdkModule.getInstance(pmsSdkConfiguration));
     modules.add(PipelineServiceUtilityModule.getInstance());
-
+    modules.add(NGMigrationSdkModule.getInstance());
     Injector injector = Guice.createInjector(modules);
     YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
     initializeServiceSecretKeys();
@@ -491,6 +502,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     initializeEnforcementSdk(injector);
     initAutoscalingMetrics();
     registerOasResource(configuration, environment, injector);
+    registerMigrations(injector);
 
     if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
       registerTraceFilter(environment, injector);
@@ -531,6 +543,20 @@ public class VerificationApplication extends Application<VerificationConfigurati
         injector.getInstance(NotifyQueuePublisherRegister.class);
     notifyQueuePublisherRegister.register(
         CVNG_ORCHESTRATION, payload -> publisher.send(Arrays.asList(CVNG_ORCHESTRATION), payload));
+  }
+
+  private void registerMigrations(Injector injector) {
+    NGMigrationConfiguration config = getMigrationSdkConfiguration();
+    NGMigrationSdkInitHelper.initialize(injector, config);
+  }
+
+  private NGMigrationConfiguration getMigrationSdkConfiguration() {
+    return NGMigrationConfiguration.builder()
+        .microservice(Microservice.CV)
+        .migrationProviderList(new ArrayList<>() {
+          { add(SRMCoreMigrationProvider.class); }
+        })
+        .build();
   }
 
   public void registerPipelineSDK(VerificationConfiguration configuration, Injector injector) {
@@ -576,7 +602,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     JsonExpansionInfo sloPolicyInfo =
         JsonExpansionInfo.newBuilder()
             .setExpansionType(ExpansionRequestType.LOCAL_FQN)
-            .setKey(YAMLFieldNameConstants.STAGE)
+            .setKey(YAMLFieldNameConstants.STAGE + YamlNode.PATH_SEP + YAMLFieldNameConstants.SPEC)
             .setExpansionKey(ExpansionKeysConstants.SLO_POLICY_EXPANSION_KEY)
             .setStageType(StepType.newBuilder().setType("Deployment").setStepCategory(StepCategory.STAGE).build())
             .build();
@@ -1020,7 +1046,11 @@ public class VerificationApplication extends Application<VerificationConfigurati
     Map<String, String> serviceToSecretMapping = new HashMap<>();
     Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate = resourceInfoAndRequest
         -> resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(NextGenManagerAuth.class) != null
-        || resourceInfoAndRequest.getKey().getResourceClass().getAnnotation(NextGenManagerAuth.class) != null;
+        || resourceInfoAndRequest.getKey().getResourceClass().getAnnotation(NextGenManagerAuth.class) != null
+        || (resourceInfoAndRequest.getKey().getResourceMethod() != null
+            && resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(SRMServiceAuthIfHasApiKey.class)
+                != null
+            && resourceInfoAndRequest.getValue().getHeaders().get(X_API_KEY) != null);
     serviceToSecretMapping.put(BEARER.getServiceId(), configuration.getManagerAuthConfig().getJwtAuthSecret());
     serviceToSecretMapping.put(
         IDENTITY_SERVICE.getServiceId(), configuration.getManagerAuthConfig().getJwtIdentityServiceSecret());
@@ -1061,7 +1091,9 @@ public class VerificationApplication extends Application<VerificationConfigurati
     List<PredefinedTemplate> templates = new ArrayList<>(Arrays.asList(PredefinedTemplate.CVNG_SLO_SLACK,
         PredefinedTemplate.CVNG_SLO_EMAIL, PredefinedTemplate.CVNG_SLO_PAGERDUTY, PredefinedTemplate.CVNG_SLO_MSTEAMS,
         PredefinedTemplate.CVNG_MONITOREDSERVICE_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_EMAIL,
-        PredefinedTemplate.CVNG_MONITOREDSERVICE_PAGERDUTY, PredefinedTemplate.CVNG_MONITOREDSERVICE_MSTEAMS));
+        PredefinedTemplate.CVNG_MONITOREDSERVICE_PAGERDUTY, PredefinedTemplate.CVNG_MONITOREDSERVICE_MSTEAMS,
+        PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_EMAIL));
+
     if (configuration.getShouldConfigureWithNotification()) {
       for (PredefinedTemplate template : templates) {
         try {

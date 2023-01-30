@@ -28,7 +28,7 @@ import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.mongo.ProcessTimeLogContext;
+import io.harness.logging.ProcessTimeLogContext;
 
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.dl.WingsPersistence;

@@ -7,6 +7,7 @@
 
 package software.wings.graphql.datafetcher.trigger;
 
+import static io.harness.beans.FeatureName.SPG_WORKFLOW_RBAC_ON_TRIGGER_RESOURCE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.notNullCheck;
 
@@ -14,6 +15,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.trigger.Trigger;
 import software.wings.graphql.datafetcher.BaseMutatorDataFetcher;
@@ -31,6 +33,7 @@ import com.google.inject.Inject;
 public class DeleteTriggerDataFetcher extends BaseMutatorDataFetcher<QLDeleteTriggerInput, QLDeleteTriggerPayload> {
   TriggerService triggerService;
   AppService appService;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Inject
   public DeleteTriggerDataFetcher(TriggerService triggerService, AppService appService) {
@@ -58,6 +61,9 @@ public class DeleteTriggerDataFetcher extends BaseMutatorDataFetcher<QLDeleteTri
 
     if (triggerService.triggerActionExists(trigger)) {
       triggerService.authorize(trigger, true);
+    }
+    if (featureFlagService.isEnabled(SPG_WORKFLOW_RBAC_ON_TRIGGER_RESOURCE, mutationContext.getAccountId())) {
+      triggerService.authorizeDeletion(trigger);
     }
     triggerService.delete(appId, triggerId);
 

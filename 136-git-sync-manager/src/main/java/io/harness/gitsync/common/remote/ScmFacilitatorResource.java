@@ -37,6 +37,8 @@ import io.harness.gitsync.common.dtos.ScmCreatePRRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
+import io.harness.gitsync.common.dtos.ScmGetFileUrlRequestDTO;
+import io.harness.gitsync.common.dtos.ScmGetFileUrlResponseDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.UserRepoResponse;
@@ -451,5 +453,40 @@ public class ScmFacilitatorResource {
                                                                        .repoName(repoName)
                                                                        .connectorRef(connectorRef)
                                                                        .build()));
+  }
+
+  @GET
+  @Path("file-url")
+  @ApiOperation(value = "Get file url", nickname = "getFileURL")
+  @Hidden
+  public ResponseDTO<String> getFileURL(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotBlank @QueryParam(
+                                            NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = GitSyncApiConstants.REPO_NAME_PARAM_MESSAGE) @NotBlank @QueryParam(
+          NGCommonEntityConstants.REPO_NAME) String repoName,
+      @Parameter(description = "File Path") @QueryParam(YamlConstants.FILE_PATH) @NotBlank @NotNull String filePath,
+      @Parameter(description = GitSyncApiConstants.BRANCH_PARAM_MESSAGE) @QueryParam(
+          GitSyncApiConstants.BRANCH_KEY) @NotNull @NotBlank String branch,
+      @Parameter(description = GitSyncApiConstants.GIT_CONNECTOR_REF_PARAM_MESSAGE) @NotBlank @QueryParam(
+          GitSyncApiConstants.CONNECTOR_REF) @NotNull String connectorRef,
+      @Parameter(description = "Commit Id") @QueryParam(YamlConstants.COMMIT_ID) @NotNull String commitId) {
+    Scope scope = Scope.builder()
+                      .accountIdentifier(accountIdentifier)
+                      .orgIdentifier(orgIdentifier)
+                      .projectIdentifier(projectIdentifier)
+                      .build();
+    ScmGetFileUrlResponseDTO scmGetFileUrlResponseDTO =
+        scmFacilitatorService.getFileUrl(ScmGetFileUrlRequestDTO.builder()
+                                             .scope(scope)
+                                             .branch(branch)
+                                             .connectorRef(connectorRef)
+                                             .commitId(commitId)
+                                             .filePath(filePath)
+                                             .repoName(repoName)
+                                             .build());
+    return ResponseDTO.newResponse(scmGetFileUrlResponseDTO.getFileURL());
   }
 }

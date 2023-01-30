@@ -62,6 +62,7 @@ import io.harness.delegate.beans.DelegateTags;
 import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.resources.DelegateSetupResourceV2;
+import io.harness.delegate.service.intfc.DelegateInstallationCommandService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.service.intfc.DelegateCache;
@@ -121,6 +122,8 @@ public class DelegateSetupResourceTest extends CategoryTest {
   private static final SubdomainUrlHelperIntfc subdomainUrlHelper = mock(SubdomainUrlHelperIntfc.class);
   private static final DelegateCache delegateCache = mock(DelegateCache.class);
   private static final AccessControlClient accessControlClient = mock(AccessControlClient.class);
+  private static final DelegateInstallationCommandService delegateInstallationCommandService =
+      mock(DelegateInstallationCommandService.class);
 
   @Parameter public String apiUrl;
 
@@ -133,7 +136,7 @@ public class DelegateSetupResourceTest extends CategoryTest {
   public static final ResourceTestRule RESOURCES =
       ResourceTestRule.builder()
           .instance(new DelegateSetupResource(delegateService, delegateScopeService, downloadTokenService,
-              subdomainUrlHelper, delegateCache, accessControlClient))
+              subdomainUrlHelper, delegateCache, accessControlClient, delegateInstallationCommandService))
           .instance(new DelegateSetupResourceV3(delegateService, delegateScopeService, downloadTokenService,
               subdomainUrlHelper, delegateCache, accessControlClient, delegateSetupService))
           .instance(new AbstractBinder() {

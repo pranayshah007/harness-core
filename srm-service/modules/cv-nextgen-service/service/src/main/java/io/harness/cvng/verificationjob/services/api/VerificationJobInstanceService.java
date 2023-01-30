@@ -9,6 +9,7 @@ package io.harness.cvng.verificationjob.services.api;
 
 import io.harness.cvng.activity.beans.ActivityVerificationSummary;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO;
+import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.entities.CVConfig;
@@ -42,4 +43,8 @@ public interface VerificationJobInstanceService {
       String verificationJobInstanceId, List<String> filterIdentifiers);
   List<String> createDemoInstances(List<VerificationJobInstance> verificationJobInstances);
   List<ProgressLog> getProgressLogs(String verificationJobInstanceId);
+  void updateAppliedDeploymentAnalysisTypeForVerificationTaskId(String verificationJobInstanceId,
+      String verificationTaskId, AppliedDeploymentAnalysisType appliedDeploymentAnalysisType);
+  AppliedDeploymentAnalysisType getAppliedDeploymentAnalysisTypeByVerificationTaskId(
+      String verificationJobInstanceId, String verificationTaskId);
 }

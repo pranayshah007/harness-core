@@ -88,7 +88,6 @@ import io.harness.exception.InvalidCredentialsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SignupException;
 import io.harness.exception.UnauthorizedException;
-import io.harness.exception.UnexpectedException;
 import io.harness.exception.UserAlreadyPresentException;
 import io.harness.exception.UserRegistrationException;
 import io.harness.exception.WingsException;
@@ -359,6 +358,8 @@ public class UserServiceImpl implements UserService {
   @Inject private FeatureFlagService featureFlagService;
   @Inject @Named("PRIVILEGED") private UserMembershipClient userMembershipClient;
   @Inject private TelemetryReporter telemetryReporter;
+
+  @Inject private UserServiceHelper userServiceHelper;
 
   private final ScheduledExecutorService scheduledExecutor = new ScheduledThreadPoolExecutor(1,
       new ThreadFactoryBuilder().setNameFormat("invite-executor-thread-%d").setPriority(Thread.NORM_PRIORITY).build());
@@ -2874,28 +2875,36 @@ public class UserServiceImpl implements UserService {
     }
     return pageResponse;
   }
-
-  @Override
-  public void loadUserGroupsForUsers(List<User> users, String accountId) {
+  private List<UserGroup> getUserGroupsOfAccount(String accountId) {
     PageRequest<UserGroup> req = aPageRequest()
                                      .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
                                      .addFilter(UserGroupKeys.accountId, EQ, accountId)
                                      .build();
     PageResponse<UserGroup> res = userGroupService.list(accountId, req, false, null, null);
-    List<UserGroup> allUserGroupList = res.getResponse();
-    if (isEmpty(allUserGroupList)) {
-      return;
-    }
+    return res.getResponse();
+  }
 
+  private HashMultimap createUsergroupsOfUserMap(List<UserGroup> userGroupList) {
     Multimap<String, UserGroup> userUserGroupMap = HashMultimap.create();
 
-    allUserGroupList.forEach(userGroup -> {
+    userGroupList.forEach(userGroup -> {
       List<String> memberIds = userGroup.getMemberIds();
       if (isEmpty(memberIds)) {
         return;
       }
       memberIds.forEach(userId -> userUserGroupMap.put(userId, userGroup));
     });
+    return (HashMultimap) userUserGroupMap;
+  }
+
+  @Override
+  public void loadUserGroupsForUsers(List<User> users, String accountId) {
+    List<UserGroup> allUserGroupList = getUserGroupsOfAccount(accountId);
+    if (isEmpty(allUserGroupList)) {
+      return;
+    }
+
+    Multimap<String, UserGroup> userUserGroupMap = createUsergroupsOfUserMap(allUserGroupList);
 
     users.forEach(user -> {
       if (isUserInvitedToAccount(user, accountId)) {
@@ -2916,11 +2925,48 @@ public class UserServiceImpl implements UserService {
     });
   }
 
+  @Override
+  public boolean isUserPartOfAnyUserGroupInCG(String userId, String accountId) {
+    User user = get(userId);
+    List<UserGroup> allUserGroupList = getUserGroupsOfAccount(accountId);
+    if (isEmpty(allUserGroupList)) {
+      return false;
+    }
+
+    Multimap<String, UserGroup> userUserGroupMap = createUsergroupsOfUserMap(allUserGroupList);
+    if (isUserInvitedToAccount(user, accountId)) {
+      UserInvite userInvite = getInviteFromEmail(accountId, user.getEmail());
+      if (userInvite == null) {
+        return false;
+      }
+      return true;
+    }
+    Collection<UserGroup> userGroups = userUserGroupMap.get(user.getUuid());
+    return !isEmpty(userGroups);
+  }
+
   /* (non-Javadoc)
    * @see software.wings.service.intfc.UserService#delete(java.lang.String)
    */
   @Override
   public void delete(String accountId, String userId) {
+    if (featureFlagService.isNotEnabled(FeatureName.PL_USER_DELETION_V2, accountId)) {
+      deleteInternal(accountId, userId, true, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+    } else {
+      User user = get(userId);
+      if (!userServiceHelper.isUserActiveInNG(user, accountId)) {
+        deleteInternal(accountId, userId, true, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+      } else {
+        log.warn("User is removed from all user groups in CG");
+        user.setUserGroups(new ArrayList<>());
+        log.error(
+            "User {} cannot be deleted in CG, since it is active on NG in account {}", user.getEmail(), accountId);
+      }
+    }
+  }
+
+  @Override
+  public void forceDelete(String accountId, String userId) {
     deleteInternal(accountId, userId, true, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
   }
 
@@ -2937,43 +2983,14 @@ public class UserServiceImpl implements UserService {
         new io.harness.limits.Action(accountId, ActionType.CREATE_USER));
 
     AtomicBoolean isUserPartOfAccountInNG = new AtomicBoolean(false);
+    isUserPartOfAccountInNG.set(userServiceHelper.isUserActiveInNG(user, accountId));
 
     LimitEnforcementUtils.withCounterDecrement(checker, () -> {
-      List<Account> updatedActiveAccounts = new ArrayList<>();
-      if (isNotEmpty(user.getAccounts())) {
-        for (Account account : user.getAccounts()) {
-          if (account.getUuid().equals(accountId)) {
-            if (accountService.isNextGenEnabled(accountId)) {
-              Boolean userMembershipCheck =
-                  NGRestUtils.getResponse(userMembershipClient.isUserInScope(userId, accountId, null, null));
-              log.info("User {} is {} of nextgen in account {}", userId,
-                  Boolean.TRUE.equals(userMembershipCheck) ? "" : "not", accountId);
-              if (Boolean.TRUE.equals(userMembershipCheck)) {
-                isUserPartOfAccountInNG.set(true);
-              }
-            }
-          } else {
-            updatedActiveAccounts.add(account);
-          }
-        }
-      }
-
-      List<Account> updatedPendingAccounts = new ArrayList<>();
-      if (isNotEmpty(user.getPendingAccounts())) {
-        for (Account account : user.getPendingAccounts()) {
-          if (!account.getUuid().equals(accountId)) {
-            updatedPendingAccounts.add(account);
-          }
-        }
-      }
+      List<Account> updatedActiveAccounts = userServiceHelper.updatedActiveAccounts(user, accountId);
+      List<Account> updatedPendingAccounts = userServiceHelper.updatedPendingAccount(user, accountId);
 
       if (isUserPartOfAccountInNG.get()) {
-        Boolean deletedFromNG = NGRestUtils.getResponse(
-            userMembershipClient.removeUserInternal(userId, accountId, null, null, removeUserFilter));
-        if (!Boolean.TRUE.equals(deletedFromNG)) {
-          throw new UnexpectedException(
-              "User could not be removed from NG. User might be the last account admin in NG.");
-        }
+        userServiceHelper.deleteUserFromNG(userId, accountId, removeUserFilter);
       }
 
       if (updateUsergroup) {
@@ -3660,6 +3677,11 @@ public class UserServiceImpl implements UserService {
                                     .collect(toSet());
 
     for (String userToDelete : usersToDelete) {
+      if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId)) {
+        forceDelete(accountId, userToDelete);
+      } else {
+        delete(accountId, userToDelete);
+      }
       delete(accountId, userToDelete);
     }
 

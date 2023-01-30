@@ -9,6 +9,8 @@ package io.harness.delegate.beans.connector.scm.azurerepo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.scm.azurerepo.outcome.AzureRepoCredentialsOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.outcome.AzureRepoHttpCredentialsOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -46,5 +48,9 @@ public class AzureRepoHttpCredentialsDTO implements AzureRepoCredentialsDTO {
       AzureRepoHttpAuthenticationType type, AzureRepoHttpCredentialsSpecDTO httpCredentialsSpec) {
     this.type = type;
     this.httpCredentialsSpec = httpCredentialsSpec;
+  }
+
+  public AzureRepoCredentialsOutcomeDTO toOutcome() {
+    return AzureRepoHttpCredentialsOutcomeDTO.builder().type(this.type).spec(this.httpCredentialsSpec).build();
   }
 }

@@ -43,7 +43,6 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -108,12 +107,11 @@ public class SecretMigrationService extends NgMigrationService {
 
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
-    return discover(secretService.getSecretById(accountId, entityId).orElse(null));
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    return NGMigrationStatus.builder().status(true).build();
+    try {
+      return discover(secretService.getSecretById(accountId, entityId).orElse(null));
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   @Override

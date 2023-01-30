@@ -55,6 +55,7 @@ import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.UuidAware;
 
@@ -175,7 +176,7 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
     Map<String, ResourceLookup> resourceLookupMap = new HashMap<>();
 
     FindOptions findOptions = new FindOptions();
-    findOptions.hint(ResourceLookup.getHint("resourceIdResourceLookupIndex"));
+    findOptions.hint(BasicDBUtils.getIndexObject(ResourceLookup.mongoIndexes(), "resourceIdResourceLookupIndex"));
 
     try (HIterator<ResourceLookup> iterator = new HIterator<>(query.fetch(findOptions))) {
       while (iterator.hasNext()) {

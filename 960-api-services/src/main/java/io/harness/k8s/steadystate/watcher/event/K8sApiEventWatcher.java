@@ -81,7 +81,7 @@ public class K8sApiEventWatcher {
 
     try {
       String resourceVersion = null;
-      while (true) {
+      while (!Thread.currentThread().isInterrupted()) {
         if (resourceVersion == null) {
           CoreV1EventList coreV1EventList =
               coreV1Api.listNamespacedEvent(namespace, null, null, null, null, null, null, null, null, null, false);
@@ -116,6 +116,10 @@ public class K8sApiEventWatcher {
         }
       }
     } catch (ApiException e) {
+      if (e.getCause() instanceof InterruptedIOException) {
+        Thread.currentThread().interrupt();
+        return;
+      }
       ApiException ex = ExceptionMessageSanitizer.sanitizeException(e);
       String errorMessage =
           String.format("Failed to watch events in namespace %s. ", namespace) + ExceptionUtils.getMessage(ex);

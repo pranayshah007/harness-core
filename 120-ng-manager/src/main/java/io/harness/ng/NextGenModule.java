@@ -12,6 +12,7 @@ import static io.harness.audit.ResourceTypeConstants.CONNECTOR;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_CONFIGURATION;
 import static io.harness.audit.ResourceTypeConstants.DEPLOYMENT_FREEZE;
 import static io.harness.audit.ResourceTypeConstants.ENVIRONMENT;
+import static io.harness.audit.ResourceTypeConstants.ENVIRONMENT_GROUP;
 import static io.harness.audit.ResourceTypeConstants.FILE;
 import static io.harness.audit.ResourceTypeConstants.ORGANIZATION;
 import static io.harness.audit.ResourceTypeConstants.PROJECT;
@@ -193,6 +194,7 @@ import io.harness.ng.core.impl.ProjectServiceImpl;
 import io.harness.ng.core.outbox.ApiKeyEventHandler;
 import io.harness.ng.core.outbox.DelegateProfileEventHandler;
 import io.harness.ng.core.outbox.EnvironmentEventHandler;
+import io.harness.ng.core.outbox.EnvironmentGroupOutboxEventHandler;
 import io.harness.ng.core.outbox.NextGenOutboxEventHandler;
 import io.harness.ng.core.outbox.OrganizationEventHandler;
 import io.harness.ng.core.outbox.ProjectEventHandler;
@@ -219,6 +221,8 @@ import io.harness.ng.core.user.service.impl.UserEntityCrudStreamListener;
 import io.harness.ng.eventsframework.EventsFrameworkModule;
 import io.harness.ng.feedback.services.FeedbackService;
 import io.harness.ng.feedback.services.impls.FeedbackServiceImpl;
+import io.harness.ng.moduleversioninfo.ModuleVersionInfoServiceImpl;
+import io.harness.ng.moduleversioninfo.service.ModuleVersionInfoService;
 import io.harness.ng.opa.OpaService;
 import io.harness.ng.opa.OpaServiceImpl;
 import io.harness.ng.opa.entities.connector.OpaConnectorService;
@@ -240,6 +244,7 @@ import io.harness.ng.userprofile.entities.BitbucketSCM.BitbucketSCMMapper;
 import io.harness.ng.userprofile.entities.GithubSCM.GithubSCMMapper;
 import io.harness.ng.userprofile.entities.GitlabSCM.GitlabSCMMapper;
 import io.harness.ng.userprofile.entities.SourceCodeManager.SourceCodeManagerMapper;
+import io.harness.ng.userprofile.event.SourceCodeManagerEventListener;
 import io.harness.ng.userprofile.services.api.SourceCodeManagerService;
 import io.harness.ng.userprofile.services.api.UserInfoService;
 import io.harness.ng.userprofile.services.impl.SourceCodeManagerServiceImpl;
@@ -613,6 +618,7 @@ public class NextGenModule extends AbstractModule {
     bind(WebhookEventService.class).to(WebhookServiceImpl.class);
     bind(ScimUserService.class).to(NGScimUserServiceImpl.class);
     bind(ScimGroupService.class).to(NGScimGroupServiceImpl.class);
+    bind(ModuleVersionInfoService.class).to(ModuleVersionInfoServiceImpl.class);
 
     install(new ValidationModule(getValidatorFactory()));
     install(new AbstractMongoModule() {
@@ -650,7 +656,7 @@ public class NextGenModule extends AbstractModule {
     install(NGModule.getInstance());
     install(ExceptionModule.getInstance());
     install(new EventsFrameworkModule(
-        this.appConfig.getEventsFrameworkConfiguration(), this.appConfig.getDebeziumConsumerConfigs()));
+        this.appConfig.getEventsFrameworkConfiguration(), this.appConfig.getDebeziumConsumersConfigs()));
     install(new SecretManagementModule());
     install(new AccountClientModule(appConfig.getManagerClientConfig(),
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.toString()));
@@ -947,6 +953,7 @@ public class NextGenModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(CONNECTOR).to(ConnectorEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(SERVICE).to(ServiceOutBoxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(ENVIRONMENT).to(EnvironmentEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(ENVIRONMENT_GROUP).to(EnvironmentGroupOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(FILE).to(FileEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(API_KEY).to(ApiKeyEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(TOKEN).to(TokenEventHandler.class);
@@ -985,6 +992,9 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkMetadataConstants.FILTER + ENTITY_CRUD))
         .to(FilterEventListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkMetadataConstants.SCM + ENTITY_CRUD))
+        .to(SourceCodeManagerEventListener.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkMetadataConstants.SETTINGS + ENTITY_CRUD))
         .to(SettingsEventListener.class);

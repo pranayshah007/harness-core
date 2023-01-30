@@ -221,6 +221,10 @@ public interface TriggerService
       @NotEmpty String appId, @NotEmpty String triggerExecutionId, TriggerResponse triggerResponse);
 
   void authorize(Trigger trigger, boolean existing);
+  void authorizeDeletion(Trigger trigger);
+  void authorizeUpdate(Trigger trigger);
+  void authorizeSave(Trigger trigger);
+  void authorizeRead(Trigger trigger);
 
   void authorizeAppAccess(List<String> appIds);
 

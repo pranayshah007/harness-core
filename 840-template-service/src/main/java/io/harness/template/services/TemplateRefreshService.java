@@ -16,23 +16,24 @@ import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 
 @OwnedBy(CDC)
 public interface TemplateRefreshService {
-  void refreshAndUpdateTemplate(
-      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel);
+  void refreshAndUpdateTemplate(String accountId, String orgId, String projectId, String templateIdentifier,
+      String versionLabel, boolean loadFromCache);
 
-  String refreshLinkedTemplateInputs(String accountId, String orgId, String projectId, String yaml);
+  String refreshLinkedTemplateInputs(
+      String accountId, String orgId, String projectId, String yaml, boolean loadFromCache);
 
-  ValidateTemplateInputsResponseDTO validateTemplateInputsInTemplate(
-      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel);
+  ValidateTemplateInputsResponseDTO validateTemplateInputsInTemplate(String accountId, String orgId, String projectId,
+      String templateIdentifier, String versionLabel, boolean loadFromCache);
 
   ValidateTemplateInputsResponseDTO validateTemplateInputsForYaml(
-      String accountId, String orgId, String projectId, String yaml);
+      String accountId, String orgId, String projectId, String yaml, boolean loadFromCache);
 
-  YamlDiffResponseDTO getYamlDiffOnRefreshingTemplate(
-      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel);
+  YamlDiffResponseDTO getYamlDiffOnRefreshingTemplate(String accountId, String orgId, String projectId,
+      String templateIdentifier, String versionLabel, boolean loadFromCache);
 
-  void recursivelyRefreshTemplates(
-      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel);
+  void recursivelyRefreshTemplates(String accountId, String orgId, String projectId, String templateIdentifier,
+      String versionLabel, boolean loadFromCache);
 
   YamlFullRefreshResponseDTO recursivelyRefreshTemplatesForYaml(
-      String accountId, String orgId, String projectId, String yaml);
+      String accountId, String orgId, String projectId, String yaml, boolean loadFromCache);
 }

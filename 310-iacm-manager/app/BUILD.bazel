@@ -61,5 +61,5 @@ run_analysis()
 
 exports_files([
     "keystore.jks",
-    "sto-manager-config.yml",
+    "iacm-manager-config.yml",
 ])

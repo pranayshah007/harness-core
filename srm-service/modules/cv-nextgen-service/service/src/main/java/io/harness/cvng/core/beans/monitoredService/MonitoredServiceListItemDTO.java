@@ -36,7 +36,7 @@ public class MonitoredServiceListItemDTO implements YamlDTO {
   HistoricalTrend historicalTrend;
   ChangeSummaryDTO changeSummary;
   Map<String, String> tags;
-  boolean serviceLicenseEnabled;
+  boolean serviceMonitoringEnabled;
 
   List<SloHealthIndicatorDTO> sloHealthIndicators;
 

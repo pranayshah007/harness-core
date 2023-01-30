@@ -72,19 +72,22 @@ public class VaultSecretMigrator implements SecretMigrator {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
 
-    VaultConnectorDTOBuilder connectorDTO = VaultConnectorDTO.builder()
-                                                .appRoleId(vaultConfig.getAppRoleId())
-                                                .basePath(vaultConfig.getBasePath())
-                                                .vaultUrl(vaultConfig.getVaultUrl())
-                                                .renewalIntervalMinutes(vaultConfig.getRenewalInterval())
-                                                .secretEngineManuallyConfigured(vaultConfig.isEngineManuallyEntered())
-                                                .secretEngineName(vaultConfig.getSecretEngineName())
-                                                .secretEngineVersion(vaultConfig.getSecretEngineVersion())
-                                                .useVaultAgent(vaultConfig.isUseVaultAgent())
-                                                .useAwsIam(false)
-                                                .isDefault(vaultConfig.isDefault())
-                                                .isReadOnly(vaultConfig.isReadOnly())
-                                                .delegateSelectors(vaultConfig.getDelegateSelectors());
+    VaultConnectorDTOBuilder connectorDTO =
+        VaultConnectorDTO.builder()
+            .namespace(StringUtils.isNotBlank(vaultConfig.getNamespace()) ? vaultConfig.getNamespace() : "/")
+            .basePath(vaultConfig.getBasePath())
+            .vaultUrl(vaultConfig.getVaultUrl())
+            // Setting renewal interval to `0` as per PL team's recommendation instead of
+            // vaultConfig.getRenewalInterval()
+            .renewalIntervalMinutes(0)
+            .secretEngineManuallyConfigured(vaultConfig.isEngineManuallyEntered())
+            .secretEngineName(vaultConfig.getSecretEngineName())
+            .secretEngineVersion(vaultConfig.getSecretEngineVersion())
+            .useVaultAgent(vaultConfig.isUseVaultAgent())
+            .useAwsIam(false)
+            .isDefault(vaultConfig.isDefault())
+            .isReadOnly(vaultConfig.isReadOnly())
+            .delegateSelectors(vaultConfig.getDelegateSelectors());
 
     String secretIdentifier =
         String.format("migratedHarnessSecret_%s", MigratorUtility.generateIdentifier(vaultConfig.getName()));
@@ -109,12 +112,14 @@ public class VaultSecretMigrator implements SecretMigrator {
     // Handle App Role
     if (StringUtils.isNoneBlank(vaultConfig.getSecretId(), vaultConfig.getAppRoleId())) {
       SecretDTOV2 appRoleSecret = getSecretDTO(vaultConfig, inputDTO, secretIdentifier, vaultConfig.getSecretId());
-      connectorDTO.useK8sAuth(false)
-          .appRoleId(vaultConfig.getAppRoleId())
-          .secretId(SecretRefData.builder()
-                        .scope(MigratorUtility.getScope(secretEntityDetail))
-                        .identifier(secretIdentifier)
-                        .build());
+      connectorDTO
+          .useK8sAuth(false)
+          //          .appRoleId(vaultConfig.getAppRoleId())
+          //          .secretId(SecretRefData.builder()
+          .authToken(SecretRefData.builder()
+                         .scope(MigratorUtility.getScope(secretEntityDetail))
+                         .identifier(secretIdentifier)
+                         .build());
       secrets.add(appRoleSecret);
     }
 
