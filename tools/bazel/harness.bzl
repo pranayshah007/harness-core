@@ -8,7 +8,7 @@ load("//:tools/bazel/unused_dependencies.bzl", "report_unused")
 load("//:tools/bazel/aeriform.bzl", "aeriformAnnotations")
 load("//project/flags:java_library_flags.bzl", "REPORT_UNUSED")
 load("//project/flags:java_library_flags.bzl", "REPORT_SIZE")
-load("//:tools/bazel/brannock.bzl", "java_library_brannock_rule")
+load("//:tools/bazel/brannock.bzl", "brannock_rule")
 
 def java_library(**kwargs):
     tags = kwargs.pop("tags", [])
@@ -22,7 +22,7 @@ def java_library(**kwargs):
         deps = kwargs.pop("deps", [])
         name = kwargs.pop("name")
 
-        java_library_brannock_rule(name = name + "_sizer", out = name + "_size_report.txt", deps = deps)
+        brannock_rule(name = name + "_sizer", out = name + "_size_report.txt", deps = deps)
 
     #aeriformAnnotations(**kwargs)
 
@@ -73,4 +73,4 @@ def java_binary(**kwargs):
         deps = kwargs.pop("runtime_deps", [])
         name = kwargs.pop("name")
 
-        java_library_brannock_rule(name = name + "_sizer", out = name + "_size_report.txt", deps = deps)
+        brannock_rule(name = name + "_sizer", out = name + "_size_report.txt", deps = deps)

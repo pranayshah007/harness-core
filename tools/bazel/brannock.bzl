@@ -41,7 +41,7 @@ def _get_size(file, ctx):
 
 # ==== Rule implementation which uses the above aspect ====
 
-def _java_library_brannock_rule_impl(ctx):
+def _brannock_rule_impl(ctx):
     sizes = []
     dep_sizes = []
     for dep in ctx.attr.deps:
@@ -58,8 +58,8 @@ def _java_library_brannock_rule_impl(ctx):
 
     return [OutputGroupInfo(size = depset([out, out_dep_sizes]))]
 
-java_library_brannock_rule = rule(
-    implementation = _java_library_brannock_rule_impl,
+brannock_rule = rule(
+    implementation = _brannock_rule_impl,
     attrs = {
         "out": attr.output(mandatory = True),
         "deps": attr.label_list(aspects = [brannock_aspect]),
