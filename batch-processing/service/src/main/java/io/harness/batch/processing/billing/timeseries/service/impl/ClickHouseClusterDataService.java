@@ -72,8 +72,6 @@ public class ClickHouseClusterDataService {
   @Autowired ClickHouseConfig clickHouseConfig;
   @Autowired BatchMainConfig batchMainConfig;
 
-  @Autowired BatchMainConfig batchMainConfig;
-
   public void createClickHouseDataBaseIfNotExist() throws Exception {
     log.info("Ok Testing with batchMainConfig.getClickHouseConfig() ::::: Username: {}, Password: {}",
         batchMainConfig.getClickHouseConfig().getUsername(), batchMainConfig.getClickHouseConfig().getPassword());
