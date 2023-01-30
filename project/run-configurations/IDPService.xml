@@ -6,9 +6,9 @@
                     debug_port="6012"
                     blaze-command="run"
                     keep-in-sync="true">
-        <blaze-target>//101-idp-service:module</blaze-target>
+        <blaze-target>//idp-service/service:module</blaze-target>
         <blaze-user-exe-flag>server</blaze-user-exe-flag>
-        <blaze-user-exe-flag>$PROJECT_DIR$/../101-idp-service/config.yml</blaze-user-exe-flag>
+        <blaze-user-exe-flag>$PROJECT_DIR$/../idp-service/config/config.yml</blaze-user-exe-flag>
     </blaze-settings>
     <method v="2">
         <option name="Blaze.BeforeRunTask" enabled="true"/>
