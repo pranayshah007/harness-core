@@ -32,6 +32,7 @@ import io.harness.serializer.KryoSerializer;
 import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -77,7 +78,7 @@ public class GoogleFunctionInstanceSyncPerpetualTaskExecutor implements Perpetua
       return googleFunctionTaskHelperBase.getGoogleFunctionServerInstanceInfo(deploymentReleaseData);
     } catch (Exception ex) {
       log.warn("Unable to get google cloud function server instance", ex);
-      return null;
+      return Collections.emptyList();
     }
   }
 

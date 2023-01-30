@@ -15,7 +15,6 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.mapper.GoogleFunctionToServerInstanceInfoMapper;
 import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
-import io.harness.logging.DummyLogCallbackImpl;
 
 import com.google.cloud.functions.v2.Function;
 import com.google.inject.Inject;
@@ -33,7 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 public class GoogleFunctionTaskHelperBase {
   @Inject private GoogleFunctionInfraConfigHelper googleFunctionInfraConfigHelper;
   @Inject private GoogleFunctionCommandTaskHelper googleFunctionCommandTaskHelper;
-  @Inject private DummyLogCallbackImpl logCallback;
   public List<ServerInstanceInfo> getGoogleFunctionServerInstanceInfo(
       GoogleFunctionDeploymentReleaseData deploymentReleaseData) throws InvalidProtocolBufferException {
     GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig =
@@ -45,7 +43,7 @@ public class GoogleFunctionTaskHelperBase {
     if (optionalFunction.isPresent()) {
       Function function = optionalFunction.get();
       GoogleFunction googleFunction =
-          googleFunctionCommandTaskHelper.getGoogleFunction(function, gcpGoogleFunctionInfraConfig, logCallback);
+          googleFunctionCommandTaskHelper.getGoogleFunction(function, gcpGoogleFunctionInfraConfig, null);
       return GoogleFunctionToServerInstanceInfoMapper.toServerInstanceInfoList(googleFunction,
           gcpGoogleFunctionInfraConfig.getProject(), gcpGoogleFunctionInfraConfig.getRegion(),
           gcpGoogleFunctionInfraConfig.getInfraStructureKey());

@@ -95,7 +95,6 @@ public class GoogleFunctionCommandTaskHelper {
   @Inject private GoogleCloudRunClient googleCloudRunClient;
   private static final int MAXIMUM_STEADY_STATE_CHECK_API_CALL = 300;
   private static final String CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION = "%s-harness-temp-version";
-  private String SOURCE_SPACE = "        ";
 
   public Function deployFunction(GcpGoogleFunctionInfraConfig googleFunctionInfraConfig,
       String googleFunctionDeployManifestContent, String updateFieldMaskContent,
@@ -558,8 +557,8 @@ public class GoogleFunctionCommandTaskHelper {
 
   public GoogleFunction getGoogleFunction(Function function, GcpGoogleFunctionInfraConfig googleFunctionInfraConfig,
       LogCallback logCallback) throws InvalidProtocolBufferException {
-    logCallback.saveExecutionLog(color("Updated Functions details: ", Blue, Bold), INFO);
-    logCallback.saveExecutionLog(JsonFormat.printer().print(function));
+    saveLogs(logCallback, color("Updated Functions details: ", Blue, Bold), INFO);
+    saveLogs(logCallback, JsonFormat.printer().print(function), INFO);
     GoogleFunction.GoogleCloudRunService googleCloudRunService =
         GoogleFunction.GoogleCloudRunService.builder()
             .serviceName(function.getServiceConfig().getService())
@@ -570,8 +569,8 @@ public class GoogleFunctionCommandTaskHelper {
     Service cloudRunService =
         getCloudRunService(function.getServiceConfig().getService(), googleFunctionInfraConfig.getGcpConnectorDTO(),
             googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion());
-    logCallback.saveExecutionLog(color("Updated Cloud-Run Service details: ", Blue, Bold), INFO);
-    logCallback.saveExecutionLog(JsonFormat.printer().print(cloudRunService));
+    saveLogs(logCallback, color("Updated Cloud-Run Service details: ", Blue, Bold), INFO);
+    saveLogs(logCallback, JsonFormat.printer().print(cloudRunService), INFO);
 
     return GoogleFunction.builder()
         .functionName(function.getName())
@@ -591,8 +590,13 @@ public class GoogleFunctionCommandTaskHelper {
     trafficTargetStatuses.stream()
         .filter(trafficTargetStatus -> trafficTargetStatus.getPercent() > 0)
         .forEach(trafficTargetStatus -> {
+          String revision = trafficTargetStatus.getRevision();
+          if (revision == "" && trafficTargetStatus.getType() == TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST) {
+            /// this is a temporary change
+            revision = "Latest";
+          }
           revisions.add(GoogleFunction.GoogleCloudRunRevision.builder()
-                            .revision(trafficTargetStatus.getRevision())
+                            .revision(revision)
                             .trafficPercent(trafficTargetStatus.getPercent())
                             .build());
         });
@@ -629,14 +633,20 @@ public class GoogleFunctionCommandTaskHelper {
   private String getSourceAsString(Source source) {
     if (source.hasStorageSource()) {
       StorageSource storageSource = source.getStorageSource();
-      return "Source: "
-          + "Bucket: " + storageSource.getBucket() + "\n" + SOURCE_SPACE + "Object: " + storageSource.getObject();
+      return "Bucket: " + storageSource.getBucket() + "\n"
+          + "Object: " + storageSource.getObject();
     } else if (source.hasRepoSource()) {
       RepoSource repoSource = source.getRepoSource();
-      return "Source: "
-          + "Repository Name: " + repoSource.getRepoName() + "\n" + SOURCE_SPACE
-          + "Branch: " + repoSource.getBranchName() + "\n" + SOURCE_SPACE + "Directory: " + repoSource.getDir();
+      return "Repository Name: " + repoSource.getRepoName() + "\n"
+          + "Branch: " + repoSource.getBranchName() + "\n"
+          + "Directory: " + repoSource.getDir();
     }
     return null;
+  }
+
+  private void saveLogs(LogCallback executionLogCallback, String message, LogLevel logLevel) {
+    if (executionLogCallback != null) {
+      executionLogCallback.saveExecutionLog(message, logLevel);
+    }
   }
 }
