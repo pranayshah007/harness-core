@@ -9,19 +9,24 @@ package io.harness.cdng.artifact.resources.googlecloudstorage.service;
 
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.INHERIT_FROM_DELEGATE;
 
+import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.googlecloudstorage.dtos.GoogleCloudStorageBucketDetails;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.gcp.GcpHelperService;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
-import io.harness.delegate.task.gcp.GcpTaskType;
+import io.harness.delegate.task.gcp.request.GcpTaskParameters;
 import io.harness.delegate.task.gcp.request.GcsListBucketsRequest;
 import io.harness.delegate.task.gcp.response.GcsBucketListResponse;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class GoogleCloudStorageArtifactResourceServiceImpl implements GoogleCloudStorageArtifactResourceService {
   @Inject private GcpHelperService gcpHelperService;
@@ -46,8 +51,19 @@ public class GoogleCloudStorageArtifactResourceServiceImpl implements GoogleClou
             .project(project)
             .build();
     List<GoogleCloudStorageBucketDetails> googleCloudStorageBucketDetails = new ArrayList<>();
-    GcsBucketListResponse gcsBucketListResponse = gcpHelperService.executeSyncTask(
-        baseNGAccess, request, GcpTaskType.LIST_GCS_BUCKETS_PER_PROJECT, "list GCS buckets per project");
+    GcpTaskParameters gcpTaskParameters =
+        GcpTaskParameters.builder().accountId(baseNGAccess.getAccountIdentifier()).gcpRequest(request).build();
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(baseNGAccess);
+    DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
+                                                  .accountId(baseNGAccess.getAccountIdentifier())
+                                                  .taskType(TaskType.GCS_BUCKETS_TASK_NG.name())
+                                                  .taskParameters(gcpTaskParameters)
+                                                  .executionTimeout(java.time.Duration.ofSeconds(30))
+                                                  .taskSetupAbstractions(abstractions)
+                                                  .taskSelectors(request.getDelegateSelectors())
+                                                  .build();
+    GcsBucketListResponse gcsBucketListResponse =
+        gcpHelperService.executeSyncTaskV2(delegateTaskRequest, "list GCS buckets per project");
     gcsBucketListResponse.getBuckets().forEach(
         (key, value)
             -> googleCloudStorageBucketDetails.add(

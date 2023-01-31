@@ -10,7 +10,6 @@ package io.harness.delegate.task.gcp;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -18,24 +17,21 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
-import io.harness.delegate.task.gcp.request.GcpRequest;
+import io.harness.delegate.task.gcp.request.GcpListProjectsRequest;
 import io.harness.delegate.task.gcp.request.GcpTaskParameters;
-import io.harness.delegate.task.gcp.response.GcpValidationTaskResponse;
-import io.harness.delegate.task.gcp.taskhandlers.TaskHandler;
+import io.harness.delegate.task.gcp.taskhandlers.GcpListProjectsTaskHandler;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 
 import com.google.inject.Inject;
-import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 @OwnedBy(CDP)
-public class GcpTask extends AbstractDelegateRunnableTask {
-  @Inject private Map<GcpTaskType, TaskHandler> gcpTaskTypeToTaskHandlerMap;
+public class GcpProjectTask extends AbstractDelegateRunnableTask {
+  @Inject private GcpListProjectsTaskHandler gcpListProjectsTaskHandler;
   @Inject private GcpValidationTaskHandler gcpValidationTaskHandler;
 
-  public GcpTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
+  public GcpProjectTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
   }
@@ -51,22 +47,8 @@ public class GcpTask extends AbstractDelegateRunnableTask {
       throw new InvalidRequestException("Task Params are not of expected type: GcpTaskParameters");
     }
     final GcpTaskParameters gcpTaskParameters = (GcpTaskParameters) parameters;
-    final GcpRequest gcpRequest = gcpTaskParameters.getGcpRequest();
-
-    switch (gcpTaskParameters.getGcpTaskType()) {
-      case VALIDATE:
-        ConnectorValidationResult connectorValidationResult = gcpValidationTaskHandler.validate(gcpRequest);
-        connectorValidationResult.setDelegateId(getDelegateId());
-        return GcpValidationTaskResponse.builder().connectorValidationResult(connectorValidationResult).build();
-      case LIST_CLUSTERS:
-      case LIST_BUCKETS:
-        TaskHandler taskHandler = gcpTaskTypeToTaskHandlerMap.get(gcpTaskParameters.getGcpTaskType());
-        return taskHandler.executeRequest(gcpRequest);
-
-      default:
-        throw new InvalidRequestException(
-            "Invalid request type [" + gcpTaskParameters.getGcpTaskType() + "]", WingsException.USER);
-    }
+    final GcpListProjectsRequest gcpListProjectsRequest = (GcpListProjectsRequest) gcpTaskParameters.getGcpRequest();
+    return gcpListProjectsTaskHandler.executeRequest(gcpListProjectsRequest);
   }
 
   @Override

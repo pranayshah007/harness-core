@@ -293,8 +293,10 @@ import io.harness.delegate.task.elastigroup.ElastigroupSetupCommandTaskNG;
 import io.harness.delegate.task.elastigroup.ElastigroupStartupScriptFetchRunTask;
 import io.harness.delegate.task.elastigroup.ElastigroupSwapRouteCommandTaskNG;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTask;
+import io.harness.delegate.task.gcp.GcpProjectTask;
 import io.harness.delegate.task.gcp.GcpTask;
 import io.harness.delegate.task.gcp.GcpTaskType;
+import io.harness.delegate.task.gcp.GcsBucketPerProjectTask;
 import io.harness.delegate.task.gcp.taskhandlers.GcpListBucketsTaskHandler;
 import io.harness.delegate.task.gcp.taskhandlers.GcpListClustersTaskHandler;
 import io.harness.delegate.task.gcp.taskhandlers.GcpListProjectsTaskHandler;
@@ -2121,7 +2123,10 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TAS_DATA_FETCH).toInstance(TasDataFetchTask.class);
     mapBinder.addBinding(TaskType.TAS_ROLLING_DEPLOY).toInstance(TasRollingDeploymentTask.class);
     mapBinder.addBinding(TaskType.TAS_ROLLING_ROLLBACK).toInstance(TasRollingRollbackTask.class);
+
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_COMMAND_TASK).toInstance(GoogleFunctionCommandTask.class);
+    mapBinder.addBinding(TaskType.GCP_PROJECTS_TASK_NG).toInstance(GcpProjectTask.class);
+    mapBinder.addBinding(TaskType.GCS_BUCKETS_TASK_NG).toInstance(GcsBucketPerProjectTask.class);
   }
 
   private void registerSecretManagementBindings() {

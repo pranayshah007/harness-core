@@ -11,7 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.INHERIT_FROM_DELEGATE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.gcp.GcpHelperService;
 import io.harness.cdng.k8s.resources.gcp.GcpResponseDTO;
 import io.harness.cdng.k8s.resources.gcp.dtos.GcpProjectDetails;
@@ -20,15 +22,19 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.request.GcpListClustersRequest;
 import io.harness.delegate.task.gcp.request.GcpListProjectsRequest;
+import io.harness.delegate.task.gcp.request.GcpTaskParameters;
 import io.harness.delegate.task.gcp.response.GcpClusterListTaskResponse;
 import io.harness.delegate.task.gcp.response.GcpProjectListTaskResponse;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Singleton
 @OwnedBy(CDP)
@@ -78,8 +84,19 @@ public class GcpResourceServiceImpl implements GcpResourceService {
             .encryptionDetails(encryptionDetails)
             .build();
     List<GcpProjectDetails> gcpProjectDetails = new ArrayList<>();
+    GcpTaskParameters gcpTaskParameters =
+        GcpTaskParameters.builder().accountId(baseNGAccess.getAccountIdentifier()).gcpRequest(request).build();
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(baseNGAccess);
+    DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
+                                                  .accountId(baseNGAccess.getAccountIdentifier())
+                                                  .taskType(TaskType.GCP_PROJECTS_TASK_NG.name())
+                                                  .taskParameters(gcpTaskParameters)
+                                                  .executionTimeout(java.time.Duration.ofSeconds(30))
+                                                  .taskSetupAbstractions(abstractions)
+                                                  .taskSelectors(request.getDelegateSelectors())
+                                                  .build();
     GcpProjectListTaskResponse gcpProjectListTaskResponse =
-        gcpHelperService.executeSyncTask(baseNGAccess, request, GcpTaskType.LIST_PROJECTS, "list GCP projects");
+        gcpHelperService.executeSyncTaskV2(delegateTaskRequest, "list GCP projects");
     gcpProjectListTaskResponse.getProjects().forEach(
         (key, value) -> gcpProjectDetails.add(GcpProjectDetails.builder().id(key).name(value).build()));
     return gcpProjectDetails;
