@@ -7,12 +7,17 @@
 
 package software.wings.common;
 
-import static java.lang.System.getenv;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class HarnessWorkloadIdentityHelper {
   public static final String ENV_VARIABLE_WORKLOAD_IDENTITY = "HARNESS_USING_WORKLOAD_IDENTITY";
   public static boolean usingWorkloadIdentity() {
     String usingWorkloadIdentity = System.getenv(ENV_VARIABLE_WORKLOAD_IDENTITY);
-    return Boolean.valueOf(usingWorkloadIdentity);
+    boolean harnessIsUsingWorkloadIdentity = Boolean.valueOf(usingWorkloadIdentity);
+    if (harnessIsUsingWorkloadIdentity) {
+      log.info("[WI]: Harness Service is deployed in workload identity enabled environment");
+    }
+    return harnessIsUsingWorkloadIdentity;
   }
 }
