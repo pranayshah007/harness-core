@@ -7,6 +7,7 @@
 
 package io.harness.ci.serializer.vm;
 
+import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.CIStepInfo;
@@ -48,7 +49,8 @@ public class VmStepSerializer {
   }
 
   public VmStepInfo serialize(Ambiance ambiance, CIStepInfo stepInfo, StageInfraDetails stageInfraDetails,
-      String identifier, ParameterField<Timeout> parameterFieldTimeout, List<CIRegistry> registries) {
+      String identifier, ParameterField<Timeout> parameterFieldTimeout, List<CIRegistry> registries,
+      ExecutionSource executionSource) {
     String stepName = stepInfo.getNonYamlInfo().getStepInfoType().getDisplayName();
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case RUN:
@@ -61,7 +63,7 @@ public class VmStepSerializer {
             (RunTestsStepInfo) stepInfo, identifier, parameterFieldTimeout, stepName, ambiance, registries);
       case PLUGIN:
         return vmPluginStepSerializer.serialize((PluginStepInfo) stepInfo, stageInfraDetails, identifier,
-            parameterFieldTimeout, stepName, ambiance, registries);
+            parameterFieldTimeout, stepName, ambiance, registries, executionSource);
       case GCR:
       case DOCKER:
       case ECR:

@@ -8,6 +8,7 @@
 package io.harness.cdng;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,14 +16,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
 import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
+import io.harness.delegate.task.helm.HelmFetchFileConfig;
 import io.harness.logging.LoggingInitializer;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,5 +76,15 @@ public class K8sHelmCommonStepHelperTest extends CategoryTest {
     List<String> paths = k8sHelmCommonStepHelper.getKustomizeManifestBasePath(githubStore, kustomizeManifestOutcome);
 
     assertThat(paths.get(0)).isEqualTo("/");
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testHelmChartManifestWithSubChartDefValuesYaml() {
+    List<HelmFetchFileConfig> helmFetchFileConfigs = k8sHelmCommonStepHelper.mapHelmChartManifestsToHelmFetchFileConfig(
+        "manifest-1", Collections.emptyList(), ManifestType.HelmChart, "sub-chart-1");
+
+    assertThat(helmFetchFileConfigs.get(0).getFilePaths()).contains("charts/sub-chart-1/values.yaml");
   }
 }

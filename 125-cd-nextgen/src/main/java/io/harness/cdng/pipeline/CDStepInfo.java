@@ -68,6 +68,7 @@ import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformDestroyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepInfo;
+import io.harness.cdng.provision.terraformcloud.TerraformCloudRunStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntDestroyStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntPlanStepInfo;
@@ -119,7 +120,7 @@ import io.swagger.annotations.ApiModel;
         TasAppResizeStepInfo.class, TasRollbackStepInfo.class, AsgRollingDeployStepInfo.class,
         AsgRollingRollbackStepInfo.class, AsgBlueGreenDeployStepInfo.class, AsgBlueGreenRollbackStepInfo.class,
         TasRollingDeployStepInfo.class, TasRollingRollbackStepInfo.class, K8sDryRunManifestStepInfo.class,
-        AsgBlueGreenSwapServiceStepInfo.class, GoogleFunctionsDeployStepInfo.class,
+        AsgBlueGreenSwapServiceStepInfo.class, TerraformCloudRunStepInfo.class, GoogleFunctionsDeployStepInfo.class,
         GoogleFunctionsDeployWithoutTrafficStepInfo.class, GoogleFunctionsTrafficShiftStepInfo.class,
         GoogleFunctionsRollbackStepInfo.class})
 

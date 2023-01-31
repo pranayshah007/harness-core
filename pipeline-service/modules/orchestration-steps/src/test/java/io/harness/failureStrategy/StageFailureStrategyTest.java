@@ -53,9 +53,10 @@ public class StageFailureStrategyTest extends CategoryTest {
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testAtleastAllErrorsFailureStrategyExists() {
-    List<FailureStrategyConfig> stageFailureStrategies1, stageFailureStrategies2, stageFailureStrategies3;
+    ParameterField<List<FailureStrategyConfig>> stageFailureStrategies1, stageFailureStrategies2,
+        stageFailureStrategies3;
     // Not containing error type as ALL_ERRORS
-    stageFailureStrategies1 = Collections.singletonList(
+    stageFailureStrategies1 = ParameterField.createValueField(Collections.singletonList(
         FailureStrategyConfig.builder()
             .onFailure(OnFailureConfig.builder()
                            .errors(Collections.singletonList(AUTHORIZATION_ERROR))
@@ -67,19 +68,19 @@ public class StageFailureStrategyTest extends CategoryTest {
                                                        .build())
                                        .build())
                            .build())
-            .build());
+            .build()));
 
     boolean ans = GenericStepPMSPlanCreator.containsOnlyAllErrorsInSomeConfig(stageFailureStrategies1);
     assertThat(ans).isEqualTo(false);
 
     // Containing error type as ALL_ERRORS only
-    stageFailureStrategies2 =
+    stageFailureStrategies2 = ParameterField.createValueField(
         Collections.singletonList(FailureStrategyConfig.builder()
                                       .onFailure(OnFailureConfig.builder()
                                                      .errors(Collections.singletonList(ALL_ERRORS))
                                                      .action(AbortFailureActionConfig.builder().build())
                                                      .build())
-                                      .build());
+                                      .build()));
 
     ans = GenericStepPMSPlanCreator.containsOnlyAllErrorsInSomeConfig(stageFailureStrategies2);
     assertThat(ans).isEqualTo(true);
@@ -88,11 +89,11 @@ public class StageFailureStrategyTest extends CategoryTest {
     List<NGFailureType> test = new ArrayList<>();
     test.add(AUTHORIZATION_ERROR);
     test.add(ALL_ERRORS);
-    stageFailureStrategies3 = Collections.singletonList(
+    stageFailureStrategies3 = ParameterField.createValueField(Collections.singletonList(
         FailureStrategyConfig.builder()
             .onFailure(
                 OnFailureConfig.builder().errors(test).action(AbortFailureActionConfig.builder().build()).build())
-            .build());
+            .build()));
     ans = GenericStepPMSPlanCreator.containsOnlyAllErrorsInSomeConfig(stageFailureStrategies3);
     assertThat(ans).isEqualTo(false);
   }

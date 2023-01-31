@@ -222,6 +222,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     sdkGraphVisualizationDataService.publishStepDetailInformation(
         ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
     return AsyncExecutableResponse.newBuilder()
+        .setStatus(Status.QUEUED_LICENSE_LIMIT_REACHED)
         .addCallbackIds(taskId)
         .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))
         .build();

@@ -9,7 +9,6 @@ package io.harness.ci.plan.creator.steps;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plancreator.V1.GitClonePlanCreator;
@@ -129,8 +128,6 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
     if (optionalCodebase.isPresent()) {
       codeBase = (CodeBase) optionalCodebase.get();
     }
-    ExecutionSource executionSource =
-        ciPlanCreatorUtils.buildExecutionSource(ctx, codeBase, ctx.getCurrentField().getId());
     String gitCloneChildNodeID =
         createGitClonePlanCreator(ctx, responseMap, executionWrapperConfigs, codeBase, childNodeID);
     childNodeID = gitCloneChildNodeID != null ? gitCloneChildNodeID : childNodeID;
@@ -143,7 +140,7 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
     }
     IntegrationStageNodeV1 stageNode = (IntegrationStageNodeV1) optionalStageNode.get();
     PlanCreationResponse planCreationResponse = initializeStepPlanCreatorV1.createPlan(
-        ctx, stageNode, codeBase, executionSource, infrastructure, executionWrapperConfigs, childNodeID);
+        ctx, stageNode, codeBase, infrastructure, executionWrapperConfigs, childNodeID);
     planCreationResponseMap.put(planCreationResponse.getPlanNode().getUuid(), planCreationResponse);
     planCreationResponseMap.putAll(responseMap);
   }

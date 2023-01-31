@@ -95,7 +95,7 @@ public interface YamlTypes {
       StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC;
   String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT;
   String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK;
-
+  String TERRAFORM_CLOUD_RUN = StepSpecTypeConstants.TERRAFORM_CLOUD_RUN;
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";
   String K8S_MANIFEST = ManifestType.K8Manifest;

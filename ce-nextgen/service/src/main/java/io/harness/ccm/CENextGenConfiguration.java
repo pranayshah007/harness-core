@@ -16,6 +16,7 @@ import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.config.AwsConfig;
 import io.harness.ccm.commons.beans.config.AwsGovCloudConfig;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.config.CurrencyPreferencesConfig;
 import io.harness.cf.CfClientConfig;
@@ -108,6 +109,7 @@ public class CENextGenConfiguration extends Configuration {
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("eventsFramework") @ConfigSecret private EventsFrameworkConfiguration eventsFrameworkConfiguration;
   @JsonProperty("timescaledb") @ConfigSecret private TimeScaleDBConfig timeScaleDBConfig;
+  @JsonProperty("clickHouseConfig") @ConfigSecret private ClickHouseConfig clickHouseConfig;
 
   @JsonProperty(value = "gcpConfig") private GcpConfig gcpConfig;
   @JsonProperty(value = "ceAzureSetupConfig") @ConfigSecret private CEAzureSetupConfig ceAzureSetupConfig;

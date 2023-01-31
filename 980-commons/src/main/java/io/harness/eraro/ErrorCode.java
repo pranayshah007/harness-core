@@ -660,7 +660,8 @@ public enum ErrorCode {
   TERRAFORM_VAULT_SECRET_CLEANUP_FAILURE,
   APPROVAL_REJECTION,
   TERRAGRUNT_EXECUTION_ERROR,
-  ADFS_ERROR;
+  ADFS_ERROR,
+  TERRAFORM_CLOUD_ERROR;
 
   private Status status = BAD_REQUEST;
   private String description;

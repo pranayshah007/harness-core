@@ -15,6 +15,9 @@ import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildRespo
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.build.BuildStatusUpdateParameter;
+import io.harness.beans.execution.ExecutionSource;
+import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.outcome.CIStepArtifactOutcome;
@@ -26,6 +29,7 @@ import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.StageExecutionSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.utils.CompletableFutures;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.UnexpectedException;
@@ -35,8 +39,10 @@ import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
@@ -52,6 +58,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.tasks.ResponseData;
+import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.registry.Registry;
 import io.harness.yaml.registry.RegistryCredential;
 
@@ -98,13 +105,22 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
 
+    ExecutionSource executionSource =
+        getExecutionSource(ambiance, integrationStageStepParametersPMS, stepParameters.getIdentifier());
+    BuildStatusUpdateParameter buildStatusUpdateParameter =
+        integrationStageStepParametersPMS.getBuildStatusUpdateParameter() != null
+        ? integrationStageStepParametersPMS.getBuildStatusUpdateParameter()
+        : obtainBuildStatusUpdateParameter(
+            stepParameters, executionSource, integrationStageStepParametersPMS.getCodeBase());
+
     StageDetails stageDetails =
         StageDetails.builder()
             .stageID(stepParameters.getIdentifier())
             .stageRuntimeID(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
-            .buildStatusUpdateParameter(integrationStageStepParametersPMS.getBuildStatusUpdateParameter())
+            .buildStatusUpdateParameter(buildStatusUpdateParameter)
             .accountId(AmbianceUtils.getAccountId(ambiance))
             .registries(getRegistries(ngAccess, integrationStageStepParametersPMS.getRegistry()))
+            .executionSource(executionSource)
             .build();
 
     K8PodDetails k8PodDetails = K8PodDetails.builder()
@@ -230,6 +246,44 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
       return registries.stream().filter(Objects::nonNull).collect(Collectors.toList());
     } catch (Exception ex) {
       throw new UnexpectedException("Error fetching connector details response from service", ex);
+    }
+  }
+
+  private ExecutionSource getExecutionSource(
+      Ambiance ambiance, IntegrationStageStepParametersPMS integrationStageStepParametersPMS, String identifier) {
+    CodeBase codeBase = integrationStageStepParametersPMS.getCodeBase();
+    if (codeBase == null) {
+      return null;
+    }
+    ExecutionTriggerInfo triggerInfo = ambiance.getMetadata().getTriggerInfo();
+    TriggerPayload triggerPayload = integrationStageStepParametersPMS.getTriggerPayload();
+    return IntegrationStageUtils.buildExecutionSourceV2(ambiance, triggerInfo, triggerPayload, identifier,
+        codeBase.getBuild(), codeBase.getConnectorRef().getValue(), connectorUtils, codeBase);
+  }
+
+  private BuildStatusUpdateParameter obtainBuildStatusUpdateParameter(
+      StageElementParameters stageElementParameters, ExecutionSource executionSource, CodeBase codeBase) {
+    if (codeBase == null) {
+      //  code base is not mandatory in case git clone is false, Sending status won't be possible
+      return null;
+    }
+
+    if (executionSource != null && executionSource.getType() == ExecutionSource.Type.WEBHOOK) {
+      String sha = IntegrationStageUtils.retrieveLastCommitSha((WebhookExecutionSource) executionSource);
+      return BuildStatusUpdateParameter.builder()
+          .sha(sha)
+          .connectorIdentifier(codeBase.getConnectorRef().getValue())
+          .repoName(codeBase.getRepoName().getValue())
+          .name(stageElementParameters.getName())
+          .identifier(stageElementParameters.getIdentifier())
+          .build();
+    } else {
+      return BuildStatusUpdateParameter.builder()
+          .connectorIdentifier(codeBase.getConnectorRef().getValue())
+          .repoName(codeBase.getRepoName().getValue())
+          .name(stageElementParameters.getName())
+          .identifier(stageElementParameters.getIdentifier())
+          .build();
     }
   }
 }

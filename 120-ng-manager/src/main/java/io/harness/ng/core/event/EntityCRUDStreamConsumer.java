@@ -12,6 +12,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_SYNC_ENTITY_STREAM;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.API_KEY_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CD_TELEMETRY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENVIRONMENT_GROUP_ENTITY;
@@ -23,6 +24,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_CO
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_PROCESS_REQUEST;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_TO_HARNESS_PROGRESS;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.INVITE;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.LICENSE_MODULES;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.POLLING_DOCUMENT;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SCM;
@@ -81,6 +83,7 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
       @Named(USER_GROUP + ENTITY_CRUD) MessageListener userGroupEntityCRUDStreamListener,
       @Named(FILTER + ENTITY_CRUD) MessageListener filterEventListener,
       @Named(FREEZE_CONFIG + ENTITY_CRUD) MessageListener freezeEventListener,
+      @Named(LICENSE_MODULES + ENTITY_CRUD) MessageListener licenseModuleListener,
       @Named(GIT_COMMIT + ENTITY_CRUD) MessageListener gitCommitEventListener,
       @Named(GIT_PROCESS_REQUEST + ENTITY_CRUD) MessageListener gitProcessRequestEventListener,
       @Named(GIT_TO_HARNESS_PROGRESS + ENTITY_CRUD) MessageListener gitToHarnessEventListener,
@@ -90,6 +93,7 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
       @Named(SETTINGS + ENTITY_CRUD) MessageListener settingsEventListener,
       @Named(USER_SCOPE_RECONCILIATION) MessageListener userMembershipReconciliationMessageProcessor,
       @Named(GIT_SYNC_ENTITY_STREAM + ENTITY_CRUD) MessageListener gitSyncProjectCleanup,
+      @Named(CD_TELEMETRY + ENTITY_CRUD) MessageListener cdTelemetryEventListener,
       @Named(GITOPS_CLUSTER_ENTITY + ENTITY_CRUD) MessageListener gitopsClusterCleanupProcessor,
       @Named(TEMPLATE_ENTITY + ENTITY_CRUD) MessageListener customDeploymentEntityCRUDStreamEventListener,
       @Named(SIGNUP_TOKEN + ENTITY_CRUD) MessageListener signupTokenEventListener,
@@ -110,7 +114,9 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
     messageListenersList.add(userGroupEntityCRUDStreamListener);
     messageListenersList.add(filterEventListener);
     messageListenersList.add(freezeEventListener);
+    messageListenersList.add(licenseModuleListener);
     messageListenersList.add(gitCommitEventListener);
+    messageListenersList.add(cdTelemetryEventListener);
     messageListenersList.add(signupTokenEventListener);
     messageListenersList.add(sourceCodeManagerEventListener);
     messageListenersList.add(stageExecutionInfoEventListener);

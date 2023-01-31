@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PRASHANT;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
@@ -34,6 +35,7 @@ import io.harness.engine.OrchestrationTestHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.statusupdate.NodeStatusUpdateHandlerFactory;
 import io.harness.engine.interrupts.statusupdate.PausedStepStatusUpdate;
+import io.harness.engine.interrupts.statusupdate.QueuedLicenseLimitReachedStatusUpdate;
 import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
@@ -69,6 +71,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   @Mock NodeStatusUpdateHandlerFactory nodeStatusUpdateHandlerFactory;
   @Mock NodeExecutionService nodeExecutionService;
   @Mock PausedStepStatusUpdate pausedStepStatusUpdate;
+  @Mock QueuedLicenseLimitReachedStatusUpdate queuedLicenseLimitReachedStatusUpdate;
   @Spy @Inject @InjectMocks PlanExecutionService planExecutionService;
 
   @Test
@@ -284,6 +287,21 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     doReturn(pausedStepStatusUpdate).when(nodeStatusUpdateHandlerFactory).obtainStepStatusUpdate(nodeUpdateInfo);
     planExecutionService.onNodeStatusUpdate(nodeUpdateInfo);
     verify(pausedStepStatusUpdate, times(1)).handleNodeStatusUpdate(nodeUpdateInfo);
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void shouldTestOnNodeStatusUpdateWithQueueLimit() {
+    NodeUpdateInfo nodeUpdateInfo =
+        NodeUpdateInfo.builder()
+            .nodeExecution(NodeExecution.builder().status(Status.QUEUED_LICENSE_LIMIT_REACHED).build())
+            .build();
+    doReturn(queuedLicenseLimitReachedStatusUpdate)
+        .when(nodeStatusUpdateHandlerFactory)
+        .obtainStepStatusUpdate(nodeUpdateInfo);
+    planExecutionService.onNodeStatusUpdate(nodeUpdateInfo);
+    verify(queuedLicenseLimitReachedStatusUpdate, times(1)).handleNodeStatusUpdate(nodeUpdateInfo);
   }
 
   @Test

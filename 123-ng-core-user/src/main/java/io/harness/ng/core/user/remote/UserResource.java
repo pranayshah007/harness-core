@@ -490,7 +490,8 @@ public class UserResource {
                  @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body UserInfo userInfo) {
     if (isUserExternallyManaged(userInfo.getUuid())) {
       log.info("User is externally managed, cannot update user - userId: {}", userInfo.getUuid());
-      throw new InvalidRequestException("Cannot update user as it is externally managed.");
+      throw new InvalidRequestException(
+          "User is externally managed by your Identity Provider and cannot be updated via UI/API. To update user information in Harness, update it from your Identity Provider");
     } else {
       return ResponseDTO.newResponse(userInfoService.update(userInfo, accountIdentifier));
     }
@@ -574,7 +575,8 @@ public class UserResource {
       // throw error when an externally managed user is being removed from account or the FF is disabled for org and
       // project levels
       log.error("User is externally managed, cannot delete user - userId: {}", userId);
-      throw new InvalidRequestException("User is externally managed, cannot delete user");
+      throw new InvalidRequestException(
+          "User is externally managed by your Identity Provider and cannot be deleted via UI / API. To delete the user from Harness, delete it from your Identity Provider.");
     } else {
       return removeUserInternal(
           userId, accountIdentifier, orgIdentifier, projectIdentifier, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);

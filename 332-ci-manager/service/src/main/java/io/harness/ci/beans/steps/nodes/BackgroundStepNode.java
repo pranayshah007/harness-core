@@ -67,8 +67,9 @@ public class BackgroundStepNode extends CIAbstractStepNode {
   }
 
   @Builder
-  public BackgroundStepNode(String uuid, String identifier, String name, List<FailureStrategyConfig> failureStrategies,
-      BackgroundStepInfo backgroundStepInfo, BackgroundStepNode.StepType type, ParameterField<Timeout> timeout) {
+  public BackgroundStepNode(String uuid, String identifier, String name,
+      ParameterField<List<FailureStrategyConfig>> failureStrategies, BackgroundStepInfo backgroundStepInfo,
+      BackgroundStepNode.StepType type, ParameterField<Timeout> timeout) {
     this.setUuid(uuid);
     this.setIdentifier(identifier);
     this.setName(name);

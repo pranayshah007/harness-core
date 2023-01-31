@@ -122,6 +122,7 @@ import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.licensing.LicenseModule;
+import io.harness.licensing.event.ModuleLicenseEventListener;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
@@ -295,6 +296,7 @@ import io.harness.service.stats.usagemetrics.eventconsumer.InstanceStatsEventLis
 import io.harness.signup.SignupModule;
 import io.harness.subscription.SubscriptionModule;
 import io.harness.telemetry.AbstractTelemetryModule;
+import io.harness.telemetry.CdTelemetryEventListener;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.template.TemplateResourceClientModule;
 import io.harness.threading.ThreadPool;
@@ -992,6 +994,12 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkMetadataConstants.FILTER + ENTITY_CRUD))
         .to(FilterEventListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkMetadataConstants.LICENSE_MODULES + ENTITY_CRUD))
+        .to(ModuleLicenseEventListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkMetadataConstants.CD_TELEMETRY + ENTITY_CRUD))
+        .to(CdTelemetryEventListener.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkMetadataConstants.SCM + ENTITY_CRUD))
         .to(SourceCodeManagerEventListener.class);

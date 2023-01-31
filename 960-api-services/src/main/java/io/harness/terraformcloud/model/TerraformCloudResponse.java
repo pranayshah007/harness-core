@@ -23,4 +23,5 @@ public class TerraformCloudResponse<T> {
   private T data;
   private JsonNode errors;
   private JsonNode meta;
+  private JsonNode links;
 }

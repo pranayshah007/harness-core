@@ -566,6 +566,15 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public Boolean updateIsSmpAccount(String accountId, boolean isSmpAccount) {
+    Account account = get(accountId);
+    account.setSmpAccount(isSmpAccount);
+    update(account);
+    publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
+    return true;
+  }
+
+  @Override
   public AccountDetails getAccountDetails(String accountId) {
     Account account = wingsPersistence.get(Account.class, accountId);
     if (account == null) {
@@ -900,6 +909,7 @@ public class AccountServiceImpl implements AccountService {
             .set(AccountKeys.nextGenEnabled, account.isNextGenEnabled())
             .set(AccountKeys.ceAutoCollectK8sEvents, account.isCeAutoCollectK8sEvents())
             .set("whitelistedDomains", account.getWhitelistedDomains())
+            .set("smpAccount", account.isSmpAccount())
             .set("isProductLed", account.isProductLed());
 
     if (null != account.getLicenseInfo()) {

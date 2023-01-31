@@ -1541,6 +1541,19 @@ public class HelmTaskHelperBase {
     }
     return -1;
   }
+  public int checkForDependencyUpdateFlag(Map<HelmSubCommandType, String> helmCmdFlags, String response) {
+    /*
+      if we pass --dependency-update flag with helm template cmd, this causes extra lines to be present in o/p
+      hence we trim this and take only the rendered manifests, which start after "---"
+     */
+    if (helmCmdFlags != null) {
+      String templateFlag = helmCmdFlags.get(HelmSubCommandType.TEMPLATE);
+      if (isNotEmpty(templateFlag) && templateFlag.contains("--dependency-update")) {
+        return response.indexOf("---");
+      }
+    }
+    return -1;
+  }
 
   @VisibleForTesting
   URI getParsedURI(String ociUrl) throws URISyntaxException {
