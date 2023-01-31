@@ -1719,7 +1719,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           endTaskV2(accountId, delegateTaskId, getRunningTaskQueryV2(accountId, delegateTaskId), ABORTED);
       // if task is not in DB then check if task is in the queue
       if (abortedDelegateTask == null) {
-        delegateTaskQueueService.addToAbortTaskEventList(accountId, delegateTaskId);
+        delegateTaskQueueService.addToAbortTaskEventList(delegateTaskId);
       }
       return abortedDelegateTask;
     }

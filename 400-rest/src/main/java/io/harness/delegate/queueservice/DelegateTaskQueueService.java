@@ -43,13 +43,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
@@ -66,7 +65,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private HPersistence persistence;
 
-  private static final Map<String, List<String>> abortTaskEvents = new ConcurrentHashMap<>();
+  private static final Set<String> abortTaskEvents = ConcurrentHashMap.newKeySet();
 
   @Inject
   public DelegateTaskQueueService(HsqsServiceClient hsqsServiceClient) {
@@ -196,8 +195,8 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
     String delegateTaskId = delegateTaskDequeue.getDelegateTask().getUuid();
     try (AutoLogContext ignore1 = new TaskLogContext(delegateTaskId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
-      Map<String, List<String>> delegateTaskAborted = getAbortedDelegateTasks();
-      if (delegateTaskAborted.containsKey(accountId) && delegateTaskAborted.get(accountId).contains(delegateTaskId)) {
+      Set<String> delegateTaskAborted = getAbortedDelegateTasks();
+      if (delegateTaskAborted.contains(delegateTaskId)) {
         log.info("Aborting delegate task from queue {}", delegateTaskDequeue.getDelegateTask().getUuid());
         return true;
       }
@@ -270,16 +269,15 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
     dequeue();
   }
 
-  public void addToAbortTaskEventList(@NotNull String accountId, String delegateTaskId) {
-    abortTaskEvents.putIfAbsent(accountId, new ArrayList<>());
-    abortTaskEvents.get(accountId).add(delegateTaskId);
+  public void addToAbortTaskEventList(@NotNull String delegateTaskId) {
+    abortTaskEvents.add(delegateTaskId);
   }
 
   @VisibleForTesting
-  protected Map<String, List<String>> getAbortedDelegateTasks() {
-    Map<String, List<String>> abortTaskEventList;
+  protected Set<String> getAbortedDelegateTasks() {
+    Set<String> abortTaskEventList;
     synchronized (abortTaskEvents) {
-      abortTaskEventList = new HashMap<>(abortTaskEvents);
+      abortTaskEventList = new HashSet<>(abortTaskEvents);
       abortTaskEvents.clear();
     }
     return abortTaskEventList;
