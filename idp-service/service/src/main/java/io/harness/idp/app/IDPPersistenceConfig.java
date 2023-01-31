@@ -1,3 +1,10 @@
+/*
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.idp.app;
 
 import static io.harness.mongo.MongoConfig.DOT_REPLACEMENT;
@@ -10,6 +17,8 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.MongoConfig;
 import io.harness.persistence.store.Store;
 import io.harness.reflection.HarnessReflections;
+import io.harness.springdata.HMongoTemplate;
+import io.harness.springdata.SpringSecurityAuditorAware;
 
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -20,9 +29,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import io.harness.springdata.HMongoTemplate;
-import io.harness.springdata.SpringSecurityAuditorAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -44,69 +50,68 @@ import org.springframework.guice.annotation.GuiceModule;
 @Configuration
 @GuiceModule
 @EnableMongoRepositories(basePackages = {"io.harness.idp.config.repositories", "io.harness.idp.secret.repositories"},
-        includeFilters = @ComponentScan.Filter(HarnessRepo.class), mongoTemplateRef = "primary")
+    includeFilters = @ComponentScan.Filter(HarnessRepo.class), mongoTemplateRef = "primary")
 @EnableMongoAuditing
 @OwnedBy(HarnessTeam.PL)
 public class IDPPersistenceConfig extends AbstractMongoConfiguration {
-    protected final Injector injector;
-    protected final List<Class<? extends Converter<?, ?>>> springConverters;
-    protected final MongoConfig mongoConfig;
-    protected final MongoClient mongoClient;
+  protected final Injector injector;
+  protected final List<Class<? extends Converter<?, ?>>> springConverters;
+  protected final MongoConfig mongoConfig;
+  protected final MongoClient mongoClient;
 
-    public IDPPersistenceConfig(Injector injector, List<Class<? extends Converter<?, ?>>> springConverters) {
-        this.injector = injector;
-        this.springConverters = springConverters;
-        this.mongoClient = injector.getInstance(Key.get(MongoClient.class, Names.named("primaryMongoClient")));
-        this.mongoConfig = injector.getInstance(MongoConfig.class);
-    }
+  public IDPPersistenceConfig(Injector injector, List<Class<? extends Converter<?, ?>>> springConverters) {
+    this.injector = injector;
+    this.springConverters = springConverters;
+    this.mongoClient = injector.getInstance(Key.get(MongoClient.class, Names.named("primaryMongoClient")));
+    this.mongoConfig = injector.getInstance(MongoConfig.class);
+  }
 
-    @Override
-    public MongoClient mongoClient() {
-        return mongoClient;
-    }
+  @Override
+  public MongoClient mongoClient() {
+    return mongoClient;
+  }
 
-    @Override
-    protected String getDatabaseName() {
-        return new MongoClientURI(mongoConfig.getUri()).getDatabase();
-    }
+  @Override
+  protected String getDatabaseName() {
+    return new MongoClientURI(mongoConfig.getUri()).getDatabase();
+  }
 
-    @Bean(name = "primary")
-    @Primary
-    public MongoTemplate mongoTemplate() throws Exception {
-        MappingMongoConverter mappingMongoConverter = mappingMongoConverter();
-        mappingMongoConverter.setMapKeyDotReplacement(DOT_REPLACEMENT);
-        return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, mongoConfig);
-    }
+  @Bean(name = "primary")
+  @Primary
+  public MongoTemplate mongoTemplate() throws Exception {
+    MappingMongoConverter mappingMongoConverter = mappingMongoConverter();
+    mappingMongoConverter.setMapKeyDotReplacement(DOT_REPLACEMENT);
+    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, mongoConfig);
+  }
 
-    @Bean
-    MongoTransactionManager transactionManager(MongoDbFactory dbFactory) {
-        return new MongoTransactionManager(dbFactory);
-    }
+  @Bean
+  MongoTransactionManager transactionManager(MongoDbFactory dbFactory) {
+    return new MongoTransactionManager(dbFactory);
+  }
 
-    @Override
-    protected Set<Class<?>> getInitialEntitySet() {
-        Set<Class<?>> classes = HarnessReflections.get().getTypesAnnotatedWith(TypeAlias.class);
-        Store store = null;
-        if (Objects.nonNull(mongoConfig.getAliasDBName())) {
-            store = Store.builder().name(mongoConfig.getAliasDBName()).build();
-        }
-        return getMatchingEntities(classes, store);
+  @Override
+  protected Set<Class<?>> getInitialEntitySet() {
+    Set<Class<?>> classes = HarnessReflections.get().getTypesAnnotatedWith(TypeAlias.class);
+    Store store = null;
+    if (Objects.nonNull(mongoConfig.getAliasDBName())) {
+      store = Store.builder().name(mongoConfig.getAliasDBName()).build();
     }
+    return getMatchingEntities(classes, store);
+  }
 
-    @Bean
-    public CustomConversions customConversions() {
-        List<?> converterInstances = springConverters.stream().map(injector::getInstance).collect(Collectors.toList());
-        return new MongoCustomConversions(converterInstances);
-    }
+  @Bean
+  public CustomConversions customConversions() {
+    List<?> converterInstances = springConverters.stream().map(injector::getInstance).collect(Collectors.toList());
+    return new MongoCustomConversions(converterInstances);
+  }
 
-    @Bean
-    public AuditorAware<EmbeddedUser> auditorAware() {
-        return injector.getInstance(SpringSecurityAuditorAware.class);
-    }
+  @Bean
+  public AuditorAware<EmbeddedUser> auditorAware() {
+    return injector.getInstance(SpringSecurityAuditorAware.class);
+  }
 
-    @Override
-    protected boolean autoIndexCreation() {
-        return false;
-    }
+  @Override
+  protected boolean autoIndexCreation() {
+    return false;
+  }
 }
-
