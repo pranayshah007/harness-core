@@ -8,6 +8,7 @@
 package io.harness.ng.moduleversioninfo.runnable;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static org.springframework.data.mongodb.core.query.Update.update;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo;
@@ -37,6 +38,7 @@ import org.json.JSONObject;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(CDP)
 @ValidateOnExecution
@@ -93,9 +95,22 @@ public class UpdateVersionInfoTask {
         }
         module.setVersion(currentVersion);
       }
-    });
 
-    mongoTemplate.insertAll(allModulesFromDB);
+        Criteria criteria = Criteria.where(ModuleVersionInfoKeys.moduleName)
+          .is(module.getModuleName())
+          .and(ModuleVersionInfoKeys.versionUrl)
+          .is(module.getVersionUrl())
+          .and(ModuleVersionInfoKeys.microservicesVersionInfo)
+          .is(module.getMicroservicesVersionInfo())
+          .and(ModuleVersionInfoKeys.displayName)
+          .is(module.getDisplayName())
+          .and(ModuleVersionInfoKeys.lastModifiedAt)
+          .is(module.getLastModifiedAt())
+          .and(ModuleVersionInfoKeys.releaseNotesLink)
+          .is(module.getReleaseNotesLink());
+      Update update = update(ModuleVersionInfoKeys.version, module.getVersion());
+      mongoTemplate.upsert(new Query(criteria), update, ModuleVersionInfo.class);
+    });
   }
 
   private void readFromFile() {
