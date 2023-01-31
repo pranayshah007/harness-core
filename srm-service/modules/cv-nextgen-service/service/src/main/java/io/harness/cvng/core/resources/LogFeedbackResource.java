@@ -1,5 +1,6 @@
 package io.harness.cvng.core.resources;
 
+import static io.harness.cvng.core.services.CVNextGenConstants.LOG_FEEDBACK_HISTORY;
 import static io.harness.cvng.core.services.CVNextGenConstants.LOG_FEEDBACK_ID;
 import static io.harness.cvng.core.services.CVNextGenConstants.LOG_FEEDBACK_RESOURCE_PATH;
 
@@ -21,6 +22,7 @@ import io.swagger.annotations.ApiOperation;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -42,12 +44,12 @@ public class LogFeedbackResource {
   @Timed
   @ExceptionMetered
   @DelegateAuth
-  @ApiOperation(value = "saves log data collected for verification", nickname = "saveLogRecords")
+  @ApiOperation(value = "saves log data collected for verification", nickname = "saveLogFeedback")
   public RestResponse<LogFeedback> saveLogFeedback(
       @PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,
       @PathParam(CVNextGenConstants.ORG_IDENTIFIER_KEY) @NonNull String orgIdentifier,
       @PathParam(CVNextGenConstants.PROJECT_IDENTIFIER_KEY) @NonNull String projectIdentifier,
-      @NotNull @Valid @Body io.harness.cvng.core.beans.LogFeedback logFeedback) {
+      @NotNull @Valid @Body LogFeedback logFeedback) {
     ProjectParamsBuilder projectParamsBuilder = ProjectParams.builder()
                                                     .accountIdentifier(accountIdentifier)
                                                     .orgIdentifier(orgIdentifier)
@@ -60,7 +62,7 @@ public class LogFeedbackResource {
   @ExceptionMetered
   @DelegateAuth
   @Path(LOG_FEEDBACK_ID)
-  @ApiOperation(value = "saves log data collected for verification", nickname = "saveLogRecords")
+  @ApiOperation(value = "saves log data collected for verification", nickname = "updateLogFeedback")
   public RestResponse<LogFeedback> updateLogFeedback(
       @PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,
       @PathParam(CVNextGenConstants.ORG_IDENTIFIER_KEY) @NonNull String orgIdentifier,
@@ -79,7 +81,7 @@ public class LogFeedbackResource {
   @ExceptionMetered
   @DelegateAuth
   @Path(LOG_FEEDBACK_ID)
-  @ApiOperation(value = "saves log data collected for verification", nickname = "saveLogRecords")
+  @ApiOperation(value = "saves log data collected for verification", nickname = "getLogFeedback")
   public RestResponse<LogFeedback> getLogFeedback(
       @PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,
       @PathParam(CVNextGenConstants.ORG_IDENTIFIER_KEY) @NonNull String orgIdentifier,
@@ -92,12 +94,12 @@ public class LogFeedbackResource {
     return new RestResponse<>(logFeedbackService.get(projectParamsBuilder.build(), logFeedbackId));
   }
 
-  @GET
+  @DELETE
   @Timed
   @ExceptionMetered
   @DelegateAuth
   @Path(LOG_FEEDBACK_ID)
-  @ApiOperation(value = "saves log data collected for verification", nickname = "saveLogRecords")
+  @ApiOperation(value = "saves log data collected for verification", nickname = "deleteLogFeedback")
   public RestResponse<Boolean> deleteLogFeedback(
       @PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,
       @PathParam(CVNextGenConstants.ORG_IDENTIFIER_KEY) @NonNull String orgIdentifier,
@@ -114,8 +116,8 @@ public class LogFeedbackResource {
   @Timed
   @ExceptionMetered
   @DelegateAuth
-  @Path(LOG_FEEDBACK_ID)
-  @ApiOperation(value = "saves log data collected for verification", nickname = "saveLogRecords")
+  @Path(LOG_FEEDBACK_HISTORY)
+  @ApiOperation(value = "saves log data collected for verification", nickname = "getFeedbackHistory")
   public RestResponse<List<LogFeedbackHistory>> getFeedbackHistory(
       @PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,
       @PathParam(CVNextGenConstants.ORG_IDENTIFIER_KEY) @NonNull String orgIdentifier,

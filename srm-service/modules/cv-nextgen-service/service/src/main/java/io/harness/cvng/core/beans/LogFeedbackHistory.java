@@ -1,14 +1,13 @@
 package io.harness.cvng.core.beans;
 
-import io.harness.cvng.core.beans.LogFeedback;
-
 import lombok.Builder;
 import lombok.Value;
+import org.codehaus.jackson.annotate.JsonProperty;
 
 @Value
 @Builder
 public class LogFeedbackHistory {
   LogFeedback logFeedback;
-  private String createdBy;
-  private String updatedBy;
+  @JsonProperty("createdBy") String createdBy;
+  @JsonProperty("updatedBy") String updatedBy;
 }

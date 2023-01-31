@@ -2,6 +2,7 @@ package io.harness.cvng.core.beans;
 
 import lombok.Builder;
 import lombok.Value;
+import org.codehaus.jackson.annotate.JsonIgnore;
 
 @Value
 @Builder
@@ -13,4 +14,6 @@ public class LogFeedback {
   String description;
   String serviceIdentifier;
   String environmentIdentifier;
+  String clusterId;
+  String verificationJobInstanceId;
 }
