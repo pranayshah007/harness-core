@@ -17,6 +17,8 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.threading.Morpheus.sleep;
 
+import static software.wings.common.HarnessWorkloadIdentityHelper.usingWorkloadIdentity;
+
 import static java.time.Duration.ofMillis;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -247,7 +249,7 @@ public class GcpKmsEncryptor implements KmsEncryptor {
   }
 
   private String encryptDekFromKms(GcpKmsConfig gcpKmsConfig, ByteString plainTextDek) {
-    try (KeyManagementServiceClient gcpKmsClient = getClient(gcpKmsConfig, true)) {
+    try (KeyManagementServiceClient gcpKmsClient = getClient(gcpKmsConfig)) {
       String resourceName = CryptoKeyName.format(
           gcpKmsConfig.getProjectId(), gcpKmsConfig.getRegion(), gcpKmsConfig.getKeyRing(), gcpKmsConfig.getKeyName());
       EncryptResponse encryptResponse = gcpKmsClient.encrypt(resourceName, plainTextDek);
@@ -256,7 +258,7 @@ public class GcpKmsEncryptor implements KmsEncryptor {
   }
 
   private byte[] decryptDekFromKms(GcpKmsConfig gcpKmsConfig, String encryptionKey) {
-    try (KeyManagementServiceClient client = getClient(gcpKmsConfig, true)) {
+    try (KeyManagementServiceClient client = getClient(gcpKmsConfig)) {
       String resourceName = CryptoKeyName.format(
           gcpKmsConfig.getProjectId(), gcpKmsConfig.getRegion(), gcpKmsConfig.getKeyRing(), gcpKmsConfig.getKeyName());
       ByteString key = ByteString.copyFrom(StandardCharsets.ISO_8859_1.encode(encryptionKey));
@@ -275,8 +277,8 @@ public class GcpKmsEncryptor implements KmsEncryptor {
     return simpleEncryption.decrypt(encryptedPlainTextKey);
   }
 
-  private KeyManagementServiceClient getClient(GcpKmsConfig gcpKmsConfig, boolean useWorkloadIdentity) {
-    if (useWorkloadIdentity) {
+  private KeyManagementServiceClient getClient(GcpKmsConfig gcpKmsConfig) {
+    if (usingWorkloadIdentity() && gcpKmsConfig.isGlobalKms()) {
       try {
         log.info("[WI]: Using workload identity for GCP KMS");
         KeyManagementServiceClient keyManagementServiceClient = KeyManagementServiceClient.create();

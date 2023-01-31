@@ -10,6 +10,7 @@ package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static software.wings.common.HarnessWorkloadIdentityHelper.usingWorkloadIdentity;
 import static software.wings.service.impl.FileServiceUtils.FILE_PATH_SEPARATOR;
 import static software.wings.service.impl.FileServiceUtils.GCS_ID_PREFIX;
 import static software.wings.service.impl.FileServiceUtils.GoogleCloudFileIdComponent;
@@ -306,7 +307,7 @@ public class GoogleCloudFileServiceImpl implements FileService {
 
   void initialize() {
     String googleCredentialsPath = System.getenv(GOOGLE_APPLICATION_CREDENTIALS_PATH);
-    if (isEmpty(googleCredentialsPath) || !new File(googleCredentialsPath).exists()) {
+    if (!usingWorkloadIdentity() && (isEmpty(googleCredentialsPath) || !new File(googleCredentialsPath).exists())) {
       throw new WingsException("Invalid credentials found at " + googleCredentialsPath);
     }
 

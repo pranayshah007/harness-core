@@ -12,6 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.metrics.MetricConstants.ENV_LABEL;
 import static io.harness.metrics.MetricConstants.METRIC_LABEL_PREFIX;
 
+import static software.wings.common.HarnessWorkloadIdentityHelper.usingWorkloadIdentity;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.metrics.beans.MetricConfiguration;
@@ -116,6 +118,9 @@ public class MetricServiceImpl implements MetricService {
     boolean prometheusCollectorEnabled = isPrometheusConnectorEnabled();
     log.info("GOOGLE_APPLICATION_CREDENTIALS: {} ENABLE_PROMETHEUS_COLLECTOR: {}", googleApplicationCred,
         prometheusCollectorEnabled);
+    if (usingWorkloadIdentity()) {
+      return true;
+    }
     return isNotEmpty(googleApplicationCred) || prometheusCollectorEnabled;
   }
 
