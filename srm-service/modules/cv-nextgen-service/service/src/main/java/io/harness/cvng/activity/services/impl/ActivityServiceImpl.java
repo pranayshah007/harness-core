@@ -156,6 +156,7 @@ public class ActivityServiceImpl implements ActivityService {
 
   @Override
   public String upsert(Activity activity) {
+    log.info("Creating  Activity {}", activity.toString());
     ActivityUpdateHandler handler = activityUpdateHandlerMap.get(activity.getType());
     ActivityUpdatableEntity activityUpdatableEntity = activityUpdatableEntityMap.get(activity.getType());
     try (AcquiredLock acquiredLock = persistentLocker.waitToAcquireLock(Activity.class,
