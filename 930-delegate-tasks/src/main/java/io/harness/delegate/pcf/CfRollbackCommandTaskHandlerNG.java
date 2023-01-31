@@ -128,9 +128,8 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       // Downsizing
       executionLogCallback =
           tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Downsize, true, commandUnitsProgress);
-      cfCommandTaskHelperNG.downSizeListOfInstancesAndUnmapRoutes(executionLogCallback,
-              cfRequestConfig, cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRollbackCommandRequestNG,
-          autoscalarRequestData);
+      cfCommandTaskHelperNG.downSizeListOfInstancesAndUnmapRoutes(executionLogCallback, cfRequestConfig,
+          cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRollbackCommandRequestNG, autoscalarRequestData);
       cfRollbackCommandResult.setCfInstanceElements(oldAppInstances);
       cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
 
