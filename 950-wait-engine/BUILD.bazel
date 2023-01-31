@@ -60,6 +60,7 @@ java_library(
         "@maven//:io_dropwizard_metrics_metrics_core",
         "@maven//:junit_junit",
         "@maven//:org_assertj_assertj_core",
+        "@maven//:org_jooq_joor",
         "@maven//:org_mockito_mockito_core",
         "@maven//:org_slf4j_slf4j_api",
         "@maven//:org_springframework_data_spring_data_mongodb",

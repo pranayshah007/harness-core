@@ -9,21 +9,11 @@ package io.harness.ngmigration.service.step.terraform;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
-import io.harness.cdng.provision.terraform.TerraformApplyStepNode;
-import io.harness.cdng.provision.terraform.TerraformPlanExecutionData;
-import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
-import io.harness.cdng.provision.terraform.TerraformPlanStepNode;
-import io.harness.cdng.provision.terraform.TerraformStepConfiguration;
-import io.harness.cdng.provision.terraform.TerraformStepConfigurationType;
 import io.harness.executions.steps.StepSpecTypeConstants;
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.plancreator.steps.AbstractStepNode;
-import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GraphNode;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 import software.wings.sm.states.provision.ApplyTerraformState;
 
@@ -56,35 +46,8 @@ public class TerraformApplyStepMapperImpl extends BaseTerraformProvisionerMapper
   }
 
   @Override
-  public AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
-    ApplyTerraformState state = (ApplyTerraformState) getState(graphNode);
-    ParameterField<String> provisionerId = ParameterField.createValueField(getProvisionerIdentifier(entities, state));
-    if (state.isRunPlanOnly()) {
-      TerraformPlanExecutionData executionData = getPlanExecutionData(entities, migratedEntities, state);
-      TerraformPlanStepInfo stepInfo = TerraformPlanStepInfo.infoBuilder()
-                                           .delegateSelectors(getDelegateSelectors(state))
-                                           .provisionerIdentifier(provisionerId)
-                                           .terraformPlanExecutionData(executionData)
-                                           .build();
-      TerraformPlanStepNode planStepNode = new TerraformPlanStepNode();
-      baseSetup(graphNode, planStepNode);
-      planStepNode.setTerraformPlanStepInfo(stepInfo);
-      return planStepNode;
-    } else {
-      TerraformStepConfiguration stepConfiguration = new TerraformStepConfiguration();
-      stepConfiguration.setTerraformExecutionData(getExecutionData(entities, migratedEntities, state));
-      stepConfiguration.setTerraformStepConfigurationType(TerraformStepConfigurationType.INLINE);
-      TerraformApplyStepInfo stepInfo = TerraformApplyStepInfo.infoBuilder()
-                                            .delegateSelectors(getDelegateSelectors(state))
-                                            .terraformStepConfiguration(stepConfiguration)
-                                            .provisionerIdentifier(provisionerId)
-                                            .build();
-      TerraformApplyStepNode applyStepNode = new TerraformApplyStepNode();
-      baseSetup(graphNode, applyStepNode);
-      applyStepNode.setTerraformApplyStepInfo(stepInfo);
-      return applyStepNode;
-    }
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+    return getStepNode(context.getEntities(), context.getMigratedEntities(), graphNode);
   }
 
   @Override

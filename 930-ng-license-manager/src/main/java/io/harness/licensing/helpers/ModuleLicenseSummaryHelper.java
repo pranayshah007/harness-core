@@ -50,6 +50,10 @@ public class ModuleLicenseSummaryHelper {
               ciLicenseSummaryDTO.setTotalDevelopers(ModuleLicenseUtils.computeAdd(
                   ciLicenseSummaryDTO.getTotalDevelopers(), temp.getNumberOfCommitters()));
             }
+            if (temp.getCacheAllowance() != null) {
+              ciLicenseSummaryDTO.setCacheSizeAllowance(
+                  ModuleLicenseUtils.computeAdd(ciLicenseSummaryDTO.getCacheSizeAllowance(), temp.getCacheAllowance()));
+            }
           }
         };
         break;

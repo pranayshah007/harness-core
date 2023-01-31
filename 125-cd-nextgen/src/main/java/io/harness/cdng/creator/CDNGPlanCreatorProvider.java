@@ -125,6 +125,8 @@ import io.harness.cdng.creator.plan.steps.TerraformApplyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformDestroyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformPlanStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.aws.asg.AsgBlueGreenDeployStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.aws.asg.AsgBlueGreenRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgBlueGreenSwapServiceStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgCanaryDeleteStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgCanaryDeployStepPlanCreator;
@@ -147,10 +149,13 @@ import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSetupStepPlanCr
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSwapRouteStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.terraformcloud.TerraformCloudRunStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntApplyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntDestroyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntPlanStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntRollbackStepPlanCreator;
+import io.harness.cdng.creator.variables.AsgBlueGreenDeployStepVariableCreator;
+import io.harness.cdng.creator.variables.AsgBlueGreenRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.AsgBlueGreenSwapServiceStepVariableCreator;
 import io.harness.cdng.creator.variables.AsgCanaryDeleteStepVariableCreator;
 import io.harness.cdng.creator.variables.AsgCanaryDeployStepVariableCreator;
@@ -216,6 +221,7 @@ import io.harness.cdng.provision.terraform.variablecreator.TerraformApplyStepVar
 import io.harness.cdng.provision.terraform.variablecreator.TerraformDestroyStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformPlanStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformRollbackStepVariableCreator;
+import io.harness.cdng.provision.terraformcloud.variablecreator.TerraformCloudRunStepVariableCreator;
 import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntApplyStepVariableCreator;
 import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntDestroyStepVariableCreator;
 import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntPlanStepVariableCreator;
@@ -261,6 +267,7 @@ import java.util.Set;
 public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String TERRAFORM_STEP_METADATA = "Terraform";
   private static final String TERRAGRUNT_STEP_METADATA = "Terragrunt";
+  private static final String TERRAFORM_CLOUD_STEP_METADATA = "Terraform Cloud";
 
   private static final String CLOUDFORMATION_STEP_METADATA = "Cloudformation";
   private static final String AZURE = "Azure";
@@ -280,6 +287,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final List<String> TERRAFORM_CATEGORY =
       Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
   private static final List<String> TERRAGRUNT_CATEGORY =
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
+  private static final List<String> TERRAFORM_CLOUD_CATEGORY =
       Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
   private static final String BUILD_STEP = "Builds";
 
@@ -416,6 +425,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new AsgRollingDeployStepPlanCreator());
     planCreators.add(new AsgRollingRollbackStepPlanCreator());
     planCreators.add(new AsgBlueGreenSwapServiceStepPlanCreator());
+    planCreators.add(new AsgBlueGreenDeployStepPlanCreator());
+    planCreators.add(new AsgBlueGreenRollbackStepPlanCreator());
 
     // TAS
     planCreators.add(new TasCanaryAppSetupStepPlanCreator());
@@ -430,6 +441,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new TasRollingRollbackStepPlanCreator());
 
     planCreators.add(new K8sDryRunManifestStepPlanCreator());
+
+    // Terraform Cloud
+    planCreators.add(new TerraformCloudRunStepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -540,6 +554,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new AsgRollingDeployStepVariableCreator());
     variableCreators.add(new AsgRollingRollbackStepVariableCreator());
     variableCreators.add(new AsgBlueGreenSwapServiceStepVariableCreator());
+    variableCreators.add(new AsgBlueGreenDeployStepVariableCreator());
+    variableCreators.add(new AsgBlueGreenRollbackStepVariableCreator());
 
     // TAS
     variableCreators.add(new TasCanaryAppSetupStepVariableCreator());
@@ -554,6 +570,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new TasRollingRollbackStepVariableCreator());
 
     variableCreators.add(new K8sDryRunManifestStepVariableCreator());
+
+    // Terraform Cloud
+    variableCreators.add(new TerraformCloudRunStepVariableCreator());
 
     return variableCreators;
   }
@@ -1032,7 +1051,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Asg Canary Deploy")
             .setType(StepSpecTypeConstants.ASG_CANARY_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.ASG_NG.name())
+            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo asgCanaryDelete =
@@ -1040,7 +1059,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Asg Canary Delete")
             .setType(StepSpecTypeConstants.ASG_CANARY_DELETE)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.ASG_NG.name())
+            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo tasCanaryAppSetup =
@@ -1103,7 +1122,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Asg Rolling Deploy")
             .setType(StepSpecTypeConstants.ASG_ROLLING_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.ASG_NG.name())
+            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo asgRollingRollback =
@@ -1111,7 +1130,23 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Asg Rolling Rollback")
             .setType(StepSpecTypeConstants.ASG_ROLLING_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.ASG_NG.name())
+            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
+            .build();
+
+    StepInfo asgBlueGreenDeploy =
+        StepInfo.newBuilder()
+            .setName("Asg Blue Green Deploy")
+            .setType(StepSpecTypeConstants.ASG_BLUE_GREEN_DEPLOY)
+            .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
+            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
+            .build();
+
+    StepInfo asgBlueGreenRollback =
+        StepInfo.newBuilder()
+            .setName("Asg Blue Green Rollback")
+            .setType(StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK)
+            .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
+            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo tasRollingDeploy =
@@ -1147,8 +1182,19 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Asg Blue Green Swap Service")
             .setType(StepSpecTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.ASG_NG.name())
+            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
+
+    StepInfo terraformCloudRun = StepInfo.newBuilder()
+                                     .setName("Terraform Cloud Run")
+                                     .setType(StepSpecTypeConstants.TERRAFORM_CLOUD_RUN)
+                                     .setFeatureRestrictionName(FeatureRestrictionName.TERRAFORM_CLOUD_RUN.name())
+                                     .setStepMetaData(StepMetaData.newBuilder()
+                                                          .addAllCategory(TERRAFORM_CLOUD_CATEGORY)
+                                                          .setFolderPath(TERRAFORM_CLOUD_STEP_METADATA)
+                                                          .build())
+                                     .setFeatureFlag(FeatureName.TERRAFORM_CLOUD.name())
+                                     .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();
 
@@ -1217,10 +1263,13 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(elastigroupSwapRoute);
     stepInfos.add(asgRollingDeploy);
     stepInfos.add(asgRollingRollback);
+    stepInfos.add(asgBlueGreenDeploy);
+    stepInfos.add(asgBlueGreenRollback);
     stepInfos.add(tasRollingDeploy);
     stepInfos.add(tasRollingRollback);
     stepInfos.add(k8sDryRunManifest);
     stepInfos.add(asgBlueGreenSwapService);
+    stepInfos.add(terraformCloudRun);
     return stepInfos;
   }
 }

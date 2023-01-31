@@ -71,7 +71,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -505,8 +505,9 @@ public class TasCanaryAppSetupStepTest extends CDNGTestBase {
     TasManifestsPackage tasManifestsPackage =
         TasManifestsPackage.builder().manifestYml(MANIFEST_YML).variableYmls(List.of(VARS_YML_1)).build();
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
-    Mockito.mockStatic(StepUtils.class);
-    when(StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    when(TaskRequestsUtils.prepareCDTaskRequest(
+             any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     TaskChainResponse taskChainResponse =
         tasCanaryAppSetupStep.executeTasTask(null, ambiance, stepElementParametersFromManifest,
@@ -546,8 +547,9 @@ public class TasCanaryAppSetupStepTest extends CDNGTestBase {
                                                   .autoscalarManifestYml(AUTOSCALAR_YML)
                                                   .build();
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
-    Mockito.mockStatic(StepUtils.class);
-    when(StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    when(TaskRequestsUtils.prepareCDTaskRequest(
+             any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     TaskChainResponse taskChainResponse =
         tasCanaryAppSetupStep.executeTasTask(null, ambiance, stepElementParametersFromManifest,

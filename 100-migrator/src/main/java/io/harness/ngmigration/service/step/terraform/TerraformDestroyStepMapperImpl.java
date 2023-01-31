@@ -14,13 +14,11 @@ import io.harness.cdng.provision.terraform.TerraformDestroyStepNode;
 import io.harness.cdng.provision.terraform.TerraformStepConfiguration;
 import io.harness.cdng.provision.terraform.TerraformStepConfigurationType;
 import io.harness.executions.steps.StepSpecTypeConstants;
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
-import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GraphNode;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 import software.wings.sm.states.provision.DestroyTerraformProvisionState;
 
@@ -49,25 +47,25 @@ public class TerraformDestroyStepMapperImpl extends BaseTerraformProvisionerMapp
   }
 
   @Override
-  public AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     DestroyTerraformProvisionState state = (DestroyTerraformProvisionState) getState(graphNode);
     TerraformDestroyStepNode terraformDestroyStepNode = new TerraformDestroyStepNode();
     baseSetup(graphNode, terraformDestroyStepNode);
 
-    //    TerraformStepConfigurationType.INHERIT_FROM_APPLY;
-    //    TerraformStepConfigurationType.INHERIT_FROM_PLAN;
     TerraformStepConfiguration stepConfiguration = new TerraformStepConfiguration();
-    // TODO
-    stepConfiguration.setTerraformStepConfigurationType(TerraformStepConfigurationType.INLINE);
-    stepConfiguration.setTerraformExecutionData(getExecutionData(entities, migratedEntities, state));
+    if ((Boolean) graphNode.getProperties().getOrDefault("inheritFromLast", false)) {
+      stepConfiguration.setTerraformStepConfigurationType(TerraformStepConfigurationType.INHERIT_FROM_APPLY);
+    } else {
+      stepConfiguration.setTerraformStepConfigurationType(TerraformStepConfigurationType.INLINE);
+      stepConfiguration.setTerraformExecutionData(
+          getExecutionData(context.getEntities(), context.getMigratedEntities(), state));
+    }
 
-    TerraformDestroyStepInfo stepInfo =
-        TerraformDestroyStepInfo.infoBuilder()
-            .provisionerIdentifier(ParameterField.createValueField(getProvisionerIdentifier(entities, state)))
-            .delegateSelectors(getDelegateSelectors(state))
-            .terraformStepConfiguration(stepConfiguration)
-            .build();
+    TerraformDestroyStepInfo stepInfo = TerraformDestroyStepInfo.infoBuilder()
+                                            .provisionerIdentifier(MigratorUtility.RUNTIME_INPUT)
+                                            .delegateSelectors(getDelegateSelectors(state))
+                                            .terraformStepConfiguration(stepConfiguration)
+                                            .build();
 
     terraformDestroyStepNode.setTerraformDestroyStepInfo(stepInfo);
     terraformDestroyStepNode.setDelegateSelectors(getDelegateSel(state));

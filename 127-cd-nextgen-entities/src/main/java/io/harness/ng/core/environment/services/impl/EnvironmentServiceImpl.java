@@ -151,7 +151,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   public Environment create(@NotNull @Valid Environment environment) {
     try {
       validatePresenceOfRequiredFields(environment.getAccountId(), environment.getIdentifier());
-      setName(environment);
+      modifyEnvironmentRequest(environment);
 
       Environment createdEnvironment =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -212,7 +212,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public Environment update(@Valid Environment requestEnvironment) {
     validatePresenceOfRequiredFields(requestEnvironment.getAccountId(), requestEnvironment.getIdentifier());
-    setName(requestEnvironment);
+    modifyEnvironmentRequest(requestEnvironment);
     Criteria criteria = getEnvironmentEqualityCriteria(requestEnvironment, requestEnvironment.getDeleted());
 
     Optional<Environment> environmentOptional =
@@ -253,7 +253,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public Environment upsert(Environment requestEnvironment, UpsertOptions upsertOptions) {
     validatePresenceOfRequiredFields(requestEnvironment.getAccountId(), requestEnvironment.getIdentifier());
-    setName(requestEnvironment);
+    modifyEnvironmentRequest(requestEnvironment);
     Criteria criteria = getEnvironmentEqualityCriteria(requestEnvironment, requestEnvironment.getDeleted());
     Environment updatedResult = Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       Environment tempResult = environmentRepository.upsert(criteria, requestEnvironment);
@@ -360,19 +360,37 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
-    checkArgument(isNotEmpty(orgIdentifier), "orgIdentifier must be present");
-    checkArgument(isNotEmpty(projectIdentifier), "project Identifier must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
 
-    Criteria criteria = getAllEnvironmentsEqualityCriteriaWithinProject(accountId, orgIdentifier, projectIdentifier);
+    return forceDeleteInternal(accountId, orgIdentifier, projectIdentifier);
+  }
+
+  private boolean forceDeleteInternal(String accountId, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = getEnvironmentsEqualityCriteria(accountId, orgIdentifier, projectIdentifier);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       boolean deleted = environmentRepository.delete(criteria);
       if (!deleted) {
-        throw new InvalidRequestException(
-            String.format("Environments under Project[%s], Organization [%s] couldn't be deleted.", projectIdentifier,
-                orgIdentifier));
+        throw new InvalidRequestException(getScopedErrorMessageForCascadeDeletion(orgIdentifier, projectIdentifier));
       }
       return true;
     }));
+  }
+
+  private String getScopedErrorMessageForCascadeDeletion(String orgIdentifier, String projectIdentifier) {
+    if (isNotEmpty(projectIdentifier)) {
+      return String.format(
+          "Environments under Project[%s], Organization [%s] couldn't be deleted.", projectIdentifier, orgIdentifier);
+    }
+    return String.format("Environments under Organization [%s] couldn't be deleted.", orgIdentifier);
+  }
+
+  @Override
+  public boolean forceDeleteAllInOrg(String accountId, String orgIdentifier) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "orgIdentifier must be present");
+
+    return forceDeleteInternal(accountId, orgIdentifier, null);
   }
 
   @Override
@@ -542,11 +560,17 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     Lists.newArrayList(fields).forEach(field -> Objects.requireNonNull(field, "One of the required fields is null."));
   }
 
-  private void setName(Environment requestEnvironment) {
+  private void modifyEnvironmentRequest(Environment requestEnvironment) {
     if (isEmpty(requestEnvironment.getName())) {
       requestEnvironment.setName(requestEnvironment.getIdentifier());
     }
     requestEnvironment.setName(requestEnvironment.getName().trim());
+    // handle empty scope identifiers as null to define the scope correctly
+    requestEnvironment.setOrgIdentifier(
+        EmptyPredicate.isEmpty(requestEnvironment.getOrgIdentifier()) ? null : requestEnvironment.getOrgIdentifier());
+    requestEnvironment.setProjectIdentifier(EmptyPredicate.isEmpty(requestEnvironment.getProjectIdentifier())
+            ? null
+            : requestEnvironment.getProjectIdentifier());
   }
 
   private Criteria getEnvironmentEqualityCriteria(Environment requestEnvironment, boolean deleted) {
@@ -587,7 +611,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     return criteria;
   }
 
-  private Criteria getAllEnvironmentsEqualityCriteriaWithinProject(String accountId, String orgId, String projectId) {
+  private Criteria getEnvironmentsEqualityCriteria(String accountId, String orgId, String projectId) {
     return Criteria.where(EnvironmentKeys.accountId)
         .is(accountId)
         .and(EnvironmentKeys.orgIdentifier)

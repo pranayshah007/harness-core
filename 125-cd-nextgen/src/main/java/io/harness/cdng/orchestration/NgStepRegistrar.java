@@ -15,6 +15,8 @@ import io.harness.cdng.artifact.steps.ArtifactSyncStep;
 import io.harness.cdng.artifact.steps.ArtifactsStep;
 import io.harness.cdng.artifact.steps.ArtifactsStepV2;
 import io.harness.cdng.artifact.steps.SidecarsStep;
+import io.harness.cdng.aws.asg.AsgBlueGreenDeployStep;
+import io.harness.cdng.aws.asg.AsgBlueGreenRollbackStep;
 import io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStep;
 import io.harness.cdng.aws.asg.AsgCanaryDeleteStep;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
@@ -89,6 +91,7 @@ import io.harness.cdng.provision.terraform.TerraformApplyStep;
 import io.harness.cdng.provision.terraform.TerraformDestroyStep;
 import io.harness.cdng.provision.terraform.TerraformPlanStep;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStep;
+import io.harness.cdng.provision.terraformcloud.steps.TerraformCloudRunStep;
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStep;
 import io.harness.cdng.provision.terragrunt.TerragruntDestroyStep;
 import io.harness.cdng.provision.terragrunt.TerragruntPlanStep;
@@ -234,6 +237,8 @@ public class NgStepRegistrar {
     engineSteps.put(AsgRollingDeployStep.STEP_TYPE, AsgRollingDeployStep.class);
     engineSteps.put(AsgRollingRollbackStep.STEP_TYPE, AsgRollingRollbackStep.class);
     engineSteps.put(AsgBlueGreenSwapServiceStep.STEP_TYPE, AsgBlueGreenSwapServiceStep.class);
+    engineSteps.put(AsgBlueGreenDeployStep.STEP_TYPE, AsgBlueGreenDeployStep.class);
+    engineSteps.put(AsgBlueGreenRollbackStep.STEP_TYPE, AsgBlueGreenRollbackStep.class);
 
     // TAS
     engineSteps.put(TasCanaryAppSetupStep.STEP_TYPE, TasCanaryAppSetupStep.class);
@@ -246,6 +251,8 @@ public class NgStepRegistrar {
     engineSteps.put(TasRollbackStep.STEP_TYPE, TasRollbackStep.class);
     engineSteps.put(TasRollingDeployStep.STEP_TYPE, TasRollingDeployStep.class);
     engineSteps.put(TasRollingRollbackStep.STEP_TYPE, TasRollingRollbackStep.class);
+
+    engineSteps.put(TerraformCloudRunStep.STEP_TYPE, TerraformCloudRunStep.class);
 
     return engineSteps;
   }

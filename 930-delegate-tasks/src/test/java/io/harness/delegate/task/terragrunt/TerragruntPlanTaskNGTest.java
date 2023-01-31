@@ -223,8 +223,11 @@ public class TerragruntPlanTaskNGTest extends CategoryTest {
     doReturn(logCallback).when(taskService).getLogCallback(any(), any(), any());
     when(cliHelper.executeCliCommand(eq("echo \"y\" | terragrunt run-all init"), anyLong(),
              eq(planParameters.getEnvVars()), any(), any(), any(), any(), any()))
+        .thenReturn(CliResponse.builder().exitCode(0).build());
+    when(cliHelper.executeCliCommand(eq("echo \"y\" | terragrunt run-all workspace list"), anyLong(),
+             eq(planParameters.getEnvVars()), any(), any(), any(), any(), any()))
         .thenReturn(CliResponse.builder()
-                        .command("echo \"y\" | terragrunt run-all init")
+                        .command("echo \"y\" | terragrunt run-all workspace list")
                         .error("command failed")
                         .commandExecutionStatus(CommandExecutionStatus.FAILURE)
                         .exitCode(-1)
@@ -234,7 +237,7 @@ public class TerragruntPlanTaskNGTest extends CategoryTest {
       assertThat(throwable).isInstanceOf(TaskNGDataException.class);
       assertThat(throwable.getCause()).isInstanceOf(TerragruntCliRuntimeException.class);
       assertThat(throwable.getCause().getMessage())
-          .contains("Terragrunt command 'echo \"y\" | terragrunt run-all init' failed with error code '-1'");
+          .contains("Terragrunt command 'echo \"y\" | terragrunt run-all workspace list' failed with error code '-1'");
       return true;
     });
   }

@@ -67,6 +67,14 @@ public interface ServiceEntityService {
   boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier);
 
   /**
+   * Deletes all services linked to a particular harness org.
+   * @param accountId  the account id
+   * @param orgIdentifier the organization identifier
+   * @return boolean to indicate if deletion was successful
+   */
+  boolean forceDeleteAllInOrg(String accountId, String orgIdentifier);
+
+  /**
    *
    * Locates the leaf node in a service entity for a given FQN of type
    * pipeline.stages.s1.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag

@@ -72,7 +72,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -497,8 +497,9 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
                                                                   .cfCliVersion(CfCliVersionNG.V7)
                                                                   .build();
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
-    Mockito.mockStatic(StepUtils.class);
-    when(StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    when(TaskRequestsUtils.prepareCDTaskRequest(
+             any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     TaskChainResponse taskChainResponse =
         tasBGAppSetupStep.executeTasTask(null, ambiance, stepElementParametersFromManifest, tasExecutionPassThroughData,
@@ -538,8 +539,9 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
                                                                   .cfCliVersion(CfCliVersionNG.V7)
                                                                   .build();
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
-    Mockito.mockStatic(StepUtils.class);
-    when(StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    when(TaskRequestsUtils.prepareCDTaskRequest(
+             any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     TaskChainResponse taskChainResponse =
         tasBGAppSetupStep.executeTasTask(null, ambiance, stepElementParametersFromManifest, tasExecutionPassThroughData,

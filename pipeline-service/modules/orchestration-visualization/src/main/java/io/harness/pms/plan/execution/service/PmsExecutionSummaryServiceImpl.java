@@ -34,6 +34,7 @@ import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -194,8 +195,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
           strategyNodeExecution.getExecutableResponses().get(0).getChildren().getChildren(0).getChildNodeId();
       Ambiance ambiance = strategyNodeExecution.getAmbiance();
       Optional<PipelineExecutionSummaryEntity> entity =
-          getPipelineExecutionSummary(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-              AmbianceUtils.getProjectIdentifier(ambiance), planExecutionId);
+          pmsExecutionSummaryRepository.findByPlanExecutionId(planExecutionId);
       if (entity.isEmpty()) {
         return false;
       }
@@ -204,13 +204,6 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     }
     updateStatusAndStepParametersInStrategyNode(strategyNodeExecution, update);
     return true;
-  }
-
-  @Override
-  public Optional<PipelineExecutionSummaryEntity> getPipelineExecutionSummary(
-      String accountId, String orgId, String projectId, String planExecutionId) {
-    return pmsExecutionSummaryRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionId(
-        accountId, orgId, projectId, planExecutionId);
   }
 
   @Override
@@ -238,6 +231,13 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       updateRequired = ExecutionSummaryUpdateUtils.addPipelineUpdateCriteria(update, nodeExecution) || updateRequired;
     }
     return ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution) || updateRequired;
+  }
+
+  @Override
+  public PipelineExecutionSummaryEntity getPipelineExecutionSummaryWithProjections(
+      String planExecutionId, Set<String> fields) {
+    Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId);
+    return pmsExecutionSummaryRepository.getPipelineExecutionSummaryWithProjections(criteria, fields);
   }
 
   @Override

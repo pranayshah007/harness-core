@@ -26,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.dtos.InstanceDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.service.services.exception.ActiveServiceInstancesPresentException;
 import io.harness.rule.Owner;
 import io.harness.service.instance.InstanceService;
 
@@ -43,6 +44,7 @@ import org.mockito.Spy;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ServiceEntityManagementServiceTest extends CategoryTest {
   @Mock ServiceEntityService serviceEntityService;
+
   @Mock InstanceService instanceService;
   @Spy @Inject @InjectMocks ServiceEntityManagementServiceImpl serviceEntityManagementService;
 
@@ -69,7 +71,7 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
     assertThatThrownBy(()
                            -> serviceEntityManagementService.deleteService(
                                accountIdentifier, orgIdentifier, projectIdentifier, identifier, "", false))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(ActiveServiceInstancesPresentException.class)
         .hasMessage(
             "Service [identifier] under Project[projectIdentifier], Organization [orgIdentifier] couldn't be deleted since there are currently 2 active instances for the service");
     verify(instanceService, never()).deleteAll(any());

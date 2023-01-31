@@ -15,6 +15,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.service.beans.ServiceDefinition;
+import io.harness.cdng.service.steps.ServiceConfigStep;
+import io.harness.cdng.service.steps.ServiceSectionStep;
+import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.UnsupportedOperationException;
@@ -60,7 +63,7 @@ public class ServiceStepsHelper {
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
 
-  void checkForVariablesAccessOrThrow(Ambiance ambiance, NGServiceConfig serviceConfig, String serviceRef) {
+  public void checkForVariablesAccessOrThrow(Ambiance ambiance, NGServiceConfig serviceConfig, String serviceRef) {
     final ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     final String principal = executionPrincipalInfo.getPrincipal();
     if (isEmpty(principal)) {
@@ -79,7 +82,8 @@ public class ServiceStepsHelper {
         io.harness.accesscontrol.acl.api.ResourceScope.of(serviceIdentifierRef.getAccountIdentifier(),
             serviceIdentifierRef.getOrgIdentifier(), serviceIdentifierRef.getProjectIdentifier()),
         io.harness.accesscontrol.acl.api.Resource.of(NGResourceType.SERVICE, serviceIdentifierRef.getIdentifier()),
-        CDNGRbacPermissions.SERVICE_RUNTIME_PERMISSION, "Validation for Service Step failed");
+        CDNGRbacPermissions.SERVICE_RUNTIME_PERMISSION,
+        String.format("Missing Access Permission for Service: [%s]", serviceRef));
 
     List<NGVariable> serviceVariables =
         serviceConfig.getNgServiceV2InfoConfig().getServiceDefinition().getServiceSpec().getVariables();
@@ -87,7 +91,7 @@ public class ServiceStepsHelper {
     checkForAccessOrThrow(ambiance, serviceVariables);
   }
 
-  void checkForAccessOrThrow(Ambiance ambiance, List<NGVariable> serviceVariables) {
+  public void checkForAccessOrThrow(Ambiance ambiance, List<NGVariable> serviceVariables) {
     if (EmptyPredicate.isEmpty(serviceVariables)) {
       return;
     }
@@ -105,7 +109,8 @@ public class ServiceStepsHelper {
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
   }
 
-  void checkForVariablesAccessOrThrow(Ambiance ambiance, ServiceDefinition serviceDefinition, String identifier) {
+  public void checkForVariablesAccessOrThrow(
+      Ambiance ambiance, ServiceDefinition serviceDefinition, String identifier) {
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     String principal = executionPrincipalInfo.getPrincipal();
     if (isEmpty(principal)) {

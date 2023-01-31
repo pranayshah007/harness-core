@@ -59,6 +59,7 @@ shared_dependencies = [
     "//950-opa-client:module",
     "//950-telemetry:module",
     "//955-filters-sdk:module",
+    "//958-debezium-utils:module",
     "//958-migration-sdk:module",
     "//958-ng-file-service-sdk:module",
     "//959-psql-database-models:module",

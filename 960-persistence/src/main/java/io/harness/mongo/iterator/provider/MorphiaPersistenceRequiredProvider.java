@@ -12,6 +12,7 @@ import static io.harness.govern.Switch.unhandled;
 import static java.lang.System.currentTimeMillis;
 
 import io.harness.iterator.PersistentIterable;
+import io.harness.mongo.iterator.BulkWriteOpsResults;
 import io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.persistence.HPersistence;
@@ -116,7 +117,7 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
   }
 
   @Override
-  public BulkWriteResult bulkWriteDocumentsMatchingIds(
+  public BulkWriteOpsResults bulkWriteDocumentsMatchingIds(
       Class<T> clazz, List<String> ids, String fieldName, long base, Duration targetInterval) {
     // 1. Create an update operation to set the given field with given value
     UpdateOperations<T> updateOperations = persistence.createUpdateOperations(clazz);
@@ -157,6 +158,11 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
     }
 
     // 4. Execute the Bulk write operation and return the results.
-    return bulkWriteOperation.execute();
+    BulkWriteResult bulkWriteResult = bulkWriteOperation.execute();
+    return BulkWriteOpsResults.builder()
+        .operationAcknowledged(bulkWriteResult.isAcknowledged())
+        .matchedCount(bulkWriteResult.getMatchedCount())
+        .modifiedCount(bulkWriteResult.getModifiedCount())
+        .build();
   }
 }

@@ -189,6 +189,9 @@ public class EnvironmentResourceV2 {
 
   public static final String ENVIRONMENT_PARAM_MESSAGE = "Environment Identifier for the entity";
 
+  private static final String TOO_MANY_HELM_OVERRIDES_PRESENT_ERROR_MESSAGE =
+      "You cannot configure multiple Helm Repo Overrides for the service. Overrides provided: [%s]";
+
   @GET
   @Path("{environmentIdentifier}")
   @NGAccessControlCheck(resourceType = ENVIRONMENT, permission = "core_environment_view")
@@ -253,6 +256,9 @@ public class EnvironmentResourceV2 {
         Resource.of(ENVIRONMENT, null, environmentAttributes), ENVIRONMENT_CREATE_PERMISSION);
     environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    if (isEmpty(environmentRequestDTO.getYaml())) {
+      environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentEntity.getYaml());
+    }
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(environmentEntity.getOrgIdentifier(),
         environmentEntity.getProjectIdentifier(), environmentEntity.getAccountId());
     Environment createdEnvironment = environmentService.create(environmentEntity);
@@ -312,6 +318,9 @@ public class EnvironmentResourceV2 {
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
     environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    if (isEmpty(environmentRequestDTO.getYaml())) {
+      environmentEntityYamlSchemaHelper.validateSchema(accountId, requestEnvironment.getYaml());
+    }
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment updatedEnvironment = environmentService.update(requestEnvironment);
     return ResponseDTO.newResponse(
@@ -341,6 +350,9 @@ public class EnvironmentResourceV2 {
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
     environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    if (isEmpty(environmentRequestDTO.getYaml())) {
+      environmentEntityYamlSchemaHelper.validateSchema(accountId, requestEnvironment.getYaml());
+    }
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(requestEnvironment.getOrgIdentifier(),
         requestEnvironment.getProjectIdentifier(), requestEnvironment.getAccountId());
@@ -660,7 +672,8 @@ public class EnvironmentResourceV2 {
       }
 
       checkDuplicateManifestIdentifiersWithIn(serviceOverrideInfoConfig.getManifests());
-      validateNoMoreThanOneHelmOverridePresent(serviceOverrideInfoConfig.getManifests());
+      validateNoMoreThanOneHelmOverridePresent(
+          serviceOverrideInfoConfig.getManifests(), TOO_MANY_HELM_OVERRIDES_PRESENT_ERROR_MESSAGE);
       checkDuplicateConfigFilesIdentifiersWithIn(serviceOverrideInfoConfig.getConfigFiles());
     }
   }

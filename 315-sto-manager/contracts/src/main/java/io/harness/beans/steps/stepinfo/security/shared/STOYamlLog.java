@@ -8,19 +8,27 @@
 package io.harness.beans.steps.stepinfo.security.shared;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
-import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.sto.variables.STOYamlLogLevel;
+import io.harness.yaml.sto.variables.STOYamlLogSerializer;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 @Data
 @OwnedBy(STO)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class STOYamlLog {
-  @ApiModelProperty(dataType = STRING_CLASSPATH) protected STOYamlLogLevel level;
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlLogLevel")
+  protected STOYamlLogLevel level;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> serializer;
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlLogSerializer")
+  protected STOYamlLogSerializer serializer;
 }

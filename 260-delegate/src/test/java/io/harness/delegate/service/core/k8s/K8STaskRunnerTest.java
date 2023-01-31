@@ -9,11 +9,14 @@ package io.harness.delegate.service.core.k8s;
 
 import static io.harness.rule.OwnerRule.MARKO;
 
+import static org.mockito.Mockito.mock;
+
 import io.harness.category.element.FunctionalTests;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.rule.Owner;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.bash.ShellScriptParameters;
 
@@ -35,7 +38,7 @@ public class K8STaskRunnerTest {
   @Before
   public void setup() throws IOException {
     final var delegateConfig = DelegateConfiguration.builder().accountId("accountId").build();
-    underTest = new K8STaskRunner(delegateConfig, Config.defaultClient());
+    underTest = new K8STaskRunner(delegateConfig, Config.defaultClient(), mock(KryoSerializer.class));
   }
 
   @Test

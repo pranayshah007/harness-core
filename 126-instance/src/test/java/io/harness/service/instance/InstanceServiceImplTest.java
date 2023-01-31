@@ -39,6 +39,7 @@ import io.harness.entities.Instance.InstanceKeys;
 import io.harness.entities.instanceinfo.GitopsInstanceInfo;
 import io.harness.entities.instanceinfo.InstanceInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
+import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
@@ -54,6 +55,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.bson.Document;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
@@ -71,6 +73,26 @@ public class InstanceServiceImplTest extends InstancesTestBase {
   @Captor ArgumentCaptor<String> instanceIdCapture;
   @Inject InstanceRepository instanceRepository1;
   @Inject InstanceServiceImpl instanceService1;
+
+  private static final String ACCOUNT_ID = "accountId";
+  private static final String ORG_ID = "orgId";
+  private static final String PROJECT_ID = "projectId";
+  private static final String SERVICE_ID = "serviceId";
+  private static final String ENVIRONMENT_ID = "environmentId";
+  private static final String DISPLAY_NAME = "artifact:tag";
+  private static final String INFRASTRUCTURE_ID = "infraId";
+  private static final String CLUSTER_ID = "clusterId";
+  private static final String AGENT_ID = "agentId";
+
+  private AggregationResults<ActiveServiceInstanceInfoWithEnvType> aggregationResults;
+
+  @Before
+  public void setup() {
+    aggregationResults = new AggregationResults<>(Arrays.asList(new ActiveServiceInstanceInfoWithEnvType(ENVIRONMENT_ID,
+                                                      ENVIRONMENT_ID, EnvironmentType.PreProduction, INFRASTRUCTURE_ID,
+                                                      INFRASTRUCTURE_ID, CLUSTER_ID, AGENT_ID, 1l, DISPLAY_NAME, 1)),
+        new Document());
+  }
 
   public void activateInstances() {
     for (Instance instance : InstanceDashboardServiceImplTest.getInstanceList()) {
@@ -475,5 +497,37 @@ public class InstanceServiceImplTest extends InstancesTestBase {
     for (int i = 0; i < instances.size(); i++) {
       assertThat(checkInstanceEquality(instances.get(i), instances1.get(i))).isEqualTo(true);
     }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getActiveServiceInstanceInfoWithEnvType_NonGitOps() {
+    when(instanceRepository.getActiveServiceInstanceInfoWithEnvType(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false))
+        .thenReturn(aggregationResults);
+    AggregationResults<ActiveServiceInstanceInfoWithEnvType> aggregationResults1 =
+        instanceRepository.getActiveServiceInstanceInfoWithEnvType(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false);
+    assertThat(aggregationResults1).isEqualTo(aggregationResults);
+    verify(instanceRepository)
+        .getActiveServiceInstanceInfoWithEnvType(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getActiveServiceInstanceInfoWithEnvType_GitOps() {
+    when(instanceRepository.getActiveServiceInstanceInfoWithEnvType(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, true))
+        .thenReturn(aggregationResults);
+    AggregationResults<ActiveServiceInstanceInfoWithEnvType> aggregationResults1 =
+        instanceRepository.getActiveServiceInstanceInfoWithEnvType(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, true);
+    assertThat(aggregationResults1).isEqualTo(aggregationResults);
+    verify(instanceRepository)
+        .getActiveServiceInstanceInfoWithEnvType(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, true);
   }
 }

@@ -35,6 +35,7 @@ import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -57,6 +58,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   @Mock private NGTemplateServiceHelper templateServiceHelper;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
 
+  @Mock private NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
+
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_ID = "orgId";
   private static final String PROJECT_ID = "projectId";
@@ -74,6 +77,9 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   public void setup() throws IllegalAccessException {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(templateMergeService).set("templateMergeServiceHelper", templateMergeServiceHelper);
+    on(templateMergeService).set("ngTemplateFeatureFlagHelperService", ngTemplateFeatureFlagHelperService);
+
+    when(ngTemplateFeatureFlagHelperService.isFeatureFlagEnabled(any(), any())).thenReturn(false);
   }
 
   @Test

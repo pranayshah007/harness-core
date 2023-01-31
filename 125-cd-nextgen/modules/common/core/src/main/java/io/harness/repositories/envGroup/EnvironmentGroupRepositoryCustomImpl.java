@@ -14,11 +14,13 @@ import static java.lang.String.format;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.events.EnvironmentGroupCreateEvent;
 import io.harness.cdng.events.EnvironmentGroupDeleteEvent;
+import io.harness.cdng.events.EnvironmentGroupForceDeleteEvent;
 import io.harness.cdng.events.EnvironmentGroupUpdateEvent;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.outbox.api.OutboxService;
+import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
@@ -29,6 +31,8 @@ import javax.validation.Valid;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -103,18 +107,39 @@ public class EnvironmentGroupRepositoryCustomImpl implements EnvironmentGroupRep
   }
 
   @Override
-  public boolean deleteEnvGroup(EnvironmentGroupEntity entityToDelete) {
+  public boolean deleteEnvGroup(EnvironmentGroupEntity entityToDelete, boolean forceDelete) {
     final DeleteResult remove = mongoTemplate.remove(entityToDelete);
     final boolean deleteSuccess = remove.wasAcknowledged() && remove.getDeletedCount() == 1;
     if (deleteSuccess) {
-      outboxService.save(EnvironmentGroupDeleteEvent.builder()
-                             .accountIdentifier(entityToDelete.getAccountIdentifier())
-                             .orgIdentifier(entityToDelete.getOrgIdentifier())
-                             .projectIdentifier(entityToDelete.getProjectIdentifier())
-                             .environmentGroupEntity(entityToDelete)
-                             .build());
+      if (forceDelete) {
+        outboxService.save(EnvironmentGroupForceDeleteEvent.builder()
+                               .accountIdentifier(entityToDelete.getAccountIdentifier())
+                               .orgIdentifier(entityToDelete.getOrgIdentifier())
+                               .projectIdentifier(entityToDelete.getProjectIdentifier())
+                               .environmentGroupEntity(entityToDelete)
+                               .build());
+      } else {
+        outboxService.save(EnvironmentGroupDeleteEvent.builder()
+                               .accountIdentifier(entityToDelete.getAccountIdentifier())
+                               .orgIdentifier(entityToDelete.getOrgIdentifier())
+                               .projectIdentifier(entityToDelete.getProjectIdentifier())
+                               .environmentGroupEntity(entityToDelete)
+                               .build());
+      }
     }
     return deleteSuccess;
+  }
+
+  @Override
+  public DeleteResult delete(Criteria criteria) {
+    Query query = new Query(criteria);
+    RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying]: Failed deleting Environment Group; attempt: {}",
+        "[Failed]: Failed deleting Environment Group; attempt: {}");
+    return Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, EnvironmentGroupEntity.class));
+  }
+
+  private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
+    return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
   }
 
   @Override

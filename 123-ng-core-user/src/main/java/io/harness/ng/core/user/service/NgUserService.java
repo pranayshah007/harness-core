@@ -104,6 +104,8 @@ public interface NgUserService {
 
   ScimUser updateScimUser(String accountId, String userId, PatchRequest patchRequest);
 
+  ScimUser updateUserDetails(String accountId, String userId, PatchRequest patchRequest);
+
   boolean updateScimUser(String accountId, String userId, ScimUser scimUser);
 
   boolean updateUserDisabled(String accountId, String userId, boolean disabled);

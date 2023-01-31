@@ -9,7 +9,6 @@ package io.harness.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.common.EntityReference;
 import io.harness.encryption.Scope;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 

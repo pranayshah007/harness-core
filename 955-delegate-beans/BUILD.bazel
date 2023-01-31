@@ -14,7 +14,7 @@ java_library(
     deps = [
         "//:lombok",
         "//955-delegate-beans/src/main/proto:955_delegate_beans_java_proto",
-        "//970-api-services-beans:module",
+        "//970-api-services-beans/src/main/java/io/harness/logging:module",
         "//980-commons/src/main/java/io/harness/logging:module",
         "//980-commons/src/main/java/io/harness/serializer:module",
         "//980-commons/src/main/java/io/harness/yaml:module",

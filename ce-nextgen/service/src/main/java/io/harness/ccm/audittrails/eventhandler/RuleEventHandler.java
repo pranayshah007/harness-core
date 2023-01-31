@@ -23,7 +23,7 @@ import io.harness.audit.client.api.AuditClientService;
 import io.harness.ccm.audittrails.events.RuleCreateEvent;
 import io.harness.ccm.audittrails.events.RuleDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleUpdateEvent;
-import io.harness.ccm.views.dto.CreateRuleDTO;
+import io.harness.ccm.audittrails.yamlDTOs.RuleDTO;
 import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.outbox.OutboxEvent;
@@ -72,7 +72,7 @@ public class RuleEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.CREATE)
                                 .module(ModuleType.CE)
-                                .newYaml(getYamlString(CreateRuleDTO.builder().rule(ruleCreateEvent.getRule()).build()))
+                                .newYaml(getYamlString(RuleDTO.builder().rule(ruleCreateEvent.getRule()).build()))
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
@@ -83,31 +83,30 @@ public class RuleEventHandler implements OutboxEventHandler {
   private boolean handleRuleUpdateEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
     RuleUpdateEvent policyUpdateEvent = objectMapper.readValue(outboxEvent.getEventData(), RuleUpdateEvent.class);
-    AuditEntry auditEntry =
-        AuditEntry.builder()
-            .action(Action.UPDATE)
-            .module(ModuleType.CE)
-            .newYaml(getYamlString(CreateRuleDTO.builder().rule(policyUpdateEvent.getRule()).build()))
-            .timestamp(outboxEvent.getCreatedAt())
-            .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
-            .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
-            .insertId(outboxEvent.getId())
-            .build();
+    AuditEntry auditEntry = AuditEntry.builder()
+                                .action(Action.UPDATE)
+                                .module(ModuleType.CE)
+                                .newYaml(getYamlString(RuleDTO.builder().rule(policyUpdateEvent.getRule()).build()))
+                                .oldYaml(getYamlString(RuleDTO.builder().rule(policyUpdateEvent.getOldRule()).build()))
+                                .timestamp(outboxEvent.getCreatedAt())
+                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+                                .insertId(outboxEvent.getId())
+                                .build();
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
   private boolean handleRuleDeleteEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
     RuleDeleteEvent policyDeleteEvent = objectMapper.readValue(outboxEvent.getEventData(), RuleDeleteEvent.class);
-    AuditEntry auditEntry =
-        AuditEntry.builder()
-            .action(Action.DELETE)
-            .module(ModuleType.CE)
-            .newYaml(getYamlString(CreateRuleDTO.builder().rule(policyDeleteEvent.getRule()).build()))
-            .timestamp(outboxEvent.getCreatedAt())
-            .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
-            .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
-            .insertId(outboxEvent.getId())
-            .build();
+    AuditEntry auditEntry = AuditEntry.builder()
+                                .action(Action.DELETE)
+                                .module(ModuleType.CE)
+                                .oldYaml(getYamlString(RuleDTO.builder().rule(policyDeleteEvent.getRule()).build()))
+                                .timestamp(outboxEvent.getCreatedAt())
+                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+                                .insertId(outboxEvent.getId())
+                                .build();
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 }

@@ -7,6 +7,13 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.ngmigration.service.step.arm.AzureCreateARMResourceStepMapperImpl;
+import io.harness.ngmigration.service.step.arm.AzureRollbackARMResourceStepMapperImpl;
+import io.harness.ngmigration.service.step.elastigroup.ElastigroupDeployStepMapperImpl;
+import io.harness.ngmigration.service.step.elastigroup.ElastigroupListenerRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.elastigroup.ElastigroupRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.elastigroup.ElastigroupSetupStepMapperImpl;
+import io.harness.ngmigration.service.step.elastigroup.ElastigroupSwapRouteStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sApplyStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sBlueGreenDeployStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sCanaryDeployStepMapperImpl;
@@ -19,6 +26,24 @@ import io.harness.ngmigration.service.step.terraform.TerraformApplyStepMapperImp
 import io.harness.ngmigration.service.step.terraform.TerraformDestroyStepMapperImpl;
 import io.harness.ngmigration.service.step.terraform.TerraformProvisionStepMapperImpl;
 import io.harness.ngmigration.service.step.terraform.TerraformRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.ApmVerificationStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.AppDynamicsStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.BugsnagStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.CloudWatchStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.DataDogLogStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.DataDogStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.DynatraceStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.ElasticSearchStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.InstanaStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.LogVerificationStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.LogzStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.NewrelicStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.PrometheusStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.SplunkStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.SplunkV2StepMapperImpl;
+import io.harness.ngmigration.service.step.verification.StackDriverLogStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.StackDriverStepMapperImpl;
+import io.harness.ngmigration.service.step.verification.SumoStepMapperImpl;
 
 import software.wings.beans.GraphNode;
 
@@ -48,7 +73,33 @@ public class StepMapperFactory {
   @Inject TerraformProvisionStepMapperImpl terraformProvisionStepMapper;
   @Inject TerraformDestroyStepMapperImpl terraformDestroyStepMapper;
   @Inject TerraformRollbackStepMapperImpl terraformRollbackStepMapper;
+  @Inject ElastigroupSetupStepMapperImpl elastigroupSetupStepMapper;
+  @Inject ElastigroupDeployStepMapperImpl elastigroupDeployStepMapper;
+  @Inject ElastigroupListenerRollbackStepMapperImpl elastigroupListenerRollbackStepMapper;
+  @Inject ElastigroupRollbackStepMapperImpl elastigroupRollbackStepMapper;
 
+  @Inject ApmVerificationStepMapperImpl apmVerificationStepMapper;
+  @Inject AppDynamicsStepMapperImpl appDynamicsStepMapper;
+  @Inject DataDogStepMapperImpl dataDogStepMapper;
+  @Inject DynatraceStepMapperImpl dynatraceStepMapper;
+  @Inject ElasticSearchStepMapperImpl elasticSearchStepMapper;
+  @Inject LogVerificationStepMapperImpl logVerificationStepMapper;
+  @Inject NewrelicStepMapperImpl newrelicStepMapper;
+  @Inject SplunkStepMapperImpl splunkStepMapper;
+  @Inject SplunkV2StepMapperImpl splunkV2StepMapper;
+  @Inject SumoStepMapperImpl sumoStepMapper;
+  @Inject PrometheusStepMapperImpl prometheusStepMapper;
+  @Inject DataDogLogStepMapperImpl dataDogLogStepMapper;
+  @Inject LogzStepMapperImpl logzStepMapper;
+  @Inject BugsnagStepMapperImpl bugsnagStepMapper;
+  @Inject StackDriverStepMapperImpl stackDriverStepMapper;
+  @Inject StackDriverLogStepMapperImpl stackDriverLogStepMapper;
+  @Inject CloudWatchStepMapperImpl cloudWatchStepMapper;
+  @Inject InstanaStepMapperImpl instanaStepMapper;
+  @Inject ResourceConstraintStepMapperImpl resourceConstraintStepMapper;
+  @Inject ElastigroupSwapRouteStepMapperImpl elastigroupSwapRouteStepMapper;
+  @Inject AzureCreateARMResourceStepMapperImpl azureCreateARMResourceStepMapper;
+  @Inject AzureRollbackARMResourceStepMapperImpl azureRollbackARMResourceStepMapper;
   @Inject UnsupportedStepMapperImpl unsupportedStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
@@ -93,6 +144,42 @@ public class StepMapperFactory {
         return terraformDestroyStepMapper;
       case "TERRAFORM_ROLLBACK":
         return terraformRollbackStepMapper;
+      case "APP_DYNAMICS":
+        return appDynamicsStepMapper;
+      case "NEW_RELIC":
+        return newrelicStepMapper;
+      case "DYNA_TRACE":
+        return dynatraceStepMapper;
+      case "SUMO":
+        return sumoStepMapper;
+      case "DATA_DOG":
+        return dataDogStepMapper;
+      case "APM_VERIFICATION":
+        return apmVerificationStepMapper;
+      case "LOG_VERIFICATION":
+        return logVerificationStepMapper;
+      case "SPLUNKV2":
+        return splunkV2StepMapper;
+      case "ELK":
+        return elasticSearchStepMapper;
+      case "PROMETHEUS":
+        return prometheusStepMapper;
+      case "DATA_DOG_LOG":
+        return dataDogLogStepMapper;
+      case "LOGZ":
+        return logzStepMapper;
+      case "BUG_SNAG":
+        return bugsnagStepMapper;
+      case "CLOUD_WATCH":
+        return cloudWatchStepMapper;
+      case "STACK_DRIVER":
+        return stackDriverStepMapper;
+      case "STACK_DRIVER_LOG":
+        return stackDriverLogStepMapper;
+      case "INSTANA":
+        return instanaStepMapper;
+      case "RESOURCE_CONSTRAINT":
+        return resourceConstraintStepMapper;
       case "ROLLING_NODE_SELECT":
       case "AWS_NODE_SELECT":
       case "AZURE_NODE_SELECT":
@@ -100,6 +187,20 @@ public class StepMapperFactory {
       case "ARTIFACT_COLLECTION":
       case "ARTIFACT_CHECK":
         return emptyStepMapper;
+      case "SPOTINST_SETUP":
+        return elastigroupSetupStepMapper;
+      case "SPOTINST_DEPLOY":
+        return elastigroupDeployStepMapper;
+      case "SPOTINST_LISTENER_UPDATE":
+        return elastigroupSwapRouteStepMapper;
+      case "SPOTINST_LISTENER_UPDATE_ROLLBACK":
+        return elastigroupListenerRollbackStepMapper;
+      case "SPOTINST_ROLLBACK":
+        return elastigroupRollbackStepMapper;
+      case "ARM_CREATE_RESOURCE":
+        return azureCreateARMResourceStepMapper;
+      case "ARM_ROLLBACK":
+        return azureRollbackARMResourceStepMapper;
       default:
         return unsupportedStepMapper;
     }

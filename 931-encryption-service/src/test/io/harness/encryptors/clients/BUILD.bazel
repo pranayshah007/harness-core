@@ -1,0 +1,60 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("//:tools/bazel/harness.bzl", "java_library")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["*.java"]),
+    resources = ["//931-encryption-service/src/test/resources:resource"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//890-sm-delegate/src/main/java/io/harness/helpers/ext/azure:module",
+        "//930-delegate-tasks/src/main/java/io/harness/beans:module",
+        "//931-encryption-service/src/java/io/harness/encryptors/clients:module",
+        "//931-encryption-service/src/java/io/harness/exception:module",
+        "//931-secret-providers/src/java/software/wings/beans:module",
+        "//931-vault-beans/src/java/io/harness/helpers/ext/vault:module",
+        "//931-vault-beans/src/java/io/harness/helpers/vault:module",
+        "//931-vault-beans/src/java/software/wings/helpers/ext/vault:module",
+        "//950-delegate-tasks-beans:module",
+        "//970-api-services-beans:module",
+        "//970-api-services-beans/src/main/java/io/harness/security/encryption:module",
+        "//980-commons/src/main/java/io/harness/concurrent:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/eraro:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/exception/runtime/hashicorp:module",
+        "//980-commons/src/main/java/io/harness/govern:module",
+        "//990-commons-test:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_amazonaws_aws_java_sdk_core",
+        "@maven//:com_amazonaws_aws_java_sdk_kms",
+        "@maven//:com_amazonaws_aws_java_sdk_secretsmanager",
+        "@maven//:com_azure_azure_core",
+        "@maven//:com_azure_azure_security_keyvault_administration",
+        "@maven//:com_azure_azure_security_keyvault_secrets",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_api_gax",
+        "@maven//:com_google_auth_google_auth_library_oauth2_http",
+        "@maven//:com_google_cloud_google_cloud_kms",
+        "@maven//:com_google_cloud_google_cloud_secretmanager",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_protobuf_protobuf_java",
+        "@maven//:com_intellij_annotations",
+        "@maven//:com_microsoft_azure_msal4j",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:org_powermock_powermock_core",
+        "@maven//:org_powermock_powermock_module_junit4",
+    ] + ["@maven//:org_mockito_mockito_inline"],
+)
+
+run_tests("*Test.java")

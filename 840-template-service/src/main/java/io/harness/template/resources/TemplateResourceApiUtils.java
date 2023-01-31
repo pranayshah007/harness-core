@@ -56,6 +56,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AccessLevel;
@@ -93,7 +94,7 @@ public class TemplateResourceApiUtils {
       getInputYaml = false;
     }
 
-    if (getInputYaml == true) {
+    if (getInputYaml) {
       // returns template along with templateInputs yaml
       log.info(String.format(
           "Gets Template along with Template inputs for template with identifier %s in project %s, org %s, account %s",
@@ -122,7 +123,7 @@ public class TemplateResourceApiUtils {
       }
       TemplateResponseDTO templateResponseDTO = NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity.orElseThrow(
           ()
-              -> new InvalidRequestException(String.format(
+              -> new NotFoundException(String.format(
                   "Template with the given Identifier: %s and %s does not exist or has been deleted",
                   templateIdentifier,
                   EmptyPredicate.isEmpty(versionLabel) ? "stable versionLabel" : "versionLabel: " + versionLabel))));
@@ -210,7 +211,7 @@ public class TemplateResourceApiUtils {
     log.info(String.format("Get List of templates in project: %s, org: %s, account: %s", project, org, account));
     TemplateFilterPropertiesDTO filterProperties = new TemplateFilterPropertiesDTO();
     List<TemplateEntityType> templateEntityTypes =
-        entityTypes.stream().map(x -> TemplateEntityType.getTemplateType(x)).collect(Collectors.toList());
+        entityTypes.stream().map(TemplateEntityType::getTemplateType).collect(Collectors.toList());
     filterProperties.setTemplateEntityTypes(templateEntityTypes);
     filterProperties.setTemplateNames(names);
     filterProperties.setDescription(description);
@@ -254,16 +255,20 @@ public class TemplateResourceApiUtils {
     if (isEmpty(listType)) {
       listType = "ALL";
     }
-    if (listType.equals("LAST_UPDATES_TEMPLATE")) {
-      type = LAST_UPDATES_TEMPLATE;
-    } else if (listType.equals("STABLE_TEMPLATE")) {
-      type = STABLE_TEMPLATE;
-    } else if (listType.equals("ALL")) {
-      type = ALL;
-    } else {
-      throw new InvalidRequestException(String.format(
-          "Expected query param 'type' to be of value LAST_UPDATES_TEMPLATE, STABLE_TEMPLATE, ALL. [%s] value Not allowed",
-          listType));
+    switch (listType) {
+      case "LAST_UPDATES_TEMPLATE":
+        type = LAST_UPDATES_TEMPLATE;
+        break;
+      case "STABLE_TEMPLATE":
+        type = STABLE_TEMPLATE;
+        break;
+      case "ALL":
+        type = ALL;
+        break;
+      default:
+        throw new InvalidRequestException(String.format(
+            "Expected query param 'type' to be of value LAST_UPDATES_TEMPLATE, STABLE_TEMPLATE, ALL. [%s] value Not allowed",
+            listType));
     }
     return type;
   }

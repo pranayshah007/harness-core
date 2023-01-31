@@ -383,16 +383,23 @@ public class GitBuildStatusUtility {
       StageElementParameters stageElementParameters = (StageElementParameters) stepParameters;
       IntegrationStageStepParametersPMS integrationStageStepParameters =
           (IntegrationStageStepParametersPMS) stageElementParameters.getSpecConfig();
-      return integrationStageStepParameters.getBuildStatusUpdateParameter();
+      return integrationStageStepParameters.getBuildStatusUpdateParameter() != null
+          ? integrationStageStepParameters.getBuildStatusUpdateParameter()
+          : fetchBuildStatusUpdateParameterFromStageDetails(ambiance);
     } else if (stepParameters instanceof CodeBaseTaskStepParameters) {
-      OptionalSweepingOutput optionalSweepingOutputStageDetails = executionSweepingOutputResolver.resolveOptional(
-          ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
-      if (optionalSweepingOutputStageDetails.isFound()) {
-        StageDetails stageDetails = (StageDetails) optionalSweepingOutputStageDetails.getOutput();
-        return stageDetails.getBuildStatusUpdateParameter();
-      }
+      return fetchBuildStatusUpdateParameterFromStageDetails(ambiance);
     }
 
+    return null;
+  }
+
+  private BuildStatusUpdateParameter fetchBuildStatusUpdateParameterFromStageDetails(Ambiance ambiance) {
+    OptionalSweepingOutput optionalSweepingOutputStageDetails = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
+    if (optionalSweepingOutputStageDetails.isFound()) {
+      StageDetails stageDetails = (StageDetails) optionalSweepingOutputStageDetails.getOutput();
+      return stageDetails.getBuildStatusUpdateParameter();
+    }
     return null;
   }
 

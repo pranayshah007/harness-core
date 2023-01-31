@@ -14,11 +14,18 @@ import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.gitaware.dto.FetchRemoteEntityRequest;
+import io.harness.gitaware.dto.GetFileGitContextRequestParams;
 import io.harness.gitaware.dto.GitContextRequestParams;
+import io.harness.gitsync.common.beans.GitOperation;
+import io.harness.gitsync.common.helper.GitSyncLogContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.scm.SCMGitSyncHelper;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitRequest;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
+import io.harness.gitsync.scm.beans.ScmGetBatchFileRequest;
+import io.harness.gitsync.scm.beans.ScmGetBatchFilesResponse;
+import io.harness.gitsync.scm.beans.ScmGetFileRequest;
 import io.harness.gitsync.scm.beans.ScmGetFileResponse;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitRequest;
@@ -29,6 +36,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import groovy.lang.Singleton;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.PL)
@@ -207,6 +215,72 @@ public class GitAwareEntityHelper {
         scmGitSyncHelper.updateFile(scope, scmUpdateFileGitRequest, Collections.emptyMap());
     GitAwareContextHelper.updateScmGitMetaData(scmUpdateFileGitResponse.getGitMetaData());
     return scmUpdateFileGitResponse;
+  }
+
+  public Map<String, GitAware> fetchEntitiesFromRemote(
+      String accountIdentifier, Map<String, FetchRemoteEntityRequest> remoteTemplatesList) {
+    ScmGetBatchFileRequest scmGetBatchFileRequest = prepareScmGetBatchFilesRequest(remoteTemplatesList);
+
+    ScmGetBatchFilesResponse scmGetBatchFilesResponse =
+        scmGitSyncHelper.getBatchFilesByBranch(accountIdentifier, scmGetBatchFileRequest);
+
+    return processScmGetBatchFiles(scmGetBatchFilesResponse.getBatchFilesResponse(), remoteTemplatesList);
+  }
+
+  private ScmGetBatchFileRequest prepareScmGetBatchFilesRequest(
+      Map<String, FetchRemoteEntityRequest> remoteTemplatesList) {
+    Map<String, ScmGetFileRequest> scmGetBatchFilesRequestMap = new HashMap<>();
+
+    for (Map.Entry<String, FetchRemoteEntityRequest> remoteTemplateRequestEntry : remoteTemplatesList.entrySet()) {
+      GetFileGitContextRequestParams getFileGitContextRequestParams =
+          remoteTemplateRequestEntry.getValue().getGetFileGitContextRequestParams();
+      Scope scope = remoteTemplateRequestEntry.getValue().getScope();
+      Map<String, String> contextMap = remoteTemplateRequestEntry.getValue().getContextMap();
+      String repoName = getFileGitContextRequestParams.getRepoName();
+
+      String branchName = isNullOrDefault(getFileGitContextRequestParams.getBranchName())
+          ? ""
+          : getFileGitContextRequestParams.getBranchName();
+      String filePath = getFileGitContextRequestParams.getFilePath();
+      if (isNullOrDefault(filePath)) {
+        throw new InvalidRequestException("No file path provided.");
+      }
+      validateFilePathHasCorrectExtension(filePath);
+      String connectorRef = getFileGitContextRequestParams.getConnectorRef();
+      boolean loadFromCache = getFileGitContextRequestParams.isLoadFromCache();
+      EntityType entityType = getFileGitContextRequestParams.getEntityType();
+
+      contextMap = GitSyncLogContextHelper.setContextMap(
+          scope, repoName, branchName, filePath, GitOperation.GET_FILE, contextMap);
+
+      ScmGetFileRequest scmGetFileRequest = ScmGetFileRequest.builder()
+                                                .scope(scope)
+                                                .repoName(repoName)
+                                                .branchName(branchName)
+                                                .filePath(filePath)
+                                                .connectorRef(connectorRef)
+                                                .loadFromCache(loadFromCache)
+                                                .entityType(entityType)
+                                                .contextMap(contextMap)
+                                                .build();
+
+      scmGetBatchFilesRequestMap.put(remoteTemplateRequestEntry.getKey(), scmGetFileRequest);
+    }
+    return ScmGetBatchFileRequest.builder().scmGetBatchFilesRequestMap(scmGetBatchFilesRequestMap).build();
+  }
+
+  private Map<String, GitAware> processScmGetBatchFiles(Map<String, ScmGetFileResponse> getBatchFilesResponse,
+      Map<String, FetchRemoteEntityRequest> remoteTemplatesList) {
+    Map<String, GitAware> batchFilesResponse = new HashMap<>();
+
+    getBatchFilesResponse.forEach((identifier, scmGetFileResponse) -> {
+      GitAware gitAwareEntity = remoteTemplatesList.get(identifier).getEntity();
+      gitAwareEntity.setData(scmGetFileResponse.getFileContent());
+
+      batchFilesResponse.put(identifier, gitAwareEntity);
+    });
+
+    return batchFilesResponse;
   }
 
   private boolean isNullOrDefault(String val) {

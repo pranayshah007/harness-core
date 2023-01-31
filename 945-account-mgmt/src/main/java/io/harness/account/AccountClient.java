@@ -59,6 +59,13 @@ public interface AccountClient {
   @PUT(ACCOUNT_API + "/{accountId}/name")
   Call<RestResponse<AccountDTO>> updateAccountName(@Path("accountId") String accountId, @Body AccountDTO dto);
 
+  @GET(ACCOUNT_API + "/trustLevel")
+  Call<RestResponse<Integer>> getAccountTrustLevel(@Query("accountId") String accountId);
+
+  @GET(ACCOUNT_API + "/update-trust-level")
+  Call<RestResponse<Boolean>> updateAccountTrustLevel(
+      @Query("accountId") String accountId, @Query("trustLevel") Integer trustLevel);
+
   @GET(FEATURE_FLAG_CHECK_API)
   Call<RestResponse<Boolean>> isFeatureFlagEnabled(
       @Query("featureName") String featureName, @Query("accountId") String accountId);

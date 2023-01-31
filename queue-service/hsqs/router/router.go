@@ -12,6 +12,7 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/harness/harness-core/queue-service/hsqs/config"
+	appdynamics "github.com/harness/harness-core/queue-service/hsqs/middleware"
 	"github.com/labstack/echo-contrib/prometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -43,6 +44,9 @@ func New(config *config.Config) *echo.Echo {
 		AllowMethods: []string{echo.GET, echo.HEAD, echo.PUT, echo.PATCH, echo.POST, echo.DELETE},
 	}))
 
+	if envConfig.AppDynamicsConfig.Enabled {
+		e.Use(AppDynamics())
+	}
 	// Disable auth when flag enabled
 	if !envConfig.DisableAuth {
 		e.Use(middleware.JWTWithConfig(jwtConfig))
@@ -105,4 +109,33 @@ func urlSkipperFunc(c echo.Context) bool {
 		return true
 	}
 	return false
+}
+
+// AppDynamics is tracing middleware for AppDynamics
+func AppDynamics() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			// Don't want to trace health checks since this could get a bit spammy
+			if strings.Contains(c.Request().URL.Path, "swagger") {
+				return next(c)
+			} else if strings.Contains(c.Request().URL.Path, "healthz") {
+				return next(c)
+			} else if strings.Contains(c.Request().URL.Path, "metrics") {
+				return next(c)
+			} else if strings.Contains(c.Request().URL.Path, "pprof") {
+				return next(c)
+			}
+
+			c.SetRequest(appdynamics.StartBTForRequest(c.Request()))
+			defer appdynamics.EndBTForRequest(c.Request())
+
+			if err := next(c); err != nil {
+				appdynamics.ReportBTError(c.Request(), err.Error())
+				return err
+			}
+
+			return nil
+		}
+	}
+
 }

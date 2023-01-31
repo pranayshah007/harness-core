@@ -38,6 +38,14 @@ public interface EnvironmentService {
 
   boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier);
 
+  /**
+   * Deletes all environments linked to a particular harness org.
+   * @param accountId  the account id
+   * @param orgIdentifier the organization identifier
+   * @return boolean to indicate if deletion was successful
+   */
+  boolean forceDeleteAllInOrg(String accountId, String orgIdentifier);
+
   List<Environment> listAccess(Criteria criteria);
 
   List<String> fetchesNonDeletedEnvIdentifiersFromList(

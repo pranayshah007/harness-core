@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.CommitDetails;
 import io.harness.beans.ContentType;
 import io.harness.beans.FileGitDetails;
+import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.HookEventType;
 import io.harness.beans.Repository;
 import io.harness.beans.WebhookGitUser;
@@ -22,6 +23,7 @@ import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
+import io.harness.beans.response.ScmGitMetadata;
 import io.harness.exception.ScmException;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
 import io.harness.product.ci.scm.proto.CreatePRResponse;
@@ -58,5 +60,7 @@ public class ScmJavaClientKryoRegistrar implements KryoRegistrar {
     kryo.register(ListFilesInCommitResponse.class, 955017);
     kryo.register(FileGitDetails.class, 955018);
     kryo.register(ContentType.class, 955019);
+    kryo.register(ScmGitMetadata.class, 955020);
+    kryo.register(GetBatchFileRequestIdentifier.class, 955021);
   }
 }

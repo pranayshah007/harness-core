@@ -9,7 +9,7 @@ package software.wings.service.impl.datadog;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.k8s.manifest.ObjectYamlUtils.encodeDot;
+import static io.harness.k8s.utils.ObjectYamlUtils.encodeDot;
 
 import io.harness.serializer.JsonUtils;
 

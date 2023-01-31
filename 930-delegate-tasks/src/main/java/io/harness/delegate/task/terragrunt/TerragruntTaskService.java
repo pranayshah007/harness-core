@@ -215,9 +215,9 @@ public class TerragruntTaskService {
 
     cleanupTerragruntLocalFiles(scriptDirectory);
 
-    TerragruntClient terragruntClient =
-        terragruntClientFactory.getClient(scriptDirectory, parameters.getTimeoutInMillis(),
-            terragruntCommandLogCallback, parameters.getRunConfiguration().getRunType().name());
+    TerragruntClient terragruntClient = terragruntClientFactory.getClient(scriptDirectory,
+        parameters.getTimeoutInMillis(), terragruntCommandLogCallback,
+        parameters.getRunConfiguration().getRunType().name(), parameters.getEnvVars());
     String terragruntWorkingDirectory = null;
     if (TerragruntTaskRunType.RUN_MODULE == parameters.getRunConfiguration().getRunType()) {
       terragruntWorkingDirectory = terragruntClient.terragruntWorkingDirectory();

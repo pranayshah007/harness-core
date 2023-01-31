@@ -25,11 +25,14 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.INSTANCE_NAME_
 import static io.harness.ccm.commons.constants.ViewFieldConstants.LAUNCH_TYPE_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.NONE_FIELD;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.PRODUCT_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.REGION_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.SERVICE_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.STORAGE_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.TASK_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
+import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantMaxStartTime;
+import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantMinStartTime;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.graphql.QLCEViewField;
@@ -120,5 +123,14 @@ public class ViewFieldUtils {
 
   public static String getBusinessMappingUnallocatedCostDefaultName() {
     return "Cost categories default";
+  }
+
+  public static List<String> getAllFieldNames() {
+    return ImmutableList.of(AWS_SERVICE_FIELD_ID, AWS_ACCOUNT_FIELD_ID, AWS_INSTANCE_TYPE_FIELD_ID, AWS_USAGE_TYPE_ID,
+        REGION_FIELD_ID, PRODUCT_FIELD_ID, "cost");
+  }
+
+  public static List<String> getTrendStatsFieldFieldNames() {
+    return ImmutableList.of(entityConstantMinStartTime, entityConstantMaxStartTime, "cost");
   }
 }

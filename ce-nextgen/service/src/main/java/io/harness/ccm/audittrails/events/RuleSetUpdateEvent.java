@@ -16,9 +16,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RuleSetUpdateEvent extends RuleSetEvent {
   public static final String RULE_SET_UPDATED = "RuleSetUpdated";
+  private RuleSet oldRuleSet;
 
-  public RuleSetUpdateEvent(String accountIdentifier, RuleSet ruleSet) {
+  public RuleSetUpdateEvent(String accountIdentifier, RuleSet ruleSet, RuleSet oldRuleSet) {
     super(accountIdentifier, ruleSet);
+    this.oldRuleSet = oldRuleSet;
   }
 
   @Override

@@ -31,9 +31,8 @@ public class DebeziumConfigurationTest extends CategoryTest {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testGetDebeziumProperties() {
-    DebeziumConfig debeziumConfig = new DebeziumConfig(false, "testConnector", "offset_file", "offsets", "false",
-        "false", "6000", "1000", "10000", 60, "3", "MongoDbConnectorClass", 1000, "shop", "false", "products", "",
-        "2000", 1000, "initial", "document", "4", "1", 1000, "1000", "100", "", "uri", null);
+    DebeziumConfig debeziumConfig = new DebeziumConfig(false, "testConnector", "offset_file", "offsets", "mongo",
+        "shop", "false", "products", 1000, "initial", "4", "1", 1000, "1000", "100", "", "uri", null);
     RedisConfig redisConfig = new RedisConfig();
     Properties expectedProps = new Properties();
     expectedProps.setProperty(DebeziumConfiguration.TRANSFORMS_UNWRAP_ARRAY_ENCODING, "document");
@@ -42,12 +41,9 @@ public class DebeziumConfigurationTest extends CategoryTest {
     expectedProps.setProperty(DebeziumConfiguration.CONNECTOR_NAME, debeziumConfig.getConnectorName());
     expectedProps.setProperty(DebeziumConfiguration.OFFSET_STORAGE, RedisOffsetBackingStore.class.getName());
     expectedProps.setProperty(DebeziumConfiguration.OFFSET_STORAGE_FILE_FILENAME, JsonUtils.asJson(redisConfig));
-    expectedProps.setProperty(
-        DebeziumConfiguration.KEY_CONVERTER_SCHEMAS_ENABLE, debeziumConfig.getKeyConverterSchemasEnable());
-    expectedProps.setProperty(
-        DebeziumConfiguration.VALUE_CONVERTER_SCHEMAS_ENABLE, debeziumConfig.getValueConverterSchemasEnable());
-    expectedProps.setProperty(
-        DebeziumConfiguration.OFFSET_FLUSH_INTERVAL_MS, debeziumConfig.getOffsetFlushIntervalMillis());
+    expectedProps.setProperty(DebeziumConfiguration.KEY_CONVERTER_SCHEMAS_ENABLE, "false");
+    expectedProps.setProperty(DebeziumConfiguration.VALUE_CONVERTER_SCHEMAS_ENABLE, "false");
+    expectedProps.setProperty(DebeziumConfiguration.OFFSET_FLUSH_INTERVAL_MS, "5000");
     expectedProps.setProperty(DebeziumConfiguration.HEARTBEAT_INTERVAL_MS, debeziumConfig.getHeartbeatIntervalMs());
 
     /* begin connector properties */
@@ -68,12 +64,9 @@ public class DebeziumConfigurationTest extends CategoryTest {
         DebeziumConfiguration.DEBEZIUM_CONNECTOR_MONGODB_TRANSFORMS_EXTRACT_NEW_DOCUMENT_STATE);
     expectedProps.setProperty(DebeziumConfiguration.TRANSFORMS_UNWRAP_DROP_TOMBSTONES, "false");
     expectedProps.setProperty(DebeziumConfiguration.TRANSFORMS_UNWRAP_ADD_HEADERS, "op");
-    expectedProps.setProperty(DebeziumConfiguration.CONNECT_MAX_ATTEMPTS, debeziumConfig.getConnectMaxAttempts());
-    expectedProps.setProperty(
-        DebeziumConfiguration.CONNECT_BACKOFF_MAX_DELAY_MS, debeziumConfig.getConnectBackoffMaxDelayMillis());
-    expectedProps.setProperty(
-        DebeziumConfiguration.CONNECT_BACKOFF_INITIAL_DELAY_MS, debeziumConfig.getConnectBackoffInitialDelayMillis());
-    expectedProps.setProperty(DebeziumConfiguration.SNAPSHOT_FETCH_SIZE, debeziumConfig.getSnapshotFetchSize());
+    expectedProps.setProperty(DebeziumConfiguration.CONNECT_MAX_ATTEMPTS, "3");
+    expectedProps.setProperty(DebeziumConfiguration.CONNECT_BACKOFF_MAX_DELAY_MS, "10000");
+    expectedProps.setProperty(DebeziumConfiguration.CONNECT_BACKOFF_INITIAL_DELAY_MS, "1000");
     expectedProps.setProperty(DebeziumConfiguration.POLL_INTERVAL_MS, "1000");
     expectedProps.setProperty(DebeziumConfiguration.MAX_QUEUE_SIZE_IN_BYTES, "1000");
     expectedProps.setProperty(DebeziumConfiguration.MAX_QUEUE_SIZE, "4");

@@ -68,8 +68,9 @@ public class GitCloneStepNode extends CIAbstractStepNode {
   }
 
   @Builder
-  public GitCloneStepNode(String uuid, String identifier, String name, List<FailureStrategyConfig> failureStrategies,
-      GitCloneStepInfo gitCloneStepInfo, GitCloneStepNode.StepType type, ParameterField<Timeout> timeout) {
+  public GitCloneStepNode(String uuid, String identifier, String name,
+      ParameterField<List<FailureStrategyConfig>> failureStrategies, GitCloneStepInfo gitCloneStepInfo,
+      GitCloneStepNode.StepType type, ParameterField<Timeout> timeout) {
     this.gitCloneStepInfo = gitCloneStepInfo;
     this.type = type;
     this.setFailureStrategies(failureStrategies);

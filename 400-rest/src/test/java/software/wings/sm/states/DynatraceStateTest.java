@@ -215,7 +215,7 @@ public class DynatraceStateTest extends APMStateVerificationTestBase {
     List<DelegateTask> tasks = wingsPersistence.createQuery(DelegateTask.class, excludeAuthority).asList();
     assertThat(tasks).hasSize(1);
     DelegateTask task = tasks.get(0);
-    assertThat(task.getData().getTaskType()).isEqualTo(TaskType.DYNA_TRACE_METRIC_DATA_COLLECTION_TASK.name());
+    assertThat(task.getTaskDataV2().getTaskType()).isEqualTo(TaskType.DYNA_TRACE_METRIC_DATA_COLLECTION_TASK.name());
 
     DynaTraceDataCollectionInfo expectedCollectionInfo =
         DynaTraceDataCollectionInfo.builder()
@@ -236,7 +236,7 @@ public class DynatraceStateTest extends APMStateVerificationTestBase {
             .build();
 
     final DynaTraceDataCollectionInfo actualCollectionInfo =
-        (DynaTraceDataCollectionInfo) task.getData().getParameters()[0];
+        (DynaTraceDataCollectionInfo) task.getTaskDataV2().getParameters()[0];
     expectedCollectionInfo.setStartTime(actualCollectionInfo.getStartTime());
     assertThat(actualCollectionInfo).isEqualTo(expectedCollectionInfo);
     assertThat(task.getAccountId()).isEqualTo(accountId);
@@ -341,7 +341,7 @@ public class DynatraceStateTest extends APMStateVerificationTestBase {
     createDelegate(accountId);
     DelegateTask task = setupAndGetDelegateTaskFromTrigger();
     final DynaTraceDataCollectionInfo actualCollectionInfo =
-        (DynaTraceDataCollectionInfo) task.getData().getParameters()[0];
+        (DynaTraceDataCollectionInfo) task.getTaskDataV2().getParameters()[0];
 
     assertThat(actualCollectionInfo.getDynatraceServiceIds()).containsExactly("entityID1");
   }
@@ -366,7 +366,7 @@ public class DynatraceStateTest extends APMStateVerificationTestBase {
     createDelegate(accountId);
     DelegateTask task = setupAndGetDelegateTaskFromTrigger();
     final DynaTraceDataCollectionInfo actualCollectionInfo =
-        (DynaTraceDataCollectionInfo) task.getData().getParameters()[0];
+        (DynaTraceDataCollectionInfo) task.getTaskDataV2().getParameters()[0];
 
     assertThat(actualCollectionInfo.getDynatraceServiceIds()).contains("entityID1", "entityID2");
   }
@@ -380,7 +380,7 @@ public class DynatraceStateTest extends APMStateVerificationTestBase {
     createDelegate(accountId);
     DelegateTask task = setupAndGetDelegateTaskFromTrigger();
     final DynaTraceDataCollectionInfo actualCollectionInfo =
-        (DynaTraceDataCollectionInfo) task.getData().getParameters()[0];
+        (DynaTraceDataCollectionInfo) task.getTaskDataV2().getParameters()[0];
 
     assertThat(actualCollectionInfo.getDynatraceServiceIds()).contains("entityID1", "entityID2");
   }
@@ -394,7 +394,7 @@ public class DynatraceStateTest extends APMStateVerificationTestBase {
     createDelegate(accountId);
     DelegateTask task = setupAndGetDelegateTaskFromTrigger();
     final DynaTraceDataCollectionInfo actualCollectionInfo =
-        (DynaTraceDataCollectionInfo) task.getData().getParameters()[0];
+        (DynaTraceDataCollectionInfo) task.getTaskDataV2().getParameters()[0];
 
     assertThat(actualCollectionInfo.getDynatraceServiceIds()).containsExactly("entityID3");
   }

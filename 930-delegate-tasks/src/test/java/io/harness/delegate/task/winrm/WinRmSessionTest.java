@@ -352,7 +352,7 @@ public class WinRmSessionTest extends CategoryTest {
     setupMocks(commands, shell, winRmTool, null, AuthenticationScheme.NTLM);
 
     winRmSession.copyScriptToRemote(commands, writer, error);
-    verify(winRmTool).executeCommand("command");
+    verify(shell).execute("command", writer, error);
   }
 
   @Test
@@ -382,7 +382,7 @@ public class WinRmSessionTest extends CategoryTest {
     setupMocks(commands, shell, winRmTool, null, AuthenticationScheme.NTLM);
 
     winRmSession.executeScript(SCRIPT_EXEC_COMMAND, writer, error);
-    verify(winRmTool).executeCommand("powershell -f file.ps1");
+    verify(shell).execute("powershell -f file.ps1", writer, error);
   }
 
   @Test

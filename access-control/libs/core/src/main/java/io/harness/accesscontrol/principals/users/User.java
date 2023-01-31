@@ -31,6 +31,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class User {
   @NotEmpty final String scopeIdentifier;
   @NotEmpty final String identifier;
+  final String name;
+  final String email;
   @EqualsAndHashCode.Exclude @Setter Long createdAt;
   @EqualsAndHashCode.Exclude @Setter Long lastModifiedAt;
   @EqualsAndHashCode.Exclude @Setter Long version;

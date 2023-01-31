@@ -357,3 +357,6 @@ replace_key_value secretsConfiguration.gcpSecretManagerProject "$GCP_SECRET_MANA
 replace_key_value secretsConfiguration.secretResolutionEnabled "$RESOLVE_SECRETS"
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+
+replace_key_value resourceGroupServiceConfig.resourceClients.ce-nextgen.baseUrl "$CE_NEXTGEN_CLIENT_BASEURL"
+replace_key_value resourceGroupServiceConfig.resourceClients.ce-nextgen.secret "$CE_NEXTGEN_SECRET"

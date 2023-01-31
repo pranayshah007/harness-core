@@ -10,6 +10,7 @@ package io.harness.delegate.beans.connector.scm.azurerepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.scm.GitConfigConstants;
+import io.harness.delegate.beans.connector.scm.azurerepo.outcome.AzureRepoCredentialsOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -22,4 +23,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
   , @JsonSubTypes.Type(value = AzureRepoSshCredentialsDTO.class, name = GitConfigConstants.SSH)
 })
 @Schema(name = "AzureRepoCredentials", description = "This is a interface for details of the Azure DevOps credentials")
-public interface AzureRepoCredentialsDTO {}
+public interface AzureRepoCredentialsDTO {
+  default AzureRepoCredentialsOutcomeDTO toOutcome() {
+    return null;
+  }
+}

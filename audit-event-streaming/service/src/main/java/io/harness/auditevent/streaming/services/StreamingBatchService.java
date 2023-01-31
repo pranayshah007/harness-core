@@ -8,7 +8,7 @@
 package io.harness.auditevent.streaming.services;
 
 import io.harness.audit.entities.streaming.StreamingDestination;
-import io.harness.auditevent.streaming.entities.BatchStatus;
+import io.harness.auditevent.streaming.beans.BatchStatus;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
 
 import java.util.List;

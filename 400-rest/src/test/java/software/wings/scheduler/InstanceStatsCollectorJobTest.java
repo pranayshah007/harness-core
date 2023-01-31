@@ -53,7 +53,7 @@ public class InstanceStatsCollectorJobTest extends CategoryTest {
   public void test_createStats() {
     doReturn(mock(AcquiredLock.class))
         .when(persistentLocker)
-        .tryToAcquireLock(any(Class.class), anyString(), any(Duration.class));
+        .waitToAcquireLock(any(Class.class), anyString(), any(Duration.class), any(Duration.class));
     doReturn(true).when(statsCollector).createStats(anyString());
     doReturn(true).when(statsCollector).createServerlessStats(anyString());
     instanceStatsCollectorJob.createStats(ACCOUNTID);
@@ -67,7 +67,7 @@ public class InstanceStatsCollectorJobTest extends CategoryTest {
   public void test_createStats_disabled() {
     doReturn(mock(AcquiredLock.class))
         .when(persistentLocker)
-        .tryToAcquireLock(any(Class.class), anyString(), any(Duration.class));
+        .waitToAcquireLock(any(Class.class), anyString(), any(Duration.class), any(Duration.class));
     doReturn(false).when(statsCollector).createStats(anyString());
     doReturn(false).when(statsCollector).createServerlessStats(anyString());
     instanceStatsCollectorJob.createStats(ACCOUNTID);
@@ -78,7 +78,9 @@ public class InstanceStatsCollectorJobTest extends CategoryTest {
   @Owner(developers = ROHIT_KUMAR)
   @Category(UnitTests.class)
   public void test_createStats_nolock() {
-    doReturn(null).when(persistentLocker).tryToAcquireLock(any(Class.class), anyString(), any(Duration.class));
+    doReturn(null)
+        .when(persistentLocker)
+        .waitToAcquireLock(any(Class.class), anyString(), any(Duration.class), any(Duration.class));
     doReturn(true).when(statsCollector).createStats(anyString());
     doReturn(true).when(statsCollector).createServerlessStats(anyString());
     instanceStatsCollectorJob.createStats(ACCOUNTID);

@@ -12,9 +12,11 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
+import static io.harness.logging.LogLevel.WARN;
 import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
@@ -23,7 +25,10 @@ import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.concurrent.HTimeLimiter;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
@@ -50,8 +55,6 @@ import com.amazonaws.services.autoscaling.model.DescribeAutoScalingInstancesRequ
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingInstancesResult;
 import com.amazonaws.services.autoscaling.model.DescribeInstanceRefreshesRequest;
 import com.amazonaws.services.autoscaling.model.DescribeInstanceRefreshesResult;
-import com.amazonaws.services.autoscaling.model.DescribeLaunchConfigurationsRequest;
-import com.amazonaws.services.autoscaling.model.DescribeLaunchConfigurationsResult;
 import com.amazonaws.services.autoscaling.model.DescribeLifecycleHooksRequest;
 import com.amazonaws.services.autoscaling.model.DescribeLoadBalancerTargetGroupsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeLoadBalancerTargetGroupsResult;
@@ -66,7 +69,6 @@ import com.amazonaws.services.autoscaling.model.DetachLoadBalancersRequest;
 import com.amazonaws.services.autoscaling.model.Filter;
 import com.amazonaws.services.autoscaling.model.Instance;
 import com.amazonaws.services.autoscaling.model.InstanceRefresh;
-import com.amazonaws.services.autoscaling.model.LaunchConfiguration;
 import com.amazonaws.services.autoscaling.model.LaunchTemplateSpecification;
 import com.amazonaws.services.autoscaling.model.LifecycleHook;
 import com.amazonaws.services.autoscaling.model.LifecycleHookSpecification;
@@ -98,8 +100,10 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -110,6 +114,19 @@ import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.Action;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.ActionTypeEnum;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersRequest;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersResponse;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeLoadBalancersResponse;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeRulesRequest;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeRulesResponse;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.ForwardActionConfig;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyListenerRequest;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyRuleRequest;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.Rule;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetGroupTuple;
 
 @Slf4j
 @OwnedBy(CDP)
@@ -119,18 +136,23 @@ public class AsgSdkManager {
   private static final String INSTANCE_STATUS_IN_SERVICE = "InService";
 
   private enum AwsClientType { EC2, ASG }
+  public static final String BG_VERSION = "BG_VERSION";
+  public static final String BG_GREEN = "GREEN";
+  public static final String BG_BLUE = "BLUE";
 
   private final Supplier<AmazonEC2Client> ec2ClientSupplier;
   private final Supplier<AmazonAutoScalingClient> asgClientSupplier;
+  private final ElbV2Client elbV2Client;
   private final Integer steadyStateTimeOutInMinutes;
   private final TimeLimiter timeLimiter;
   @Setter private LogCallback logCallback;
 
   @Builder
   public AsgSdkManager(Supplier<AmazonEC2Client> ec2ClientSupplier, Supplier<AmazonAutoScalingClient> asgClientSupplier,
-      LogCallback logCallback, Integer steadyStateTimeOutInMinutes, TimeLimiter timeLimiter) {
+      ElbV2Client elbV2Client, LogCallback logCallback, Integer steadyStateTimeOutInMinutes, TimeLimiter timeLimiter) {
     this.ec2ClientSupplier = ec2ClientSupplier;
     this.asgClientSupplier = asgClientSupplier;
+    this.elbV2Client = elbV2Client;
     this.logCallback = logCallback;
     this.steadyStateTimeOutInMinutes = steadyStateTimeOutInMinutes;
     this.timeLimiter = timeLimiter;
@@ -143,7 +165,6 @@ public class AsgSdkManager {
   private CloseableAmazonWebServiceClient<AmazonAutoScalingClient> getAsgClient() {
     return new CloseableAmazonWebServiceClient(asgClientSupplier.get());
   }
-
   private <C extends AmazonWebServiceClient, R> R awsCall(Function<C, R> call, AwsClientType type) {
     try (CloseableAmazonWebServiceClient<C> client = (type == AwsClientType.EC2)
             ? (CloseableAmazonWebServiceClient<C>) getEc2Client()
@@ -231,11 +252,8 @@ public class AsgSdkManager {
     asgCall(asgClient -> asgClient.updateAutoScalingGroup(updateAutoScalingGroupRequest));
 
     updateTags(asgName, createAutoScalingGroupRequest);
-
     updateLifecyleHooks(asgName, createAutoScalingGroupRequest);
-
     updateLoadBalancers(asgName, createAutoScalingGroupRequest);
-
     updateLoadBalancerTargetGroups(asgName, createAutoScalingGroupRequest);
   }
 
@@ -287,11 +305,11 @@ public class AsgSdkManager {
         }
         tagsList.add(tag);
       });
-    }
 
-    CreateOrUpdateTagsRequest createOrUpdateTagsRequest = new CreateOrUpdateTagsRequest();
-    createOrUpdateTagsRequest.setTags(tagsList);
-    asgCall(asgClient -> asgClient.createOrUpdateTags(createOrUpdateTagsRequest));
+      CreateOrUpdateTagsRequest createOrUpdateTagsRequest = new CreateOrUpdateTagsRequest();
+      createOrUpdateTagsRequest.setTags(tagsList);
+      asgCall(asgClient -> asgClient.createOrUpdateTags(createOrUpdateTagsRequest));
+    }
   }
 
   private void updateLifecyleHooks(String asgName, CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
@@ -511,6 +529,14 @@ public class AsgSdkManager {
     }
   }
 
+  public boolean checkAsgDownsizedToZero(String asgName) {
+    AutoScalingGroup autoScalingGroup = getASG(asgName);
+    List<Instance> instances = autoScalingGroup.getInstances();
+
+    long totalNrOfInstances = instances.size();
+    return totalNrOfInstances == 0;
+  }
+
   public StartInstanceRefreshResult startInstanceRefresh(
       String asgName, Boolean skipMatching, Integer instanceWarmup, Integer minimumHealthyPercentage) {
     StartInstanceRefreshRequest startInstanceRefreshRequest =
@@ -583,7 +609,8 @@ public class AsgSdkManager {
   public void clearAllScalingPoliciesForAsg(String asgName) {
     List<ScalingPolicy> scalingPolicies = listAllScalingPoliciesOfAsg(asgName);
     if (isEmpty(scalingPolicies)) {
-      logCallback.saveExecutionLog(format("No policies found attached to Asg: [%s]", asgName));
+      logCallback.saveExecutionLog(
+          format("No policies found which are currently attached with autoscaling group: [%s] to detach", asgName));
       return;
     }
     scalingPolicies.forEach(scalingPolicy -> {
@@ -595,29 +622,170 @@ public class AsgSdkManager {
 
   public void attachScalingPoliciesToAsg(String asgName, List<PutScalingPolicyRequest> putScalingPolicyRequestList) {
     if (putScalingPolicyRequestList.isEmpty()) {
-      logCallback.saveExecutionLog(format("No scaling policy found which should be attached to Asg: %s", asgName));
+      logCallback.saveExecutionLog(
+          format("No scaling policy provided which is needed be attached to autoscaling group: %s", asgName));
       return;
     }
     putScalingPolicyRequestList.forEach(putScalingPolicyRequest -> {
       putScalingPolicyRequest.setAutoScalingGroupName(asgName);
       PutScalingPolicyResult putScalingPolicyResult =
           asgCall(asgClient -> asgClient.putScalingPolicy(putScalingPolicyRequest));
-      logCallback.saveExecutionLog(format("Attached policy with Arn: %s", putScalingPolicyResult.getPolicyARN()));
+      logCallback.saveExecutionLog(
+          format("Attached scaling policy with Arn: %s", putScalingPolicyResult.getPolicyARN()));
     });
-  }
-
-  public LaunchConfiguration getLaunchConfiguration(String asgName) {
-    DescribeLaunchConfigurationsRequest describeLaunchConfigurationsRequest = new DescribeLaunchConfigurationsRequest();
-    describeLaunchConfigurationsRequest.setLaunchConfigurationNames(Collections.singleton(asgName));
-    DescribeLaunchConfigurationsResult describeLaunchConfigurationsResult =
-        asgCall(asgClient -> asgClient.describeLaunchConfigurations(describeLaunchConfigurationsRequest));
-    return describeLaunchConfigurationsResult.getLaunchConfigurations().get(0);
   }
 
   private UpdateAutoScalingGroupRequest createAsgRequestToUpdateAsgRequestMapper(
       CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
     String createAutoScalingGroupRequestContent = AsgContentParser.toString(createAutoScalingGroupRequest, false);
     return AsgContentParser.parseJson(createAutoScalingGroupRequestContent, UpdateAutoScalingGroupRequest.class, false);
+  }
+
+  public void modifySpecificListenerRule(
+      String region, String listenerRuleArn, List<String> targetGroupArnsList, AwsInternalConfig awsInternalConfig) {
+    Collection<software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetGroupTuple> targetGroups =
+        new ArrayList<>();
+    if (isNotEmpty(targetGroupArnsList)) {
+      targetGroupArnsList.forEach(targetGroupArn -> {
+        TargetGroupTuple targetGroupTuple = TargetGroupTuple.builder().targetGroupArn(targetGroupArn).weight(1).build();
+        targetGroups.add(targetGroupTuple);
+      });
+      ModifyRuleRequest modifyRuleRequest =
+          ModifyRuleRequest.builder()
+              .ruleArn(listenerRuleArn)
+              .actions(Action.builder()
+                           .type(ActionTypeEnum.FORWARD)
+                           .forwardConfig(ForwardActionConfig.builder().targetGroups(targetGroups).build())
+                           .build())
+              .build();
+      elbV2Client.modifyRule(awsInternalConfig, modifyRuleRequest, region);
+    }
+  }
+
+  public boolean checkForDefaultRule(
+      String region, String listenerArn, String listenerRuleArn, AwsInternalConfig awsInternalConfig) {
+    String nextToken = null;
+    do {
+      DescribeRulesRequest describeRulesRequest =
+          DescribeRulesRequest.builder().listenerArn(listenerArn).marker(nextToken).pageSize(10).build();
+      DescribeRulesResponse describeRulesResponse =
+          elbV2Client.describeRules(awsInternalConfig, describeRulesRequest, region);
+      List<Rule> currentRules = describeRulesResponse.rules();
+      if (EmptyPredicate.isNotEmpty(currentRules)) {
+        Optional<Rule> defaultRule = currentRules.stream().filter(Rule::isDefault).findFirst();
+        if (defaultRule.isPresent() && listenerRuleArn.equalsIgnoreCase(defaultRule.get().ruleArn())) {
+          return true;
+        }
+      }
+      nextToken = describeRulesResponse.nextMarker();
+    } while (nextToken != null);
+    return false;
+  }
+
+  public void modifyDefaultListenerRule(
+      String region, String listenerArn, List<String> targetGroupArnsList, AwsInternalConfig awsInternalConfig) {
+    Collection<software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetGroupTuple> targetGroups =
+        new ArrayList<>();
+    if (isNotEmpty(targetGroupArnsList)) {
+      targetGroupArnsList.forEach(targetGroupArn -> {
+        TargetGroupTuple targetGroupTuple = TargetGroupTuple.builder().targetGroupArn(targetGroupArn).weight(1).build();
+        targetGroups.add(targetGroupTuple);
+      });
+
+      ModifyListenerRequest modifyListenerRequest =
+          ModifyListenerRequest.builder()
+              .listenerArn(listenerArn)
+              .defaultActions(Action.builder()
+                                  .type(ActionTypeEnum.FORWARD)
+                                  .forwardConfig(ForwardActionConfig.builder().targetGroups(targetGroups).build())
+                                  .build())
+              .build();
+      elbV2Client.modifyListener(awsInternalConfig, modifyListenerRequest, region);
+    }
+  }
+
+  public void updateBGTags(String asgName, String newTagValue) {
+    Tag newTag = new Tag();
+    newTag.withKey(BG_VERSION)
+        .withValue(newTagValue)
+        .withPropagateAtLaunch(true)
+        .withResourceId(asgName)
+        .withResourceType("auto-scaling-group");
+
+    CreateOrUpdateTagsRequest createOrUpdateTagsRequest = new CreateOrUpdateTagsRequest();
+    createOrUpdateTagsRequest.withTags(newTag);
+    asgCall(asgClient -> asgClient.createOrUpdateTags(createOrUpdateTagsRequest));
+  }
+
+  public String getDefaultListenerRuleForListener(
+      AwsInternalConfig awsInternalConfig, String region, String listenerArn) {
+    List<Rule> rules = getListenerRulesForListener(awsInternalConfig, region, listenerArn);
+    for (Rule rule : rules) {
+      if (rule.isDefault()) {
+        return rule.ruleArn();
+      }
+    }
+
+    // throw error if default listener rule not found
+    String errorMessage = format("Default listener rule not found for listener %s", listenerArn);
+    throw new InvalidRequestException(errorMessage);
+  }
+
+  public List<Rule> getListenerRulesForListener(
+      AwsInternalConfig awsInternalConfig, String region, String listenerArn) {
+    List<Rule> rules = newArrayList();
+    String nextToken = null;
+    do {
+      DescribeRulesRequest describeRulesRequest =
+          DescribeRulesRequest.builder().listenerArn(listenerArn).marker(nextToken).pageSize(10).build();
+      DescribeRulesResponse describeRulesResponse =
+          elbV2Client.describeRules(awsInternalConfig, describeRulesRequest, region);
+      rules.addAll(describeRulesResponse.rules());
+      nextToken = describeRulesResponse.nextMarker();
+    } while (nextToken != null);
+
+    return rules;
+  }
+
+  public List<String> getTargetGroupArnsFromLoadBalancer(String region, String listenerArn, String listenerRuleArn,
+      String loadBalancer, AwsInternalConfig awsInternalConfig) {
+    software.amazon.awssdk.services.elasticloadbalancingv2.model
+        .DescribeLoadBalancersRequest describeLoadBalancersRequest =
+        software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeLoadBalancersRequest.builder()
+            .names(loadBalancer)
+            .build();
+    DescribeLoadBalancersResponse describeLoadBalancersResponse =
+        elbV2Client.describeLoadBalancer(awsInternalConfig, describeLoadBalancersRequest, region);
+    if (EmptyPredicate.isEmpty(describeLoadBalancersResponse.loadBalancers())) {
+      throw new InvalidRequestException(
+          "load balancer with name:" + loadBalancer + "is not present in this aws account");
+    }
+    String loadBalancerArn = describeLoadBalancersResponse.loadBalancers().get(0).loadBalancerArn();
+    List<Listener> listeners = newArrayList();
+    String nextToken = null;
+    do {
+      DescribeListenersRequest describeListenersRequest =
+          DescribeListenersRequest.builder().loadBalancerArn(loadBalancerArn).marker(nextToken).pageSize(10).build();
+      DescribeListenersResponse describeListenersResponse =
+          elbV2Client.describeListener(awsInternalConfig, describeListenersRequest, region);
+      listeners.addAll(describeListenersResponse.listeners());
+      nextToken = describeLoadBalancersResponse.nextMarker();
+    } while (nextToken != null);
+
+    if (EmptyPredicate.isNotEmpty(listeners)) {
+      return listeners.stream()
+          .filter(
+              listener -> isNotEmpty(listener.listenerArn()) && listenerArn.equalsIgnoreCase(listener.listenerArn()))
+          .map(listener -> getListenerRulesForListener(awsInternalConfig, region, listener.listenerArn()))
+          .flatMap(Collection::stream)
+          .filter(rule -> rule.ruleArn().equalsIgnoreCase(listenerRuleArn))
+          .map(Rule::actions)
+          .flatMap(Collection::stream)
+          .map(Action::targetGroupArn)
+          .collect(Collectors.toList());
+    }
+    throw new InvalidRequestException(
+        "listener with arn:" + listenerArn + "is not present in load balancer: " + loadBalancer);
   }
 
   public void info(String msg, Object... params) {
@@ -636,6 +804,12 @@ public class AsgSdkManager {
     } else {
       logCallback.saveExecutionLog(formatted);
     }
+  }
+
+  public void warn(String msg, Object... params) {
+    String formatted = format(msg, params);
+    log.warn(formatted);
+    logCallback.saveExecutionLog(color(formatted, Yellow, Bold), WARN);
   }
 
   public void error(String msg, String... params) {

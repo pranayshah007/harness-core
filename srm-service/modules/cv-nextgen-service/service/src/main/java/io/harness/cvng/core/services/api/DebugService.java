@@ -13,6 +13,7 @@ import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.DataCollectionTask;
+import io.harness.cvng.core.jobs.FakeFeatureFlagSRMProducer;
 
 public interface DebugService {
   SLODebugResponse getSLODebugResponse(ProjectParams projectParams, String identifier);
@@ -23,4 +24,6 @@ public interface DebugService {
   DataCollectionTask retryDataCollectionTask(ProjectParams projectParams, String identifier);
 
   boolean registerInternalChangeEvent(ProjectParams projectParams, ChangeEventDTO changeEventDTO);
+
+  void registerFFChangeEvent(FakeFeatureFlagSRMProducer.FFEventBody ffEventBody);
 }

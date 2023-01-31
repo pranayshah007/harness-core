@@ -32,6 +32,9 @@ import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.billing.bigquery.BigQueryServiceImpl;
 import io.harness.ccm.budgetGroup.service.BudgetGroupService;
 import io.harness.ccm.budgetGroup.service.BudgetGroupServiceImpl;
+import io.harness.ccm.clickHouse.ClickHouseService;
+import io.harness.ccm.clickHouse.ClickHouseServiceImpl;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.dao.recommendation.RecommendationCrudService;
 import io.harness.ccm.commons.dao.recommendation.RecommendationCrudServiceImpl;
 import io.harness.ccm.commons.service.impl.ClusterRecordServiceImpl;
@@ -139,6 +142,13 @@ public class BatchProcessingModule extends AbstractModule {
     return batchMainConfig.getDbAliases();
   }
 
+  @Provides
+  @Singleton
+  @Named("clickHouseConfig")
+  public ClickHouseConfig clickHouseConfig() {
+    return batchMainConfig.getClickHouseConfig();
+  }
+
   @Override
   protected void configure() {
     bind(SecretManager.class).to(NoOpSecretManagerImpl.class);
@@ -192,6 +202,7 @@ public class BatchProcessingModule extends AbstractModule {
     bind(CurrencyPreferenceService.class).to(CurrencyPreferenceServiceImpl.class);
     bind(CurrencyPreferenceHelper.class).to(CurrencyPreferenceHelperImpl.class);
     bind(CCMJiraHelper.class).to(CCMJiraHelperImpl.class);
+    bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
     bind(BudgetGroupService.class).to(BudgetGroupServiceImpl.class);
 
     install(new MetricsModule());

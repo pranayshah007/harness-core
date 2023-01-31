@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.vivekveman;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,6 +36,11 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePassword
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.DelegateNotAvailableException;
+import io.harness.exception.DelegateServiceDriverException;
+import io.harness.exception.HintException;
+import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -282,5 +288,20 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
     verify(secretManagerClientService).getEncryptionDetails(any(), requestArgumentCaptorForSecretService.capture());
     assertThat(requestArgumentCaptorForSecretService.getValue() instanceof ServiceNowAuthCredentialsDTO).isTrue();
     assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_IMPORT_SET_STAGING_TABLES);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetStagingTableListWhenDelegatesAreDown() {
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenThrow(new DelegateServiceDriverException("delegates not available"));
+    assertThatThrownBy(
+        () -> serviceNowResourceService.getStagingTableList(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(HintException.class)
+        .hasMessage(
+            String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK))
+        .hasCause(new DelegateNotAvailableException(
+            "Delegates are not available for performing servicenow operation.", WingsException.USER));
   }
 }

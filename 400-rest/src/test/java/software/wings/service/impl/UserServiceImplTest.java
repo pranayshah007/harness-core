@@ -20,6 +20,7 @@ import static io.harness.ng.core.invites.dto.InviteOperationResponse.INVITE_INVA
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_ADDED;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.HEN;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.NANDAN;
@@ -135,6 +136,8 @@ public class UserServiceImplTest extends WingsBaseTest {
   @Inject private SubdomainUrlHelperIntfc subdomainUrlHelper;
   @Mock NgInviteClient ngInviteClient;
   @Mock SignupService signupService;
+
+  @Mock UserServiceHelper userServiceHelper;
   @Mock EventPublishHelper eventPublishHelper;
   @Mock TOTPAuthHandler totpAuthHandler;
   @Mock UserServiceLimitChecker userServiceLimitChecker;
@@ -593,6 +596,21 @@ public class UserServiceImplTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = HEN)
+  @Category(UnitTests.class)
+  public void listUsersEmails() {
+    setup();
+
+    List<User> userList = userServiceImpl.getUsersEmails("ACCOUNT_ID");
+
+    for (User user : userList) {
+      assertThat(user.getName()).isNull();
+      assertThat(user.getAccountName()).isNull();
+      assertThat(user.getEmail()).isNotNull();
+    }
+  }
+
+  @Test
   @Owner(developers = MOHIT)
   @Category(UnitTests.class)
   public void shouldSearchAndSortUsers() {
@@ -839,7 +857,7 @@ public class UserServiceImplTest extends WingsBaseTest {
                    .filter(UserInviteKeys.accountId, "ACCOUNT_ID")
                    .get())
         .isEqualTo(null);
-    verify(accountService, times(1)).isNextGenEnabled("ACCOUNT_ID");
+    when(userServiceHelper.isUserActiveInNG(any(), anyString())).thenReturn(false);
     verifyNoMoreInteractions(userMembershipClient);
     verify(userGroupService, times(1))
         .list("ACCOUNT_ID",
@@ -895,6 +913,7 @@ public class UserServiceImplTest extends WingsBaseTest {
                                        .isDefault(true)
                                        .build();
     wingsPersistence.save(user1);
+    when(userServiceHelper.isUserActiveInNG(any(), anyString())).thenReturn(false).thenReturn(true);
     when(harnessUserGroupService.isHarnessSupportUser(user1.getUuid())).thenReturn(false);
     assertThat(userServiceImpl.get(user1.getUuid())).isEqualTo(user1);
 
@@ -930,6 +949,7 @@ public class UserServiceImplTest extends WingsBaseTest {
         .thenReturn("dummy-message-id");
 
     doNothing().when(auditServiceHelper).reportDeleteForAuditingUsingAccountId("ACCOUNT_ID", user1);
+    doNothing().when(userServiceHelper).deleteUserFromNG(anyString(), anyString(), any());
 
     userServiceImpl.delete("ACCOUNT_ID", user1.getUuid());
     assertThat(wingsPersistence.createQuery(UserInvite.class)
@@ -937,10 +957,8 @@ public class UserServiceImplTest extends WingsBaseTest {
                    .filter(UserInviteKeys.accountId, "ACCOUNT_ID")
                    .get())
         .isEqualTo(null);
-    verify(accountService, times(1)).isNextGenEnabled("ACCOUNT_ID");
-    verify(userMembershipClient, times(1)).isUserInScope(user1.getUuid(), "ACCOUNT_ID", null, null);
-    verify(userMembershipClient, times(1))
-        .removeUserInternal(user1.getUuid(), "ACCOUNT_ID", null, null, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+    verify(userServiceHelper, times(1)).updatedActiveAccounts(any(), anyString());
+    verify(userServiceHelper, times(1)).updatedPendingAccount(any(), anyString());
     verify(userGroupService, times(1))
         .list("ACCOUNT_ID",
             aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true, null,

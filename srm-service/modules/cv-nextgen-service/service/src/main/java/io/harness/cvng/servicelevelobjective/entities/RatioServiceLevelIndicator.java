@@ -66,7 +66,6 @@ public class RatioServiceLevelIndicator extends ServiceLevelIndicator {
     try {
       Preconditions.checkArgument(isCoreUpdatable(serviceLevelIndicator));
       RatioServiceLevelIndicator ratioServiceLevelIndicator = (RatioServiceLevelIndicator) serviceLevelIndicator;
-      Preconditions.checkArgument(this.getEventType().equals(ratioServiceLevelIndicator.getEventType()));
       Preconditions.checkArgument(this.getMetric1().equalsIgnoreCase(ratioServiceLevelIndicator.getMetric1()));
       Preconditions.checkArgument(this.getMetric2().equalsIgnoreCase(ratioServiceLevelIndicator.getMetric2()));
       return true;
@@ -79,6 +78,7 @@ public class RatioServiceLevelIndicator extends ServiceLevelIndicator {
   public boolean shouldReAnalysis(ServiceLevelIndicator serviceLevelIndicator) {
     try {
       RatioServiceLevelIndicator ratioServiceLevelIndicator = (RatioServiceLevelIndicator) serviceLevelIndicator;
+      Preconditions.checkArgument(this.getEventType().equals(ratioServiceLevelIndicator.getEventType()));
       Preconditions.checkArgument(this.getThresholdValue().equals(ratioServiceLevelIndicator.getThresholdValue()));
       Preconditions.checkArgument(this.getThresholdType().equals(ratioServiceLevelIndicator.getThresholdType()));
       return false;
