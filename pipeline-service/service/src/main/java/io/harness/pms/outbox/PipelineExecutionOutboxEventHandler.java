@@ -18,9 +18,7 @@ import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
-import io.harness.pms.events.PipelineEndEvent;
 import io.harness.pms.events.PipelineOutboxEvents;
-import io.harness.pms.events.PipelineStartEvent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,9 +43,8 @@ public class PipelineExecutionOutboxEventHandler implements OutboxEventHandler {
 
   private boolean handlePipelineStartEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
-    PipelineStartEvent event = objectMapper.readValue(outboxEvent.getEventData(), PipelineStartEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
-                                .action(Action.DELETE)
+                                .action(Action.START)
                                 .module(ModuleType.PMS)
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
@@ -58,9 +55,8 @@ public class PipelineExecutionOutboxEventHandler implements OutboxEventHandler {
   }
   private boolean handlePipelineEndEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
-    PipelineEndEvent event = objectMapper.readValue(outboxEvent.getEventData(), PipelineEndEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
-                                .action(Action.DELETE)
+                                .action(Action.END)
                                 .module(ModuleType.PMS)
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
