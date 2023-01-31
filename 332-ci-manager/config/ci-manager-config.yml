@@ -103,7 +103,7 @@ scmConnectionConfig:
 
 logServiceConfig:
   internalUrl: ""
-  baseUrl: https://qa.harness.io/log-service/
+  baseUrl: https://uat.harness.io/log-service/
   globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
 
 tiServiceConfig:
@@ -164,10 +164,10 @@ ciExecutionServiceConfig:
     overrideConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
-  delegateServiceEndpointVariableValue: "delegate-service:8080"
+  delegateServiceEndpointVariableValue: "4.tcp.ngrok.io:19259"
   addonImage: harness/ci-addon:1.16.3
   liteEngineImage: harness/ci-lite-engine:1.16.3
-  isLocal: false
+  isLocal: true
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
@@ -314,7 +314,7 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
+shouldConfigureWithPMS: true
 
 enableDashboardTimescale: false
 

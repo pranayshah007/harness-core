@@ -82,6 +82,8 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.ngexception.CILiteEngineException;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.hsqs.client.HsqsServiceClient;
 import io.harness.hsqs.client.model.EnqueueRequest;
@@ -99,11 +101,13 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
@@ -114,8 +118,10 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.CIAccountExecutionMetadataRepository;
+import io.harness.serializer.JsonUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.steps.matrix.ExpandedExecutionWrapperInfo;
@@ -176,6 +182,9 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject QueueExecutionUtils queueExecutionUtils;
   private static final String DEPENDENCY_OUTCOME = "dependencies";
+  @Inject EngineExpressionService engineExpressionService;
+
+  EngineExpressionEvaluator engineExpressionEvaluator = new EngineExpressionEvaluator(null);
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -246,6 +255,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
         ciLicenseService, AmbianceUtils.getAccountId(ambiance), initializeStepInfo.getInfrastructure());
 
     populateStrategyExpansion(initializeStepInfo, ambiance);
+
     CIInitializeTaskParams buildSetupTaskParams =
         buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);
     boolean executeOnHarnessHostedDelegates = false;
@@ -526,8 +536,18 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     for (ExecutionWrapperConfig config : executionElement.getSteps()) {
       // Inject the envVariables before calling strategy expansion
       IntegrationStageUtils.injectLoopEnvVariables(config);
+
       ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
           strategyHelper.expandExecutionWrapperConfig(config, maxExpansionLimit);
+
+      try {
+        StrategyMetadata obj = AmbianceUtils.getStageLevelFromAmbiance(ambiance).get().getStrategyMetadata();
+        Map map = JsonUtils.asMap(YamlUtils.readTree(obj.toString()).getNode().toString());
+        CICustomExpressionEvaluator evaluator = new CICustomExpressionEvaluator(null, map);
+        evaluator.resolve(expandedExecutionWrapperInfo, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+      } catch (Exception e) {
+      }
+
       expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
       strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
     }

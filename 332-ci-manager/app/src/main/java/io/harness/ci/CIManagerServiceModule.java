@@ -16,6 +16,8 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELEGA
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
+import static java.lang.Boolean.FALSE;
+
 import io.harness.AccessControlClientModule;
 import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -79,6 +81,8 @@ import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.expression.EngineExpressionService;
+import io.harness.pms.expression.NoopEngineExpressionServiceImpl;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
@@ -234,6 +238,11 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(CIBuildEnforcer.class).to(CIBuildEnforcerImpl.class);
     bind(CIYAMLSanitizationService.class).to(CIYAMLSanitizationServiceImpl.class).in(Singleton.class);
     bind(CIAccountValidationService.class).to(CIAccountValidationServiceImpl.class).in(Singleton.class);
+    Boolean shouldConfigureWithPMS = ciManagerConfiguration.getShouldConfigureWithPMS();
+    if (shouldConfigureWithPMS == null || shouldConfigureWithPMS.equals(FALSE)) {
+      bind(EngineExpressionService.class).to(NoopEngineExpressionServiceImpl.class);
+    }
+
     install(NgLicenseHttpClientModule.getInstance(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId()));
 

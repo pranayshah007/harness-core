@@ -12,6 +12,8 @@ import static io.harness.ci.utils.HostedVmSecretResolver.SECRET_CACHE_KEY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
+import static java.lang.Boolean.FALSE;
+
 import io.harness.AccessControlClientModule;
 import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -62,6 +64,8 @@ import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
 import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.expression.EngineExpressionService;
+import io.harness.pms.expression.NoopEngineExpressionServiceImpl;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ClientMode;
@@ -212,7 +216,15 @@ public class STOManagerServiceModule extends AbstractModule {
     bind(AwsClient.class).to(AwsClientImpl.class);
     bind(CILicenseService.class).to(CILicenseServiceImpl.class).in(Singleton.class);
     bind(CIYAMLSanitizationService.class).to(CIYAMLSanitizationServiceImpl.class).in(Singleton.class);
+<<<<<<< HEAD
     bind(CIAccountValidationService.class).to(CIAccountValidationServiceImpl.class).in(Singleton.class);
+=======
+
+    Boolean shouldConfigureWithPMS = stoManagerConfiguration.getShouldConfigureWithPMS();
+    if (shouldConfigureWithPMS == null || shouldConfigureWithPMS.equals(FALSE)) {
+      bind(EngineExpressionService.class).to(NoopEngineExpressionServiceImpl.class);
+    }
+>>>>>>> 759ddc5dd6e (fix: [CI-6820]: issue with strategy looping variables)
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
     // serve health checks. If it's being used for other tasks also, max pool size should be increased.
     bind(ExecutorService.class)

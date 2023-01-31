@@ -317,7 +317,16 @@ public class StrategyUtils {
       if (LevelUtils.isStepLevel(level)) {
         fetchGlobalIterationsVariablesForStrategyObjectMap(strategyObjectMap, levels);
       }
+      Map<String,Object> innerMap = new HashMap<>();
+      innerMap.put(ITERATION, level.getStrategyMetadata().getCurrentIteration());
+      innerMap.put(ITERATIONS, level.getStrategyMetadata().getTotalIterations());
+      innerMap.put(TOTAL_ITERATIONS, level.getStrategyMetadata().getTotalIterations());
 
+      if (LevelUtils.isStepLevel(level)) {
+        strategyObjectMap.put("step",innerMap);
+      }else {
+        strategyObjectMap.put("stage", innerMap);
+      }
       strategyObjectMap.put(ITERATION, level.getStrategyMetadata().getCurrentIteration());
       strategyObjectMap.put(ITERATIONS, level.getStrategyMetadata().getTotalIterations());
       strategyObjectMap.put(TOTAL_ITERATIONS, level.getStrategyMetadata().getTotalIterations());

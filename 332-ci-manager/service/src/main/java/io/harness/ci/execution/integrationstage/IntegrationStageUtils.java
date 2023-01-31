@@ -566,8 +566,8 @@ public class IntegrationStageUtils {
       }
       ObjectNode envVariables = (ObjectNode) spec.get("envVariables");
       HashMap<String, String> envMap = new HashMap<>();
-      envMap.put("HARNESS_STAGE_INDEX", "<+stage.iteration>");
-      envMap.put("HARNESS_STAGE_TOTAL", "<+stage.iterations>");
+      envMap.put("HARNESS_STAGE_INDEX", "<+stage.currentIteration>");
+      envMap.put("HARNESS_STAGE_TOTAL", "<+stage.totalIterations>");
       envMap.put("HARNESS_STEP_INDEX", "<+step.iteration>");
       envMap.put("HARNESS_STEP_TOTAL", "<+step.iterations>");
       envMap.put("HARNESS_NODE_INDEX", "<+strategy.iteration>");

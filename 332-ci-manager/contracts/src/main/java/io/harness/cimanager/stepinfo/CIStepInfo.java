@@ -33,6 +33,7 @@ import io.harness.beans.steps.stepinfo.UploadToS3StepInfo;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.yaml.core.StepSpecType;
 
@@ -88,5 +89,10 @@ public interface CIStepInfo extends StepSpecType, WithStepElementParameters, Spe
         CiStepParametersUtils.getStepParameters(stepElementConfig, failRollbackParameters);
     stepParametersBuilder.spec(getSpecParameters());
     return stepParametersBuilder.build();
+  }
+
+  @Override
+  default ExpressionMode getExpressionMode() {
+    return ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED;
   }
 }
