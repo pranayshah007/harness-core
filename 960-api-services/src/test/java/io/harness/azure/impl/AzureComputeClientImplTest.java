@@ -27,6 +27,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.azure.AzureClient;
+import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.AzureHostConnectionType;
 import io.harness.azure.model.AzureOSType;
@@ -546,6 +547,11 @@ public class AzureComputeClientImplTest extends CategoryTest {
   }
 
   private AzureConfig getAzureComputeConfig() {
-    return AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+    return AzureConfig.builder()
+        .clientId("clientId")
+        .tenantId("tenantId")
+        .key("key".toCharArray())
+        .azureEnvironmentType(AzureEnvironmentType.AZURE)
+        .build();
   }
 }
