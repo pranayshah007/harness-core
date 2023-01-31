@@ -131,7 +131,7 @@ public class JenkinsStateTest extends CategoryTest {
     ExecutionResponse executionResponse = jenkinsState.execute(executionContext);
     assertThat(executionResponse).isNotNull().hasFieldOrPropertyWithValue("async", true);
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     assertThat(delegateTaskArgumentCaptor.getValue())
         .isNotNull()
         .hasFieldOrPropertyWithValue("data.taskType", JENKINS.name());
@@ -152,7 +152,7 @@ public class JenkinsStateTest extends CategoryTest {
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     ExecutionResponse response = jenkinsState.execute(executionContext);
     assertThat(response).isNotNull();
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     JenkinsTaskParams params = (JenkinsTaskParams) delegateTaskArgumentCaptor.getValue().getData().getParameters()[0];
 
     assertThat(params.getJenkinsConfig()).isEqualTo(jenkinsConfig);
@@ -179,7 +179,7 @@ public class JenkinsStateTest extends CategoryTest {
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     ExecutionResponse response = jenkinsState.execute(executionContext);
     assertThat(response).isNotNull();
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     JenkinsTaskParams params = (JenkinsTaskParams) delegateTaskArgumentCaptor.getValue().getData().getParameters()[0];
 
     assertThat(params.getJenkinsConfig()).isEqualTo(jenkinsConfig);

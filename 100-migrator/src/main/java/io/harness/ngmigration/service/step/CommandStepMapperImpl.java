@@ -9,14 +9,13 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepSpecTypeConstants;
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.steps.template.TemplateStepNode;
 
 import software.wings.beans.GraphNode;
 import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.CommandState;
@@ -26,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
-public class CommandStepMapperImpl implements StepMapper {
+public class CommandStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
     String templateId = graphNode.getTemplateUuid();
@@ -53,20 +52,19 @@ public class CommandStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     CommandState state = new CommandState(stepYaml.getName());
     state.parseProperties(properties);
     return state;
   }
 
   @Override
-  public TemplateStepNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
-    return defaultTemplateSpecMapper(migratedEntities, graphNode);
+  public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+    return defaultTemplateSpecMapper(context, graphNode);
   }
 
   @Override
-  public AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     throw new InvalidRequestException("Only templatized command steps are currently supported");
   }
 

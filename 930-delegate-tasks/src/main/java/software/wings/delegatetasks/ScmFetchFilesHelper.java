@@ -39,6 +39,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.task.git.ScmFetcherUtils;
+import io.harness.delegate.task.git.metadata.GitFetchMetadataLocalThread;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GitClientException;
@@ -73,14 +74,18 @@ public class ScmFetchFilesHelper {
   @Inject private ScmDelegateClient scmDelegateClient;
   @Inject private ScmServiceClient scmServiceClient;
   private static final List<String> ROOT_DIRECTORY_PATHS = Arrays.asList(".", "/");
-
+  private static final String DEFAULT_FETCH_IDENTIFIER = "--default";
   public GitFetchFilesResult fetchFilesFromRepoWithScm(
       GitFileConfig gitFileConfig, GitConfig gitConfig, List<String> filePathList) {
+    return fetchFilesFromRepoWithScm(DEFAULT_FETCH_IDENTIFIER, gitFileConfig, gitConfig, filePathList);
+  }
+  public GitFetchFilesResult fetchFilesFromRepoWithScm(
+      String identifier, GitFileConfig gitFileConfig, GitConfig gitConfig, List<String> filePathList) {
     ScmConnector scmConnector = getScmConnector(gitConfig);
     FileContentBatchResponse fileBatchContentResponse;
 
     fileBatchContentResponse = fetchFilesByFilePaths(gitFileConfig, filePathList, scmConnector);
-
+    GitFetchMetadataLocalThread.putCommitId(identifier, fileBatchContentResponse.getCommitId());
     List<GitFile> gitFiles =
         fileBatchContentResponse.getFileBatchContentResponse()
             .getFileContentsList()

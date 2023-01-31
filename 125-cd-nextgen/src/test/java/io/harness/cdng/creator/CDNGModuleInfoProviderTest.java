@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
+import io.harness.beans.ScopeLevel;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.GcrArtifactSummary;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
@@ -201,7 +202,7 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
                  .found(true)
                  .outcome(new GitopsClustersOutcome(new ArrayList<>())
                               .appendCluster(new Metadata("envgroup1", "envgroup1"), new Metadata("env1", "env1"),
-                                  EnvironmentType.PreProduction.toString(), new Metadata("c1", "c1")))
+                                  EnvironmentType.PreProduction.toString(), new Metadata("c1", "c1"), null))
                  .build())
         .when(outcomeService)
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("gitops"));
@@ -343,7 +344,7 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
                               .appendCluster(new Metadata("env1", "env1name"), new Metadata("c1", "c1"), "Production")
                               .appendCluster(new Metadata("env2", "env2name"), new Metadata("c2", "c2"), "Production")
                               .appendCluster(new Metadata("eg1", "eg1name"), new Metadata("env3", "env3name"),
-                                  EnvironmentType.PreProduction.toString(), new Metadata("c3", "c3")))
+                                  EnvironmentType.PreProduction.toString(), new Metadata("c3", "c3"), null))
                  .build())
         .when(outcomeService)
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("gitops"));
@@ -378,9 +379,9 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
                  .found(true)
                  .outcome(new GitopsClustersOutcome(new ArrayList<>())
                               .appendCluster(new Metadata("eg1", "eg1name"), new Metadata("env1", "env1name"),
-                                  EnvironmentType.PreProduction.toString(), new Metadata("c1", "c1"))
+                                  EnvironmentType.PreProduction.toString(), new Metadata("c1", "c1"), null)
                               .appendCluster(new Metadata("eg1", "eg1name"), new Metadata("env2", "env2name"),
-                                  EnvironmentType.PreProduction.toString(), new Metadata("c2", "c2")))
+                                  EnvironmentType.PreProduction.toString(), new Metadata("c2", "c2"), null))
                  .build())
         .when(outcomeService)
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("gitops"));
@@ -499,16 +500,17 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
                                           .setStepCategory(StepCategory.STEP)
                                           .build());
 
-    doReturn(OptionalOutcome.builder()
-                 .found(true)
-                 .outcome(new GitopsClustersOutcome(new ArrayList<>())
-                              .appendCluster(new Metadata("eg1", "eg1name"), new Metadata("env1", "env1name"),
-                                  EnvironmentType.PreProduction.toString(), new Metadata("c1", "c1name"))
-                              .appendCluster(new Metadata("eg1", "eg1name"), new Metadata("env1", "env1name"),
-                                  EnvironmentType.PreProduction.toString(), new Metadata("c2", "c2name"))
-                              .appendCluster(new Metadata("eg1", "eg1name"), new Metadata("env2", "env2name"),
-                                  EnvironmentType.PreProduction.toString(), new Metadata("c3", "c3name")))
-                 .build())
+    doReturn(
+        OptionalOutcome.builder()
+            .found(true)
+            .outcome(new GitopsClustersOutcome(new ArrayList<>())
+                         .appendCluster(new Metadata("eg1", "eg1name"), new Metadata("env1", "env1name"),
+                             EnvironmentType.PreProduction.toString(), new Metadata("c1", "c1name"), "agent1")
+                         .appendCluster(new Metadata("eg1", "eg1name"), new Metadata("env1", "env1name"),
+                             EnvironmentType.PreProduction.toString(), new Metadata("account.c2", "c2name"), "agent2")
+                         .appendCluster(new Metadata("eg1", "eg1name"), new Metadata("env2", "env2name"),
+                             EnvironmentType.PreProduction.toString(), new Metadata("c3", "c3name"), null))
+            .build())
         .when(outcomeService)
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("gitops"));
 
@@ -525,6 +527,8 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
                        .envId("env1")
                        .envGroupName("eg1name")
                        .envGroupId("eg1")
+                       .agentId("agent1")
+                       .scope(ScopeLevel.PROJECT.name())
                        .build());
     assertThat(clusters.get(1))
         .isEqualTo(GitOpsExecutionSummary.Cluster.builder()
@@ -534,6 +538,8 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
                        .envId("env1")
                        .envGroupName("eg1name")
                        .envGroupId("eg1")
+                       .agentId("agent2")
+                       .scope(ScopeLevel.ACCOUNT.name())
                        .build());
     assertThat(clusters.get(2))
         .isEqualTo(GitOpsExecutionSummary.Cluster.builder()
@@ -543,6 +549,7 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
                        .envId("env2")
                        .envGroupName("eg1name")
                        .envGroupId("eg1")
+                       .scope(ScopeLevel.PROJECT.name())
                        .build());
   }
 

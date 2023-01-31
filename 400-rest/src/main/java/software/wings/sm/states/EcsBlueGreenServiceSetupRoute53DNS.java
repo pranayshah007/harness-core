@@ -238,7 +238,7 @@ public class EcsBlueGreenServiceSetupRoute53DNS extends State {
     String logMessage = "Creating a task to fetch files from git.";
     executionLogCallback.saveExecutionLog(logMessage, CommandExecutionStatus.RUNNING);
     final DelegateTask gitFetchFileTask = createGitFetchFileAsyncTask(context, applicationManifestMap, activityId);
-    delegateService.queueTask(gitFetchFileTask);
+    delegateService.queueTaskV2(gitFetchFileTask);
 
     EcsBGRoute53SetupStateExecutionData stateExecutionData =
         createStateExecutionData(activityId, applicationManifestMap, context, ecsSetUpDataBag);

@@ -7,6 +7,7 @@ package git
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -279,6 +280,12 @@ func GetLatestCommit(ctx context.Context, request *pb.GetLatestCommitRequest, lo
 			Status: int32(response.Status),
 		}
 		return out, nil
+	}
+
+	// bitbucket onprem API doesn't return commit link, hence populating it manually.
+	if refResponse.Link == "" && request.GetProvider().GetBitbucketServer() != nil {
+		namespace, name := scm.Split(request.GetSlug())
+		refResponse.Link = fmt.Sprintf("%sprojects/%s/repos/%s/commits/%s", client.BaseURL, namespace, name, refResponse.Sha)
 	}
 
 	commit, err := converter.ConvertCommit(refResponse)

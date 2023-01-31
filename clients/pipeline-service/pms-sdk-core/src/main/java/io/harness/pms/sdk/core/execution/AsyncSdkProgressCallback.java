@@ -12,6 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutionMode;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.sdk.core.execution.async.AsyncProgressData;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.tasks.ProgressData;
@@ -41,11 +43,16 @@ public class AsyncSdkProgressCallback implements ProgressCallback {
       Ambiance ambiance = Ambiance.parseFrom(ambianceBytes);
       String stepParamsJson = ByteString.copyFrom(stepParameters).toStringUtf8();
       ExecutableProcessor executableProcessor = executableProcessorFactory.obtainProcessor(mode);
+      Status statusToBeUpdated = Status.NO_OP;
+      if (progressData instanceof AsyncProgressData) {
+        statusToBeUpdated = ((AsyncProgressData) progressData).getStatus();
+      }
       executableProcessor.handleProgress(
           ProgressPackage.builder()
               .ambiance(ambiance)
               .stepParameters(RecastOrchestrationUtils.fromJson(stepParamsJson, StepParameters.class))
               .progressData(progressData)
+              .status(statusToBeUpdated)
               .build());
     } catch (InvalidProtocolBufferException e) {
       log.error("Not able to deserialize Node Execution from bytes. Progress Callback will not be executed");

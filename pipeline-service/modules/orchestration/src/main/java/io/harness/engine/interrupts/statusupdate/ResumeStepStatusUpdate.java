@@ -37,6 +37,8 @@ public class ResumeStepStatusUpdate implements NodeStatusUpdateHandler {
   public void handleNodeStatusUpdate(NodeUpdateInfo nodeStatusUpdateInfo) {
     boolean resumePlan = resumeParents(nodeStatusUpdateInfo.getNodeExecution());
     if (resumePlan) {
+      // Why excluding current node -> as status update for this node is queued, this we dont want to mark pipeline
+      // status as queued.
       Status planStatus = planExecutionService.calculateStatusExcluding(
           nodeStatusUpdateInfo.getPlanExecutionId(), nodeStatusUpdateInfo.getNodeExecutionId());
       if (!StatusUtils.isFinalStatus(planStatus)) {

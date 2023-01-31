@@ -18,6 +18,7 @@ import (
 	_ "github.com/harness/harness-core/queue-service/hsqs/docs"
 	"github.com/harness/harness-core/queue-service/hsqs/handler"
 	"github.com/harness/harness-core/queue-service/hsqs/instrumentation/metrics"
+	appdynamics "github.com/harness/harness-core/queue-service/hsqs/middleware"
 	"github.com/harness/harness-core/queue-service/hsqs/profiler"
 	"github.com/harness/harness-core/queue-service/hsqs/router"
 	"github.com/harness/harness-core/queue-service/hsqs/store/redis"
@@ -69,12 +70,24 @@ var serverCmd = &cobra.Command{
 
 func startServer(c *config.Config) {
 
+	// enabling Profiler for service
 	if c.EnableProfiler {
 		err := profiler.Start(c)
 		if err != nil {
 			log.Warn(err.Error())
 		}
 	}
+	log.Info("Initialising AppDynamics...")
+
+	if c.AppDynamicsConfig.Enabled {
+		if err := appdynamics.Init(c); err != nil {
+			log.Error(err.Error())
+		} else {
+			log.Info("AppDyanmics initialised")
+		}
+	}
+
+	// enabling AppDynamics For Service
 
 	store := redis.NewRedisStoreWithTLS(c.Redis.Endpoint, c.Redis.Password, c.Redis.SSLEnabled, c.Redis.CertPath, c.PendingTimeout, c.ClaimTimeout)
 	customMetrics := metrics.InitMetrics()

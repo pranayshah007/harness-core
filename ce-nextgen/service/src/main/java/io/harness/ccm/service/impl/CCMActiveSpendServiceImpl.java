@@ -18,6 +18,7 @@ import io.harness.ccm.views.graphql.ViewsQueryHelper;
 
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.QueryJobConfiguration;
+import com.google.cloud.bigquery.QueryParameterValue;
 import com.google.cloud.bigquery.TableResult;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +37,7 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
   public static final String TABLE_NAME = "costAggregated";
   public static final String QUERY_TEMPLATE =
       "SELECT SUM(cost) AS cost, TIMESTAMP_TRUNC(day, month) AS month, cloudProvider FROM `%s` "
-      + "WHERE day >= TIMESTAMP_MILLIS(%s) AND day <= TIMESTAMP_MILLIS(%s) AND accountId = '%s' GROUP BY month, cloudProvider";
+      + "WHERE day >= TIMESTAMP_MILLIS(@start_time) AND day <= TIMESTAMP_MILLIS(@end_time) AND accountId = @account_id GROUP BY month, cloudProvider";
 
   @Override
   public CostOverviewDTO getActiveSpendStats(long startTime, long endTime, String accountIdentifier) {
@@ -74,10 +75,15 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
   public Long getActiveSpend(long startTime, long endTime, String accountIdentifier) {
     String gcpProjectId = configuration.getGcpConfig().getGcpProjectId();
     String cloudProviderTableName = format("%s.%s.%s", gcpProjectId, DATA_SET_NAME, TABLE_NAME);
-    String query = format(QUERY_TEMPLATE, cloudProviderTableName, startTime, endTime, accountIdentifier);
+    String query = format(QUERY_TEMPLATE, cloudProviderTableName);
     log.info("Query: {}", query);
     BigQuery bigQuery = bigQueryService.get();
-    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
+    QueryJobConfiguration queryConfig =
+        QueryJobConfiguration.newBuilder(query)
+            .addNamedParameter("start_time", QueryParameterValue.int64(startTime))
+            .addNamedParameter("end_time", QueryParameterValue.int64(endTime))
+            .addNamedParameter("account_id", QueryParameterValue.string(accountIdentifier))
+            .build();
     TableResult result;
     try {
       result = bigQuery.query(queryConfig);

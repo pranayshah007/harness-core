@@ -24,11 +24,10 @@ public enum FeatureName {
   SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE("Enables refresh pipeline when trigger "
           + "continue pipeline execution",
       HarnessTeam.SPG),
-  SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE("Enables the use of workflow variables to skip"
-          + " pipeline stage",
-      HarnessTeam.SPG),
-
+  SPG_WFE_PROJECTIONS_DEPLOYMENTS_PAGE("Enable projection on deployments page and executions", HarnessTeam.SPG),
   SPG_ENABLE_NOTIFICATION_RULES("Enables notification rules and approvals notifications by usergroup", HarnessTeam.SPG),
+  SPG_ENABLE_VALIDATION_WORKFLOW_PIPELINE_STAGE(
+      "Enables validation of dot on pipeline and workflow name", HarnessTeam.SPG),
   SPG_NG_GITHUB_WEBHOOK_AUTHENTICATION("Enables authentication for GitHub webhook triggers in NG", HarnessTeam.SPG),
   SPG_ALLOW_DISABLE_TRIGGERS("Allow disabling triggers at application level for CG", HarnessTeam.SPG),
   SPG_ALLOW_UI_JIRA_CUSTOM_DATETIME_FIELD("Enables backend parse custom field time of jira as the UI", HarnessTeam.SPG),
@@ -96,6 +95,7 @@ public enum FeatureName {
   FFM_4117_INTEGRATE_SRM("Enable Feature Flags to send events to the SRM module", HarnessTeam.CF),
   FFM_3959_FF_MFE_Environment_Detail("Enable Feature Flag MFE Environment page", HarnessTeam.CF),
   FFM_3961_ENHANCED_ONBOARDING("Enable new onboarding experience for FeatureFlags", HarnessTeam.CF),
+  FFM_6610_ENABLE_METRICS_ENDPOINT("Enable fetching feature flag metrics from new metrics endpoint", HarnessTeam.CF),
   WINRM_COPY_CONFIG_OPTIMIZE,
   ECS_MULTI_LBS,
   ENTITY_AUDIT_RECORD,
@@ -427,6 +427,7 @@ public enum FeatureName {
       HarnessTeam.DEL),
   SRM_ENABLE_HEALTHSOURCE_CLOUDWATCH_METRICS("UI FF to enable CloudWatch Metrics healthsource", HarnessTeam.CV),
   SRM_ENABLE_VERIFY_STEP_LONG_DURATION("Enable longer duration for verify step", HarnessTeam.CV),
+  SRM_CUSTOM_CHANGE_SOURCE("UI FF to enable Custom Change Source", HarnessTeam.CV),
   SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
   ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC),
   LOOKER_ENTITY_RECONCILIATION,
@@ -496,6 +497,8 @@ public enum FeatureName {
       HarnessTeam.PIPELINE),
   SPG_CD_RUN_STEP("CD run step in NG", HarnessTeam.SPG),
   GITOPS_ONPREM_ENABLED("Enable the gitops tab in the UI in case of ONPREM/SMP", HarnessTeam.GITOPS),
+  GITOPS_HOSTED(
+      "Enable hosted GitOps.Allows to install agent and ArgoCD components in Harness cluster", HarnessTeam.GITOPS),
   CIE_HOSTED_VMS_MAC("FF for enabling hosted builds for mac os", HarnessTeam.CI),
   SPG_DELETE_ENVIRONMENTS_ON_SERVICE_RENAME_GIT_SYNC(
       "On service rename delete stale folders inside environments folders.", HarnessTeam.SPG),
@@ -531,6 +534,10 @@ public enum FeatureName {
       "Enable support for AWS S3 bucket and URIs for Terraform Source, tfVars and Backend Config", HarnessTeam.CDP),
   CCM_BUDGET_CASCADES("Enable to allow nested budgets for Financial Management", HarnessTeam.CE),
   PIE_NG_GITX_CACHING("FF to enable caching on new git experience", HarnessTeam.PIPELINE),
+
+  PIE_NG_BATCH_GET_TEMPLATES(
+      "FF to enable batching of templates to improve loading time of pipeline and template studio",
+      HarnessTeam.PIPELINE),
   INSTANT_DELEGATE_DOWN_ALERT("FF to instantly alert when delegates are down", HarnessTeam.SPG),
   QUEUE_CI_EXECUTIONS("FF to enable queueing in CI builds", HarnessTeam.CI),
   QUEUE_CI_EXECUTIONS_CONCURRENCY("FF to enable queueing in CI builds", HarnessTeam.CI),
@@ -585,7 +592,23 @@ public enum FeatureName {
       "To enable pipeline-settings and limits in Project Default Settings in UI", HarnessTeam.PIPELINE),
   ENABLE_K8_BUILDS("FF for enabling kubernetes builds as an option", HarnessTeam.CI),
   PL_USER_DELETION_V2("Modularising user deletion flows separately for CG and NG ", HarnessTeam.PL),
-  DISABLE_INSTANCE_STATS_JOB_CG("Disable Instance Stats Job from CG", HarnessTeam.CDP);
+  DISABLE_INSTANCE_STATS_JOB_CG("Disable Instance Stats Job from CG", HarnessTeam.CDP),
+  CG_K8S_MANIFEST_COMMIT_VAR(
+      "Enables users to pass commit id as sweeping output and use later in subsequent steps. PM Rohan",
+      HarnessTeam.CDP),
+  SPG_SIDENAV_COLLAPSE("FF for enabling collapse and expand of side nav", HarnessTeam.SPG),
+  PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS("Enable removal of user level viewer role assignments", HarnessTeam.PL),
+  PL_REMOVE_EXTERNAL_USER_ORG_PROJECT(
+      "Allow deletion of externally managed user from orgs and projects", HarnessTeam.PL),
+  CDP_AWS_SAM("FF for enabling AWS SAM deployments", HarnessTeam.CDP),
+  TERRAFORM_CLOUD("Enable support of Terraform Cloud in the NG", HarnessTeam.CDP),
+  CI_REMOTE_DEBUG("Enable the option for remote debug for CI users.", HarnessTeam.CI),
+  NG_CDS_HELM_SUB_CHARTS("Support for helm sub charts", HarnessTeam.CDP),
+  CDS_GOOGLE_CLOUD_FUNCTION("This flag is to enable the Google Functions Deployment Swimlane for users. "
+          + "This flag only works with Service and Environments v2",
+      HarnessTeam.CDP),
+  CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY(
+      "FF for disabling headers while doing capability check for HTTP", HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

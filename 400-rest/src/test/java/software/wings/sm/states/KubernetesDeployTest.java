@@ -318,7 +318,8 @@ public class KubernetesDeployTest extends WingsBaseTest {
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
 
-    when(delegateProxyFactory.get(eq(ContainerService.class), any(SyncTaskContext.class))).thenReturn(containerService);
+    when(delegateProxyFactory.getV2(eq(ContainerService.class), any(SyncTaskContext.class)))
+        .thenReturn(containerService);
     when(configuration.getPortal()).thenReturn(portalConfig);
     when(portalConfig.getUrl()).thenReturn("http://www.url.com");
     when(artifactService.get(any())).thenReturn(anArtifact().build());
@@ -361,7 +362,7 @@ public class KubernetesDeployTest extends WingsBaseTest {
     assertThat(response.getCorrelationIds()).isNotNull().hasSize(1);
     verify(activityService).save(any(Activity.class));
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     CommandExecutionContext executionContext = (CommandExecutionContext) delegateTask.getData().getParameters()[1];
     KubernetesResizeParams params = (KubernetesResizeParams) executionContext.getContainerResizeParams();

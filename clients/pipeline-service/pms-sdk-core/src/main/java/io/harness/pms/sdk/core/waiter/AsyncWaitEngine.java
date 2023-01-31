@@ -18,4 +18,10 @@ import java.util.List;
 public interface AsyncWaitEngine {
   void waitForAllOn(
       NotifyCallback notifyCallback, ProgressCallback progressCallback, List<String> correlationIds, int timeout);
+
+  /**
+   * This method notifies that they have acquired the task for the given correlationId
+   * @param correlationId
+   */
+  void taskAcquired(String correlationId);
 }

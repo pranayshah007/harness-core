@@ -23,7 +23,7 @@ public class CiTelemetryRecordsJob {
   @Inject CiTelemetryPublisher publisher;
 
   public void scheduleTasks() {
-    long initialDelay = 10;
+    long initialDelay = 1800;
 
     try {
       log.info("CiTelemetryRecordsJob scheduler starting");

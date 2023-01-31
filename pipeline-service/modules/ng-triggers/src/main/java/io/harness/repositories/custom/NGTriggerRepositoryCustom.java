@@ -11,8 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
+import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 
 import com.mongodb.client.result.DeleteResult;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -24,4 +26,5 @@ public interface NGTriggerRepositoryCustom {
   NGTriggerEntity updateValidationStatus(Criteria criteria, NGTriggerEntity ngTriggerEntity);
   NGTriggerEntity updateValidationStatusAndMetadata(Criteria criteria, NGTriggerEntity ngTriggerEntity);
   DeleteResult hardDelete(Criteria criteria);
+  TriggerUpdateCount updateTriggerYaml(List<NGTriggerEntity> ngTriggerEntityList);
 }

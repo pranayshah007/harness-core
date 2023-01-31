@@ -74,6 +74,9 @@ public abstract class AbstractServicesApiImpl {
         ResourceScope.of(account, org, project), Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
     serviceSchemaHelper.validateSchema(account, serviceRequest.getYaml());
     ServiceEntity serviceEntity = serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account);
+    if (isEmpty(serviceRequest.getYaml())) {
+      serviceSchemaHelper.validateSchema(account, serviceEntity.getYaml());
+    }
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
     ServiceEntity createdService = serviceEntityService.create(serviceEntity);
@@ -187,6 +190,9 @@ public abstract class AbstractServicesApiImpl {
         Resource.of(NGResourceType.SERVICE, serviceRequest.getIdentifier()), SERVICE_UPDATE_PERMISSION);
     serviceSchemaHelper.validateSchema(account, serviceRequest.getYaml());
     ServiceEntity requestService = serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account);
+    if (isEmpty(serviceRequest.getYaml())) {
+      serviceSchemaHelper.validateSchema(account, requestService.getYaml());
+    }
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         requestService.getOrgIdentifier(), requestService.getProjectIdentifier(), requestService.getAccountId());
     ServiceEntity updateService = serviceEntityService.update(requestService);

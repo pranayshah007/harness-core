@@ -44,7 +44,7 @@ import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.EcsScalableTargetDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsScalingPolicyDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsServiceDefinitionManifestOutcome;

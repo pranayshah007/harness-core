@@ -1328,7 +1328,7 @@ public class ApplicationManifestServiceImpl implements ApplicationManifestServic
 
     DelegateResponseData notifyResponseData;
     try {
-      notifyResponseData = delegateService.executeTask(delegateTask);
+      notifyResponseData = delegateService.executeTaskV2(delegateTask);
     } catch (InterruptedException ex) {
       throw new InvalidRequestException(ex.getMessage(), WingsException.USER);
     }

@@ -704,6 +704,8 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
     return new ResourceManagementClientBuilder()
         .subscriptionId(subscriptionId)
         .pipeline(getAzureHttpPipeline(azureConfig, subscriptionId))
+        .endpoint(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getResourceManagerEndpoint())
+        .environment(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()))
         .buildClient();
   }
 }

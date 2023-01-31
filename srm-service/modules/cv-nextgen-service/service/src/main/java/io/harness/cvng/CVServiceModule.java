@@ -25,6 +25,7 @@ import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.cvng.activity.entities.Activity.ActivityUpdatableEntity;
+import io.harness.cvng.activity.entities.CustomChangeActivity.CustomChangeActivityUpdatableEntity;
 import io.harness.cvng.activity.entities.DeploymentActivity.DeploymentActivityUpdatableEntity;
 import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity.HarnessCDCurrentGenActivityUpdatableEntity;
 import io.harness.cvng.activity.entities.InternalChangeActivity.InternalChangeActivityUpdatableEntity;
@@ -33,6 +34,7 @@ import io.harness.cvng.activity.entities.PagerDutyActivity.PagerDutyActivityUpda
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.activity.services.api.ActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.ActivityServiceImpl;
+import io.harness.cvng.activity.services.impl.CustomChangeActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.DeploymentActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.InternalChangeActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.KubernetesClusterActivityUpdateHandler;
@@ -104,6 +106,7 @@ import io.harness.cvng.core.entities.StackdriverCVConfig.StackDriverCVConfigUpda
 import io.harness.cvng.core.entities.StackdriverLogCVConfig.StackdriverLogCVConfigUpdatableEntity;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.changeSource.ChangeSource;
+import io.harness.cvng.core.entities.changeSource.CustomChangeSource;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource;
 import io.harness.cvng.core.entities.changeSource.HarnessCDCurrentGenChangeSource;
 import io.harness.cvng.core.entities.changeSource.KubernetesChangeSource;
@@ -113,6 +116,9 @@ import io.harness.cvng.core.handler.monitoredService.MonitoredServiceSLIMetricUp
 import io.harness.cvng.core.jobs.AccountChangeEventMessageProcessor;
 import io.harness.cvng.core.jobs.ConnectorChangeEventMessageProcessor;
 import io.harness.cvng.core.jobs.ConsumerMessageProcessor;
+import io.harness.cvng.core.jobs.CustomChangeEventPublisherService;
+import io.harness.cvng.core.jobs.CustomChangeEventPublisherServiceImpl;
+import io.harness.cvng.core.jobs.FakeFeatureFlagSRMProducer;
 import io.harness.cvng.core.jobs.OrganizationChangeEventMessageProcessor;
 import io.harness.cvng.core.jobs.ProjectChangeEventMessageProcessor;
 import io.harness.cvng.core.jobs.StateMachineEventPublisherService;
@@ -120,6 +126,7 @@ import io.harness.cvng.core.jobs.StateMachineEventPublisherServiceImpl;
 import io.harness.cvng.core.jobs.StateMachineMessageProcessor;
 import io.harness.cvng.core.jobs.StateMachineMessageProcessorImpl;
 import io.harness.cvng.core.services.CVNextGenConstants;
+import io.harness.cvng.core.services.DebugConfigService;
 import io.harness.cvng.core.services.api.AppDynamicsService;
 import io.harness.cvng.core.services.api.AwsService;
 import io.harness.cvng.core.services.api.CVConfigService;
@@ -162,6 +169,7 @@ import io.harness.cvng.core.services.api.SumoLogicService;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.TimeSeriesThresholdService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.services.api.WebhookConfigService;
 import io.harness.cvng.core.services.api.WebhookService;
 import io.harness.cvng.core.services.api.demo.CVNGDemoDataIndexService;
 import io.harness.cvng.core.services.api.demo.CVNGDemoPerpetualTaskService;
@@ -249,6 +257,7 @@ import io.harness.cvng.core.services.impl.sidekickexecutors.VerificationJobInsta
 import io.harness.cvng.core.services.impl.sidekickexecutors.VerificationTaskCleanupSideKickExecutor;
 import io.harness.cvng.core.transformer.changeEvent.ChangeEventEntityAndDTOTransformer;
 import io.harness.cvng.core.transformer.changeEvent.ChangeEventMetaDataTransformer;
+import io.harness.cvng.core.transformer.changeEvent.CustomChangeEventTransformer;
 import io.harness.cvng.core.transformer.changeEvent.HarnessCDChangeEventTransformer;
 import io.harness.cvng.core.transformer.changeEvent.HarnessCDCurrentGenChangeEventTransformer;
 import io.harness.cvng.core.transformer.changeEvent.InternalChangeEventTransformer;
@@ -256,6 +265,7 @@ import io.harness.cvng.core.transformer.changeEvent.KubernetesClusterChangeEvent
 import io.harness.cvng.core.transformer.changeEvent.PagerDutyChangeEventTransformer;
 import io.harness.cvng.core.transformer.changeSource.ChangeSourceEntityAndDTOTransformer;
 import io.harness.cvng.core.transformer.changeSource.ChangeSourceSpecTransformer;
+import io.harness.cvng.core.transformer.changeSource.CustomChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.HarnessCDChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.HarnessCDCurrentGenChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.KubernetesChangeSourceSpecTransformer;
@@ -342,6 +352,7 @@ import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIAnalyserService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityFilterService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
@@ -355,6 +366,7 @@ import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLOServiceIm
 import io.harness.cvng.servicelevelobjective.services.impl.GraphDataServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.RatioAnalyserServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIDataProcessorServiceImpl;
+import io.harness.cvng.servicelevelobjective.services.impl.SLIDataUnavailabilityFilterServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIRecordServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLODashboardServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLOErrorBudgetResetServiceImpl;
@@ -507,6 +519,19 @@ public class CVServiceModule extends AbstractModule {
     bind(LogClusterService.class).to(LogClusterServiceImpl.class);
     bind(LogAnalysisService.class).to(LogAnalysisServiceImpl.class);
     bind(DataCollectionTaskService.class).to(DataCollectionTaskServiceImpl.class);
+    bind(WebhookConfigService.class).toInstance(new WebhookConfigService() {
+      @Override
+      public String getWebhookApiBaseUrl() {
+        return verificationConfiguration.getWebhookConfig().getWebhookBaseUrl();
+      }
+    });
+
+    bind(DebugConfigService.class).toInstance(new DebugConfigService() {
+      @Override
+      public boolean isDebugEnabled() {
+        return verificationConfiguration.isEnableDebugAPI();
+      }
+    });
     MapBinder<Type, DataCollectionTaskManagementService> dataCollectionTaskServiceMapBinder =
         MapBinder.newMapBinder(binder(), Type.class, DataCollectionTaskManagementService.class);
     dataCollectionTaskServiceMapBinder.addBinding(Type.SERVICE_GUARD)
@@ -730,6 +755,8 @@ public class CVServiceModule extends AbstractModule {
     bind(ParseSampleDataService.class).to(ParseSampleDataServiceImpl.class);
     bind(VerifyStepDemoService.class).to(VerifyStepDemoServiceImpl.class);
     bind(StateMachineEventPublisherService.class).to(StateMachineEventPublisherServiceImpl.class);
+    bind(CustomChangeEventPublisherService.class).to(CustomChangeEventPublisherServiceImpl.class);
+    bind(FakeFeatureFlagSRMProducer.class);
     bind(String.class)
         .annotatedWith(Names.named("portalUrl"))
         .toInstance(verificationConfiguration.getPortalUrl().endsWith("/")
@@ -899,6 +926,18 @@ public class CVServiceModule extends AbstractModule {
     changeSourceTypeChangeSourceSpecTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_CD_CURRENT_GEN)
         .to(HarnessCDCurrentGenChangeSourceSpecTransformer.class)
         .in(Scopes.SINGLETON);
+    changeSourceTypeChangeSourceSpecTransformerMapBinder.addBinding(ChangeSourceType.CUSTOM_DEPLOY)
+        .to(CustomChangeSourceSpecTransformer.class)
+        .in(Scopes.SINGLETON);
+    changeSourceTypeChangeSourceSpecTransformerMapBinder.addBinding(ChangeSourceType.CUSTOM_INFRA)
+        .to(CustomChangeSourceSpecTransformer.class)
+        .in(Scopes.SINGLETON);
+    changeSourceTypeChangeSourceSpecTransformerMapBinder.addBinding(ChangeSourceType.CUSTOM_INCIDENT)
+        .to(CustomChangeSourceSpecTransformer.class)
+        .in(Scopes.SINGLETON);
+    changeSourceTypeChangeSourceSpecTransformerMapBinder.addBinding(ChangeSourceType.CUSTOM_FF)
+        .to(CustomChangeSourceSpecTransformer.class)
+        .in(Scopes.SINGLETON);
 
     bindAnalysisStateExecutor();
 
@@ -923,6 +962,18 @@ public class CVServiceModule extends AbstractModule {
     activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.FEATURE_FLAG)
         .to(InternalChangeActivityUpdatableEntity.class)
         .in(Scopes.SINGLETON);
+    activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.CUSTOM_DEPLOY)
+        .to(CustomChangeActivityUpdatableEntity.class)
+        .in(Scopes.SINGLETON);
+    activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.CUSTOM_INCIDENT)
+        .to(CustomChangeActivityUpdatableEntity.class)
+        .in(Scopes.SINGLETON);
+    activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.CUSTOM_INFRA)
+        .to(CustomChangeActivityUpdatableEntity.class)
+        .in(Scopes.SINGLETON);
+    activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.CUSTOM_FF)
+        .to(CustomChangeActivityUpdatableEntity.class)
+        .in(Scopes.SINGLETON);
 
     MapBinder<ChangeSourceType, ChangeSourceUpdateHandler> changeSourceUpdateHandlerMapBinder =
         MapBinder.newMapBinder(binder(), ChangeSourceType.class, ChangeSourceUpdateHandler.class);
@@ -943,6 +994,18 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     activityUpdateHandlerMapBinder.addBinding(ActivityType.FEATURE_FLAG)
         .to(InternalChangeActivityUpdateHandler.class)
+        .in(Scopes.SINGLETON);
+    activityUpdateHandlerMapBinder.addBinding(ActivityType.CUSTOM_DEPLOY)
+        .to(CustomChangeActivityUpdateHandler.class)
+        .in(Scopes.SINGLETON);
+    activityUpdateHandlerMapBinder.addBinding(ActivityType.CUSTOM_INFRA)
+        .to(CustomChangeActivityUpdateHandler.class)
+        .in(Scopes.SINGLETON);
+    activityUpdateHandlerMapBinder.addBinding(ActivityType.CUSTOM_INCIDENT)
+        .to(CustomChangeActivityUpdateHandler.class)
+        .in(Scopes.SINGLETON);
+    activityUpdateHandlerMapBinder.addBinding(ActivityType.CUSTOM_FF)
+        .to(CustomChangeActivityUpdateHandler.class)
         .in(Scopes.SINGLETON);
 
     MapBinder<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMapBinder =
@@ -970,6 +1033,7 @@ public class CVServiceModule extends AbstractModule {
     bind(UserJourneyService.class).to(UserJourneyServiceImpl.class);
     bind(ServiceLevelIndicatorService.class).to(ServiceLevelIndicatorServiceImpl.class).in(Singleton.class);
     bind(SLIDataProcessorService.class).to(SLIDataProcessorServiceImpl.class);
+    bind(SLIDataUnavailabilityFilterService.class).to(SLIDataUnavailabilityFilterServiceImpl.class);
     bind(ServiceLevelIndicatorEntityAndDTOTransformer.class);
     bind(CompositeSLOService.class).to(CompositeSLOServiceImpl.class);
     bind(DebugService.class).to(DebugServiceImpl.class).in(Singleton.class);
@@ -999,6 +1063,18 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_FF)
         .to(InternalChangeEventTransformer.class)
+        .in(Scopes.SINGLETON);
+    changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.CUSTOM_DEPLOY)
+        .to(CustomChangeEventTransformer.class)
+        .in(Scopes.SINGLETON);
+    changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.CUSTOM_INFRA)
+        .to(CustomChangeEventTransformer.class)
+        .in(Scopes.SINGLETON);
+    changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.CUSTOM_INCIDENT)
+        .to(CustomChangeEventTransformer.class)
+        .in(Scopes.SINGLETON);
+    changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.CUSTOM_FF)
+        .to(CustomChangeEventTransformer.class)
         .in(Scopes.SINGLETON);
 
     bind(StateMachineMessageProcessor.class).to(StateMachineMessageProcessorImpl.class);
@@ -1149,6 +1225,18 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     changeTypeSourceMapBinder.addBinding(ChangeSourceType.HARNESS_CD_CURRENT_GEN)
         .to(HarnessCDCurrentGenChangeSource.UpdatableHarnessCDCurrentGenChangeSourceEntity.class)
+        .in(Scopes.SINGLETON);
+    changeTypeSourceMapBinder.addBinding(ChangeSourceType.CUSTOM_DEPLOY)
+        .to(CustomChangeSource.UpdatableCustomChangeSourceEntity.class)
+        .in(Scopes.SINGLETON);
+    changeTypeSourceMapBinder.addBinding(ChangeSourceType.CUSTOM_INCIDENT)
+        .to(CustomChangeSource.UpdatableCustomChangeSourceEntity.class)
+        .in(Scopes.SINGLETON);
+    changeTypeSourceMapBinder.addBinding(ChangeSourceType.CUSTOM_INFRA)
+        .to(CustomChangeSource.UpdatableCustomChangeSourceEntity.class)
+        .in(Scopes.SINGLETON);
+    changeTypeSourceMapBinder.addBinding(ChangeSourceType.CUSTOM_FF)
+        .to(CustomChangeSource.UpdatableCustomChangeSourceEntity.class)
         .in(Scopes.SINGLETON);
   }
 

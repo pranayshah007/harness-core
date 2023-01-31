@@ -16,5 +16,6 @@ public enum AWSActions {
   @JsonProperty(AWSConstants.TAG) TAG,
   @JsonProperty(AWSConstants.MARKFOROP) MARKFOROP,
   @JsonProperty(AWSConstants.REMOVETAG) REMOVETAG,
-  @JsonProperty(AWSConstants.RENAMETAG) RENAMETAG
+  @JsonProperty(AWSConstants.RENAMETAG) RENAMETAG,
+  @JsonProperty(AWSConstants.WEBHOOK) WEBHOOK
 }

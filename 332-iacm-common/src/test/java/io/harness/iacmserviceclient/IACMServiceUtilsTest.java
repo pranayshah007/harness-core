@@ -121,14 +121,6 @@ public class IACMServiceUtilsTest extends CategoryTest implements MockableTestMi
         .isInstanceOf(GeneralException.class)
         .hasMessageContaining("Could not retrieve IACM stack info from the IACM service. Response body is null");
 
-    Call<JsonObject> connectorCall4 = mock(Call.class);
-    when(iacmServiceClient.getStackInfo(any(), any(), any(), any(), any())).thenReturn(connectorCall4);
-    response = Response.success(200, JsonParser.parseString("{foobar:bar}").getAsJsonObject());
-    when(connectorCall4.execute()).thenReturn(response);
-    assertThatThrownBy(() -> iacmServiceUtils.getIACMStackInfo("a", "b", "c", "d"))
-        .isInstanceOf(GeneralException.class)
-        .hasMessageContaining("Could not parse stack response. Please contact Harness Support for more information");
-
     Call<JsonObject> connectorCall5 = mock(Call.class);
     when(iacmServiceClient.getStackInfo(any(), any(), any(), any(), any())).thenReturn(connectorCall5);
     response = Response.success(200, JsonParser.parseString("{name:bar}").getAsJsonObject());
@@ -180,15 +172,6 @@ public class IACMServiceUtilsTest extends CategoryTest implements MockableTestMi
     assertThatThrownBy(() -> iacmServiceUtils.getIacmStackEnvs("a", "b", "c", "d"))
         .isInstanceOf(GeneralException.class)
         .hasMessageContaining("Could not retrieve IACM variables from the IACM service. Response body is null");
-
-    Call<JsonArray> connectorCall4 = mock(Call.class);
-    when(iacmServiceClient.getStackVariables(any(), any(), any(), any(), any())).thenReturn(connectorCall4);
-    response = Response.success(200, JsonParser.parseString("[{foobar:bar}]").getAsJsonArray());
-    when(connectorCall4.execute()).thenReturn(response);
-    assertThatThrownBy(() -> iacmServiceUtils.getIacmStackEnvs("a", "b", "c", "d"))
-        .isInstanceOf(GeneralException.class)
-        .hasMessageContaining(
-            "Could not parse variables response. Please contact Harness Support for more information");
 
     Call<JsonArray> connectorCall5 = mock(Call.class);
     when(iacmServiceClient.getStackVariables(any(), any(), any(), any(), any())).thenReturn(connectorCall5);

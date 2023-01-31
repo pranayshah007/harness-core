@@ -60,7 +60,7 @@ public class CoreDelegateService extends SimpleDelegateAgent {
     return Arrays.stream(TaskType.values()).collect(toImmutableList());
   }
 
-  //    @Override
+  @Override
   protected void onPreResponseSent(final DelegateTaskResponse response) {
     final DelegateMetaInfo responseMetadata =
         DelegateMetaInfo.builder().hostName(HOST_NAME).id(DelegateAgentCommonVariables.getDelegateId()).build();

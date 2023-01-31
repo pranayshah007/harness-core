@@ -8,6 +8,8 @@
 package io.harness.plancreator.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
@@ -22,7 +24,9 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.when.beans.StepWhenCondition;
+import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.StepSpecType;
+import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.timeout.Timeout;
 
@@ -62,7 +66,9 @@ public class StepElementConfig {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN)
   ParameterField<Timeout> timeout;
-  List<FailureStrategyConfig> failureStrategies;
+  @VariableExpression(skipVariableExpression = true)
+  @YamlSchemaTypes(value = {runtime, list})
+  ParameterField<List<FailureStrategyConfig>> failureStrategies;
 
   @JsonProperty("strategy") StrategyConfig strategy;
 
@@ -83,7 +89,7 @@ public class StepElementConfig {
 
   @Builder
   public StepElementConfig(String uuid, String identifier, String name, String description,
-      ParameterField<Timeout> timeout, List<FailureStrategyConfig> failureStrategies, String type,
+      ParameterField<Timeout> timeout, ParameterField<List<FailureStrategyConfig>> failureStrategies, String type,
       StepSpecType stepSpecType, ParameterField<String> skipCondition, StepWhenCondition when,
       ParameterField<List<String>> delegateSelectors) {
     this.uuid = uuid;

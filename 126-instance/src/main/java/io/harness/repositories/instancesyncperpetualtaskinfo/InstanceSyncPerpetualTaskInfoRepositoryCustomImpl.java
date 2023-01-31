@@ -10,10 +10,14 @@ package io.harness.repositories.instancesyncperpetualtaskinfo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfo;
+import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.client.result.DeleteResult;
 import lombok.AllArgsConstructor;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -32,5 +36,16 @@ public class InstanceSyncPerpetualTaskInfoRepositoryCustomImpl
     Query query = new Query(criteria);
     return mongoTemplate.findAndModify(
         query, update, FindAndModifyOptions.options().returnNew(true), InstanceSyncPerpetualTaskInfo.class);
+  }
+  @Override
+  public DeleteResult delete(Criteria criteria) {
+    Query query = new Query(criteria);
+    RetryPolicy<Object> retryPolicy =
+        getRetryPolicy("[Retrying]: Failed deleting instance sync perpetual task info; attempt: {}",
+            "[Failed]: Failed deleting Service; attempt: {}");
+    return Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, InstanceSyncPerpetualTaskInfo.class));
+  }
+  private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
+    return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
   }
 }

@@ -231,13 +231,13 @@ public class AwsAmiServiceTrafficShiftAlbSetupTest extends WingsBaseTest {
     doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
     doReturn(false).when(featureFlagService).isEnabled(any(), anyString());
     if (!isSuccess) {
-      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTask(any());
+      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTaskV2(any());
     }
   }
 
   private void verifyTestResult(AwsAmiServiceTrafficShiftAlbSetup state, ExecutionResponse response) {
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(captor.capture());
+    verify(delegateService, times(1)).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
     assertThat(delegateTask.getData().getParameters()).isNotNull();

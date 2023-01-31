@@ -25,6 +25,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/exception:module",
         "//980-commons/src/main/java/io/harness/secret:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_google_apis_google_api_services_cloudresourcemanager",
         "@maven//:com_google_apis_google_api_services_storage",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_inject_guice",

@@ -44,10 +44,9 @@ import io.harness.queue.QueueController;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import com.mongodb.BulkWriteResult;
-import dev.morphia.query.MorphiaIterator;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
@@ -361,7 +360,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         log.debug("Redis Batch Iterator Mode - time to acquire Redis lock {}", processTime);
 
         startTime = currentTimeMillis();
-        MorphiaIterator<T, T> docItr = persistenceProvider.obtainNextInstances(clazz, fieldName, filterExpander, limit);
+        Iterator<T> docItr = persistenceProvider.obtainNextInstances(clazz, fieldName, filterExpander, limit);
         processTime = currentTimeMillis() - startTime;
         log.debug("Redis Batch Iterator Mode - time to acquire {} docs is {}", limit, processTime);
 
@@ -493,7 +492,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
     int size = docIds.size();
     try {
       long startTime = currentTimeMillis();
-      BulkWriteResult writeResults =
+      BulkWriteOpsResults writeResults =
           persistenceProvider.bulkWriteDocumentsMatchingIds(clazz, docIds, fieldName, base, targetInterval);
       long processTime = currentTimeMillis() - startTime;
       log.debug(

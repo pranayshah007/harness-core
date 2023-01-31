@@ -257,6 +257,10 @@ public class ModuleLicenseHelper {
             && !ciLicense.getNumberOfCommitters().equals(currentCILicense.getNumberOfCommitters())) {
           currentCILicense.setNumberOfCommitters(ciLicense.getNumberOfCommitters());
         }
+        if (ciLicense.getCacheAllowance() != null
+            && !ciLicense.getCacheAllowance().equals(currentCILicense.getCacheAllowance())) {
+          currentCILicense.setCacheAllowance(ciLicense.getCacheAllowance());
+        }
         if (ciLicense.getHostingCredits() != null
             && !ciLicense.getHostingCredits().equals(currentCILicense.getHostingCredits())) {
           currentCILicense.setHostingCredits(ciLicense.getHostingCredits());

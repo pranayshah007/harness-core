@@ -184,9 +184,9 @@ public final class STOSettingsUtils {
           resolveStringParameter("image.access_id", stepType, identifier, imageData.getAccessId(), false));
       map.put(getSTOKey("container_access_token"),
           resolveStringParameter("image.access_token", stepType, identifier, imageData.getAccessToken(), false));
-      map.put(getSTOKey("container_image_name"),
+      map.put(getSTOKey("container_project"),
           resolveStringParameter("image.name", stepType, identifier, imageData.getName(), false));
-      map.put(getSTOKey("container_image_tag"),
+      map.put(getSTOKey("container_tag"),
           resolveStringParameter("image.tag", stepType, identifier, imageData.getTag(), false));
     }
 
@@ -204,12 +204,15 @@ public final class STOSettingsUtils {
           resolveStringParameter("instance.path", stepType, identifier, instanceData.getPath(), false));
       map.put(getSTOKey("instance_protocol"),
           resolveStringParameter("instance.protocol", stepType, identifier, instanceData.getProtocol(), false));
-      map.put(getSTOKey("instance_port"),
-          String.valueOf(resolveIntegerParameter(instanceData.getPort(), DEFAULT_INSTANCE_PORT)));
       map.put(getSTOKey("instance_access_id"),
           resolveStringParameter("instance.access_id", stepType, identifier, instanceData.getAccessId(), false));
       map.put(getSTOKey("instance_access_token"),
           resolveStringParameter("instance.access_token", stepType, identifier, instanceData.getAccessToken(), false));
+
+      Integer port = resolveIntegerParameter(instanceData.getPort(), null);
+      if (port != null) {
+        map.put(getSTOKey("instance_port"), String.valueOf(port));
+      }
     }
 
     return map;
@@ -240,10 +243,6 @@ public final class STOSettingsUtils {
           map.put(getSTOKey("repository_project"), targetName);
           map.put(getSTOKey("repository_branch"), targetVariant);
           break;
-        case CONTAINER:
-          map.put(getSTOKey("container_project"), targetName);
-          map.put(getSTOKey("container_tag"), targetVariant);
-          break;
         case CONFIGURATION:
           map.put(getSTOKey("configuration_type"), targetName);
           map.put(getSTOKey("configuration_environment"), targetVariant);
@@ -268,7 +267,7 @@ public final class STOSettingsUtils {
 
         map.put(getSTOKey("log_level"), logLevel != null ? logLevel.getYamlName() : STOYamlLogLevel.INFO.getYamlName());
         map.put(getSTOKey("log_serializer"),
-            logSerializer != null ? logSerializer.getYamlName() : STOYamlLogSerializer.BUNYAN.getYamlName());
+            logSerializer != null ? logSerializer.getYamlName() : STOYamlLogSerializer.SIMPLE_ONPREM.getYamlName());
       }
 
       STOYamlArgs argsData = advancedSettings.getArgs();
@@ -503,8 +502,11 @@ public final class STOSettingsUtils {
     if (toolData != null) {
       map.put(getSTOKey("product_context"),
           resolveStringParameter("tool.context", stepType, identifier, toolData.getContext(), false));
-      map.put(
-          getSTOKey("zap_custom_port"), String.valueOf(resolveIntegerParameter(toolData.getPort(), ZAP_DEFAULT_PORT)));
+
+      Integer port = resolveIntegerParameter(toolData.getPort(), null);
+      if (port != null) {
+        map.put(getSTOKey("zap_custom_port"), String.valueOf(port));
+      }
     }
 
     return map;

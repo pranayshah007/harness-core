@@ -274,7 +274,7 @@ public class AzureVMSSRollbackStateTest extends WingsBaseTest {
         .when(azureVMSSStateHelper)
         .fixNamePrefix(any(), anyString(), anyString(), anyString(), anyString());
     doReturn(2).when(azureVMSSStateHelper).renderExpressionOrGetDefault(anyString(), any(), anyInt());
-    doReturn("Done").when(delegateService).queueTask(any());
+    doReturn("Done").when(delegateService).queueTaskV2(any());
     return context;
   }
 }

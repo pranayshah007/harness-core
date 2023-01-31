@@ -12,7 +12,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//970-api-services-beans:module",
+        "//970-api-services-beans/src/main/java/io/harness/git:module",
+        "//970-api-services-beans/src/main/java/io/harness/git/model:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//980-commons/src/main/java/io/harness/eraro:module",
         "//980-commons/src/main/java/io/harness/exception:module",

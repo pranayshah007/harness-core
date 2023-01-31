@@ -54,20 +54,21 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/oc/v4.2.16/oc https://app.harness.io/public/shared/tools/oc/release/v4.2.16/bin/linux/$TARGETARCH/oc \
   && mkdir -m 777 -p client-tools/kustomize/v4.5.4 \
   && curl -s -L -o client-tools/kustomize/v4.5.4/kustomize https://app.harness.io/public/shared/tools/kustomize/release/v4.5.4/bin/linux/$TARGETARCH/kustomize \
-  && mkdir -m 777 -p client-tools/scm/1658d03e \
-  && curl -s -L -o client-tools/scm/1658d03e/scm https://app.harness.io/public/shared/tools/scm/release/1658d03e/bin/linux/$TARGETARCH/scm
+  && mkdir -m 777 -p client-tools/scm/bf795ebf \
+  && curl -s -L -o client-tools/scm/bf795ebf/scm https://app.harness.io/public/shared/tools/scm/release/bf795ebf/bin/linux/$TARGETARCH/scm
 
-
-RUN chmod -R 755 /opt/harness-delegate/client-tools \
-    && chgrp -R 0 /opt/harness-delegate/client-tools  \
-    && chmod -R g=u /opt/harness-delegate/client-tools \
-    && chown -R 1001 /opt/harness-delegate/client-tools
+RUN chmod -R 755 /opt/harness-delegate \
+    && chgrp -R 0 /opt/harness-delegate  \
+    && chmod -R g=u /opt/harness-delegate \
+    && chown -R 1001 /opt/harness-delegate
 
 ENV PATH=/opt/harness-delegate/client-tools/kubectl/v1.24.3/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/go-template/v0.4.1/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/chartmuseum/v0.15.0/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/tf-config-inspect/v1.1/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/kustomize/v4.5.4/:$PATH
+
+COPY ./delegate.jar ./delegate.jar
 
 USER 1001
 

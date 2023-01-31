@@ -797,7 +797,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
             .build();
     ExecutionResponse executionResponse = jiraCreateUpdateState.execute(context);
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     assertThat(delegateTaskArgumentCaptor.getValue())
         .isNotNull()
         .hasFieldOrPropertyWithValue("data.taskType", JIRA.name());
@@ -824,7 +824,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
             .build();
     ExecutionResponse executionResponse = jiraCreateUpdateState.execute(context);
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     assertThat(delegateTaskArgumentCaptor.getValue())
         .isNotNull()
         .hasFieldOrPropertyWithValue("data.taskType", JIRA.name());
@@ -852,7 +852,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
             .build();
     ExecutionResponse executionResponse = jiraCreateUpdateState.execute(context);
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     assertThat(delegateTaskArgumentCaptor.getValue())
         .isNotNull()
         .hasFieldOrPropertyWithValue("data.taskType", JIRA.name());
@@ -924,6 +924,6 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
     when(jiraHelperService.getCreateMetadata(
              JIRA_CONNECTOR_ID, null, jiraCreateUpdateState.getProject(), ACCOUNT_ID, APP_ID, 0, ISSUE_TYPE))
         .thenReturn(createMetaResponse);
-    when(delegateService.queueTask(any())).thenReturn(UUID);
+    when(delegateService.queueTaskV2(any())).thenReturn(UUID);
   }
 }

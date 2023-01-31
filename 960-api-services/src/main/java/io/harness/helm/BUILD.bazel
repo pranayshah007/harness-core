@@ -13,7 +13,10 @@ java_library(
     deps = [
         "//:lombok",
         "//960-api-services/src/main/java/io/harness/k8s:module",
-        "//970-api-services-beans:module",
+        "//970-api-services-beans/src/main/java/io/harness/exception:module",
+        "//970-api-services-beans/src/main/java/io/harness/helm:module",
+        "//970-api-services-beans/src/main/java/io/harness/k8s/model:module",
+        "//970-api-services-beans/src/main/java/io/harness/logging:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//980-commons/src/main/java/io/harness/exception:module",
         "//980-commons/src/main/java/io/harness/logging:module",

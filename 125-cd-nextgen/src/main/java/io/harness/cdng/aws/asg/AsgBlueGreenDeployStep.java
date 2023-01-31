@@ -12,6 +12,7 @@ import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -24,7 +25,6 @@ import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataRequest;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataResponse;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataResult;
-import io.harness.delegate.task.aws.asg.AsgLoadBalancerConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -128,6 +128,7 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgName(asgBlueGreenExecutionPassThroughData.getAsgName())
+            .firstDeployment(asgBlueGreenExecutionPassThroughData.isFirstDeployment())
             .asgLoadBalancerConfig(asgBlueGreenExecutionPassThroughData.getLoadBalancerConfig())
             .amiImageId(amiImageId)
             .build();
@@ -199,7 +200,7 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
 
     AsgBlueGreenDeployOutcome asgBlueGreenDeployOutcome =
         AsgBlueGreenDeployOutcome.builder()
-            .asgName(asgBlueGreenDeployResult.getAutoScalingGroupContainer().getAutoScalingGroupName())
+            .autoScalingGroupContainer(asgBlueGreenDeployResult.getAutoScalingGroupContainer())
             .build();
 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_BLUE_GREEN_DEPLOY_OUTCOME,
@@ -240,14 +241,15 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
           AsgBlueGreenPrepareRollbackDataOutcome.builder()
               .prodAsgName(asgPrepareRollbackDataResult.getProdAsgName())
               .asgName(asgPrepareRollbackDataResult.getAsgName())
-              .asgManifestsDataForRollback(asgPrepareRollbackDataResult.getAsgManifestsDataForRollback())
+              .prodAsgManifestDataForRollback(asgPrepareRollbackDataResult.getProdAsgManifestsDataForRollback())
+              .stageAsgManifestDataForRollback(asgPrepareRollbackDataResult.getStageAsgManifestsDataForRollback())
               .loadBalancer(loadBalancerConfig.getLoadBalancer())
               .stageListenerArn(loadBalancerConfig.getStageListenerArn())
               .stageListenerRuleArn(loadBalancerConfig.getStageListenerRuleArn())
-              .stageTargetGroupArns(loadBalancerConfig.getStageTargetGroupArns())
+              .stageTargetGroupArnsList(loadBalancerConfig.getStageTargetGroupArnsList())
               .prodListenerArn(loadBalancerConfig.getProdListenerArn())
               .prodListenerRuleArn(loadBalancerConfig.getProdListenerRuleArn())
-              .prodTargetGroupArns(loadBalancerConfig.getProdTargetGroupArns())
+              .prodTargetGroupArnsList(loadBalancerConfig.getProdTargetGroupArnsList())
               .build();
 
       executionSweepingOutputService.consume(ambiance,
@@ -260,6 +262,7 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
               .lastActiveUnitProgressData(asgPrepareRollbackDataResponse.getUnitProgressData())
               .asgName(asgPrepareRollbackDataResult.getAsgName())
               .loadBalancerConfig(loadBalancerConfig)
+              .firstDeployment(asgPrepareRollbackDataResult.getProdAsgName() == null)
               .build();
 
       Map<String, List<String>> asgStoreManifestsContent = asgStepPassThroughData.getAsgStoreManifestsContent();

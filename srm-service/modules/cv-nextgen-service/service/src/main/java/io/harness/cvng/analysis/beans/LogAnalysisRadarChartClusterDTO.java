@@ -45,6 +45,17 @@ public class LogAnalysisRadarChartClusterDTO {
             .label(logAnalysisRadarChartListDTO.getLabel())
             .radius(logAnalysisRadarChartListDTO.getRadius())
             .risk(logAnalysisRadarChartListDTO.getRisk());
+    if (logAnalysisRadarChartListDTO.hasControlData()) {
+      logAnalysisRadarChartClusterDTOBuilder.baseline(
+          LogAnalysisRadarChartClusterDTO.builder()
+              .message(logAnalysisRadarChartListDTO.getBaseline().getMessage())
+              .clusterType(logAnalysisRadarChartListDTO.getBaseline().getClusterType())
+              .angle(logAnalysisRadarChartListDTO.getBaseline().getAngle())
+              .label(logAnalysisRadarChartListDTO.getBaseline().getLabel())
+              .radius(logAnalysisRadarChartListDTO.getBaseline().getRadius())
+              .risk(logAnalysisRadarChartListDTO.getBaseline().getRisk())
+              .build());
+    }
     return logAnalysisRadarChartClusterDTOBuilder.build();
   }
 }

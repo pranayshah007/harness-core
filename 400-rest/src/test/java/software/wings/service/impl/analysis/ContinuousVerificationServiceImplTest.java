@@ -452,7 +452,7 @@ public class ContinuousVerificationServiceImplTest extends WingsBaseTest {
 
     continuousVerificationService.collectCVData(cvTaskId, dataCollectionInfoV2);
     ArgumentCaptor<DelegateTask> argumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(argumentCaptor.capture());
+    verify(delegateService).queueTaskV2(argumentCaptor.capture());
     DelegateTask delegateTask = argumentCaptor.getValue();
     assertThat(delegateTask.getAccountId()).isEqualTo(dataCollectionInfoV2.getAccountId());
     assertThat(delegateTask.getData().getParameters()).hasSize(1);
@@ -717,7 +717,7 @@ public class ContinuousVerificationServiceImplTest extends WingsBaseTest {
 
     when(settingsService.get(serverConfigId)).thenReturn(settingAttribute);
     when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(new ArrayList<>());
-    when(delegateProxyFactory.get(any(), any())).thenReturn(apmDelegateService);
+    when(delegateProxyFactory.getV2(any(), any())).thenReturn(apmDelegateService);
     when(apmDelegateService.fetch(any(), any())).thenReturn("{}");
     when(datadogService.getConcatenatedListOfMetricsForValidation(anyString(), any(), any(), any()))
         .thenReturn("kubernetes.cpu.usage.total");
@@ -871,7 +871,7 @@ public class ContinuousVerificationServiceImplTest extends WingsBaseTest {
     persistence.save(context);
     continuousVerificationService.collectCVDataForWorkflow("sampleUuid", 26452678);
     ArgumentCaptor<DelegateTask> taskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(4)).queueTask(taskArgumentCaptor.capture());
+    verify(delegateService, times(4)).queueTaskV2(taskArgumentCaptor.capture());
     assertThat(taskArgumentCaptor.getAllValues().size()).isEqualTo(4);
     Set<String> hosts = context.getTestNodes().keySet();
     List<DelegateTask> tasks = taskArgumentCaptor.getAllValues();

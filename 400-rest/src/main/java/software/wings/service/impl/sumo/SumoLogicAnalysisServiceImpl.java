@@ -52,7 +52,7 @@ public class SumoLogicAnalysisServiceImpl extends AnalysisServiceImpl implements
                                           .timeout(DEFAULT_SYNC_CALL_TIMEOUT * 3)
                                           .build();
     try {
-      return delegateProxyFactory.get(SumoDelegateService.class, sumoTaskContext)
+      return delegateProxyFactory.getV2(SumoDelegateService.class, sumoTaskContext)
           .getLogDataByHost(accountId, (SumoConfig) settingAttribute.getValue(), sumoLogicSetupTestNodedata.getQuery(),
               sumoLogicSetupTestNodedata.getHostNameField(), mlServiceUtils.getHostName(sumoLogicSetupTestNodedata),
               encryptedDataDetails,
