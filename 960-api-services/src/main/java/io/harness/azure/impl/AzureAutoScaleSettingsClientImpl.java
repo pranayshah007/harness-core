@@ -22,6 +22,7 @@ import io.harness.azure.context.AzureClientContext;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.AzureConstants;
 import io.harness.azure.utility.AzureResourceUtility;
+import io.harness.azure.utility.AzureUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
@@ -326,6 +327,8 @@ public class AzureAutoScaleSettingsClientImpl extends AzureClient implements Azu
     return new MonitorClientBuilder()
         .subscriptionId(subscriptionId)
         .pipeline(getAzureHttpPipeline(azureConfig, subscriptionId))
+        .endpoint(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getResourceManagerEndpoint())
+        .environment(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()))
         .buildClient();
   }
 }
