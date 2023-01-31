@@ -11,12 +11,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.AddExecutableResponseRequest;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.execution.utils.SdkResponseEventUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.EnumSet;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -28,7 +30,18 @@ public class AddExecutableResponseRequestProcessor implements SdkResponseProcess
   @Override
   public void handleEvent(SdkResponseEventProto event) {
     AddExecutableResponseRequest request = event.getAddExecutableResponseRequest();
-    nodeExecutionService.updateV2(SdkResponseEventUtils.getNodeExecutionId(event),
-        ops -> ops.addToSet(NodeExecutionKeys.executableResponses, request.getExecutableResponse()));
+    if (request.getExecutableResponse().hasAsync()
+        && request.getExecutableResponse().getAsync().getStatus() != Status.NO_OP) {
+      // As override set is empty, this will prevent any race condition as mongo will handle it using
+      // StatusUtils.nodeAllowedStartSet()
+      nodeExecutionService.updateStatusWithOps(SdkResponseEventUtils.getNodeExecutionId(event),
+          request.getExecutableResponse().getAsync().getStatus(),
+          ops
+          -> ops.addToSet(NodeExecutionKeys.executableResponses, request.getExecutableResponse()),
+          EnumSet.noneOf(Status.class));
+    } else {
+      nodeExecutionService.updateV2(SdkResponseEventUtils.getNodeExecutionId(event),
+          ops -> ops.addToSet(NodeExecutionKeys.executableResponses, request.getExecutableResponse()));
+    }
   }
 }

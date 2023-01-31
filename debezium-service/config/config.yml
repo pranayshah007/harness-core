@@ -78,21 +78,6 @@ debeziumConfigs:
           enabled: ${SNAPSHOT_EVENTS_FRAMEWORK_SSL_CONFIG_ENABLED:-false}
           CATrustStorePath: ${SNAPSHOT_EVENTS_FRAMEWORK_CATRUST_STORE_PATH:-/tmp/ca_trust_store}
           CATrustStorePassword:  ${SNAPSHOT_EVENTS_FRAMEWORK_CATRUST_STORE_PASSWORD:-}
-  - isEnabled: ${IS_ENABLED_APPLICATIONS:-true}
-    name: ${DEBEZIUM_NAME_APPLICATIONS:-applications} # unique for each debezium config
-    mongodb.name: ${MONGODB_NAME_APPLICATIONS:-harnessMongo} # unique for each debezium config
-    mongodb.ssl.enabled: ${MONGO_DB_SSL_ENABLED_APPLICATIONS:-false}
-    database.include.list: ${DATABASE_INCLUDE_LIST_APPLICATIONS:-harness}
-    collection.include.list: ${COLLECTION_INCLUDE_LIST_APPLICATIONS:-harness.applications}
-    redisStreamSize: ${REDIS_STREAM_SIZE_APPLICATIONS:-10000}
-    snapshot.mode: ${SNAPSHOT_MODE_APPLICATIONS:-never}
-    max.queue.size: ${MAX_QUEUE_SIZE_APPLICATIONS:-8192}
-    max.batch.size: ${MAX_BATCH_SIZE_APPLICATIONS:-2048}
-    max.queue.size.in.bytes: ${MAX_QUEUE_SIZE_IN_BYTES_APPLICATIONS:-1000000000}
-    poll.interval.ms: ${POLL_INTERVAL_MS_APPLICATIONS:-3000}
-    field.exclude.list: ${FIELD_EXCLUDE_LIST_APPLICATIONS:-harness.applications.keywords}
-    heartbeat.interval.ms: ${HEARTBEAT_INTERVAL_APPLICATIONS:-10000}
-    mongodb.connection.string: ${MONGODB_CONNECTION_STRING_APPLICATIONS:-mongodb://localhost:27017}
 
 eventsFramework:
   redis:

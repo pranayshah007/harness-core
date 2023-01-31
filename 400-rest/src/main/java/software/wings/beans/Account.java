@@ -105,6 +105,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Getter @Setter private LicenseInfo licenseInfo;
 
+  @Getter @Setter private int trustLevel = -1;
+
   @Getter @Setter private CeLicenseInfo ceLicenseInfo;
 
   private Set<AccountEvent> accountEvents;
@@ -603,6 +605,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private boolean accountActivelyUsed;
     private ServiceAccountConfig serviceAccountConfig;
     private boolean globalDelegateAccount;
+    private int trustLevel;
 
     private Builder() {}
 
@@ -780,6 +783,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       return this;
     }
 
+    public Builder withTrustLevel(int trustLevel) {
+      this.trustLevel = trustLevel;
+      return this;
+    }
+
     public Builder but() {
       return anAccount()
           .withCompanyName(companyName)
@@ -810,7 +818,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
           .withIsProductLed(isProductLed)
           .withAccountActivelyUsed(accountActivelyUsed)
           .withAccountPreferences(accountPreferences)
-          .withServiceAccountConfig(serviceAccountConfig);
+          .withServiceAccountConfig(serviceAccountConfig)
+          .withTrustLevel(trustLevel);
     }
 
     public Account build() {
@@ -848,6 +857,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       account.setAccountPreferences(accountPreferences);
       account.setNextGenEnabled(nextGenEnabled);
       account.setServiceAccountConfig(serviceAccountConfig);
+      account.setTrustLevel(trustLevel);
       return account;
     }
   }

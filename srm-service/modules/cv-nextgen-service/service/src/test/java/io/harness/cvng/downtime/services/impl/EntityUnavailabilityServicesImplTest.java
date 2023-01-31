@@ -31,7 +31,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -148,10 +147,11 @@ public class EntityUnavailabilityServicesImplTest extends CvNextGenTestBase {
     entityUnavailabilityStatusesDTO.setEndTime(clock.millis() / 1000 + 1);
     entityUnavailabilityStatusesService.create(
         projectParams, Collections.singletonList(entityUnavailabilityStatusesDTO));
-    Set<String> entitiyIds = entityUnavailabilityStatusesService.getActiveInstances(
-        projectParams, Collections.singletonList(entityUnavailabilityStatusesDTO.getEntityId()));
-    assertThat(entitiyIds.size()).isEqualTo(1);
-    assertThat(entitiyIds.contains(entityUnavailabilityStatusesDTO.getEntityId())).isEqualTo(true);
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getActiveOrFirstUpcomingInstance(
+            projectParams, Collections.singletonList(entityUnavailabilityStatusesDTO.getEntityId()));
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(1);
+    assertThat(entityUnavailabilityStatusesDTOS.get(0)).isEqualTo(entityUnavailabilityStatusesDTO);
   }
 
   @Test

@@ -17,3 +17,4 @@ The application starts the thread for starting up debezium engine and push the e
    `run`
    
 2. Add the `apiKey` in `cfClientConfig` of `config.yml` of debezium service. The value of api key can be found here: <br />
+   https://vault-internal.harness.io:8200/ui/vault/secrets/secret/show/debezium/apiKey

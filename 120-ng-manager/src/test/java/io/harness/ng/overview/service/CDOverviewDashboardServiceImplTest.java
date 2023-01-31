@@ -40,6 +40,7 @@ import io.harness.ng.overview.dto.ArtifactInstanceDetails;
 import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
+import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
 import io.harness.rule.Owner;
 import io.harness.service.instancedashboardservice.InstanceDashboardServiceImpl;
@@ -1079,5 +1080,31 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     verify(environmentService)
         .fetchesNonDeletedEnvironmentFromListOfIdentifiers(ACCOUNT_ID, ORG_ID, PROJECT_ID, envIds);
     verifyServiceEntityCall();
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getInstanceGroupedOnArtifactList() {
+    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList = new ArrayList<>();
+    InstanceGroupedOnArtifactList instanceGroupedOnArtifactList = InstanceGroupedOnArtifactList.builder().build();
+    when(instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false))
+        .thenReturn(activeServiceInstanceInfoWithEnvTypeList);
+    when(serviceEntityServiceImpl.getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
+        .thenReturn(Optional.of(ServiceEntity.builder().gitOpsEnabled(false).build()));
+    mockStatic(DashboardServiceHelper.class);
+    when(DashboardServiceHelper.getInstanceGroupedByArtifactListHelper(activeServiceInstanceInfoWithEnvTypeList, false))
+        .thenReturn(instanceGroupedOnArtifactList);
+
+    InstanceGroupedOnArtifactList instanceGroupedOnArtifactList1 =
+        cdOverviewDashboardService.getInstanceGroupedOnArtifactList(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, ENVIRONMENT_1, DISPLAY_NAME_1);
+
+    assertThat(instanceGroupedOnArtifactList1).isEqualTo(instanceGroupedOnArtifactList);
+    verify(serviceEntityServiceImpl).getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    verify(instanceDashboardService)
+        .getActiveServiceInstanceInfoWithEnvType(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false);
   }
 }

@@ -201,6 +201,12 @@ public interface EntityTypeConstants {
   String ASG_BLUE_GREEN_DEPLOY = "AsgBlueGreenDeploy";
   String ASG_BLUE_GREEN_ROLLBACK = "AsgBlueGreenRollback";
   String CCM_GOVERNANCE_RULE_AWS = "GovernanceRuleAWS";
+
+  String GOOGLE_CLOUD_FUNCTIONS_DEPLOY = "DeployCloudFunction";
+  String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC = "DeployCloudFunctionWithNoTraffic";
+  String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = "CloudFunctionTrafficShift";
+  String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "CloudFunctionRollback";
+
   String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
   String K8S_DRY_RUN_MANIFEST = "K8sDryRun";

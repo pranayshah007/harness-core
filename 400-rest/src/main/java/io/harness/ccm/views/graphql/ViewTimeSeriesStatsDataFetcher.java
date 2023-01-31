@@ -11,19 +11,16 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.billing.preaggregated.PreAggregatedBillingDataHelper.convertTimeSeriesPointsMapToList;
 import static io.harness.ccm.billing.preaggregated.PreAggregatedBillingDataHelper.getNumericValue;
 
-import static software.wings.graphql.datafetcher.billing.CloudBillingHelper.unified;
 import static software.wings.graphql.datafetcher.billing.CloudTimeSeriesStatsDataFetcher.OTHERS;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.billing.TimeSeriesDataPoints;
 import io.harness.ccm.views.service.ViewsBillingService;
 
 import software.wings.graphql.datafetcher.AbstractStatsDataFetcherWithAggregationListAndLimit;
 import software.wings.graphql.datafetcher.billing.BillingDataHelper;
-import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 import software.wings.graphql.schema.type.aggregation.QLBillingDataPoint;
 import software.wings.graphql.schema.type.aggregation.QLBillingDataPoint.QLBillingDataPointBuilder;
 import software.wings.graphql.schema.type.aggregation.QLData;
@@ -32,7 +29,6 @@ import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.AuthRule;
 
 import com.google.cloud.Timestamp;
-import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.FieldList;
 import com.google.cloud.bigquery.FieldValueList;
@@ -52,8 +48,6 @@ public class ViewTimeSeriesStatsDataFetcher
     extends AbstractStatsDataFetcherWithAggregationListAndLimit<QLCEViewAggregation, QLCEViewFilterWrapper,
         QLCEViewGroupBy, QLCEViewSortCriteria> {
   @Inject ViewsBillingService viewsBillingService;
-  @Inject CloudBillingHelper cloudBillingHelper;
-  @Inject BigQueryService bigQueryService;
   @Inject BillingDataHelper billingDataHelper;
 
   public static final String nullStringValueConstant = "Others";
@@ -63,11 +57,8 @@ public class ViewTimeSeriesStatsDataFetcher
   protected QLData fetch(String accountId, List<QLCEViewAggregation> aggregateFunction,
       List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy, List<QLCEViewSortCriteria> sort,
       Integer limit, Integer offset) {
-    String cloudProviderTableName = cloudBillingHelper.getCloudProviderTableName(accountId, unified);
-    BigQuery bigQuery = bigQueryService.get();
-
-    return convertToQLViewTimeSeriesData(viewsBillingService.getTimeSeriesStats(
-        bigQuery, filters, groupBy, aggregateFunction, sort, cloudProviderTableName));
+    return convertToQLViewTimeSeriesData(
+        viewsBillingService.getTimeSeriesStats(accountId, filters, groupBy, aggregateFunction, sort));
   }
 
   public QLViewTimeSeriesData convertToQLViewTimeSeriesData(TableResult result) {

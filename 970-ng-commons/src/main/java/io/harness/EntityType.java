@@ -521,7 +521,20 @@ public enum EntityType {
       EntityYamlRootNames.ASG_BLUE_GREEN_ROLLBACK),
   @JsonProperty(EntityTypeConstants.TERRAFORM_CLOUD_RUN)
   TERRAFORM_CLOUD_RUN(ModuleType.CD, EntityTypeConstants.TERRAFORM_CLOUD_RUN, IdentifierRef.class,
-      EntityYamlRootNames.TERRAFORM_CLOUD_RUN);
+      EntityYamlRootNames.TERRAFORM_CLOUD_RUN),
+  @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY)
+  GOOGLE_CLOUD_FUNCTIONS_DEPLOY(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY, IdentifierRef.class,
+      EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_DEPLOY),
+  @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC)
+  GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC(ModuleType.CD,
+      EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC, IdentifierRef.class,
+      EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC),
+  @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT)
+  GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT,
+      IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT),
+  @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK)
+  GOOGLE_CLOUD_FUNCTIONS_ROLLBACK(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK,
+      IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK);
 
   private final ModuleType moduleType;
   String yamlName;

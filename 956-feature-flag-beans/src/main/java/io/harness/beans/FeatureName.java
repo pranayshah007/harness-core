@@ -427,6 +427,7 @@ public enum FeatureName {
       HarnessTeam.DEL),
   SRM_ENABLE_HEALTHSOURCE_CLOUDWATCH_METRICS("UI FF to enable CloudWatch Metrics healthsource", HarnessTeam.CV),
   SRM_ENABLE_VERIFY_STEP_LONG_DURATION("Enable longer duration for verify step", HarnessTeam.CV),
+  SRM_CUSTOM_CHANGE_SOURCE("UI FF to enable Custom Change Source", HarnessTeam.CV),
   SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
   ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC),
   LOOKER_ENTITY_RECONCILIATION,
@@ -496,6 +497,8 @@ public enum FeatureName {
       HarnessTeam.PIPELINE),
   SPG_CD_RUN_STEP("CD run step in NG", HarnessTeam.SPG),
   GITOPS_ONPREM_ENABLED("Enable the gitops tab in the UI in case of ONPREM/SMP", HarnessTeam.GITOPS),
+  GITOPS_HOSTED(
+      "Enable hosted GitOps.Allows to install agent and ArgoCD components in Harness cluster", HarnessTeam.GITOPS),
   CIE_HOSTED_VMS_MAC("FF for enabling hosted builds for mac os", HarnessTeam.CI),
   SPG_DELETE_ENVIRONMENTS_ON_SERVICE_RENAME_GIT_SYNC(
       "On service rename delete stale folders inside environments folders.", HarnessTeam.SPG),
@@ -600,7 +603,12 @@ public enum FeatureName {
   CDP_AWS_SAM("FF for enabling AWS SAM deployments", HarnessTeam.CDP),
   TERRAFORM_CLOUD("Enable support of Terraform Cloud in the NG", HarnessTeam.CDP),
   CI_REMOTE_DEBUG("Enable the option for remote debug for CI users.", HarnessTeam.CI),
-  NG_CDS_HELM_SUB_CHARTS("Support for helm sub charts", HarnessTeam.CDP);
+  NG_CDS_HELM_SUB_CHARTS("Support for helm sub charts", HarnessTeam.CDP),
+  CDS_GOOGLE_CLOUD_FUNCTION("This flag is to enable the Google Functions Deployment Swimlane for users. "
+          + "This flag only works with Service and Environments v2",
+      HarnessTeam.CDP),
+  CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY(
+      "FF for disabling headers while doing capability check for HTTP", HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

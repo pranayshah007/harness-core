@@ -82,7 +82,6 @@ public class WaitStep extends PipelineAsyncExecutable {
         return StepResponse.builder().status(Status.SUCCEEDED).build();
       }
     } else {
-      waitStepService.updatePlanStatus(ambiance.getPlanExecutionId(), nodeExecutionId);
       return StepResponse.builder().status(Status.SUCCEEDED).build();
     }
   }

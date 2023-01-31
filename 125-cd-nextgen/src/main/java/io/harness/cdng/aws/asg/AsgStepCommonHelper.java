@@ -244,7 +244,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
       taskChainResponse = asgStepExecutor.executeAsgTask(
           ambiance, stepElementParameters, executionPassThroughData, unitProgressData, asgStepExecutorParams);
-    } else if (asgStepExecutor instanceof AsgRollingDeployStep) {
+    } else if (asgStepExecutor instanceof AsgRollingDeployStep || asgStepExecutor instanceof AsgBlueGreenDeployStep) {
       AsgPrepareRollbackDataPassThroughData asgPrepareRollbackDataPassThroughData =
           AsgPrepareRollbackDataPassThroughData.builder()
               .infrastructureOutcome(infrastructureOutcome)

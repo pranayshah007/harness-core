@@ -23,6 +23,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.dto.FetchRemoteEntityRequest;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.rule.Owner;
 import io.harness.template.beans.GetTemplateEntityRequest;
@@ -38,8 +39,10 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -138,8 +141,10 @@ public class TemplateMergeServiceHelperTest extends TemplateServiceTestBase {
     getBatchTemplateMap.put(TEMPLATE_UNIQUE_IDENTIFIER, stepTemplate);
     when(templateServiceHelper.getBatchRemoteTemplates(any(), any())).thenReturn(getBatchTemplateMap);
 
-    Map<String, TemplateEntity> remoteTemplatesList =
-        templateMergeServiceHelper.getBatchTemplates(ACCOUNT_IDENTIFIER, getBatchRequest);
+    Queue<YamlField> yamlNodeQueue = new LinkedList<>();
+
+    Map<String, TemplateEntity> remoteTemplatesList = templateMergeServiceHelper.getBatchTemplatesAndProcessTemplates(
+        ACCOUNT_IDENTIFIER, getBatchRequest, yamlNodeQueue);
     assertTrue(remoteTemplatesList.containsKey(TEMPLATE_UNIQUE_IDENTIFIER));
 
     TemplateEntity templateEntity = remoteTemplatesList.get(TEMPLATE_UNIQUE_IDENTIFIER);
@@ -149,6 +154,42 @@ public class TemplateMergeServiceHelperTest extends TemplateServiceTestBase {
     assertEquals(PROJECT_IDENTIFIER, templateEntity.getProjectIdentifier());
 
     assertEquals(TEMPLATE_IDENTIFIER, templateEntity.getIdentifier());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetBatchTemplatesAndProcessTemplates() {
+    TemplateEntity stepTemplate = convertYamlToTemplateEntity(SAMPLE_YAML);
+    stepTemplate.setStoreType(StoreType.INLINE);
+    when(templateServiceHelper.getMetadataOrThrowExceptionIfInvalid(any(), any(), any(), any(), any(), eq(false)))
+        .thenReturn(Optional.of(stepTemplate));
+
+    Map<String, GetTemplateEntityRequest> getBatchRequest = templateMergeServiceHelper.prepareBatchGetTemplatesRequest(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, templateToGet, false);
+
+    Map<String, TemplateEntity> getBatchTemplateMap = new HashMap<>();
+    getBatchTemplateMap.put(TEMPLATE_UNIQUE_IDENTIFIER, stepTemplate);
+    when(templateServiceHelper.getBatchRemoteTemplates(any(), any())).thenReturn(getBatchTemplateMap);
+
+    Queue<YamlField> yamlNodeQueue = new LinkedList<>();
+
+    Map<String, TemplateEntity> remoteTemplatesList = templateMergeServiceHelper.getBatchTemplatesAndProcessTemplates(
+        ACCOUNT_IDENTIFIER, getBatchRequest, yamlNodeQueue);
+    assertTrue(remoteTemplatesList.containsKey(TEMPLATE_UNIQUE_IDENTIFIER));
+
+    TemplateEntity templateEntity = remoteTemplatesList.get(TEMPLATE_UNIQUE_IDENTIFIER);
+
+    assertEquals(ACCOUNT_IDENTIFIER, templateEntity.getAccountIdentifier());
+    assertEquals(ORG_IDENTIFIER, templateEntity.getOrgIdentifier());
+    assertEquals(PROJECT_IDENTIFIER, templateEntity.getProjectIdentifier());
+
+    assertEquals(TEMPLATE_IDENTIFIER, templateEntity.getIdentifier());
+    assertTrue(((YamlField) ((LinkedList<?>) yamlNodeQueue).get(0))
+                   .getNode()
+                   .getCurrJsonNode()
+                   .toString()
+                   .contains("templateRef"));
   }
 
   @Test

@@ -89,9 +89,12 @@ public interface YamlTypes {
   String ASG_BLUE_GREEN_DEPLOY = StepSpecTypeConstants.ASG_BLUE_GREEN_DEPLOY;
   String ASG_BLUE_GREEN_ROLLBACK = StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK;
   String ASG_BLUE_GREEN_SWAP_SERVICE = StepSpecTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE;
-
+  String GOOGLE_CLOUD_FUNCTIONS_DEPLOY = StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY;
+  String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC =
+      StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC;
+  String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT;
+  String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK;
   String TERRAFORM_CLOUD_RUN = StepSpecTypeConstants.TERRAFORM_CLOUD_RUN;
-
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";
   String K8S_MANIFEST = ManifestType.K8Manifest;
@@ -133,6 +136,7 @@ public interface YamlTypes {
 
   String COMMAND_FLAGS_WRAPPER = "commandFlags";
   String REGION = "region";
+  String PROJECT = "project";
   String STAGE = "stage";
   String TEMPLATE = "template";
   String CREDENTIALS_REF = "credentialsRef";

@@ -84,6 +84,7 @@ import io.harness.ng.overview.dto.HealthDeploymentInfoV2;
 import io.harness.ng.overview.dto.InstanceGroupedByArtifactList;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
+import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
 import io.harness.ng.overview.dto.LastWorkloadInfo;
 import io.harness.ng.overview.dto.ServiceDeployment;
@@ -2335,16 +2336,19 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList =
         instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
             accountIdentifier, orgIdentifier, projectIdentifier, environmentId, serviceId, null, isGitOps);
-
-    // sort based on last deployed time
-
-    Collections.sort(activeServiceInstanceInfoList, new Comparator<ActiveServiceInstanceInfoWithEnvType>() {
-      public int compare(ActiveServiceInstanceInfoWithEnvType o1, ActiveServiceInstanceInfoWithEnvType o2) {
-        return (int) (o2.getLastDeployedAt() - o1.getLastDeployedAt());
-      }
-    });
-
+    DashboardServiceHelper.sortActiveServiceInstanceInfoWithEnvTypeList(activeServiceInstanceInfoList);
     return DashboardServiceHelper.getInstanceGroupedByEnvironmentListHelper(activeServiceInstanceInfoList, isGitOps);
+  }
+
+  @Override
+  public InstanceGroupedOnArtifactList getInstanceGroupedOnArtifactList(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceId, String environmentId, String displayName) {
+    boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList =
+        instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
+            accountIdentifier, orgIdentifier, projectIdentifier, environmentId, serviceId, displayName, isGitOps);
+    DashboardServiceHelper.sortActiveServiceInstanceInfoWithEnvTypeList(activeServiceInstanceInfoList);
+    return DashboardServiceHelper.getInstanceGroupedByArtifactListHelper(activeServiceInstanceInfoList, isGitOps);
   }
 
   @Override

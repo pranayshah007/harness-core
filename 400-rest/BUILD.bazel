@@ -64,7 +64,6 @@ java_library(
         "//955-outbox-sdk:module",
         "//956-feature-flag-beans:module",
         "//957-cg-beans:module",
-        "//958-debezium-utils:module",
         "//959-common-entities:module",
         "//959-file-service-commons:module",
         "//959-timeout-engine:module",

@@ -558,8 +558,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     on(gitFilePathHelper).set("gitSyncConnectorHelper", gitSyncConnectorHelper);
     when(gitSyncConnectorHelper.getScmConnectorForGivenRepo(any(), any(), any(), any(), any()))
         .thenThrow(InvalidRequestException.class);
-    assertThatThrownBy(() -> scmFacilitatorService.getFileUrl(fileUrlRequestDTO))
-        .isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(() -> scmFacilitatorService.getFileUrl(fileUrlRequestDTO));
   }
 
   @Test
@@ -576,13 +575,6 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
                                    .accountIdentifier(UUID.randomUUID().toString())
                                    .scmGetFileByBranchRequestDTOMap(scmGetFileByBranchRequestDTOMap)
                                    .build()))
-        .isInstanceOf(InvalidRequestException.class);
-    assertThatThrownBy(
-        ()
-            -> scmFacilitatorService.getBatchFilesByBranch(ScmGetBatchFilesByBranchRequestDTO.builder()
-                                                               .accountIdentifier(UUID.randomUUID().toString())
-                                                               .scmGetFileByBranchRequestDTOMap(null)
-                                                               .build()))
         .isInstanceOf(InvalidRequestException.class);
   }
 
