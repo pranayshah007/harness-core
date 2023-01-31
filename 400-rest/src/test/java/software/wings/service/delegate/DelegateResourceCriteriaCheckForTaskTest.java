@@ -4,7 +4,7 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
-package io.harness.queueservice.impl;
+package software.wings.service.delegate;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.JENNY;
@@ -20,11 +20,11 @@ import io.harness.delegate.beans.Delegate.DelegateBuilder;
 import io.harness.delegate.beans.DelegateCapacity;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.TaskDataV2;
-import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.queueservice.ResourceBasedDelegateSelectionCheckForTask;
+import io.harness.queueservice.impl.FilterByDelegateCapacity;
+import io.harness.queueservice.impl.OrderByTotalNumberOfTaskAssignedCriteria;
 import io.harness.queueservice.infc.DelegateCapacityManagementService;
-import io.harness.redis.intfc.DelegateServiceCache;
 import io.harness.rule.Owner;
 import io.harness.service.intfc.DelegateCache;
 
@@ -38,25 +38,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.annotation.Description;
 import wiremock.com.google.common.collect.Lists;
 
-@RunWith(MockitoJUnitRunner.class)
 public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
   @Inject private ResourceBasedDelegateSelectionCheckForTask resourceBasedDelegateSelectionCheckForTask;
   @Inject @InjectMocks private OrderByTotalNumberOfTaskAssignedCriteria orderByTotalNumberOfTaskAssignedCriteria;
   @Inject @InjectMocks private FilterByDelegateCapacity filterByDelegateCapacity;
   @Inject private DelegateCapacityManagementService delegateCapacityManagementService;
-
-  @Mock FeatureFlagService featureFlagService;
 
   @Inject private HPersistence persistence;
 
@@ -65,13 +58,6 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
   private static final List<String> supportedTasks = Arrays.stream(TaskType.values()).map(Enum::name).collect(toList());
 
   @Mock private DelegateCache delegateCache;
-
-  @Mock private DelegateServiceCache delegateServiceCache;
-
-  @Before
-  public void setUp() throws Exception {
-    MockitoAnnotations.initMocks(this);
-  }
 
   @Test
   @Owner(developers = JENNY)
