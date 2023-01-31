@@ -7,6 +7,8 @@
 
 package io.harness.cvng.analysis.beans;
 
+import io.harness.cvng.core.beans.LogFeedback;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -25,7 +27,8 @@ public class LogAnalysisRadarChartClusterDTO {
   Double angle;
   LogAnalysisRadarChartClusterDTO baseline;
   DeploymentLogAnalysisDTO.ClusterType clusterType;
-
+  LogFeedback.FeedbackScore feedbackApplied;
+  LogFeedback feedback;
   @JsonProperty(value = "hasControlData")
   public boolean hasControlData() {
     if (baseline != null) {

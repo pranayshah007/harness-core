@@ -19,7 +19,8 @@ public enum Risk {
   HEALTHY(0, "Healthy"),
   OBSERVE(1, "Observe"),
   NEED_ATTENTION(2, "Need Attention"),
-  UNHEALTHY(3, "Unhealthy");
+  UNHEALTHY(3, "Unhealthy"),
+  MEDIUM_HEALTHY(4, "Medium Healthy");
   private static final Map<Integer, Risk> INT_TO_RISK_MAP = new HashMap<>();
   private static final Map<Integer, Risk> INT_TO_RISK_MAP_FOR_DEPLOYMENT_LOG_ANALYSIS = new HashMap<>();
   private static final Map<Integer, Risk> INT_TO_RISK_MAP_FOR_DEPLOYMENT_TIMESERIES_ANALYSIS = new HashMap<>();
@@ -33,6 +34,7 @@ public enum Risk {
     INT_TO_RISK_MAP_FOR_DEPLOYMENT_LOG_ANALYSIS.put(1, UNHEALTHY);
     // LE doest not send 2 for log analysis, but keeping this entry for backward compatibility
     INT_TO_RISK_MAP_FOR_DEPLOYMENT_LOG_ANALYSIS.put(2, UNHEALTHY);
+    INT_TO_RISK_MAP_FOR_DEPLOYMENT_LOG_ANALYSIS.put(3, MEDIUM_HEALTHY);
 
     INT_TO_RISK_MAP_FOR_DEPLOYMENT_TIMESERIES_ANALYSIS.put(-2, NO_DATA);
     INT_TO_RISK_MAP_FOR_DEPLOYMENT_TIMESERIES_ANALYSIS.put(-1, NO_ANALYSIS);

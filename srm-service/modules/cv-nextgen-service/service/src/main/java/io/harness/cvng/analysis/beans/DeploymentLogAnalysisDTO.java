@@ -9,6 +9,8 @@ package io.harness.cvng.analysis.beans;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.cvng.core.beans.LogFeedback;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.ArrayList;
@@ -99,13 +101,22 @@ public class DeploymentLogAnalysisDTO {
   public static class ClusterSummary {
     int label;
     ClusterType clusterType;
+    ClusterType previousClusterType;
     int risk;
+    int previousRisk;
     public Risk getRiskLevel() {
       return Risk.valueOfRiskForDeploymentLogAnalysis(risk);
     }
+
+    public Risk getPreviousRiskLevel() {
+      return Risk.valueOfRiskForDeploymentLogAnalysis(risk);
+    }
+
     double score;
     int count;
     List<Double> testFrequencyData;
+    LogFeedback feedback;
+    LogFeedback.FeedbackScore feedbackApplied;
 
     List<HostFrequencyData> frequencyData;
     public List<Double> getTestFrequencyData() {
@@ -184,6 +195,7 @@ public class DeploymentLogAnalysisDTO {
   @Builder
   public static class ResultSummary {
     int risk;
+    int previousRisk;
     public Risk getRiskLevel() {
       return Risk.valueOfRiskForDeploymentLogAnalysis(risk);
     }
