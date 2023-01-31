@@ -504,12 +504,12 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     when(settingsService.get(anyString())).thenReturn(SettingAttribute.Builder.aSettingAttribute().build());
     when(artifactCollectionUtils.getBuildSourceParameters(any(), any(), eq(false), eq(false)))
         .thenReturn(BuildSourceParameters.builder().build());
-    when(delegateService.queueTask(any())).thenReturn(delegateTaskId);
+    when(delegateService.queueTaskV2(any())).thenReturn(delegateTaskId);
 
     ExecutionResponse executionResponse = artifactCollectionState.execute(executionContext);
     verify(settingsService).get(anyString());
     verify(artifactCollectionUtils).getBuildSourceParameters(any(), any(), eq(false), eq(false));
-    verify(delegateService).queueTask(any());
+    verify(delegateService).queueTaskV2(any());
     assertThat(executionResponse).isNotNull();
     assertThat(executionResponse.isAsync()).isEqualTo(true);
     assertThat(executionResponse.getDelegateTaskId()).isEqualTo(delegateTaskId);
@@ -530,7 +530,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     when(settingsService.get(anyString())).thenReturn(SettingAttribute.Builder.aSettingAttribute().build());
     when(artifactCollectionUtils.getBuildSourceParameters(any(), any(), eq(false), eq(false)))
         .thenReturn(BuildSourceParameters.builder().build());
-    when(delegateService.queueTask(any())).thenReturn(delegateTaskId);
+    when(delegateService.queueTaskV2(any())).thenReturn(delegateTaskId);
     Artifact lastDeployedArtifact = anArtifact()
                                         .withAppId(APP_ID)
                                         .withStatus(Status.APPROVED)
@@ -545,7 +545,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     ExecutionResponse executionResponse = artifactCollectionState.execute(executionContext);
     verify(settingsService, never()).get(anyString());
     verify(artifactCollectionUtils, never()).getBuildSourceParameters(any(), any(), eq(false), eq(false));
-    verify(delegateService, never()).queueTask(any());
+    verify(delegateService, never()).queueTaskV2(any());
     assertThat(executionResponse).isNotNull();
     assertThat(executionResponse.isAsync()).isEqualTo(false);
     assertThat(executionResponse.getErrorMessage()).isNotNull();
@@ -571,12 +571,12 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     when(artifactCollectionUtils.fetchCustomDelegateTask(
              anyString(), any(), any(), eq(false), eq(BuildSourceParameters.BuildSourceRequestType.GET_BUILD), any()))
         .thenReturn(DelegateTask.builder());
-    when(delegateService.queueTask(any())).thenReturn(delegateTaskId);
+    when(delegateService.queueTaskV2(any())).thenReturn(delegateTaskId);
 
     ExecutionResponse executionResponse = artifactCollectionState.execute(executionContext);
     verify(settingsService, never()).get(anyString());
     verify(artifactCollectionUtils).renderCustomArtifactScriptString(customArtifactStream);
-    verify(delegateService).queueTask(any());
+    verify(delegateService).queueTaskV2(any());
     assertThat(executionResponse).isNotNull();
     assertThat(executionResponse.isAsync()).isEqualTo(true);
     assertThat(executionResponse.getDelegateTaskId()).isEqualTo(delegateTaskId);
@@ -604,12 +604,12 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     when(settingsService.get(anyString())).thenReturn(SettingAttribute.Builder.aSettingAttribute().build());
     when(artifactCollectionUtils.getBuildSourceParameters(any(), any(), eq(false), eq(false)))
         .thenReturn(BuildSourceParameters.builder().build());
-    when(delegateService.queueTask(any())).thenReturn(delegateTaskId);
+    when(delegateService.queueTaskV2(any())).thenReturn(delegateTaskId);
 
     ExecutionResponse executionResponse = artifactCollectionState.execute(executionContext);
     verify(settingsService).get(anyString());
     verify(artifactCollectionUtils).getBuildSourceParameters(any(), any(), eq(false), eq(false));
-    verify(delegateService).queueTask(any());
+    verify(delegateService).queueTaskV2(any());
     verify(artifactStreamHelper).resolveArtifactStreamRuntimeValues(any(), anyMap());
     assertThat(executionResponse).isNotNull();
     assertThat(executionResponse.isAsync()).isEqualTo(true);
@@ -778,7 +778,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     when(artifactService.create(artifact)).thenReturn(artifact);
 
     artifactCollectionState.setTimeoutMillis(10000);
-    when(delegateService.queueTask(any())).thenReturn(DELEGATE_ID);
+    when(delegateService.queueTaskV2(any())).thenReturn(DELEGATE_ID);
     when(artifactCollectionUtils.renderCustomArtifactScriptString(customArtifactStream))
         .thenReturn(ArtifactStreamAttributes.builder().build());
     when(artifactCollectionUtils.fetchCustomDelegateTask(

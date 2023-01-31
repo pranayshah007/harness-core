@@ -956,7 +956,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
     install(AlertModule.getInstance());
 
     install(new EventsFrameworkModule(configuration.getEventsFrameworkConfiguration(),
-        configuration.isEventsFrameworkAvailableInOnPrem(), StartupMode.DELEGATE_SERVICE.equals(startupMode)));
+        configuration.isEventsFrameworkAvailableInOnPrem(), StartupMode.DELEGATE_SERVICE.equals(startupMode),
+        configuration.getDebeziumConsumerConfigs()));
     install(FeatureFlagModule.getInstance());
     install(AccessControlAdminClientModule.getInstance(
         AccessControlAdminClientConfiguration.builder()

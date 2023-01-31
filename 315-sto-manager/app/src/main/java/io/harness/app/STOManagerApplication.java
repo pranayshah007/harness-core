@@ -112,7 +112,6 @@ import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -230,7 +229,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
       @Singleton
       @Named("dbAliases")
       public List<String> getDbAliases() {
-        return Collections.EMPTY_LIST;
+        return configuration.getDbAliases();
       }
     });
 
@@ -267,7 +266,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
       }
     });
 
-    modules.add(new STOPersistenceModule());
+    modules.add(new CIPersistenceModule());
     addGuiceValidationModule(modules);
     modules.add(new STOManagerServiceModule(configuration));
     modules.add(new CacheModule(configuration.getCacheConfig()));

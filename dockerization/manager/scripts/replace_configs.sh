@@ -717,7 +717,7 @@ if [[ "" != "$QUEUE_SERVICE_BASE_URL" ]]; then
   export QUEUE_SERVICE_BASE_URL; yq -i '.delegateQueueServiceConfig.queueServiceConfig.baseUrl=env(QUEUE_SERVICE_BASE_URL)' $CONFIG_FILE
 fi
 if [[ "" != "$ENABLE_TASK_QUEUE_DEQUEUE" ]]; then
-  export ENABLE_TASK_QUEUE_DEQUEUE; yq -i '.delegateQueueServiceConfig.queueServiceConfig.enableQueueAndDequeue=env(ENABLE_TASK_QUEUE_DEQUEUE)' $CONFIG_FILE
+  export ENABLE_TASK_QUEUE_DEQUEUE; yq -i '.delegateQueueServiceConfig.enableQueueAndDequeue=env(ENABLE_TASK_QUEUE_DEQUEUE)' $CONFIG_FILE
 fi
 
 
@@ -1042,6 +1042,8 @@ replace_key_value eventsFramework.redis.nettyThreads $EVENTS_FRAMEWORK_NETTY_THR
 replace_key_value eventsFramework.redis.sslConfig.enabled $EVENTS_FRAMEWORK_REDIS_SSL_ENABLED
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
+replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
+replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL
 replace_key_value ngAuthUIEnabled "$HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER"
 replace_key_value portal.zendeskBaseUrl "$ZENDESK_BASE_URL"
 replace_key_value deployVariant "$DEPLOY_VERSION"

@@ -127,6 +127,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -146,6 +147,7 @@ public class K8sHelmCommonStepHelper {
       ImmutableSet.of(ManifestType.K8Manifest, ManifestType.HelmChart);
   protected static final Set<String> HELM_CHART_REPO_STORE_TYPES =
       ImmutableSet.of(ManifestStoreType.S3, ManifestStoreType.GCS, ManifestStoreType.HTTP, ManifestStoreType.OCI);
+  protected static final String SUB_CHARTS_FOLDER = "charts/";
   @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private K8sEntityHelper k8sEntityHelper;
@@ -421,9 +423,9 @@ public class K8sHelmCommonStepHelper {
     HelmChartManifestDelegateConfig helmManifest = (HelmChartManifestDelegateConfig) getManifestDelegateConfig(
         k8sStepPassThroughData.getManifestOutcome(), ambiance);
 
-    List<HelmFetchFileConfig> helmFetchFileConfigList =
-        mapHelmChartManifestsToHelmFetchFileConfig(helmChartManifestOutcome.getIdentifier(),
-            getParameterFieldValue(helmChartManifestOutcome.getValuesPaths()), helmChartManifestOutcome.getType());
+    List<HelmFetchFileConfig> helmFetchFileConfigList = mapHelmChartManifestsToHelmFetchFileConfig(
+        helmChartManifestOutcome.getIdentifier(), getParameterFieldValue(helmChartManifestOutcome.getValuesPaths()),
+        helmChartManifestOutcome.getType(), helmManifest.getSubChartName());
 
     helmFetchFileConfigList.addAll(mapValuesManifestsToHelmFetchFileConfig(aggregatedValuesManifests));
     HelmValuesFetchRequest helmValuesFetchRequest =
@@ -498,6 +500,10 @@ public class K8sHelmCommonStepHelper {
       HelmChartManifestOutcome manifestOutcome = (HelmChartManifestOutcome) k8sManifestOutcome;
       valuesPaths = getParameterFieldValue(manifestOutcome.getValuesPaths());
       folderPath = getParameterFieldValue(gitStoreConfig.getFolderPath());
+      String subChartName = getParameterFieldValue(manifestOutcome.getSubChartName());
+      if (isNotEmpty(subChartName)) {
+        folderPath = Paths.get(folderPath, SUB_CHARTS_FOLDER, subChartName).toString();
+      }
     }
     List<GitFetchFilesConfig> gitFetchFilesConfigList = new ArrayList<>();
     populateGitFetchFilesConfigListWithValuesPaths(gitFetchFilesConfigList, gitStoreConfig, k8sManifestOutcome,
@@ -585,6 +591,10 @@ public class K8sHelmCommonStepHelper {
             .deleteRepoCacheDir(helmVersion != HelmVersion.V2)
             .skipApplyHelmDefaultValues(cdFeatureFlagHelper.isEnabled(
                 AmbianceUtils.getAccountId(ambiance), FeatureName.CDP_SKIP_DEFAULT_VALUES_YAML_NG))
+            .subChartName(
+                cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_CDS_HELM_SUB_CHARTS)
+                    ? getParameterFieldValue(helmChartManifestOutcome.getSubChartName())
+                    : "")
             .build();
 
       case ManifestType.Kustomize:
@@ -971,10 +981,15 @@ public class K8sHelmCommonStepHelper {
   }
 
   public static List<HelmFetchFileConfig> mapHelmChartManifestsToHelmFetchFileConfig(
-      String identifier, List<String> valuesPaths, String manifestType) {
+      String identifier, List<String> valuesPaths, String manifestType, String subChartName) {
     List<HelmFetchFileConfig> helmFetchFileConfigList = new ArrayList<>();
-    helmFetchFileConfigList.add(
-        createHelmFetchFileConfig(identifier, manifestType, Arrays.asList(VALUES_YAML_KEY), true));
+    if (isEmpty(subChartName)) {
+      helmFetchFileConfigList.add(
+          createHelmFetchFileConfig(identifier, manifestType, Arrays.asList(VALUES_YAML_KEY), true));
+    } else {
+      helmFetchFileConfigList.add(createHelmFetchFileConfig(identifier, manifestType,
+          Arrays.asList(Paths.get(SUB_CHARTS_FOLDER, subChartName, VALUES_YAML_KEY).toString()), true));
+    }
     if (isNotEmpty(valuesPaths)) {
       helmFetchFileConfigList.add(createHelmFetchFileConfig(identifier, manifestType, valuesPaths, false));
     }

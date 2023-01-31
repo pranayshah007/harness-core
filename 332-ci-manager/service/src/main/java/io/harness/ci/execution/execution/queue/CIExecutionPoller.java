@@ -50,7 +50,7 @@ public class CIExecutionPoller implements Managed {
   private AtomicBoolean shouldStop = new AtomicBoolean(false);
   private static final int WAIT_TIME_IN_SECONDS = 5;
   private final String moduleName = "ci";
-  private final int batchSize = 1;
+  private final int batchSize = 5;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
 
@@ -103,7 +103,8 @@ public class CIExecutionPoller implements Managed {
                                                                   .maxWaitDuration(100)
                                                                   .build())
                                                      .execute();
-      if (messages.body() == null) {
+      if (messages.code() != 200 || messages.body() == null) {
+        log.info("dequeue from hsqs failed. error code: {}", messages.code());
         TimeUnit.SECONDS.sleep(WAIT_TIME_IN_SECONDS);
         return;
       }
@@ -125,8 +126,8 @@ public class CIExecutionPoller implements Managed {
     RetryPolicy<Object> retryPolicy =
         getRetryPolicy(format("[Retrying failed call to hsqs: {}"), format("Failed to call hsqs retrying {} times"));
 
+    ProcessMessageResponse processMessageResponse = ciInitTaskMessageProcessor.processMessage(message);
     try {
-      ProcessMessageResponse processMessageResponse = ciInitTaskMessageProcessor.processMessage(message);
       if (processMessageResponse.getSuccess()) {
         Response<AckResponse> response = hsqsServiceClient
                                              .ack(AckRequest.builder()
@@ -135,19 +136,12 @@ public class CIExecutionPoller implements Managed {
                                                       .subTopic(processMessageResponse.getAccountId())
                                                       .build())
                                              .execute();
-        log.info("ack response code: {}", response.code());
+        log.info("ack response code: {}, messageId: {}", response.code(), message.getItemId());
       } else {
-        Response<UnAckResponse> response = hsqsServiceClient
-                                               .unack(UnAckRequest.builder()
-                                                          .itemID(message.getItemId())
-                                                          .topic(moduleName)
-                                                          .subTopic(processMessageResponse.getAccountId())
-                                                          .build())
-                                               .execute();
-        log.info("unack response code: {}", response.code());
+        log.info("skipping ack message Id: {}", message.getItemId());
       }
     } catch (Exception ex) {
-      log.error("got error in calling hsqs client", ex);
+      log.error("got error in calling hsqs client for message id: {}", message.getItemId(), ex);
     }
   }
 

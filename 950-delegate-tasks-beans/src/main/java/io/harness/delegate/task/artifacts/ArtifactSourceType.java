@@ -17,6 +17,8 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAM
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GITHUB_PACKAGES_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GOOGLE_CLOUD_SOURCE_ARTIFACT_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GOOGLE_CLOUD_STORAGE_ARTIFACT_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -41,7 +43,9 @@ public enum ArtifactSourceType {
   @JsonProperty(GOOGLE_ARTIFACT_REGISTRY_NAME) GOOGLE_ARTIFACT_REGISTRY(GOOGLE_ARTIFACT_REGISTRY_NAME),
   @JsonProperty(GITHUB_PACKAGES_NAME) GITHUB_PACKAGES(GITHUB_PACKAGES_NAME),
   @JsonProperty(AZURE_ARTIFACTS_NAME) AZURE_ARTIFACTS(AZURE_ARTIFACTS_NAME),
-  @JsonProperty(AMI_ARTIFACTS_NAME) AMI(AMI_ARTIFACTS_NAME);
+  @JsonProperty(AMI_ARTIFACTS_NAME) AMI(AMI_ARTIFACTS_NAME),
+  @JsonProperty(GOOGLE_CLOUD_STORAGE_ARTIFACT_NAME) GOOGLE_CLOUD_STORAGE_ARTIFACT(GOOGLE_CLOUD_STORAGE_ARTIFACT_NAME),
+  @JsonProperty(GOOGLE_CLOUD_SOURCE_ARTIFACT_NAME) GOOGLE_CLOUD_SOURCE_ARTIFACT(GOOGLE_CLOUD_SOURCE_ARTIFACT_NAME);
 
   private final String displayName;
 

@@ -112,8 +112,8 @@ public class InputSetEntity implements GitAware, GitSyncableEntity, PersistentEn
   @NotEmpty InputSetEntityType inputSetEntityType;
   @Wither List<String> inputSetReferences;
 
-  @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate Long createdAt;
-  @Wither @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate Long lastUpdatedAt;
+  @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate @Builder.Default Long createdAt = 0L;
+  @Wither @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate @Builder.Default Long lastUpdatedAt = 0L;
   @Wither @Builder.Default Boolean deleted = Boolean.FALSE;
   @Wither @Version Long version;
 

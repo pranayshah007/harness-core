@@ -205,4 +205,6 @@ public interface EntityTypeConstants {
   String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
   String K8S_DRY_RUN_MANIFEST = "K8sDryRun";
   String ASG_BLUE_GREEN_SWAP_SERVICE_STEP = "AsgBlueGreenSwapService";
+
+  String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
 }

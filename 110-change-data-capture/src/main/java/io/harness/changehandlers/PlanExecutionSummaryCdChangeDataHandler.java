@@ -13,9 +13,16 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.changestreamsframework.ChangeEvent;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
+import io.harness.timescaledb.TimeScaleDBService;
 
+import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +31,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class PlanExecutionSummaryCdChangeDataHandler extends AbstractChangeDataHandler {
+  @Inject private TimeScaleDBService timeScaleDBService;
+
   @Override
   public Map<String, String> getColumnValueMapping(ChangeEvent<?> changeEvent, String[] fields) {
     if (changeEvent == null) {
@@ -86,11 +95,63 @@ public class PlanExecutionSummaryCdChangeDataHandler extends AbstractChangeDataH
       columnValueMapping.put("endTs", String.valueOf(dbObject.get(PlanExecutionSummaryKeys.endTs).toString()));
     }
 
+    if (dbObject.get("tags") != null && dbObject.get(PlanExecutionSummaryKeys.status).equals("SUCCESS")) {
+      List<BasicDBObject> tags = (List<BasicDBObject>) dbObject.get("tags");
+      for (BasicDBObject tag : tags) {
+        if (tag.get("key").equals("reverted_execution_id")) {
+          String originalExecutionId = tag.get("value").toString();
+          String query = "SELECT endTs FROM pipeline_execution_summary_cd WHERE planexecutionid = ? AND status = ?";
+          Long currEndTime = (Long) dbObject.get(PlanExecutionSummaryKeys.endTs);
+          calculateMeanTimeToRestore(query, columnValueMapping, originalExecutionId, currEndTime);
+        }
+      }
+    }
     return columnValueMapping;
   }
 
   @Override
   public List<String> getPrimaryKeys() {
     return asList("id", "startts");
+  }
+
+  private void calculateMeanTimeToRestore(
+      String query, Map<String, String> columnValueMapping, String originalExecutionId, Long currEndTime) {
+    boolean successfulOperation = false;
+    log.trace("In dbOperation, Query: {}", query);
+    List<Long> endTs = new ArrayList<>();
+    if (timeScaleDBService.isValid()) {
+      int retryCount = 0;
+      while (!successfulOperation && retryCount < 5) {
+        try (Connection dbConnection = timeScaleDBService.getDBConnection();
+             PreparedStatement statement = dbConnection.prepareStatement(query)) {
+          statement.setString(1, originalExecutionId);
+          statement.setString(2, "SUCCESS");
+          ResultSet resultSet = statement.executeQuery();
+          while (resultSet.next()) {
+            endTs.add(resultSet.getLong(1));
+          }
+          if (endTs.size() == 1) {
+            log.info("Found execution with planExecutionId = {}", originalExecutionId);
+            successfulOperation = true;
+          } else {
+            break;
+          }
+        } catch (SQLException e) {
+          log.error("Failed to fetch execution with planExecutionId = {},retryCount=[{}], Exception: ",
+              originalExecutionId, retryCount, e);
+          retryCount++;
+        }
+      }
+    } else {
+      log.error("TimeScale Down");
+    }
+    if (successfulOperation) {
+      columnValueMapping.put("is_revert_execution", "true");
+      columnValueMapping.put("original_execution_id", originalExecutionId);
+      if (currEndTime != null) {
+        Long timeToRestore = currEndTime - endTs.get(0);
+        columnValueMapping.put("mean_time_to_restore", String.valueOf(Long.parseLong(timeToRestore.toString())));
+      }
+    }
   }
 }

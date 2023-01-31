@@ -22,6 +22,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -500,5 +501,45 @@ public class MergeHelperTest extends CategoryTest {
         + "  template:\n"
         + "    key: \"b.allowedValues(a,b,c)\"\n";
     assertThat(mergeRuntimeInputValuesIntoOriginalYaml(base, correctRuntime, true)).isEqualTo(merged);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testMergeForServiceYaml() {
+    String base = "service:\n"
+        + "  field: \"leaf\"\n";
+    String runtime = "service:\n"
+        + "  field: <+input>\n";
+    String merged = MergeHelper.mergeInputSetFormatYamlToOriginYaml(base, runtime);
+    assertThat(merged).isEqualTo(base);
+
+    base = "service:\n"
+        + "  field:\n"
+        + "    leaf: \"correct\"\n";
+    runtime = "service:\n"
+        + "  field: <+input>\n";
+    merged = MergeHelper.mergeInputSetFormatYamlToOriginYaml(base, runtime);
+    assertThat(merged).isEqualTo(base);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testCheckIfPipelineValueIsRuntime() {
+    String base = "stage:\n"
+        + "  field: \"leaf\"\n";
+    String runtime = "stage:\n"
+        + "  field: \"not to be there\"\n";
+    YamlConfig baseConfig = new YamlConfig(base);
+    YamlConfig runtimeConfig = new YamlConfig(runtime);
+    String merged =
+        MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(baseConfig, runtimeConfig, true, true)
+            .getYaml();
+    assertThat(merged).isEqualTo(base);
+
+    merged = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(baseConfig, runtimeConfig, true, false)
+                 .getYaml();
+    assertThat(merged).isEqualTo(runtime);
   }
 }

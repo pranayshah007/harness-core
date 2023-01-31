@@ -9,12 +9,14 @@ package io.harness.cvng.beans.change;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
 @Data
@@ -22,6 +24,9 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @SuperBuilder
+@JsonDeserialize(using = ChangeEventDTODeserializer.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
+@FieldNameConstants
 public class ChangeEventDTO {
   String id;
   @NotNull String accountId;
@@ -40,11 +45,7 @@ public class ChangeEventDTO {
   @JsonProperty("type") ChangeSourceType type;
   long eventTime;
 
-  @JsonTypeInfo(
-      use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
-  @Valid
-  @NotNull
-  ChangeEventMetadata metadata;
+  @Valid @NotNull ChangeEventMetadata metadata;
 
   public ChangeSourceType getType() {
     if (type == null && metadata != null) {

@@ -9,7 +9,7 @@ package io.harness.ngmigration.service.workflow;
 
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.step.StepMapperFactory;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 
 import software.wings.beans.BasicOrchestrationWorkflow;
 import software.wings.beans.GraphNode;
@@ -25,7 +25,6 @@ import java.util.Map;
 
 public class BasicWorkflowHandlerImpl extends WorkflowHandler {
   @Inject BasicWorkflowYamlHandler basicWorkflowYamlHandler;
-  @Inject private StepMapperFactory stepMapperFactory;
 
   @Override
   public List<GraphNode> getSteps(Workflow workflow) {
@@ -36,13 +35,13 @@ public class BasicWorkflowHandlerImpl extends WorkflowHandler {
 
   @Override
   public boolean areSimilar(Workflow workflow1, Workflow workflow2) {
-    return areSimilar(stepMapperFactory, workflow1, workflow2);
+    return areSimilar(workflow1, workflow2);
   }
 
   @Override
   public JsonNode getTemplateSpec(
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
-    return getDeploymentStageTemplateSpec(entities, migratedEntities, workflow, stepMapperFactory);
+    return getDeploymentStageTemplateSpec(WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow));
   }
 
   @Override

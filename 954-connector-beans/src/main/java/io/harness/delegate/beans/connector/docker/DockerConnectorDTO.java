@@ -15,6 +15,9 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.docker.outcome.DockerAuthenticationOutcomeDTO;
+import io.harness.delegate.beans.connector.docker.outcome.DockerConnectorOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -59,5 +62,19 @@ public class DockerConnectorDTO extends ConnectorConfigDTO implements DelegateSe
       return null;
     }
     return Collections.singletonList(auth.getCredentials());
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return DockerConnectorOutcomeDTO.builder()
+        .dockerRegistryUrl(this.dockerRegistryUrl)
+        .providerType(this.providerType)
+        .auth(DockerAuthenticationOutcomeDTO.builder()
+                  .spec(this.auth.getCredentials())
+                  .type(this.auth.getAuthType())
+                  .build())
+        .delegateSelectors(this.delegateSelectors)
+        .executeOnDelegate(this.executeOnDelegate)
+        .build();
   }
 }

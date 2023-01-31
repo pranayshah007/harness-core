@@ -825,6 +825,8 @@ def setAvailableColumns(jsonData):
         azure_column_mapping["currency"] = "billingcurrency"
     elif "currency" in columns:
         azure_column_mapping["currency"] = "currency"
+    elif "billingcurrencycode" in columns:
+        azure_column_mapping["currency"] = "billingcurrencycode"
     else:
         raise Exception("No mapping found for currency column")
 

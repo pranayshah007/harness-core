@@ -308,7 +308,10 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
 
         content.forEach(c -> {
           if (individualClusters.containsKey(c.getIdentifier())) {
-            individualClusters.get(c.getIdentifier()).forEach(envCluster -> { envCluster.setClusterName(c.name()); });
+            individualClusters.get(c.getIdentifier()).forEach(envCluster -> {
+              envCluster.setClusterName(c.name());
+              envCluster.setAgentId(c.getAgentIdentifier());
+            });
           }
         });
 
@@ -405,7 +408,8 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
       }
       outcome.appendCluster(new Metadata(clusterInternal.getEnvGroupRef(), clusterInternal.getEnvGroupName()),
           new Metadata(clusterInternal.getEnvRef(), clusterInternal.getEnvName()), clusterInternal.getEnvType(),
-          new Metadata(clusterInternal.getClusterRef(), clusterInternal.getClusterName()), mergedVars);
+          new Metadata(clusterInternal.getClusterRef(), clusterInternal.getClusterName()), mergedVars,
+          clusterInternal.getAgentId());
     });
 
     return outcome;
@@ -422,6 +426,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     String envType;
     String clusterRef;
     String clusterName;
+    String agentId;
     Map<String, Object> envVariables;
   }
 

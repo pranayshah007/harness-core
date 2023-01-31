@@ -269,9 +269,9 @@ public class SecretTextTest extends WingsBaseTest {
     when(kmsEncryptorsRegistry.getKmsEncryptor(any())).thenReturn(kmsEncryptor);
     when(vaultEncryptorsRegistry.getVaultEncryptor(any())).thenReturn(vaultEncryptor);
 
-    when(delegateProxyFactory.get(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))
+    when(delegateProxyFactory.getV2(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))
         .thenReturn(secretManagementDelegateService);
-    when(delegateProxyFactory.get(eq(EncryptionService.class), any(SyncTaskContext.class)))
+    when(delegateProxyFactory.getV2(eq(EncryptionService.class), any(SyncTaskContext.class)))
         .thenReturn(encryptionService);
     FieldUtils.writeField(secretService, "kmsRegistry", kmsEncryptorsRegistry, true);
     FieldUtils.writeField(secretService, "vaultRegistry", vaultEncryptorsRegistry, true);

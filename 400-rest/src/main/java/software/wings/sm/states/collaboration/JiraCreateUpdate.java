@@ -326,7 +326,7 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
             .workflowExecutionId(context.getWorkflowExecutionId())
             .selectionLogsTrackingEnabled(isSelectionLogsTrackingForTasksEnabled())
             .build();
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
 
     return ExecutionResponse.builder()

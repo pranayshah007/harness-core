@@ -18,6 +18,8 @@ import lombok.Value;
 @Builder
 public class ResolvedCVConfigInfo {
   @Nullable String monitoredServiceIdentifier;
+  @Nullable String monitoredServiceTemplateIdentifier;
+  @Nullable String monitoredServiceTemplateVersionLabel;
   @Nullable List<CVConfig> cvConfigs;
   List<HealthSourceInfo> healthSources;
 

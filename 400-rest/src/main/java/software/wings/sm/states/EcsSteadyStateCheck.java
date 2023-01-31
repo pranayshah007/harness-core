@@ -155,7 +155,7 @@ public class EcsSteadyStateCheck extends State {
               .selectionLogsTrackingEnabled(isSelectionLogsTrackingForTasksEnabled())
               .description("ECS Steady state check task execution")
               .build();
-      String delegateTaskId = delegateService.queueTask(delegateTask);
+      String delegateTaskId = delegateService.queueTaskV2(delegateTask);
 
       appendDelegateTaskDetails(context, delegateTask);
       return ExecutionResponse.builder()

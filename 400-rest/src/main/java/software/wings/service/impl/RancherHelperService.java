@@ -83,7 +83,7 @@ public class RancherHelperService {
 
     DelegateResponseData notifyResponseData;
     try {
-      notifyResponseData = delegateService.executeTask(delegateTask);
+      notifyResponseData = delegateService.executeTaskV2(delegateTask);
       validateRancherDelegateResponse((HttpStateExecutionResponse) notifyResponseData);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();

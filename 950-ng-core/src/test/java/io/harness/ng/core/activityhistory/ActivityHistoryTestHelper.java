@@ -11,7 +11,7 @@ import static io.harness.EntityType.CONNECTORS;
 import static io.harness.EntityType.PIPELINES;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import io.harness.common.EntityReference;
+import io.harness.beans.EntityReference;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.activityhistory.dto.EntityUsageActivityDetailDTO;
 import io.harness.ng.core.activityhistory.dto.NGActivityDTO;

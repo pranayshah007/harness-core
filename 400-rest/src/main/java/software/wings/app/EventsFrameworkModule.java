@@ -10,6 +10,7 @@ package software.wings.app;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.DMS;
 import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
+import static io.harness.eventsframework.EventsFrameworkConstants.APPLICATION_TIMESCALE_REDIS_CHANGE_EVENT_CONSUMER;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_READ_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_TOPIC_SIZE;
@@ -26,8 +27,10 @@ import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT
 import static io.harness.eventsframework.EventsFrameworkConstants.SAML_AUTHORIZATION_ASSERTION;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cache.HarnessCacheManager;
 import io.harness.configuration.DeployMode;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
+import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.impl.noop.NoOpConsumer;
@@ -36,9 +39,18 @@ import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisProducer;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
+import io.harness.version.VersionInfoManager;
+
+import software.wings.search.redisConsumer.DebeziumConsumersConfig;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import javax.cache.Cache;
+import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import lombok.AllArgsConstructor;
 import org.redisson.api.RedissonClient;
 
@@ -48,6 +60,7 @@ public class EventsFrameworkModule extends AbstractModule {
   private final EventsFrameworkConfiguration eventsFrameworkConfiguration;
   private final boolean isEventsFrameworkAvailableInOnPrem;
   private final boolean isDmsMode;
+  private final DebeziumConsumersConfig debeziumConsumersConfigs;
 
   @Override
   protected void configure() {
@@ -106,6 +119,21 @@ public class EventsFrameworkModule extends AbstractModule {
           .annotatedWith(Names.named(OBSERVER_EVENT_CHANNEL))
           .toInstance(RedisConsumer.of(OBSERVER_EVENT_CHANNEL, authorizationServiceHeader, redissonClient,
               DEFAULT_MAX_PROCESSING_TIME, DEFAULT_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(APPLICATION_TIMESCALE_REDIS_CHANGE_EVENT_CONSUMER))
+          .toInstance(RedisConsumer.of(debeziumConsumersConfigs.getApplicationTimescaleStreaming().getTopic(),
+              MANAGER.getServiceId(), redissonClient, EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME,
+              debeziumConsumersConfigs.getApplicationTimescaleStreaming().getBatchSize(),
+              redisConfig.getEnvNamespace()));
     }
+  }
+
+  @Provides
+  @Singleton
+  @Named("debeziumEventsCache")
+  public Cache<String, Long> sdkEventsCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache("debeziumEventsCache", String.class, Long.class,
+        AccessedExpiryPolicy.factoryOf(Duration.ONE_HOUR), versionInfoManager.getVersionInfo().getBuildNo());
   }
 }

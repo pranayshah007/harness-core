@@ -53,6 +53,7 @@ import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.impl.SettingsServiceImpl;
 import software.wings.service.impl.instance.ContainerInstanceHandler;
 import software.wings.service.impl.instance.InstanceHandlerFactoryService;
+import software.wings.service.impl.instance.InstanceSyncPerpetualTaskService;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.instance.DeploymentService;
 import software.wings.service.intfc.instance.InstanceService;
@@ -95,6 +96,7 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
   @Mock private InstanceHandlerFactoryService instanceHandlerFactory;
   @Mock private DeploymentService deploymentService;
   @Mock private FeatureFlagService featureFlagService;
+  @Mock private InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
 
   @Before
   public void setup() {

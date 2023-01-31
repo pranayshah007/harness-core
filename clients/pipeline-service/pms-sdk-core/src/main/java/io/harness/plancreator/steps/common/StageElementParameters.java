@@ -8,6 +8,8 @@
 package io.harness.plancreator.steps.common;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,6 +18,8 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
 import io.harness.when.beans.StageWhenCondition;
+import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
 import java.util.List;
@@ -41,7 +45,9 @@ public class StageElementParameters implements StepParameters {
   ParameterField<String> skipCondition;
   StageWhenCondition when;
 
-  List<FailureStrategyConfig> failureStrategies;
+  @VariableExpression(skipVariableExpression = true)
+  @YamlSchemaTypes(value = {runtime, list})
+  ParameterField<List<FailureStrategyConfig>> failureStrategies;
   @SkipAutoEvaluation ParameterField<Map<String, Object>> variables;
   Map<String, String> tags;
   String type;

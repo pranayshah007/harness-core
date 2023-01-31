@@ -15,7 +15,7 @@ import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.common.EntityReference;
+import io.harness.beans.EntityReference;
 import io.harness.context.GlobalContextData;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.exception.UnexpectedException;

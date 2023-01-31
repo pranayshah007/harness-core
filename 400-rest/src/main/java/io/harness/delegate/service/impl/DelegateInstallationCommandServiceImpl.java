@@ -7,16 +7,17 @@
 
 package io.harness.delegate.service.impl;
 
+import io.harness.delegate.beans.DelegateEntityOwner;
+import io.harness.delegate.beans.DelegateTokenDetails;
+import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.service.intfc.DelegateInstallationCommandService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.exception.DelegateInstallationCommandNotSupportedException;
-import io.harness.exception.DelegateTokenNotFoundException;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.validation.constraints.NotBlank;
@@ -26,7 +27,6 @@ import org.apache.commons.text.StringSubstitutor;
 
 @Slf4j
 public class DelegateInstallationCommandServiceImpl implements DelegateInstallationCommandService {
-  private static final String DEFAULT_TOKEN_NAME = "default_token";
   private final DelegateNgTokenService delegateNgTokenService;
   private final DelegateVersionService delegateVersionService;
   private static final String TERRAFORM_TEMPLATE_FLE = "/delegatetemplates/delegate-terraform-example-module.ftl";
@@ -66,8 +66,9 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
   }
 
   @Override
-  public String getCommand(@NotBlank String commandType, @NotBlank String managerUrl, @NotBlank String accountId) {
-    final String tokenValue = getDefaultNgToken(accountId);
+  public String getCommand(@NotBlank final String commandType, @NotBlank final String managerUrl,
+      @NotBlank final String accountId, final DelegateEntityOwner owner) {
+    final String tokenValue = getDefaultNgToken(accountId, owner);
     final String image = delegateVersionService.getImmutableDelegateImageTag(accountId);
     final Map<String, String> values = getScriptParams(managerUrl, accountId, tokenValue, image);
 
@@ -88,8 +89,9 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
   }
 
   @Override
-  public String getTerraformExampleModuleFile(final String managerUrl, final String accountId) throws IOException {
-    final String tokenValue = getDefaultNgToken(accountId);
+  public String getTerraformExampleModuleFile(
+      final String managerUrl, final String accountId, final DelegateEntityOwner owner) throws IOException {
+    final String tokenValue = getDefaultNgToken(accountId, owner);
     final String image = delegateVersionService.getImmutableDelegateImageTag(accountId);
     final Map<String, String> values = getScriptParams(managerUrl, accountId, tokenValue, image);
     String content = IOUtils.toString(this.getClass().getResourceAsStream(TERRAFORM_TEMPLATE_FLE), "UTF-8");
@@ -107,16 +109,15 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
         .build();
   }
 
-  private String getDefaultNgToken(String accountId) {
-    final Map<String, Boolean> activeStatus =
-        delegateNgTokenService.isDelegateTokenActive(accountId, List.of(DEFAULT_TOKEN_NAME));
-    if (Objects.isNull(activeStatus) || activeStatus.isEmpty()) {
-      final String errorMsg = String.format("default token not found for account %s.", accountId);
-      log.error(errorMsg);
-      throw new DelegateTokenNotFoundException(errorMsg);
+  private String getDefaultNgToken(String accountId, DelegateEntityOwner owner) {
+    final DelegateTokenDetails delegateTokenDetails =
+        delegateNgTokenService.getDelegateToken(accountId, delegateNgTokenService.getDefaultTokenName(owner), true);
+    String tokenValue;
+    if (Objects.isNull(delegateTokenDetails) || !delegateTokenDetails.getStatus().equals(DelegateTokenStatus.ACTIVE)) {
+      tokenValue = "<PUT YOUR TOKEN>";
+    } else {
+      tokenValue = delegateTokenDetails.getValue();
     }
-    return Boolean.TRUE.equals(activeStatus.get(DEFAULT_TOKEN_NAME))
-        ? delegateNgTokenService.getDelegateTokenValue(accountId, DEFAULT_TOKEN_NAME)
-        : "<PUT YOUR TOKEN>";
+    return tokenValue;
   }
 }

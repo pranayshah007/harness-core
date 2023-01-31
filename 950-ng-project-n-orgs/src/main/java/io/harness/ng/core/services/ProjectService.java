@@ -63,5 +63,5 @@ public interface ProjectService {
 
   Map<String, Integer> getProjectsCountPerOrganization(String accountIdentifier, List<String> orgIdentifiers);
 
-  Long countProjects(String accountIdenifier);
+  Long countProjects(String accountIdentifier);
 }

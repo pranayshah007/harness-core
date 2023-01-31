@@ -234,7 +234,6 @@ import org.apache.commons.validator.routines.UrlValidator;
 @Slf4j
 @TargetModule(_955_ACCOUNT_MGMT)
 @BreakDependencyOn("io.harness.delegate.beans.Delegate")
-@BreakDependencyOn("software.wings.service.impl.DelegateConnectionDao")
 public class AccountServiceImpl implements AccountService {
   private static final SecureRandom random = new SecureRandom();
   private static final int SIZE_PER_SERVICES_REQUEST = 25;
@@ -561,6 +560,15 @@ public class AccountServiceImpl implements AccountService {
   public Boolean updateIsProductLed(String accountId, boolean isProductLed) {
     Account account = get(accountId);
     account.setProductLed(isProductLed);
+    update(account);
+    publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
+    return true;
+  }
+
+  @Override
+  public Boolean updateIsSmpAccount(String accountId, boolean isSmpAccount) {
+    Account account = get(accountId);
+    account.setSmpAccount(isSmpAccount);
     update(account);
     publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
     return true;
@@ -901,6 +909,7 @@ public class AccountServiceImpl implements AccountService {
             .set(AccountKeys.nextGenEnabled, account.isNextGenEnabled())
             .set(AccountKeys.ceAutoCollectK8sEvents, account.isCeAutoCollectK8sEvents())
             .set("whitelistedDomains", account.getWhitelistedDomains())
+            .set("smpAccount", account.isSmpAccount())
             .set("isProductLed", account.isProductLed());
 
     if (null != account.getLicenseInfo()) {

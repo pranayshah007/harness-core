@@ -165,7 +165,7 @@ public class EcsRunTaskDeploy extends State {
     gitFileConfig.setBranch(context.renderExpression(gitFileConfig.getBranch()));
     gitFileConfig.setRepoName(context.renderExpression(gitFileConfig.getRepoName()));
     DelegateTask gitFetchFilesAsyncTask = createGitFetchFileAsyncTask(context, activity.getUuid());
-    delegateService.queueTask(gitFetchFilesAsyncTask);
+    delegateService.queueTaskV2(gitFetchFilesAsyncTask);
 
     EcsRunTaskStateExecutionData stateExecutionData =
         createRunTaskStateExecutionData(activity.getUuid(), context, ecsRunTaskDataBag, gitFetchFilesAsyncTask);

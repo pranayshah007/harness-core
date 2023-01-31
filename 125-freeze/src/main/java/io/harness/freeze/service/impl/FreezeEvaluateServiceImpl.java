@@ -153,7 +153,7 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
     return activeFreezeList;
   }
 
-  private boolean matchesEntities(Map<FreezeEntityType, List<String>> entityMap, List<FreezeEntityRule> rules) {
+  protected boolean matchesEntities(Map<FreezeEntityType, List<String>> entityMap, List<FreezeEntityRule> rules) {
     for (FreezeEntityRule rule : rules) {
       if (matchesEntities(entityMap, rule)) {
         return true;

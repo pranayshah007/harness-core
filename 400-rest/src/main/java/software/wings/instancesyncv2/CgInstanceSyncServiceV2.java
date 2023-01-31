@@ -83,6 +83,7 @@ public class CgInstanceSyncServiceV2 {
   public static final String AUTO_SCALE = "AUTO_SCALE";
   public static final int PERPETUAL_TASK_INTERVAL = 10;
   public static final int PERPETUAL_TASK_TIMEOUT = 5;
+  public static final int HANDLE_NEW_DEPLOYMENT_MAX_RETRIES = 3;
   private final CgInstanceSyncV2DeploymentHelperFactory helperFactory;
   private final DelegateServiceGrpcClient delegateServiceClient;
   private final CgInstanceSyncTaskDetailsService taskDetailsService;
@@ -114,40 +115,62 @@ public class CgInstanceSyncServiceV2 {
     String appId = event.getDeploymentSummaries().iterator().next().getAppId();
     InfrastructureMapping infrastructureMapping = infrastructureMappingService.get(appId, infraMappingId);
     isSupportedCloudProvider(infrastructureMapping.getComputeProviderType());
-    try (AcquiredLock lock = persistentLocker.waitToAcquireLock(
-             InfrastructureMapping.class, infraMappingId, Duration.ofSeconds(200), Duration.ofSeconds(220))) {
-      if (lock == null) {
-        log.warn("Couldn't acquire infra lock. appId [{}]", infrastructureMapping.getAppId());
-        return;
+
+    int retryCount = 0;
+    while (retryCount < HANDLE_NEW_DEPLOYMENT_MAX_RETRIES) {
+      try (AcquiredLock lock = persistentLocker.waitToAcquireLock(InfrastructureMapping.class,
+               infrastructureMapping.getUuid(), Duration.ofSeconds(200), Duration.ofSeconds(220))) {
+        if (lock == null) {
+          log.warn("Couldn't acquire infra lock. appId [{}]", infrastructureMapping.getAppId());
+          retryCount++;
+          continue;
+        }
+        handleInstanceSyncForNewDeployement(event, infrastructureMapping);
+        break;
+      } catch (NotSupportedException ex) {
+        throw ex;
+      } catch (Exception ex) {
+        log.error(
+            format("Failed Attempt no. [%s] while handling deployment event for executionId [%s], infraMappingId [%s]",
+                retryCount + 1, event.getDeploymentSummaries().iterator().next().getWorkflowExecutionId(),
+                infrastructureMapping.getUuid()),
+            ex);
+        retryCount++;
+        if (retryCount >= HANDLE_NEW_DEPLOYMENT_MAX_RETRIES) {
+          // We have to catch all kinds of exceptions, In case of any Failure we switch to instance sync V1
+          throw new RuntimeException(
+              format("Exception while handling deployment event for executionId [%s], infraMappingId [%s]",
+                  event.getDeploymentSummaries().iterator().next().getWorkflowExecutionId(),
+                  infrastructureMapping.getUuid()));
+        }
       }
-      List<DeploymentSummary> deploymentSummaries = event.getDeploymentSummaries();
-
-      if (isEmpty(deploymentSummaries)) {
-        log.error("Deployment Summaries can not be empty or null");
-        return;
-      }
-
-      deploymentSummaries = deploymentSummaries.stream().filter(this::hasDeploymentKey).collect(Collectors.toList());
-
-      deploymentSummaries.forEach(deploymentSummary -> saveDeploymentSummary(deploymentSummary, false));
-
-      InstanceHandler instanceHandler = instanceHandlerFactory.getInstanceHandler(infrastructureMapping);
-      instanceHandler.handleNewDeployment(
-          event.getDeploymentSummaries(), event.isRollback(), event.getOnDemandRollbackInfo());
-
-      event.getDeploymentSummaries()
-          .stream()
-          .filter(deployment -> Objects.nonNull(deployment.getDeploymentInfo()))
-          .filter(this::hasDeploymentKey)
-          .forEach(this::handlePerpetualTask);
-
-    } catch (Exception ex) {
-      // We have to catch all kinds of exceptions, In case of any Failure we switch to instance sync V1
-      throw new RuntimeException(
-          format("Exception while handling deployment event for executionId [%s], infraMappingId [%s]",
-              event.getDeploymentSummaries().iterator().next().getWorkflowExecutionId(), infraMappingId),
-          ex);
     }
+  }
+
+  public void handleInstanceSyncForNewDeployement(DeploymentEvent event, InfrastructureMapping infrastructureMapping) {
+    List<DeploymentSummary> deploymentSummaries = event.getDeploymentSummaries();
+
+    if (isEmpty(deploymentSummaries)) {
+      log.error("Deployment Summaries can not be empty or null");
+      return;
+    }
+
+    deploymentSummaries = deploymentSummaries.stream().filter(this::hasDeploymentKey).collect(Collectors.toList());
+
+    deploymentSummaries.forEach(deploymentSummary -> saveDeploymentSummary(deploymentSummary, false));
+
+    InstanceHandler instanceHandler = instanceHandlerFactory.getInstanceHandler(infrastructureMapping);
+    instanceHandler.handleNewDeployment(
+        event.getDeploymentSummaries(), event.isRollback(), event.getOnDemandRollbackInfo());
+
+    event.getDeploymentSummaries()
+        .stream()
+        .filter(deployment -> Objects.nonNull(deployment.getDeploymentInfo()))
+        .filter(this::hasDeploymentKey)
+        .forEach(this::handlePerpetualTask);
+
+    instanceSyncPerpetualTaskService.createPerpetualTasksForNewDeploymentBackup(
+        deploymentSummaries, infrastructureMapping);
   }
 
   private void isSupportedCloudProvider(String cloudProviderType) {
@@ -227,6 +250,10 @@ public class CgInstanceSyncServiceV2 {
       instancesPerTask.get(instanceSyncData.getTaskDetailsId()).addAll(Arrays.asList(instanceSyncData));
     }
 
+    handlingInstanceSync(instancesPerTask);
+  }
+
+  private void handlingInstanceSync(Map<String, List<InstanceSyncData>> instancesPerTask) {
     for (String taskDetailsId : instancesPerTask.keySet()) {
       InstanceSyncTaskDetails taskDetails = taskDetailsService.getForId(taskDetailsId);
       InfrastructureMapping infraMapping =

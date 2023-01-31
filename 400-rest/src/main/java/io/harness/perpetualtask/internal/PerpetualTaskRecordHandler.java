@@ -133,7 +133,7 @@ public class PerpetualTaskRecordHandler extends IteratorPumpModeHandler implemen
         return;
       }
       try {
-        DelegateResponseData response = delegateService.executeTask(validationTask);
+        DelegateResponseData response = delegateService.executeTaskV2(validationTask);
 
         if (response instanceof DelegateTaskNotifyResponseData) {
           if (response instanceof PerpetualTaskCapabilityCheckResponse) {

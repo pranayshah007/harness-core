@@ -7,6 +7,8 @@
 
 package io.harness.audit.mapper.streaming;
 
+import static io.harness.ng.core.mapper.TagMapper.convertToList;
+import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 import static io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO.TypeEnum.AWS_S3;
 
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
@@ -23,6 +25,8 @@ public class StreamingDestinationMapper {
     streamingDestination.setAccountIdentifier(accountIdentifier);
     streamingDestination.setIdentifier(streamingDestinationDTO.getIdentifier());
     streamingDestination.setName(streamingDestinationDTO.getName());
+    streamingDestination.setDescription(streamingDestinationDTO.getDescription());
+    streamingDestination.setTags(convertToList(streamingDestinationDTO.getTags()));
     streamingDestination.setStatus(streamingDestinationDTO.getStatus());
     streamingDestination.setConnectorRef(streamingDestinationDTO.getConnectorRef());
     streamingDestination.setType(streamingDestinationDTO.getSpec().getType());
@@ -43,6 +47,8 @@ public class StreamingDestinationMapper {
     return new StreamingDestinationDTO()
         .identifier(streamingDestination.getIdentifier())
         .name(streamingDestination.getName())
+        .description(streamingDestination.getDescription())
+        .tags(convertToMap(streamingDestination.getTags()))
         .status(streamingDestination.getStatus())
         .connectorRef(streamingDestination.getConnectorRef())
         .spec(getSpec(streamingDestination));

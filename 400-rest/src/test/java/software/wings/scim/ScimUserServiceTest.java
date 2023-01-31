@@ -100,10 +100,31 @@ public class ScimUserServiceTest extends WingsBaseTest {
     userGroup.setImportedByScim(true);
 
     when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
+    when(featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, ACCOUNT_ID)).thenReturn(false);
     when(userService.get(ACCOUNT_ID, USER_ID)).thenReturn(user);
     when(wingsPersistence.save(userGroup)).thenReturn("true");
     scimUserService.updateUser(ACCOUNT_ID, USER_ID, patchRequest);
     verify(userService, times(1)).updateUser(USER_ID, updateOperations);
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testUpdateGroupRemoveMembersShouldPassV2() {
+    PatchRequest patchRequest = getOktaActivityReplaceOperation();
+    User user = new User();
+    user.setUuid(USER_ID);
+
+    UserGroup userGroup = new UserGroup();
+    userGroup.setMemberIds(Arrays.asList(USER_ID));
+    userGroup.setAccountId(ACCOUNT_ID);
+    userGroup.setImportedByScim(true);
+
+    when(featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, ACCOUNT_ID)).thenReturn(true);
+    when(userService.get(ACCOUNT_ID, USER_ID)).thenReturn(user);
+    when(wingsPersistence.save(userGroup)).thenReturn("true");
+    scimUserService.updateUser(ACCOUNT_ID, USER_ID, patchRequest);
+    verify(userService, times(1)).delete(ACCOUNT_ID, USER_ID);
   }
 
   @Test

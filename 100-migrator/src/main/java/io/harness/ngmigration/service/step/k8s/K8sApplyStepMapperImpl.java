@@ -10,15 +10,14 @@ package io.harness.ngmigration.service.step.k8s;
 import io.harness.cdng.k8s.K8sApplyStepInfo;
 import io.harness.cdng.k8s.K8sApplyStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
-import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GraphNode;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 import software.wings.sm.states.k8s.K8sApplyState;
 
@@ -27,7 +26,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
-public class K8sApplyStepMapperImpl implements StepMapper {
+public class K8sApplyStepMapperImpl extends StepMapper {
+  @Override
+  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
+    return WorkflowStepSupportStatus.SUPPORTED;
+  }
+
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.K8S_APPLY;
@@ -35,15 +39,14 @@ public class K8sApplyStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     K8sApplyState state = new K8sApplyState(stepYaml.getName());
     state.parseProperties(properties);
     return state;
   }
 
   @Override
-  public AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     K8sApplyState state = (K8sApplyState) getState(graphNode);
     K8sApplyStepNode k8sApplyStepNode = new K8sApplyStepNode();
     baseSetup(state, k8sApplyStepNode);

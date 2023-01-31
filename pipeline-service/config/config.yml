@@ -89,6 +89,9 @@ grpcClientConfigs:
   cv:
     target: localhost:12401
     authority: localhost
+  srm:
+    target: localhost:12401
+    authority: localhost
   ci:
     target: localhost:12301
     authority: localhost
@@ -114,6 +117,12 @@ yamlSchemaClientConfig:
         readTimeOutSeconds: 15
       secret: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
     cv:
+      serviceHttpClientConfig:
+        baseUrl: http://localhost:6457/cv/api/
+        connectTimeOutSeconds: 15
+        readTimeOutSeconds: 15
+      secret: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
+    srm:
       serviceHttpClientConfig:
         baseUrl: http://localhost:6457/cv/api/
         connectTimeOutSeconds: 15

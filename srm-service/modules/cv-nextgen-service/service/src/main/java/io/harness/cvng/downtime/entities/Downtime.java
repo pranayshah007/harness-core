@@ -23,8 +23,10 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.persistence.CreatedAtAware;
+import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
+import io.harness.persistence.UpdatedByAware;
 import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -32,6 +34,7 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
+import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -60,7 +63,8 @@ import org.springframework.data.annotation.LastModifiedBy;
 @Entity(value = "downtime", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-public class Downtime implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware {
+public class Downtime
+    implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware, CreatedByAware, UpdatedByAware {
   @Id private String uuid;
   @NotNull String accountId;
   String orgIdentifier;
@@ -85,6 +89,8 @@ public class Downtime implements PersistentEntity, UuidAware, UpdatedAtAware, Cr
   @SuperBuilder
   @EqualsAndHashCode
   public abstract static class DowntimeDetails {
+    long startTime;
+
     public abstract DowntimeType getType();
   }
 
@@ -100,7 +106,7 @@ public class Downtime implements PersistentEntity, UuidAware, UpdatedAtAware, Cr
   @SuperBuilder
   @EqualsAndHashCode(callSuper = true)
   public static class OnetimeDurationBased extends OnetimeDowntimeDetails {
-    DowntimeDuration downtimeDuration;
+    @NotNull DowntimeDuration downtimeDuration;
     OnetimeDowntimeType onetimeDowntimeType = OnetimeDowntimeType.DURATION;
   }
 
@@ -108,7 +114,7 @@ public class Downtime implements PersistentEntity, UuidAware, UpdatedAtAware, Cr
   @SuperBuilder
   @EqualsAndHashCode(callSuper = true)
   public static class EndTimeBased extends OnetimeDowntimeDetails {
-    long endTime;
+    @NotNull long endTime;
     OnetimeDowntimeType onetimeDowntimeType = OnetimeDowntimeType.END_TIME;
   }
 
@@ -117,8 +123,8 @@ public class Downtime implements PersistentEntity, UuidAware, UpdatedAtAware, Cr
   @EqualsAndHashCode(callSuper = true)
   public static class RecurringDowntimeDetails extends DowntimeDetails {
     long recurrenceEndTime;
-    DowntimeDuration downtimeDuration;
-    DowntimeRecurrence downtimeRecurrence;
+    @ApiModelProperty(required = true) @NotNull DowntimeDuration downtimeDuration;
+    @ApiModelProperty(required = true) @NotNull DowntimeRecurrence downtimeRecurrence;
     private final DowntimeType type = DowntimeType.RECURRING;
   }
 

@@ -13,6 +13,8 @@ import io.harness.cvng.analysis.beans.CanaryBlueGreenAdditionalInfo.HostSummaryI
 import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
+import io.harness.cvng.beans.MonitoredServiceDataSourceType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.v2.AbstractAnalysedNode;
 import io.harness.cvng.cdng.beans.v2.AnalysedDeploymentNode;
 import io.harness.cvng.cdng.beans.v2.AnalysedLoadTestNode;
@@ -34,6 +36,7 @@ import io.harness.cvng.resources.VerifyStepResource;
 import io.harness.cvng.verificationjob.beans.AdditionalInfo;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.PageUtils;
@@ -45,6 +48,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @NextGenManagerAuth
 public class VerifyStepResourceImpl implements VerifyStepResource {
@@ -67,9 +71,10 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
         .stream()
         .map(dto
             -> HealthSource.builder()
-                   .healthSourceName(dto.getName())
-                   .healthSourceIdentifier(dto.getIdentifier())
-                   .providerName(dto.getType())
+                   .name(dto.getName())
+                   .identifier(dto.getIdentifier())
+                   .type(MonitoredServiceDataSourceType.dataSourceTypeMonitoredServiceDataSourceTypeMap.get(
+                       dto.getType()))
                    .providerType(ProviderType.fromVerificationType(dto.getVerificationType()))
                    .build())
         .collect(Collectors.toList());
@@ -95,8 +100,8 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
         .verificationStartTimestamp(deploymentVerificationJobInstanceSummary.getActivityStartTime())
         .verificationProgressPercentage(deploymentVerificationJobInstanceSummary.getProgressPercentage())
         .verificationStatus(deploymentVerificationJobInstanceSummary.getStatus())
-        .controlNodes(getControlNodesOverview(appliedDeploymentAnalysisType, additionalInfo))
-        .testNodes(getTestNodesOverview(appliedDeploymentAnalysisType, additionalInfo))
+        .controlNodes(getControlNodesOverview(additionalInfo))
+        .testNodes(getTestNodesOverview(additionalInfo))
         .metricsAnalysis(deploymentTimeSeriesAnalysisService.getMetricsAnalysisOverview(
             verifyStepPathParams.getVerifyStepExecutionId()))
         .logClusters(deploymentLogAnalysisService.getLogsAnalysisOverview(
@@ -118,6 +123,17 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
   private static VerificationSpec getVerificationSpec(VerificationJobInstance verificationJobInstance,
       DeploymentVerificationJobInstanceSummary deploymentVerificationJobInstanceSummary) {
     return VerificationSpec.builder()
+        .analysedServiceIdentifier(verificationJobInstance.getResolvedJob().getServiceIdentifier())
+        .analysedEnvIdentifier(verificationJobInstance.getResolvedJob().getEnvIdentifier())
+        .monitoredServiceIdentifier(verificationJobInstance.getResolvedJob().getMonitoredServiceIdentifier())
+        .monitoredServiceTemplateIdentifier(
+            verificationJobInstance.getResolvedJob().getMonitoredServiceTemplateIdentifier())
+        .monitoredServiceTemplateVersionLabel(
+            verificationJobInstance.getResolvedJob().getMonitoredServiceTemplateVersionLabel())
+        .monitoredServiceType(
+            StringUtils.isBlank(verificationJobInstance.getResolvedJob().getMonitoredServiceTemplateIdentifier())
+                ? MonitoredServiceSpecType.DEFAULT
+                : MonitoredServiceSpecType.TEMPLATE)
         .analysisType(deploymentVerificationJobInstanceSummary.getAdditionalInfo().getType())
         .durationInMinutes(Duration.ofMillis(deploymentVerificationJobInstanceSummary.getDurationMs()).toMinutes())
         .sensitivity(verificationJobInstance.getResolvedJob().getSensitivity())
@@ -125,10 +141,9 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
         .build();
   }
 
-  private AnalysedNodeOverview getControlNodesOverview(
-      AppliedDeploymentAnalysisType appliedDeploymentAnalysisType, AdditionalInfo additionalInfo) {
-    AnalysedNodeOverview analysedNodeOverview = null;
-    switch (appliedDeploymentAnalysisType) {
+  private AnalysedNodeOverview getControlNodesOverview(AdditionalInfo additionalInfo) {
+    AnalysedNodeOverview analysedNodeOverview;
+    switch (additionalInfo.getType()) {
       case CANARY:
         CanaryBlueGreenAdditionalInfo canaryAdditionalInfo = (CanaryBlueGreenAdditionalInfo) additionalInfo;
         analysedNodeOverview = AnalysedNodeOverview.builder()
@@ -136,6 +151,8 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                                    .nodes(getControlNodesForCanaryOrRollingAnalysisType(canaryAdditionalInfo))
                                    .build();
         break;
+      case BLUE_GREEN:
+      case AUTO:
       case ROLLING:
         CanaryBlueGreenAdditionalInfo blueGreenAdditionalInfo = (CanaryBlueGreenAdditionalInfo) additionalInfo;
         analysedNodeOverview = AnalysedNodeOverview.builder()
@@ -150,11 +167,8 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                                    .nodes(getControlNodesForLoadTestAnalysisType(loadTestAdditionalInfo))
                                    .build();
         break;
-      case NO_ANALYSIS:
-        break;
       default:
-        throw new IllegalArgumentException(
-            "Unrecognised AppliedDeploymentAnalysisType " + appliedDeploymentAnalysisType);
+        throw new IllegalArgumentException("Unrecognised VerificationJobType " + additionalInfo.getType());
     }
     return analysedNodeOverview;
   }
@@ -167,10 +181,9 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
         .collect(Collectors.toList());
   }
 
-  private AnalysedNodeOverview getTestNodesOverview(
-      AppliedDeploymentAnalysisType appliedDeploymentAnalysisType, AdditionalInfo additionalInfo) {
-    AnalysedNodeOverview analysedNodeOverview = null;
-    switch (appliedDeploymentAnalysisType) {
+  private AnalysedNodeOverview getTestNodesOverview(AdditionalInfo additionalInfo) {
+    AnalysedNodeOverview analysedNodeOverview;
+    switch (additionalInfo.getType()) {
       case CANARY:
         CanaryBlueGreenAdditionalInfo canaryAdditionalInfo = (CanaryBlueGreenAdditionalInfo) additionalInfo;
         analysedNodeOverview = AnalysedNodeOverview.builder()
@@ -178,6 +191,8 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                                    .nodes(getTestNodesForCanaryOrRollingAnalysisType(canaryAdditionalInfo))
                                    .build();
         break;
+      case BLUE_GREEN:
+      case AUTO:
       case ROLLING:
         CanaryBlueGreenAdditionalInfo blueGreenAdditionalInfo = (CanaryBlueGreenAdditionalInfo) additionalInfo;
         analysedNodeOverview = AnalysedNodeOverview.builder()
@@ -192,11 +207,8 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                                    .nodes(getTestNodesForLoadTestAnalysisType(loadTestAdditionalInfo))
                                    .build();
         break;
-      case NO_ANALYSIS:
-        break;
       default:
-        throw new IllegalArgumentException(
-            "Unrecognised AppliedDeploymentAnalysisType " + appliedDeploymentAnalysisType);
+        throw new IllegalArgumentException("Unrecognised VerificationJobType " + additionalInfo.getType());
     }
     return analysedNodeOverview;
   }
@@ -234,7 +246,7 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
   @Override
   public PageResponse<MetricsAnalysis> getMetricsAnalysisForVerifyStepExecutionId(
       VerifyStepPathParams verifyStepPathParams, boolean anomalousMetricsOnly, List<String> healthSources,
-      List<String> transactionGroups, List<String> nodes, int limit, int page) {
+      List<String> transactionGroups, List<String> nodes, PageRequest pageRequest) {
     List<MetricsAnalysis> metricsAnalyses =
         deploymentTimeSeriesAnalysisService.getFilteredMetricAnalysesForVerifyStepExecutionId(
             verifyStepPathParams.getAccountIdentifier(), verifyStepPathParams.getVerifyStepExecutionId(),
@@ -246,6 +258,6 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                 .anomalousNodesOnly(anomalousMetricsOnly)
                 .build());
 
-    return PageUtils.offsetAndLimit(metricsAnalyses, page - 1, limit);
+    return PageUtils.offsetAndLimit(metricsAnalyses, pageRequest.getPageIndex(), pageRequest.getPageSize());
   }
 }

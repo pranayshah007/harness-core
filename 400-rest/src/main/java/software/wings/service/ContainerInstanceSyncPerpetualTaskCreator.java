@@ -23,6 +23,7 @@ import static software.wings.service.InstanceSyncConstants.RELEASE_NAME;
 import static software.wings.service.InstanceSyncConstants.TIMEOUT_SECONDS;
 import static software.wings.service.impl.ContainerMetadataType.K8S;
 
+import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -154,6 +155,39 @@ INSTANCE_SYNC_V2_CG we do not want the migration job to recreate the Perpetual t
   @Override
   public List<String> createPerpetualTasksForNewDeployment(List<DeploymentSummary> deploymentSummaries,
       List<PerpetualTaskRecord> existingPerpetualTasks, InfrastructureMapping infrastructureMapping) {
+    SetView<ContainerMetadata> containersMetadataToExamine =
+        getContainerMetadataDiff(deploymentSummaries, existingPerpetualTasks);
+
+    return createPerpetualTasks(containersMetadataToExamine, infrastructureMapping);
+  }
+
+  @Override
+  public List<PerpetualTaskRecord> createPerpetualTasksBackup(List<DeploymentSummary> deploymentSummaries,
+      List<PerpetualTaskRecord> existingPerpetualTasks, InfrastructureMapping infrastructureMapping) {
+    SetView<ContainerMetadata> containersMetadataToExamine =
+        getContainerMetadataDiff(deploymentSummaries, existingPerpetualTasks);
+
+    return containersMetadataToExamine.stream()
+        .map(containerMetadata -> clientParamsBuilder(containerMetadata, infrastructureMapping))
+        .map(params -> createForBackup(params, infrastructureMapping))
+        .collect(Collectors.toList());
+  }
+
+  private ContainerInstanceSyncPerpetualTaskClientParams clientParamsBuilder(
+      ContainerMetadata containerMetadata, InfrastructureMapping infrastructureMapping) {
+    return ContainerInstanceSyncPerpetualTaskClientParams.builder()
+        .appId(infrastructureMapping.getAppId())
+        .inframappingId(infrastructureMapping.getUuid())
+        .containerSvcName(containerMetadata.getContainerServiceName())
+        .namespace(containerMetadata.getNamespace())
+        .releaseName(containerMetadata.getReleaseName())
+        .containerType(nonNull(containerMetadata.getType()) ? containerMetadata.getType().name() : null)
+        .clusterName(containerMetadata.getClusterName())
+        .build();
+  }
+
+  private SetView<ContainerMetadata> getContainerMetadataDiff(
+      List<DeploymentSummary> deploymentSummaries, List<PerpetualTaskRecord> existingPerpetualTasks) {
     Set<ContainerMetadata> existingContainersMetadata =
         existingPerpetualTasks.stream().map(this::getContainerMetadataFromPT).collect(Collectors.toSet());
 
@@ -165,10 +199,7 @@ INSTANCE_SYNC_V2_CG we do not want the migration job to recreate the Perpetual t
             .flatMap(deploymentInfo -> extractContainerMetadata(deploymentInfo).stream())
             .collect(Collectors.toSet());
 
-    SetView<ContainerMetadata> containersMetadataToExamine =
-        Sets.difference(newDeploymentContainersMetadata, existingContainersMetadata);
-
-    return createPerpetualTasks(containersMetadataToExamine, infrastructureMapping);
+    return Sets.difference(newDeploymentContainersMetadata, existingContainersMetadata);
   }
 
   @Override
@@ -211,20 +242,50 @@ INSTANCE_SYNC_V2_CG we do not want the migration job to recreate the Perpetual t
   private List<String> createPerpetualTasks(
       Set<ContainerMetadata> containersMetadata, InfrastructureMapping infrastructureMapping) {
     return containersMetadata.stream()
-        .map(containerMetadata
-            -> ContainerInstanceSyncPerpetualTaskClientParams.builder()
-                   .appId(infrastructureMapping.getAppId())
-                   .inframappingId(infrastructureMapping.getUuid())
-                   .containerSvcName(containerMetadata.getContainerServiceName())
-                   .namespace(containerMetadata.getNamespace())
-                   .releaseName(containerMetadata.getReleaseName())
-                   .containerType(nonNull(containerMetadata.getType()) ? containerMetadata.getType().name() : null)
-                   .clusterName(containerMetadata.getClusterName())
-                   .build())
+        .map(containerMetadata -> clientParamsBuilder(containerMetadata, infrastructureMapping))
         .map(params -> create(params, infrastructureMapping))
         .collect(Collectors.toList());
   }
 
+  private PerpetualTaskRecord createForBackup(
+      ContainerInstanceSyncPerpetualTaskClientParams clientParams, InfrastructureMapping infraMapping) {
+    Map<String, String> clientParamMap = new HashMap<>();
+    clientParamMap.put(HARNESS_APPLICATION_ID, clientParams.getAppId());
+    clientParamMap.put(INFRASTRUCTURE_MAPPING_ID, clientParams.getInframappingId());
+    clientParamMap.put(NAMESPACE, clientParams.getNamespace());
+    clientParamMap.put(RELEASE_NAME, clientParams.getReleaseName());
+    clientParamMap.put(CONTAINER_SERVICE_NAME, clientParams.getContainerSvcName());
+    clientParamMap.put(CONTAINER_TYPE, Utils.emptyIfNull(clientParams.getContainerType()));
+
+    if (Objects.nonNull(clientParams.getClusterName())) {
+      clientParamMap.put(CLUSTER_NAME, clientParams.getClusterName());
+    }
+
+    PerpetualTaskClientContext clientContext =
+        PerpetualTaskClientContext.builder().clientParams(clientParamMap).build();
+
+    PerpetualTaskSchedule schedule = PerpetualTaskSchedule.newBuilder()
+                                         .setInterval(Durations.fromMinutes(INTERVAL_MINUTES))
+                                         .setTimeout(Durations.fromSeconds(TIMEOUT_SECONDS))
+                                         .build();
+
+    return createPerpetualTaskRecord(PerpetualTaskType.CONTAINER_INSTANCE_SYNC, infraMapping.getAccountId(),
+        clientContext, schedule, getTaskDescription(infraMapping));
+  }
+
+  public PerpetualTaskRecord createPerpetualTaskRecord(String perpetualTaskType, String accountId,
+
+      PerpetualTaskClientContext clientContext, PerpetualTaskSchedule schedule, String taskDescription) {
+    return PerpetualTaskRecord.builder()
+        .accountId(accountId)
+        .perpetualTaskType(perpetualTaskType)
+        .clientContext(clientContext)
+        .timeoutMillis(Durations.toMillis(schedule.getTimeout()))
+        .delegateId("")
+        .assignIteration(currentTimeMillis())
+        .taskDescription(taskDescription)
+        .build();
+  }
   private String create(
       ContainerInstanceSyncPerpetualTaskClientParams clientParams, InfrastructureMapping infraMapping) {
     Map<String, String> clientParamMap = new HashMap<>();

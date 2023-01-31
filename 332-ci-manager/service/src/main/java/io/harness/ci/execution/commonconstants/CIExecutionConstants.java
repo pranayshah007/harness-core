@@ -91,4 +91,9 @@ public class CIExecutionConstants extends ContainerExecutionConstants {
   public static final String CPU = "CPU";
 
   public static final String NULL_STR = "null";
+
+  public static final String BASE_AZURE_HOSTNAME = "azurecr.io";
+  public static final String BASE_GCR_HOSTNAME = "gcr.io";
+  public static final String BASE_ECR_HOSTNAME = "amazonaws.com";
+  public static final String HTTPS_URL = "https://";
 }

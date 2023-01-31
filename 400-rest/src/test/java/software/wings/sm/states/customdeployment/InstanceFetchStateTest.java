@@ -236,7 +236,7 @@ public class InstanceFetchStateTest extends WingsBaseTest {
                       .timeout(5 * 60 * 1000)
                       .build())
             .build();
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     verify(expressionEvaluator, times(1)).substitute(anyString(), anyMap());
 
     final DelegateTask task = captor.getValue();
@@ -463,7 +463,7 @@ public class InstanceFetchStateTest extends WingsBaseTest {
 
     state.execute(context);
 
-    verify(delegateService).queueTask(any(DelegateTask.class));
+    verify(delegateService).queueTaskV2(any(DelegateTask.class));
 
     // empty host object array path
     doReturn(CustomDeploymentTypeTemplate.builder()
@@ -512,7 +512,7 @@ public class InstanceFetchStateTest extends WingsBaseTest {
 
     state.execute(context);
 
-    verify(delegateService).queueTask(any(DelegateTask.class));
+    verify(delegateService).queueTaskV2(any(DelegateTask.class));
 
     doReturn(CustomDeploymentTypeTemplate.builder()
                  .fetchInstanceScript("")
@@ -560,7 +560,7 @@ public class InstanceFetchStateTest extends WingsBaseTest {
 
     state.execute(context);
 
-    verify(delegateService, times(1)).queueTask(any(DelegateTask.class));
+    verify(delegateService, times(1)).queueTaskV2(any(DelegateTask.class));
 
     Map<String, String> attributes = new HashMap<>();
     attributes.put("key", "value");

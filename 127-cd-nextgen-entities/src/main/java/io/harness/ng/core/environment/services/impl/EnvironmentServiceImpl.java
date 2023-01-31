@@ -151,7 +151,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   public Environment create(@NotNull @Valid Environment environment) {
     try {
       validatePresenceOfRequiredFields(environment.getAccountId(), environment.getIdentifier());
-      setName(environment);
+      modifyEnvironmentRequest(environment);
 
       Environment createdEnvironment =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -212,7 +212,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public Environment update(@Valid Environment requestEnvironment) {
     validatePresenceOfRequiredFields(requestEnvironment.getAccountId(), requestEnvironment.getIdentifier());
-    setName(requestEnvironment);
+    modifyEnvironmentRequest(requestEnvironment);
     Criteria criteria = getEnvironmentEqualityCriteria(requestEnvironment, requestEnvironment.getDeleted());
 
     Optional<Environment> environmentOptional =
@@ -253,7 +253,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public Environment upsert(Environment requestEnvironment, UpsertOptions upsertOptions) {
     validatePresenceOfRequiredFields(requestEnvironment.getAccountId(), requestEnvironment.getIdentifier());
-    setName(requestEnvironment);
+    modifyEnvironmentRequest(requestEnvironment);
     Criteria criteria = getEnvironmentEqualityCriteria(requestEnvironment, requestEnvironment.getDeleted());
     Environment updatedResult = Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       Environment tempResult = environmentRepository.upsert(criteria, requestEnvironment);
@@ -560,11 +560,17 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     Lists.newArrayList(fields).forEach(field -> Objects.requireNonNull(field, "One of the required fields is null."));
   }
 
-  private void setName(Environment requestEnvironment) {
+  private void modifyEnvironmentRequest(Environment requestEnvironment) {
     if (isEmpty(requestEnvironment.getName())) {
       requestEnvironment.setName(requestEnvironment.getIdentifier());
     }
     requestEnvironment.setName(requestEnvironment.getName().trim());
+    // handle empty scope identifiers as null to define the scope correctly
+    requestEnvironment.setOrgIdentifier(
+        EmptyPredicate.isEmpty(requestEnvironment.getOrgIdentifier()) ? null : requestEnvironment.getOrgIdentifier());
+    requestEnvironment.setProjectIdentifier(EmptyPredicate.isEmpty(requestEnvironment.getProjectIdentifier())
+            ? null
+            : requestEnvironment.getProjectIdentifier());
   }
 
   private Criteria getEnvironmentEqualityCriteria(Environment requestEnvironment, boolean deleted) {

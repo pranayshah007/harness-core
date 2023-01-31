@@ -34,7 +34,7 @@ public class InstanceSyncPTInfoBackupDao {
     persistence.delete(instanceSyncPTInfoBackup);
   }
 
-  List<InstanceSyncPTInfoBackup> findAllByAccountIdAndInfraMappingId(String accountId, String infraMappingId) {
+  public List<InstanceSyncPTInfoBackup> findAllByAccountIdAndInfraMappingId(String accountId, String infraMappingId) {
     Query<InstanceSyncPTInfoBackup> query =
         persistence.createQuery(InstanceSyncPTInfoBackup.class)
             .filter(InstanceSyncPTInfoBackup.ACCOUNT_ID_KEY, accountId)

@@ -41,6 +41,7 @@ import io.harness.rule.Owner;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimUser;
 import io.harness.serializer.JsonUtils;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import software.wings.beans.Account;
 import software.wings.beans.UserInvite;
@@ -68,17 +69,21 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
   private NGScimUserServiceImpl scimUserService;
   @Mock private AccountClient accountClient;
 
+  private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+
   @Before
   public void setup() throws IOException {
     inviteService = mock(InviteService.class);
     ngUserService = mock(NgUserService.class);
     userGroupService = mock(UserGroupService.class);
+    ngFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
 
     Call<RestResponse<Boolean>> ffCall = mock(Call.class);
     when(accountClient.isFeatureFlagEnabled(any(), anyString())).thenReturn(ffCall);
     when(ffCall.execute()).thenReturn(retrofit2.Response.success(new RestResponse<>(true)));
 
-    scimUserService = new NGScimUserServiceImpl(ngUserService, inviteService, userGroupService, accountClient);
+    scimUserService = new NGScimUserServiceImpl(
+        ngUserService, inviteService, userGroupService, accountClient, ngFeatureFlagHelperService);
   }
 
   @Test

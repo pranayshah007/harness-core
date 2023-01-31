@@ -17,6 +17,8 @@ echo "JFROG_PASSWORD=\"bar\"" >> bazel-credentials.bzl
 
 apt-get update -y
 apt install curl -y
+apt-get install jq -y
+
 curl -O https://dl.google.com/go/go1.18.linux-amd64.tar.gz
 tar -xvf go1.18.linux-amd64.tar.gz
 mv go/ /usr/local/
@@ -31,7 +33,22 @@ export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 apt-get install build-essential -y
 apt-get install zlib1g-dev -y
 
-BAZEL_ARGUMENTS="--platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 --define=ABSOLUTE_JAVABASE=${JAVA_HOME} --javabase=@bazel_tools//tools/jdk:absolute_javabase --host_javabase=@bazel_tools//tools/jdk:absolute_javabase --java_toolchain=@bazel_tools//tools/jdk:toolchain_vanilla --host_java_toolchain=@bazel_tools//tools/jdk:toolchain_vanilla"
-bazelisk build ${BAZEL_ARGUMENTS} //queue-service/hsqs/...
 
-cp $(bazelisk info bazel-bin)/queue-service/hsqs/hsqs_/hsqs queue-service/hsqs/hsqs
+if [ "$APPD_ENABLED" == "true" ]; then
+export TOKEN=$(curl -X POST -d '{"username": "'"$APPD_USERNAME"'", "password": "'"$APPD_PASSWORD"'", "scopes": ["download"]}' https://identity.msrv.saas.appdynamics.com/v2.0/oauth/token | jq -r '.access_token') && \
+        curl -L -O \
+        -H "Authorization: Bearer $TOKEN" \
+        "https://download.appdynamics.com/download/prox/download-file/golang-sdk/4.5.2.0/golang-sdk-x64-linux-4.5.2.0.tbz2" && \
+        tar xjf golang-sdk-x64-linux-4.5.2.0.tbz2 --no-same-owner && \
+        mv appdynamics $GOROOT/src && \
+        rm golang-sdk-x64-linux-4.5.2.0.tbz2
+fi
+
+cd queue-service/hsqs
+
+go install appdynamics
+go build -tags=appdynamics -buildvcs=false
+
+cp hsqs /root/.cache/bazel/hsqs
+
+cp $GOROOT/src/appdynamics/lib/libappdynamics.so /root/.cache/bazel/libappdynamics.so

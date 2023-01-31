@@ -156,12 +156,13 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Category(UnitTests.class)
   @Parameters(method = "getDeploymentStageConfig")
   public void testCreatePlanForChildrenNodes_0(DeploymentStageNode node) {
-    node.setFailureStrategies(List.of(FailureStrategyConfig.builder()
-                                          .onFailure(OnFailureConfig.builder()
-                                                         .errors(List.of(NGFailureType.ALL_ERRORS))
-                                                         .action(AbortFailureActionConfig.builder().build())
-                                                         .build())
-                                          .build()));
+    node.setFailureStrategies(
+        ParameterField.createValueField(List.of(FailureStrategyConfig.builder()
+                                                    .onFailure(OnFailureConfig.builder()
+                                                                   .errors(List.of(NGFailureType.ALL_ERRORS))
+                                                                   .action(AbortFailureActionConfig.builder().build())
+                                                                   .build())
+                                                    .build())));
 
     JsonNode jsonNode = mapper.valueToTree(node);
     PlanCreationContext ctx = PlanCreationContext.builder()

@@ -25,10 +25,19 @@
       "type": "string"
     },
     "failureStrategies": {
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/FailureStrategyConfig"
-      }
+      "oneOf": [
+        {
+          "$ref": "#/definitions/ParameterFieldListFailureStrategyConfig"
+        },
+        {
+          "type": "array"
+        },
+        {
+          "type": "string",
+          "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+          "minLength": 1
+        }
+      ]
     },
     "identifier": {
       "type": "string",
@@ -3944,10 +3953,19 @@
           "type": "string"
         },
         "failureStrategies": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FailureStrategyConfig"
-          }
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ParameterFieldListFailureStrategyConfig"
+            },
+            {
+              "type": "array"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "identifier": {
           "type": "string",
@@ -5291,35 +5309,7 @@
       ],
       "properties": {
         "action": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/AbortFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/IgnoreFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ManualInterventionFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/RetryFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StageRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StepGroupFailureActionConfig"
-            }
-          ]
+          "$ref": "#/definitions/FailureStrategyActionConfig"
         },
         "errors": {
           "type": "array",
@@ -5348,35 +5338,7 @@
       "type": "object",
       "properties": {
         "action": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/AbortFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/IgnoreFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ManualInterventionFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/RetryFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StageRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StepGroupFailureActionConfig"
-            }
-          ]
+          "$ref": "#/definitions/FailureStrategyActionConfig"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5385,35 +5347,7 @@
       "type": "object",
       "properties": {
         "action": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/AbortFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/IgnoreFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ManualInterventionFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/RetryFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StageRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StepGroupFailureActionConfig"
-            }
-          ]
+          "$ref": "#/definitions/FailureStrategyActionConfig"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5891,6 +5825,45 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/DependencyElement"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldListFailureStrategyConfig": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FailureStrategyConfig"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FailureStrategyConfig"
           }
         }
       },
@@ -7654,7 +7627,7 @@
             }
           ]
         },
-        "failOnSeverity": {
+        "fail_on_severity": {
           "oneOf": [
             {
               "type": "string",
@@ -7673,7 +7646,7 @@
             }
           ]
         },
-        "includeRaw": {
+        "include_raw": {
           "oneOf": [
             {
               "type": "boolean"
@@ -7715,13 +7688,13 @@
     "STOYamlAuth": {
       "type": "object",
       "required": [
-        "accessToken"
+        "access_token"
       ],
       "properties": {
-        "accessId": {
+        "access_id": {
           "type": "string"
         },
-        "accessToken": {
+        "access_token": {
           "type": "string"
         },
         "domain": {
@@ -7764,10 +7737,10 @@
     "STOYamlBlackduckToolData": {
       "type": "object",
       "properties": {
-        "projectName": {
+        "project_name": {
           "type": "string"
         },
-        "projectVersion": {
+        "project_version": {
           "type": "string"
         }
       },
@@ -7776,10 +7749,10 @@
     "STOYamlCheckmarxToolData": {
       "type": "object",
       "properties": {
-        "projectName": {
+        "project_name": {
           "type": "string"
         },
-        "teamName": {
+        "team_name": {
           "type": "string"
         }
       },
@@ -7788,37 +7761,37 @@
     "STOYamlFODToolData": {
       "type": "object",
       "properties": {
-        "appName": {
+        "app_name": {
           "type": "string"
         },
-        "auditType": {
+        "audit_type": {
           "type": "string"
         },
-        "dataCenter": {
+        "data_center": {
           "type": "string"
         },
         "entitlement": {
           "type": "string"
         },
-        "loookupType": {
+        "lookup_type": {
           "type": "string"
         },
-        "ownerId": {
+        "owner_id": {
           "type": "string"
         },
-        "releaseName": {
+        "release_name": {
           "type": "string"
         },
-        "scanSettings": {
+        "scan_settings": {
           "type": "string"
         },
-        "scanType": {
+        "scan_type": {
           "type": "string"
         },
-        "targetLanguage": {
+        "target_language": {
           "type": "string"
         },
-        "targetLanguageVersion": {
+        "target_language_version": {
           "type": "string"
         }
       },
@@ -7830,10 +7803,10 @@
         "type"
       ],
       "properties": {
-        "accessId": {
+        "access_id": {
           "type": "string"
         },
-        "accessToken": {
+        "access_token": {
           "type": "string"
         },
         "domain": {
@@ -7881,10 +7854,10 @@
     "STOYamlInstance": {
       "type": "object",
       "properties": {
-        "accessId": {
+        "access_id": {
           "type": "string"
         },
-        "accessToken": {
+        "access_token": {
           "type": "string"
         },
         "domain": {
@@ -7976,16 +7949,16 @@
         "include": {
           "type": "string"
         },
-        "productName": {
+        "product_name": {
           "type": "string"
         },
-        "productToken": {
+        "product_token": {
           "type": "string"
         },
-        "projectName": {
+        "project_name": {
           "type": "string"
         },
-        "projectToken": {
+        "project_token": {
           "type": "string"
         }
       },
@@ -8056,10 +8029,10 @@
     "STOYamlVeracodeToolData": {
       "type": "object",
       "properties": {
-        "appId": {
+        "app_id": {
           "type": "string"
         },
-        "projectName": {
+        "project_name": {
           "type": "string"
         }
       },
@@ -9145,10 +9118,19 @@
           "type": "string"
         },
         "failureStrategies": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FailureStrategyConfig"
-          }
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ParameterFieldListFailureStrategyConfig"
+            },
+            {
+              "type": "array"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "identifier": {
           "type": "string",
@@ -10159,10 +10141,19 @@
           ]
         },
         "failureStrategies": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FailureStrategyConfig"
-          }
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ParameterFieldListFailureStrategyConfig"
+            },
+            {
+              "type": "array"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "identifier": {
           "type": "string",
@@ -11389,7 +11380,10 @@
             "config": {
               "type": "string",
               "enum": [
-                "default"
+                "default",
+                "quick",
+                "attack",
+                "standard"
               ]
             },
             "imagePullPolicy": {

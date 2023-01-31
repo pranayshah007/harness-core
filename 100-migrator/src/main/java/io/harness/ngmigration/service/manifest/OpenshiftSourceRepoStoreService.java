@@ -18,8 +18,8 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GitFileConfig;
@@ -49,8 +49,8 @@ public class OpenshiftSourceRepoStoreService implements NgManifestService {
     OpenshiftManifest openshiftManifest =
         OpenshiftManifest.builder()
             .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-            .skipResourceVersioning(
-                ParameterField.createValueField(applicationManifest.getSkipVersioningForAllK8sObjects()))
+            .skipResourceVersioning(ParameterField.createValueField(
+                Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
             .store(ParameterField.createValueField(
                 StoreConfigWrapper.builder()
                     .type(StoreConfigType.GIT)

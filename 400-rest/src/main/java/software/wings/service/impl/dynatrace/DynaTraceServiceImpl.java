@@ -64,7 +64,7 @@ public class DynaTraceServiceImpl implements DynaTraceService {
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT * 3)
                                             .build();
       List<DynaTraceMetricDataResponse> response =
-          delegateProxyFactory.get(DynaTraceDelegateService.class, syncTaskContext)
+          delegateProxyFactory.getV2(DynaTraceDelegateService.class, syncTaskContext)
               .getMetricsWithDataForNode((DynaTraceConfig) settingAttribute.getValue(), encryptionDetails,
                   setupTestNodeData, createApiCallLog(settingAttribute.getAccountId(), setupTestNodeData.getGuid()));
       if (response.isEmpty()) {
@@ -103,7 +103,7 @@ public class DynaTraceServiceImpl implements DynaTraceService {
                                           .appId(GLOBAL_APP_ID)
                                           .timeout(DEFAULT_SYNC_CALL_TIMEOUT * 3)
                                           .build();
-    return delegateProxyFactory.get(DynaTraceDelegateService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(DynaTraceDelegateService.class, syncTaskContext)
         .getServices((DynaTraceConfig) settingAttribute.getValue(), encryptionDetails,
             createApiCallLog(settingAttribute.getAccountId(), generateUuid()), shouldResolveAllServices);
   }

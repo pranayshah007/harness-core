@@ -388,7 +388,7 @@ public class EcsStateHelper {
     delegateTask.setDescription("ECS Listener Update task execution");
     delegateTask.setTags(isNotEmpty(awsConfig.getTag()) ? singletonList(awsConfig.getTag()) : null);
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(delegateTask, stateExecutionInstanceId);
 
     return ExecutionResponse.builder()
@@ -802,7 +802,7 @@ public class EcsStateHelper {
             .description("ECS command task execution")
             .selectionLogsTrackingEnabled(selectionLogsEnabled)
             .build();
-    delegateService.queueTask(task);
+    delegateService.queueTaskV2(task);
     return task;
   }
 
@@ -1109,7 +1109,7 @@ public class EcsStateHelper {
             .selectionLogsTrackingEnabled(selectionLogsEnabled)
             .description("ECS Command task execution")
             .build();
-    delegateService.queueTask(task);
+    delegateService.queueTaskV2(task);
     return task;
   }
 
@@ -1147,7 +1147,7 @@ public class EcsStateHelper {
             .selectionLogsTrackingEnabled(selectionLogsEnabled)
             .description("ECS Run task deploy execution")
             .build();
-    delegateService.queueTask(task);
+    delegateService.queueTaskV2(task);
     return task;
   }
 
@@ -1355,7 +1355,7 @@ public class EcsStateHelper {
 
     EcsCommandExecutionResponse delegateResponse;
     try {
-      delegateResponse = delegateService.executeTask(task);
+      delegateResponse = delegateService.executeTaskV2(task);
     } catch (InterruptedException e) {
       log.error("", e);
       Thread.currentThread().interrupt();

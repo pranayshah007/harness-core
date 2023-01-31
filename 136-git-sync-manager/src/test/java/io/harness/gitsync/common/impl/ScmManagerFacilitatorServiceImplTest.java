@@ -38,6 +38,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.gitsync.GitSyncTestBase;
+import io.harness.gitsync.common.beans.ConnectorDetails;
 import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.GetLatestCommitOnFileRequestDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
@@ -63,7 +64,9 @@ import io.harness.tasks.DecryptGitApiAccessHelper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -356,5 +359,35 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
     final GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
         scmManagerFacilitatorService.getLatestCommitOnFile(getLatestCommitOnFileRequestDTO);
     assertThat(getLatestCommitOnFileResponse.getCommitId()).isEqualTo(commitId);
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetDecryptedScmConnector() {
+    Map<ConnectorDetails, ScmConnector> decryptedConnectorMap = new HashMap<>();
+    scmManagerFacilitatorService.getDecryptedScmConnector(decryptedConnectorMap,
+        getScope(accountIdentifier, orgIdentifier, projectIdentifier), "connectorRef-1", githubConnector);
+    assertThat(decryptedConnectorMap.size()).isEqualTo(1);
+    scmManagerFacilitatorService.getDecryptedScmConnector(
+        decryptedConnectorMap, getScope(null, orgIdentifier, projectIdentifier), "connectorRef-1", githubConnector);
+    assertThat(decryptedConnectorMap.size()).isEqualTo(2);
+    scmManagerFacilitatorService.getDecryptedScmConnector(
+        decryptedConnectorMap, getScope(null, null, projectIdentifier), "connectorRef-1", githubConnector);
+    assertThat(decryptedConnectorMap.size()).isEqualTo(3);
+    scmManagerFacilitatorService.getDecryptedScmConnector(
+        decryptedConnectorMap, getScope(null, orgIdentifier, projectIdentifier), "connectorRef-1", githubConnector);
+    assertThat(decryptedConnectorMap.size()).isEqualTo(3);
+    scmManagerFacilitatorService.getDecryptedScmConnector(
+        decryptedConnectorMap, getScope(null, orgIdentifier, projectIdentifier), "connectorRef-2", githubConnector);
+    assertThat(decryptedConnectorMap.size()).isEqualTo(4);
+  }
+
+  private Scope getScope(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return Scope.builder()
+        .accountIdentifier(accountIdentifier)
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .build();
   }
 }

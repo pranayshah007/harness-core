@@ -582,7 +582,7 @@ public class CloudFormationStateTest extends WingsBaseTest {
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     CloudFormationCreateStackRequest cloudFormationCreateStackRequest =
@@ -637,7 +637,7 @@ public class CloudFormationStateTest extends WingsBaseTest {
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     CloudFormationDeleteStackRequest cloudFormationDeleteStackRequest =

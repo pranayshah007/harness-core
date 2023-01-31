@@ -44,8 +44,9 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -72,8 +73,13 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
-public abstract class BaseTerraformProvisionerMapper implements StepMapper {
+public abstract class BaseTerraformProvisionerMapper extends StepMapper {
   private static final String SECRET_FORMAT = "<+secrets.getValue(\"%s\")>";
+
+  @Override
+  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
+    return WorkflowStepSupportStatus.MANUAL_EFFORT;
+  }
 
   public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
     TerraformProvisionState state = (TerraformProvisionState) getState(graphNode);
@@ -257,6 +263,7 @@ public abstract class BaseTerraformProvisionerMapper implements StepMapper {
     GitStore gitStore = null;
     if (EmptyPredicate.isNotEmpty(state.getTfVarFiles())) {
       gitStore = getGitStore(entities, migratedEntities, state);
+      gitStore.setFolderPath(ParameterField.ofNull());
       gitStore.setPaths(ParameterField.createValueField(state.getTfVarFiles()));
     } else if (state.getTfVarGitFileConfig() != null) {
       GitStoreBuilder storeBuilder = GitStore.builder().connectorRef(MigratorUtility.RUNTIME_INPUT);
