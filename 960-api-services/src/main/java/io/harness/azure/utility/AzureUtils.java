@@ -354,4 +354,16 @@ public class AzureUtils {
 
     return retrofitBuilder.build().create(clazz);
   }
+
+  public String getAuthorityHost(AzureEnvironmentType azureEnvironmentType, String tenantId) {
+    if (azureEnvironmentType != null && tenantId != null) {
+      String authorityHost =
+          format("%s%s", getAzureEnvironment(azureEnvironmentType).getActiveDirectoryEndpoint(), tenantId);
+      log.info(format("Using authority host [%s]", authorityHost));
+      return authorityHost;
+    }
+    log.error(
+        format("Failed to create authority host [AzureEnvType=%s], [TenantId=%s]", azureEnvironmentType, tenantId));
+    return null;
+  }
 }
