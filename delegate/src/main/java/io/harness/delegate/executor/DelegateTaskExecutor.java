@@ -39,7 +39,7 @@ public abstract class DelegateTaskExecutor {
         Configuration configuration = ConfigurationProvider.getExecutorConfiguration(args.length > 1 ? args[1] : null);
 
         DelegateTaskPackage delegateTaskPackage =
-            TaskPackageReader.readTask(configuration.getTaskFilePath(), injector.getInstance(KryoSerializer.class));
+            TaskPackageReader.readTask(configuration.getTaskInputPath(), injector.getInstance(KryoSerializer.class));
         DelegateRunnableTask runnableTask = injector.getInstance(TaskFactory.class).getDelegateRunnableTask(
             injector.getInstance(Key.get(new TypeLiteral<Map<TaskType, Class<? extends DelegateRunnableTask>>>() {})),
             delegateTaskPackage,

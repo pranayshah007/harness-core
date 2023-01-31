@@ -7,16 +7,37 @@
 
 package io.harness.delegate.executor.serviceproviders;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import io.harness.delegate.DelegateConfigurationServiceProvider;
+import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.threading.CurrentThreadExecutor;
 import io.harness.threading.ExecutorModule;
+import io.harness.threading.ThreadPool;
 import io.harness.time.TimeModule;
 import io.harness.version.VersionModule;
 import software.wings.delegatetasks.DelegateLogService;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+
 public class ServiceProvidersModule extends AbstractModule {
+
+    @Provides
+    @Singleton
+    @Named("verificationDataCollectorExecutor")
+    public ExecutorService verificationDataCollectorExecutor() {
+        return ThreadPool.create(4, 20, 5, TimeUnit.SECONDS,
+            new ThreadFactoryBuilder()
+                .setNameFormat("verificationDataCollector-%d")
+                .setPriority(Thread.MIN_PRIORITY)
+                .build());
+    }
+
     @Override
     public void configure() {
         ExecutorModule.getInstance().setExecutorService(new CurrentThreadExecutor());
@@ -25,5 +46,6 @@ public class ServiceProvidersModule extends AbstractModule {
         bind(DelegateConfigurationServiceProvider.class).to(DelegateAccountIdProvider.class);
         bind(DelegateFileManagerBase.class).to(DelegateFileManagerNoopImpl.class);
         bind(DelegateLogService.class).to(DelegateLogServiceNoopImpl.class);
+        bind(DelegatePropertiesServiceProvider.class).to(DelegatePropertiesServiceProviderNoopImpl.class);
     }
 }
