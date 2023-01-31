@@ -61,7 +61,8 @@ public enum ResourceType {
   CLOUD_ASSET_GOVERNANCE_RULE_SET(ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_SET),
   CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT(ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT),
   TARGET_GROUP(ResourceTypeConstants.TARGET_GROUP),
-  FEATURE_FLAG(ResourceTypeConstants.FEATURE_FLAG);
+  FEATURE_FLAG(ResourceTypeConstants.FEATURE_FLAG),
+  PIPELINE_EXECUTION(ResourceTypeConstants.PIPELINE_EXECUTION);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

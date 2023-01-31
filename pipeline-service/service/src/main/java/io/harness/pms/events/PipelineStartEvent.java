@@ -64,7 +64,7 @@ public class PipelineStartEvent implements Event {
     labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, pipelineIdentifier);
     return Resource.builder()
         .identifier(pipelineIdentifier)
-        .type(ResourceTypeConstants.PIPELINE)
+        .type(ResourceTypeConstants.PIPELINE_EXECUTION)
         .labels(labels)
         .build();
   }
