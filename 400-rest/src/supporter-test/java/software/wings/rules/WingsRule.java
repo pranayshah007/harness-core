@@ -67,7 +67,6 @@ import io.harness.queue.QueuePublisher;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
 import io.harness.redis.DelegateServiceCacheModule;
 import io.harness.redis.RedisConfig;
-import io.harness.redis.intfc.DelegateServiceCache;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
@@ -462,13 +461,6 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
         bind(DelegateTokenAuthenticator.class).to(DelegateTokenAuthenticatorImpl.class).in(Singleton.class);
       }
     });
-    modules.add(new AbstractModule() {
-      @Override
-      protected void configure() {
-        bind(DelegateServiceCache.class).toInstance(mock(DelegateServiceCache.class));
-      }
-    });
-
     modules.add(new ProviderModule() {
       @Provides
       @Singleton

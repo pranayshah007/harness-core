@@ -170,7 +170,7 @@ public class DelegateCacheImpl implements DelegateCache {
   public Delegate get(String accountId, String delegateId, boolean forceRefresh) {
     try {
       if (enableRedisForDelegateService) {
-        return getDelegateFromRedisCache(delegateId);
+        return getDelegateFromRedisCache(delegateId, forceRefresh);
       }
 
       if (forceRefresh) {
@@ -300,8 +300,8 @@ public class DelegateCacheImpl implements DelegateCache {
         .asList();
   }
 
-  private Delegate getDelegateFromRedisCache(String delegateId) {
-    if (delegateRedisCache.get(delegateId) == null) {
+  private Delegate getDelegateFromRedisCache(String delegateId, boolean forceRefresh) {
+    if (delegateRedisCache.get(delegateId) == null || forceRefresh) {
       Delegate delegate = persistence.createQuery(Delegate.class).filter(DelegateKeys.uuid, delegateId).get();
       delegateRedisCache.put(delegateId, delegate);
     }
