@@ -28,7 +28,6 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
-import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
