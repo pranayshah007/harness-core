@@ -41,8 +41,7 @@ java_library(
         "@maven//:com_google_oauth_client_google_oauth_client",
         "@maven//:com_squareup_okhttp3_okhttp",
         "@maven//:commons_io_commons_io",
-        "@maven//:org_apache_commons_commons_lang3",
-            "@maven//:com_google_apis_google_api_services_cloudresourcemanager",
+        "@maven//:org_apache_commons_commons_lang3"
 
     ],
 )

@@ -11,6 +11,7 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//:lombok",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/gcp/helpers:module",
         "//932-connector-task:module",
         "//950-delegate-tasks-beans:module",
@@ -18,8 +19,7 @@ java_library(
         "//960-api-services/src/main/java/io/harness/exception/sanitizer:module",
         "//960-api-services/src/main/java/io/harness/gcp/client:module",
         "//960-api-services/src/main/java/io/harness/security/encryption:module",
-        "//970-api-services-beans/src/main/java/io/harness/logging:module",
-        "//970-api-services-beans/src/main/java/io/harness/security/encryption:module",
+        "//970-api-services-beans:module",
         "//970-ng-commons:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//980-commons/src/main/java/io/harness/exception:module",
