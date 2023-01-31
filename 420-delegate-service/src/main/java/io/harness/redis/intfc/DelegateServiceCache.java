@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.redis.impl.DelegateServiceCacheImpl;
-import io.harness.redis.intfc.DelegateRedissonCacheManager.CounterOperation;
 
 import com.google.inject.ImplementedBy;
 import java.util.List;
@@ -21,11 +20,9 @@ import java.util.List;
 @OwnedBy(DEL)
 @ImplementedBy(DelegateServiceCacheImpl.class)
 public interface DelegateServiceCache {
-  Integer delegateTaskCacheCounter(String delegateId, CounterOperation counterOperation);
+  Delegate getDelegate(String delegateId);
 
-  Delegate getDelegateCache(String delegateId);
-
-  DelegateGroup getDelegateGroupCache(String accountId, String delegateGroupId);
+  DelegateGroup getDelegateGroup(String accountId, String delegateGroupId);
 
   List<Delegate> getDelegatesForGroup(String accountId, String delegateGroupId);
 

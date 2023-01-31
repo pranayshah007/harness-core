@@ -7,7 +7,6 @@
 package io.harness.queueservice.impl;
 
 import static io.harness.beans.DelegateTask.Status.STARTED;
-import static io.harness.beans.FeatureName.DELEGATE_TASK_LOAD_DISTRIBUTION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -16,22 +15,17 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.TaskGroup;
-import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.queueservice.infc.DelegateResourceCriteria;
-import io.harness.redis.intfc.DelegateRedissonCacheManager.CounterOperation;
-import io.harness.redis.intfc.DelegateServiceCache;
 import io.harness.service.intfc.DelegateCache;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -44,21 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourceCriteria {
   @Inject private HPersistence persistence;
   @Inject private DelegateCache delegateCache;
-  @Inject private DelegateServiceCache delegateServiceCache;
-  @Inject private FeatureFlagService featureFlagService;
-
-  @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
-
-  private final Random random = new Random();
   final Comparator<Map.Entry<String, Integer>> valueComparator = Map.Entry.comparingByValue(Comparator.naturalOrder());
-
-  final Comparator<Delegate> delegateTaskCountComparator = (d1, d2) -> {
-    int diff = d1.getNumberOfTaskAssigned() - d2.getNumberOfTaskAssigned();
-    if (diff == 0) {
-      return Math.max(random.nextInt(), 0);
-    }
-    return diff;
-  };
 
   @Inject
   public OrderByTotalNumberOfTaskAssignedCriteria(HPersistence persistence, DelegateCache delegateCache) {
@@ -69,17 +49,7 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   @Override
   public List<Delegate> getFilteredEligibleDelegateList(
       List<Delegate> delegateList, TaskType taskType, String accountId) {
-    if (enableRedisForDelegateService || featureFlagService.isEnabled(DELEGATE_TASK_LOAD_DISTRIBUTION, accountId)) {
-      return listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(delegateList);
-    }
     return listOfDelegatesSortedByNumberOfTaskAssigned(delegateList, accountId, taskType);
-  }
-  private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(List<Delegate> delegateList) {
-    delegateList.forEach(delegate
-        -> delegate.setNumberOfTaskAssigned(
-            delegateServiceCache.delegateTaskCacheCounter(delegate.getUuid(), CounterOperation.GET)));
-    delegateList.sort(delegateTaskCountComparator);
-    return delegateList;
   }
 
   private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssigned(
@@ -127,7 +97,11 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
           .collect(Collectors.toList());
     }
     return delegateTaskList;
-    // delegateServiceCache.getDelegateCache(delegateId)
+  }
+
+  private Map<String, Integer> listOfDelegatesSortedByNumberOfTaskAssignedFromRedisCache(String accountId) {
+    // TBD
+    return null;
   }
 
   public static <T> Predicate<T> distinctByKey(Function<T, Object> function) {

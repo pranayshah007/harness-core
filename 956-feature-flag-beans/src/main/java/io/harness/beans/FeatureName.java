@@ -278,7 +278,6 @@ public enum FeatureName {
   SINGLE_MANIFEST_SUPPORT,
   ENV_GROUP,
   REDUCE_DELEGATE_MEMORY_SIZE("Reduce CG delegate memory to 4GB", HarnessTeam.DEL),
-  DELEGATE_TASK_LOAD_DISTRIBUTION("Enable delegate task fair distribution and load balancing", HarnessTeam.DEL),
   PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION,
   DISABLE_LOCAL_LOGIN,
   WINRM_KERBEROS_CACHE_UNIQUE_FILE,

@@ -13,7 +13,6 @@ import static io.harness.beans.DelegateTask.Status.ERROR;
 import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.beans.DelegateTask.Status.runningStatuses;
-import static io.harness.beans.FeatureName.DELEGATE_TASK_LOAD_DISTRIBUTION;
 import static io.harness.beans.FeatureName.DEL_SECRET_EVALUATION_VERBOSE_LOGGING;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS;
@@ -120,9 +119,6 @@ import io.harness.network.SafeHttpCall;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
-import io.harness.queueservice.ResourceBasedDelegateSelectionCheckForTask;
-import io.harness.redis.intfc.DelegateRedissonCacheManager.CounterOperation;
-import io.harness.redis.intfc.DelegateServiceCache;
 import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -283,9 +279,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject @Named(EXPRESSION_EVALUATOR_EXECUTOR) ExecutorService expressionEvaluatorExecutor;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
   @Inject private DelegateTaskQueueService delegateTaskQueueService;
-  @Inject private ResourceBasedDelegateSelectionCheckForTask delegateSelectionCheckForTask;
-  @Inject private DelegateServiceCache delegateServiceCache;
-  @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
 
   private static final SecureRandom random = new SecureRandom();
   private HarnessCacheManager harnessCacheManager;
@@ -772,10 +765,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private String getDelegateIdForFirstBroadcast(DelegateTask delegateTask, List<String> eligibleListOfDelegates) {
-    if (enableRedisForDelegateService
-        && featureFlagService.isEnabled(DELEGATE_TASK_LOAD_DISTRIBUTION, delegateTask.getAccountId())) {
-      return getMostResourceAvailableDelegateIdForFirstBroadcast(delegateTask, eligibleListOfDelegates);
-    }
     for (String delegateId : eligibleListOfDelegates) {
       if (assignDelegateService.isDelegateGroupWhitelisted(delegateTask, delegateId)
           || assignDelegateService.isWhitelisted(delegateTask, delegateId)) {
@@ -785,32 +774,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_NO_FIRST_WHITELISTED);
     printCriteriaNoMatch(delegateTask);
     return eligibleListOfDelegates.get(random.nextInt(eligibleListOfDelegates.size()));
-  }
-
-  private String getMostResourceAvailableDelegateIdForFirstBroadcast(
-      DelegateTask delegateTask, List<String> eligibleListOfDelegates) {
-    List<Delegate> delegateList = getDelegatesList(eligibleListOfDelegates, delegateTask.getAccountId());
-    Optional<List<String>> filteredDelegateList =
-        delegateSelectionCheckForTask.perform(delegateList, getTaskType(delegateTask), delegateTask.getAccountId());
-    log.info("Filtered delegate list : {}", filteredDelegateList.get());
-    if (filteredDelegateList.get().isEmpty()) {
-      log.info("Filtered delegate list is empty");
-      return eligibleListOfDelegates.get(random.nextInt(eligibleListOfDelegates.size()));
-    }
-    log.info("Most resource available delegate for task id {}, is {}", delegateTask.getUuid(),
-        filteredDelegateList.get().get(0));
-    return filteredDelegateList.get().get(0);
-  }
-
-  private List<Delegate> getDelegatesList(List<String> eligibleDelegateId, String accountId) {
-    return eligibleDelegateId.stream().map(id -> delegateCache.get(accountId, id, false)).collect(Collectors.toList());
-  }
-
-  private TaskType getTaskType(DelegateTask delegateTask) {
-    if (delegateTask.getTaskDataV2() != null) {
-      return TaskType.valueOf(delegateTask.getTaskDataV2().getTaskType());
-    }
-    return TaskType.valueOf(delegateTask.getData().getTaskType());
   }
 
   private void handleTaskFailureResponse(DelegateTask task, Exception exception) {
@@ -1590,10 +1553,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     // If the task wasn't updated because delegateId already exists then query for the task with the delegateId in
     // case client is retrying the request
     copyTaskDataV2ToTaskData(task);
-    if (enableRedisForDelegateService
-        && featureFlagService.isEnabled(DELEGATE_TASK_LOAD_DISTRIBUTION, delegateTask.getAccountId())) {
-      delegateServiceCache.delegateTaskCacheCounter(delegateId, CounterOperation.INCREMENT);
-    }
     if (task != null) {
       try (
           DelayLogContext ignore = new DelayLogContext(task.getLastUpdatedAt() - task.getCreatedAt(), OVERRIDE_ERROR)) {

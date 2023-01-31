@@ -42,27 +42,6 @@ public class DelegateRedissonCacheManagerImpl implements DelegateRedissonCacheMa
   }
 
   @Override
-  public Long redissonCounter(String cacheName, CounterOperation cacheCounterOperation) {
-    if (redissonClient.getAtomicLong(cacheName) == null || !redissonClient.getAtomicLong(cacheName).isExists()) {
-      redissonClient.getAtomicLong(cacheName).expire(10, TimeUnit.MINUTES);
-    }
-    switch (cacheCounterOperation) {
-      case GET:
-        return redissonClient.getAtomicLong(cacheName).get();
-      case INCREMENT:
-        return redissonClient.getAtomicLong(cacheName).incrementAndGet();
-      case DECREMENT:
-        if (redissonClient.getAtomicLong(cacheName).get() < 0) {
-          log.info("RedissonCounter: Should not come here");
-          return redissonClient.getAtomicLong(cacheName).addAndGet(0);
-        }
-        return redissonClient.getAtomicLong(cacheName).decrementAndGet();
-      default:
-        return 0L;
-    }
-  }
-
-  @Override
   public <K, V> RLocalCachedMap<K, V> getCache(
       String cacheName, Class<K> keyType, Class<V> valueType, String keyPrefix) {
     // TBD: Implement in future

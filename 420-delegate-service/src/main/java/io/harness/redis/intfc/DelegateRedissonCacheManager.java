@@ -19,12 +19,8 @@ import org.redisson.api.RLocalCachedMap;
 @OwnedBy(DEL)
 @ImplementedBy(DelegateRedissonCacheManagerImpl.class)
 public interface DelegateRedissonCacheManager {
-  enum CounterOperation { INCREMENT, DECREMENT, GET }
-
   <K, V> RLocalCachedMap<K, V> getCache(
       String cacheName, Class<K> keyType, Class<V> valueType, LocalCachedMapOptions<K, V> localCachedMapOptions);
 
   <K, V> RLocalCachedMap<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType, String keyPrefix);
-
-  Long redissonCounter(String cacheName, CounterOperation counterOperation);
 }

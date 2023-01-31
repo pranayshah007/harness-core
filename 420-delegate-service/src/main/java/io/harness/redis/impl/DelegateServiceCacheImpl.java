@@ -21,7 +21,6 @@ import io.harness.delegate.beans.DelegateGroup.DelegateGroupKeys;
 import io.harness.perpetualtask.internal.PerpetualTaskRecordDao;
 import io.harness.persistence.HPersistence;
 import io.harness.redis.intfc.DelegateRedissonCacheManager;
-import io.harness.redis.intfc.DelegateRedissonCacheManager.CounterOperation;
 import io.harness.redis.intfc.DelegateServiceCache;
 
 import com.google.inject.Inject;
@@ -44,12 +43,7 @@ public class DelegateServiceCacheImpl implements DelegateServiceCache {
   @Inject private PerpetualTaskRecordDao perpetualTaskRecordDao;
 
   @Override
-  public Integer delegateTaskCacheCounter(String delegateId, CounterOperation counterOperation) {
-    return delegateRedissonCacheManager.redissonCounter(delegateId, counterOperation).intValue();
-  }
-
-  @Override
-  public Delegate getDelegateCache(String delegateId) {
+  public Delegate getDelegate(String delegateId) {
     if (delegateCache.get(delegateId) == null) {
       Delegate delegate = persistence.createQuery(Delegate.class).filter(DelegateKeys.uuid, delegateId).get();
       delegateCache.put(delegateId, delegate);
@@ -58,7 +52,7 @@ public class DelegateServiceCacheImpl implements DelegateServiceCache {
   }
 
   @Override
-  public DelegateGroup getDelegateGroupCache(String accountId, String delegateGroupId) {
+  public DelegateGroup getDelegateGroup(String accountId, String delegateGroupId) {
     if (delegateGroupCache.get(delegateGroupId) == null) {
       DelegateGroup delegateGroup = persistence.createQuery(DelegateGroup.class)
                                         .filter(DelegateGroupKeys.accountId, accountId)
