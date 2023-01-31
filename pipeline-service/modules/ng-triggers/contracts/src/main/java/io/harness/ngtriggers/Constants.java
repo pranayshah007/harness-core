@@ -51,6 +51,7 @@ public interface Constants {
   String MERGE_REQUEST_EVENT_TYPE = "MergeRequest";
   String PUSH_EVENT_TYPE = "Push";
   String ISSUE_COMMENT_EVENT_TYPE = "IssueComment";
+  String RELEASE_EVENT_TYPE = "Release";
   String MR_COMMENT_EVENT_TYPE = "MRComment";
   String PR_COMMENT_EVENT_TYPE = "PRComment";
 
@@ -123,4 +124,27 @@ public interface Constants {
   String PIPELINE_INPUTS_VALIDATION_ERROR = "PipelineInputsErrorMetadataV2";
   String MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION = "mandate_custom_webhook_authorization";
   String MANDATE_CUSTOM_WEBHOOK_TRUE_VALUE = "true";
+  String API_SAMPLE_TRIGGER_YAML = "trigger:\n"
+      + "  name: Trigger\n"
+      + "  identifier: Trigger\n"
+      + "  enabled: true\n"
+      + "  orgIdentifier: default\n"
+      + "  projectIdentifier: Terraform_Provider\n"
+      + "  pipelineIdentifier: Terraform_NG_Acc_Tests_With_Notifications\n"
+      + "  source:\n"
+      + "    type: Scheduled\n"
+      + "    spec:\n"
+      + "      type: Cron\n"
+      + "      spec:\n"
+      + "        expression: 0 8,20 * * *\n"
+      + "  inputYaml: |\n"
+      + "    pipeline:\n"
+      + "      identifier: Terraform_NG_Acc_Tests_With_Notifications\n"
+      + "      properties:\n"
+      + "        ci:\n"
+      + "          codebase:\n"
+      + "            build:\n"
+      + "              type: branch\n"
+      + "              spec:\n"
+      + "                branch: main";
 }

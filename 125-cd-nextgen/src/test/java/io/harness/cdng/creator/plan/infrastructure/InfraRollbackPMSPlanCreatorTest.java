@@ -28,6 +28,7 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.rule.Owner;
@@ -52,12 +53,13 @@ public class InfraRollbackPMSPlanCreatorTest extends CDNGTestBase {
   @Category(UnitTests.class)
   public void testRollbackPlanForV1InfraProvisioner() {
     DeploymentStageNode node = getDeploymentStageConfigProvisionerV1();
-    node.setFailureStrategies(List.of(FailureStrategyConfig.builder()
-                                          .onFailure(OnFailureConfig.builder()
-                                                         .errors(List.of(NGFailureType.ALL_ERRORS))
-                                                         .action(AbortFailureActionConfig.builder().build())
-                                                         .build())
-                                          .build()));
+    node.setFailureStrategies(
+        ParameterField.createValueField(List.of(FailureStrategyConfig.builder()
+                                                    .onFailure(OnFailureConfig.builder()
+                                                                   .errors(List.of(NGFailureType.ALL_ERRORS))
+                                                                   .action(AbortFailureActionConfig.builder().build())
+                                                                   .build())
+                                                    .build())));
 
     JsonNode jsonNode = mapper.valueToTree(node);
     PlanCreationContext ctx = PlanCreationContext.builder()
@@ -79,12 +81,13 @@ public class InfraRollbackPMSPlanCreatorTest extends CDNGTestBase {
   @Category(UnitTests.class)
   public void testRollbackPlanForV2InfraProvisioner() {
     DeploymentStageNode node = getDeploymentStageConfigProvisionerV2();
-    node.setFailureStrategies(List.of(FailureStrategyConfig.builder()
-                                          .onFailure(OnFailureConfig.builder()
-                                                         .errors(List.of(NGFailureType.ALL_ERRORS))
-                                                         .action(AbortFailureActionConfig.builder().build())
-                                                         .build())
-                                          .build()));
+    node.setFailureStrategies(
+        ParameterField.createValueField(List.of(FailureStrategyConfig.builder()
+                                                    .onFailure(OnFailureConfig.builder()
+                                                                   .errors(List.of(NGFailureType.ALL_ERRORS))
+                                                                   .action(AbortFailureActionConfig.builder().build())
+                                                                   .build())
+                                                    .build())));
 
     JsonNode jsonNode = mapper.valueToTree(node);
     PlanCreationContext ctx = PlanCreationContext.builder()

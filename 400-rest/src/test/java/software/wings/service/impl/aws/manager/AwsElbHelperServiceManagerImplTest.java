@@ -54,7 +54,7 @@ public class AwsElbHelperServiceManagerImplTest extends CategoryTest {
     on(service).set("delegateService", mockDelegateService);
     doReturn(AwsElbListClassicElbsResponse.builder().classicElbs(asList("class-0", "class-1")).build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -77,7 +77,7 @@ public class AwsElbHelperServiceManagerImplTest extends CategoryTest {
                      AwsLoadBalancerDetails.builder().name("lb-1").build()))
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -101,7 +101,7 @@ public class AwsElbHelperServiceManagerImplTest extends CategoryTest {
                      AwsLoadBalancerDetails.builder().name("lb-1").build()))
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -125,7 +125,7 @@ public class AwsElbHelperServiceManagerImplTest extends CategoryTest {
                      AwsLoadBalancerDetails.builder().name("lb-1").build()))
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -148,7 +148,7 @@ public class AwsElbHelperServiceManagerImplTest extends CategoryTest {
                      AwsLoadBalancerDetails.builder().name("lb-1").build()))
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -172,7 +172,7 @@ public class AwsElbHelperServiceManagerImplTest extends CategoryTest {
                      AwsLoadBalancerDetails.builder().name("lb-1").build()))
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -195,7 +195,7 @@ public class AwsElbHelperServiceManagerImplTest extends CategoryTest {
                      AwsLoadBalancerDetails.builder().name("lb-1").build()))
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -216,7 +216,7 @@ public class AwsElbHelperServiceManagerImplTest extends CategoryTest {
     on(service).set("delegateService", mockDelegateService);
     doReturn(AwsElbListTargetGroupsResponse.builder().targetGroups(ImmutableMap.of("k", "v")).build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -240,7 +240,7 @@ public class AwsElbHelperServiceManagerImplTest extends CategoryTest {
                      AwsElbListener.builder().listenerArn("list-Arn").protocol("HTTP").port(8080).build()))
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());

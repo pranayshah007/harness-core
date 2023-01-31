@@ -7,7 +7,7 @@
 
 package io.harness.auditevent.streaming.services.impl;
 
-import static io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum.INACTIVE;
+import static io.harness.spec.server.audit.v1.model.StreamingDestinationStatus.INACTIVE;
 
 import io.harness.NGResourceFilterConstants;
 import io.harness.audit.client.remote.streaming.StreamingDestinationClient;

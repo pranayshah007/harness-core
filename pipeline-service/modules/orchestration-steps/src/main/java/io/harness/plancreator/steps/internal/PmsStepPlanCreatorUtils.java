@@ -7,7 +7,6 @@
 
 package io.harness.plancreator.steps.internal;
 
-import static io.harness.pms.yaml.YAMLFieldNameConstants.FAILURE_STRATEGIES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
@@ -20,12 +19,10 @@ import io.harness.advisers.retry.RetryAdviserRollbackParameters;
 import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
-import io.harness.advisers.rollback.OnFailRollbackParameters.OnFailRollbackParametersBuilder;
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
-import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
@@ -45,9 +42,9 @@ import io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultValu
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.PlanCreatorUtilsCommon;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
@@ -55,14 +52,10 @@ import io.harness.yaml.core.failurestrategy.NGFailureActionType;
 import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -158,11 +151,12 @@ public class PmsStepPlanCreatorUtils {
       KryoSerializer kryoSerializer, YamlField currentField, boolean isStepInsideRollback, boolean isPipelineStage) {
     List<AdviserObtainment> adviserObtainmentList = new ArrayList<>();
     List<FailureStrategyConfig> stageFailureStrategies =
-        getFieldFailureStrategies(currentField, STAGE, isStepInsideRollback);
+        PlanCreatorUtilsCommon.getFieldFailureStrategies(currentField, STAGE, isStepInsideRollback);
     List<FailureStrategyConfig> stepGroupFailureStrategies =
-        getFieldFailureStrategies(currentField, STEP_GROUP, isStepInsideRollback);
+        PlanCreatorUtilsCommon.getFieldFailureStrategies(currentField, STEP_GROUP, isStepInsideRollback);
 
-    List<FailureStrategyConfig> stepFailureStrategies = getFailureStrategies(currentField.getNode());
+    List<FailureStrategyConfig> stepFailureStrategies =
+        PlanCreatorUtilsCommon.getFailureStrategies(currentField.getNode());
 
     Map<FailureStrategyActionConfig, Collection<FailureType>> actionMap;
     FailureStrategiesUtils.priorityMergeFailureStrategies(
@@ -250,7 +244,7 @@ public class PmsStepPlanCreatorUtils {
         break;
       case STAGE_ROLLBACK:
         OnFailRollbackParameters rollbackParameters =
-            getRollbackParameters(currentField, failureTypes, RollbackStrategy.STAGE_ROLLBACK);
+            PlanCreatorUtilsCommon.getRollbackParameters(currentField, failureTypes, RollbackStrategy.STAGE_ROLLBACK);
         adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
                                       .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
                                       .build());
@@ -271,7 +265,8 @@ public class PmsStepPlanCreatorUtils {
                 .build());
         break;
       case PIPELINE_ROLLBACK:
-        rollbackParameters = getRollbackParameters(currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
+        rollbackParameters = PlanCreatorUtilsCommon.getRollbackParameters(
+            currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
         adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
                                       .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
                                       .build());
@@ -291,28 +286,6 @@ public class PmsStepPlanCreatorUtils {
     return nodeName;
   }
 
-  public OnFailRollbackParameters getRollbackParameters(
-      YamlField currentField, Set<FailureType> failureTypes, RollbackStrategy rollbackStrategy) {
-    OnFailRollbackParametersBuilder rollbackParametersBuilder = OnFailRollbackParameters.builder();
-    rollbackParametersBuilder.applicableFailureTypes(failureTypes);
-    rollbackParametersBuilder.strategy(rollbackStrategy);
-    rollbackParametersBuilder.strategyToUuid(getRollbackStrategyMap(currentField));
-    return rollbackParametersBuilder.build();
-  }
-
-  @VisibleForTesting
-  Map<RollbackStrategy, String> getRollbackStrategyMap(YamlField currentField) {
-    String stageNodeId = GenericPlanCreatorUtils.getStageNodeId(currentField);
-    Map<RollbackStrategy, String> rollbackStrategyStringMap = new HashMap<>();
-    rollbackStrategyStringMap.put(
-        RollbackStrategy.STAGE_ROLLBACK, stageNodeId + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX);
-    rollbackStrategyStringMap.put(
-        RollbackStrategy.STEP_GROUP_ROLLBACK, GenericPlanCreatorUtils.getStepGroupRollbackStepsNodeId(currentField));
-    rollbackStrategyStringMap.put(
-        RollbackStrategy.PIPELINE_ROLLBACK, GenericPlanCreatorUtils.getRollbackStageNodeId(currentField));
-    return rollbackStrategyStringMap;
-  }
-
   @VisibleForTesting
   AdviserObtainment getRetryAdviserObtainment(KryoSerializer kryoSerializer, Set<FailureType> failureTypes,
       String nextNodeUuid, AdviserObtainment.Builder adviserObtainmentBuilder, RetryFailureActionConfig retryAction,
@@ -324,7 +297,7 @@ public class PmsStepPlanCreatorUtils {
                 .nextNodeId(nextNodeUuid)
                 .repairActionCodeAfterRetry(GenericPlanCreatorUtils.toRepairAction(actionUnderRetry))
                 .retryCount(retryCount.getValue())
-                .strategyToUuid(getRollbackStrategyMap(currentField))
+                .strategyToUuid(PlanCreatorUtilsCommon.getRollbackStrategyMap(currentField))
                 .waitIntervalList(retryAction.getSpecConfig()
                                       .getRetryIntervals()
                                       .getValue()
@@ -333,23 +306,6 @@ public class PmsStepPlanCreatorUtils {
                                       .collect(Collectors.toList()))
                 .build())))
         .build();
-  }
-
-  @VisibleForTesting
-  List<FailureStrategyConfig> getFieldFailureStrategies(
-      YamlField currentField, String fieldName, boolean isStepInsideRollback) {
-    YamlNode fieldNode = YamlUtils.getGivenYamlNodeFromParentPath(currentField.getNode(), fieldName);
-    if (isStepInsideRollback && fieldNode != null) {
-      // Check if found fieldNode is within rollbackSteps section
-      YamlNode rollbackNode = YamlUtils.findParentNode(fieldNode, ROLLBACK_STEPS);
-      if (rollbackNode == null) {
-        return Collections.emptyList();
-      }
-    }
-    if (fieldNode != null) {
-      return getFailureStrategies(fieldNode);
-    }
-    return Collections.emptyList();
   }
 
   @VisibleForTesting
@@ -364,21 +320,5 @@ public class PmsStepPlanCreatorUtils {
                 .timeout((int) TimeoutUtils.getTimeoutInSeconds(actionConfig.getSpecConfig().getTimeout(), 0))
                 .build())))
         .build();
-  }
-
-  @VisibleForTesting
-  List<FailureStrategyConfig> getFailureStrategies(YamlNode node) {
-    YamlField failureStrategy = node.getField(FAILURE_STRATEGIES);
-    List<FailureStrategyConfig> failureStrategyConfigs = null;
-
-    try {
-      if (failureStrategy != null) {
-        failureStrategyConfigs =
-            YamlUtils.read(failureStrategy.getNode().toString(), new TypeReference<List<FailureStrategyConfig>>() {});
-      }
-    } catch (IOException e) {
-      throw new InvalidRequestException("Invalid yaml", e);
-    }
-    return failureStrategyConfigs;
   }
 }

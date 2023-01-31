@@ -28,6 +28,7 @@ import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.utils.PlanCreatorUtilsCommon;
 import io.harness.when.utils.RunInfoUtils;
 
 import com.google.common.collect.Sets;
@@ -98,7 +99,7 @@ public class WaitStepPlanCreator extends AbstractStepPlanCreator<WaitStepNode> {
     if (stepElement.getStepSpecType() instanceof WithStepElementParameters) {
       return ((WaitStepInfo) stepElement.getStepSpecType())
           .getStepParameters(stepElement,
-              PmsStepPlanCreatorUtils.getRollbackParameters(
+              PlanCreatorUtilsCommon.getRollbackParameters(
                   ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN),
               ctx);
     }

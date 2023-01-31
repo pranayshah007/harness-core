@@ -20,9 +20,13 @@ import io.harness.audit.api.AuditYamlService;
 import io.harness.audit.api.impl.AuditServiceImpl;
 import io.harness.audit.api.impl.AuditSettingsServiceImpl;
 import io.harness.audit.api.impl.AuditYamlServiceImpl;
+import io.harness.audit.api.streaming.AggregateStreamingService;
 import io.harness.audit.api.streaming.StreamingService;
+import io.harness.audit.api.streaming.impl.AggregateStreamingServiceImpl;
 import io.harness.audit.api.streaming.impl.StreamingServiceImpl;
 import io.harness.audit.client.remote.AuditClientModule;
+import io.harness.audit.repositories.streaming.StreamingBatchRepository;
+import io.harness.audit.repositories.streaming.StreamingBatchRepositoryImpl;
 import io.harness.govern.ProviderModule;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
@@ -138,6 +142,8 @@ public class AuditServiceModule extends AbstractModule {
     bind(AuditService.class).to(AuditServiceImpl.class);
     bind(AuditSettingsService.class).to(AuditSettingsServiceImpl.class);
     bind(StreamingService.class).to(StreamingServiceImpl.class);
+    bind(AggregateStreamingService.class).to(AggregateStreamingServiceImpl.class);
+    bind(StreamingBatchRepository.class).to(StreamingBatchRepositoryImpl.class);
     install(
         AccessControlClientModule.getInstance(appConfig.getAccessControlClientConfig(), AUDIT_SERVICE.getServiceId()));
     install(new TokenClientModule(this.appConfig.getManagerServiceConfig(),

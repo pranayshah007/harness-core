@@ -15,6 +15,7 @@ import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
@@ -98,6 +99,29 @@ public class AsgTaskHelper {
         .logCallback(logCallback)
         .steadyStateTimeOutInMinutes(timeoutInMinutes)
         .timeLimiter(timeLimiter)
+        .build();
+  }
+
+  public AsgSdkManager getAsgSdkManager(
+      AsgCommandRequest asgCommandRequest, LogCallback logCallback, ElbV2Client elbV2Client) {
+    Integer timeoutInMinutes = asgCommandRequest.getTimeoutIntervalInMin();
+    AsgInfraConfig asgInfraConfig = asgCommandRequest.getAsgInfraConfig();
+
+    String region = asgInfraConfig.getRegion();
+    AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO(), region);
+
+    Supplier<AmazonEC2Client> ec2ClientSupplier =
+        () -> awsUtils.getAmazonEc2Client(Regions.fromName(region), awsInternalConfig);
+    Supplier<AmazonAutoScalingClient> asgClientSupplier =
+        () -> awsUtils.getAmazonAutoScalingClient(Regions.fromName(region), awsInternalConfig);
+
+    return AsgSdkManager.builder()
+        .ec2ClientSupplier(ec2ClientSupplier)
+        .asgClientSupplier(asgClientSupplier)
+        .logCallback(logCallback)
+        .steadyStateTimeOutInMinutes(timeoutInMinutes)
+        .timeLimiter(timeLimiter)
+        .elbV2Client(elbV2Client)
         .build();
   }
 

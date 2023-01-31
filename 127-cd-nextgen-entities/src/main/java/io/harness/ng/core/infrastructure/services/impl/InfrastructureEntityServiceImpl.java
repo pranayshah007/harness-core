@@ -26,9 +26,11 @@ import io.harness.cdng.customdeployment.helper.CustomDeploymentEntitySetupHelper
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
+import io.harness.exception.WingsException;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.infrastructure.InfrastructureType;
@@ -68,6 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -119,6 +122,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
           infraEntity.getAccountId(), infraEntity.getIdentifier(), infraEntity.getEnvIdentifier());
       setNameIfNotPresent(infraEntity);
       modifyInfraRequest(infraEntity);
+      Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(infraEntity);
       InfrastructureEntity createdInfra =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             InfrastructureEntity infrastructureEntity = infrastructureRepository.save(infraEntity);
@@ -132,7 +136,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
                                    .build());
             return infrastructureEntity;
           }));
-      infrastructureEntitySetupUsageHelper.updateSetupUsages(createdInfra);
+      infrastructureEntitySetupUsageHelper.createSetupUsages(createdInfra, referredEntities);
       if (infraEntity.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
         customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(infraEntity);
       }
@@ -143,6 +147,17 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
           getDuplicateInfrastructureExistsErrorMessage(infraEntity.getAccountId(), infraEntity.getOrgIdentifier(),
               infraEntity.getProjectIdentifier(), infraEntity.getEnvIdentifier(), infraEntity.getIdentifier()),
           USER, ex);
+    }
+  }
+
+  private Set<EntityDetailProtoDTO> getAndValidateReferredEntities(InfrastructureEntity infraEntity) {
+    try {
+      return infrastructureEntitySetupUsageHelper.getAllReferredEntities(infraEntity);
+    } catch (RuntimeException ex) {
+      throw new InvalidRequestException(
+          String.format(
+              "Exception while retrieving referred entities for infrastructure: [%s]. ", infraEntity.getIdentifier())
+          + ex.getMessage());
     }
   }
 
@@ -176,6 +191,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     setObsoleteAsFalse(requestInfra);
     setNameIfNotPresent(requestInfra);
     modifyInfraRequest(requestInfra);
+    Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(requestInfra);
     Criteria criteria = getInfrastructureEqualityCriteria(requestInfra);
     Optional<InfrastructureEntity> infraEntityOptional =
         get(requestInfra.getAccountId(), requestInfra.getOrgIdentifier(), requestInfra.getProjectIdentifier(),
@@ -209,7 +225,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
                                    .build());
             return updatedResult;
           }));
-      infrastructureEntitySetupUsageHelper.updateSetupUsages(updatedInfra);
+      infrastructureEntitySetupUsageHelper.updateSetupUsages(updatedInfra, referredEntities);
       if (requestInfra.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
         customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(requestInfra);
       }
@@ -227,6 +243,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     validatePresenceOfRequiredFields(requestInfra.getAccountId(), requestInfra.getIdentifier());
     setNameIfNotPresent(requestInfra);
     modifyInfraRequest(requestInfra);
+    Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(requestInfra);
     Criteria criteria = getInfrastructureEqualityCriteria(requestInfra);
 
     Optional<InfrastructureEntity> infraEntityOptional =
@@ -261,7 +278,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
                                  .build());
           return result;
         }));
-    infrastructureEntitySetupUsageHelper.updateSetupUsages(upsertedInfra);
+    infrastructureEntitySetupUsageHelper.updateSetupUsages(upsertedInfra, referredEntities);
     if (requestInfra.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
       customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(requestInfra);
     }
@@ -469,9 +486,14 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       validateInfraList(infraEntities);
       populateDefaultNameIfNotPresent(infraEntities);
       modifyInfraRequestBatch(infraEntities);
+      List<Set<EntityDetailProtoDTO>> referredEntityList = new ArrayList<>();
+      for (InfrastructureEntity infrastructureEntity : infraEntities) {
+        referredEntityList.add(getAndValidateReferredEntities(infrastructureEntity));
+      }
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
         List<InfrastructureEntity> outputInfrastructureEntitiesList =
             (List<InfrastructureEntity>) infrastructureRepository.saveAll(infraEntities);
+        int i = 0;
         for (InfrastructureEntity infraEntity : infraEntities) {
           outboxService.save(EnvironmentUpdatedEvent.builder()
                                  .accountIdentifier(infraEntity.getAccountId())
@@ -481,6 +503,8 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
                                  .projectIdentifier(infraEntity.getProjectIdentifier())
                                  .newInfrastructureEntity(infraEntity)
                                  .build());
+          infrastructureEntitySetupUsageHelper.createSetupUsages(infraEntity, referredEntityList.get(i));
+          i++;
         }
 
         return new PageImpl<>(outputInfrastructureEntitiesList);
@@ -488,6 +512,12 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
           getDuplicateInfrastructureExistsErrorMessage(accountId, ex.getMessage()), USER, ex);
+    } catch (WingsException ex) {
+      String infraNames = infraEntities.stream().map(InfrastructureEntity::getName).collect(Collectors.joining(","));
+      log.info("Encountered exception while saving the infrastructure entity records of [{}], with exception",
+          infraNames, ex);
+      throw new InvalidRequestException(
+          "Encountered exception while saving the infrastructure entity records. " + ex.getMessage());
     } catch (Exception ex) {
       String infraNames = infraEntities.stream().map(InfrastructureEntity::getName).collect(Collectors.joining(","));
       log.info("Encountered exception while saving the infrastructure entity records of [{}], with exception",
@@ -703,6 +733,12 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       requestInfra.setProjectIdentifier(envIdentifierRef.getProjectIdentifier());
       requestInfra.setEnvIdentifier(envIdentifierRef.getIdentifier());
     }
+
+    // handle empty scope identifiers
+    requestInfra.setOrgIdentifier(
+        EmptyPredicate.isEmpty(requestInfra.getOrgIdentifier()) ? null : requestInfra.getOrgIdentifier());
+    requestInfra.setProjectIdentifier(
+        EmptyPredicate.isEmpty(requestInfra.getProjectIdentifier()) ? null : requestInfra.getProjectIdentifier());
   }
 
   private void modifyInfraRequestBatch(List<InfrastructureEntity> infrastructureEntityList) {

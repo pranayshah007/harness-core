@@ -13,6 +13,7 @@ java_library(
     deps = [
         "//:lombok",
         "//960-ng-core-beans/src/main/java/io/harness/serializer/kryo:module",
+        "//970-api-services-beans/src/main/java/io/harness/serializer:module",
         "//970-ng-commons:module",
         "//980-commons/src/main/java/io/harness/morphia:module",
         "@maven//:com_google_guava_guava",

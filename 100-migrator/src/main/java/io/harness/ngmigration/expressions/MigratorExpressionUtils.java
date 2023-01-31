@@ -23,13 +23,13 @@ import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class MigratorExpressionUtils {
-  public static Object render(Object object, Map<String, String> customExpressions) {
+  public static Object render(Object object, Map<String, Object> customExpressions) {
     Map<String, Object> context = prepareContextMap(customExpressions);
     return ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(context));
   }
 
   @NotNull
-  static Map<String, Object> prepareContextMap(Map<String, String> customExpressions) {
+  static Map<String, Object> prepareContextMap(Map<String, Object> customExpressions) {
     Map<String, Object> context = new HashMap<>();
     // Infra Expressions
     context.put("infra.kubernetes.namespace", "<+infra.namespace>");

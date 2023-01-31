@@ -304,14 +304,14 @@ public class AzureVMSSSwitchRoutesStateTest extends WingsBaseTest {
     doReturn(SUCCESS).when(azureVMSSStateHelper).getExecutionStatus(any());
 
     if (!isSuccess) {
-      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTask(any());
+      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTaskV2(any());
     }
     return mockContext;
   }
 
   private void verifyDelegateTaskCreationResult(ExecutionResponse response, boolean isRollback) {
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
 
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();

@@ -16,4 +16,7 @@ public interface DelegateHeartbeatParams {
   String getDelegateId();
   String getAccountId();
   long getLastHeartBeat();
+  String getVersion();
+  String getLocation();
+  String getDelegateConnectionId();
 }

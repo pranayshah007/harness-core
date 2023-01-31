@@ -332,7 +332,7 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
                                           .build();
     boolean isCertValidationRequired = accountService.isCertValidationRequired(vaultConfig.getAccountId());
     vaultConfig.setCertValidationRequired(isCertValidationRequired);
-    return delegateProxyFactory.get(SecretManagementDelegateService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(SecretManagementDelegateService.class, syncTaskContext)
         .getVaultSecretChangeLogs(encryptedData, vaultConfig);
   }
 

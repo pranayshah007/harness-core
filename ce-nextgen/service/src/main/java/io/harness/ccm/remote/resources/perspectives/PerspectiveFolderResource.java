@@ -174,10 +174,12 @@ public class PerspectiveFolderResource {
       })
   public ResponseDTO<List<CEViewFolder>>
   getFolders(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
+                 NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @Parameter(description = "Search by folder name pattern") @QueryParam(
+          "folderNamePattern") String folderNamePattern) {
     rbacHelper.checkFolderViewPermission(accountId, null, null);
     List<CEViewFolder> ceViewFolders;
-    ceViewFolders = ceViewFolderService.getFolders(accountId);
+    ceViewFolders = ceViewFolderService.getFolders(accountId, folderNamePattern == null ? "" : folderNamePattern);
     return ResponseDTO.newResponse(ceViewFolders);
   }
 

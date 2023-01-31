@@ -220,7 +220,7 @@ public class CloudWatchServiceImpl implements CloudWatchService {
       if (!setupTestNodeData.isServiceLevel()) {
         hostName = mlServiceUtils.getHostName(setupTestNodeData);
       }
-      return delegateProxyFactory.get(CloudWatchDelegateService.class, syncTaskContext)
+      return delegateProxyFactory.getV2(CloudWatchDelegateService.class, syncTaskContext)
           .getMetricsWithDataForNode((AwsConfig) settingAttribute.getValue(), encryptionDetails, setupTestNodeData,
               createApiCallLog(settingAttribute.getAccountId(), setupTestNodeData.getGuid()), hostName);
     } catch (Exception e) {

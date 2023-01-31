@@ -29,7 +29,7 @@ import io.harness.cdng.aws.asg.AsgRollingPrepareRollbackDataOutcome.AsgRollingPr
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
-import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -268,7 +268,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
                             .async(true)
                             .build();
 
-    String taskName = taskType.getDisplayName() + " : " + commandRequest.getCommandName();
+    String taskName = taskType.getDisplayName();
 
     AsgSpecParameters asgSpecParameters = (AsgSpecParameters) stepElementParameters.getSpec();
 

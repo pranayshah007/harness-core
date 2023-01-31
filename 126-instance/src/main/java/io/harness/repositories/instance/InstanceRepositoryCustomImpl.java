@@ -26,10 +26,12 @@ import io.harness.models.CountByOrgIdProjectIdAndServiceId;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.EnvironmentInstanceCountModel;
+import io.harness.models.InstanceGroupedByPipelineExecution;
 import io.harness.models.InstancesByBuildId;
 import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
+import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.google.inject.Inject;
@@ -504,6 +506,44 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
 
     Query query = new Query().addCriteria(criteria);
     return secondaryMongoTemplate.find(query, Instance.class);
+  }
+
+  @Override
+  public AggregationResults<InstanceGroupedByPipelineExecution> getActiveInstanceGroupedByPipelineExecution(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, String envId,
+      EnvironmentType environmentType, String infraId, String clusterIdentifier, String displayName) {
+    Criteria criteria =
+        getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, null, envId);
+
+    if (infraId != null) {
+      criteria.and(InstanceKeys.infraIdentifier).is(infraId);
+    }
+    if (clusterIdentifier != null) {
+      criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).is(clusterIdentifier);
+    }
+
+    if (environmentType != null) {
+      criteria.and(InstanceKeys.envType).is(environmentType);
+    }
+
+    if (displayName != null) {
+      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME).is(displayName);
+    }
+
+    MatchOperation matchOperation = Aggregation.match(criteria);
+    SortOperation sortOperation = Aggregation.sort(Sort.by(Sort.Direction.DESC, InstanceKeys.lastDeployedAt));
+    GroupOperation group = group(InstanceKeys.lastPipelineExecutionId)
+                               .first(InstanceKeys.lastPipelineExecutionId)
+                               .as(InstanceKeys.lastPipelineExecutionId)
+                               .first(InstanceKeys.lastPipelineExecutionName)
+                               .as(InstanceKeys.lastPipelineExecutionName)
+                               .first(InstanceKeys.lastDeployedAt)
+                               .as(InstanceKeys.lastDeployedAt)
+                               .push(Aggregation.ROOT)
+                               .as(InstanceSyncConstants.INSTANCES);
+
+    return secondaryMongoTemplate.aggregate(newAggregation(sortOperation, matchOperation, group),
+        INSTANCE_NG_COLLECTION, InstanceGroupedByPipelineExecution.class);
   }
 
   /*

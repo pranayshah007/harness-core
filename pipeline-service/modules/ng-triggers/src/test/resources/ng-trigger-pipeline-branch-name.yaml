@@ -1,0 +1,18 @@
+trigger:
+  name: myCustomTrigger
+  identifier: myCustomTrigger
+  enabled: true
+  description: ""
+  tags: {}
+  orgIdentifier: NgTriggersOrg
+  projectIdentifier: viniciusTest
+  pipelineIdentifier: myRemotePipelineWithRemoteTemplate
+  source:
+    type: Webhook
+    spec:
+      type: Custom
+      spec:
+        payloadConditions: []
+        headerConditions: []
+  pipelineBranchName: qa
+  inputSetRefs: []

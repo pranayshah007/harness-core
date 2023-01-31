@@ -282,9 +282,6 @@ public class TasSwapRoutesStep extends CdTaskExecutable<CfCommandResponseNG> {
         (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
             ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
     List<CfInternalInstanceElement> instances = new ArrayList<>(Collections.emptyList());
-    if (response == null) {
-      return Collections.emptyList();
-    }
     instances.addAll(response.getNewAppInstances());
     return instances.stream()
         .map(instance -> getServerInstance(null, instance, infrastructureOutcome))

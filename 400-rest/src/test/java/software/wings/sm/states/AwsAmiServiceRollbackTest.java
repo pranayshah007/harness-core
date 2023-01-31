@@ -236,7 +236,7 @@ public class AwsAmiServiceRollbackTest extends WingsBaseTest {
     doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), any(), any());
 
     ExecutionResponse response = state.executeInternal(mockContext);
-    verify(mockDelegateService, times(1)).queueTask(any(DelegateTask.class));
+    verify(mockDelegateService, times(1)).queueTaskV2(any(DelegateTask.class));
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
     assertThat(((AwsAmiDeployStateExecutionData) response.getStateExecutionData()).isRollback()).isTrue();
   }

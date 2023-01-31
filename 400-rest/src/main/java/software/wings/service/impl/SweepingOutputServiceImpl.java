@@ -357,4 +357,10 @@ public class SweepingOutputServiceImpl implements SweepingOutputService {
         .phaseExecutionId(phaseExecutionId)
         .stateExecutionId(stateExecutionId);
   }
+
+  @Override
+  public void pruneByApplication(String appId) {
+    wingsPersistence.delete(
+        wingsPersistence.createQuery(SweepingOutputInstance.class).filter(SweepingOutputInstanceKeys.appId, appId));
+  }
 }

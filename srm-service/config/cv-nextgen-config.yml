@@ -61,6 +61,11 @@ ngManagerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+webhookConfig:
+  webhookBaseUrl: http://localhost:6457/cv/api/
+
+enableDebugAPI: false
+
 enforcementClientConfiguration:
   enforcementCheckEnabled: true
 

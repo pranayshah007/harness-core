@@ -211,7 +211,7 @@ public class ARMProvisionState extends State {
                           GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT, helper.renderTimeout(timeoutExpression, context))))
                       .build())
             .build();
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
     return ExecutionResponse.builder()
         .async(true)
@@ -357,7 +357,7 @@ public class ARMProvisionState extends State {
                                                       .build();
     renderDelegateTask(context, delegateTask, stateExecutionContext);
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
     return ExecutionResponse.builder()
         .async(true)

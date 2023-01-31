@@ -258,7 +258,7 @@ public class CIStepGroupUtils {
     Integer depth = ciCodebase.getDepth().getValue();
     ExecutionSource executionSource = ciExecutionArgs.getExecutionSource();
     if (depth == null) {
-      if (executionSource.getType() == ExecutionSource.Type.MANUAL) {
+      if (executionSource != null && executionSource.getType() == ExecutionSource.Type.MANUAL) {
         ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
         if (isNotEmpty(manualExecutionSource.getBranch()) || isNotEmpty(manualExecutionSource.getTag())) {
           depth = GIT_CLONE_MANUAL_DEPTH;
@@ -367,7 +367,8 @@ public class CIStepGroupUtils {
     List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getEntrypoint();
 
     setCacheEnvVariables(envVariables, caching, accountId);
-    envVariables.put(PLUGIN_OVERRIDE, STRING_FALSE);
+    // We will override cache for cache intel for now. Might need to surface it as an option
+    envVariables.put(PLUGIN_OVERRIDE, STRING_TRUE);
     envVariables.put(PLUGIN_REBUILD, STRING_TRUE);
 
     PluginStepInfo step = PluginStepInfo.builder()

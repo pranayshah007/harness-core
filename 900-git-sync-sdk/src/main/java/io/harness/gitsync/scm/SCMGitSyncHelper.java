@@ -28,6 +28,8 @@ import io.harness.gitsync.CreatePRRequest;
 import io.harness.gitsync.CreatePRResponse;
 import io.harness.gitsync.ErrorDetails;
 import io.harness.gitsync.FileInfo;
+import io.harness.gitsync.GetBatchFilesRequest;
+import io.harness.gitsync.GetBatchFilesResponse;
 import io.harness.gitsync.GetFileRequest;
 import io.harness.gitsync.GetFileResponse;
 import io.harness.gitsync.GetRepoUrlRequest;
@@ -53,6 +55,9 @@ import io.harness.gitsync.scm.beans.ScmCreateFileGitRequest;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
 import io.harness.gitsync.scm.beans.ScmCreatePRResponse;
 import io.harness.gitsync.scm.beans.ScmErrorDetails;
+import io.harness.gitsync.scm.beans.ScmGetBatchFileRequest;
+import io.harness.gitsync.scm.beans.ScmGetBatchFilesResponse;
+import io.harness.gitsync.scm.beans.ScmGetFileRequest;
 import io.harness.gitsync.scm.beans.ScmGetFileResponse;
 import io.harness.gitsync.scm.beans.ScmGetRepoUrlResponse;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
@@ -78,6 +83,7 @@ import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.StringValue;
+import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -271,6 +277,63 @@ public class SCMGitSyncHelper {
 
       return ScmGetRepoUrlResponse.builder().repoUrl(getRepoUrlResponse.getRepoUrl()).build();
     }
+  }
+
+  public ScmGetBatchFilesResponse getBatchFilesByBranch(
+      String accountIdentifier, ScmGetBatchFileRequest scmGetBatchFileRequest) {
+    Map<String, ScmGetFileRequest> scmGetBatchFilesRequestMap = scmGetBatchFileRequest.getScmGetBatchFilesRequestMap();
+    if (scmGetBatchFilesRequestMap.isEmpty()) {
+      return ScmGetBatchFilesResponse.builder().build();
+    }
+    Map<String, GetFileRequest> sdkRequestMap = new HashMap<>();
+
+    for (Map.Entry<String, ScmGetFileRequest> scmGetFileRequestEntry : scmGetBatchFilesRequestMap.entrySet()) {
+      ScmGetFileRequest scmGetFileRequest = scmGetFileRequestEntry.getValue();
+      GetFileRequest getFileRequest =
+          GetFileRequest.newBuilder()
+              .setRepoName(scmGetFileRequest.getRepoName())
+              .setConnectorRef(scmGetFileRequest.getConnectorRef())
+              .setBranchName(Strings.nullToEmpty(scmGetFileRequest.getBranchName()))
+              .setFilePath(scmGetFileRequest.getFilePath())
+              .setCacheRequestParams(CacheRequestMapper.getCacheRequest(scmGetFileRequest.isLoadFromCache()))
+              .putAllContextMap(scmGetFileRequest.getContextMap())
+              .setEntityType(EntityTypeMapper.getEntityType(scmGetFileRequest.getEntityType()))
+              .setScopeIdentifiers(ScopeIdentifierMapper.getScopeIdentifiersFromScope(scmGetFileRequest.getScope()))
+              .setPrincipal(getPrincipal())
+              .build();
+      sdkRequestMap.put(scmGetFileRequestEntry.getKey(), getFileRequest);
+    }
+
+    final GetBatchFilesRequest getBatchFilesRequest = GetBatchFilesRequest.newBuilder()
+                                                          .setAccountIdentifier(accountIdentifier)
+                                                          .putAllGetFileRequestMap(sdkRequestMap)
+                                                          .build();
+
+    final GetBatchFilesResponse getBatchFilesResponse = GitSyncGrpcClientUtils.retryAndProcessException(
+        harnessToGitPushInfoServiceBlockingStub::getBatchFiles, getBatchFilesRequest);
+
+    if (isFailureResponse(getBatchFilesResponse.getStatusCode())) {
+      log.error("Git SDK getBatchFiles Failure: {}", getBatchFilesResponse);
+      scmErrorHandler.processAndThrowException(getBatchFilesResponse.getStatusCode(),
+          getScmErrorDetailsFromGitProtoResponse(getBatchFilesResponse.getError()), ScmGitMetaData.builder().build());
+    }
+
+    return prepareScmGetBatchFilesResponse(getBatchFilesResponse);
+  }
+
+  private ScmGetBatchFilesResponse prepareScmGetBatchFilesResponse(GetBatchFilesResponse getBatchFilesResponse) {
+    Map<String, GetFileResponse> getFileResponseMap = getBatchFilesResponse.getGetFileResponseMapMap();
+    Map<String, ScmGetFileResponse> batchFilesResponse = new HashMap<>();
+
+    getFileResponseMap.forEach((identifier, getFileResponse) -> {
+      batchFilesResponse.put(identifier,
+          ScmGetFileResponse.builder()
+              .fileContent(getFileResponse.getFileContent())
+              .gitMetaData(getScmGitMetaData(getFileResponse))
+              .build());
+    });
+
+    return ScmGetBatchFilesResponse.builder().batchFilesResponse(batchFilesResponse).build();
   }
 
   @VisibleForTesting
