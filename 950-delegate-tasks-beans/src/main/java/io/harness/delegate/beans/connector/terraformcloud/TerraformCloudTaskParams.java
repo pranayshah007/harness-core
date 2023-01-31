@@ -18,7 +18,6 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
-import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
@@ -32,7 +31,7 @@ public class TerraformCloudTaskParams
   TerraformCloudConnectorDTO terraformCloudConnectorDTO;
   TerraformCloudTaskType terraformCloudTaskType;
   List<EncryptedDataDetail> encryptionDetails;
-  Map<String, Object> params;
+  String organization;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

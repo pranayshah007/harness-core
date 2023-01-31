@@ -25,7 +25,7 @@ public class EnvironmentInstanceDetails {
     @NotNull String envId;
     String envName;
     EnvironmentType environmentType;
-    int count;
+    Integer count;
     @NotNull ArtifactDeploymentDetail artifactDeploymentDetail;
   }
 }

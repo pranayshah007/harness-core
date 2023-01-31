@@ -8,6 +8,8 @@
 package io.harness.steps.wait;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
@@ -15,7 +17,9 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.AbstractStepNode;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
@@ -43,7 +47,9 @@ public class WaitStepNode extends AbstractStepNode {
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   WaitStepInfo waitStepInfo;
-  @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
+  @VariableExpression(skipVariableExpression = true)
+  @YamlSchemaTypes(value = {runtime, list})
+  ParameterField<List<FailureStrategyConfig>> failureStrategies;
 
   @JsonIgnore
   public String getType() {

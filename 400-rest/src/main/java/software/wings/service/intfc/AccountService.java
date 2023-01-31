@@ -260,4 +260,6 @@ public interface AccountService {
   boolean doMultipleAccountsExist();
 
   List<AccountDTO> getAllAccounts();
+
+  Boolean updateIsSmpAccount(String customerAccountId, boolean isSmpAccount);
 }

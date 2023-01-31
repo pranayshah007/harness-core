@@ -186,10 +186,12 @@ public class VmInitializeTaskParamsBuilder {
     saveStageInfraDetails(ambiance, poolId, workDir, harnessImageConnectorRef, volToMountPath, infraInfo);
     StageDetails stageDetails = getStageDetails(ambiance);
 
-    CIExecutionArgs ciExecutionArgs = CIExecutionArgs.builder()
-                                          .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
-                                          .executionSource(initializeStepInfo.getExecutionSource())
-                                          .build();
+    CIExecutionArgs ciExecutionArgs =
+        CIExecutionArgs.builder()
+            .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
+            .executionSource(initializeStepInfo.getExecutionSource() != null ? initializeStepInfo.getExecutionSource()
+                                                                             : stageDetails.getExecutionSource())
+            .build();
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     ConnectorDetails gitConnector = codebaseUtils.getGitConnector(

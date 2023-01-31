@@ -26,6 +26,7 @@ public class WorkspaceData extends Data {
   @Builder
   @lombok.Data
   public static class Attributes {
+    private String name;
     @JsonProperty("execution-mode") private String executionMode;
     @JsonProperty("auto-apply") private boolean autoApply;
     @JsonProperty("allow-destroy-plan") private boolean allowDestroyPlan;

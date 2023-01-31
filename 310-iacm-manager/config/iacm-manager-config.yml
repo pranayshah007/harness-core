@@ -74,7 +74,8 @@ stoServiceConfig:
   globalToken: "78d16b66-4b4c-11eb-8377-acde48001122"
 
 iacmServiceConfig:
-  baseUrl: http://localhost:4000
+  baseUrl: http://localhost:8080
+  externalUrl: http://localhost:8000
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
 
 managerTarget: localhost:9880
@@ -185,7 +186,7 @@ ciExecutionServiceConfig:
       artifactoryUpload: plugins/artifactory:1.2.0
       cacheGCS: plugins/cache:1.4.2
       cacheS3: plugins/cache:1.4.2
-      iacmTerraform: sigilita/drone-terraform-nasser
+      iacmTerraform: plugins/harness_terraform:linux-amd64
 
 scmConnectionConfig:
   url: localhost:8091

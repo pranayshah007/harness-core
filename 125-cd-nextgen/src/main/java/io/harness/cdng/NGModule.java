@@ -66,6 +66,8 @@ import io.harness.cdng.manifest.resources.HelmChartService;
 import io.harness.cdng.manifest.resources.HelmChartServiceImpl;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsServiceImpl;
+import io.harness.cdng.provision.terraformcloud.resources.service.TerraformCloudResourceService;
+import io.harness.cdng.provision.terraformcloud.resources.service.TerraformCloudResourceServiceImpl;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceServiceImpl;
 import io.harness.cdng.tas.service.TasResourceService;
@@ -165,6 +167,7 @@ public class NGModule extends AbstractModule {
     bind(InstanceDeploymentInfoService.class).to(InstanceDeploymentInfoServiceImpl.class);
     bind(GARResourceService.class).to(GARResourceServiceImpl.class);
     bind(HelmChartService.class).to(HelmChartServiceImpl.class);
+    bind(TerraformCloudResourceService.class).to(TerraformCloudResourceServiceImpl.class);
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ENVIRONMENTGROUP.toString())

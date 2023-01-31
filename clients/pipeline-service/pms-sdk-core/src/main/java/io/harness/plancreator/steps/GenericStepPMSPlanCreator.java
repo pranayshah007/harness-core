@@ -145,9 +145,10 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
     return PlanCreationResponse.builder().planNode(stepPlanNode).build();
   }
 
-  public static boolean containsOnlyAllErrorsInSomeConfig(List<FailureStrategyConfig> stageFailureStrategies) {
+  public static boolean containsOnlyAllErrorsInSomeConfig(
+      ParameterField<List<FailureStrategyConfig>> stageFailureStrategies) {
     boolean containsOnlyAllErrors = false;
-    for (FailureStrategyConfig failureStrategyConfig : stageFailureStrategies) {
+    for (FailureStrategyConfig failureStrategyConfig : stageFailureStrategies.getValue()) {
       if (failureStrategyConfig.getOnFailure().getErrors().size() == 1
           && failureStrategyConfig.getOnFailure().getErrors().get(0).getYamlName().contentEquals(
               NGFailureTypeConstants.ALL_ERRORS)) {
@@ -465,17 +466,23 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
 
   private List<FailureStrategyConfig> getFailureStrategies(YamlNode node) {
     YamlField failureStrategy = node.getField(FAILURE_STRATEGIES);
-    List<FailureStrategyConfig> failureStrategyConfigs = null;
+    ParameterField<List<FailureStrategyConfig>> failureStrategyConfigs = null;
 
     try {
       if (failureStrategy != null) {
-        failureStrategyConfigs =
-            YamlUtils.read(failureStrategy.getNode().toString(), new TypeReference<List<FailureStrategyConfig>>() {});
+        failureStrategyConfigs = YamlUtils.read(
+            failureStrategy.getNode().toString(), new TypeReference<ParameterField<List<FailureStrategyConfig>>>() {});
       }
     } catch (IOException e) {
       throw new InvalidRequestException("Invalid yaml", e);
     }
-    return failureStrategyConfigs;
+    // If failureStrategies configured as <+input> and no value is given, failureStrategyConfigs.getValue() will still
+    // be null and handled as empty list
+    if (ParameterField.isNotNull(failureStrategyConfigs)) {
+      return failureStrategyConfigs.getValue();
+    } else {
+      return null;
+    }
   }
 
   // This is required as step can be inside stepGroup which can have Parallel and stepGroup itself can

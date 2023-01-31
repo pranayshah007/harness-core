@@ -221,6 +221,8 @@ github.com/drone/go-scm v1.27.1-0.20221116132008-1949a8eb7407 h1:HE9ukdqJZAtwBzA
 github.com/drone/go-scm v1.27.1-0.20221116132008-1949a8eb7407/go.mod h1:DFIJJjhMj0TSXPz+0ni4nyZ9gtTtC40Vh/TGRugtyWw=
 github.com/drone/go-scm v1.28.1 h1:3WukxtsFFU5omHfp8dU3EXjEQCmtqAZkCj9pHHs+Xus=
 github.com/drone/go-scm v1.28.1/go.mod h1:DFIJJjhMj0TSXPz+0ni4nyZ9gtTtC40Vh/TGRugtyWw=
+github.com/drone/go-scm v1.28.2-0.20230130112242-4428a9bf64df h1:TB0fL4RpUrIngifmZ6CWFOJQpVKtKJGjLGGj00TLqYE=
+github.com/drone/go-scm v1.28.2-0.20230130112242-4428a9bf64df/go.mod h1:DFIJJjhMj0TSXPz+0ni4nyZ9gtTtC40Vh/TGRugtyWw=
 github.com/drone/go-scm-codecommit v0.0.0-20210315104920-2d8b9dc5ed8a h1:0i0YKhLdfnUvtB7UZstfbDslmhh1DXR+z3JsrNSwsG4=
 github.com/drone/go-scm-codecommit v0.0.0-20210315104920-2d8b9dc5ed8a/go.mod h1:NzMbLgUts8cAxLwSxMKRGESCkBON514HiEjxcA8VIgM=
 github.com/dustin/go-humanize v0.0.0-20171111073723-bb3d318650d4/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=

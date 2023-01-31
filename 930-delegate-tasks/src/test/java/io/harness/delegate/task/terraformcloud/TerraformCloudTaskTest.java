@@ -8,10 +8,12 @@
 package io.harness.delegate.task.terraformcloud;
 
 import static io.harness.rule.OwnerRule.BUHA;
+import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -30,12 +32,16 @@ import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformClou
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
 import io.harness.encryption.SecretRefData;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
-import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,6 +59,7 @@ public class TerraformCloudTaskTest {
 
   @Mock private TerraformCloudConfigMapper terraformCloudConfigMapper;
   @Mock private TerraformCloudValidationHandler terraformCloudValidationHandler;
+  @Mock private TerraformCloudTaskHelper terraformCloudTaskHelper;
 
   @InjectMocks
   private TerraformCloudTaskNG task = new TerraformCloudTaskNG(
@@ -64,18 +71,15 @@ public class TerraformCloudTaskTest {
   @Category(UnitTests.class)
   public void testValidateTaskTypeSuccessfully() throws IOException {
     TaskParameters taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.VALIDATE);
-
     ConnectorValidationResult connectorValidationResult = ConnectorValidationResult.builder()
                                                               .status(ConnectivityStatus.SUCCESS)
                                                               .testedAt(System.currentTimeMillis())
                                                               .build();
-
     doReturn(connectorValidationResult).when(terraformCloudValidationHandler).validate(any());
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 
     assertThat(delegateResponseData).isInstanceOf(TerraformCloudValidateTaskResponse.class);
-
     TerraformCloudValidateTaskResponse terraformCloudValidateTaskResponse =
         (TerraformCloudValidateTaskResponse) delegateResponseData;
     assertThat(terraformCloudValidateTaskResponse.getConnectorValidationResult().getDelegateId())
@@ -87,21 +91,21 @@ public class TerraformCloudTaskTest {
   @Test
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
-  public void testValidateTaskTypeFailed() {
-    TaskParameters taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.VALIDATE);
-
+  public void testValidateTaskTypeFailed() throws IOException {
+    TerraformCloudTaskParams taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.VALIDATE);
     ConnectorValidationResult connectorValidationResult = ConnectorValidationResult.builder()
                                                               .status(ConnectivityStatus.FAILURE)
                                                               .errorSummary("Some error")
                                                               .testedAt(System.currentTimeMillis())
                                                               .build();
-
     doReturn(connectorValidationResult).when(terraformCloudValidationHandler).validate(any());
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 
+    verify(terraformCloudConfigMapper)
+        .mapTerraformCloudConfigWithDecryption(
+            taskParameters.getTerraformCloudConnectorDTO(), taskParameters.getEncryptionDetails());
     assertThat(delegateResponseData).isInstanceOf(TerraformCloudValidateTaskResponse.class);
-
     TerraformCloudValidateTaskResponse terraformCloudValidateTaskResponse =
         (TerraformCloudValidateTaskResponse) delegateResponseData;
     assertThat(terraformCloudValidateTaskResponse.getConnectorValidationResult().getStatus())
@@ -112,12 +116,55 @@ public class TerraformCloudTaskTest {
         .isEqualTo("Some error");
   }
 
-  private TaskParameters getTerraformCloudTaskParams(TerraformCloudTaskType taskType) {
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testGetOrganizations() throws IOException {
+    Map<String, String> organizationsMap = Collections.singletonMap("id1", "org1");
+    TerraformCloudTaskParams taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.GET_ORGANIZATIONS);
+    doReturn(organizationsMap).when(terraformCloudTaskHelper).getOrganizationsMap(any());
+
+    DelegateResponseData delegateResponseData = task.run(taskParameters);
+
+    verify(terraformCloudConfigMapper)
+        .mapTerraformCloudConfigWithDecryption(
+            taskParameters.getTerraformCloudConnectorDTO(), taskParameters.getEncryptionDetails());
+    verify(terraformCloudTaskHelper).getOrganizationsMap(any());
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudOrganizationsTaskResponse.class);
+    TerraformCloudOrganizationsTaskResponse terraformCloudOrganizationsTaskResponse =
+        (TerraformCloudOrganizationsTaskResponse) delegateResponseData;
+    assertThat(terraformCloudOrganizationsTaskResponse.getOrganizations()).isEqualTo(organizationsMap);
+    assertThat(terraformCloudOrganizationsTaskResponse.getCommandExecutionStatus())
+        .isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testGetWorkspaces() throws IOException {
+    Map<String, String> workspacesMap = Collections.singletonMap("id1", "ws1");
+    TerraformCloudTaskParams taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.GET_WORKSPACES);
+    doReturn(workspacesMap).when(terraformCloudTaskHelper).getWorkspacesMap(any(), any());
+
+    DelegateResponseData delegateResponseData = task.run(taskParameters);
+
+    verify(terraformCloudConfigMapper)
+        .mapTerraformCloudConfigWithDecryption(
+            taskParameters.getTerraformCloudConnectorDTO(), taskParameters.getEncryptionDetails());
+    verify(terraformCloudTaskHelper).getWorkspacesMap(any(), any());
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudWorkspacesTaskResponse.class);
+    TerraformCloudWorkspacesTaskResponse terraformCloudWorkspacesTaskResponse =
+        (TerraformCloudWorkspacesTaskResponse) delegateResponseData;
+    assertThat(terraformCloudWorkspacesTaskResponse.getWorkspaces()).isEqualTo(workspacesMap);
+    assertThat(terraformCloudWorkspacesTaskResponse.getCommandExecutionStatus())
+        .isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  private TerraformCloudTaskParams getTerraformCloudTaskParams(TerraformCloudTaskType taskType) {
     return TerraformCloudTaskParams.builder()
         .terraformCloudTaskType(taskType)
         .encryptionDetails(null)
         .terraformCloudConnectorDTO(getTerraformCloudConnectorDTO())
-        .params(ImmutableMap.of("ENV", "Dev"))
         .build();
   }
 

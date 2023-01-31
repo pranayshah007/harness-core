@@ -1,6 +1,11 @@
 pipeline:
   name: "Manager Service Deployment"
   identifier: managerServiceDeployment
+  variables:
+    - name: v1
+      type: Number
+      default: 1
+      value: <+input>
   stages:
     - stage:
         identifier: qaStage

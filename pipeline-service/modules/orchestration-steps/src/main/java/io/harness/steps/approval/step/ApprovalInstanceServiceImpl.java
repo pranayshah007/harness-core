@@ -186,7 +186,6 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
       }
       waitNotifyEngine.doneWith(approvalInstanceId, responseData);
     }
-    updatePlanStatus(instance);
   }
 
   @Override
@@ -198,7 +197,6 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
       waitNotifyEngine.doneWith(
           instance.getId(), HarnessApprovalResponseData.builder().approvalInstanceId(instance.getId()).build());
     }
-    updatePlanStatus(instance);
     return instance;
   }
 
@@ -242,20 +240,6 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
           String.format("Harness approval instance has already completed. Status: %s", instance.getStatus()));
     }
     return instance;
-  }
-
-  private void updatePlanStatus(ApprovalInstance instance) {
-    if (instance == null || instance.getStatus() == ApprovalStatus.WAITING) {
-      return;
-    }
-
-    // Update plan status after the completion of the approval step.
-    Ambiance ambiance = instance.getAmbiance();
-    Status planStatus = planExecutionService.calculateStatusExcluding(
-        ambiance.getPlanExecutionId(), AmbianceUtils.obtainCurrentRuntimeId(ambiance));
-    if (!StatusUtils.isFinalStatus(planStatus)) {
-      planExecutionService.updateStatus(ambiance.getPlanExecutionId(), planStatus);
-    }
   }
 
   private <T> T doTransaction(TransactionCallback<T> callback) {
