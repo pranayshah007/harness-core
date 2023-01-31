@@ -69,8 +69,8 @@ public class SpotInstHelperServiceDelegateImpl implements SpotInstHelperServiceD
   public static <T> T executeRestCall(Call<T> restRequest) {
     RetryPolicy<Response<T>> retryPolicy =
         new RetryPolicy<Response<T>>()
-            .withBackoff(1, 10, ChronoUnit.SECONDS)
-            .withMaxAttempts(3)
+            .withBackoff(1, 20, ChronoUnit.SECONDS)
+            .withMaxAttempts(5)
             .handle(IOException.class)
             .onRetry(e -> log.warn("Failure #{}. Retrying. Exception {}", e.getAttemptCount(), e.getLastFailure()))
             .onRetriesExceeded(e -> log.warn("Failed to connect. Max retries exceeded"));
