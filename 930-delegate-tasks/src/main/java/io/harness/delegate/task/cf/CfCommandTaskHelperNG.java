@@ -860,8 +860,7 @@ public class CfCommandTaskHelperNG {
     }
   }
 
-  public void downSizeListOfInstancesAndUnmapRoutes(LogCallback executionLogCallback,
-      List<CfServiceData> cfServiceDataUpdated, CfRequestConfig cfRequestConfig, TasApplicationInfo newAppInfo,
+  public void downSizeListOfInstancesAndUnmapRoutes(LogCallback executionLogCallback, CfRequestConfig cfRequestConfig, TasApplicationInfo newAppInfo,
       CfRollbackCommandRequestNG cfRollbackCommandRequestNG, CfAppAutoscalarRequestData autoscalarRequestData)
       throws PivotalClientApiException {
     executionLogCallback.saveExecutionLog("\n");
