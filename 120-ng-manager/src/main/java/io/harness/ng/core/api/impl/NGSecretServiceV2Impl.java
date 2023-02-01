@@ -477,11 +477,6 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
     return secretRepository.count(criteria);
   }
 
-  @Override
-  public Long countSecrets(String accountIdentifier) {
-    return secretRepository.countByAccountIdentifier(accountIdentifier);
-  }
-
   public Map<String, String> buildAbstractions(
       String accountIdIdentifier, String orgIdentifier, String projectIdentifier) {
     Map<String, String> abstractions = new HashMap<>(2);

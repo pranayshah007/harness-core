@@ -18,6 +18,4 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 
 @OwnedBy(PL)
 @HarnessRepo
-public interface UserGroupRepository extends PagingAndSortingRepository<UserGroup, String>, UserGroupRepositoryCustom {
-  Long countByAccountIdentifierAndDeletedIsFalse(String accountIdentifier);
-}
+public interface UserGroupRepository extends PagingAndSortingRepository<UserGroup, String>, UserGroupRepositoryCustom {}

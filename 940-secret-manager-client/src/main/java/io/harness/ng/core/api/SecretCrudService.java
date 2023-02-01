@@ -61,6 +61,4 @@ public interface SecretCrudService {
 
   void validateSshWinRmSecretRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, SecretDTOV2 secretDTO);
-
-  Long countSecrets(String accountIdentifier);
 }
