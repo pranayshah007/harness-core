@@ -84,6 +84,7 @@ public class PMSPipelineTemplateHelper {
       long start = System.currentTimeMillis();
       try {
         GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+        log.info(String.format("LoadFromCache in PipelineTemplateHelper: %s", loadFromCache));
         if (gitEntityInfo != null) {
           return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
               gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true, getConnectorRef(), getRepoName(),

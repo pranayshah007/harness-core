@@ -198,6 +198,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     // is not needed and will be null
     String validationUUID;
     try {
+      log.info(String.format("LoadFromCache in PipelineResourceImpl: %s", loadFromCache));
       PipelineGetResult pipelineGetResult = pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId,
           pipelineId, false, false, Boolean.TRUE.equals(loadFromFallbackBranch),
           PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), validateAsync);
