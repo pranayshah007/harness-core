@@ -246,6 +246,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
 
   private Optional<TemplateEntity> getTemplateEntity(Criteria criteria, String accountId, String orgIdentifier,
       String projectIdentifier, boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    log.info(String.format("LoadFromCache in NGTemplateRepositoryCustomImpl getTemplateEntity: %b", loadFromCache));
     Query query = new Query(criteria);
     TemplateEntity savedEntity = mongoTemplate.findOne(query, TemplateEntity.class);
     if (savedEntity == null) {
@@ -271,6 +272,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
 
   TemplateEntity fetchRemoteEntity(String accountId, String orgIdentifier, String projectIdentifier,
       TemplateEntity savedEntity, String branchName, boolean loadFromCache) {
+    log.info(String.format("LoadFromCache in NGTemplateRepositoryCustomImpl fetchRemoteEntity: %b", loadFromCache));
     return (TemplateEntity) gitAwareEntityHelper.fetchEntityFromRemote(savedEntity,
         Scope.of(accountId, orgIdentifier, projectIdentifier),
         GitContextRequestParams.builder()

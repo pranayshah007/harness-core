@@ -116,6 +116,7 @@ public class SCMGitSyncHelper {
 
   public ScmGetFileResponse getFileByBranch(Scope scope, String repoName, String branchName, String filePath,
       String connectorRef, boolean loadFromCache, EntityType entityType, Map<String, String> contextMap) {
+    log.info(String.format("LoadFromCache in SCMGitSyncHelper getFileByBranch: %b", loadFromCache));
     contextMap =
         GitSyncLogContextHelper.setContextMap(scope, repoName, branchName, filePath, GitOperation.GET_FILE, contextMap);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();

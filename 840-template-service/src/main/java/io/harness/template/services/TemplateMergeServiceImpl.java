@@ -97,6 +97,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
    */
   public TemplateMergeResponseDTO applyTemplatesToYamlV2(String accountId, String orgId, String projectId, String yaml,
       boolean getMergedYamlWithTemplateField, boolean loadFromCache) {
+    log.info(String.format("LoadFromCache in TemplateMergeServiceImpl applyTemplatesToYamlV2: %b", loadFromCache));
     YamlNode yamlNode = TemplateUtils.validateAndGetYamlNode(yaml);
     TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId, null, null);
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
@@ -130,6 +131,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   private TemplateMergeResponseDTO getTemplateMergeResponseDTO(String accountId, String orgId, String projectId,
       String yaml, boolean getMergedYamlWithTemplateField, YamlNode yamlNode,
       Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache) {
+    log.info(String.format("LoadFromCache in TemplateMergeServiceImpl getTemplateMergeResponseDTO: %b", loadFromCache));
     Map<String, Object> resMap;
     if (ngTemplateFeatureFlagHelperService.isFeatureFlagEnabled(accountId, FeatureName.PIE_NG_BATCH_GET_TEMPLATES)) {
       templateCacheMap.putAll(
