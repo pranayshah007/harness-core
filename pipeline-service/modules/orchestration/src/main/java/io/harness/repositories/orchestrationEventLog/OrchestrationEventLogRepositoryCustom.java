@@ -14,10 +14,18 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.OrchestrationEventLog;
 
 import java.util.List;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public interface OrchestrationEventLogRepositoryCustom {
   List<OrchestrationEventLog> findUnprocessedEvents(String planExecutionId, long lastUpdatedAt, int thresholdLog);
   boolean checkIfAnyUnprocessedEvents(String planExecutionId, long lastUpdatedAt);
+
+  /**
+   * Delete all OrchestrationLogEvents for given planExecutionIds
+   * Uses - planExecutionId_createdAt
+   * @param planExecutionIds
+   */
+  void deleteAllOrchestrationLogEvents(Set<String> planExecutionIds);
 }

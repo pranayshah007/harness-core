@@ -623,8 +623,8 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   @Override
-  public Long countProjects(String accountIdenifier) {
-    return projectRepository.countByAccountIdentifierAndDeletedIsFalse(accountIdenifier);
+  public Long countProjects(String accountIdentifier) {
+    return projectRepository.countByAccountIdentifierAndDeletedIsFalse(accountIdentifier);
   }
 
   private void validateCreateProjectRequest(String accountIdentifier, String orgIdentifier, ProjectDTO project) {

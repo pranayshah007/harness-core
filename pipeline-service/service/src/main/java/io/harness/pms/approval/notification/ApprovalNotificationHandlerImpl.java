@@ -36,6 +36,7 @@ import io.harness.ng.core.notification.SlackConfigDTO;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.Team;
 import io.harness.notification.channeldetails.EmailChannel;
+import io.harness.notification.channeldetails.MSTeamChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.channeldetails.SlackChannel;
 import io.harness.notification.notificationclient.NotificationClient;
@@ -238,6 +239,18 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
   private NotificationChannel getNotificationChannel(HarnessApprovalInstance instance,
       NotificationSettingConfigDTO notificationSettingConfig, UserGroupDTO userGroup,
       Map<String, String> templateData) {
+    if (isNull(userGroup)) {
+      return null;
+    }
+    NotificationRequest.UserGroup.Builder notifyUserGroupBuilder = NotificationRequest.UserGroup.newBuilder();
+    notifyUserGroupBuilder.setIdentifier(userGroup.getIdentifier());
+    if (isNotEmpty(userGroup.getOrgIdentifier())) {
+      notifyUserGroupBuilder.setOrgIdentifier(userGroup.getOrgIdentifier());
+    }
+    if (isNotEmpty(userGroup.getProjectIdentifier())) {
+      notifyUserGroupBuilder.setProjectIdentifier(userGroup.getProjectIdentifier());
+    }
+
     switch (notificationSettingConfig.getType()) {
       case SLACK:
         String slackTemplateId = instance.isIncludePipelineExecutionHistory()
@@ -255,16 +268,6 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
         String emailTemplateId = instance.isIncludePipelineExecutionHistory()
             ? PredefinedTemplate.HARNESS_APPROVAL_EXECUTION_NOTIFICATION_EMAIL.getIdentifier()
             : PredefinedTemplate.HARNESS_APPROVAL_NOTIFICATION_EMAIL.getIdentifier();
-        NotificationRequest.UserGroup.Builder notifyUserGroupBuilder = NotificationRequest.UserGroup.newBuilder();
-        if (userGroup != null) {
-          notifyUserGroupBuilder.setIdentifier(userGroup.getIdentifier());
-          if (isNotEmpty(userGroup.getOrgIdentifier())) {
-            notifyUserGroupBuilder.setOrgIdentifier(userGroup.getOrgIdentifier());
-          }
-          if (isNotEmpty(userGroup.getProjectIdentifier())) {
-            notifyUserGroupBuilder.setProjectIdentifier(userGroup.getProjectIdentifier());
-          }
-        }
 
         return EmailChannel.builder()
             .accountId(userGroup.getAccountIdentifier())
@@ -273,6 +276,20 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
             .templateId(emailTemplateId)
             .templateData(templateData)
             .recipients(Collections.emptyList())
+            .build();
+
+      case MSTEAMS:
+        String msTeamsTemplateId = instance.isIncludePipelineExecutionHistory()
+            ? PredefinedTemplate.HARNESS_APPROVAL_EXECUTION_NOTIFICATION_MSTEAMS.getIdentifier()
+            : PredefinedTemplate.HARNESS_APPROVAL_NOTIFICATION_MSTEAMS.getIdentifier();
+
+        return MSTeamChannel.builder()
+            .msTeamKeys(Collections.emptyList())
+            .accountId(userGroup.getAccountIdentifier())
+            .team(Team.PIPELINE)
+            .templateData(templateData)
+            .templateId(msTeamsTemplateId)
+            .userGroups(new ArrayList<>(Collections.singleton(notifyUserGroupBuilder.build())))
             .build();
 
       default:

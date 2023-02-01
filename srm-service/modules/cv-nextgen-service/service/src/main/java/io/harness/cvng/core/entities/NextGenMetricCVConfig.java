@@ -23,6 +23,7 @@ import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
 import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
 import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
+import io.harness.data.structure.UUIDGenerator;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
@@ -127,7 +128,7 @@ public class NextGenMetricCVConfig extends MetricCVConfig<NextGenMetricInfo> {
     metricInfos.add(NextGenMetricInfo.builder()
                         .metricName(queryDefinition.getName())
                         .metricType(metricType)
-                        .query(queryDefinition.getQuery())
+                        .query(queryDefinition.getQuery().trim())
                         .queryParams(queryDefinition.getQueryParams().getQueryParamsEntity())
                         .identifier(queryDefinition.getIdentifier())
                         .sli(SLIMetricTransformer.transformQueryDefinitiontoEntity(queryDefinition))
@@ -174,6 +175,7 @@ public class NextGenMetricCVConfig extends MetricCVConfig<NextGenMetricInfo> {
           metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
       TimeSeriesThreshold timeSeriesThreshold =
           TimeSeriesThreshold.builder()
+              .uuid(UUIDGenerator.generateUuid())
               .accountId(getAccountId())
               .projectIdentifier(getProjectIdentifier())
               .dataSourceType(getType())
@@ -206,7 +208,7 @@ public class NextGenMetricCVConfig extends MetricCVConfig<NextGenMetricInfo> {
                   NextGenMetricInfo.builder()
                       .identifier(queryDefinition.getIdentifier())
                       .metricName(queryDefinition.getName())
-                      .query(queryDefinition.getQuery())
+                      .query(queryDefinition.getQuery().trim())
                       .queryParams(queryDefinition.getQueryParams().getQueryParamsEntity())
                       .sli(SLIMetricTransformer.transformQueryDefinitiontoEntity(queryDefinition))
                       .liveMonitoring(LiveMonitoringTransformer.transformQueryDefinitiontoEntity(queryDefinition))

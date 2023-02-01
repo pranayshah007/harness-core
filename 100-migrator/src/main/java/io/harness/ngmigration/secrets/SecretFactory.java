@@ -26,7 +26,7 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 
@@ -34,6 +34,7 @@ import software.wings.beans.AwsSecretsManagerConfig;
 import software.wings.beans.AzureVaultConfig;
 import software.wings.beans.GcpKmsConfig;
 import software.wings.beans.GcpSecretsManagerConfig;
+import software.wings.beans.KmsConfig;
 import software.wings.beans.LocalEncryptionConfig;
 import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.VaultConfig;
@@ -54,6 +55,8 @@ public class SecretFactory {
   @Inject private GcpSecretMigrator gcpSecretMigrator;
   @Inject private VaultSshSecretMigrator vaultSshSecretMigrator;
   @Inject private AzureVaultSecretMigrator azureVaultSecretMigrator;
+  @Inject private AwsKmsSecretMigrator awsKmsSecretMigrator;
+  @Inject private GcpKmsSecretMigrator gcpKmsSecretMigrator;
 
   public static ConnectorType getConnectorType(SecretManagerConfig secretManagerConfig) {
     if (secretManagerConfig instanceof AzureVaultConfig) {
@@ -68,14 +71,14 @@ public class SecretFactory {
     if (secretManagerConfig instanceof LocalEncryptionConfig) {
       return ConnectorType.LOCAL;
     }
-    if (secretManagerConfig instanceof VaultConfig) {
-      return ConnectorType.VAULT;
-    }
-    if (secretManagerConfig instanceof SSHVaultConfig) {
+    if (secretManagerConfig instanceof VaultConfig || secretManagerConfig instanceof SSHVaultConfig) {
       return ConnectorType.VAULT;
     }
     if (secretManagerConfig instanceof AwsSecretsManagerConfig) {
       return ConnectorType.AWS_SECRET_MANAGER;
+    }
+    if (secretManagerConfig instanceof KmsConfig) {
+      return ConnectorType.AWS_KMS;
     }
     throw new InvalidRequestException("Unsupported secret manager");
   }
@@ -102,6 +105,12 @@ public class SecretFactory {
     // Handle special case for Harness Secret managers
     if (secretManagerConfig instanceof GcpKmsConfig && isHarnessSecretManager(secretManagerConfig)) {
       return harnessSecretMigrator;
+    }
+    if (secretManagerConfig instanceof KmsConfig) {
+      return awsKmsSecretMigrator;
+    }
+    if (secretManagerConfig instanceof GcpKmsConfig) {
+      return gcpKmsSecretMigrator;
     }
     throw new InvalidRequestException("Unsupported secret manager");
   }

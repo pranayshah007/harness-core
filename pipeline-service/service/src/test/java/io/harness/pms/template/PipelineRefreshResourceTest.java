@@ -54,4 +54,43 @@ public class PipelineRefreshResourceTest extends PipelineServiceTestBase {
     verifyNoMoreInteractions(pipelineRefreshService);
     assertThat(responseDTO.getData()).isEqualTo(false);
   }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testValidateTemplateInputs() {
+    ResponseDTO.newResponse(
+        pipelineRefreshResource
+            .validateTemplateInputs(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "false", null)
+            .getData());
+    verify(pipelineRefreshService, times(1))
+        .validateTemplateInputsInPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "false");
+    verifyNoMoreInteractions(pipelineRefreshService);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testGetYamlDiff() {
+    ResponseDTO.newResponse(
+        pipelineRefreshResource.getYamlDiff(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null)
+            .getData());
+    verify(pipelineRefreshService, times(1))
+        .getYamlDiff(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER);
+    verifyNoMoreInteractions(pipelineRefreshService);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testRefreshAll() {
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
+    ResponseDTO.newResponse(
+        pipelineRefreshResource.refreshAll(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null)
+            .getData());
+    verify(pipelineRefreshService, times(1))
+        .recursivelyRefreshAllTemplateInputsInPipeline(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
+    verifyNoMoreInteractions(pipelineRefreshService);
+  }
 }

@@ -12,8 +12,10 @@ import static io.harness.execution.PlanExecution.PlanExecutionKeys;
 import static io.harness.pms.contracts.execution.Status.PAUSED;
 import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PRASHANT;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
@@ -33,6 +35,7 @@ import io.harness.engine.OrchestrationTestHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.statusupdate.NodeStatusUpdateHandlerFactory;
 import io.harness.engine.interrupts.statusupdate.PausedStepStatusUpdate;
+import io.harness.engine.interrupts.statusupdate.QueuedLicenseLimitReachedStatusUpdate;
 import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
@@ -41,6 +44,7 @@ import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.rule.Owner;
 import io.harness.testlib.RealMongo;
@@ -50,6 +54,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -66,6 +71,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   @Mock NodeStatusUpdateHandlerFactory nodeStatusUpdateHandlerFactory;
   @Mock NodeExecutionService nodeExecutionService;
   @Mock PausedStepStatusUpdate pausedStepStatusUpdate;
+  @Mock QueuedLicenseLimitReachedStatusUpdate queuedLicenseLimitReachedStatusUpdate;
   @Spy @Inject @InjectMocks PlanExecutionService planExecutionService;
 
   @Test
@@ -221,6 +227,58 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
 
   @Test
   @RealMongo
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldFetchPlanExecutionsByStatus() {
+    String planExecutionId = generateUuid();
+    String accountId = "TestAccountId";
+    String orgId = "TestOrgId";
+    String projectId = "TestProjectId";
+
+    Map<String, String> setupAbstractions = new HashMap<>();
+    setupAbstractions.put(SetupAbstractionKeys.accountId, accountId);
+    setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, orgId);
+    setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, projectId);
+
+    planExecutionService.save(PlanExecution.builder()
+                                  .uuid(planExecutionId)
+                                  .setupAbstractions(setupAbstractions)
+                                  .status(Status.RUNNING)
+                                  .lastUpdatedAt(System.currentTimeMillis())
+                                  .build());
+    planExecutionService.save(PlanExecution.builder()
+                                  .uuid(generateUuid())
+                                  .setupAbstractions(setupAbstractions)
+                                  .status(Status.RUNNING)
+                                  .lastUpdatedAt(System.currentTimeMillis())
+                                  .build());
+    planExecutionService.save(PlanExecution.builder()
+                                  .uuid(generateUuid())
+                                  .setupAbstractions(setupAbstractions)
+                                  .status(Status.WAIT_STEP_RUNNING)
+                                  .lastUpdatedAt(System.currentTimeMillis())
+                                  .build());
+    planExecutionService.save(PlanExecution.builder()
+                                  .uuid(generateUuid())
+                                  .setupAbstractions(setupAbstractions)
+                                  .status(Status.APPROVAL_WAITING)
+                                  .lastUpdatedAt(System.currentTimeMillis())
+                                  .build());
+
+    List<PlanExecution> finalList = new LinkedList<>();
+    try (CloseableIterator<PlanExecution> iterator =
+             planExecutionService.fetchPlanExecutionsByStatus(StatusUtils.activeStatuses(),
+                 ImmutableSet.of(PlanExecutionKeys.setupAbstractions, PlanExecutionKeys.metadata))) {
+      while (iterator.hasNext()) {
+        finalList.add(iterator.next());
+      }
+    }
+
+    assertEquals(finalList.size(), 4);
+  }
+
+  @Test
+  @RealMongo
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void shouldTestOnNodeStatusUpdate() {
@@ -229,6 +287,21 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     doReturn(pausedStepStatusUpdate).when(nodeStatusUpdateHandlerFactory).obtainStepStatusUpdate(nodeUpdateInfo);
     planExecutionService.onNodeStatusUpdate(nodeUpdateInfo);
     verify(pausedStepStatusUpdate, times(1)).handleNodeStatusUpdate(nodeUpdateInfo);
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void shouldTestOnNodeStatusUpdateWithQueueLimit() {
+    NodeUpdateInfo nodeUpdateInfo =
+        NodeUpdateInfo.builder()
+            .nodeExecution(NodeExecution.builder().status(Status.QUEUED_LICENSE_LIMIT_REACHED).build())
+            .build();
+    doReturn(queuedLicenseLimitReachedStatusUpdate)
+        .when(nodeStatusUpdateHandlerFactory)
+        .obtainStepStatusUpdate(nodeUpdateInfo);
+    planExecutionService.onNodeStatusUpdate(nodeUpdateInfo);
+    verify(queuedLicenseLimitReachedStatusUpdate, times(1)).handleNodeStatusUpdate(nodeUpdateInfo);
   }
 
   @Test

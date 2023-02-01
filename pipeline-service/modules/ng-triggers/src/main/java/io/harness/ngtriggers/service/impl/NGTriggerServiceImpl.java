@@ -18,6 +18,7 @@ import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
+import static io.harness.ngtriggers.beans.source.YamlFields.PIPELINE_BRANCH_NAME;
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
 
 import static java.util.Collections.emptyList;
@@ -61,8 +62,10 @@ import io.harness.ngtriggers.beans.entity.metadata.status.PollingSubscriptionSta
 import io.harness.ngtriggers.beans.entity.metadata.status.StatusResult;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.ValidationStatus;
+import io.harness.ngtriggers.beans.source.GitMoveOperationType;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
+import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.ngtriggers.beans.source.artifact.BuildAware;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
@@ -90,6 +93,8 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
 import io.harness.pms.rbac.PipelineRbacPermissions;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.polling.client.PollingResourceClient;
 import io.harness.polling.contracts.PollingItem;
@@ -116,11 +121,13 @@ import com.google.inject.Singleton;
 import com.mongodb.client.result.DeleteResult;
 import java.io.IOException;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -1123,5 +1130,44 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       }
     }
     return TriggerYamlDiffDTO.builder().oldYAML(triggerYaml).newYAML(newTriggerYaml).build();
+  }
+
+  public TriggerUpdateCount updateBranchName(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String targetIdentifier, GitMoveOperationType operationType, String pipelineBranchName) {
+    Optional<List<NGTriggerEntity>> listOfTriggers =
+        ngTriggerRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndDeletedNot(
+            accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, true);
+    List<NGTriggerEntity> listOfUpdatedTriggers = new ArrayList<>();
+    long failedYamlUpdateCount = 0;
+    if (listOfTriggers.isPresent()) {
+      for (NGTriggerEntity triggerEntity : listOfTriggers.get()) {
+        try {
+          YamlField yamlField = YamlUtils.readTree(triggerEntity.getYaml());
+          YamlNode triggerNode = yamlField.getNode().getField("trigger").getNode();
+          if (Objects.equals(operationType, GitMoveOperationType.INLINE_TO_REMOTE)) {
+            ((ObjectNode) triggerNode.getCurrJsonNode()).put(PIPELINE_BRANCH_NAME, pipelineBranchName);
+          } else if (Objects.equals(operationType, GitMoveOperationType.REMOTE_TO_INLINE)) {
+            ((ObjectNode) triggerNode.getCurrJsonNode()).remove(PIPELINE_BRANCH_NAME);
+          }
+          String updateYml = YamlUtils.writeYamlString(yamlField);
+          triggerEntity.setYaml(updateYml);
+          listOfUpdatedTriggers.add(triggerEntity);
+        } catch (Exception e) {
+          failedYamlUpdateCount++;
+          log.error(
+              "Error performing updateBranchName operation on trigger: " + TriggerHelper.getTriggerRef(triggerEntity),
+              e);
+        }
+      }
+
+      TriggerUpdateCount updateTriggerYamlResult = ngTriggerRepository.updateTriggerYaml(listOfUpdatedTriggers);
+      return TriggerUpdateCount.builder()
+          .failureCount(updateTriggerYamlResult.getFailureCount() + failedYamlUpdateCount)
+          .successCount(updateTriggerYamlResult.getSuccessCount())
+          .build();
+    } else {
+      log.info("No non-deleted Trigger found to update pipelineBranchName");
+      return TriggerUpdateCount.builder().successCount(0).failureCount(0).build();
+    }
   }
 }

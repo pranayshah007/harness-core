@@ -300,6 +300,9 @@ public class AzureResourceTest extends CategoryTest {
         InfrastructureConfig.builder()
             .infrastructureDefinitionConfig(
                 InfrastructureDefinitionConfig.builder()
+                    .orgIdentifier(ORG_IDENTIFIER)
+                    .projectIdentifier(PROJECT_IDENTIFIER)
+                    .identifier(INFRA_DEFINITION_ID)
                     .type(InfrastructureType.AZURE_WEB_APP)
                     .spec(AzureWebAppInfrastructure.builder()
                               .connectorRef(ParameterField.createValueField(identifierRef.getIdentifier()))
@@ -337,6 +340,9 @@ public class AzureResourceTest extends CategoryTest {
         InfrastructureConfig.builder()
             .infrastructureDefinitionConfig(
                 InfrastructureDefinitionConfig.builder()
+                    .orgIdentifier(ORG_IDENTIFIER)
+                    .projectIdentifier(PROJECT_IDENTIFIER)
+                    .identifier(INFRA_DEFINITION_ID)
                     .type(InfrastructureType.AZURE_WEB_APP)
                     .spec(AzureWebAppInfrastructure.builder()
                               .connectorRef(ParameterField.createValueField(identifierRef.getIdentifier()))

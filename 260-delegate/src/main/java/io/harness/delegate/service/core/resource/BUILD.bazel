@@ -14,7 +14,7 @@ java_library(
         "//:lombok",
         "//420-delegate-agent/src/main/java/io/harness/delegate/service:module",
         "//950-delegate-tasks-beans:module",
-        "//980-commons:module",
+        "//980-commons/src/main/java/io/harness/security/annotations:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_google_inject_guice",
         "@maven//:io_swagger_swagger_annotations",

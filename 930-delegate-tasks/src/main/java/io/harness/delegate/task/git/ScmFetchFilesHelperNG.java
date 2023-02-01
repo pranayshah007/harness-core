@@ -73,6 +73,18 @@ public class ScmFetchFilesHelperNG {
         .build();
   }
 
+  public FetchFilesResult fetchAnyFilesFromRepoWithScm(
+      GitStoreDelegateConfig gitStoreDelegateConfig, List<String> filePathList) {
+    boolean useBranch = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH;
+    List<GitFile> gitFiles = fetchAnyFilesFromRepo(useBranch, gitStoreDelegateConfig.getBranch(),
+        gitStoreDelegateConfig.getCommitId(), filePathList, gitStoreDelegateConfig.getGitConfigDTO());
+    return FetchFilesResult.builder()
+        .files(gitFiles)
+        .commitResult(
+            CommitResult.builder().commitId(useBranch ? "latest" : gitStoreDelegateConfig.getCommitId()).build())
+        .build();
+  }
+
   public String downloadFilesUsingScm(
       String manifestFilesDirectory, GitStoreDelegateConfig gitStoreDelegateConfig, LogCallback executionLogCallback) {
     String directoryPath = Paths.get(manifestFilesDirectory).toString();
@@ -105,6 +117,26 @@ public class ScmFetchFilesHelperNG {
                 return true;
               }
             })
+            .map(fileContent
+                -> GitFile.builder().fileContent(fileContent.getContent()).filePath(fileContent.getPath()).build())
+            .collect(Collectors.toList());
+
+    if (isNotEmpty(gitFiles)) {
+      gitFiles.forEach(gitFile -> log.info("File fetched : " + gitFile.getFilePath()));
+    }
+    return gitFiles;
+  }
+
+  private List<GitFile> fetchAnyFilesFromRepo(
+      boolean useBranch, String branch, String commitId, List<String> filePathList, ScmConnector scmConnector) {
+    FileContentBatchResponse fileBatchContentResponse =
+        fetchFilesByFilePaths(useBranch, branch, commitId, filePathList, scmConnector);
+
+    List<GitFile> gitFiles =
+        fileBatchContentResponse.getFileBatchContentResponse()
+            .getFileContentsList()
+            .stream()
+            .filter(fileContent -> fileContent.getStatus() == 200)
             .map(fileContent
                 -> GitFile.builder().fileContent(fileContent.getContent()).filePath(fileContent.getPath()).build())
             .collect(Collectors.toList());

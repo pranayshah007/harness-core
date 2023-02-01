@@ -15,7 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class NGEntityNameValidator implements ConstraintValidator<NGEntityName, String> {
   private static final String ALLOWED_CHARS_STRING =
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_. ";
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_. /";
   private int maxAllowedLength;
 
   @Override
@@ -41,7 +41,8 @@ public class NGEntityNameValidator implements ConstraintValidator<NGEntityName, 
     if (!Sets.newHashSet(Lists.charactersOf(ALLOWED_CHARS_STRING)).containsAll(Lists.charactersOf(value))) {
       context.disableDefaultConstraintViolation();
       context
-          .buildConstraintViolationWithTemplate("can only contain alphanumeric, dot, hyphen and underscore characters.")
+          .buildConstraintViolationWithTemplate(
+              "can only contain alphanumeric, dot, hyphen, forward slash and underscore characters.")
           .addConstraintViolation();
       return false;
     }

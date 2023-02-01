@@ -32,7 +32,7 @@ pipeline:
               type: "Http"
               spec:
                 url: "https://www.google.com"
-                method: "GET"
+                method: "GET.allowedValues(POST, PUT, GET)"
                 headers: []
                 outputVariables: []
                 requestBody: "<+input>"

@@ -14,7 +14,7 @@ import static io.harness.cache.CacheBackend.NOOP;
 import io.harness.AccessControlClientConfiguration;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.app.STOManagerConfiguration;
+import io.harness.app.CIManagerConfiguration;
 import io.harness.app.STOManagerServiceModule;
 import io.harness.beans.entities.IACMServiceConfig;
 import io.harness.beans.execution.QueueServiceClient;
@@ -158,8 +158,8 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
       }
     });
 
-    STOManagerConfiguration configuration =
-        STOManagerConfiguration.builder()
+    CIManagerConfiguration configuration =
+        CIManagerConfiguration.builder()
             .managerAuthority("localhost")
             .managerTarget("localhost:9880")
             .accessControlClientConfiguration(AccessControlClientConfiguration.builder().build())

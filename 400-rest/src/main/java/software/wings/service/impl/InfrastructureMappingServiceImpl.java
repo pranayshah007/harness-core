@@ -1100,7 +1100,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
     boolean useNewKubectlVersion =
         featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, infraMapping.getAccountId());
     try {
-      delegateProxyFactory.get(ContainerService.class, syncTaskContext)
+      delegateProxyFactory.getV2(ContainerService.class, syncTaskContext)
           .validate(containerServiceParams, useNewKubectlVersion);
     } catch (InvalidRequestException ex) {
       throw ex;
@@ -1162,7 +1162,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
     boolean useNewKubectlVersion =
         featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, infraMapping.getAccountId());
     try {
-      delegateProxyFactory.get(ContainerService.class, syncTaskContext)
+      delegateProxyFactory.getV2(ContainerService.class, syncTaskContext)
           .validate(containerServiceParams, useNewKubectlVersion);
     } catch (Exception e) {
       log.warn(ExceptionUtils.getMessage(e), e);
@@ -1222,7 +1222,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
     boolean useNewKubectlVersion =
         featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, infraMapping.getAccountId());
     try {
-      delegateProxyFactory.get(ContainerService.class, syncTaskContext)
+      delegateProxyFactory.getV2(ContainerService.class, syncTaskContext)
           .validate(containerServiceParams, useNewKubectlVersion);
     } catch (Exception e) {
       log.warn(ExceptionUtils.getMessage(e), e);
@@ -2186,7 +2186,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
           ((HostConnectionAttributes) hostConnectionSetting.getValue()).getSshVaultConfigId());
       ((HostConnectionAttributes) hostConnectionSetting.getValue()).setSshVaultConfig(sshVaultConfig);
     }
-    return delegateProxyFactory.get(HostValidationService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(HostValidationService.class, syncTaskContext)
         .validateHost(validationRequest.getHostNames(), hostConnectionSetting.toDTO(), encryptionDetails,
             validationRequest.getExecutionCredential(), sshVaultConfig);
   }
@@ -2428,7 +2428,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
                                                         .masterUrl(masterUrl)
                                                         .build();
     try {
-      Map<String, Integer> activeServiceCounts = delegateProxyFactory.get(ContainerService.class, syncTaskContext)
+      Map<String, Integer> activeServiceCounts = delegateProxyFactory.getV2(ContainerService.class, syncTaskContext)
                                                      .getActiveServiceCounts(containerServiceParams);
       return Integer.toString(activeServiceCounts.values().stream().mapToInt(Integer::intValue).sum());
     } catch (Exception e) {

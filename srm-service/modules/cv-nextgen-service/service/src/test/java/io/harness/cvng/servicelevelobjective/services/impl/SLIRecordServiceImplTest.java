@@ -10,11 +10,13 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.BAD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.NO_DATA;
+import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.SKIP_DATA;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KAPIL;
+import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
@@ -95,6 +97,21 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     assertThat(lastRecord.getRunningGoodCount()).isEqualTo(8);
   }
 
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreate_SkipData() {
+    Instant startTime = Instant.parse("2020-07-27T10:50:00Z").minus(Duration.ofMinutes(10));
+    List<SLIState> sliStates = Arrays.asList(BAD, SKIP_DATA, GOOD, NO_DATA, GOOD, GOOD, BAD, SKIP_DATA, BAD, BAD);
+    createData(startTime, sliStates);
+    SLIRecord lastRecord = getLastRecord(serviceLevelIndicator.getUuid());
+    assertThat(lastRecord.getRunningBadCount()).isEqualTo(4);
+    assertThat(lastRecord.getRunningGoodCount()).isEqualTo(3);
+    createData(startTime.plus(Duration.ofMinutes(10)), sliStates);
+    lastRecord = getLastRecord(serviceLevelIndicator.getUuid());
+    assertThat(lastRecord.getRunningBadCount()).isEqualTo(8);
+    assertThat(lastRecord.getRunningGoodCount()).isEqualTo(6);
+  }
   @Test
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)

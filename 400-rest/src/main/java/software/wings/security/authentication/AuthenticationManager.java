@@ -25,7 +25,6 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
-import static software.wings.beans.Account.AccountKeys;
 import static software.wings.beans.User.Builder;
 
 import static org.apache.cxf.common.util.UrlUtils.urlDecode;
@@ -79,7 +78,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 
@@ -298,9 +296,6 @@ public class AuthenticationManager {
         user.setLastLogin(System.currentTimeMillis());
         userService.update(user);
       }
-    }
-    if (user != null && isEmpty(user.getSupportAccounts())) {
-      userService.loadSupportAccounts(user, Set.of(AccountKeys.uuid));
     }
     return user;
   }

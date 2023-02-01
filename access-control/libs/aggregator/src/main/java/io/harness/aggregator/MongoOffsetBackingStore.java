@@ -11,14 +11,17 @@ import io.harness.aggregator.models.MongoReconciliationOffset;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoClientURI;
 import com.mongodb.ReadPreference;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.connect.runtime.WorkerConfig;
@@ -40,17 +43,21 @@ public class MongoOffsetBackingStore extends MemoryOffsetBackingStore {
     super.configure(workerConfig);
     String connectionUri = workerConfig.getString("offset.storage.file.filename");
     collectionName = workerConfig.getString("offset.storage.topic");
-    MongoClientOptions primaryMongoClientOptions = MongoClientOptions.builder()
-                                                       .retryWrites(true)
-                                                       .connectTimeout(30000)
-                                                       .serverSelectionTimeout(90000)
-                                                       .socketTimeout(360000)
-                                                       .maxConnectionIdleTime(600000)
-                                                       .connectionsPerHost(300)
-                                                       .readPreference(ReadPreference.primary())
-                                                       .build();
-    MongoClientURI uri = new MongoClientURI(connectionUri, MongoClientOptions.builder(primaryMongoClientOptions));
-    mongoClient = new MongoClient(uri);
+    MongoClientURI uri = new MongoClientURI(connectionUri);
+
+    MongoClientSettings mongoClientSettings =
+        MongoClientSettings.builder()
+            .applyConnectionString(new ConnectionString(connectionUri))
+            .retryWrites(true)
+            .applyToSocketSettings(builder -> builder.connectTimeout(30000, TimeUnit.MILLISECONDS))
+            .applyToClusterSettings(builder -> builder.serverSelectionTimeout(90000, TimeUnit.MILLISECONDS))
+            .applyToSocketSettings(builder -> builder.readTimeout(360000, TimeUnit.MILLISECONDS))
+            .applyToConnectionPoolSettings(builder -> builder.maxConnectionIdleTime(600000, TimeUnit.MILLISECONDS))
+            .applyToConnectionPoolSettings(builder -> builder.maxSize(300))
+            .readPreference(ReadPreference.primary())
+            .build();
+    mongoClient = MongoClients.create(mongoClientSettings);
+
     mongoTemplate = new MongoTemplate(mongoClient, Objects.requireNonNull(uri.getDatabase()));
   }
 

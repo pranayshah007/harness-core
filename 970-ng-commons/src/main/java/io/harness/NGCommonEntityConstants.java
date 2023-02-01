@@ -49,6 +49,7 @@ public class NGCommonEntityConstants {
   public static final String LAST_DEPLOYED_AT = "lastDeployedAt";
   public static final String INPUT_SET_IDENTIFIER_KEY = "inputSetIdentifier";
   public static final String ENVIRONMENT_IDENTIFIER_KEY = "environmentIdentifier";
+  public static final String ENVIRONMENT_TYPE_KEY = "environmentType";
   public static final String STATUS = "status";
   public static final String MONGODB_ID = "_id";
   public static final String CONNECTOR_IDENTIFIER_KEY = "connectorIdentifier";
@@ -82,6 +83,7 @@ public class NGCommonEntityConstants {
   public static final Integer MAX_PAGE_SIZE = 10000;
   public static final String EXPIRY_TIME = "expiryTime";
   public static final String SORT = "sort";
+  public static final String FILE_PATH_KEY = "path";
 
   // TODO(UTSAV): Move to ce-nextgen
   public static final String IS_EVENTS_ENABLED = "eventsEnabled";
@@ -111,6 +113,7 @@ public class NGCommonEntityConstants {
   public static final String FILE_TAGS_MESSAGE = "The File or Folder tags";
   public static final String FILE_CONTENT_MESSAGE = "The content of the File as InputStream";
   public static final String FILE_FILTER_PROPERTIES_MESSAGE = "Details of the File filter properties to be applied";
+  public static final String FILE_PATH_PARAM_MESSAGE = "The file path";
   public static final String FILTER_IDENTIFIER_MESSAGE = "Filter identifier";
   public static final String ENTITY_TYPE_MESSAGE = "Entity type";
   public static final String FOLDER_DETAILS_MESSAGE = "Folder details";
@@ -164,8 +167,12 @@ public class NGCommonEntityConstants {
   public static final String JOB_NAME = "jobName";
   public static final String FQN_PATH = "fqnPath";
   public static final String ARTIFACT_PATH = "artifactPath";
+  public static final String ARTIFACT = "artifact";
   public static final String PARENT_JOB_NAME = "parentJobName";
   public static final String HARNESS_IMAGE = "harnessImage";
   public static final String METHOD_NAME = "methodName";
   public static final String AGENT_KEY = "agentIdentifier";
+  public static final String CONFIG_FILE_FUNCTOR = "configFile";
+  public static final String FUNCTOR_STRING_METHOD_NAME = "getAsString";
+  public static final String FUNCTOR_BASE64_METHOD_NAME = "getAsBase64";
 }

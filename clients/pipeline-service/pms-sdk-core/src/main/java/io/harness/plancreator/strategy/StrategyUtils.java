@@ -7,12 +7,14 @@
 
 package io.harness.plancreator.strategy;
 
+import static io.harness.plancreator.strategy.StrategyConstants.CURRENT_GLOBAL_ITERATION;
 import static io.harness.plancreator.strategy.StrategyConstants.ITEM;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATION;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATIONS;
 import static io.harness.plancreator.strategy.StrategyConstants.MATRIX;
 import static io.harness.plancreator.strategy.StrategyConstants.PARTITION;
 import static io.harness.plancreator.strategy.StrategyConstants.REPEAT;
+import static io.harness.plancreator.strategy.StrategyConstants.TOTAL_GLOBAL_ITERATIONS;
 import static io.harness.plancreator.strategy.StrategyConstants.TOTAL_ITERATIONS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.NAME;
@@ -32,6 +34,7 @@ import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.LevelUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -51,17 +54,21 @@ import io.harness.strategy.StrategyValidationUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class StrategyUtils {
+  @Inject IterationVariables iterationVariables;
   public boolean isWrappedUnderStrategy(YamlField yamlField) {
     YamlField strategyField = yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY);
     return strategyField != null;
@@ -290,7 +297,13 @@ public class StrategyUtils {
     Map<String, Object> matrixValuesMap = new HashMap<>();
     Map<String, Object> repeatValuesMap = new HashMap<>();
 
+    List<IterationVariables> levels = new ArrayList<>();
     for (Level level : levelsWithStrategyMetadata) {
+      levels.add(IterationVariables.builder()
+                     .currentIteration(level.getStrategyMetadata().getCurrentIteration())
+                     .totalIterations(level.getStrategyMetadata().getTotalIterations())
+                     .build());
+
       if (level.getStrategyMetadata().hasMatrixMetadata()) {
         // MatrixMapLocal can contain either a string as value or a json as value.
         Map<String, String> matrixMapLocal = level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap();
@@ -300,6 +313,11 @@ public class StrategyUtils {
         repeatValuesMap.put(ITEM, level.getStrategyMetadata().getForMetadata().getValue());
         repeatValuesMap.put(PARTITION, level.getStrategyMetadata().getForMetadata().getPartitionList());
       }
+
+      if (LevelUtils.isStepLevel(level)) {
+        fetchGlobalIterationsVariablesForStrategyObjectMap(strategyObjectMap, levels);
+      }
+
       strategyObjectMap.put(ITERATION, level.getStrategyMetadata().getCurrentIteration());
       strategyObjectMap.put(ITERATIONS, level.getStrategyMetadata().getTotalIterations());
       strategyObjectMap.put(TOTAL_ITERATIONS, level.getStrategyMetadata().getTotalIterations());
@@ -309,6 +327,40 @@ public class StrategyUtils {
     strategyObjectMap.put(REPEAT, repeatValuesMap);
 
     return strategyObjectMap;
+  }
+
+  /***
+   * This method calculates total no of iteration that the final step will undergo.
+   * Ex: If stage has parallelism 3, stepGroup3 and step as 3, then totalIterations will be 27 and
+   * currentIteration say middle iteration of each stage+stepGroup+step will have 13(indexes range from 0-26) as idx and
+   * that is also calculated.
+   * @param strategyObjectMap
+   * @param levels
+   */
+  public void fetchGlobalIterationsVariablesForStrategyObjectMap(
+      Map<String, Object> strategyObjectMap, List<IterationVariables> levels) {
+    List<Integer> preprocessedProductArray = new ArrayList<>();
+    ListIterator<IterationVariables> itr = levels.listIterator(levels.size());
+
+    preprocessedProductArray.add(itr.previous().getTotalIterations());
+    while (itr.hasPrevious()) {
+      // Iterate in reverse
+      preprocessedProductArray.add(
+          preprocessedProductArray.get(preprocessedProductArray.size() - 1) * itr.previous().getTotalIterations());
+    }
+    Collections.reverse(preprocessedProductArray);
+
+    strategyObjectMap.put(CURRENT_GLOBAL_ITERATION, getCurrentGlobalIteration(levels, preprocessedProductArray));
+    strategyObjectMap.put(TOTAL_GLOBAL_ITERATIONS, preprocessedProductArray.get(0));
+  }
+
+  private Object getCurrentGlobalIteration(List<IterationVariables> levels, List<Integer> preprocessedProductArray) {
+    int currentGlobalIteration = 0;
+    for (int i = 0; i <= levels.size() - 2; i++) {
+      currentGlobalIteration += levels.get(i).getCurrentIteration() * preprocessedProductArray.get(i + 1);
+    }
+    currentGlobalIteration += levels.get(levels.size() - 1).getCurrentIteration();
+    return currentGlobalIteration;
   }
 
   public Map<String, Object> getMatrixMapFromCombinations(Map<String, String> combinationsMap) {

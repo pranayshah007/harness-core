@@ -205,6 +205,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowADFSDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
@@ -222,6 +223,11 @@ import io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO;
 import io.harness.delegate.beans.connector.tasconnector.TasCredentialSpecDTO;
 import io.harness.delegate.beans.connector.tasconnector.TasCredentialType;
 import io.harness.delegate.beans.connector.tasconnector.TasManualDetailsDTO;
+import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
+import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialDTO;
+import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialSpecDTO;
+import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType;
+import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.serializer.KryoRegistrar;
 
@@ -451,11 +457,18 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(ServiceNowAuthType.class, 10000113);
     kryo.register(ServiceNowAuthCredentialsDTO.class, 10000114);
     kryo.register(ServiceNowUserNamePasswordDTO.class, 10000115);
+    kryo.register(ServiceNowADFSDTO.class, 10000116);
 
     kryo.register(TasConnectorDTO.class, 10000201);
     kryo.register(TasCredentialDTO.class, 10000202);
     kryo.register(TasCredentialSpecDTO.class, 10000203);
     kryo.register(TasCredentialType.class, 10000204);
     kryo.register(TasManualDetailsDTO.class, 10000205);
+
+    kryo.register(TerraformCloudConnectorDTO.class, 10000300);
+    kryo.register(TerraformCloudCredentialDTO.class, 10000301);
+    kryo.register(TerraformCloudCredentialSpecDTO.class, 10000302);
+    kryo.register(TerraformCloudTokenCredentialsDTO.class, 10000303);
+    kryo.register(TerraformCloudCredentialType.class, 10000304);
   }
 }

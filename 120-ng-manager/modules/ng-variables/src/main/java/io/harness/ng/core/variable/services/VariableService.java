@@ -28,4 +28,5 @@ public interface VariableService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> variableIdentifiersList);
 
   List<String> getExpressions(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  Long countVariables(String accountIdentifier);
 }

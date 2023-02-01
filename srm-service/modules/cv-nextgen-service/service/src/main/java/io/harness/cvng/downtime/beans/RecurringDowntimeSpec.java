@@ -7,6 +7,8 @@
 package io.harness.cvng.downtime.beans;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,9 +21,9 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RecurringDowntimeSpec extends DowntimeSpec {
-  private long recurrenceEndTime;
-  private DowntimeDuration downtimeDuration;
-  private DowntimeRecurrence downtimeRecurrence;
+  @ApiModelProperty(required = true) @NotNull private long recurrenceEndTime;
+  @ApiModelProperty(required = true) @NotNull private DowntimeDuration downtimeDuration;
+  @ApiModelProperty(required = true) @NotNull private DowntimeRecurrence downtimeRecurrence;
 
   @Override
   public DowntimeType getType() {

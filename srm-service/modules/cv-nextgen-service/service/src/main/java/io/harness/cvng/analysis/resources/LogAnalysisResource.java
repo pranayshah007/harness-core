@@ -113,8 +113,9 @@ public class LogAnalysisResource {
   getPreviousDeploymentAnalysis(@QueryParam("verificationTaskId") String verificationTaskId,
       @QueryParam("analysisStartTime") String analysisStartTime,
       @QueryParam("analysisEndTime") String analysisEndTime) {
-    return new RestResponse<>(logAnalysisService.getPreviousDeploymentAnalysis(verificationTaskId,
-        Instant.ofEpochMilli(Long.parseLong(analysisStartTime)),
-        Instant.ofEpochMilli(Long.parseLong(analysisEndTime))));
+    DeploymentLogAnalysisDTO deploymentLogAnalysisDTO = logAnalysisService.getPreviousDeploymentAnalysis(
+        verificationTaskId, Instant.ofEpochMilli(Long.parseLong(analysisStartTime)),
+        Instant.ofEpochMilli(Long.parseLong(analysisEndTime)));
+    return new RestResponse<>(deploymentLogAnalysisDTO);
   }
 }

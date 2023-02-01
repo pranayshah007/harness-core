@@ -80,7 +80,7 @@ public class DecryptGitApiAccessHelper {
                                                   .build();
     DelegateResponseData responseData = null;
     try {
-      responseData = delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException e) {
       throw new DelegateNotAvailableException("Encountered error while decrypting secrets", WingsException.USER);
     } catch (Exception e) {
@@ -98,5 +98,10 @@ public class DecryptGitApiAccessHelper {
       DecryptableEntity decryptableEntity, NGAccess ngAccess) {
     return encryptionHelper.getEncryptionDetail(decryptableEntity, ngAccess.getAccountIdentifier(),
         ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+  }
+
+  public DecryptableEntity decryptEncryptionDetails(
+      DecryptableEntity decryptableEntity, List<EncryptedDataDetail> encryptedDataDetails, String accountId) {
+    return ngEncryptorService.decryptEncryptedDetails(decryptableEntity, encryptedDataDetails, accountId);
   }
 }

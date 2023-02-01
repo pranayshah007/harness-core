@@ -12,6 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static java.util.Objects.nonNull;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.aws.asg.AsgBlueGreenDeployStep;
+import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
+import io.harness.cdng.aws.asg.AsgRollingDeployStep;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStep;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStep;
@@ -34,6 +37,8 @@ import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStep;
 import io.harness.cdng.ssh.CommandStep;
 import io.harness.cdng.tas.TasAppResizeStep;
 import io.harness.cdng.tas.TasRollbackStep;
+import io.harness.cdng.tas.TasRollingDeployStep;
+import io.harness.cdng.tas.TasRollingRollbackStep;
 import io.harness.cdng.tas.TasSwapRollbackStep;
 import io.harness.cdng.tas.TasSwapRoutesStep;
 import io.harness.pms.contracts.steps.StepType;
@@ -57,7 +62,10 @@ public class InstanceSyncStepResolver {
       FetchInstanceScriptStep.STEP_TYPE.getType(), ElastigroupDeployStep.STEP_TYPE.getType(),
       TasAppResizeStep.STEP_TYPE.getType(), TasSwapRoutesStep.STEP_TYPE.getType(), TasRollbackStep.STEP_TYPE.getType(),
       TasSwapRollbackStep.STEP_TYPE.getType(), ElastigroupBGStageSetupStep.STEP_TYPE.getType(),
-      ElastigroupSwapRouteStep.STEP_TYPE.getType(), ElastigroupRollbackStep.STEP_TYPE.getType()));
+      ElastigroupSwapRouteStep.STEP_TYPE.getType(), ElastigroupRollbackStep.STEP_TYPE.getType(),
+      TasRollingDeployStep.STEP_TYPE.getType(), TasRollingRollbackStep.STEP_TYPE.getType(),
+      AsgRollingDeployStep.STEP_TYPE.getType(), AsgCanaryDeployStep.STEP_TYPE.getType(),
+      AsgBlueGreenDeployStep.STEP_TYPE.getType()));
 
   public boolean shouldRunInstanceSync(StepType stepType) {
     return nonNull(stepType) && INSTANCE_SYN_STEP_TYPES.contains(stepType.getType());

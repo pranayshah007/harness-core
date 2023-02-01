@@ -21,7 +21,7 @@ import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig.EnvGroupPlanCreatorConfigBuilder;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
-import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
+import io.harness.cdng.environment.helper.EnvironmentInfraFilterUtils;
 import io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigMapper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
@@ -77,7 +77,7 @@ public class EnvGroupPlanCreatorHelper {
     List<EnvironmentPlanCreatorConfig> envConfigs = new ArrayList<>();
     EnvGroupPlanCreatorConfigBuilder envGroupPlanCreatorConfigBuilder = EnvGroupPlanCreatorConfig.builder();
 
-    if (!EnvironmentInfraFilterHelper.areFiltersPresent(envGroupYaml)) {
+    if (!EnvironmentInfraFilterUtils.areFiltersPresent(envGroupYaml)) {
       List<EnvironmentYamlV2> envV2Yamls = envGroupYaml.getEnvironments().getValue();
       if (envGroupYaml.getDeployToAll().getValue()) {
         for (Environment env : environments) {

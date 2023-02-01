@@ -10,6 +10,7 @@ package io.harness.mappers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
+import io.harness.dtos.instanceinfo.AsgInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AwsSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
@@ -94,6 +95,8 @@ public class InstanceDetailsMapper {
       return ServiceSpecType.TAS;
     } else if (instanceDTO.getInstanceInfoDTO() instanceof SpotInstanceInfoDTO) {
       return ServiceSpecType.ELASTIGROUP;
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof AsgInstanceInfoDTO) {
+      return ServiceSpecType.ASG;
     }
     return null;
   }

@@ -46,6 +46,7 @@ import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoExecutionTimeoutException;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteResult;
+import com.mongodb.client.MongoClient;
 import dev.morphia.AdvancedDatastore;
 import dev.morphia.DatastoreImpl;
 import dev.morphia.FindAndModifyOptions;
@@ -136,6 +137,7 @@ public class MongoPersistence implements HPersistence {
   private Map<String, Info> storeInfo = new ConcurrentHashMap<>();
   private Map<Class, Store> classStores = new ConcurrentHashMap<>();
   private Map<String, AdvancedDatastore> datastoreMap;
+  private Map<String, MongoClient> mongoClientMap;
   private final HarnessConnectionPoolListener harnessConnectionPoolListener;
   @Inject UserProvider userProvider;
 
@@ -143,6 +145,7 @@ public class MongoPersistence implements HPersistence {
   public MongoPersistence(@Named("primaryDatastore") AdvancedDatastore primaryDatastore,
       HarnessConnectionPoolListener harnessConnectionPoolListener) {
     datastoreMap = new HashMap<>();
+    mongoClientMap = new HashMap<>();
     datastoreMap.put(DEFAULT_STORE.getName(), primaryDatastore);
     this.harnessConnectionPoolListener = harnessConnectionPoolListener;
   }
@@ -183,6 +186,17 @@ public class MongoPersistence implements HPersistence {
         return getDatastore(DEFAULT_STORE);
       }
       return MongoModule.createDatastore(morphia, info.getUri(), store.getName(), harnessConnectionPoolListener);
+    });
+  }
+
+  @Override
+  public MongoClient getNewMongoClient(Store store) {
+    return mongoClientMap.computeIfAbsent(store.getName(), key -> {
+      Info info = storeInfo.get(store.getName());
+      if (info == null || isEmpty(info.getUri())) {
+        return getNewMongoClient(DEFAULT_STORE);
+      }
+      return MongoModule.createNewMongoCLient(info.getUri(), store.getName(), harnessConnectionPoolListener);
     });
   }
 

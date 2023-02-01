@@ -12,6 +12,8 @@ spec:
         - image: alpine
           name: delegate-task
           imagePullPolicy: Always
+          command: [ "/bin/sh" ]
+          args: [ "-c", "while true; do echo hello; sleep 100;done" ]
           resources:
             limits:
               memory: "512Mi"

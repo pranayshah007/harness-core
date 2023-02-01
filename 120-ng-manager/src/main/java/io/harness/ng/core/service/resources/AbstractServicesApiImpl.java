@@ -74,6 +74,9 @@ public abstract class AbstractServicesApiImpl {
         ResourceScope.of(account, org, project), Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
     serviceSchemaHelper.validateSchema(account, serviceRequest.getYaml());
     ServiceEntity serviceEntity = serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account);
+    if (isEmpty(serviceRequest.getYaml())) {
+      serviceSchemaHelper.validateSchema(account, serviceEntity.getYaml());
+    }
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
     ServiceEntity createdService = serviceEntityService.create(serviceEntity);
@@ -81,12 +84,13 @@ public abstract class AbstractServicesApiImpl {
     return Response.status(Response.Status.CREATED).entity(serviceResponse).build();
   }
 
-  public Response deleteServiceEntity(String org, String project, String service, String account) {
+  public Response deleteServiceEntity(String org, String project, String service, String account, boolean forceDelete) {
     Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.get(account, org, project, service, false);
     if (serviceEntityOptional.isEmpty()) {
       throw new NotFoundException(String.format("Service with identifier [%s] not found", service));
     }
-    boolean deleted = serviceEntityManagementService.deleteService(account, org, project, service, "ifMatch");
+    boolean deleted =
+        serviceEntityManagementService.deleteService(account, org, project, service, "ifMatch", forceDelete);
     if (!deleted) {
       throw new InvalidRequestException(String.format("Service with identifier [%s] could not be deleted", service));
     }
@@ -186,6 +190,9 @@ public abstract class AbstractServicesApiImpl {
         Resource.of(NGResourceType.SERVICE, serviceRequest.getIdentifier()), SERVICE_UPDATE_PERMISSION);
     serviceSchemaHelper.validateSchema(account, serviceRequest.getYaml());
     ServiceEntity requestService = serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account);
+    if (isEmpty(serviceRequest.getYaml())) {
+      serviceSchemaHelper.validateSchema(account, requestService.getYaml());
+    }
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         requestService.getOrgIdentifier(), requestService.getProjectIdentifier(), requestService.getAccountId());
     ServiceEntity updateService = serviceEntityService.update(requestService);

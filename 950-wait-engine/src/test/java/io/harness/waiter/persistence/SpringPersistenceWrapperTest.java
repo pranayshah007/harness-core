@@ -8,6 +8,7 @@
 package io.harness.waiter.persistence;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.waiter.TestNotifyEventListener.TEST_PUBLISHER;
 import static io.harness.waiter.WaitInstanceService.MAX_CALLBACK_PROCESSING_TIME;
@@ -22,26 +23,67 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 import io.harness.testlib.RealMongo;
+import io.harness.timeout.TimeoutEngine;
 import io.harness.waiter.NotifyResponse;
+import io.harness.waiter.NotifyResponse.NotifyResponseKeys;
 import io.harness.waiter.TestNotifyCallback;
 import io.harness.waiter.TestProgressCallback;
 import io.harness.waiter.WaitInstance;
 import io.harness.waiter.WaitInstance.WaitInstanceKeys;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.joor.Reflect;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class SpringPersistenceWrapperTest extends WaitEngineTestBase {
-  @Inject SpringPersistenceWrapper persistenceWrapper;
+  @Mock TimeoutEngine timeoutEngine;
+  @Mock MongoTemplate mongoTemplateMock;
   @Inject MongoTemplate mongoTemplate;
+  @Inject SpringPersistenceWrapper persistenceWrapper;
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  @RealMongo
+  public void testDeleteWaitInstancesWithinBatchSize() {
+    Reflect.on(persistenceWrapper).set("timeoutEngine", timeoutEngine);
+    Reflect.on(persistenceWrapper).set("mongoTemplate", mongoTemplateMock);
+    String correlationId = generateUuid();
+    Set<String> correlationIds = new HashSet<>();
+    for (int i = 0; i < 100; i++) {
+      correlationIds.add(String.valueOf(i));
+    }
+    correlationIds.add(correlationId);
+    Query query = query(where(WaitInstanceKeys.correlationIds).in(correlationIds));
+    query.fields().include(WaitInstanceKeys.timeoutInstanceId);
+
+    Mockito.doReturn(Collections.emptyList()).when(mongoTemplateMock).findAllAndRemove(query, WaitInstance.class);
+    DeleteResult acknowledged = DeleteResult.acknowledged(0);
+    Mockito.doReturn(acknowledged)
+        .when(mongoTemplateMock)
+        .remove(query(where(NotifyResponseKeys.uuid).in(new ArrayList<>(correlationIds))), NotifyResponse.class);
+
+    persistenceWrapper.deleteWaitInstancesAndMetadata(correlationIds);
+    Mockito.verify(timeoutEngine, Mockito.times(1)).deleteTimeouts(Collections.emptyList());
+    Mockito.verify(mongoTemplateMock, Mockito.times(1)).findAllAndRemove(query, WaitInstance.class);
+    Mockito.verify(mongoTemplateMock, Mockito.times(1))
+        .remove(query(where(NotifyResponseKeys.uuid).in(new ArrayList<>(correlationIds))), NotifyResponse.class);
+  }
 
   @Test
   @Owner(developers = PRASHANT)

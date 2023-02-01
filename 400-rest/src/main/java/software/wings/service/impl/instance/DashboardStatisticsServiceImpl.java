@@ -1154,6 +1154,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
           WorkflowExecutionKeys.statusInstanceBreakdownMap, WorkflowExecutionKeys.tags);
       finalPageRequest.setFieldsExcluded(fieldsExcluded);
     }
+    finalPageRequest.setOptions(Collections.singletonList(PageRequest.Option.SKIPCOUNT));
 
     Optional<Integer> retentionPeriodInDays =
         ((DeploymentHistoryFeature) deploymentHistoryFeature).getRetentionPeriodInDays(accountId);
@@ -1351,7 +1352,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
   private ManifestSummary prepareManifestSummaryFromHelmChart(HelmChart helmChart) {
     helmChart.setMetadata(applicationManifestService.fetchAppManifestProperties(
         helmChart.getAppId(), helmChart.getApplicationManifestId()));
-    return ManifestSummary.prepareSummaryFromHelmChart(helmChart);
+    return ManifestSummary.prepareSummaryFromHelmChart(helmChart.toDto());
   }
 
   private EntitySummary getEntitySummary(String name, String id, String type) {

@@ -48,4 +48,6 @@ public interface NGSecretServiceV2 {
   List<Secret> getPermitted(Collection<Secret> secrets);
 
   Page<Secret> getPaginatedResult(List<Secret> unpagedSecrets, int page, int size);
+
+  Long countSecrets(String accountIdentifier);
 }

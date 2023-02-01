@@ -36,15 +36,14 @@ import io.harness.ccm.views.helper.EnforcementCount;
 import io.harness.ccm.views.helper.EnforcementCountRequest;
 import io.harness.ccm.views.helper.ExecutionDetailRequest;
 import io.harness.ccm.views.helper.ExecutionDetails;
-import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleEnforcementService;
-import io.harness.ccm.views.service.RuleSetService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
-import io.harness.security.annotations.PublicApi;
+import io.harness.remote.GovernanceConfig;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
 
@@ -116,8 +115,7 @@ import retrofit2.Response;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-// @NextGenManagerAuth
-@PublicApi
+@NextGenManagerAuth
 public class GovernanceRuleEnforcementResource {
   public static final String ACCOUNT_ID = "accountId";
   public static final String EXECUTION_SCHEDULE = "executionSchedule";
@@ -131,23 +129,23 @@ public class GovernanceRuleEnforcementResource {
   public static final String CODE_MESSAGE_BODY = "code: {}, message: {}, body: {}";
   private final RuleEnforcementService ruleEnforcementService;
   // private final CCMRbacHelper rbacHelper
-  private final GovernanceRuleService ruleService;
-  private final RuleSetService ruleSetService;
   private final TelemetryReporter telemetryReporter;
-  @Inject CENextGenConfiguration configuration;
+  private final CENextGenConfiguration configuration;
   @Inject SchedulerClient schedulerClient;
-  @Inject private OutboxService outboxService;
-  @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
+  private final OutboxService outboxService;
+  private final TransactionTemplate transactionTemplate;
   private static final RetryPolicy<Object> transactionRetryRule = DEFAULT_RETRY_POLICY;
   public static final String MALFORMED_ERROR = "Request payload is malformed";
   @Inject
   public GovernanceRuleEnforcementResource(RuleEnforcementService ruleEnforcementService,
-      GovernanceRuleService governanceRuleService, RuleSetService ruleSetService, TelemetryReporter telemetryReporter) {
+      TelemetryReporter telemetryReporter, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
+      OutboxService outboxService, CENextGenConfiguration configuration) {
     this.ruleEnforcementService = ruleEnforcementService;
     // this.rbacHelper rbacHelper
-    this.ruleService = governanceRuleService;
-    this.ruleSetService = ruleSetService;
     this.telemetryReporter = telemetryReporter;
+    this.outboxService = outboxService;
+    this.transactionTemplate = transactionTemplate;
+    this.configuration = configuration;
   }
 
   @POST
@@ -186,24 +184,8 @@ public class GovernanceRuleEnforcementResource {
     if (ruleEnforcementService.listName(accountId, ruleEnforcement.getName(), true) != null) {
       throw new InvalidRequestException("Rule Enforcement with given name already exits");
     }
-    if (ruleEnforcement.getRuleIds() != null
-        && ruleEnforcement.getRuleIds().size() > configuration.getGovernanceConfig().getPoliciesInEnforcement()) {
-      throw new InvalidRequestException("Limit of number of rules in an enforcement is exceeded ");
-    }
-    if (ruleEnforcement.getRuleSetIDs() != null
-        && ruleEnforcement.getRuleSetIDs().size() > configuration.getGovernanceConfig().getPacksInEnforcement()) {
-      throw new InvalidRequestException("Limit of number of Rule Sets in an enforcement is exceeded ");
-    }
-    if (ruleEnforcement.getTargetAccounts().size() > configuration.getGovernanceConfig().getAccountLimit()) {
-      throw new InvalidRequestException("Limit of number of target accounts allowed per enforcement is exceeded ");
-    }
-
-    if (ruleEnforcement.getTargetRegions().size() > configuration.getGovernanceConfig().getRegionLimit()) {
-      throw new InvalidRequestException("Limit of target regions allowed per enforcement is exceeded ");
-    }
-
-    ruleService.check(accountId, ruleEnforcement.getRuleIds());
-    ruleSetService.check(accountId, ruleEnforcement.getRuleSetIDs());
+    GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
+    ruleEnforcementService.checkLimitsAndValidate(ruleEnforcement, governanceConfig);
     ruleEnforcementService.save(ruleEnforcement);
 
     // Insert a record in dkron
@@ -261,7 +243,7 @@ public class GovernanceRuleEnforcementResource {
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new RuleEnforcementCreateEvent(accountId, ruleEnforcement));
+      outboxService.save(new RuleEnforcementCreateEvent(accountId, ruleEnforcement.toDTO()));
       return ruleEnforcementService.listName(accountId, ruleEnforcement.getName(), false);
     })));
   }
@@ -298,14 +280,14 @@ public class GovernanceRuleEnforcementResource {
         log.error("Error in deleting job from dkron", e);
       }
     }
+    RuleEnforcement ruleEnforcement = ruleEnforcementService.listId(accountId, uuid, false);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
-    properties.put(RULE_ENFORCEMENT_NAME, ruleEnforcementService.listId(accountId, uuid, false).getName());
+    properties.put(RULE_ENFORCEMENT_NAME, ruleEnforcement.getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_ENFORCEMENT_DELETE, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(
-          new RuleEnforcementDeleteEvent(accountId, ruleEnforcementService.listId(accountId, uuid, false)));
+      outboxService.save(new RuleEnforcementDeleteEvent(accountId, ruleEnforcement.toDTO()));
       return ruleEnforcementService.delete(accountId, uuid);
     })));
   }
@@ -336,17 +318,14 @@ public class GovernanceRuleEnforcementResource {
     ruleEnforcement.setAccountId(accountId);
     RuleEnforcement ruleEnforcementFromMongo =
         ruleEnforcementService.listId(accountId, ruleEnforcement.getUuid(), false);
-    if (ruleEnforcement.getRuleIds() != null) {
-      ruleService.check(accountId, ruleEnforcement.getRuleIds());
-    }
-    if (ruleEnforcement.getRuleSetIDs() != null) {
-      ruleSetService.check(accountId, ruleEnforcement.getRuleSetIDs());
-    }
+    GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
+    ruleEnforcementService.checkLimitsAndValidate(ruleEnforcement, governanceConfig);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_ENFORCEMENT_NAME, ruleEnforcement.getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_ENFORCEMENT_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+
     // Update dkron if enforcement is toggled
     if (configuration.getGovernanceConfig().isUseDkron()
         && !Objects.equals(ruleEnforcementFromMongo.getIsEnabled(), ruleEnforcement.getIsEnabled())) {
@@ -361,7 +340,8 @@ public class GovernanceRuleEnforcementResource {
       }
     }
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new RuleEnforcementUpdateEvent(accountId, ruleEnforcement));
+      outboxService.save(
+          new RuleEnforcementUpdateEvent(accountId, ruleEnforcement.toDTO(), ruleEnforcementFromMongo.toDTO()));
       return ruleEnforcementService.update(ruleEnforcement);
     })));
   }

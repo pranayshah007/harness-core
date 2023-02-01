@@ -87,6 +87,8 @@ import software.wings.api.k8s.K8sCanaryDeleteServiceElement;
 import software.wings.api.k8s.K8sElement;
 import software.wings.api.k8s.K8sExecutionSummary;
 import software.wings.api.k8s.K8sGitConfigMapInfo;
+import software.wings.api.k8s.K8sGitFetchInfo;
+import software.wings.api.k8s.K8sGitInfo;
 import software.wings.api.k8s.K8sHelmDeploymentElement;
 import software.wings.api.k8s.K8sStateExecutionData;
 import software.wings.api.k8s.K8sSwapServiceElement;
@@ -290,9 +292,11 @@ import software.wings.sm.status.StateStatusUpdateInfo;
 import software.wings.verification.VerificationDataAnalysisResponse;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
 
+import com.amazonaws.services.kms.model.AWSKMSException;
 import com.esotericsoftware.kryo.Kryo;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
+import com.mongodb.MongoExecutionTimeoutException;
 
 @OwnedBy(PL)
 @TargetModule(_360_CG_MANAGER)
@@ -530,6 +534,8 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(K8sResourcesSweepingOutput.class, 40019);
     kryo.register(K8sGitConfigMapInfo.class, 40023);
     kryo.register(K8sApplicationManifestSourceInfo.class, 40024);
+    kryo.register(K8sGitFetchInfo.class, 40026);
+    kryo.register(K8sGitInfo.class, 40027);
     kryo.register(DirectKubernetesCluster.class, 40051);
     kryo.register(EcsCluster.class, 40052);
     kryo.register(io.harness.ccm.cluster.entities.GcpKubernetesCluster.class, 40053);
@@ -616,5 +622,7 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(Artifact.class, 50029);
     kryo.register(Artifact.ContentStatus.class, 50030);
     kryo.register(Artifact.Status.class, 50031);
+    kryo.register(MongoExecutionTimeoutException.class, 50032);
+    kryo.register(AWSKMSException.class, 50033);
   }
 }

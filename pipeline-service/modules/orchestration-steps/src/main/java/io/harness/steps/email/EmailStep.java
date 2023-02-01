@@ -13,6 +13,7 @@ import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.NotificationTaskResponse;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
@@ -86,6 +87,12 @@ public class EmailStep extends PipelineSyncExecutable {
     }
     if (StringUtils.isNotBlank(ccMail)) {
       ccRecipients = Stream.of(ccMail.trim().split("\\s*,\\s*")).collect(Collectors.toSet());
+    }
+    if (emailStepParameters.subject == null || StringUtils.isBlank(emailStepParameters.subject.getValue())) {
+      throw new InvalidRequestException("Email subject cannot be blank");
+    }
+    if (emailStepParameters.body == null || StringUtils.isBlank(emailStepParameters.body.getValue())) {
+      throw new InvalidRequestException("Email body cannot be blank");
     }
     EmailDTO emailDTO = EmailDTO.builder()
                             .toRecipients(toRecipients)

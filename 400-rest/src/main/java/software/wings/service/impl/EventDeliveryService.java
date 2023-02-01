@@ -175,7 +175,7 @@ public class EventDeliveryService {
         new EventsDeliveryCallback(accountId, event.getAppId(), eventConfig.getUuid(), event.getUuid(), permitId),
         waitId);
     log.info("Queuing delegate task for event delivery with waitId {}", waitId);
-    String taskId = delegateService.queueTask(delegateTask);
+    String taskId = delegateService.queueTaskV2(delegateTask);
     log.info("Queued delegate taskId {} for event delivery", taskId);
   }
 

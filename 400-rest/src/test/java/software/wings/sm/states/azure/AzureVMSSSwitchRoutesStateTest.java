@@ -15,7 +15,7 @@ import static io.harness.rule.OwnerRule.ANIL;
 
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.Environment.Builder.anEnvironment;
-import static software.wings.beans.Log.Builder.aLog;
+import static software.wings.beans.dto.Log.Builder.aLog;
 import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -304,14 +304,14 @@ public class AzureVMSSSwitchRoutesStateTest extends WingsBaseTest {
     doReturn(SUCCESS).when(azureVMSSStateHelper).getExecutionStatus(any());
 
     if (!isSuccess) {
-      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTask(any());
+      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTaskV2(any());
     }
     return mockContext;
   }
 
   private void verifyDelegateTaskCreationResult(ExecutionResponse response, boolean isRollback) {
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
 
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();

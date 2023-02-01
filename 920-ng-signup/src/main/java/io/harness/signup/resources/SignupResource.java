@@ -90,8 +90,9 @@ public class SignupResource {
   @Path("/complete/{token}")
   @PublicApi
   public RestResponse<UserInfo> completeSignupInvite(@PathParam("token") String token,
-      @QueryParam("referer") String referer, @QueryParam(NGLicensingEntityConstants.GA_CLIENT_ID) String gaClientId) {
-    return new RestResponse<>(signupService.completeSignupInvite(token, referer, gaClientId));
+      @QueryParam("referer") String referer, @QueryParam(NGLicensingEntityConstants.GA_CLIENT_ID) String gaClientId,
+      @QueryParam(NGLicensingEntityConstants.VISITOR_TOKEN) String visitorToken) {
+    return new RestResponse<>(signupService.completeSignupInvite(token, referer, gaClientId, visitorToken));
   }
 
   /**

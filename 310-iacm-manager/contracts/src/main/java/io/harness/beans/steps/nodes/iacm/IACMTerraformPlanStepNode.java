@@ -68,7 +68,7 @@ public class IACMTerraformPlanStepNode extends CIAbstractStepNode {
 
   @Builder
   public IACMTerraformPlanStepNode(String uuid, String identifier, String name,
-      List<FailureStrategyConfig> failureStrategies, IACMTerraformPlanInfo iacmTerraformPlanInfo,
+      ParameterField<List<FailureStrategyConfig>> failureStrategies, IACMTerraformPlanInfo iacmTerraformPlanInfo,
       IACMTerraformPlanStepNode.StepType type, ParameterField<Timeout> timeout) {
     this.setFailureStrategies(failureStrategies);
     this.iacmTerraformPlanInfo = iacmTerraformPlanInfo;

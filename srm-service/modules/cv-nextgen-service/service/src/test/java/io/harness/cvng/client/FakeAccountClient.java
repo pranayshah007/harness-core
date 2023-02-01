@@ -81,6 +81,16 @@ public class FakeAccountClient implements AccountClient {
   }
 
   @Override
+  public Call<RestResponse<Integer>> getAccountTrustLevel(String accountId) {
+    throw new UnsupportedOperationException("mocked method - provide impl when required");
+  }
+
+  @Override
+  public Call<RestResponse<Boolean>> updateAccountTrustLevel(String accountId, Integer trustLevel) {
+    throw new UnsupportedOperationException("mocked method - provide impl when required");
+  }
+
+  @Override
   public Call<RestResponse<Boolean>> isFeatureFlagEnabled(String featureName, String accountId) {
     throw new UnsupportedOperationException("mocked method - provide impl when required");
   }

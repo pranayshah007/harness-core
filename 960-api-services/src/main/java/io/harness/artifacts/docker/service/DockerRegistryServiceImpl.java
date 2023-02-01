@@ -416,15 +416,17 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
   }
 
   @Override
-  public ArtifactMetaInfo getArtifactMetaInfo(DockerInternalConfig dockerConfig, String imageName, String tag) {
+  public ArtifactMetaInfo getArtifactMetaInfo(
+      DockerInternalConfig dockerConfig, String imageName, String tag, boolean shouldFetchDockerV2DigestSHA256) {
     if (!dockerConfig.hasCredentials()) {
-      return dockerPublicRegistryProcessor.getArtifactMetaInfo(dockerConfig, imageName, tag);
+      return dockerPublicRegistryProcessor.getArtifactMetaInfo(
+          dockerConfig, imageName, tag, shouldFetchDockerV2DigestSHA256);
     }
     DockerRegistryRestClient registryRestClient = dockerRestClientFactory.getDockerRegistryRestClient(dockerConfig);
     String authHeader = Credentials.basic(dockerConfig.getUsername(), dockerConfig.getPassword());
     Function<Headers, String> getToken = headers -> getToken(dockerConfig, headers, registryRestClient);
     return dockerRegistryUtils.getArtifactMetaInfo(
-        dockerConfig, registryRestClient, getToken, authHeader, imageName, tag);
+        dockerConfig, registryRestClient, getToken, authHeader, imageName, tag, shouldFetchDockerV2DigestSHA256);
   }
 
   @VisibleForTesting
@@ -529,6 +531,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
     log.error("Request not successful. Reason: {}", response);
     int code = response.code();
     switch (code) {
+      case 403:
       case 404:
       case 400:
         return false;

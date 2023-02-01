@@ -15,6 +15,9 @@ import io.harness.cdng.artifact.steps.ArtifactSyncStep;
 import io.harness.cdng.artifact.steps.ArtifactsStep;
 import io.harness.cdng.artifact.steps.ArtifactsStepV2;
 import io.harness.cdng.artifact.steps.SidecarsStep;
+import io.harness.cdng.aws.asg.AsgBlueGreenDeployStep;
+import io.harness.cdng.aws.asg.AsgBlueGreenRollbackStep;
+import io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStep;
 import io.harness.cdng.aws.asg.AsgCanaryDeleteStep;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingDeployStep;
@@ -51,6 +54,10 @@ import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
 import io.harness.cdng.gitops.steps.FetchLinkedAppsStep;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
+import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStep;
+import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStep;
+import io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStep;
+import io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
 import io.harness.cdng.infra.steps.EnvironmentStep;
@@ -65,6 +72,7 @@ import io.harness.cdng.k8s.K8sBlueGreenStep;
 import io.harness.cdng.k8s.K8sCanaryDeleteStep;
 import io.harness.cdng.k8s.K8sCanaryStep;
 import io.harness.cdng.k8s.K8sDeleteStep;
+import io.harness.cdng.k8s.K8sDryRunManifestStep;
 import io.harness.cdng.k8s.K8sRollingRollbackStep;
 import io.harness.cdng.k8s.K8sRollingStep;
 import io.harness.cdng.k8s.K8sScaleStep;
@@ -87,6 +95,7 @@ import io.harness.cdng.provision.terraform.TerraformApplyStep;
 import io.harness.cdng.provision.terraform.TerraformDestroyStep;
 import io.harness.cdng.provision.terraform.TerraformPlanStep;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStep;
+import io.harness.cdng.provision.terraformcloud.steps.TerraformCloudRunStep;
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStep;
 import io.harness.cdng.provision.terragrunt.TerragruntDestroyStep;
 import io.harness.cdng.provision.terragrunt.TerragruntPlanStep;
@@ -109,6 +118,8 @@ import io.harness.cdng.tas.TasBasicAppSetupStep;
 import io.harness.cdng.tas.TasCanaryAppSetupStep;
 import io.harness.cdng.tas.TasCommandStep;
 import io.harness.cdng.tas.TasRollbackStep;
+import io.harness.cdng.tas.TasRollingDeployStep;
+import io.harness.cdng.tas.TasRollingRollbackStep;
 import io.harness.cdng.tas.TasSwapRollbackStep;
 import io.harness.cdng.tas.TasSwapRoutesStep;
 import io.harness.pms.contracts.steps.StepType;
@@ -161,6 +172,7 @@ public class NgStepRegistrar {
     engineSteps.put(K8sBlueGreenStep.STEP_TYPE, K8sBlueGreenStep.class);
     engineSteps.put(K8sBGSwapServicesStep.STEP_TYPE, K8sBGSwapServicesStep.class);
     engineSteps.put(K8sApplyStep.STEP_TYPE, K8sApplyStep.class);
+    engineSteps.put(K8sDryRunManifestStep.STEP_TYPE, K8sDryRunManifestStep.class);
     engineSteps.put(TerraformApplyStep.STEP_TYPE, TerraformApplyStep.class);
     engineSteps.put(TerraformPlanStep.STEP_TYPE, TerraformPlanStep.class);
     engineSteps.put(TerraformDestroyStep.STEP_TYPE, TerraformDestroyStep.class);
@@ -228,6 +240,9 @@ public class NgStepRegistrar {
     engineSteps.put(AsgCanaryDeleteStep.STEP_TYPE, AsgCanaryDeleteStep.class);
     engineSteps.put(AsgRollingDeployStep.STEP_TYPE, AsgRollingDeployStep.class);
     engineSteps.put(AsgRollingRollbackStep.STEP_TYPE, AsgRollingRollbackStep.class);
+    engineSteps.put(AsgBlueGreenSwapServiceStep.STEP_TYPE, AsgBlueGreenSwapServiceStep.class);
+    engineSteps.put(AsgBlueGreenDeployStep.STEP_TYPE, AsgBlueGreenDeployStep.class);
+    engineSteps.put(AsgBlueGreenRollbackStep.STEP_TYPE, AsgBlueGreenRollbackStep.class);
 
     // TAS
     engineSteps.put(TasCanaryAppSetupStep.STEP_TYPE, TasCanaryAppSetupStep.class);
@@ -238,6 +253,14 @@ public class NgStepRegistrar {
     engineSteps.put(TasSwapRollbackStep.STEP_TYPE, TasSwapRollbackStep.class);
     engineSteps.put(TasAppResizeStep.STEP_TYPE, TasAppResizeStep.class);
     engineSteps.put(TasRollbackStep.STEP_TYPE, TasRollbackStep.class);
+    engineSteps.put(TasRollingDeployStep.STEP_TYPE, TasRollingDeployStep.class);
+    engineSteps.put(TasRollingRollbackStep.STEP_TYPE, TasRollingRollbackStep.class);
+
+    engineSteps.put(GoogleFunctionsDeployStep.STEP_TYPE, GoogleFunctionsDeployStep.class);
+    engineSteps.put(GoogleFunctionsDeployWithoutTrafficStep.STEP_TYPE, GoogleFunctionsDeployWithoutTrafficStep.class);
+    engineSteps.put(GoogleFunctionsTrafficShiftStep.STEP_TYPE, GoogleFunctionsTrafficShiftStep.class);
+    engineSteps.put(GoogleFunctionsRollbackStep.STEP_TYPE, GoogleFunctionsRollbackStep.class);
+    engineSteps.put(TerraformCloudRunStep.STEP_TYPE, TerraformCloudRunStep.class);
 
     return engineSteps;
   }

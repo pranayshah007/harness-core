@@ -33,6 +33,8 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.serializer.kryo.NGCommonsKryoRegistrar;
 import io.harness.serializer.kryo.YamlKryoRegistrar;
 import io.harness.utils.PmsFeatureFlagService;
+import io.harness.yaml.registry.Registry;
+import io.harness.yaml.registry.RegistryCredential;
 import io.harness.yaml.repository.Reference;
 import io.harness.yaml.repository.ReferenceType;
 import io.harness.yaml.repository.Repository;
@@ -42,6 +44,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -142,6 +145,28 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     assertThat(repository.getConnector().fetchFinalValue()).isEqualTo("connector");
     assertThat(repository.getName().fetchFinalValue()).isEqualTo("harness-core");
     assertThat(repository.getReference().fetchFinalValue()).isNull();
+
+    assertThat(globalDependency.getMetadataMap()).containsKey(YAMLFieldNameConstants.REGISTRY);
+    bytes = globalDependency.getMetadataMap().get(YAMLFieldNameConstants.REGISTRY).toByteArray();
+    Registry registry = (Registry) kryoSerializer.asObject(bytes);
+    assertThat(registry).isNotNull();
+    List<RegistryCredential> credentials = registry.getCredentials();
+    assertThat(credentials).hasSize(4);
+    assertThat(credentials.get(0).getName().isExpression()).isFalse();
+    assertThat(credentials.get(0).getName().fetchFinalValue()).isEqualTo("account.docker");
+    assertThat(credentials.get(0).getMatch().fetchFinalValue()).isNull();
+
+    assertThat(credentials.get(1).getName().isExpression()).isTrue();
+    assertThat(credentials.get(1).getName().fetchFinalValue()).isEqualTo("<+expression>");
+    assertThat(credentials.get(1).getMatch().fetchFinalValue()).isNull();
+
+    assertThat(credentials.get(2).getName().fetchFinalValue()).isEqualTo("account.dockerhub");
+    assertThat(credentials.get(2).getMatch().fetchFinalValue()).isEqualTo("docker.io");
+
+    assertThat(credentials.get(3).getName().isExpression()).isTrue();
+    assertThat(credentials.get(3).getName().fetchFinalValue()).isEqualTo("<+expression>");
+    assertThat(credentials.get(3).getMatch().isExpression()).isTrue();
+    assertThat(credentials.get(3).getMatch().fetchFinalValue()).isEqualTo("<+expression>");
   }
 
   @Test

@@ -14,17 +14,20 @@ import static java.lang.System.currentTimeMillis;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentIterable;
+import io.harness.mongo.iterator.BulkWriteOpsResults;
 import io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.BulkWriteResult;
 import dev.morphia.query.FilterOperator;
-import dev.morphia.query.MorphiaIterator;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import org.bson.types.ObjectId;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
+import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -110,14 +113,61 @@ public class SpringPersistenceProvider<T extends PersistentIterable>
   }
 
   @Override
-  public MorphiaIterator<T, T> obtainNextInstances(
+  public Iterator<T> obtainNextInstances(
       Class<T> clazz, String fieldName, SpringFilterExpander filterExpander, int limit) {
-    return null;
+    long now = currentTimeMillis();
+    Query query = createQuery(now, fieldName, filterExpander, false);
+    query.limit(limit);
+
+    List<T> docs = persistence.find(query, clazz);
+
+    return docs.iterator();
   }
 
   @Override
-  public BulkWriteResult bulkWriteDocumentsMatchingIds(
+  public BulkWriteOpsResults bulkWriteDocumentsMatchingIds(
       Class<T> clazz, List<String> ids, String fieldName, long base, Duration targetInterval) {
-    return null;
+    // 1. Create an update operation to set the given field with given value
+    Update update = new Update();
+    update.set(fieldName, base + targetInterval.toMillis());
+
+    // 2. Initialize an unordered bulk operation
+    BulkOperations bulkOps = persistence.bulkOps(BulkOperations.BulkMode.UNORDERED, clazz);
+
+    // 3. Create find query.
+    /* The Mongo documents will have '_id' field of type ObjectId if Mongo assigned the id.
+       It will have '_id' field of type String if the document was inserted manually.
+       Thus, check if the given id is of type ObjectId or String and prepare find queries accordingly.
+     */
+    List<String> stringIds = new ArrayList<>();
+    List<ObjectId> objectIds = new ArrayList<>();
+
+    for (String id : ids) {
+      if (ObjectId.isValid(id)) {
+        objectIds.add(new ObjectId(id));
+      } else {
+        stringIds.add(id);
+      }
+    }
+
+    // 3a. Create a find query to match String Ids
+    if (!stringIds.isEmpty()) {
+      Query query = new Query(Criteria.where("_id").in(stringIds));
+      bulkOps.updateMulti(query, update);
+    }
+
+    // 3b. Create a find query to match Object Ids
+    if (!objectIds.isEmpty()) {
+      Query query = new Query(Criteria.where("_id").in(objectIds));
+      bulkOps.updateMulti(query, update);
+    }
+
+    // 4. Execute the Bulk write operation and return the results.
+    com.mongodb.bulk.BulkWriteResult bulkWriteResult = bulkOps.execute();
+    return BulkWriteOpsResults.builder()
+        .operationAcknowledged(bulkWriteResult.wasAcknowledged())
+        .matchedCount(bulkWriteResult.getMatchedCount())
+        .modifiedCount(bulkWriteResult.getModifiedCount())
+        .build();
   }
 }

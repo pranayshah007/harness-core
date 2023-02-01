@@ -17,6 +17,7 @@ import io.harness.cache.SpringCacheEntity.SpringCacheEntityKeys;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.serializer.KryoSerializer;
 import io.harness.springdata.HMongoTemplate;
+import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -25,9 +26,13 @@ import com.mongodb.MongoCommandException;
 import java.sql.Date;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
@@ -69,6 +74,10 @@ public class SpringMongoStore implements DistributedStore {
   @Override
   public <T extends Distributable> void upsert(T entity, Duration ttl, boolean downgrade) {
     upsertInternal(entity, ttl, downgrade, System.currentTimeMillis());
+  }
+
+  public <T extends Distributable> void delete(List<T> entities) {
+    deleteInternal(entities);
   }
 
   private String canonicalKey(long algorithmId, long structureHash, String key, List<String> params) {
@@ -123,6 +132,20 @@ public class SpringMongoStore implements DistributedStore {
       log.error("Failed to obtain from cache", ex);
     }
     return null;
+  }
+
+  private <T extends Distributable> void deleteInternal(List<T> entities) {
+    Set<String> finalEntityKeys = new HashSet<>();
+    for (T entity : entities) {
+      final String canonicalKey =
+          canonicalKey(entity.algorithmId(), entity.structureHash(), entity.key(), entity.parameters());
+      finalEntityKeys.add(canonicalKey);
+    }
+    Query query = new Query(where(SpringCacheEntityKeys.canonicalKey).in(finalEntityKeys));
+    RetryPolicy<Object> retryPolicy =
+        PersistenceUtils.getRetryPolicy("[Retrying]: Failed deleting SpringCacheEntity; attempt: {}",
+            "[Failed]: Failed deleting SpringCacheEntity; attempt: {}");
+    Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, SpringCacheEntity.class));
   }
 
   private <T extends Distributable> void upsertInternal(

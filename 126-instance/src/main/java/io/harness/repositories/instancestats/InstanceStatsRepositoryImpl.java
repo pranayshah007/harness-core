@@ -9,9 +9,12 @@ package io.harness.repositories.instancestats;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
+import io.harness.exception.InvalidRequestException;
 import io.harness.models.InstanceStats;
 import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.google.inject.Inject;
 import java.sql.Connection;
@@ -33,13 +36,8 @@ public class InstanceStatsRepositoryImpl implements InstanceStatsRepository {
     int totalTries = 0;
     while (totalTries <= MAX_RETRY_COUNT) {
       ResultSet resultSet = null;
-      try (
-          Connection dbConnection = timeScaleDBService.getDBConnection();
-          PreparedStatement statement = dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD.query())) {
-        statement.setString(1, accountId);
-        statement.setString(2, orgId);
-        statement.setString(3, projectId);
-        statement.setString(4, serviceId);
+      try (Connection dbConnection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = getScopedStatement(dbConnection, accountId, orgId, projectId, serviceId)) {
         resultSet = statement.executeQuery();
         return parseInstanceStatsRecord(resultSet);
       } catch (SQLException ex) {
@@ -60,7 +58,6 @@ public class InstanceStatsRepositoryImpl implements InstanceStatsRepository {
   }
 
   // ------------------------------- PRIVATE METHODS ------------------------------
-
   private InstanceStats parseInstanceStatsRecord(ResultSet resultSet) throws SQLException {
     while (resultSet != null && resultSet.next()) {
       return InstanceStats.builder()
@@ -73,5 +70,48 @@ public class InstanceStatsRepositoryImpl implements InstanceStatsRepository {
           .build();
     }
     return null;
+  }
+
+  /**
+   *
+   * @param dbConnection connection session with a db
+   * @param accountId account of service
+   * @param orgId organisation of service
+   * @param projectId project of service
+   * @param serviceId identifier of service
+   * @return statement to get instance stats by using service ref and scoped query
+   * @throws SQLException
+   */
+  private PreparedStatement getScopedStatement(
+      Connection dbConnection, String accountId, String orgId, String projectId, String serviceId) throws SQLException {
+    IdentifierRef serviceIdentifierRef =
+        FullyQualifiedIdentifierHelper.getIdentifierRefWithScope(accountId, orgId, projectId, serviceId);
+    PreparedStatement statement = null;
+    switch (serviceIdentifierRef.getScope()) {
+      case ACCOUNT:
+        statement = dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD_ACCOUNT_LEVEL.query());
+        statement.setString(1, accountId);
+        statement.setString(2, serviceIdentifierRef.buildScopedIdentifier());
+        break;
+      case ORG:
+        statement = dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD_ORG_LEVEL.query());
+        statement.setString(1, accountId);
+        statement.setString(2, orgId);
+        statement.setString(3, serviceIdentifierRef.buildScopedIdentifier());
+        break;
+      case PROJECT:
+        statement = dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD_PROJECT_LEVEL.query());
+        statement.setString(1, accountId);
+        statement.setString(2, orgId);
+        statement.setString(3, projectId);
+        statement.setString(4, serviceIdentifierRef.buildScopedIdentifier());
+        break;
+      default:
+        throw new InvalidRequestException(
+            String.format("Unknown scope : %s encountered while preparing statement for instance stats",
+                serviceIdentifierRef.getScope().toString()));
+    }
+
+    return statement;
   }
 }

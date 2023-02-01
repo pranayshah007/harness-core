@@ -73,8 +73,8 @@ public class MailSenderImpl {
     } catch (EmailException e) {
       log.error("Failed to send email. Check SMTP configuration. notificationId: {}\n{}", notificationId,
           ExceptionUtils.getMessage(e));
-      return NotificationProcessingResponse.nonSent(emailIds.size());
+      return NotificationProcessingResponse.nonSent(emailIds.size() + ccEmailIds.size());
     }
-    return NotificationProcessingResponse.allSent(emailIds.size());
+    return NotificationProcessingResponse.allSent(emailIds.size() + ccEmailIds.size());
   }
 }

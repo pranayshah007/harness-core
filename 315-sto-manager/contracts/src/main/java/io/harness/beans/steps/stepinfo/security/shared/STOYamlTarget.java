@@ -17,29 +17,24 @@ import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.sto.variables.STOYamlTargetType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(STO)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class STOYamlTarget {
   @NotNull
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlTargetType")
   protected STOYamlTargetType type;
 
-  @NotNull
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> name;
+  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> name;
 
-  @NotNull
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> variant;
+  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> variant;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> workspace;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> workspace;
 }

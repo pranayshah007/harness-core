@@ -34,7 +34,7 @@ import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.template.yaml.TemplateRefHelper;
-import io.harness.utils.YamlPipelineUtils;
+import io.harness.template.yaml.TemplateYamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -116,7 +116,7 @@ public class InputsValidator {
     if (TemplateRefHelper.hasTemplateRef(yaml)) {
       Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
           accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache);
-      resolvedTemplatesYaml = YamlPipelineUtils.writeYamlString(resolvedTemplatesMap);
+      resolvedTemplatesYaml = TemplateYamlUtils.writeYamlString(resolvedTemplatesMap);
     }
     InputsValidationResponse ngManagerInputsValidationResponse =
         NGRestUtils.getResponse(ngManagerReconcileClient.validateYaml(accountId, orgId, projectId,
@@ -252,7 +252,7 @@ public class InputsValidator {
     // Generate the Template Spec from the Template YAML
     JsonNode templateSpec;
     try {
-      NGTemplateConfig templateConfig = YamlPipelineUtils.read(templateYaml, NGTemplateConfig.class);
+      NGTemplateConfig templateConfig = TemplateYamlUtils.read(templateYaml, NGTemplateConfig.class);
       templateSpec = templateConfig.getTemplateInfoConfig().getSpec();
     } catch (IOException e) {
       log.error("Could not read template yaml", e);

@@ -21,7 +21,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.common.VariablesSweepingOutput;
-import io.harness.cdng.NgExpressionHelper;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.creator.plan.environment.EnvironmentMapper;
@@ -34,7 +33,8 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.gitops.steps.EnvClusterRefs;
 import io.harness.cdng.gitops.steps.GitOpsEnvOutCome;
-import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.helpers.NgExpressionHelper;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
@@ -630,8 +630,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   private String mergeServiceInputsIntoService(String originalServiceYaml, Map<String, Object> serviceInputs) {
     Map<String, Object> serviceInputsYaml = new HashMap<>();
     serviceInputsYaml.put(YamlTypes.SERVICE_ENTITY, serviceInputs);
-    return MergeHelper.mergeInputSetFormatYamlToOriginYaml(
-        originalServiceYaml, YamlPipelineUtils.writeYamlString(serviceInputsYaml));
+    return MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
+        originalServiceYaml, YamlPipelineUtils.writeYamlString(serviceInputsYaml), true);
   }
 
   private NGEnvironmentConfig mergeEnvironmentInputs(
@@ -641,8 +641,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     }
     Map<String, Object> environmentInputYaml = new HashMap<>();
     environmentInputYaml.put(YamlTypes.ENVIRONMENT_YAML, environmentInputs);
-    String resolvedYaml = MergeHelper.mergeInputSetFormatYamlToOriginYaml(
-        originalEnvYaml, YamlPipelineUtils.writeYamlString(environmentInputYaml));
+    String resolvedYaml = MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
+        originalEnvYaml, YamlPipelineUtils.writeYamlString(environmentInputYaml), true);
     return YamlUtils.read(resolvedYaml, NGEnvironmentConfig.class);
   }
 

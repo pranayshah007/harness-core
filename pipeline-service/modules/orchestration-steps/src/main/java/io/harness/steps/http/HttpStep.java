@@ -10,6 +10,7 @@ package io.harness.steps.http;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
@@ -30,6 +31,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
@@ -42,6 +44,7 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executables.PipelineTaskExecutable;
 import io.harness.supplier.ThrowingSupplier;
+import io.harness.utils.PmsFeatureFlagHelper;
 
 import software.wings.beans.TaskType;
 
@@ -61,6 +64,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject private PmsFeatureFlagHelper pmsFeatureFlagHelper;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -96,6 +100,10 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     if (httpStepParameters.getRequestBody() != null) {
       httpTaskParametersNgBuilder.body(httpStepParameters.getRequestBody().getValue());
     }
+
+    boolean shouldAvoidCapabilityUsingHeaders = pmsFeatureFlagHelper.isEnabled(
+        AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY);
+    httpTaskParametersNgBuilder.shouldAvoidHeadersInCapability(shouldAvoidCapabilityUsingHeaders);
 
     final TaskData taskData =
         TaskData.builder()

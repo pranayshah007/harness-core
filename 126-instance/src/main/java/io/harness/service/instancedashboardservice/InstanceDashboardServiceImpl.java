@@ -17,10 +17,15 @@ import io.harness.mappers.InstanceDetailsMapper;
 import io.harness.mappers.InstanceMapper;
 import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.ActiveServiceInstanceInfoV2;
+import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
+import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.BuildsByEnvironment;
 import io.harness.models.EnvBuildInstanceCount;
+import io.harness.models.EnvironmentInstanceCountModel;
 import io.harness.models.InstanceDTOsByBuildId;
+import io.harness.models.InstanceDetailGroupedByPipelineExecutionList;
 import io.harness.models.InstanceDetailsByBuildId;
+import io.harness.models.InstanceGroupedByPipelineExecution;
 import io.harness.models.InstancesByBuildId;
 import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.models.dashboard.InstanceCountDetails;
@@ -29,6 +34,7 @@ import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeBase;
 import io.harness.models.dashboard.InstanceCountDetailsByService;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.service.instance.InstanceService;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -36,6 +42,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 
@@ -197,6 +204,32 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
   }
 
   @Override
+  public List<EnvironmentInstanceCountModel> getInstanceCountForEnvironmentFilteredByService(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean isGitOps) {
+    AggregationResults<EnvironmentInstanceCountModel> environmentInstanceCountAggregationResults =
+        instanceService.getInstanceCountForEnvironmentFilteredByService(
+            accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isGitOps);
+    List<EnvironmentInstanceCountModel> environmentInstanceCounts = new ArrayList<>();
+    environmentInstanceCountAggregationResults.forEach(
+        environmentInstanceCount -> { environmentInstanceCounts.add(environmentInstanceCount); });
+    return environmentInstanceCounts;
+  }
+
+  @Override
+  public List<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
+      String displayName, boolean isGitOps) {
+    AggregationResults<ActiveServiceInstanceInfoWithEnvType> aggregationResults =
+        instanceService.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier, projectIdentifier,
+            envIdentifier, serviceIdentifier, displayName, isGitOps);
+    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList = new ArrayList<>();
+    aggregationResults.forEach(activeServiceInstanceInfoWithEnvType -> {
+      activeServiceInstanceInfoWithEnvTypeList.add(activeServiceInstanceInfoWithEnvType);
+    });
+    return activeServiceInstanceInfoWithEnvTypeList;
+  }
+
+  @Override
   public List<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     AggregationResults<ActiveServiceInstanceInfo> activeServiceInstanceInfoAggregationResults =
@@ -258,6 +291,17 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
   }
 
   @Override
+  public List<ArtifactDeploymentDetailModel> getLastDeployedInstance(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, boolean isEnvironmentCard, boolean isGitOps) {
+    AggregationResults<ArtifactDeploymentDetailModel> artifactDeploymentDetailsAggregationResults =
+        instanceService.getLastDeployedInstance(
+            accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isEnvironmentCard, isGitOps);
+    List<ArtifactDeploymentDetailModel> artifactDeploymentDetailsList = new ArrayList<>();
+    artifactDeploymentDetailsAggregationResults.forEach(
+        artifactDeploymentDetails -> { artifactDeploymentDetailsList.add(artifactDeploymentDetails); });
+    return artifactDeploymentDetailsList;
+  }
+  @Override
   public InstanceDetailsByBuildId getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, String infraId, String clusterIdentifier,
       String pipelineExecutionId, String buildId, Boolean isGitops) {
@@ -271,17 +315,51 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
         .build();
   }
 
+  @Override
+  public List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
+  getActiveInstanceDetailGroupedByPipelineExecution(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceId, String envId, EnvironmentType environmentType, String infraId,
+      String clusterIdentifier, String displayName, boolean isGitOps) {
+    AggregationResults<InstanceGroupedByPipelineExecution> aggregationResults =
+        instanceService.getActiveInstanceGroupedByPipelineExecution(accountIdentifier, orgIdentifier, projectIdentifier,
+            serviceId, envId, environmentType, infraId, clusterIdentifier, displayName);
+    List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
+        instanceGroupedByPipelineExecutionList = new ArrayList<>();
+    aggregationResults.forEach(instanceGroupedByPipelineExecution -> {
+      final String pipelineId = instanceGroupedByPipelineExecution.getLastPipelineExecutionName();
+      final String planExecutionId = instanceGroupedByPipelineExecution.getLastPipelineExecutionId();
+      final long lastDeployedAt = instanceGroupedByPipelineExecution.getLastDeployedAt();
+      final List<Instance> instances = instanceGroupedByPipelineExecution.getInstances();
+      if (pipelineId == null || planExecutionId == null || instances == null) {
+        return;
+      }
+      instanceGroupedByPipelineExecutionList.add(
+          InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution.builder()
+              .pipelineId(pipelineId)
+              .planExecutionId(planExecutionId)
+              .lastDeployedAt(lastDeployedAt)
+              .instances(instanceDetailsMapper.toInstanceDetailsDTOList(InstanceMapper.toDTO(instances), isGitOps))
+              .build());
+    });
+    return instanceGroupedByPipelineExecutionList;
+  }
+
   /*
     Returns breakup of active instances by envType at a given timestamp for specified accountIdentifier,
     projectIdentifier, orgIdentifier and serviceIds
   */
   @Override
   public InstanceCountDetailsByEnvTypeAndServiceId getActiveServiceInstanceCountBreakdown(String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs) {
+      String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers, long timestampInMs) {
     Map<String, Map<EnvironmentType, Integer>> serviceIdToEnvTypeVsInstanceCountMap = new HashMap<>();
+    List<String> serviceRefs = serviceIdentifiers.stream()
+                                   .map(serviceId
+                                       -> FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+                                           accountIdentifier, orgIdentifier, projectIdentifier, serviceId))
+                                   .collect(Collectors.toList());
     instanceService
         .getActiveServiceInstanceCountBreakdown(
-            accountIdentifier, orgIdentifier, projectIdentifier, serviceId, timestampInMs)
+            accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs, timestampInMs)
         .getMappedResults()
         .forEach(countByEnvType -> {
           final String currentServiceId = countByEnvType.getServiceIdentifier();

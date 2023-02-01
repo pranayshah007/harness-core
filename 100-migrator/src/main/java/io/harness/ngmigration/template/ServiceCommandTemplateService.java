@@ -32,6 +32,7 @@ import io.harness.cdng.ssh.TailFilePattern;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.shell.ScriptType;
 import io.harness.steps.shellscript.ShellScriptBaseSource;
@@ -39,8 +40,6 @@ import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellType;
 import io.harness.yaml.core.variables.NGVariable;
-import io.harness.yaml.core.variables.NGVariableType;
-import io.harness.yaml.core.variables.StringNGVariable;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import software.wings.beans.command.CommandUnit;
@@ -57,7 +56,6 @@ import software.wings.beans.command.ProcessCheckStoppedCommandUnit;
 import software.wings.beans.command.ScpCommandUnit;
 import software.wings.beans.command.SetupEnvCommandUnit;
 import software.wings.beans.template.Template;
-import software.wings.beans.template.command.ShellScriptTemplate;
 import software.wings.beans.template.command.SshCommandTemplate;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -78,15 +76,6 @@ public class ServiceCommandTemplateService implements NgTemplateService {
           PORT_CHECK_CLEARED, PORT_CHECK_LISTENING, PROCESS_CHECK_RUNNING, PROCESS_CHECK_STOPPED);
 
   @Override
-  public Set<String> getExpressions(Template template) {
-    ShellScriptTemplate shellScriptTemplate = (ShellScriptTemplate) template.getTemplateObject();
-    if (StringUtils.isBlank(shellScriptTemplate.getScriptString())) {
-      return Collections.emptySet();
-    }
-    return MigratorExpressionUtils.extractAll(shellScriptTemplate.getScriptString());
-  }
-
-  @Override
   public boolean isMigrationSupported() {
     return true;
   }
@@ -102,13 +91,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
 
     List<NGVariable> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(template.getVariables())) {
-      template.getVariables().forEach(variable -> {
-        variables.add(StringNGVariable.builder()
-                          .name(variable.getName())
-                          .type(NGVariableType.STRING)
-                          .value(valueOrDefaultEmpty(variable.getValue()))
-                          .build());
-      });
+      variables.addAll(MigratorUtility.getVariables(template.getVariables()));
     }
 
     List<CommandUnitWrapper> commandUnitWrappers = sshCommandTemplate.getCommandUnits()
@@ -175,6 +158,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.SCRIPT)
         .name(name)
+        .identifier(MigratorUtility.generateIdentifier(name))
         .spec(ScriptCommandUnitSpec.builder()
                   .shell(ScriptType.POWERSHELL.equals(scriptType) ? ShellType.PowerShell : ShellType.Bash)
                   .tailFiles(Collections.emptyList())
@@ -197,6 +181,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.COPY)
         .name(commandUnit.getName())
+        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName()))
         .spec(CopyCommandUnitSpec.builder()
                   .destinationPath(valueOrDefaultEmpty(configCommandUnit.getDestinationParentPath()))
                   .sourceType(CommandUnitSourceType.Config)
@@ -209,6 +194,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.DOWNLOAD_ARTIFACT)
         .name(commandUnit.getName())
+        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName()))
         .spec(DownloadArtifactCommandUnitSpec.builder()
                   .destinationPath(valueOrDefaultEmpty(downloadCommandUnit.getCommandPath()))
                   .build())
@@ -220,6 +206,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.COPY)
         .name(commandUnit.getName())
+        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName()))
         .spec(CopyCommandUnitSpec.builder()
                   .destinationPath(valueOrDefaultEmpty(scpCommandUnit.getDestinationDirectoryPath()))
                   .sourceType(CommandUnitSourceType.Artifact)
@@ -245,6 +232,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.SCRIPT)
         .name(commandUnit.getName())
+        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName()))
         .spec(
             ScriptCommandUnitSpec.builder()
                 .shell(execCommandUnit.getScriptType().equals(ScriptType.BASH) ? ShellType.Bash : ShellType.PowerShell)

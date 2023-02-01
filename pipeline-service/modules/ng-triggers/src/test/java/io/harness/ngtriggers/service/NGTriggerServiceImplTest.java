@@ -9,9 +9,11 @@ package io.harness.ngtriggers.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.ngtriggers.beans.source.YamlFields.PIPELINE_BRANCH_NAME;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.MATT;
+import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
@@ -55,8 +57,10 @@ import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogType;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookInfo;
+import io.harness.ngtriggers.beans.source.GitMoveOperationType;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
+import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
@@ -71,6 +75,9 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.rbac.PipelineRbacPermissions;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.polling.client.PollingResourceClient;
 import io.harness.polling.contracts.GitPollingPayload;
 import io.harness.polling.contracts.PollingItem;
@@ -83,6 +90,8 @@ import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.io.Resources;
@@ -543,6 +552,47 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   public void testGetTriggerYamlDiffWhenTriggerForRemotePipeline() throws IOException {
     checkTriggerYamlDiff("trigger-yaml-diff-pipeline-with-input.yaml", "trigger-yaml-diff-trigger-with-input-set.yaml",
         "trigger-yaml-diff-trigger-with-input-set.yaml", false);
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testUpdateBranchName() throws IOException {
+    String pipelineBranchName = "pipelineBranchName";
+    TriggerUpdateCount triggerUpdateCount = TriggerUpdateCount.builder().failureCount(0).successCount(1).build();
+    String filenamePipelineBranchName = "ng-trigger-pipeline-branch-name.yaml";
+    NGTriggerEntity ngTrigger =
+        NGTriggerEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .identifier(IDENTIFIER)
+            .projectIdentifier(PROJ_IDENTIFIER)
+            .targetIdentifier(PIPELINE_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .type(NGTriggerType.WEBHOOK)
+            .yaml(Resources.toString(
+                Objects.requireNonNull(classLoader.getResource(filenamePipelineBranchName)), StandardCharsets.UTF_8))
+            .build();
+    Optional<List<NGTriggerEntity>> optionalNGTriggerList = Optional.of(Collections.singletonList(ngTrigger));
+
+    when(ngTriggerRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndDeletedNot(
+             eq(ACCOUNT_ID), eq(ORG_IDENTIFIER), eq(PROJ_IDENTIFIER), eq(PIPELINE_IDENTIFIER), eq(true)))
+        .thenReturn(optionalNGTriggerList);
+
+    when(ngTriggerRepository.updateTriggerYaml(any())).thenReturn(triggerUpdateCount);
+
+    ngTriggerServiceImpl.updateBranchName(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
+        GitMoveOperationType.REMOTE_TO_INLINE, pipelineBranchName);
+
+    YamlField yamlField = YamlUtils.readTree(ngTrigger.getYaml());
+    YamlNode triggerNode = yamlField.getNode().getField("trigger").getNode();
+    assertThat(((ObjectNode) triggerNode.getCurrJsonNode().get(PIPELINE_BRANCH_NAME))).isNull();
+
+    ngTriggerServiceImpl.updateBranchName(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
+        GitMoveOperationType.INLINE_TO_REMOTE, pipelineBranchName);
+
+    YamlField yamlField1 = YamlUtils.readTree(ngTrigger.getYaml());
+    YamlNode triggerNode1 = yamlField1.getNode().getField("trigger").getNode();
+    assertThat((triggerNode1.getCurrJsonNode().get(PIPELINE_BRANCH_NAME))).isEqualTo(new TextNode(pipelineBranchName));
   }
 
   private void checkTriggerYamlDiff(String filenamePipeline, String filenameTrigger, String filenameNewTrigger,

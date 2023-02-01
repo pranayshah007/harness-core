@@ -50,6 +50,7 @@ import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.executable.CiAsyncExecutable;
 import io.harness.ci.execution.BackgroundTaskUtility;
+import io.harness.ci.execution.QueueExecutionUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
@@ -58,6 +59,7 @@ import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
 import io.harness.ci.license.CILicenseService;
 import io.harness.ci.states.CIDelegateTaskExecutor;
 import io.harness.ci.utils.CIStagePlanCreationUtils;
+import io.harness.ci.validation.CIAccountValidationService;
 import io.harness.ci.validation.CIYAMLSanitizationService;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
@@ -83,6 +85,7 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.hsqs.client.HsqsServiceClient;
 import io.harness.hsqs.client.model.EnqueueRequest;
+import io.harness.hsqs.client.model.EnqueueResponse;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logging.CommandExecutionStatus;
@@ -139,6 +142,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(CI)
@@ -159,6 +163,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private CIYAMLSanitizationService sanitizationService;
+  @Inject private CIAccountValidationService validationService;
   @Inject private BackgroundTaskUtility backgroundTaskUtility;
   @Inject private CILicenseService ciLicenseService;
   @Inject private StrategyHelper strategyHelper;
@@ -169,6 +174,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
 
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
+  @Inject QueueExecutionUtils queueExecutionUtils;
   private static final String DEPENDENCY_OUTCOME = "dependencies";
 
   @Override
@@ -186,7 +192,9 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     String logKey = getLogKey(ambiance);
     String taskId;
 
-    if (ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, AmbianceUtils.getAccountId(ambiance))) {
+    boolean queueConcurrencyEnabled =
+        ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, AmbianceUtils.getAccountId(ambiance));
+    if (queueConcurrencyEnabled) {
       log.info("start executeAsyncAfterRbac for initialize step with queue");
       taskId = generateUuid();
       String topic = "ci";
@@ -199,10 +207,15 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
                                           .payload(payload)
                                           .build();
       try {
-        hsqsServiceClient.enqueue(enqueueRequest, ciExecutionServiceConfig.getQueueServiceClient().getAuthToken())
-            .execute();
+        Response<EnqueueResponse> execute = hsqsServiceClient.enqueue(enqueueRequest).execute();
+        if (execute.code() == 200) {
+          log.info("build queued. message id: {}", execute.body().getItemId());
+        } else {
+          log.info("build queue failed. response code {}", execute.code());
+        }
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        throw new CIStageExecutionException(format("failed to process execution, queuing failed. runtime Id: {}",
+            AmbianceUtils.getStageRuntimeIdAmbiance(ambiance)));
       }
     } else {
       taskId = executeBuild(ambiance, stepParameters);
@@ -212,10 +225,16 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     sdkGraphVisualizationDataService.publishStepDetailInformation(
         ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
-    return AsyncExecutableResponse.newBuilder()
-        .addCallbackIds(taskId)
-        .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))
-        .build();
+    AsyncExecutableResponse.Builder responseBuilder =
+        AsyncExecutableResponse.newBuilder().addCallbackIds(taskId).addAllLogKeys(
+            CollectionUtils.emptyIfNull(singletonList(logKey)));
+
+    // Sending the status if feature flag is enabled
+    if (queueConcurrencyEnabled) {
+      return responseBuilder.setStatus(Status.QUEUED_LICENSE_LIMIT_REACHED).build();
+    }
+
+    return responseBuilder.build();
   }
 
   public String executeBuild(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -267,6 +286,12 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(
         accountId, taskData, abstractions, generateLogAbstractions(ambiance));
+
+    try {
+      queueExecutionUtils.addActiveExecutionBuild(initializeStepInfo, accountId, stageExecutionId);
+    } catch (Exception ex) {
+      log.error("Failed to add Execution record for {}", stageExecutionId, ex);
+    }
 
     return ciDelegateTaskExecutor.queueTask(abstractions, task,
         taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()), new ArrayList<>(),
@@ -336,14 +361,15 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     validateFeatureFlags(initializeStepInfo, accountIdentifier);
     validateConnectors(
         initializeStepInfo, connectorsEntityDetails, accountIdentifier, orgIdentifier, projectIdentifier);
-    sanitizeExecution(initializeStepInfo);
+    sanitizeExecution(initializeStepInfo, accountIdentifier);
   }
 
-  private void sanitizeExecution(InitializeStepInfo initializeStepInfo) {
+  private void sanitizeExecution(InitializeStepInfo initializeStepInfo, String accountIdentifier) {
     List<ExecutionWrapperConfig> steps = initializeStepInfo.getExecutionElementConfig().getSteps();
     if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED
         || initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.HOSTED_VM) {
       sanitizationService.validate(steps);
+      validationService.isAccountValidForExecution(accountIdentifier);
     }
   }
   private void validateConnectors(InitializeStepInfo initializeStepInfo, List<EntityDetail> connectorEntitiesList,

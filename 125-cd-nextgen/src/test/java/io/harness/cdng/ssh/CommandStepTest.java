@@ -82,6 +82,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 @OwnedBy(CDP)
 public class CommandStepTest extends CategoryTest {
@@ -96,6 +97,7 @@ public class CommandStepTest extends CategoryTest {
   @Captor private ArgumentCaptor<List<ServerInstanceInfo>> serverInstanceInfoListCaptor;
 
   @InjectMocks private CommandStep commandStep;
+  @Spy private CommandTaskDataFactory commandTaskDataFactory;
 
   private final String accountId = "accountId";
   private final String infraKey = "INFRAKEY";

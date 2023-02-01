@@ -159,7 +159,7 @@ public class AzureVMSSDeployStateTest extends WingsBaseTest {
     doReturn(userData).when(azureVMSSStateHelper).getBase64EncodedUserData(context, appId, serviceId);
     doReturn(namePrefix).when(azureVMSSStateHelper).fixNamePrefix(any(), any(), any(), any(), any());
     doReturn(numberOfInstances).when(azureVMSSStateHelper).renderExpressionOrGetDefault(any(), any(), anyInt());
-    doReturn(delegateResult).when(delegateService).queueTask(any());
+    doReturn(delegateResult).when(delegateService).queueTaskV2(any());
     doReturn("newVirtualMachineScaleSetName-id")
         .when(azureVMSSStateHelper)
         .getVMSSIdFromName(eq("subscriptionId"), eq("resourceGroupName"), eq("newVirtualMachineScaleSetName"));

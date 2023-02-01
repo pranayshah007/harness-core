@@ -64,6 +64,7 @@ public class DeploymentTimeSeriesAnalysisDTO {
       return Risk.valueOfRiskForDeploymentTimeSeriesAnalysis(risk);
     }
     Double score;
+    List<String> appliedThresholdIds;
     List<Double> controlData;
     List<Double> testData;
     public boolean isAnomalous() {

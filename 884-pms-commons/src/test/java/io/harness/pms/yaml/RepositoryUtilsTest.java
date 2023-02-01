@@ -83,6 +83,18 @@ public class RepositoryUtilsTest extends CategoryTest {
   @Test
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
+  public void testGetReferenceFromInputsYamlPayload() {
+    String inputsPayload = readFile("inputs-yaml-payload.yaml");
+    Optional<Reference> optionalReference = RepositoryUtils.getReferenceFromInputPayload(inputsPayload);
+    assertThat(optionalReference.isPresent()).isTrue();
+    Reference reference = optionalReference.get();
+    assertThat(reference.getValue()).isEqualTo("main");
+    assertThat(reference.getType()).isEqualTo(ReferenceType.BRANCH);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
   public void testGetReferenceFromInputsPayloadWithoutRepository() {
     String inputsPayload = readFile("inputs-payload-without-repository.json");
     Optional<Reference> optionalReference = RepositoryUtils.getReferenceFromInputPayload(inputsPayload);

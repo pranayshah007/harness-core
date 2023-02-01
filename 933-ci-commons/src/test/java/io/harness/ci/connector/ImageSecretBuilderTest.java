@@ -7,6 +7,7 @@
 
 package io.harness.ci.connector;
 
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -34,6 +35,7 @@ import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
+import io.harness.delegate.beans.connector.gcpconnector.GcpDelegateDetailsDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
@@ -204,6 +206,25 @@ public class ImageSecretBuilderTest extends CategoryTest {
         ImageDetailsWithConnector.builder().imageDetails(imageDetails).imageConnectorDetails(connectorDetails).build();
 
     assertNotNull(imageSecretBuilder.getJSONEncodedImageCredentials(imageDetailsWithConnector));
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void getGCRJSONEncodedImageCredentialsInheritFromDelegate() {
+    GcpDelegateDetailsDTO gcpDelegateDetailsDTO = GcpDelegateDetailsDTO.builder().build();
+    GcpConnectorDTO gcpConnectorDTO = GcpConnectorDTO.builder()
+                                          .credential(GcpConnectorCredentialDTO.builder()
+                                                          .gcpCredentialType(GcpCredentialType.INHERIT_FROM_DELEGATE)
+                                                          .config(gcpDelegateDetailsDTO)
+                                                          .build())
+                                          .build();
+
+    ConnectorDetails connectorDetails = getConnectorDetails(gcpConnectorDTO, ConnectorType.GCP);
+    ImageDetails imageDetails = ImageDetails.builder().name(gcpImageName).tag(tag).build();
+    ImageDetailsWithConnector imageDetailsWithConnector =
+        ImageDetailsWithConnector.builder().imageDetails(imageDetails).imageConnectorDetails(connectorDetails).build();
+    assertNull(imageSecretBuilder.getJSONEncodedImageCredentials(imageDetailsWithConnector));
   }
 
   @Test()

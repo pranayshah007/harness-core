@@ -9,7 +9,6 @@ package io.harness.iacm.plan.creator.filter;
 
 import static io.harness.filters.FilterCreatorHelper.convertToEntityDetailProtoDTO;
 import static io.harness.git.GitClientHelper.getGitRepo;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.CI;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CI_CODE_BASE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PROPERTIES;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;

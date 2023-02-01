@@ -103,6 +103,9 @@ public class MigrationResourceService {
 
   public SaveSummaryDTO save(String authToken, ImportDTO importDTO) {
     DiscoveryResult discoveryResult = discover(authToken, importDTO);
+    if (discoveryResult == null) {
+      return SaveSummaryDTO.builder().build();
+    }
     return discoveryService.migrateEntity(authToken, getMigrationInput(importDTO), discoveryResult);
   }
 
@@ -113,7 +116,7 @@ public class MigrationResourceService {
   private static MigrationInputDTO getMigrationInput(ImportDTO importDTO) {
     Map<NGMigrationEntityType, InputDefaults> defaults = new HashMap<>();
     Map<CgEntityId, BaseProvidedInput> overrides = new HashMap<>();
-    Map<String, String> expressions = new HashMap<>();
+    Map<String, Object> expressions = new HashMap<>();
     if (importDTO.getInputs() != null) {
       overrides = importDTO.getInputs().getOverrides();
       defaults = importDTO.getInputs().getDefaults();

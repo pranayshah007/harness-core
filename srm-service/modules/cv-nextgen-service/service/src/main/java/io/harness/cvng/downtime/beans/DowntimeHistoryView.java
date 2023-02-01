@@ -17,14 +17,7 @@ public class DowntimeHistoryView {
   String name;
   DowntimeCategory category;
   List<AffectedEntity> affectedEntities;
-  String description;
   DowntimeDuration duration;
-  DowntimeStatus status;
-  String startTime;
-  String endTime;
-
-  private static class AffectedEntity {
-    String name;
-    String env;
-  }
+  long startTime;
+  long endTime;
 }

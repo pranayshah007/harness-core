@@ -11,6 +11,7 @@ import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgInstanceRefresh;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
@@ -32,6 +33,7 @@ import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgInstanceRefreshManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.AsgNGException;
@@ -120,6 +122,7 @@ public class AsgRollingRollbackCommandTaskHandler extends AsgCommandTaskNGHandle
       String asgLaunchTemplateVersion = asgTaskHelper.getAsgLaunchTemplateContent(asgManifestsDataForRollback);
       String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgManifestsDataForRollback);
       List<String> asgScalingPolicyContent = asgTaskHelper.getAsgScalingPolicyContent(asgManifestsDataForRollback);
+      List<String> asgScheduledActionContent = asgTaskHelper.getAsgScheduledActionContent(asgManifestsDataForRollback);
 
       // Get ASG name from asg configuration manifest
       CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
@@ -145,6 +148,8 @@ public class AsgRollingRollbackCommandTaskHandler extends AsgCommandTaskNGHandle
                       .build())
               .addHandler(AsgScalingPolicy,
                   AsgScalingPolicyManifestRequest.builder().manifests(asgScalingPolicyContent).build())
+              .addHandler(AsgScheduledUpdateGroupAction,
+                  AsgScheduledActionManifestRequest.builder().manifests(asgScheduledActionContent).build())
               .addHandler(
                   AsgInstanceRefresh, AsgInstanceRefreshManifestRequest.builder().skipMatching(skipMatching).build())
               .executeUpsert();

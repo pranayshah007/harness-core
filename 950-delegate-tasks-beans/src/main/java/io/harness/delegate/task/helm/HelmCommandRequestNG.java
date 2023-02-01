@@ -59,7 +59,7 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
   @NotEmpty private HelmCommandType helmCommandType;
   @Expression(ALLOW_SECRETS) List<String> valuesYamlList;
   private K8sInfraDelegateConfig k8sInfraDelegateConfig;
-  private ManifestDelegateConfig manifestDelegateConfig;
+  @Expression(ALLOW_SECRETS) private ManifestDelegateConfig manifestDelegateConfig;
   private String accountId;
   private boolean k8SteadyStateCheckEnabled;
   @Builder.Default private boolean shouldOpenFetchFilesLogStream = true;

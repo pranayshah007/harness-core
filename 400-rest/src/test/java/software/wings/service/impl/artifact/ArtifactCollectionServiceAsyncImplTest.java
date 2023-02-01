@@ -60,11 +60,11 @@ public class ArtifactCollectionServiceAsyncImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void verifyCustomCollectionWithCustomScriptTimeout() {
     CustomArtifactStream customArtifactStream = createCustomArtifactStream("70");
-    when(delegateService.queueTask(any())).thenReturn("ID");
+    when(delegateService.queueTaskV2(any())).thenReturn("ID");
     artifactCollectionServiceAsync.collectNewArtifactsAsync(customArtifactStream, "permitId");
     verify(mockWaitNotifyEngine, times(1)).waitForAllOn(any(), any(), any());
     ArgumentCaptor<DelegateTask> argument = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(argument.capture());
+    verify(delegateService, times(1)).queueTaskV2(argument.capture());
     assertThat(argument.getValue().getData().getTimeout()).isEqualTo(70000);
   }
 
@@ -73,11 +73,11 @@ public class ArtifactCollectionServiceAsyncImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void verifyCustomCollectionWithDefaultScriptTimeout() {
     CustomArtifactStream customArtifactStream = createCustomArtifactStream("");
-    when(delegateService.queueTask(any())).thenReturn("ID");
+    when(delegateService.queueTaskV2(any())).thenReturn("ID");
     artifactCollectionServiceAsync.collectNewArtifactsAsync(customArtifactStream, "permitId");
     verify(mockWaitNotifyEngine, times(1)).waitForAllOn(any(), any(), any());
     ArgumentCaptor<DelegateTask> argument = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(argument.capture());
+    verify(delegateService, times(1)).queueTaskV2(argument.capture());
     assertThat(argument.getValue().getData().getTimeout()).isEqualTo(60000);
   }
 

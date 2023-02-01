@@ -32,10 +32,10 @@ import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.OnboardingService;
 import io.harness.cvng.core.utils.HealthSourceOnboardMappingUtils;
 import io.harness.cvng.exception.NotImplementedForHealthSourceException;
-import io.harness.data.structure.UUIDGenerator;
 import io.harness.datacollection.entity.LogDataRecord;
 import io.harness.datacollection.entity.TimeSeriesRecord;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.ng.core.CorrelationContext;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -46,7 +46,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.jetbrains.annotations.NotNull;
 
 public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboardingService {
   @Inject private OnboardingService onboardingService;
@@ -77,7 +76,7 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
             .accountId(projectParams.getAccountIdentifier())
             .orgIdentifier(projectParams.getOrgIdentifier())
             .projectIdentifier(projectParams.getProjectIdentifier())
-            .tracingId(UUIDGenerator.generateUuid())
+            .tracingId(CorrelationContext.getCorrelationId())
             .build();
     OnboardingResponseDTO onboardingResponseDTO =
         onboardingService.getOnboardingResponse(projectParams.getAccountIdentifier(), onboardingRequestDTO);
@@ -110,10 +109,9 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
                                                     .connectorIdentifier(queryRecordsRequest.getConnectorIdentifier())
                                                     .accountId(accountIdentifier)
                                                     .orgIdentifier(orgIdentifier)
-                                                    .tracingId(UUIDGenerator.generateUuid())
+                                                    .tracingId(CorrelationContext.getCorrelationId())
                                                     .projectIdentifier(projectIdentifier)
                                                     .build();
-
     OnboardingResponseDTO response = onboardingService.getOnboardingResponse(accountIdentifier, onboardingRequestDTO);
     List<TimeSeriesRecord> timeSeriesRecords =
         JsonUtils.asList(JsonUtils.asJson(response.getResult()), new TypeReference<>() {});
@@ -128,7 +126,6 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
     return MetricRecordsResponse.builder().timeSeriesData(Collections.singletonList(timeSeries)).build();
   }
 
-  @NotNull
   private DataCollectionInfo<ConnectorConfigDTO> getDataCollectionInfoForMetric(
       QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams) {
     String accountIdentifier = projectParams.getAccountIdentifier();
@@ -177,7 +174,7 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
                                                     .accountId(accountIdentifier)
                                                     .orgIdentifier(orgIdentifier)
                                                     .projectIdentifier(projectIdentifier)
-                                                    .tracingId(UUIDGenerator.generateUuid())
+                                                    .tracingId(CorrelationContext.getCorrelationId())
                                                     .build();
     OnboardingResponseDTO response = onboardingService.getOnboardingResponse(accountIdentifier, onboardingRequestDTO);
     List<LogDataRecord> logDataRecords =
@@ -192,7 +189,6 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
     return LogRecordsResponse.builder().logRecords(logRecords).build();
   }
 
-  @NotNull
   private DataCollectionInfo<ConnectorConfigDTO> getDataCollectionInfoForLog(
       QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams) {
     CVConfig cvConfig;

@@ -41,7 +41,7 @@ public class MaintenanceController implements Managed {
       if (forceMaintenance == null || forceMaintenance != force) {
         log.info("Setting forced maintenance {}", force);
         forceMaintenance = force;
-        currentMaintenanceState.set(force);
+        setCurrentMaintenanceState(force);
       }
     }
   }
@@ -50,7 +50,7 @@ public class MaintenanceController implements Managed {
     synchronized (log) {
       log.info("Un-setting forced maintenance");
       forceMaintenance = null;
-      currentMaintenanceState.set(false);
+      setCurrentMaintenanceState(false);
     }
   }
 
@@ -59,7 +59,7 @@ public class MaintenanceController implements Managed {
   }
 
   private final AtomicBoolean running = new AtomicBoolean(false);
-  private final Subject<MaintenanceListener> maintenanceListenerSubject = new Subject<>();
+  private static final Subject<MaintenanceListener> maintenanceListenerSubject = new Subject<>();
   private ScheduledFuture scheduledFuture;
 
   public void register(MaintenanceListener listener) {
@@ -87,11 +87,7 @@ public class MaintenanceController implements Managed {
     boolean isShutdown = new File(SHUTDOWN_FILENAME).exists();
     boolean isMaintenance = isShutdown || currentMaintenanceState.get() || new File(MAINTENANCE_FILENAME).exists();
 
-    if (currentMaintenanceState.getAndSet(isMaintenance) != isMaintenance) {
-      log.info("{} maintenance mode", isMaintenance ? "Entering" : "Leaving");
-      maintenanceListenerSubject.fireInform(
-          isMaintenance ? MaintenanceListener::onEnterMaintenance : MaintenanceListener::onLeaveMaintenance);
-    }
+    setCurrentMaintenanceState(isMaintenance);
 
     if (shutdown.getAndSet(isShutdown) != isShutdown) {
       // We don't expect to ever leave shutdown mode, but log either way
@@ -99,6 +95,14 @@ public class MaintenanceController implements Managed {
       if (isShutdown) {
         maintenanceListenerSubject.fireInform(MaintenanceListener::onShutdown);
       }
+    }
+  }
+
+  private static void setCurrentMaintenanceState(boolean maintenanceState) {
+    if (currentMaintenanceState.getAndSet(maintenanceState) != maintenanceState) {
+      log.info("{} maintenance mode", maintenanceState ? "Entering" : "Leaving");
+      maintenanceListenerSubject.fireInform(
+          maintenanceState ? MaintenanceListener::onEnterMaintenance : MaintenanceListener::onLeaveMaintenance);
     }
   }
 

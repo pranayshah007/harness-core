@@ -8,6 +8,8 @@
 package io.harness.plancreator.steps.common;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotation.RecasterAlias;
@@ -17,6 +19,8 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.when.beans.StepWhenCondition;
+import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
 import java.util.List;
@@ -38,7 +42,9 @@ public class StepElementParameters implements StepParameters {
   String name;
   String description;
   ParameterField<String> timeout;
-  List<FailureStrategyConfig> failureStrategies;
+  @VariableExpression(skipVariableExpression = true)
+  @YamlSchemaTypes(value = {runtime, list})
+  ParameterField<List<FailureStrategyConfig>> failureStrategies;
 
   ParameterField<String> skipCondition;
   StepWhenCondition when;

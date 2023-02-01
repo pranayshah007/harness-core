@@ -35,43 +35,6 @@ public class DebeziumConfig {
    */
   @JsonProperty("offset.storage.topic") private String offsetStorageTopic;
   /**
-   * whether to include schema for keys as a part of the event
-   */
-  @JsonProperty("key.converter.schemas.enable") String keyConverterSchemasEnable;
-  /**
-   * whether to include schema for values as a part of the event
-   */
-  @JsonProperty("value.converter.schemas.enable") String valueConverterSchemasEnable;
-  /**
-   * Interval at which offset will be flushed to offset store
-   */
-  @JsonProperty("offset.flush.interval.ms") String offsetFlushIntervalMillis;
-  /**
-   * Positive integer value that specifies the initial delay when trying to reconnect to a primary after the first
-   * failed connection attempt or when no primary is available.
-   */
-  @JsonProperty("connect.backoff.initial.delay.ms") private String connectBackoffInitialDelayMillis;
-
-  /**
-   * Positive integer value that specifies the maximum delay when trying to reconnect to a primary after repeated failed
-   * connection attempts or when no primary is available.
-   */
-  @JsonProperty("connect.backoff.max.delay.ms") private String connectBackoffMaxDelayMillis;
-  @JsonProperty("sleepInterval") private long sleepInterval;
-
-  /**
-   * Positive integer value that specifies the maximum number of failed connection attempts to a replica set primary
-   * before an exception occurs and task is aborted.
-   */
-  @JsonProperty("connect.max.attempts") private String connectMaxAttempts;
-
-  /**
-   * The name of the Java class for the connector. Always use a value of io.debezium.connector.mongodb.MongoDbConnector
-   * for the MongoDB connector.
-   */
-  @JsonProperty("connector.class") String connectorClass;
-  @JsonProperty("producingCountPerBatch") long producingCountPerBatch;
-  /**
    * A unique name that identifies the connector and/or MongoDB replica set or sharded cluster that this connector
    * monitors. Each server should be monitored by at most one Debezium connector, since this server name prefixes
    * all persisted Kafka topics emanating from the MongoDB replica set or cluster. Only alphanumeric characters
@@ -94,13 +57,6 @@ public class DebeziumConfig {
    */
   @JsonProperty("collection.include.list") private String collectionIncludeList;
   /**
-   *
-   Specifies the maximum number of documents that should be read in one go from each collection while taking a snapshot.
-   The connector will read the collection contents in multiple batches of this size. Defaults to 0, which indicates that
-   the server chooses an appropriate fetch size.
-   */
-  @JsonProperty("snapshot.fetch.size") private String snapshotFetchSize;
-  /**
    * Specifies maximum topic size for redis stream
    */
   @JsonProperty("redisStreamSize") private int redisStreamSize;
@@ -109,13 +65,6 @@ public class DebeziumConfig {
    * - both snapshot and streaming, "initial" - only snapshot, "never" - only streaming)
    */
   @JsonProperty("snapshot.mode") private String snapshotMode;
-  /**
-   * To bypass the impedance mismatch in heterogeneous array, it is possible to encode the array in two different ways
-   * using array.encoding configuration option. Value document will convert the array into a struct of structs in the
-   * similar way as done by BSON serialization. The main struct contains fields named _0, _1, _2 etc. where the name
-   * represents the index of the element in the array. Every element is then passed as the value for the given field.
-   */
-  @JsonProperty("transforms.unwrap.array.encoding") private String transformsUnwrapArrayEncoding;
   /**
    * Positive integer value that specifies the maximum number of records that the blocking queue can hold. When Debezium
    * reads events streamed from the database, it places the events in the blocking queue before it writes them to Kafka.
