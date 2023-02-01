@@ -989,8 +989,9 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     boolean canAssignTaskToDelegate =
         canAssignTaskToDelegate(delegate.getSupportedTaskTypes(), task.getData().getTaskType());
     if (!canAssignTaskToDelegate) {
-      task.getNonAssignableDelegates().putIfAbsent(CAN_NOT_ASSIGN_TASK_GROUP, new ArrayList<>());
-      task.getNonAssignableDelegates().get(CAN_NOT_ASSIGN_TASK_GROUP).add(delegateName);
+      final String taskNotAssignedReasonPhrase = CAN_NOT_ASSIGN_TASK_GROUP + " {" + task.getData().getTaskType() + "} ";
+      task.getNonAssignableDelegates().putIfAbsent(taskNotAssignedReasonPhrase, new ArrayList<>());
+      task.getNonAssignableDelegates().get(taskNotAssignedReasonPhrase).add(delegateName);
       log.debug("Delegate {} does not support task {} which is of type {}", delegateId, task.getUuid(),
           task.getData().getTaskType());
       return canAssignTaskToDelegate;
@@ -1037,8 +1038,10 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     boolean canAssignTaskToDelegate =
         canAssignTaskToDelegate(delegate.getSupportedTaskTypes(), task.getTaskDataV2().getTaskType());
     if (!canAssignTaskToDelegate) {
-      task.getNonAssignableDelegates().putIfAbsent(CAN_NOT_ASSIGN_TASK_GROUP, new ArrayList<>());
-      task.getNonAssignableDelegates().get(CAN_NOT_ASSIGN_TASK_GROUP).add(delegateName);
+      final String taskNotAssignedReasonPhrase =
+          CAN_NOT_ASSIGN_TASK_GROUP + " {" + task.getTaskDataV2().getTaskType() + "} ";
+      task.getNonAssignableDelegates().putIfAbsent(taskNotAssignedReasonPhrase, new ArrayList<>());
+      task.getNonAssignableDelegates().get(taskNotAssignedReasonPhrase).add(delegateName);
       log.debug("Delegate {} does not support task {} which is of type {}", delegateId, task.getUuid(),
           task.getTaskDataV2().getTaskType());
       return canAssignTaskToDelegate;

@@ -36,6 +36,7 @@ import io.harness.cvng.resources.VerifyStepResource;
 import io.harness.cvng.verificationjob.beans.AdditionalInfo;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.PageUtils;
@@ -245,7 +246,7 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
   @Override
   public PageResponse<MetricsAnalysis> getMetricsAnalysisForVerifyStepExecutionId(
       VerifyStepPathParams verifyStepPathParams, boolean anomalousMetricsOnly, List<String> healthSources,
-      List<String> transactionGroups, List<String> nodes, int limit, int page) {
+      List<String> transactionGroups, List<String> nodes, PageRequest pageRequest) {
     List<MetricsAnalysis> metricsAnalyses =
         deploymentTimeSeriesAnalysisService.getFilteredMetricAnalysesForVerifyStepExecutionId(
             verifyStepPathParams.getAccountIdentifier(), verifyStepPathParams.getVerifyStepExecutionId(),
@@ -257,6 +258,6 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                 .anomalousNodesOnly(anomalousMetricsOnly)
                 .build());
 
-    return PageUtils.offsetAndLimit(metricsAnalyses, page - 1, limit);
+    return PageUtils.offsetAndLimit(metricsAnalyses, pageRequest.getPageIndex(), pageRequest.getPageSize());
   }
 }

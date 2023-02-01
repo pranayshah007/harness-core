@@ -54,7 +54,7 @@ public class AwsAsgHelperServiceManagerImplTest extends CategoryTest {
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
     doReturn(AwsAsgListAllNamesResponse.builder().aSgNames(asList("foo", "bar")).build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     List<String> asgs =
         service.listAutoScalingGroupNames(AwsConfig.builder().build(), emptyList(), "us-east-1", "appId");
     assertThat(asgs).isNotNull();
@@ -77,7 +77,7 @@ public class AwsAsgHelperServiceManagerImplTest extends CategoryTest {
                  .instances(asList(new Instance().withInstanceId("id-1234"), new Instance().withInstanceId("id-2345")))
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     List<Instance> instances =
         service.listAutoScalingGroupInstances(AwsConfig.builder().build(), emptyList(), "us-east-1", "asg", "appId");
     assertThat(instances).isNotNull();
@@ -93,7 +93,7 @@ public class AwsAsgHelperServiceManagerImplTest extends CategoryTest {
     on(service).set("delegateService", mockDelegateService);
     doReturn(AwsAsgListDesiredCapacitiesResponse.builder().capacities(ImmutableMap.of("asg_1", 1, "asg_2", 1)).build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -116,7 +116,7 @@ public class AwsAsgHelperServiceManagerImplTest extends CategoryTest {
                  .data(AwsAsgGetRunningCountData.builder().asgName("foo").asgMin(0).asgMax(1).asgDesired(1).build())
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());

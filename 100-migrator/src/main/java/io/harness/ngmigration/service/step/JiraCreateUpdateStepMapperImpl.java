@@ -7,7 +7,7 @@
 
 package io.harness.ngmigration.service.step;
 
-import static io.harness.ngmigration.service.MigratorUtility.RUNTIME_INPUT;
+import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_INPUT;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;

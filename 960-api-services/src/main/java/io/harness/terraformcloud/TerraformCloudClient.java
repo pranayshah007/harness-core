@@ -21,15 +21,15 @@ import io.harness.terraformcloud.model.StateVersionOutputData;
 import io.harness.terraformcloud.model.TerraformCloudResponse;
 import io.harness.terraformcloud.model.WorkspaceData;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.List;
 
 @OwnedBy(CDP)
 public interface TerraformCloudClient {
-  TerraformCloudResponse<List<OrganizationData>> listOrganizations(String url, String token) throws IOException;
+  TerraformCloudResponse<List<OrganizationData>> listOrganizations(String url, String token, int page)
+      throws IOException;
 
-  TerraformCloudResponse<List<WorkspaceData>> listWorkspaces(String url, String token, String organization)
+  TerraformCloudResponse<List<WorkspaceData>> listWorkspaces(String url, String token, String organization, int page)
       throws IOException;
 
   TerraformCloudResponse<RunData> createRun(String url, String token, RunRequest request) throws IOException;
@@ -48,7 +48,7 @@ public interface TerraformCloudClient {
 
   TerraformCloudResponse<ApplyData> getApply(String url, String token, String applyId) throws IOException;
 
-  TerraformCloudResponse<List<PolicyCheckData>> listPolicyChecks(String url, String token, String runId)
+  TerraformCloudResponse<List<PolicyCheckData>> listPolicyChecks(String url, String token, String runId, int page)
       throws IOException;
 
   String getPolicyCheckOutput(String url, String token, String policyCheckId) throws IOException;

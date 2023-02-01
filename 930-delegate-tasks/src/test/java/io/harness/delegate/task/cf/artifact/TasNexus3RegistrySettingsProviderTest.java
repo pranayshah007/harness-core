@@ -13,6 +13,7 @@ import static io.harness.delegate.task.azure.AzureTestUtils.REGISTRY_HOSTNAME;
 import static io.harness.rule.OwnerRule.RISHABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -68,6 +69,96 @@ public class TasNexus3RegistrySettingsProviderTest extends CategoryTest {
 
     assertThat(containerSettingsResult.getPassword()).isEqualTo("test-password");
     assertThat(containerSettingsResult.getUsername()).isEqualTo("test-username");
+    assertThat(containerSettingsResult.getUrl()).isEqualTo(REGISTRY_HOSTNAME);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetContainerSettingsForNexusContainerRegistryNullUser() {
+    NexusConnectorDTO nexusConnectorDTO =
+        NexusConnectorDTO.builder()
+            .nexusServerUrl(null)
+            .auth(NexusAuthenticationDTO.builder()
+                      .authType(NexusAuthType.USER_PASSWORD)
+                      .credentials(NexusUsernamePasswordAuthDTO.builder()
+                                       .username(null)
+                                       .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'a'}).build())
+                                       .build())
+                      .build())
+            .build();
+
+    assertThatThrownBy(
+        ()
+            -> tasNexus3RegistrySettingsProvider.getContainerSettings(
+                TasTestUtils.createTestContainerArtifactConfig(nexusConnectorDTO, NEXUS_PRIVATE_REGISTRY),
+                decryptionHelper))
+        .hasMessage("Configure username for Nexus Private Registry  container registry connector");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetContainerSettingsForNexusContainerRegistryNullPass() {
+    NexusConnectorDTO nexusConnectorDTO =
+        NexusConnectorDTO.builder()
+            .nexusServerUrl(null)
+            .auth(NexusAuthenticationDTO.builder()
+                      .authType(NexusAuthType.USER_PASSWORD)
+                      .credentials(NexusUsernamePasswordAuthDTO.builder()
+                                       .username("hello")
+                                       .passwordRef(SecretRefData.builder().decryptedValue(new char[] {}).build())
+                                       .build())
+                      .build())
+            .build();
+
+    assertThatThrownBy(
+        ()
+            -> tasNexus3RegistrySettingsProvider.getContainerSettings(
+                TasTestUtils.createTestContainerArtifactConfig(nexusConnectorDTO, NEXUS_PRIVATE_REGISTRY),
+                decryptionHelper))
+        .hasMessage("Configure password for Nexus Private Registry  container registry connector");
+    assertThatThrownBy(()
+                           -> tasNexus3RegistrySettingsProvider.getContainerSettings(
+                               TasTestUtils.createTestContainerArtifactConfigWithoutHostname(
+                                   nexusConnectorDTO, NEXUS_PRIVATE_REGISTRY),
+                               decryptionHelper))
+        .hasMessage("Check if connector provided Nexus Private Registry  is properly configured");
+  }
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetContainerSettingsForNexusContainerRegistryBlankHostname() {
+    NexusConnectorDTO nexusConnectorDTO =
+        NexusConnectorDTO.builder()
+            .nexusServerUrl("host.test-registryName")
+            .auth(NexusAuthenticationDTO.builder().authType(NexusAuthType.ANONYMOUS).build())
+            .build();
+
+    TasArtifactCreds containerSettingsResult = tasNexus3RegistrySettingsProvider.getContainerSettings(
+        TasTestUtils.createTestContainerArtifactConfigWithoutHostname(nexusConnectorDTO, NEXUS_PRIVATE_REGISTRY),
+        decryptionHelper);
+
+    assertThat(containerSettingsResult.getPassword()).isNull();
+    assertThat(containerSettingsResult.getUsername()).isNull();
+    assertThat(containerSettingsResult.getUrl()).isEqualTo("host.test-registryName");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetContainerSettingsForNexusContainerRegistryAnonymous() {
+    NexusConnectorDTO nexusConnectorDTO =
+        NexusConnectorDTO.builder()
+            .nexusServerUrl("host.test-registryName")
+            .auth(NexusAuthenticationDTO.builder().authType(NexusAuthType.ANONYMOUS).build())
+            .build();
+
+    TasArtifactCreds containerSettingsResult = tasNexus3RegistrySettingsProvider.getContainerSettings(
+        TasTestUtils.createTestContainerArtifactConfig(nexusConnectorDTO, NEXUS_PRIVATE_REGISTRY), decryptionHelper);
+
+    assertThat(containerSettingsResult.getPassword()).isNull();
+    assertThat(containerSettingsResult.getUsername()).isNull();
     assertThat(containerSettingsResult.getUrl()).isEqualTo(REGISTRY_HOSTNAME);
   }
 }

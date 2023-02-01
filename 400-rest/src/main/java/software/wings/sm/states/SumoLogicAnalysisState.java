@@ -179,7 +179,7 @@ public class SumoLogicAnalysisState extends AbstractLogAnalysisState {
         waitIds);
     List<String> delegateTaskIds = new ArrayList<>();
     for (DelegateTask task : delegateTasks) {
-      delegateTaskIds.add(delegateService.queueTask(task));
+      delegateTaskIds.add(delegateService.queueTaskV2(task));
     }
     return StringUtils.join(delegateTaskIds, ",");
   }

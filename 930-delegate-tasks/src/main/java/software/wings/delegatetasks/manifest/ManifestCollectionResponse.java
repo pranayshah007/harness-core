@@ -10,7 +10,7 @@ package software.wings.delegatetasks.manifest;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 
-import software.wings.beans.appmanifest.HelmChart;
+import software.wings.beans.dto.HelmChart;
 
 import java.util.List;
 import java.util.Set;

@@ -14,6 +14,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.build.BuildStatusUpdateParameter;
+import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.steps.CIRegistry;
 import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
@@ -49,6 +50,7 @@ public class StageDetails implements PersistentEntity, UuidAware, ContextElement
   private BuildStatusUpdateParameter buildStatusUpdateParameter;
   private List<CIRegistry> registries;
   private long lastUpdatedAt;
+  private ExecutionSource executionSource;
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
   @FdIndex private String accountId;
 }

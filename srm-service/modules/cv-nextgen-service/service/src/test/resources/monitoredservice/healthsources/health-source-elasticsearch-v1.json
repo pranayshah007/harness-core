@@ -1,0 +1,20 @@
+{
+  "type": "ElasticSearch",
+  "identifier": "elk_test",
+  "name": "elk test",
+  "spec": {
+    "connectorRef": "account.ELK_Connector",
+    "feature": "ElasticSearch Logs",
+    "queries": [
+      {
+        "name": "ElasticSearch Logs Query",
+        "index": "integration-test-1",
+        "messageIdentifier": "['_source'].['message']",
+        "query": "*",
+        "serviceInstanceIdentifier": "['_source'].['hostname']",
+        "timeStampFormat": "yyyy MMM dd HH:mm:ss.SSS zzz",
+        "timeStampIdentifier": "['_source'].['@timestamp']"
+      }
+    ]
+  }
+}

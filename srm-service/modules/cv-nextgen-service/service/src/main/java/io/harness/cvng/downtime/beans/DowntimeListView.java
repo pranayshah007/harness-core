@@ -20,7 +20,7 @@ public class DowntimeListView {
   List<AffectedEntity> affectedEntities;
   String description;
   DowntimeDuration duration;
-  DowntimeStatus status;
+  DowntimeStatusDetails downtimeStatusDetails;
   boolean enabled;
   LastModified lastModified;
   DowntimeSpecDTO spec;

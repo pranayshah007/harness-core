@@ -2,7 +2,6 @@
 DockerFile* diptiman.adak@harness.io udham.singh@harness.io
 .bazel* diptiman.adak@harness.io udham.singh@harness.io
 bazel* diptiman.adak@harness.io udham.singh@harness.io
-/dockerization/delegate/ raghu@harness.io jenny.james@harness.io marko.milic@harness.io arpit.tiwari@harness.io gaurav.jain@harness.io
 /access-control/ ankit.singhal@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io jimit.gandhi@harness.io
 /batch-processing/ hitesh.aringa@harness.io nikunj.badjatya@harness.io shubhanshu.verma@harness.io trunapushpa.surkar@harness.io
 /clients/access-control/ ankit.singhal@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io jimit.gandhi@harness.io
@@ -21,8 +20,7 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /127-cd-nextgen-entities/src/main/java/io/harness/ng/core tathagat.chaurasiya@harness.io yogesh.chauhan@harness.io
 /840-template-service utkarsh.choubey@harness.io tathagat.chaurasiya@harness.io  inderpreet.chera@harness.io yogesh.chauhan@harness.io
 
-/260-delegate/src/main/java/io/harness/ johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io arpit.tiwari@harness.io gaurav.jain@harness.io anil.chowdhury@harness.io  deepak.puthraya@harness.io
-/400-rest/src/main/resources/delegatetemplates/ raghu@harness.io jenny.james@harness.io marko.milic@harness.io arpit.tiwari@harness.io gaurav.jain@harness.io
+/260-delegate/src/main/java/io/harness/ raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
 /pipeline-service/service/src/main/java/io/harness/pms/plan/creation/PipelineServiceInternalInfoProvider.java prashant.sharma@harness.io vaibhav.si@harness.io archit.singla@harness.io
 /320-ci-execution/src/main/java/io/harness/ci/plan/creator/CIPipelineServiceInfoProvider.java prashant.sharma@harness.io vaibhav.si@harness.io sahil.hindwani@harness.io
 /300-cv-nextgen/src/main/java* praveen.sugavanam@harness.io abhijith.pradeep@harness.io deepak.chhikara@harness.io
@@ -39,66 +37,42 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /332-ci-manager/service/src/**/Security*.java @harness/sto
 
 ### All BUILD.bazel files 260-delegate depends on - to avoid the introduction of new, unnecessary dependencies increasing the delegate JAR size.
-/260-delegate/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/420-delegate-agent/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/420-delegate-service/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/420-delegate-service/src/main/qbg/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/490-ce-commons/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/867-polling-contracts/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/890-sm-core/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/910-delegate-service-driver/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/910-delegate-task-grpc-service/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/920-delegate-agent-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/920-delegate-service-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/930-delegate-tasks/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/932-connector-task/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/940-secret-manager-client/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/945-account-mgmt/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/948-cv-nextgen-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/950-delegate-tasks-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/950-log-client/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/950-ng-authentication-service/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/950-ng-core/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/950-ng-signup-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/950-wait-engine/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/952-remote-observers/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/952-scm-java-client/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/953-events-api/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/954-connector-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/955-alert-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/955-cg-yaml/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/955-delegate-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/955-filters-sdk/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/955-outbox-sdk/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/955-setup-usage-sdk/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/956-feature-flag-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/957-cg-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/959-common-entities/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/959-file-service-commons/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/959-psql-database-models/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/959-timeout-engine/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/960-api-services/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/960-expression-service/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/960-ng-core-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/960-ng-license-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/960-ng-license-usage-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/960-persistence/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/960-yaml-sdk/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/970-api-services-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/970-grpc/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/970-ng-commons/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/970-rbac-core/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/970-watcher-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/979-recaster/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/980-commons/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/999-annotations/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/access-control/contracts/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/clients/access-control/sdk/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/clients/audit/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/clients/notification/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/platform-service/modules/audit-service/contracts/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/platform-service/modules/notification-service/contracts/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/platform-service/modules/notification-service/delegate-tasks/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
+/260-delegate/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/910-delegate-service-driver/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/910-delegate-task-grpc-service/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/920-delegate-agent-beans/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/920-delegate-service-beans/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/930-delegate-tasks/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/932-connector-task/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/940-secret-manager-client/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/948-cv-nextgen-beans/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/950-delegate-tasks-beans/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/952-scm-java-client/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/953-events-api/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/954-connector-beans/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/955-alert-beans/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/955-cg-yaml/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/955-delegate-beans/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/957-cg-beans/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/959-common-entities/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/959-file-service-commons/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/959-psql-database-models/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/960-api-services/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/960-expression-service/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/960-ng-core-beans/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/960-ng-license-beans/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/960-persistence/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/970-api-services-beans/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/970-grpc/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/970-ng-commons/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/970-rbac-core/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/970-watcher-beans/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/979-recaster/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/980-commons/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/999-annotations/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/clients/notification/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/platform-service/modules/notification-service/contracts/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
+/platform-service/modules/notification-service/delegate-tasks/BUILD.bazel raghu@harness.io marko.milic@harness.io gaurav.jain@harness.io jenny.james@harness.io
 /pipeline-service/modules/orchestration-steps/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io sridhar.balijepalli@harness.io rajendra.baviskar@harness.io vinicius.calasans@harness.io ankit.tiwari@harness.io
 /pipeline-service/service/src/main/java/io/harness/pms/jira/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io sridhar.balijepalli@harness.io rajendra.baviskar@harness.io vinicius.calasans@harness.io ankit.tiwari@harness.io
 /pipeline-service/service/src/main/java/io/harness/pms/approval/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io sridhar.balijepalli@harness.io rajendra.baviskar@harness.io vinicius.calasans@harness.io ankit.tiwari@harness.io

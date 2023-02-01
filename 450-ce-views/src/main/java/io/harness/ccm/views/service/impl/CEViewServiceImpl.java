@@ -9,15 +9,12 @@ package io.harness.ccm.views.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
-import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.budget.utils.BudgetUtils;
-import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.views.dao.CEReportScheduleDao;
 import io.harness.ccm.views.dao.CEViewDao;
 import io.harness.ccm.views.dao.CEViewFolderDao;
@@ -88,8 +85,6 @@ public class CEViewServiceImpl implements CEViewService {
   @Inject private ViewTimeRangeHelper viewTimeRangeHelper;
   @Inject private ViewFilterBuilderHelper viewFilterBuilderHelper;
   @Inject private ViewsQueryHelper viewsQueryHelper;
-  @Inject private BigQueryHelper bigQueryHelper;
-  @Inject private BigQueryService bigQueryService;
 
   private static final String VIEW_NAME_DUPLICATE_EXCEPTION = "Perspective with given name already exists";
   private static final String CLONE_NAME_DUPLICATE_EXCEPTION = "A clone for this perspective already exists";
@@ -158,10 +153,8 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   private double getCostForPerspective(String accountId, List<QLCEViewFilterWrapper> filters) {
-    String cloudProviderTable = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
-    ViewCostData costData = viewsBillingService.getCostData(bigQueryService.get(), filters,
-        viewsQueryHelper.getPerspectiveTotalCostAggregation(), cloudProviderTable,
-        viewsQueryHelper.buildQueryParams(accountId, false));
+    ViewCostData costData = viewsBillingService.getCostData(filters,
+        viewsQueryHelper.getPerspectiveTotalCostAggregation(), viewsQueryHelper.buildQueryParams(accountId, false));
     return costData.getCost();
   }
 
@@ -176,14 +169,12 @@ public class CEViewServiceImpl implements CEViewService {
     filters.add(viewsQueryHelper.getViewMetadataFilter(perspectiveId));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(startTime, AFTER));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
-    String cloudProviderTable = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
     ViewCostData costDataForForecast =
         ViewCostData.builder()
-            .cost(
-                viewsBillingService
-                    .getCostData(bigQueryService.get(), filters, viewsQueryHelper.getPerspectiveTotalCostAggregation(),
-                        cloudProviderTable, viewsQueryHelper.buildQueryParams(accountId, false))
-                    .getCost())
+            .cost(viewsBillingService
+                      .getCostData(filters, viewsQueryHelper.getPerspectiveTotalCostAggregation(),
+                          viewsQueryHelper.buildQueryParams(accountId, false))
+                      .getCost())
             .minStartTime(1000 * startTime)
             .maxStartTime(1000 * BudgetUtils.getStartOfCurrentDay() - BudgetUtils.ONE_DAY_MILLIS)
             .build();
@@ -313,8 +304,7 @@ public class CEViewServiceImpl implements CEViewService {
       filters.add(
           viewFilterBuilderHelper.getViewTimeFilter(startEndTime.getEndTime(), QLCEViewTimeFilterOperator.BEFORE));
 
-      QLCEViewTrendInfo trendData = viewsBillingService.getTrendStatsData(
-          bigQuery, filters, totalCostAggregationFunction, cloudProviderTableName);
+      QLCEViewTrendInfo trendData = viewsBillingService.getTrendStatsData(filters, totalCostAggregationFunction);
       double totalCost = trendData.getValue().doubleValue();
       log.info("Total cost of view {}", totalCost);
       return ceViewDao.updateTotalCost(ceView.getUuid(), ceView.getAccountId(), totalCost);

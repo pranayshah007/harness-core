@@ -8,8 +8,8 @@
 package io.harness.ngmigration.service.entity;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ngmigration.service.MigratorUtility.generateFileIdentifier;
-import static io.harness.ngmigration.service.MigratorUtility.getYamlConfigFile;
+import static io.harness.ngmigration.utils.MigratorUtility.generateFileIdentifier;
+import static io.harness.ngmigration.utils.MigratorUtility.getYamlConfigFile;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER;

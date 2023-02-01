@@ -44,6 +44,7 @@ import io.harness.cdng.infra.InfraSectionStepParameters;
 import io.harness.cdng.infra.InfraUseFromStage;
 import io.harness.cdng.infra.InfrastructureDef;
 import io.harness.cdng.infra.steps.InfraStepParameters;
+import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepInfo;
 import io.harness.cdng.k8s.DeleteResourcesWrapper;
 import io.harness.cdng.k8s.K8sBlueGreenOutcome;
@@ -84,6 +85,7 @@ import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepInf
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepInfo;
 import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
+import io.harness.cdng.provision.terraformcloud.TerraformCloudRunStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntDestroyStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntPlanStepInfo;
@@ -262,5 +264,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(K8sDryRunManifestStepInfo.class, 12644);
     kryo.register(K8sDryRunManifestStepParameters.class, 12645);
     kryo.register(K8sDryRunManifestOutcome.class, 12646);
+    kryo.register(TerraformCloudRunStepInfo.class, 12656);
+    kryo.register(GoogleFunctionsInfrastructure.class, 12657);
   }
 }

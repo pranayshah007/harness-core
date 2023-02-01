@@ -123,7 +123,7 @@ public class ContainerSyncImpl implements ContainerSync {
                 .masterUrl(masterUrl)
                 .build();
 
-        result.addAll(delegateProxyFactory.get(ContainerService.class, syncTaskContext)
+        result.addAll(delegateProxyFactory.getV2(ContainerService.class, syncTaskContext)
                           .getContainerInfos(containerServiceParams, false));
       } catch (WingsException e) {
         // PL-1118: If cluster not found, return empty instance list so that all instances associated with this cluster
@@ -174,7 +174,7 @@ public class ContainerSyncImpl implements ContainerSync {
                 .timeout(DEFAULT_SYNC_CALL_TIMEOUT * 2)
                 .build();
 
-        result.addAll(delegateProxyFactory.get(ContainerService.class, syncTaskContext)
+        result.addAll(delegateProxyFactory.getV2(ContainerService.class, syncTaskContext)
                           .getContainerInfos(containerServiceParams, false));
       } catch (WingsException e) {
         // PL-1118: If cluster not found, return empty instance list so that all instances associated with this cluster
@@ -215,7 +215,7 @@ public class ContainerSyncImpl implements ContainerSync {
             .timeout(DEFAULT_SYNC_CALL_TIMEOUT * 2)
             .build();
 
-    return delegateProxyFactory.get(ContainerService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(ContainerService.class, syncTaskContext)
         .getControllerNames(containerServiceParams, labels);
   }
 

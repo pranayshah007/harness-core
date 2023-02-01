@@ -20,6 +20,7 @@ public enum GitOperation {
   GET_BRANCH_HEAD_COMMIT("get branch head commit"),
   LIST_FILES("list files"),
   BG_THREAD_GET_FILE("background thread get file"),
+  GET_BATCH_FILES("get batch files"),
   ;
 
   private String value;

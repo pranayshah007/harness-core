@@ -99,6 +99,7 @@ import io.harness.helm.HelmCliCommandType;
 import io.harness.helm.HelmClient;
 import io.harness.helm.HelmClientImpl.HelmCliResponse;
 import io.harness.helm.HelmCommandData;
+import io.harness.helm.HelmSubCommandType;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
@@ -122,6 +123,7 @@ import io.harness.shell.SshSessionConfig;
 import software.wings.helpers.ext.helm.response.ReleaseInfo;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.FakeTimeLimiter;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -211,6 +213,30 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
                                                                           .build();
 
   HelmDeployServiceImplNG spyHelmDeployService;
+
+  String renderedHelmChart = "apiVersion: apps/v1\n"
+      + "kind: Deployment\n"
+      + "metadata:\n"
+      + "  name: example\n"
+      + "  labels: []\n"
+      + "spec:\n"
+      + "  selector:\n"
+      + "    app: test-app\n"
+      + "    release: helm-release\n"
+      + "  template:\n"
+      + "    metadata:\n"
+      + "      name: example\n"
+      + "      labels:\n"
+      + "         app: test-app\n"
+      + "         release: helm-release\n"
+      + "---\n"
+      + "apiVersion: v1\n"
+      + "kind: Secret\n"
+      + "metadata:\n"
+      + "  name: example\n"
+      + "type: Opaque\n"
+      + "data:\n"
+      + "  sample: c29tZXRpbWVzIHNjaWVuY2UgaXMgbW9yZSBhcnQgdGhhbiBzY2llbmNlLCBNb3J0eQ==\n";
 
   @Before
   public void setUp() throws IOException {
@@ -583,29 +609,6 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
   public void testPrintHelmChartForK8sResourcesOnDeploy() throws Exception {
     helmInstallCommandRequestNG.setNamespace("default");
     helmInstallCommandRequestNG.setValuesYamlList(Collections.emptyList());
-    String renderedHelmChart = "apiVersion: apps/v1\n"
-        + "kind: Deployment\n"
-        + "metadata:\n"
-        + "  name: example\n"
-        + "  labels: []\n"
-        + "spec:\n"
-        + "  selector:\n"
-        + "    app: test-app\n"
-        + "    release: helm-release\n"
-        + "  template:\n"
-        + "    metadata:\n"
-        + "      name: example\n"
-        + "      labels:\n"
-        + "         app: test-app\n"
-        + "         release: helm-release\n"
-        + "---\n"
-        + "apiVersion: v1\n"
-        + "kind: Secret\n"
-        + "metadata:\n"
-        + "  name: example\n"
-        + "type: Opaque\n"
-        + "data:\n"
-        + "  sample: c29tZXRpbWVzIHNjaWVuY2UgaXMgbW9yZSBhcnQgdGhhbiBzY2llbmNlLCBNb3J0eQ==\n";
     List<KubernetesResource> expectedLoggedResources = ManifestHelper.processYaml(renderedHelmChart);
     String expectedLoggedYaml = ManifestHelper.toYamlForLogs(expectedLoggedResources);
     HelmCliResponse renderedHelmChartResponse =
@@ -629,6 +632,53 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     assertThat(savedLogsCaptor.getAllValues()).contains(expectedLoggedYaml);
   }
 
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testPrintHelmChartWithSubCharts() throws Exception {
+    helmInstallCommandRequestNG.setNamespace("default");
+    helmInstallCommandRequestNG.setValuesYamlList(Collections.emptyList());
+    HelmChartManifestDelegateConfig chartManifestConfig =
+        HelmChartManifestDelegateConfig.builder()
+            .chartName(HelmTestConstants.CHART_NAME_KEY)
+            .chartVersion("V3")
+            .helmCommandFlag(HelmCommandFlag.builder()
+                                 .valueMap(ImmutableMap.of(HelmSubCommandType.TEMPLATE, "--dependency-update"))
+                                 .build())
+            .storeDelegateConfig(httpHelmStoreDelegateConfig)
+            .subChartName("child-1")
+            .build();
+    helmInstallCommandRequestNG.setManifestDelegateConfig(chartManifestConfig);
+
+    List<KubernetesResource> expectedLoggedResources = ManifestHelper.processYaml(renderedHelmChart);
+    String expectedLoggedYaml = ManifestHelper.toYamlForLogs(expectedLoggedResources);
+
+    String renderedChartWithDependencies = "successfully fetched and updated dependencies\n---\n" + renderedHelmChart;
+
+    HelmCliResponse renderedHelmChartResponse =
+        HelmCliResponse.builder().commandExecutionStatus(SUCCESS).output(renderedChartWithDependencies).build();
+
+    initForDeploy();
+    doReturn(renderedHelmChartResponse)
+        .when(helmClient)
+        .renderChart(any(HelmCommandData.class), eq("tmp/chart-name/charts/child-1"), eq("default"),
+            eq(Collections.emptyList()), eq(true));
+    doReturn(renderedHelmChart)
+        .when(delegateLocalConfigService)
+        .replacePlaceholdersWithLocalConfig(eq("---\n" + renderedHelmChart));
+    doNothing()
+        .when(k8sTaskHelperBase)
+        .setNamespaceToKubernetesResourcesIfRequired(anyList(), eq(helmInstallCommandRequestNG.getNamespace()));
+    doReturn(46)
+        .when(helmTaskHelperBase)
+        .checkForDependencyUpdateFlag(
+            eq(chartManifestConfig.getHelmCommandFlag().getValueMap()), eq(renderedChartWithDependencies));
+
+    spyHelmDeployService.deploy(helmInstallCommandRequestNG);
+    ArgumentCaptor<String> savedLogsCaptor = ArgumentCaptor.forClass(String.class);
+    verify(logCallback, atLeastOnce()).saveExecutionLog(savedLogsCaptor.capture());
+    assertThat(savedLogsCaptor.getAllValues()).contains(expectedLoggedYaml);
+  }
   @Test
   @Owner(developers = ACHYUTH)
   @Category(UnitTests.class)

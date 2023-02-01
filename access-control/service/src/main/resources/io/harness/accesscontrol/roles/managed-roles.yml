@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 43
+version: 44
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -859,3 +859,21 @@ roles:
       managed: true
       allowedScopeLevels:
         - account
+    - identifier: _dashboard_viewer
+      name: Dashboard Viewer
+      description: Dashboard Viewer
+      permissions:
+        - core_dashboards_view
+      managed: true
+      allowedScopeLevels:
+        - account
+    - identifier: _dashboard_admin
+      name: Dashboard Admin
+      description: Dashboard Admin
+      permissions:
+        - core_dashboards_view
+        - core_dashboards_edit
+      managed: true
+      allowedScopeLevels:
+        - account
+

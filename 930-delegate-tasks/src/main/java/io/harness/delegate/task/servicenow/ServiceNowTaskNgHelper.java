@@ -306,7 +306,6 @@ public class ServiceNowTaskNgHelper {
             parameters.getTicketType().toString().toLowerCase(), query, "all");
     Response<JsonNode> response = null;
     try {
-      log.info("getIssueIdFromIssueNumber called for ticketNumber: {}", parameters.getTicketNumber());
       response = Retry.decorateCallable(retry, request::execute).call();
       log.info("Response received from serviceNow: {}", response);
       handleResponse(response, "Failed to fetch ticketId : " + parameters.getTicketNumber() + " from serviceNow");
@@ -349,7 +348,6 @@ public class ServiceNowTaskNgHelper {
             parameters.getTicketType().toString().toLowerCase(), query, "all");
     Response<JsonNode> response = null;
     try {
-      log.info("fetchServiceNowTicketUsingSysId called for sys_id: {}", ticketSysId);
       response = Retry.decorateCallable(retry, request::execute).call();
       log.info("Response received from serviceNow: {}", response);
       handleResponse(response, "Failed to fetch ticket with sys_id : " + ticketSysId + " from serviceNow");
@@ -446,7 +444,6 @@ public class ServiceNowTaskNgHelper {
             serviceNowTaskNGParameters.getTemplateListOffset(), serviceNowTaskNGParameters.getTemplateName());
     Response<JsonNode> response = null;
     try {
-      log.info("getTemplateList called for ticketType: {}", serviceNowTaskNGParameters.getTicketType().toLowerCase());
       response = Retry.decorateCallable(retry, request::execute).call();
       log.info("Response received from serviceNow: {}", response);
       handleResponse(response, "Failed to get ServiceNow templates");
@@ -496,8 +493,6 @@ public class ServiceNowTaskNgHelper {
     Response<JsonNode> response = null;
 
     try {
-      log.info("getTicket called for ticketType:{}, ticketNumber:{}",
-          serviceNowTaskNGParameters.getTicketType().toLowerCase(), serviceNowTaskNGParameters.getTicketNumber());
       response = Retry.decorateCallable(retry, request::execute).call();
       handleResponse(response, "Failed to get serviceNow ticket");
       JsonNode responseObj = response.body().get("result");
@@ -541,8 +536,6 @@ public class ServiceNowTaskNgHelper {
             serviceNowTaskNGParameters.getTicketType().toLowerCase());
     Response<JsonNode> response = null;
     try {
-      log.info(
-          "getIssueCreateMetaData called for ticketType:{}", serviceNowTaskNGParameters.getTicketType().toLowerCase());
       response = Retry.decorateCallable(retry, request::execute).call();
       handleResponse(response, "Failed to get serviceNow fields");
       JsonNode responseObj = response.body().get("result");
@@ -578,7 +571,6 @@ public class ServiceNowTaskNgHelper {
             serviceNowTaskNGParameters.getTicketType().toLowerCase());
     Response<JsonNode> response = null;
     try {
-      log.info("getMetadata called for ticketType:{}", serviceNowTaskNGParameters.getTicketType().toLowerCase());
       response = Retry.decorateCallable(retry, request::execute).call();
       log.info("Response received from serviceNow for GET_METADATA: {}", response);
       handleResponse(response, "Failed to get serviceNow fields");
@@ -708,7 +700,6 @@ public class ServiceNowTaskNgHelper {
         serviceNowRestClient.getStagingTableList(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO));
     Response<JsonNode> response = null;
     try {
-      log.info("getStagingTableList called");
       response = Retry.decorateCallable(retry, request::execute).call();
       log.info("Response received from serviceNow: {}", response);
       handleResponse(response, "Failed to get ServiceNow staging tables");
@@ -786,7 +777,6 @@ public class ServiceNowTaskNgHelper {
         serviceNowRestClient.validateConnection(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO));
     Response<JsonNode> response = null;
     try {
-      log.info("validateCredentials called");
       response = Retry.decorateCallable(retry, request::execute).call();
       handleResponse(response, "Failed to validate ServiceNow credentials");
       return ServiceNowTaskNGResponse.builder().build();

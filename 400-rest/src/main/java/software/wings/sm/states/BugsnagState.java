@@ -250,7 +250,7 @@ public class BugsnagState extends AbstractLogAnalysisState {
             .executionData(executionData)
             .build(),
         waitId);
-    return delegateService.queueTask(delegateTask);
+    return delegateService.queueTaskV2(delegateTask);
   }
 
   public static Map<String, Map<String, CustomLogResponseMapper>> constructLogDefinitions(

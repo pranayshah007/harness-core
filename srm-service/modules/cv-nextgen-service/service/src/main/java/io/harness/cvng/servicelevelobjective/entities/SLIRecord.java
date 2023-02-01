@@ -12,6 +12,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.analysis.entities.VerificationTaskBase;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -78,7 +79,8 @@ public class SLIRecord extends VerificationTaskBase implements PersistentEntity,
   private long runningGoodCount; // // prevMinuteRecord.runningGoodCount + sliState == GOOD ? 1 : 0
 
   private int sliVersion;
-  public enum SLIState { NO_DATA, GOOD, BAD }
+  public enum SLIState { NO_DATA, GOOD, BAD, SKIP_DATA }
+
   @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusDays(180).toInstant());
   @Data
   @Builder

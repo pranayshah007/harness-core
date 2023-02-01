@@ -23,6 +23,7 @@ import static software.wings.beans.LogWeight.Bold;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
+import static java.util.stream.Collectors.toSet;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -38,52 +39,7 @@ import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.AmazonWebServiceClient;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
-import com.amazonaws.services.autoscaling.model.AttachLoadBalancerTargetGroupsRequest;
-import com.amazonaws.services.autoscaling.model.AttachLoadBalancersRequest;
-import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
-import com.amazonaws.services.autoscaling.model.AutoScalingInstanceDetails;
-import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
-import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupResult;
-import com.amazonaws.services.autoscaling.model.CreateOrUpdateTagsRequest;
-import com.amazonaws.services.autoscaling.model.DeleteAutoScalingGroupRequest;
-import com.amazonaws.services.autoscaling.model.DeleteLifecycleHookRequest;
-import com.amazonaws.services.autoscaling.model.DeletePolicyRequest;
-import com.amazonaws.services.autoscaling.model.DeleteTagsRequest;
-import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
-import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
-import com.amazonaws.services.autoscaling.model.DescribeAutoScalingInstancesRequest;
-import com.amazonaws.services.autoscaling.model.DescribeAutoScalingInstancesResult;
-import com.amazonaws.services.autoscaling.model.DescribeInstanceRefreshesRequest;
-import com.amazonaws.services.autoscaling.model.DescribeInstanceRefreshesResult;
-import com.amazonaws.services.autoscaling.model.DescribeLifecycleHooksRequest;
-import com.amazonaws.services.autoscaling.model.DescribeLoadBalancerTargetGroupsRequest;
-import com.amazonaws.services.autoscaling.model.DescribeLoadBalancerTargetGroupsResult;
-import com.amazonaws.services.autoscaling.model.DescribeLoadBalancersRequest;
-import com.amazonaws.services.autoscaling.model.DescribeLoadBalancersResult;
-import com.amazonaws.services.autoscaling.model.DescribePoliciesRequest;
-import com.amazonaws.services.autoscaling.model.DescribePoliciesResult;
-import com.amazonaws.services.autoscaling.model.DescribeTagsRequest;
-import com.amazonaws.services.autoscaling.model.DescribeTagsResult;
-import com.amazonaws.services.autoscaling.model.DetachLoadBalancerTargetGroupsRequest;
-import com.amazonaws.services.autoscaling.model.DetachLoadBalancersRequest;
-import com.amazonaws.services.autoscaling.model.Filter;
-import com.amazonaws.services.autoscaling.model.Instance;
-import com.amazonaws.services.autoscaling.model.InstanceRefresh;
-import com.amazonaws.services.autoscaling.model.LaunchTemplateSpecification;
-import com.amazonaws.services.autoscaling.model.LifecycleHook;
-import com.amazonaws.services.autoscaling.model.LifecycleHookSpecification;
-import com.amazonaws.services.autoscaling.model.LoadBalancerState;
-import com.amazonaws.services.autoscaling.model.LoadBalancerTargetGroupState;
-import com.amazonaws.services.autoscaling.model.PutLifecycleHookRequest;
-import com.amazonaws.services.autoscaling.model.PutScalingPolicyRequest;
-import com.amazonaws.services.autoscaling.model.PutScalingPolicyResult;
-import com.amazonaws.services.autoscaling.model.RefreshPreferences;
-import com.amazonaws.services.autoscaling.model.ScalingPolicy;
-import com.amazonaws.services.autoscaling.model.StartInstanceRefreshRequest;
-import com.amazonaws.services.autoscaling.model.StartInstanceRefreshResult;
-import com.amazonaws.services.autoscaling.model.Tag;
-import com.amazonaws.services.autoscaling.model.TagDescription;
-import com.amazonaws.services.autoscaling.model.UpdateAutoScalingGroupRequest;
+import com.amazonaws.services.autoscaling.model.*;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateRequest;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateResult;
@@ -102,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -121,12 +78,15 @@ import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeList
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeLoadBalancersResponse;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeRulesRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeRulesResponse;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeTargetHealthRequest;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeTargetHealthResponse;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ForwardActionConfig;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyListenerRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyRuleRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Rule;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetGroupTuple;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetHealthDescription;
 
 @Slf4j
 @OwnedBy(CDP)
@@ -502,33 +462,6 @@ public class AsgSdkManager {
     return autoScalingGroup == null;
   }
 
-  public void waitReadyState(String asgName, Predicate<String> predicate, String operationName) {
-    info("Waiting for operation `%s` to reach steady state", operationName);
-    info("Polling every %d seconds", STEADY_STATE_INTERVAL_IN_SECONDS);
-    try {
-      HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMinutes(steadyStateTimeOutInMinutes), () -> {
-        while (!predicate.test(asgName)) {
-          sleep(ofSeconds(STEADY_STATE_INTERVAL_IN_SECONDS));
-        }
-        return true;
-      });
-    } catch (ExecutionException | UncheckedExecutionException | ExecutionError e) {
-      String errorMessage = format("Exception while waiting for steady state for `%s` operation. Error message: [%s]",
-          operationName, e.getMessage());
-      error(errorMessage);
-      throw new InvalidRequestException(errorMessage, e.getCause());
-    } catch (TimeoutException | InterruptedException e) {
-      String errorMessage = format("Timed out while waiting for steady state for `%s` operation", operationName);
-      error(errorMessage);
-      throw new InvalidRequestException(errorMessage, e);
-    } catch (Exception e) {
-      String errorMessage = format("Exception while waiting for steady state for `%s` operation. Error message: [%s]",
-          operationName, e.getMessage());
-      error(errorMessage);
-      throw new InvalidRequestException(errorMessage, e);
-    }
-  }
-
   public boolean checkAsgDownsizedToZero(String asgName) {
     AutoScalingGroup autoScalingGroup = getASG(asgName);
     List<Instance> instances = autoScalingGroup.getInstances();
@@ -590,6 +523,33 @@ public class AsgSdkManager {
     }
   }
 
+  public <T> void waitReadyState(T input, Predicate<T> predicate, String operationName) {
+    info("Waiting for `%s` to reach steady state", operationName);
+    info("Polling every %d seconds", STEADY_STATE_INTERVAL_IN_SECONDS);
+    try {
+      HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMinutes(steadyStateTimeOutInMinutes), () -> {
+        while (!predicate.test(input)) {
+          sleep(ofSeconds(STEADY_STATE_INTERVAL_IN_SECONDS));
+        }
+        return true;
+      });
+    } catch (ExecutionException | UncheckedExecutionException | ExecutionError e) {
+      String errorMessage = format(
+          "Exception while waiting for steady state for `%s`. Error message: [%s]", operationName, e.getMessage());
+      error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e.getCause());
+    } catch (TimeoutException | InterruptedException e) {
+      String errorMessage = format("Timed out while waiting for steady state for `%s`", operationName);
+      error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
+    } catch (Exception e) {
+      String errorMessage = format(
+          "Exception while waiting for steady state for `%s`. Error message: [%s]", operationName, e.getMessage());
+      error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
+    }
+  }
+
   public List<ScalingPolicy> listAllScalingPoliciesOfAsg(String asgName) {
     List<ScalingPolicy> scalingPolicies = newArrayList();
     String nextToken = null;
@@ -632,6 +592,51 @@ public class AsgSdkManager {
           asgCall(asgClient -> asgClient.putScalingPolicy(putScalingPolicyRequest));
       logCallback.saveExecutionLog(
           format("Attached scaling policy with Arn: %s", putScalingPolicyResult.getPolicyARN()));
+    });
+  }
+
+  public List<ScheduledUpdateGroupAction> listAllScheduledActionsOfAsg(String asgName) {
+    List<ScheduledUpdateGroupAction> actions = newArrayList();
+    String nextToken = null;
+    do {
+      DescribeScheduledActionsRequest request =
+          new DescribeScheduledActionsRequest().withAutoScalingGroupName(asgName).withNextToken(nextToken);
+      DescribeScheduledActionsResult result = asgCall(asgClient -> asgClient.describeScheduledActions(request));
+
+      if (isNotEmpty(result.getScheduledUpdateGroupActions())) {
+        actions.addAll(result.getScheduledUpdateGroupActions());
+      }
+      nextToken = result.getNextToken();
+    } while (nextToken != null);
+    return actions;
+  }
+
+  public void clearAllScheduledActionsForAsg(String asgName) {
+    List<ScheduledUpdateGroupAction> actions = listAllScheduledActionsOfAsg(asgName);
+    if (isEmpty(actions)) {
+      logCallback.saveExecutionLog(format(
+          "No scheduled actions found which are currently attached with autoscaling group: [%s] to detach", asgName));
+      return;
+    }
+    actions.forEach(action -> {
+      DeleteScheduledActionRequest deleteScheduledActionRequest =
+          new DeleteScheduledActionRequest().withAutoScalingGroupName(asgName).withScheduledActionName(
+              action.getScheduledActionName());
+      asgCall(asgClient -> asgClient.deleteScheduledAction(deleteScheduledActionRequest));
+    });
+  }
+
+  public void attachScheduledActionsToAsg(
+      String asgName, List<PutScheduledUpdateGroupActionRequest> putScheduledUpdateGroupActionRequests) {
+    if (putScheduledUpdateGroupActionRequests.isEmpty()) {
+      logCallback.saveExecutionLog(
+          format("No scheduled actions provided which is needed be attached to autoscaling group: %s", asgName));
+      return;
+    }
+    putScheduledUpdateGroupActionRequests.forEach(request -> {
+      request.setAutoScalingGroupName(asgName);
+      asgCall(asgClient -> asgClient.putScheduledUpdateGroupAction(request));
+      logCallback.saveExecutionLog(format("Attached scheduled action with name: %s", request.getScheduledActionName()));
     });
   }
 
@@ -786,6 +791,36 @@ public class AsgSdkManager {
     }
     throw new InvalidRequestException(
         "listener with arn:" + listenerArn + "is not present in load balancer: " + loadBalancer);
+  }
+
+  public boolean checkAllTargetsRegistered(
+      List<String> targetIds, List<String> targetGroupARNList, AwsInternalConfig awsInternalConfig, String region) {
+    if (isEmpty(targetIds)) {
+      return true;
+    }
+
+    Set<String> instanceIdsRegistered = new HashSet<>();
+
+    for (String targetGroupARN : targetGroupARNList) {
+      DescribeTargetHealthRequest describeTargetHealthRequest =
+          DescribeTargetHealthRequest.builder().targetGroupArn(targetGroupARN).build();
+
+      DescribeTargetHealthResponse response =
+          elbV2Client.describeTargetHealth(awsInternalConfig, describeTargetHealthRequest, region);
+
+      List<TargetHealthDescription> healthDescriptions = response.targetHealthDescriptions();
+      if (isNotEmpty(healthDescriptions)) {
+        instanceIdsRegistered.addAll(
+            healthDescriptions.stream()
+                .filter(description -> description.targetHealth().stateAsString().equalsIgnoreCase("Healthy"))
+                .map(description -> description.target().id())
+                .filter(targetIds::contains)
+                .collect(toSet()));
+      }
+    }
+
+    info("[%d] out of [%d] targets registered and in healthy state", instanceIdsRegistered.size(), targetIds.size());
+    return instanceIdsRegistered.containsAll(targetIds);
   }
 
   public void info(String msg, Object... params) {

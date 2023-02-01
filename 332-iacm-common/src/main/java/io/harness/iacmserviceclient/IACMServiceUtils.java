@@ -9,6 +9,7 @@ package io.harness.iacmserviceclient;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.entities.Execution;
 import io.harness.beans.entities.IACMServiceConfig;
 import io.harness.beans.entities.Stack;
 import io.harness.beans.entities.StackVariables;
@@ -86,7 +87,7 @@ public class IACMServiceUtils {
     }
     if (stack.getProvider_connector() == null) {
       throw new GeneralException("Could not retrieve IACM Connector from the IACM service. The StackID: "
-          + stack.getSlug() + " doesn't have a connector reference");
+          + stack.getIdentifier() + " doesn't have a connector reference");
     }
     return stack;
   }
@@ -167,16 +168,15 @@ public class IACMServiceUtils {
 
   public String GetTerraformEndpointsData(Ambiance ambiance, String stackId) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    String executionId = ambiance.getPlanExecutionId();
     TerraformEndpointsData tfEndpointsData =
         TerraformEndpointsData.builder()
             .org_id(ngAccess.getOrgIdentifier())
+            .base_url(iacmServiceConfig.getExternalUrl())
             .account_id(ngAccess.getAccountIdentifier())
-            .base_url(iacmServiceConfig.getBaseUrl())
-            .execution_id(executionId)
+            .pipeline_execution_id(ambiance.getPlanExecutionId())
+            .pipeline_stage_execution_id(ambiance.getStageExecutionId())
             .project_id(ngAccess.getProjectIdentifier())
             .stack_id(stackId)
-            .stage_execution_id(ambiance.getStageExecutionId())
             //            .token(getIACMServiceToken(ngAccess.getAccountIdentifier())) //TODO: When we have a token
             //            generation in place, use this one
             .token("TODO TOKEN")
@@ -187,6 +187,48 @@ public class IACMServiceUtils {
     } catch (Exception ex) {
       throw new GeneralException(
           "Could not parse Endpoint information. Please contact Harness Support for more information");
+    }
+  }
+
+  public void createIACMExecution(Ambiance ambiance, String stackId, String action) {
+    log.info("Initiating post request to IACM service for execution creation: {}", this.iacmServiceConfig.getBaseUrl());
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+
+    Execution execution = Execution.builder()
+                              .org(ngAccess.getOrgIdentifier())
+                              .account(ngAccess.getAccountIdentifier())
+                              .project(ngAccess.getProjectIdentifier())
+                              .stack(stackId)
+                              .pipeline_execution_id(ambiance.getPlanExecutionId())
+                              .pipeline(ambiance.getPlanId())
+                              .pipeline_stage_id(ambiance.getStageExecutionId())
+                              .action(action)
+                              .build();
+
+    Call<JsonObject> connectorCall =
+        iacmServiceClient.postIACMExecution(ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), execution,
+            this.iacmServiceConfig.getGlobalToken(), ngAccess.getAccountIdentifier());
+    Response<JsonObject> response;
+
+    try {
+      response = connectorCall.execute();
+    } catch (Exception e) {
+      log.error("Error while trying to execute the request in the IACM Service: ", e);
+      throw new GeneralException("Error creating the execution from the IACM service. Call failed", e);
+    }
+    if (!response.isSuccessful()) {
+      if (response.code() == 409) {
+        return;
+      }
+      String errorBody = null;
+      try {
+        errorBody = response.errorBody().string();
+      } catch (IOException e) {
+        log.error("Could not read error body {}", response.errorBody());
+      }
+      throw new GeneralException(
+          String.format("Could not parse body for the execution response = %s, message = %s, response = %s",
+              response.code(), response.message(), response.errorBody() == null ? "null" : errorBody));
     }
   }
 }

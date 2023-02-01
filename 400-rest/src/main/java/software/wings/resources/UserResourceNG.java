@@ -341,6 +341,7 @@ public class UserResourceNG {
   @Path("/batch")
   public RestResponse<List<UserInfo>> listUsers(@QueryParam("accountId") String accountId, UserFilterNG userFilterNG) {
     Set<User> userSet = new HashSet<>();
+
     if (!isEmpty(userFilterNG.getUserIds())) {
       userSet.addAll(userService.getUsers(userFilterNG.getUserIds(), accountId));
     }
@@ -348,6 +349,14 @@ public class UserResourceNG {
       userSet.addAll(userService.getUsersByEmail(userFilterNG.getEmailIds(), accountId));
     }
     return new RestResponse<>(convertUserToNgUser(new ArrayList<>(userSet), false));
+  }
+
+  @POST
+  @Path("/batch-emails")
+  public RestResponse<List<UserInfo>> listUsersEmails(@QueryParam("accountId") String accountId) {
+    List<User> emails = userService.getUsersEmails(accountId);
+
+    return new RestResponse<>(convertUserToNgUser(new ArrayList<>(emails), false));
   }
 
   @PUT

@@ -12,7 +12,6 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.steps.nodes.InitializeStepNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
@@ -45,18 +44,17 @@ public class InitializeStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<Initiali
   @Inject private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
 
   public PlanCreationResponse createPlan(PlanCreationContext ctx, IntegrationStageNodeV1 integrationStageNodeV1,
-      CodeBase codebase, ExecutionSource executionSource, Infrastructure infrastructure,
-      List<ExecutionWrapperConfig> executionWrapperConfigs, String childID) {
+      CodeBase codebase, Infrastructure infrastructure, List<ExecutionWrapperConfig> executionWrapperConfigs,
+      String childID) {
     // create PluginStepNode
     InitializeStepNode initializeStepNode =
-        getStepNode(ctx, codebase, integrationStageNodeV1, executionSource, infrastructure, executionWrapperConfigs);
+        getStepNode(ctx, codebase, infrastructure, integrationStageNodeV1, executionWrapperConfigs);
     // create Plan node
     return createInternalStepPlan(ctx, initializeStepNode, childID);
   }
 
-  private InitializeStepNode getStepNode(PlanCreationContext ctx, CodeBase codeBase,
-      IntegrationStageNodeV1 integrationStageNodeV1, ExecutionSource executionSource, Infrastructure infrastructure,
-      List<ExecutionWrapperConfig> executionWrapperConfigs) {
+  private InitializeStepNode getStepNode(PlanCreationContext ctx, CodeBase codeBase, Infrastructure infrastructure,
+      IntegrationStageNodeV1 integrationStageNodeV1, List<ExecutionWrapperConfig> executionWrapperConfigs) {
     IntegrationStageConfigImplV1 integrationStageConfigImplV1 = integrationStageNodeV1.getStageConfig();
     InitializeStepInfo initializeStepInfo =
         InitializeStepInfo.builder()
@@ -72,7 +70,6 @@ public class InitializeStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<Initiali
                                     .cloneCodebase(ParameterField.createValueField(codeBase != null))
                                     .serviceDependencies(ParameterField.createValueField(Collections.emptyList()))
                                     .build())
-            .executionSource(executionSource)
             .ciCodebase(codeBase)
             .skipGitClone(codeBase == null)
             .executionElementConfig(ExecutionElementConfig.builder().steps(executionWrapperConfigs).build())

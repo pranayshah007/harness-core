@@ -196,7 +196,7 @@ public class AzureVMSSDeployState extends AbstractAzureState {
             .description("Azure VMSS Deploy task execution")
             .build();
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
 
     appendDelegateTaskDetails(context, delegateTask);
     return ExecutionResponse.builder()

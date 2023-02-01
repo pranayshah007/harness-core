@@ -24,6 +24,7 @@ import io.swagger.annotations.ApiModelProperty;
 import java.math.BigDecimal;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -44,6 +45,7 @@ public class PercentageCapacitySpec implements CapacitySpec {
   @JsonProperty("percentage")
   @Min(0)
   @Max(100)
+  @NotNull
   ParameterField<Integer> percentage;
 
   @Override

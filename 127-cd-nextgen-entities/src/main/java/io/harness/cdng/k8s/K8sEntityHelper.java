@@ -10,6 +10,9 @@ package io.harness.cdng.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.ConnectorType.AZURE;
+import static io.harness.delegate.beans.connector.ConnectorType.GCP;
+import static io.harness.delegate.beans.connector.ConnectorType.KUBERNETES_CLUSTER;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
@@ -41,6 +44,7 @@ import io.harness.delegate.task.k8s.AzureK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.ng.core.NGAccess;
@@ -53,13 +57,18 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.annotation.Nonnull;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(CDP)
 @Singleton
 public class K8sEntityHelper {
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
+  public static final String CLASS_CAST_EXCEPTION_ERROR =
+      "Unsupported Connector for Infrastructure type: [%s]. Connector provided is of type: [%s]. Configure connector of type: [%s] to resolve the issue";
   public List<EncryptedDataDetail> getEncryptionDataDetails(
       @Nonnull ConnectorInfoDTO connectorDTO, @Nonnull NGAccess ngAccess) {
     switch (connectorDTO.getConnectorType()) {
@@ -143,50 +152,73 @@ public class K8sEntityHelper {
 
   public K8sInfraDelegateConfig getK8sInfraDelegateConfig(InfrastructureOutcome infrastructure, NGAccess ngAccess) {
     ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructure.getConnectorRef(), ngAccess);
-    switch (infrastructure.getKind()) {
+    try {
+      switch (infrastructure.getKind()) {
+        case KUBERNETES_DIRECT:
+          K8sDirectInfrastructureOutcome k8SDirectInfrastructure = (K8sDirectInfrastructureOutcome) infrastructure;
+          KubernetesHelperService.validateNamespace(k8SDirectInfrastructure.getNamespace());
+
+          return DirectK8sInfraDelegateConfig.builder()
+              .namespace(k8SDirectInfrastructure.getNamespace())
+              .kubernetesClusterConfigDTO((KubernetesClusterConfigDTO) connectorDTO.getConnectorConfig())
+              .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+              .build();
+
+        case KUBERNETES_GCP:
+          K8sGcpInfrastructureOutcome k8sGcpInfrastructure = (K8sGcpInfrastructureOutcome) infrastructure;
+          KubernetesHelperService.validateNamespace(k8sGcpInfrastructure.getNamespace());
+          KubernetesHelperService.validateCluster(k8sGcpInfrastructure.getCluster());
+
+          return GcpK8sInfraDelegateConfig.builder()
+              .namespace(k8sGcpInfrastructure.getNamespace())
+              .cluster(k8sGcpInfrastructure.getCluster())
+              .gcpConnectorDTO((GcpConnectorDTO) connectorDTO.getConnectorConfig())
+              .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+              .build();
+
+        case KUBERNETES_AZURE:
+          K8sAzureInfrastructureOutcome k8sAzureInfrastructure = (K8sAzureInfrastructureOutcome) infrastructure;
+          KubernetesHelperService.validateNamespace(k8sAzureInfrastructure.getNamespace());
+          KubernetesHelperService.validateSubscription(k8sAzureInfrastructure.getSubscription());
+          KubernetesHelperService.validateResourceGroup(k8sAzureInfrastructure.getResourceGroup());
+          KubernetesHelperService.validateCluster(k8sAzureInfrastructure.getCluster());
+
+          return AzureK8sInfraDelegateConfig.builder()
+              .namespace(k8sAzureInfrastructure.getNamespace())
+              .cluster(k8sAzureInfrastructure.getCluster())
+              .subscription(k8sAzureInfrastructure.getSubscription())
+              .resourceGroup(k8sAzureInfrastructure.getResourceGroup())
+              .azureConnectorDTO((AzureConnectorDTO) connectorDTO.getConnectorConfig())
+              .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+              .useClusterAdminCredentials(k8sAzureInfrastructure.getUseClusterAdminCredentials() != null
+                  && k8sAzureInfrastructure.getUseClusterAdminCredentials())
+              .build();
+
+        default:
+          throw new UnsupportedOperationException(
+              format("Unsupported Infrastructure type: [%s]", infrastructure.getKind()));
+      }
+    } catch (ClassCastException ex) {
+      if (Set.of(KUBERNETES_DIRECT, KUBERNETES_GCP, KUBERNETES_AZURE).contains(infrastructure.getKind())) {
+        String requiredConnectorType = getRequiredConnectorType(infrastructure.getKind());
+        throw new InvalidArgumentsException(Pair.of("connectorRef",
+            String.format(CLASS_CAST_EXCEPTION_ERROR, infrastructure.getKind(), connectorDTO.getConnectorType(),
+                requiredConnectorType)));
+      }
+      throw ex;
+    }
+  }
+
+  public String getRequiredConnectorType(String infrastructureType) {
+    switch (infrastructureType) {
       case KUBERNETES_DIRECT:
-        K8sDirectInfrastructureOutcome k8SDirectInfrastructure = (K8sDirectInfrastructureOutcome) infrastructure;
-        KubernetesHelperService.validateNamespace(k8SDirectInfrastructure.getNamespace());
-
-        return DirectK8sInfraDelegateConfig.builder()
-            .namespace(k8SDirectInfrastructure.getNamespace())
-            .kubernetesClusterConfigDTO((KubernetesClusterConfigDTO) connectorDTO.getConnectorConfig())
-            .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
-            .build();
-
+        return KUBERNETES_CLUSTER.getDisplayName();
       case KUBERNETES_GCP:
-        K8sGcpInfrastructureOutcome k8sGcpInfrastructure = (K8sGcpInfrastructureOutcome) infrastructure;
-        KubernetesHelperService.validateNamespace(k8sGcpInfrastructure.getNamespace());
-        KubernetesHelperService.validateCluster(k8sGcpInfrastructure.getCluster());
-
-        return GcpK8sInfraDelegateConfig.builder()
-            .namespace(k8sGcpInfrastructure.getNamespace())
-            .cluster(k8sGcpInfrastructure.getCluster())
-            .gcpConnectorDTO((GcpConnectorDTO) connectorDTO.getConnectorConfig())
-            .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
-            .build();
-
+        return GCP.getDisplayName();
       case KUBERNETES_AZURE:
-        K8sAzureInfrastructureOutcome k8sAzureInfrastructure = (K8sAzureInfrastructureOutcome) infrastructure;
-        KubernetesHelperService.validateNamespace(k8sAzureInfrastructure.getNamespace());
-        KubernetesHelperService.validateSubscription(k8sAzureInfrastructure.getSubscription());
-        KubernetesHelperService.validateResourceGroup(k8sAzureInfrastructure.getResourceGroup());
-        KubernetesHelperService.validateCluster(k8sAzureInfrastructure.getCluster());
-
-        return AzureK8sInfraDelegateConfig.builder()
-            .namespace(k8sAzureInfrastructure.getNamespace())
-            .cluster(k8sAzureInfrastructure.getCluster())
-            .subscription(k8sAzureInfrastructure.getSubscription())
-            .resourceGroup(k8sAzureInfrastructure.getResourceGroup())
-            .azureConnectorDTO((AzureConnectorDTO) connectorDTO.getConnectorConfig())
-            .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
-            .useClusterAdminCredentials(k8sAzureInfrastructure.getUseClusterAdminCredentials() != null
-                && k8sAzureInfrastructure.getUseClusterAdminCredentials())
-            .build();
-
+        return AZURE.getDisplayName();
       default:
-        throw new UnsupportedOperationException(
-            format("Unsupported Infrastructure type: [%s]", infrastructure.getKind()));
+        return StringUtils.EMPTY;
     }
   }
 }

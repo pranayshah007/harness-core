@@ -47,8 +47,8 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.audit.v1.model.AwsS3StreamingDestinationSpecDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
-import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationStatus;
 import io.harness.utils.PageUtils;
 
 import com.mongodb.BasicDBList;
@@ -84,7 +84,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   private String id;
   private String identifier;
   private String name;
-  private StatusEnum statusEnum;
+  private StreamingDestinationStatus statusEnum;
   private String bucket;
   private String connectorRef;
 
@@ -109,7 +109,8 @@ public class StreamingServiceImplTest extends CategoryTest {
     id = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     identifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     name = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
-    statusEnum = StatusEnum.values()[RandomUtils.nextInt(0, StatusEnum.values().length - 1)];
+    statusEnum =
+        StreamingDestinationStatus.values()[RandomUtils.nextInt(0, StreamingDestinationStatus.values().length - 1)];
     bucket = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     connectorRef = "account." + randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     when(transactionTemplate.execute(any()))
@@ -162,7 +163,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testList() {
     String searchTerm = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
-    StreamingDestinationDTO.StatusEnum statusEnum = StreamingDestinationDTO.StatusEnum.ACTIVE;
+    StreamingDestinationStatus statusEnum = StreamingDestinationStatus.ACTIVE;
     int page = 0;
     int limit = 10;
     Pageable pageable = PageUtils.getPageRequest(new PageRequest(
@@ -253,7 +254,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeleteStreamingDestination() {
     StreamingDestination streamingDestination = getStreamingDestination();
-    streamingDestination.setStatus(StatusEnum.INACTIVE);
+    streamingDestination.setStatus(StreamingDestinationStatus.INACTIVE);
 
     when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
         .thenReturn(Optional.of(streamingDestination));
@@ -273,7 +274,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeleteStreamingDestination_withInvalidRequestException() {
     StreamingDestination streamingDestination = getStreamingDestination();
-    streamingDestination.setStatus(StatusEnum.ACTIVE);
+    streamingDestination.setStatus(StreamingDestinationStatus.ACTIVE);
 
     when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
         .thenReturn(Optional.of(streamingDestination));
@@ -295,7 +296,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   public void testUpdateStreamingDestination() throws Exception {
     StreamingDestinationDTO streamingDestinationDTO = getStreamingDestinationDTO();
     streamingDestinationDTO.setName(name + " changed");
-    streamingDestinationDTO.setStatus(StatusEnum.INACTIVE);
+    streamingDestinationDTO.setStatus(StreamingDestinationStatus.INACTIVE);
     streamingDestinationDTO.setSpec(new AwsS3StreamingDestinationSpecDTO()
                                         .bucket(bucket + " changed")
                                         .type(StreamingDestinationSpecDTO.TypeEnum.AWS_S3));
@@ -304,7 +305,7 @@ public class StreamingServiceImplTest extends CategoryTest {
 
     AwsS3StreamingDestination newStreamingDestination = (AwsS3StreamingDestination) getStreamingDestination();
     newStreamingDestination.setName(name + " changed");
-    newStreamingDestination.setStatus(StatusEnum.INACTIVE);
+    newStreamingDestination.setStatus(StreamingDestinationStatus.INACTIVE);
     newStreamingDestination.setBucket(bucket + " changed");
 
     when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))

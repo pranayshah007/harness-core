@@ -14,6 +14,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.WorkflowType;
 
+import software.wings.beans.dto.HelmChart;
+
 import lombok.Builder;
 import lombok.Data;
 

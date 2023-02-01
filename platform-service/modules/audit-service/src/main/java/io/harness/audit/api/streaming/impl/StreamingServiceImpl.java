@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.audit.remote.v1.api.streaming.StreamingDestinationPermissions.VIEW_STREAMING_DESTINATION_PERMISSION;
 import static io.harness.audit.remote.v1.api.streaming.StreamingDestinationResourceTypes.STREAMING_DESTINATION;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.spec.server.audit.v1.model.StreamingDestinationStatus.ACTIVE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.NGResourceFilterConstants;
@@ -38,14 +39,10 @@ import io.harness.exception.NoResultFoundException;
 import io.harness.ng.core.dto.EntityScopeInfo;
 import io.harness.outbox.api.OutboxService;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
-import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum;
 import io.harness.utils.PageUtils;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Streams;
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -185,7 +182,7 @@ public class StreamingServiceImpl implements StreamingService {
   @Override
   public boolean delete(String accountIdentifier, String identifier) {
     StreamingDestination streamingDestination = getStreamingDestination(accountIdentifier, identifier);
-    if (streamingDestination.getStatus().equals(StatusEnum.ACTIVE)) {
+    if (streamingDestination.getStatus().equals(ACTIVE)) {
       String message = String.format(
           "Streaming destination with identifier [%s] cannot be deleted because it is active.", identifier);
       log.error(message);

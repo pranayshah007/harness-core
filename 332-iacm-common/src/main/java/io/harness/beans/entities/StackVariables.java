@@ -11,12 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.IACM;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
 @OwnedBy(IACM)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class StackVariables {
   Long created;
   Long updated;

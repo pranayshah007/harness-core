@@ -203,7 +203,7 @@ public class SSOServiceTest extends WingsBaseTest {
   @Owner(developers = UJJAWAL)
   @Category(UnitTests.class)
   public void validateLdapConnectionSettings() {
-    when(DELEGATE_PROXY_FACTORY.get(any(), any())).thenReturn(LDAP_DELEGATE_SERVICE);
+    when(DELEGATE_PROXY_FACTORY.getV2(any(), any())).thenReturn(LDAP_DELEGATE_SERVICE);
     when(LDAP_DELEGATE_SERVICE.validateLdapConnectionSettings(any(), any()))
         .thenReturn(LdapTestResponse.builder().status(Status.SUCCESS).build());
     LdapTestResponse response = ssoService.validateLdapConnectionSettings(ldapSettings, "testAccount");
@@ -214,7 +214,7 @@ public class SSOServiceTest extends WingsBaseTest {
   @Owner(developers = UJJAWAL)
   @Category(UnitTests.class)
   public void validateLdapUserSettings() {
-    when(DELEGATE_PROXY_FACTORY.get(any(), any())).thenReturn(LDAP_DELEGATE_SERVICE);
+    when(DELEGATE_PROXY_FACTORY.getV2(any(), any())).thenReturn(LDAP_DELEGATE_SERVICE);
     when(LDAP_DELEGATE_SERVICE.validateLdapUserSettings(any(), any()))
         .thenReturn(LdapTestResponse.builder().status(Status.SUCCESS).build());
     LdapTestResponse response = ssoService.validateLdapUserSettings(ldapSettings, "testAccount");
@@ -225,7 +225,7 @@ public class SSOServiceTest extends WingsBaseTest {
   @Owner(developers = UJJAWAL)
   @Category(UnitTests.class)
   public void validateLdapGroupSettings() {
-    when(DELEGATE_PROXY_FACTORY.get(any(), any())).thenReturn(LDAP_DELEGATE_SERVICE);
+    when(DELEGATE_PROXY_FACTORY.getV2(any(), any())).thenReturn(LDAP_DELEGATE_SERVICE);
     when(LDAP_DELEGATE_SERVICE.validateLdapGroupSettings(any(), any()))
         .thenReturn(LdapTestResponse.builder().status(Status.SUCCESS).build());
     LdapTestResponse response = ssoService.validateLdapGroupSettings(ldapSettings, "testAccount");
@@ -236,7 +236,7 @@ public class SSOServiceTest extends WingsBaseTest {
   @Owner(developers = UJJAWAL)
   @Category(UnitTests.class)
   public void validateLdapAuthentication() {
-    when(DELEGATE_PROXY_FACTORY.get(any(), any())).thenReturn(LDAP_DELEGATE_SERVICE);
+    when(DELEGATE_PROXY_FACTORY.getV2(any(), any())).thenReturn(LDAP_DELEGATE_SERVICE);
     when(LDAP_DELEGATE_SERVICE.authenticate(any(), any(), any(), any()))
         .thenReturn(LdapResponse.builder().status(LdapResponse.Status.SUCCESS).build());
     LdapResponse response = ssoService.validateLdapAuthentication(ldapSettings, "username", "password");
@@ -257,7 +257,7 @@ public class SSOServiceTest extends WingsBaseTest {
   public void searchGroupsByName() {
     EncryptedDataDetail encryptedDataDetail = mock(EncryptedDataDetail.class);
     LdapSettings spyLdapSettings = spy(ldapSettings);
-    when(DELEGATE_PROXY_FACTORY.get(any(), any())).thenReturn(LDAP_DELEGATE_SERVICE);
+    when(DELEGATE_PROXY_FACTORY.getV2(any(), any())).thenReturn(LDAP_DELEGATE_SERVICE);
     when(LDAP_DELEGATE_SERVICE.searchGroupsByName(any(), any(), any()))
         .thenReturn(Collections.singletonList(LdapGroupResponse.builder().name("testGroup").build()));
     when(SSO_SETTING_SERVICE.getLdapSettingsByUuid(any())).thenReturn(spyLdapSettings);

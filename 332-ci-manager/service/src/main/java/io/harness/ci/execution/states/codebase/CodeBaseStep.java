@@ -14,13 +14,20 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.ManualExecutionSource;
+import io.harness.beans.serializer.RunTimeInputHandler;
+import io.harness.beans.sweepingoutputs.ContextElement;
+import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.ChildExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -37,6 +44,7 @@ public class CodeBaseStep implements ChildExecutable<CodeBaseStepParameters> {
       StepType.newBuilder().setType("CI_CODEBASE").setStepCategory(StepCategory.STEP).build();
 
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
 
   @Override
   public Class<CodeBaseStepParameters> getStepParametersClass() {
@@ -54,14 +62,15 @@ public class CodeBaseStep implements ChildExecutable<CodeBaseStepParameters> {
   // to expose data that we have
   private String getChildNodeId(Ambiance ambiance, CodeBaseStepParameters stepParameters) {
     String childNodeId = stepParameters.getCodeBaseSyncTaskId();
-
-    ExecutionSource executionSource = stepParameters.getExecutionSource();
+    ExecutionSource executionSource = getExecutionSource(ambiance, stepParameters.getExecutionSource());
     if (executionSource != null && executionSource.getType() == ExecutionSource.Type.MANUAL) {
       ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
       if (isNotEmpty(manualExecutionSource.getPrNumber()) || isNotEmpty(manualExecutionSource.getBranch())
           || isNotEmpty(manualExecutionSource.getTag())) {
+        String connectorRef = RunTimeInputHandler.resolveStringParameterV2("connectorRef", STEP_TYPE.getType(),
+            ambiance.getStageExecutionId(), stepParameters.getConnectorRef(), true);
         ConnectorDetails connectorDetails =
-            connectorUtils.getConnectorDetails(AmbianceUtils.getNgAccess(ambiance), stepParameters.getConnectorRef());
+            connectorUtils.getConnectorDetails(AmbianceUtils.getNgAccess(ambiance), connectorRef);
         boolean executeOnDelegate =
             connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
         if (connectorUtils.hasApiAccess(connectorDetails) && executeOnDelegate) {
@@ -77,5 +86,18 @@ public class CodeBaseStep implements ChildExecutable<CodeBaseStepParameters> {
       Ambiance ambiance, CodeBaseStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     log.info("Completed execution for codebase node step [{}]", stepParameters);
     return createStepResponseFromChildResponse(responseDataMap);
+  }
+
+  private ExecutionSource getExecutionSource(Ambiance ambiance, ExecutionSource executionSource) {
+    if (executionSource != null) {
+      return executionSource;
+    }
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
+    if (!optionalSweepingOutput.isFound()) {
+      throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
+    }
+    StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();
+    return stageDetails.getExecutionSource();
   }
 }

@@ -21,6 +21,7 @@ import io.harness.manifest.request.ManifestRequest;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
+import com.amazonaws.services.autoscaling.model.Instance;
 import com.amazonaws.services.autoscaling.model.LifecycleHookSpecification;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @OwnedBy(CDP)
@@ -126,6 +128,18 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
 
     AutoScalingGroup finalAutoScalingGroup = asgSdkManager.getASG(asgName);
     chainState.setAutoScalingGroup(finalAutoScalingGroup);
+
+    // wait all instances to be healthy in target groups
+    if ("BG".equals(chainState.getExecutionStrategy())) {
+      List<String> instanceIds =
+          finalAutoScalingGroup.getInstances().stream().map(Instance::getInstanceId).collect(Collectors.toList());
+      Predicate<List<String>> predicate = arg
+          -> asgSdkManager.checkAllTargetsRegistered(arg, chainState.getTargetGroupArnList(),
+              asgConfigurationManifestRequest.getAwsInternalConfig(), asgConfigurationManifestRequest.getRegion());
+      String operation =
+          format("check all instances to be healthy in target groups [%s]", chainState.getTargetGroupArnList());
+      asgSdkManager.waitReadyState(instanceIds, predicate, operation);
+    }
 
     return chainState;
   }

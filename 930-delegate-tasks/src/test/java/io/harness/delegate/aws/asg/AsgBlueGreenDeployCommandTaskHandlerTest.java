@@ -80,7 +80,7 @@ public class AsgBlueGreenDeployCommandTaskHandlerTest extends CategoryTest {
   @Before
   public void setup() {
     doReturn(prepareRollbackLogCallback).when(asgTaskHelper).getLogCallback(any(), anyString(), anyBoolean(), any());
-    doReturn(asgSdkManager).when(asgTaskHelper).getAsgSdkManager(any(), any());
+    doReturn(asgSdkManager).when(asgTaskHelper).getAsgSdkManager(any(), any(), any(ElbV2Client.class));
     doReturn(AwsInternalConfig.builder().build()).when(awsUtils).getAwsInternalConfig(any(), anyString());
     doReturn(LAUNCH_TEMPLATE_CONTENT).when(asgTaskHelper).getAsgLaunchTemplateContent(any());
     doReturn(CONFIG_CONTENT).when(asgTaskHelper).getAsgConfigurationContent(any());

@@ -69,6 +69,9 @@ public class OutcomeExpressionConstants {
   public final String TAS_SWAP_ROUTES_OUTCOME = "TasSwapRoutesOutcome";
   public final String TAS_INBUILT_VARIABLES_OUTCOME = "pcf";
   public final String ASG_ROLLING_DEPLOY_OUTCOME = "asgRollingDeployOutcome";
+  public final String GOOGLE_FUNCTION_PREPARE_ROLLBACK_OUTCOME = "googleFunctionPrepareRollbackOutcome";
+  public final String GOOGLE_FUNCTION_DEPLOY_OUTCOME = "googleFunctionDeployOutcome";
+  public final String GOOGLE_FUNCTION_DEPLOY_WITHOUT_TRAFFIC_OUTCOME = "googleFunctionDeployWithoutTrafficOutcome";
   public final String TAS_ROLLING_DEPLOY_OUTCOME = "TasRollingDeployOutcome";
   public final String ASG_BLUE_GREEN_SWAP_SERVICE_OUTCOME = "asgBlueGreenSwapServiceOutcome";
   public final String ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_OUTCOME = "asgBlueGreenPrepareRollbackDataOutcome";

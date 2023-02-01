@@ -35,6 +35,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
+import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
@@ -65,6 +66,7 @@ public class HttpStepTest extends CategoryTest {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @InjectMocks private HttpStepParameters httpStepParameters;
 
+  @Mock private PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock private ILogStreamingStepClient iLogStreamingStepClient;
   @Mock private NGLogCallback ngLogCallback;

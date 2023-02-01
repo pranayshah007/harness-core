@@ -73,7 +73,7 @@ public class ElkAnalysisServiceImpl extends AnalysisServiceImpl implements ElkAn
                                          .appId(GLOBAL_APP_ID)
                                          .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                          .build();
-    return delegateProxyFactory.get(ElkDelegateService.class, elkTaskContext)
+    return delegateProxyFactory.getV2(ElkDelegateService.class, elkTaskContext)
         .getIndices(elkConfig, encryptedDataDetails);
   }
 
@@ -82,7 +82,7 @@ public class ElkAnalysisServiceImpl extends AnalysisServiceImpl implements ElkAn
       throws IOException {
     SyncTaskContext elkTaskContext =
         SyncTaskContext.builder().accountId(accountId).appId(GLOBAL_APP_ID).timeout(DEFAULT_SYNC_CALL_TIMEOUT).build();
-    return delegateProxyFactory.get(ElkDelegateService.class, elkTaskContext)
+    return delegateProxyFactory.getV2(ElkDelegateService.class, elkTaskContext)
         .getVersion(elkConfig, encryptedDataDetails);
   }
 
@@ -118,7 +118,7 @@ public class ElkAnalysisServiceImpl extends AnalysisServiceImpl implements ElkAn
     Object responseWithoutHost;
     try {
       responseWithoutHost =
-          delegateProxyFactory.get(ElkDelegateService.class, elkTaskContext)
+          delegateProxyFactory.getV2(ElkDelegateService.class, elkTaskContext)
               .search((ElkConfig) settingAttribute.getValue(), encryptedDataDetails, elkFetchRequestWithoutHost,
                   createApiCallLog(settingAttribute.getAccountId(), elkSetupTestNodeData.getGuid()), 5);
     } catch (IOException ex) {
@@ -177,7 +177,7 @@ public class ElkAnalysisServiceImpl extends AnalysisServiceImpl implements ElkAn
     Object responseWithHost;
     try {
       responseWithHost =
-          delegateProxyFactory.get(ElkDelegateService.class, elkTaskContext)
+          delegateProxyFactory.getV2(ElkDelegateService.class, elkTaskContext)
               .search((ElkConfig) settingAttribute.getValue(), encryptedDataDetails, elkFetchRequestWithHost,
                   createApiCallLog(settingAttribute.getAccountId(), elkSetupTestNodeData.getGuid()), 5);
     } catch (IOException ex) {
@@ -245,7 +245,7 @@ public class ElkAnalysisServiceImpl extends AnalysisServiceImpl implements ElkAn
                                            .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                            .build();
       Object responseWithoutHost =
-          delegateProxyFactory.get(ElkDelegateService.class, elkTaskContext)
+          delegateProxyFactory.getV2(ElkDelegateService.class, elkTaskContext)
               .search((ElkConfig) settingAttribute.getValue(), encryptedDataDetails, elkFetchRequestWithoutHost,
                   createApiCallLog(settingAttribute.getAccountId(), guid), 5);
       long totalHitsPerMinute = parseTotalHits(responseWithoutHost) / TIME_DURATION_FOR_LOGS_IN_MINUTES;

@@ -55,6 +55,9 @@ public final class EventsFrameworkMetadataConstants {
   public static final String FREEZE_CONFIG = "freezeConfig";
 
   public static final String GIT_COMMIT = "gitCommit";
+  public static final String CD_TELEMETRY = "cdTelemetry";
+
+  public static final String LICENSE_MODULES = "licenseModule";
   public static final String SIGNUP_TOKEN = "signupToken";
   public static final String POLLING_DOCUMENT = "pollingDocument";
   public static final String GIT_TO_HARNESS_PROGRESS = "gitToHarnessProgress";

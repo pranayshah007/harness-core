@@ -32,7 +32,7 @@ import io.harness.cdng.ssh.TailFilePattern;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.shell.ScriptType;
 import io.harness.steps.shellscript.ShellScriptBaseSource;

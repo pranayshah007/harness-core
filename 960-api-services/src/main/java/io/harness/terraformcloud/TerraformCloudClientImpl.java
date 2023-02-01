@@ -24,6 +24,7 @@ import io.harness.terraformcloud.model.TerraformCloudResponse;
 import io.harness.terraformcloud.model.WorkspaceData;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -39,21 +40,23 @@ import retrofit2.converter.scalars.ScalarsConverterFactory;
 
 @Slf4j
 @OwnedBy(CDP)
+@Singleton
 public class TerraformCloudClientImpl implements TerraformCloudClient {
   static final long TIME_OUT = 60;
 
   @Override
-  public TerraformCloudResponse<List<OrganizationData>> listOrganizations(String url, String token) throws IOException {
+  public TerraformCloudResponse<List<OrganizationData>> listOrganizations(String url, String token, int page)
+      throws IOException {
     Call<TerraformCloudResponse<List<OrganizationData>>> call =
-        getRestClient(url).listOrganizations(getAuthorization(token));
+        getRestClient(url).listOrganizations(getAuthorization(token), page);
     return executeRestCall(call);
   }
 
   @Override
-  public TerraformCloudResponse<List<WorkspaceData>> listWorkspaces(String url, String token, String organization)
-      throws IOException {
+  public TerraformCloudResponse<List<WorkspaceData>> listWorkspaces(
+      String url, String token, String organization, int page) throws IOException {
     Call<TerraformCloudResponse<List<WorkspaceData>>> call =
-        getRestClient(url).listWorkspaces(getAuthorization(token), organization);
+        getRestClient(url).listWorkspaces(getAuthorization(token), organization, page);
     return executeRestCall(call);
   }
 
@@ -106,10 +109,10 @@ public class TerraformCloudClientImpl implements TerraformCloudClient {
   }
 
   @Override
-  public TerraformCloudResponse<List<PolicyCheckData>> listPolicyChecks(String url, String token, String runId)
-      throws IOException {
+  public TerraformCloudResponse<List<PolicyCheckData>> listPolicyChecks(
+      String url, String token, String runId, int page) throws IOException {
     Call<TerraformCloudResponse<List<PolicyCheckData>>> call =
-        getRestClient(url).listPolicyChecks(getAuthorization(token), runId);
+        getRestClient(url).listPolicyChecks(getAuthorization(token), runId, page);
     return executeRestCall(call);
   }
 
@@ -150,6 +153,7 @@ public class TerraformCloudClientImpl implements TerraformCloudClient {
   private <T> T executeRestCall(Call<T> call) throws IOException {
     Response<T> response = null;
     try {
+      log.info("Requesting: {}", call.request().url().url());
       response = call.execute();
       if (!response.isSuccessful() && response.errorBody() != null) {
         throw new TerraformCloudApiException(response.errorBody().string(), response.code());

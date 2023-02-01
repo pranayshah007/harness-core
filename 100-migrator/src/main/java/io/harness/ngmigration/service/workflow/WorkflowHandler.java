@@ -22,9 +22,9 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.service.step.StepMapperFactory;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.pipeline.PipelineInfoConfig;
@@ -452,7 +452,7 @@ public abstract class WorkflowHandler {
     return getDeploymentStageConfig(inferServiceDefinitionType(workflow), steps, rollbackSteps);
   }
 
-  List<FailureStrategyConfig> getDefaultFailureStrategy() {
+  ParameterField<List<FailureStrategyConfig>> getDefaultFailureStrategy() {
     FailureStrategyConfig failureStrategyConfig =
         FailureStrategyConfig.builder()
             .onFailure(OnFailureConfig.builder()
@@ -460,7 +460,7 @@ public abstract class WorkflowHandler {
                            .action(AbortFailureActionConfig.builder().build())
                            .build())
             .build();
-    return Collections.singletonList(failureStrategyConfig);
+    return ParameterField.createValueField(Collections.singletonList(failureStrategyConfig));
   }
 
   JsonNode getDeploymentStageTemplateSpec(WorkflowMigrationContext context) {

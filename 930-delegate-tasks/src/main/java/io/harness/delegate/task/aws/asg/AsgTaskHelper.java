@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
@@ -60,6 +61,10 @@ public class AsgTaskHelper {
 
   public List<String> getAsgScalingPolicyContent(Map<String, List<String>> asgStoreManifestsContent) {
     return asgStoreManifestsContent.get(AsgScalingPolicy);
+  }
+
+  public List<String> getAsgScheduledActionContent(Map<String, List<String>> asgStoreManifestsContent) {
+    return asgStoreManifestsContent.get(AsgScheduledUpdateGroupAction);
   }
 
   public AutoScalingGroupContainer mapToAutoScalingGroupContainer(AutoScalingGroup autoScalingGroup) {

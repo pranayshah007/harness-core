@@ -46,7 +46,6 @@ import software.wings.beans.VMSSAuthType;
 import software.wings.beans.VMSSDeploymentType;
 import software.wings.beans.Variable;
 import software.wings.beans.VariableType;
-import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.ManifestInput;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactFile;
@@ -140,7 +139,6 @@ public class CgOrchestrationBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(ArtifactFile.class, 5066);
     kryo.register(Tag.class, 7185);
     kryo.register(Artifact.class, 7192);
-    kryo.register(HelmChart.class, 71106);
     kryo.register(Artifact.ContentStatus.class, 7193);
     kryo.register(Artifact.Status.class, 7194);
     kryo.register(ApprovalDetails.Action.class, 7461);

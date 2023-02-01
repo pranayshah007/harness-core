@@ -308,11 +308,7 @@ public class TemplateMergeServiceHelper {
     Map<String, GetTemplateEntityRequest> getBatchRequest = prepareBatchGetTemplatesRequest(
         accountIdentifier, orgIdentifier, projectIdentifier, templatesToGet, loadFromCache);
 
-    Map<String, TemplateEntity> remoteTemplates = getBatchTemplates(accountIdentifier, getBatchRequest);
-
-    validateAndAddToQueue(remoteTemplates, yamlNodeQueue);
-
-    return remoteTemplates;
+    return getBatchTemplatesAndProcessTemplates(accountIdentifier, getBatchRequest, yamlNodeQueue);
   }
 
   private void validateAndAddToQueue(Map<String, TemplateEntity> remoteTemplates, Queue<YamlField> yamlNodeQueue) {
@@ -388,10 +384,11 @@ public class TemplateMergeServiceHelper {
   }
 
   @VisibleForTesting
-  Map<String, TemplateEntity> getBatchTemplates(
-      String accountIdentifier, Map<String, GetTemplateEntityRequest> getBatchRequest) {
+  Map<String, TemplateEntity> getBatchTemplatesAndProcessTemplates(
+      String accountIdentifier, Map<String, GetTemplateEntityRequest> getBatchRequest, Queue<YamlField> yamlNodeQueue) {
     Map<String, FetchRemoteEntityRequest> remoteTemplatesRequestList = new HashMap<>();
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
+    Map<String, TemplateEntity> inlineTemplateResponseList = new HashMap<>();
 
     for (Map.Entry<String, GetTemplateEntityRequest> getFileRequest : getBatchRequest.entrySet()) {
       Scope scope = getFileRequest.getValue().getScope();
@@ -410,10 +407,21 @@ public class TemplateMergeServiceHelper {
             getFileRequest.getKey(), buildFetchRemoteEntityRequest(scope, savedEntity, loadFromCache));
       } else {
         templateCacheMap.put(getFileRequest.getKey(), templateEntity.get());
+        inlineTemplateResponseList.put(getFileRequest.getKey(), savedEntity);
       }
     }
+    //    process inline templates
+    if (!inlineTemplateResponseList.isEmpty()) {
+      validateAndAddToQueue(inlineTemplateResponseList, yamlNodeQueue);
+    }
 
-    templateCacheMap.putAll(performBatchGetTemplateAndValidate(accountIdentifier, remoteTemplatesRequestList));
+    //    process remote templates
+    if (!remoteTemplatesRequestList.isEmpty()) {
+      Map<String, TemplateEntity> remoteTemplateResponseList =
+          new HashMap<>(performBatchGetTemplateAndValidate(accountIdentifier, remoteTemplatesRequestList));
+      templateCacheMap.putAll(remoteTemplateResponseList);
+      validateAndAddToQueue(remoteTemplateResponseList, yamlNodeQueue);
+    }
     return templateCacheMap;
   }
 

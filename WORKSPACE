@@ -1322,8 +1322,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:HE9ukdqJZAtwBzA5fc66Fnc8XNOZmfPLxbucmf3/8SQ=",
-    version = "v1.27.1-0.20221116132008-1949a8eb7407",
+    sum = "h1:TB0fL4RpUrIngifmZ6CWFOJQpVKtKJGjLGGj00TLqYE=",
+    version = "v1.28.2-0.20230130112242-4428a9bf64df",
 )
 
 go_repository(
@@ -5083,20 +5083,20 @@ plain_artifacts = [
     "org.apache.kafka:kafka-clients:2.8.1",
     "org.apache.logging.log4j:log4j-api:2.17.1",
     "org.apache.logging.log4j:log4j-to-slf4j:2.17.1",
-    "org.apache.lucene:lucene-analyzers-common:8.5.1",
-    "org.apache.lucene:lucene-backward-codecs:8.5.1",
-    "org.apache.lucene:lucene-core:8.5.1",
-    "org.apache.lucene:lucene-grouping:8.5.1",
-    "org.apache.lucene:lucene-highlighter:8.5.1",
-    "org.apache.lucene:lucene-join:8.5.1",
-    "org.apache.lucene:lucene-memory:8.5.1",
-    "org.apache.lucene:lucene-misc:8.5.1",
-    "org.apache.lucene:lucene-queries:8.5.1",
-    "org.apache.lucene:lucene-queryparser:8.5.1",
-    "org.apache.lucene:lucene-sandbox:8.5.1",
-    "org.apache.lucene:lucene-spatial-extras:8.5.1",
-    "org.apache.lucene:lucene-spatial3d:8.5.1",
-    "org.apache.lucene:lucene-suggest:8.5.1",
+    "org.apache.lucene:lucene-analyzers-common:8.11.1",
+    "org.apache.lucene:lucene-backward-codecs:8.11.1",
+    "org.apache.lucene:lucene-core:8.11.1",
+    "org.apache.lucene:lucene-grouping:8.11.1",
+    "org.apache.lucene:lucene-highlighter:8.11.1",
+    "org.apache.lucene:lucene-join:8.11.1",
+    "org.apache.lucene:lucene-memory:8.11.1",
+    "org.apache.lucene:lucene-misc:8.11.1",
+    "org.apache.lucene:lucene-queries:8.11.1",
+    "org.apache.lucene:lucene-queryparser:8.11.1",
+    "org.apache.lucene:lucene-sandbox:8.11.1",
+    "org.apache.lucene:lucene-spatial-extras:8.11.1",
+    "org.apache.lucene:lucene-spatial3d:8.11.1",
+    "org.apache.lucene:lucene-suggest:8.11.1",
     "org.apache.maven.plugin-tools:maven-plugin-annotations:3.4",
     "org.apache.maven.plugin-tools:maven-plugin-annotations:3.4",
     "org.apache.maven:maven-artifact:3.3.3",
@@ -5694,6 +5694,8 @@ filegroup(
     strip_prefix = "Python-3.9.10",
     urls = ["https://www.python.org/ftp/python/3.9.10/Python-3.9.10.tar.xz"],
 )
+
+register_toolchains("//:harness_no_fdLimit_jdk11_toolchain_definition")
 
 register_toolchains("//:py_toolchain")
 

@@ -963,23 +963,23 @@ public class AnalysisServiceImpl implements AnalysisService {
                                       .build();
     switch (stateType) {
       case SPLUNKV2:
-        delegateProxyFactory.get(SplunkDelegateService.class, taskContext)
+        delegateProxyFactory.getV2(SplunkDelegateService.class, taskContext)
             .validateConfig((SplunkConfig) settingAttribute.getValue(), encryptedDataDetails);
         return;
       case ELK:
-        delegateProxyFactory.get(ElkDelegateService.class, taskContext)
+        delegateProxyFactory.getV2(ElkDelegateService.class, taskContext)
             .validateConfig((ElkConfig) settingAttribute.getValue(), encryptedDataDetails);
         return;
       case LOGZ:
-        delegateProxyFactory.get(LogzDelegateService.class, taskContext)
+        delegateProxyFactory.getV2(LogzDelegateService.class, taskContext)
             .validateConfig((LogzConfig) settingAttribute.getValue(), encryptedDataDetails);
         return;
       case SUMO:
-        delegateProxyFactory.get(SumoDelegateService.class, taskContext)
+        delegateProxyFactory.getV2(SumoDelegateService.class, taskContext)
             .validateConfig((SumoConfig) settingAttribute.getValue(), encryptedDataDetails);
         return;
       case INSTANA:
-        delegateProxyFactory.get(InstanaDelegateService.class, taskContext)
+        delegateProxyFactory.getV2(InstanaDelegateService.class, taskContext)
             .validateConfig((InstanaConfig) settingAttribute.getValue(), encryptedDataDetails);
         return;
       default:
@@ -1005,7 +1005,7 @@ public class AnalysisServiceImpl implements AnalysisService {
                                                .appId(GLOBAL_APP_ID)
                                                .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                                .build();
-          return delegateProxyFactory.get(ElkDelegateService.class, elkTaskContext)
+          return delegateProxyFactory.getV2(ElkDelegateService.class, elkTaskContext)
               .getLogSample((ElkConfig) settingAttribute.getValue(), index, true, encryptedDataDetails);
         case LOGZ:
           errorCode = ErrorCode.LOGZ_CONFIGURATION_ERROR;
@@ -1014,7 +1014,7 @@ public class AnalysisServiceImpl implements AnalysisService {
                                                 .appId(GLOBAL_APP_ID)
                                                 .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                                 .build();
-          return delegateProxyFactory.get(LogzDelegateService.class, logzTaskContext)
+          return delegateProxyFactory.getV2(LogzDelegateService.class, logzTaskContext)
               .getLogSample((LogzConfig) settingAttribute.getValue(), encryptedDataDetails);
         case SUMO:
           errorCode = ErrorCode.SUMO_CONFIGURATION_ERROR;
@@ -1023,7 +1023,7 @@ public class AnalysisServiceImpl implements AnalysisService {
                                                 .appId(GLOBAL_APP_ID)
                                                 .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                                 .build();
-          return delegateProxyFactory.get(SumoDelegateService.class, sumoTaskContext)
+          return delegateProxyFactory.getV2(SumoDelegateService.class, sumoTaskContext)
               .getLogSample((SumoConfig) settingAttribute.getValue(), index, encryptedDataDetails, duration);
         default:
           errorCode = ErrorCode.DEFAULT_ERROR_CODE;
@@ -1066,7 +1066,7 @@ public class AnalysisServiceImpl implements AnalysisService {
                                                .appId(GLOBAL_APP_ID)
                                                .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                                .build();
-          searchResponse = delegateProxyFactory.get(ElkDelegateService.class, elkTaskContext)
+          searchResponse = delegateProxyFactory.getV2(ElkDelegateService.class, elkTaskContext)
                                .search((ElkConfig) settingAttribute.getValue(), encryptedDataDetails, elkFetchRequest,
                                    createApiCallLog(accountId, null), ElkDelegateServiceImpl.MAX_RECORDS);
           break;
@@ -1077,7 +1077,7 @@ public class AnalysisServiceImpl implements AnalysisService {
                                                 .appId(GLOBAL_APP_ID)
                                                 .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                                 .build();
-          searchResponse = delegateProxyFactory.get(LogzDelegateService.class, logzTaskContext)
+          searchResponse = delegateProxyFactory.getV2(LogzDelegateService.class, logzTaskContext)
                                .search((LogzConfig) settingAttribute.getValue(), encryptedDataDetails, elkFetchRequest,
                                    createApiCallLog(accountId, null));
           break;
