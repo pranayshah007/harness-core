@@ -12,7 +12,6 @@ import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgSwapService;
 
 import static software.wings.beans.LogHelper.color;
-import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
@@ -86,7 +85,7 @@ public class AsgBlueGreenSwapServiceCommandTaskHandler extends AsgCommandTaskNGH
     try {
       AsgSdkManager asgSdkManager =
           asgTaskHelper.getAsgSdkManager(asgCommandRequest, swapServiceLogCallback, elbV2Client);
-      asgSdkManager.info(format("Swapping autoscaling group services", Bold));
+      asgSdkManager.info("Swapping autoscaling group services");
       AwsInternalConfig awsInternalConfig =
           awsNgConfigMapper.createAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO());
 
@@ -150,7 +149,6 @@ public class AsgBlueGreenSwapServiceCommandTaskHandler extends AsgCommandTaskNGH
           color(format("Swapping Finished Successfully. %n"), LogColor.Green, LogWeight.Bold), LogLevel.INFO,
           CommandExecutionStatus.SUCCESS);
 
-      log.info("Completed task execution for command: Asg Swap Service");
       return asgBlueGreenSwapServiceResponse;
     } catch (Exception e) {
       swapServiceLogCallback.saveExecutionLog(color(format("Swapping Failed. %n"), LogColor.Red, LogWeight.Bold),

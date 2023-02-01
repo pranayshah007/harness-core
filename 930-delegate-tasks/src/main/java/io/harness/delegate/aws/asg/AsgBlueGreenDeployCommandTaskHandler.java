@@ -107,7 +107,7 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
       String region = asgInfraConfig.getRegion();
       AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO(), region);
 
-      asgSdkManager.info(format("Starting Blue Green Deployment", Bold));
+      asgSdkManager.info("Starting Blue Green Deployment");
 
       AutoScalingGroupContainer autoScalingGroupContainer = executeBGDeploy(asgSdkManager, asgStoreManifestsContent,
           asgName, amiImageId, targetGroupArnsList, isFirstDeployment, awsInternalConfig, region);

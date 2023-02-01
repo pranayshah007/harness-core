@@ -89,7 +89,7 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
 
     try {
       AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback);
-      asgSdkManager.info(format("Starting Rolling Deployment", Bold));
+      asgSdkManager.info("Starting Rolling Deployment");
 
       AutoScalingGroupContainer autoScalingGroupContainer = executeRollingDeployWithInstanceRefresh(asgSdkManager,
           asgStoreManifestsContent, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage,

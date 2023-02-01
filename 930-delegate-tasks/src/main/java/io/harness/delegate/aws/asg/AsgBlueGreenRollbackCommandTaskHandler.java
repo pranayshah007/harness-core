@@ -101,7 +101,7 @@ public class AsgBlueGreenRollbackCommandTaskHandler extends AsgCommandTaskNGHand
       String region = asgInfraConfig.getRegion();
       AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO(), region);
 
-      asgSdkManager.info(format("Starting Blue Green Rollback", Bold));
+      asgSdkManager.info("Starting Blue Green Rollback");
 
       // first deployment
       if (prodAsgName == null) {
@@ -177,8 +177,7 @@ public class AsgBlueGreenRollbackCommandTaskHandler extends AsgCommandTaskNGHand
   private void executeRollbackVersion(
       AsgSdkManager asgSdkManager, String asgName, Map<String, List<String>> asgManifestsDataForRollback) {
     if (isNotEmpty(asgManifestsDataForRollback)) {
-      String operationName = format("Rollback to previous version of ASG %s", asgName);
-      asgSdkManager.info("%s has started", operationName);
+      asgSdkManager.info("Rolling back to previous version of ASG %s", asgName);
 
       // Get the content of all required manifest files
       String asgLaunchTemplateVersion = asgTaskHelper.getAsgLaunchTemplateContent(asgManifestsDataForRollback);
@@ -211,7 +210,7 @@ public class AsgBlueGreenRollbackCommandTaskHandler extends AsgCommandTaskNGHand
                   AsgScheduledActionManifestRequest.builder().manifests(asgScheduledActionContent).build())
               .executeUpsert();
 
-      asgSdkManager.infoBold("%s ended successfully", operationName);
+      asgSdkManager.infoBold("Rolled back to previous version of ASG %s successfully", asgName);
     } else {
       asgSdkManager.deleteAsg(asgName);
     }
