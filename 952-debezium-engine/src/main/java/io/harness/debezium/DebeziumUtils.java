@@ -39,7 +39,7 @@ public class DebeziumUtils {
       if (error instanceof InvalidRequestException && error.getMessage().equals("Snapshot completed")) {
         log.info("Snapshot Completed for collection {}, stopping debezium controller..", collection);
         debeziumController.stopDebeziumController();
-      } else if (!success) {
+      } else if (!success && error != null) {
         resetOffset(JsonUtils.asObject(redisConfigJson, RedisConfig.class), redisKey);
         log.error(
             "Offset reset for key: {} because of exception: {}, at {}", redisKey, error, System.currentTimeMillis());
