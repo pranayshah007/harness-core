@@ -78,6 +78,12 @@ public class ContainerDelegateTaskHelper {
     return queueTask(abstractions, task, new ArrayList<>());
   }
 
+  public String queueTask(Ambiance ambiance, TaskData taskData, String accountId) {
+    Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
+    HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
+    return queueTask(abstractions, task, new ArrayList<>());
+  }
+
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
     return new RetryPolicy<>()
         .handle(Exception.class)

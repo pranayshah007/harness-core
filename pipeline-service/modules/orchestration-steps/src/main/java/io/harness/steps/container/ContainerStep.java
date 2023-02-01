@@ -45,6 +45,7 @@ import io.harness.steps.container.execution.ContainerStepCleanupHelper;
 import io.harness.steps.container.execution.ContainerStepExecutionResponseHelper;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
 import io.harness.steps.executable.TaskChainExecutableWithRbac;
+import io.harness.steps.plugin.ContainerCommandUnitConstants;
 import io.harness.steps.plugin.ContainerStepInfo;
 import io.harness.steps.plugin.ContainerStepPassThroughData;
 import io.harness.supplier.ThrowingSupplier;
@@ -162,8 +163,11 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
 
     outcomeService.consume(ambiance, POD_DETAILS_OUTCOME, liteEnginePodDetailsOutcome, StepCategory.STEP.name());
 
-    TaskData runStepTaskData = containerRunStepHelper.getRunStepTask(ambiance, containerStepInfo,
-        AmbianceUtils.getAccountId(ambiance), getLogPrefix(ambiance), timeoutForDelegateTask);
+    TaskData runStepTaskData =
+        containerRunStepHelper.getRunStepTask(ambiance, containerStepInfo, AmbianceUtils.getAccountId(ambiance),
+            LogStreamingHelper.generateLogKeyGivenCommandUnit(
+                getLogPrefix(ambiance), ContainerCommandUnitConstants.ContainerStep),
+            timeoutForDelegateTask, null);
     String stageId = ambiance.getStageExecutionId();
 
     TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, runStepTaskData, kryoSerializer,
