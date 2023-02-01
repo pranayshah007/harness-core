@@ -10,10 +10,13 @@ package io.harness.delegate.task.artifacts.mappers;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.bamboo.BambooUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConstant;
+import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateResponse;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
 import software.wings.beans.BambooConfig;
+import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import lombok.experimental.UtilityClass;
 
@@ -22,6 +25,7 @@ public class BambooRequestResponseMapper {
   public BambooConfig toBambooConfig(BambooArtifactDelegateRequest request) {
     String password = "";
     String username = "";
+    String encryptedPassword = "";
     String token = "";
     if (request.getBambooConnectorDTO().getAuth() != null
         && request.getBambooConnectorDTO().getAuth().getCredentials() != null) {
@@ -42,6 +46,17 @@ public class BambooRequestResponseMapper {
         .bambooUrl(request.getBambooConnectorDTO().getBambooUrl())
         .password(password.toCharArray())
         .username(username)
+        .build();
+  }
+
+  public BambooArtifactDelegateResponse toBambooArtifactDelegateResponse(
+      BuildDetails buildDetails, BambooArtifactDelegateRequest attributeRequest) {
+    return BambooArtifactDelegateResponse.builder()
+        .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetails))
+        .sourceType(ArtifactSourceType.BAMBOO)
+        .artifactPath(attributeRequest.getArtifactPaths().get(0))
+        .build(buildDetails.getNumber())
+        .planKey(attributeRequest.getPlanKey())
         .build();
   }
 }

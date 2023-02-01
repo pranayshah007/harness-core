@@ -21,9 +21,12 @@ import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import software.wings.sm.states.FilePathAssertionEntry;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,11 +41,22 @@ import lombok.Value;
 @EqualsAndHashCode(callSuper = false)
 @OwnedBy(HarnessTeam.CDC)
 public class BambooArtifactDelegateRequest implements ArtifactSourceDelegateRequest {
+  String buildRegex;
   String authMechanism;
   List<String> delegateSelectors;
   String connectorRef;
   List<EncryptedDataDetail> encryptedDataDetails;
+  String planKey;
+  List<String> artifactPaths;
   BambooConnectorDTO bambooConnectorDTO;
+  ArtifactSourceType sourceType;
+
+  private Map<String, String> metadata;
+  private String buildNumber;
+  private String buildDisplayName;
+  private String buildFullDisplayName;
+  private String description;
+  private List<FilePathAssertionEntry> filePathAssertionMap;
 
   public Set<String> getDelegateSelectors() {
     Set<String> combinedDelegateSelectors = new HashSet<>();

@@ -35,6 +35,7 @@ import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactSpecVisit
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptBaseSource;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
@@ -375,5 +376,6 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(GoogleCloudFunctionDefinitionManifest.class, 140068);
     kryo.register(GoogleCloudFunctionDefinitionManifestOutcome.class, 140069);
     kryo.register(CfCliVersionNG.class, 140070);
+    kryo.register(BambooArtifactConfig.class, 150070);
   }
 }

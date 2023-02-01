@@ -410,6 +410,7 @@ import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
 import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
@@ -2246,5 +2247,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(BambooCapabilityHelper.class, 873574);
     kryo.register(BambooValidationParams.class, 873575);
     kryo.register(BambooArtifactDelegateRequest.class, 873576);
+    kryo.register(BambooArtifactDelegateResponse.class, 873577);
   }
 }

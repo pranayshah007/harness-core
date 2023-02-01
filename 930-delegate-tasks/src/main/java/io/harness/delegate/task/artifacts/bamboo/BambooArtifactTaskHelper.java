@@ -10,8 +10,6 @@ package io.harness.delegate.task.artifacts.bamboo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.MdcGlobalContextData;
-import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
-import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
@@ -49,35 +47,32 @@ public class BambooArtifactTaskHelper {
           artifactTaskResponse = getSuccessTaskResponse(bambooArtifactTaskHandler.validateArtifactServer(attributes));
           saveLogs(executionLogCallback, "validated artifact server: " + registryUrl);
           break;
-          //                case GET_JOBS:
-          //                    saveLogs(executionLogCallback, "Get the Jenkins Job");
-          //                    artifactTaskResponse =
-          //                    getSuccessTaskResponse(jenkinsArtifactTaskHandler.getJob(attributes));
-          //                    saveLogs(executionLogCallback, "Get the Jenkins Job " + registryUrl);
-          //                    break;
-          //                case GET_ARTIFACT_PATH:
-          //                    saveLogs(executionLogCallback, "Get the Jenkins Artifact Path");
-          //                    artifactTaskResponse =
-          //                    getSuccessTaskResponse(jenkinsArtifactTaskHandler.getArtifactPaths(attributes));
-          //                    saveLogs(executionLogCallback, "Get the Jenkins Job " + registryUrl);
-          //                    break;
-          //                case GET_BUILDS:
-          //                    saveLogs(executionLogCallback, "Get the Jenkins Builds for Job");
-          //                    artifactTaskResponse =
-          //                    getSuccessTaskResponse(jenkinsArtifactTaskHandler.getBuilds(attributes));
-          //                    saveLogs(executionLogCallback, "Get the Jenkins Builds for Job " + registryUrl);
-          //                    break;
+        case GET_BUILDS:
+          saveLogs(executionLogCallback, "Get the Bamboo Builds for Job");
+          artifactTaskResponse = getSuccessTaskResponse(bambooArtifactTaskHandler.getBuilds(attributes));
+          saveLogs(executionLogCallback, "Get the Bamboo Builds for Job " + registryUrl);
+          break;
+        case GET_LAST_SUCCESSFUL_BUILD:
+          saveLogs(executionLogCallback, "Get the Bamboo Build");
+          artifactTaskResponse = getSuccessTaskResponse(bambooArtifactTaskHandler.getLastSuccessfulBuild(attributes));
+          saveLogs(executionLogCallback, "Get the Bamboo Build " + registryUrl);
+          break;
+        case GET_PLANS:
+          saveLogs(executionLogCallback, "Get the Bamboo Plans");
+          artifactTaskResponse = getSuccessTaskResponse(bambooArtifactTaskHandler.getPlans(attributes));
+          saveLogs(executionLogCallback, "Get the Bamboo Plans " + registryUrl);
+          break;
+        case GET_ARTIFACT_PATH:
+          saveLogs(executionLogCallback, "Get the Bamboo Artifact Path");
+          artifactTaskResponse = getSuccessTaskResponse(bambooArtifactTaskHandler.getArtifactPaths(attributes));
+          saveLogs(executionLogCallback, "Get the Bamboo Job " + registryUrl);
+          break;
+
           //                case GET_JOB_PARAMETERS:
           //                    saveLogs(executionLogCallback, "Get the Jenkins Job");
           //                    artifactTaskResponse =
           //                    getSuccessTaskResponse(jenkinsArtifactTaskHandler.getJobWithParamters(attributes));
           //                    saveLogs(executionLogCallback, "Get the Jenkins Job " + registryUrl);
-          //                    break;
-          //                case GET_LAST_SUCCESSFUL_BUILD:
-          //                    saveLogs(executionLogCallback, "Get the Jenkins Build");
-          //                    artifactTaskResponse =
-          //                    getSuccessTaskResponse(jenkinsArtifactTaskHandler.getLastSuccessfulBuild(attributes));
-          //                    saveLogs(executionLogCallback, "Get the Jenkins Build " + registryUrl);
           //                    break;
           //                case JENKINS_BUILD:
           //                    saveLogs(executionLogCallback, "Trigger the Jenkins Builds");

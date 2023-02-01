@@ -30,10 +30,12 @@ import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactTaskNG;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 import io.harness.logstreaming.NGLogCallback;
@@ -223,6 +225,11 @@ public class ArtifactUtils {
             googleArtifactRegistryConfig.getPkg().getValue(), version,
             googleArtifactRegistryConfig.getConnectorRef().getValue(),
             googleArtifactRegistryConfig.getGoogleArtifactRegistryType().getValue());
+      case BAMBOO:
+        BambooArtifactConfig bambooArtifactConfig = (BambooArtifactConfig) artifactConfig;
+        return String.format("\ntype: %s \nJobName: %s \nArtifactPath: %s \nBuild: %s \nConnectorRef: %s\n", sourceType,
+            bambooArtifactConfig.getPlanKey().getValue(), bambooArtifactConfig.getArtifactPath().getValue(),
+            bambooArtifactConfig.getBuild().getValue(), bambooArtifactConfig.getConnectorRef().getValue());
 
       default:
         throw new UnsupportedOperationException(String.format("Unknown Artifact Config type: [%s]", sourceType));
