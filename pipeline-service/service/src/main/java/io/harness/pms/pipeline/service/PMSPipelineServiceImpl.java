@@ -261,6 +261,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   public PipelineGetResult getAndValidatePipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineId, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
       boolean loadFromCache, boolean validateAsync) {
+
+    if(loadFromCache){
+      log.info(String.format("LoadFromCache in getAndValidatePipeline: true"));
+    }else {
+      log.info(String.format("LoadFromCache in getAndValidatePipeline: false"));
+    }
     Optional<PipelineEntity> pipelineEntity;
     // if validateAsync is true, then this ID wil be of the event started for the async validation process, which can be
     // queried on using another API to get the result of the async validation. If validateAsync is false, then this ID
@@ -282,6 +288,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   public Optional<PipelineEntity> getAndValidatePipeline(String accountId, String orgIdentifier,
       String projectIdentifier, String identifier, boolean deleted, boolean loadFromFallbackBranch,
       boolean loadFromCache) {
+    if(loadFromCache){
+      log.info(String.format("LoadFromCache in getAndValidatePipeline: true"));
+    }else {
+      log.info(String.format("LoadFromCache in getAndValidatePipeline: false"));
+    }
     Optional<PipelineEntity> optionalPipelineEntity = getPipeline(
         accountId, orgIdentifier, projectIdentifier, identifier, deleted, false, loadFromFallbackBranch, loadFromCache);
     if (optionalPipelineEntity.isEmpty()) {
