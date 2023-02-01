@@ -48,7 +48,7 @@ public class DelegateServiceApplicationStartupTest {
   public void testAppStartup() {
     final Client client = new JerseyClientBuilder().sslContext(Http.getSslContext()).build();
     final Response response =
-        client.target(String.format("https://localhost:%d/api/swagger.json", SUPPORT.getLocalPort())).request().get();
+        client.target(String.format("http://localhost:%d/api/swagger.json", SUPPORT.getLocalPort())).request().get();
     assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
     response.close();
   }

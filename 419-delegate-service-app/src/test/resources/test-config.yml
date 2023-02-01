@@ -1,12 +1,5 @@
 server:
   applicationConnectors:
-    - type: h2
-      port: 9080
-      keyStorePath: keystore.jks
-      keyStorePassword: password
-      certAlias: localhost
-      validateCerts: false
-      maxRequestHeaderSize: 100KiB
     - type: http
       port: 3458
       maxRequestHeaderSize: 100KiB
