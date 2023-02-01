@@ -8,6 +8,7 @@
 package io.harness.ci.validation;
 
 import io.harness.account.AccountClient;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ng.core.account.AccountTrustLevel;
 import io.harness.ng.core.user.UserInfo;
@@ -23,6 +24,7 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
   @Inject private CIMiningPatternJob ciMiningPatternJob;
   @Inject private UserClient userClient;
   @Inject private AccountClient accountClient;
+  @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
 
   @Inject
   public CIAccountValidationServiceImpl() {}
@@ -47,6 +49,9 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
   }
 
   private Integer initializeAccountTrustLevel(String accountId) {
+    if (ciExecutionServiceConfig.isLocal()) {
+      return AccountTrustLevel.NEW_USER;
+    }
     Set<String> domains = ciMiningPatternJob.getValidDomains();
 
     List<UserInfo> users = CGRestUtils.getResponse(userClient.listUsersEmails(accountId));

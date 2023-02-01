@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SHALINI;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -37,6 +38,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -267,5 +269,19 @@ public class PolicyEvalUtilsTest extends CategoryTest {
     StepResponse stepResponse = PolicyEvalUtils.evalPolicies(
         ambiance, stepParameters, StepResponse.builder().status(Status.SUCCEEDED).build(), opaServiceClient);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testEvalPoliciesWithEmptyPolicySetsList() throws IOException {
+    stepParameters =
+        StepElementParameters.builder()
+            .name(stepName)
+            .enforce(PolicyConfig.builder().policySets(ParameterField.createValueField(new ArrayList<>())).build())
+            .build();
+    StepResponse stepResponse = StepResponse.builder().status(Status.SUCCEEDED).build();
+    StepResponse stepResponse1 = PolicyEvalUtils.evalPolicies(ambiance, stepParameters, stepResponse, opaServiceClient);
+    assertEquals(stepResponse1, stepResponse);
   }
 }

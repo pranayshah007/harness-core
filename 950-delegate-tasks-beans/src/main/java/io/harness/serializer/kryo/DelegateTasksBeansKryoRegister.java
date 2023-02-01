@@ -952,6 +952,7 @@ import io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTa
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
+import io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException;
 import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
 import io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO;
 import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
@@ -1114,6 +1115,7 @@ import software.wings.yaml.gitSync.YamlGitConfig;
 
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.esotericsoftware.kryo.Kryo;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.protobuf.UnknownFieldSet;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.SneakyThrows;
@@ -1650,6 +1652,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GcpProjectListTaskResponse.class, 673600);
     kryo.register(GcsListBucketsRequest.class, 673601);
     kryo.register(GcsBucketListResponse.class, 673602);
+    kryo.register(HashiCorpVaultRuntimeException.class, 673603);
+    kryo.register(UncheckedTimeoutException.class, 673604);
 
     kryo.register(ScmPushTaskParams.class, 553286);
     kryo.register(ScmPushTaskResponseData.class, 553287);

@@ -49,6 +49,27 @@ paths:
       tags:
         - Streaming Destinations
       x-internal: true
+  /v1/streaming-destinations/aggregate:
+    get:
+      summary: List Streaming Destinations
+      operationId: getStreamingDestinationsAggregate
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamingDestinationAggregateListResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/PageIndex'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/Status'
+      description: Get list of Streaming Destinations
+      security:
+        - x-api-key: []
+      tags:
+        - Streaming Destinations
+      x-internal: true
   '/v1/streaming-destinations/{streaming-destination}':
     parameters:
       - $ref: '#/components/parameters/StreamingDestinationParam'
@@ -183,6 +204,39 @@ components:
         - status
         - connector_ref
         - spec
+    Connector:
+      type: object
+      x-internal: true
+      properties:
+        name:
+          type: string
+          description: Connector name
+          pattern: '^[0-9a-zA-Z-_ ]{0,63}$'
+        identifier:
+          type: string
+          minLength: 1
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          description: Connector identifier
+          maxLength: 64
+        description:
+          type: string
+          description: Connector description
+        org:
+          type: string
+          description: Organization identifier for connector
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+        project:
+          type: string
+          description: Project identifier for connector
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          description: Connector tags
+      required:
+        - name
+        - identifier
     StreamingDestinationSpecDTO:
       title: StreamingDestinationSpecDTO
       x-stoplight:
@@ -235,6 +289,8 @@ components:
           type: integer
           format: int64
           description: Last updated time of the Streaming Destination status
+      required:
+        - streaming_destination
     StreamingDestinationCards:
       title: StreamingDestinationCards
       x-stoplight:
@@ -284,6 +340,43 @@ components:
           type: integer
           description: Number of streaming destinations that have failure
           format: int64
+    StreamingDestinationAggregateDTO:
+      title: StreamingDestinationAggregateDTO
+      x-stoplight:
+        id: chl0l737sfwea
+      type: object
+      description: Streaming Destination Aggregate DTO
+      properties:
+        streaming_destination:
+          $ref: '#/components/schemas/StreamingDestinationDTO'
+        connector_info:
+          $ref: '#/components/schemas/Connector'
+        streaming_details:
+          $ref: '#/components/schemas/StreamingDetails'
+      required:
+        - streaming_destination
+        - connector_info
+    StreamingDetails:
+      title: StreamingDetails
+      x-stoplight:
+        id: 505pv39rdv4z1
+      type: object
+      properties:
+        status:
+          type: string
+          description: Status of the batch
+          enum:
+            - READY
+            - IN_PROGRESS
+            - SUCCESS
+            - FAILED
+        last_streamed_at:
+          type: integer
+          format: int64
+        error_message:
+          type: string
+      description: Details of the last streamed batch
+      x-internal: true
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -417,6 +510,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/StreamingDestinationCards'
+    StreamingDestinationAggregateListResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/StreamingDestinationAggregateDTO'
+      headers: {}
   requestBodies:
     CreateStreamingDestinationRequest:
       content:

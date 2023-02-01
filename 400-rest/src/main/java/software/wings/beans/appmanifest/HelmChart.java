@@ -7,6 +7,8 @@
 
 package software.wings.beans.appmanifest;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -30,8 +32,10 @@ import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import dev.morphia.annotations.Transient;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -79,4 +83,53 @@ public class HelmChart implements AccountAccess, NameAccess, PersistentEntity, U
   private String appVersion;
   private String description;
   private Map<String, String> metadata;
+
+  public software.wings.beans.dto.HelmChart toDto() {
+    return software.wings.beans.dto.HelmChart.builder()
+        .uuid(getUuid())
+        .version(getVersion())
+        .applicationManifestId(getApplicationManifestId())
+        .appManifestName(getAppManifestName())
+        .name(getName())
+        .displayName(getDisplayName())
+        .accountId(getAccountId())
+        .appId(getAppId())
+        .serviceId(getServiceId())
+        .createdAt(getCreatedAt())
+        .lastUpdatedAt(getLastUpdatedAt())
+        .appVersion(getAppVersion())
+        .description(getDescription())
+        .metadata(getMetadata())
+        .build();
+  }
+
+  public static HelmChart fromDto(software.wings.beans.dto.HelmChart dto) {
+    if (dto == null) {
+      return null;
+    }
+
+    return HelmChart.builder()
+        .uuid(dto.getUuid())
+        .version(dto.getVersion())
+        .applicationManifestId(dto.getApplicationManifestId())
+        .appManifestName(dto.getAppManifestName())
+        .name(dto.getName())
+        .displayName(dto.getDisplayName())
+        .accountId(dto.getAccountId())
+        .appId(dto.getAppId())
+        .serviceId(dto.getServiceId())
+        .createdAt(dto.getCreatedAt())
+        .lastUpdatedAt(dto.getLastUpdatedAt())
+        .appVersion(dto.getAppVersion())
+        .description(dto.getDescription())
+        .metadata(dto.getMetadata())
+        .build();
+  }
+
+  public static List<HelmChart> fromDtos(List<software.wings.beans.dto.HelmChart> dtos) {
+    if (isEmpty(dtos)) {
+      return Collections.emptyList();
+    }
+    return dtos.stream().map(dto -> fromDto(dto)).collect(Collectors.toList());
+  }
 }

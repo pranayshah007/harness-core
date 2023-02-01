@@ -1843,7 +1843,7 @@
 71103:io.harness.logging.LogLevel
 71104:software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse
 71105:software.wings.delegatetasks.manifest.ManifestCollectionResponse
-71106:software.wings.beans.appmanifest.HelmChart
+71106:software.wings.beans.dto.HelmChart
 71111:software.wings.helpers.ext.helm.response.HelmCollectChartResponse
 71123:java.time.ZonedDateTime
 72100:software.wings.beans.GcpSecretsManagerConfig
@@ -2478,6 +2478,8 @@
 673600:io.harness.delegate.task.gcp.response.GcpProjectListTaskResponse
 673601:io.harness.delegate.task.gcp.request.GcsListBucketsRequest
 673602:io.harness.delegate.task.gcp.response.GcsBucketListResponse
+673603:io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException
+673604:com.google.common.util.concurrent.UncheckedTimeoutException
 680000:io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskParams
 680001:io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskType
 680002:io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse

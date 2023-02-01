@@ -2039,6 +2039,8 @@
 50029:software.wings.persistence.artifact.Artifact
 50030:software.wings.persistence.artifact.Artifact.ContentStatus
 50031:software.wings.persistence.artifact.Artifact.Status
+50032:com.mongodb.MongoExecutionTimeoutException
+50033:com.amazonaws.services.kms.model.AWSKMSException
 54320:io.harness.ng.core.entities.Organization
 54321:io.harness.ng.core.entities.Project
 54322:io.harness.ng.core.entities.SampleEncryptableSettingImplementation
@@ -2180,7 +2182,7 @@
 71103:io.harness.logging.LogLevel
 71104:software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse
 71105:software.wings.delegatetasks.manifest.ManifestCollectionResponse
-71106:software.wings.beans.appmanifest.HelmChart
+71106:software.wings.beans.dto.HelmChart
 71107:software.wings.beans.ConfigFile
 71108:software.wings.beans.ConfigFile.ConfigOverrideType
 71109:software.wings.beans.EntityVersion
@@ -2877,6 +2879,8 @@
 673600:io.harness.delegate.task.gcp.response.GcpProjectListTaskResponse
 673601:io.harness.delegate.task.gcp.request.GcsListBucketsRequest
 673602:io.harness.delegate.task.gcp.response.GcsBucketListResponse
+673603:io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException
+673604:com.google.common.util.concurrent.UncheckedTimeoutException
 680000:io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskParams
 680001:io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskType
 680002:io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse

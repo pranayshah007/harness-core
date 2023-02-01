@@ -59,6 +59,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.security.crypto.bcrypt.BCrypt.checkpw;
 import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
+import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.LogoutResponse;
@@ -94,6 +95,11 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.invites.remote.InviteAcceptResponse;
 import io.harness.invites.remote.NgInviteClient;
+import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseStatus;
+import io.harness.licensing.LicenseType;
+import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
+import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
 import io.harness.limits.ActionType;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.limits.LimitEnforcementUtils;
@@ -281,6 +287,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.joda.time.DateTime;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 
 /**
@@ -292,6 +299,8 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 @Slf4j
 @TargetModule(_950_NG_AUTHENTICATION_SERVICE)
 public class UserServiceImpl implements UserService {
+  private static final Long TEST_FF_NUMBER_OF_CLIENT_MAUS = 1000000L;
+  private static final int TEST_FF_NUMBER_OF_USERS = 50;
   static final String ADD_TO_ACCOUNT_OR_GROUP_EMAIL_TEMPLATE_NAME = "add_group";
   static final String USER_PASSWORD_CHANGED_EMAIL_TEMPLATE_NAME = "password_changed";
   private static final String ADD_ACCOUNT_EMAIL_TEMPLATE_NAME = "add_account";
@@ -360,6 +369,8 @@ public class UserServiceImpl implements UserService {
   @Inject private TelemetryReporter telemetryReporter;
 
   @Inject private UserServiceHelper userServiceHelper;
+
+  @Inject private AdminLicenseHttpClient adminLicenseHttpClient;
 
   private final ScheduledExecutorService scheduledExecutor = new ScheduledThreadPoolExecutor(1,
       new ThreadFactoryBuilder().setNameFormat("invite-executor-thread-%d").setPriority(Thread.NORM_PRIORITY).build());
@@ -4123,14 +4134,14 @@ public class UserServiceImpl implements UserService {
                                   .accountStatus(AccountStatus.ACTIVE)
                                   .build();
     if (marketPlace.getProductCode().equals(configuration.getMarketPlaceConfig().getAwsMarketPlaceProductCode())) {
-      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals("TRIAL")) {
+      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
       accountId = setupAccountForUser(user, userInvite, licenseInfo);
     } else if (marketPlace.getProductCode().equals(
                    configuration.getMarketPlaceConfig().getAwsMarketPlaceCeProductCode())) {
       CeLicenseType ceLicenseType = CeLicenseType.PAID;
-      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals("TRIAL")) {
+      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         ceLicenseType = CeLicenseType.FULL_TRIAL;
       }
       licenseInfo.setAccountType(AccountType.TRIAL);
@@ -4140,6 +4151,25 @@ public class UserServiceImpl implements UserService {
           CeLicenseInfo.builder()
               .expiryTime(marketPlace.getExpirationDate().getTime())
               .licenseType(ceLicenseType)
+              .build());
+    } else if (marketPlace.getProductCode().equals(
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceFfProductCode())) {
+      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+        licenseInfo.setAccountType(AccountType.TRIAL);
+      }
+      // TODO: please add trial logic here [PLG-1942]
+      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          CFModuleLicenseDTO.builder()
+              .numberOfClientMAUs(TEST_FF_NUMBER_OF_CLIENT_MAUS)
+              .numberOfUsers(TEST_FF_NUMBER_OF_USERS)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.CF)
+              .edition(Edition.ENTERPRISE)
+              .licenseType(LicenseType.PAID)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(marketPlace.getExpirationDate().getTime())
               .build());
     } else {
       throw new InvalidRequestException("Cannot resolve AWS marketplace order");

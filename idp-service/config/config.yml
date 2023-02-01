@@ -1,0 +1,62 @@
+mongo:
+  uri: mongodb://localhost:27017/idp-harness
+  connectTimeout: 30000
+  serverSelectionTimeout: 90000
+  socketTimeout: 360000
+  maxConnectionIdleTime: 600000
+  connectionsPerHost: 300
+  indexManagerMode: AUTO
+  transactionsEnabled: false
+  aliasDBName: idp-harness
+  traceMode: DISABLED
+  maxOperationTimeInMillis: 300000
+
+# change the ports
+server:
+  applicationConnectors:
+    - type: http
+      port: 12001
+      maxRequestHeaderSize: 100KiB
+  requestLog:
+    appenders: []
+  maxThreads: 1024
+
+eventsFramework:
+  redis:
+    sentinel: false
+    masterName: "test"
+    redisUrl: "redis://localhost:6379"
+    sentinelUrls:
+      - "redis://redis1:26379"
+      - "redis://redis2:26379"
+      - "redis://redis3:26379"
+    envNamespace: ""
+    readMode: MASTER
+    nettyThreads: 16
+    useScriptCache: true
+    userName: ""
+    password: ""
+    sslConfig:
+      enabled: false
+      CATrustStorePath: "/tmp/ca_trust_store"
+      CATrustStorePassword: ""
+
+logging:
+  level: INFO
+  loggers:
+    org.glassfish.jersey: WARN
+    allbegray.slack: WARN
+    org.glassfish.jersey.server.ServerRuntime.Responder: "OFF"
+  appenders:
+    - type: console
+      threshold: TRACE
+      target: STDOUT
+      logFormat: "%date{ISO8601} %green([%thread]) %highlight(%-5level) %cyan(%logger) - %msg %yellow(%replace(%mdc){'(.+)', '[$1]'}) %n"
+#    - type: gke-console
+#      threshold: TRACE
+#      target: STDOUT
+#      stackdriverLogEnabled: true
+
+logStreamingServiceConfig:
+  baseUrl: http://localhost:8079
+  serviceToken: token

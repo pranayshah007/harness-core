@@ -43,6 +43,8 @@ public class SerializerUtils {
       entrypoint = Arrays.asList("powershell", "-Command");
     } else if (shellType == CIShellType.PWSH) {
       entrypoint = Arrays.asList("pwsh", "-Command");
+    } else if (shellType == CIShellType.PYTHON) {
+      entrypoint = Arrays.asList("python3", "-c");
     } else {
       throw new CIStageExecutionException(format("Invalid shell type: %s", shellType));
     }
@@ -70,6 +72,8 @@ public class SerializerUtils {
       cmd = "set -xe; ";
     } else if (shellType == CIShellType.POWERSHELL || shellType == CIShellType.PWSH) {
       cmd = "$ErrorActionPreference = 'Stop' \n";
+    } else if (shellType == CIShellType.PYTHON) {
+      cmd = "";
     } else {
       throw new CIStageExecutionException(format("Invalid shell type: %s", shellType));
     }
@@ -131,6 +135,11 @@ public class SerializerUtils {
             + "  git config --global --add safe.directory '*' || true \n"
             + "fi\n"
             + "set -x\n";
+      } else if (shellType == CIShellType.PYTHON) {
+        safeDirScript = "import subprocess\n"
+            + "try:\n"
+            + "\tsubprocess.run(['git', 'config', '--global', '--add', 'safe.directory', '*'])\n"
+            + "except:\n";
       } else {
         safeDirScript = "try\n"
             + "{\n"
