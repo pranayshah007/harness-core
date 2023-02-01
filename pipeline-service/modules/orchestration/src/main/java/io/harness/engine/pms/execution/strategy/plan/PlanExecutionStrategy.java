@@ -193,6 +193,7 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
         .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
         .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
         .pipelineExecutionUuid(ambiance.getPlanExecutionId())
+        .triggerType(ambiance.getMetadata().getTriggerInfo().getTriggerType())
         .startTs(ambiance.getStartTs())
         .build();
   }
@@ -228,6 +229,7 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
         .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
         .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
         .pipelineExecutionUuid(ambiance.getPlanExecutionId())
+        .triggerType(ambiance.getMetadata().getTriggerInfo().getTriggerType())
         .startTs(ambiance.getStartTs())
         .build();
   }
