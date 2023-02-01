@@ -22,6 +22,7 @@ import io.harness.delegate.task.common.DelegateRunnableTask;
 import io.harness.delegate.taskagent.client.delegate.DelegateCoreClientFactory;
 import io.harness.delegate.taskagent.servicediscovery.ServiceDiscovery;
 
+import io.harness.delegate.taskagent.servicediscovery.ServiceEndpoint;
 import io.harness.security.TokenGenerator;
 import software.wings.beans.TaskType;
 
@@ -68,7 +69,7 @@ public class TaskFactory {
       final var tokenGenerator = new TokenGenerator(accountId, configuration.getDelegateToken());
       var delegateCoreClient =
           (new DelegateCoreClientFactory(tokenGenerator)).createDelegateCoreClient(
-              ServiceDiscovery.getDelegateServiceEndpoint(configuration.getDelegateName()));
+              new ServiceEndpoint(configuration.getDelegateHost(), configuration.getDelegatePort()));
 
       (new ResponseSender(delegateCoreClient)).sendResponse(accountId, taskId, taskResponse);
     };

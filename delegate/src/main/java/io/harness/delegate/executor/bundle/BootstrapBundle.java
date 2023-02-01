@@ -11,6 +11,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
+import io.harness.delegate.executor.common.CommonModule;
 import io.harness.delegate.executor.serviceproviders.ServiceProvidersModule;
 import io.harness.delegate.task.common.DelegateRunnableTask;
 import io.harness.serializer.KryoRegistrar;
@@ -64,6 +65,7 @@ public class BootstrapBundle extends AbstractModule {
     }
 
     private void installExecutorlibUtilities() {
+        install(new CommonModule());
         install(new ServiceProvidersModule());
     }
 }

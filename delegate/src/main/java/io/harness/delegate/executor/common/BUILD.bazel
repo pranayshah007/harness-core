@@ -10,15 +10,11 @@ java_library(
     name = "module",
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
-    resources = [
-            "//delegate/src/main/java/io/harness/delegate/executor/resources:resource",
-    ],
     deps = [
-        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/common:module",
-        "//950-delegate-tasks-beans:module",
-        "//980-commons/src/main/java/io/harness/serializer:module",
-        "//delegate/src/main/java/io/harness/delegate/executor/common:module",
-        "//delegate/src/main/java/io/harness/delegate/executor/serviceproviders:module",
+        "//980-commons/src/main/java/io/harness/threading:module",
+        "//980-commons/src/main/java/io/harness/time:module",
+        "//980-commons/src/main/java/io/harness/version:module",
+        "@maven//:com_google_guava_guava",
         "@maven//:com_google_inject_guice",
     ],
 )

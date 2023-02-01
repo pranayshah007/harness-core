@@ -24,7 +24,7 @@ import javax.annotation.Nullable;
 public class ConfigurationProvider {
   private static io.harness.delegate.executor.config.Configuration configuration;
 
-  private static final String CONFIG_PATH = "executor_config.yaml";
+  private static final String CONFIG_PATH = "/etc/executor-config/executor_config.yaml";
 
   public static io.harness.delegate.executor.config.Configuration getExecutorConfiguration(@Nullable String path) {
     log.info("Working Directory = " + System.getProperty("user.dir"));
