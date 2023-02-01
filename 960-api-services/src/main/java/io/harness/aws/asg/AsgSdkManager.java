@@ -40,6 +40,49 @@ import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 import com.amazonaws.AmazonWebServiceClient;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
 import com.amazonaws.services.autoscaling.model.*;
+import com.amazonaws.services.autoscaling.model.AttachLoadBalancerTargetGroupsRequest;
+import com.amazonaws.services.autoscaling.model.AttachLoadBalancersRequest;
+import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
+import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
+import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupResult;
+import com.amazonaws.services.autoscaling.model.CreateOrUpdateTagsRequest;
+import com.amazonaws.services.autoscaling.model.DeleteAutoScalingGroupRequest;
+import com.amazonaws.services.autoscaling.model.DeleteLifecycleHookRequest;
+import com.amazonaws.services.autoscaling.model.DeletePolicyRequest;
+import com.amazonaws.services.autoscaling.model.DeleteTagsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
+import com.amazonaws.services.autoscaling.model.DescribeInstanceRefreshesRequest;
+import com.amazonaws.services.autoscaling.model.DescribeInstanceRefreshesResult;
+import com.amazonaws.services.autoscaling.model.DescribeLifecycleHooksRequest;
+import com.amazonaws.services.autoscaling.model.DescribeLoadBalancerTargetGroupsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeLoadBalancerTargetGroupsResult;
+import com.amazonaws.services.autoscaling.model.DescribeLoadBalancersRequest;
+import com.amazonaws.services.autoscaling.model.DescribeLoadBalancersResult;
+import com.amazonaws.services.autoscaling.model.DescribePoliciesRequest;
+import com.amazonaws.services.autoscaling.model.DescribePoliciesResult;
+import com.amazonaws.services.autoscaling.model.DescribeTagsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeTagsResult;
+import com.amazonaws.services.autoscaling.model.DetachLoadBalancerTargetGroupsRequest;
+import com.amazonaws.services.autoscaling.model.DetachLoadBalancersRequest;
+import com.amazonaws.services.autoscaling.model.Filter;
+import com.amazonaws.services.autoscaling.model.Instance;
+import com.amazonaws.services.autoscaling.model.InstanceRefresh;
+import com.amazonaws.services.autoscaling.model.LaunchTemplateSpecification;
+import com.amazonaws.services.autoscaling.model.LifecycleHook;
+import com.amazonaws.services.autoscaling.model.LifecycleHookSpecification;
+import com.amazonaws.services.autoscaling.model.LoadBalancerState;
+import com.amazonaws.services.autoscaling.model.LoadBalancerTargetGroupState;
+import com.amazonaws.services.autoscaling.model.PutLifecycleHookRequest;
+import com.amazonaws.services.autoscaling.model.PutScalingPolicyRequest;
+import com.amazonaws.services.autoscaling.model.PutScalingPolicyResult;
+import com.amazonaws.services.autoscaling.model.RefreshPreferences;
+import com.amazonaws.services.autoscaling.model.ScalingPolicy;
+import com.amazonaws.services.autoscaling.model.StartInstanceRefreshRequest;
+import com.amazonaws.services.autoscaling.model.StartInstanceRefreshResult;
+import com.amazonaws.services.autoscaling.model.Tag;
+import com.amazonaws.services.autoscaling.model.TagDescription;
+import com.amazonaws.services.autoscaling.model.UpdateAutoScalingGroupRequest;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateRequest;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateResult;
@@ -57,7 +100,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -425,19 +467,6 @@ public class AsgSdkManager {
     infoBold("Operation `%s` ended successfully", operationName);
   }
 
-  public List<AutoScalingInstanceDetails> getAutoScalingInstanceDetails(AutoScalingGroup autoScalingGroup) {
-    List<String> instanceIds =
-        autoScalingGroup.getInstances().stream().map(Instance::getInstanceId).collect(Collectors.toList());
-    if (isEmpty(instanceIds)) {
-      return Collections.emptyList();
-    }
-    DescribeAutoScalingInstancesRequest describeAutoScalingInstancesRequest =
-        new DescribeAutoScalingInstancesRequest().withInstanceIds(instanceIds);
-    DescribeAutoScalingInstancesResult describeAutoScalingInstancesResult =
-        asgCall(asgClient -> asgClient.describeAutoScalingInstances(describeAutoScalingInstancesRequest));
-    return describeAutoScalingInstancesResult.getAutoScalingInstances();
-  }
-
   public boolean checkAllInstancesInReadyState(String asgName) {
     AutoScalingGroup autoScalingGroup = getASG(asgName);
     List<Instance> instances = autoScalingGroup.getInstances();
@@ -722,20 +751,6 @@ public class AsgSdkManager {
     asgCall(asgClient -> asgClient.createOrUpdateTags(createOrUpdateTagsRequest));
   }
 
-  public String getDefaultListenerRuleForListener(
-      AwsInternalConfig awsInternalConfig, String region, String listenerArn) {
-    List<Rule> rules = getListenerRulesForListener(awsInternalConfig, region, listenerArn);
-    for (Rule rule : rules) {
-      if (rule.isDefault()) {
-        return rule.ruleArn();
-      }
-    }
-
-    // throw error if default listener rule not found
-    String errorMessage = format("Default listener rule not found for listener %s", listenerArn);
-    throw new InvalidRequestException(errorMessage);
-  }
-
   public List<Rule> getListenerRulesForListener(
       AwsInternalConfig awsInternalConfig, String region, String listenerArn) {
     List<Rule> rules = newArrayList();
@@ -821,6 +836,18 @@ public class AsgSdkManager {
 
     info("[%d] out of [%d] targets registered and in healthy state", instanceIdsRegistered.size(), targetIds.size());
     return instanceIdsRegistered.containsAll(targetIds);
+  }
+  public String describeBGTags(String asgName) {
+    Filter filter1 = new Filter().withName("auto-scaling-group").withValues(asgName);
+    Filter filter2 = new Filter().withName("key").withValues(BG_VERSION);
+
+    List<Filter> filterList = new ArrayList<>();
+    filterList.add(filter1);
+    filterList.add(filter2);
+
+    DescribeTagsRequest describeTagsRequest = new DescribeTagsRequest().withFilters(filterList);
+    DescribeTagsResult describeTagsResult = asgCall(asgClient -> asgClient.describeTags(describeTagsRequest));
+    return describeTagsResult.getTags().get(0).getValue();
   }
 
   public void info(String msg, Object... params) {

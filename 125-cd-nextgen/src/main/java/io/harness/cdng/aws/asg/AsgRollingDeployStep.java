@@ -14,8 +14,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataRequest;
@@ -61,6 +63,7 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
   @Inject private AsgStepCommonHelper asgStepCommonHelper;
   @Inject private AsgStepHelper asgStepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -187,7 +190,12 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_ROLLING_DEPLOY_OUTCOME,
         asgRollingDeployOutcome, StepOutcomeGroup.STEP.name());
 
-    return stepResponseBuilder.status(Status.SUCCEEDED).build();
+    List<ServerInstanceInfo> serverInstanceInfos = asgStepCommonHelper.getServerInstanceInfos(asgRollingDeployResponse,
+        infrastructureOutcome.getInfrastructureKey(),
+        asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance).getRegion());
+    StepResponse.StepOutcome stepOutcome =
+        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
+    return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
   }
 
   @Override

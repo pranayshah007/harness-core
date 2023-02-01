@@ -321,6 +321,7 @@ import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.gitapi.GitRepoType;
 import io.harness.delegate.beans.helm.HelmChartVersionDetails;
+import io.harness.delegate.beans.instancesync.info.AsgServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
@@ -2153,6 +2154,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AsgBlueGreenSwapServiceRequest.class, 573596);
     kryo.register(AsgBlueGreenSwapServiceResponse.class, 573597);
     kryo.register(AsgBlueGreenSwapServiceResult.class, 573598);
+    kryo.register(AsgServerInstanceInfo.class, 573599);
 
     kryo.register(AsgLoadBalancerConfig.class, 5731600);
     kryo.register(AsgBlueGreenRollbackRequest.class, 5731601);

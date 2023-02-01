@@ -37,19 +37,28 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.mapper.AutoScalingGroupContainerToServerInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.exception.TaskNGDataException;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResponse;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeployResult;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResponse;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResult;
+import io.harness.delegate.task.aws.asg.AsgRollingDeployResponse;
+import io.harness.delegate.task.aws.asg.AsgRollingDeployResult;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.GeneralException;
 import io.harness.exception.IllegalArgumentException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -107,6 +116,10 @@ public class AsgStepCommonHelper extends CDStepHelper {
   @Inject private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   private final LogWrapper logger = new LogWrapper(log);
+  private static final String EXEC_STRATEGY_CANARY = "canary";
+  private static final String EXEC_STRATEGY_BLUEGREEN = "blue-green";
+  private static final String EXEC_STRATEGY_ROLLING = "rolling";
+  static final String VERSION_DELIMITER = "__";
 
   public TaskChainResponse startChainLink(
       AsgStepExecutor asgStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
@@ -575,5 +588,43 @@ public class AsgStepCommonHelper extends CDStepHelper {
       throw new IllegalArgumentException("AMI not available. Please specify the AMI artifact", WingsException.USER);
     }
     return image;
+  }
+
+  public List<ServerInstanceInfo> getServerInstanceInfos(
+      AsgCommandResponse asgCommandResponse, String infrastructureKey, String region) {
+    if (asgCommandResponse instanceof AsgRollingDeployResponse) {
+      AsgRollingDeployResult asgRollingDeployResult =
+          ((AsgRollingDeployResponse) asgCommandResponse).getAsgRollingDeployResult();
+      String asgName = asgRollingDeployResult.getAutoScalingGroupContainer().getAutoScalingGroupName();
+      return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgRollingDeployResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_ROLLING,
+          asgName, null);
+    } else if (asgCommandResponse instanceof AsgCanaryDeployResponse) {
+      AsgCanaryDeployResult asgCanaryDeployResult =
+          ((AsgCanaryDeployResponse) asgCommandResponse).getAsgCanaryDeployResult();
+      String asgName = asgCanaryDeployResult.getAutoScalingGroupContainer().getAutoScalingGroupName();
+      String asgNameWithoutSuffix = asgName.substring(0, asgName.length() - 8);
+      return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgCanaryDeployResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_CANARY,
+          asgNameWithoutSuffix, null);
+    } else if (asgCommandResponse instanceof AsgBlueGreenDeployResponse) {
+      AsgBlueGreenDeployResult asgBlueGreenDeployResult =
+          ((AsgBlueGreenDeployResponse) asgCommandResponse).getAsgBlueGreenDeployResult();
+      String prodAsgName = asgBlueGreenDeployResult.getProdAutoScalingGroupContainer().getAutoScalingGroupName();
+      String asgNameWithoutSuffix = prodAsgName.substring(0, prodAsgName.length() - 3);
+
+      List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
+
+      serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgBlueGreenDeployResult.getProdAutoScalingGroupContainer(), infrastructureKey, region,
+          EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, true));
+
+      serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgBlueGreenDeployResult.getStageAutoScalingGroupContainer(), infrastructureKey, region,
+          EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, false));
+
+      return serverInstanceInfoList;
+    }
+    throw new GeneralException("Invalid asg command response instance");
   }
 }

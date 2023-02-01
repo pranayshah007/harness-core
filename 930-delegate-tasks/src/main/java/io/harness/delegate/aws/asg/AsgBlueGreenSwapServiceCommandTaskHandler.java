@@ -39,6 +39,7 @@ import io.harness.delegate.task.aws.asg.AsgCommandRequest;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.delegate.task.aws.asg.AsgTaskHelper;
+import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -147,8 +148,15 @@ public class AsgBlueGreenSwapServiceCommandTaskHandler extends AsgCommandTaskNGH
                          .executeUpsert();
       }
 
+      AutoScalingGroup newAutoScalingGroup = asgSdkManager.getASG(chainState.getNewAsgName());
+      AutoScalingGroupContainer newAutoScalingGroupContainer =
+          asgTaskHelper.mapToAutoScalingGroupContainer(newAutoScalingGroup);
+
       AsgBlueGreenSwapServiceResult asgBlueGreenSwapServiceResult =
-          AsgBlueGreenSwapServiceResult.builder().trafficShifted(true).build();
+          AsgBlueGreenSwapServiceResult.builder()
+              .autoScalingGroupContainer(newAutoScalingGroupContainer)
+              .trafficShifted(true)
+              .build();
 
       AsgBlueGreenSwapServiceResponse asgBlueGreenSwapServiceResponse =
           AsgBlueGreenSwapServiceResponse.builder()

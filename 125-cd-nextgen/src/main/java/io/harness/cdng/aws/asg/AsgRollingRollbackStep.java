@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -62,6 +63,7 @@ public class AsgRollingRollbackStep extends CdTaskExecutable<AsgCommandResponse>
   @Inject private OutcomeService outcomeService;
   @Inject private AccountService accountService;
   @Inject private StepHelper stepHelper;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -78,7 +80,7 @@ public class AsgRollingRollbackStep extends CdTaskExecutable<AsgCommandResponse>
       StepResponseBuilder stepResponseBuilder =
           StepResponse.builder().unitProgressList(asgRollingRollbackResponse.getUnitProgressData().getUnitProgresses());
 
-      stepResponse = generateStepResponse(asgRollingRollbackResponse, stepResponseBuilder);
+      stepResponse = generateStepResponse(asgRollingRollbackResponse, stepResponseBuilder, ambiance);
     } catch (Exception e) {
       log.error("Error while processing asg rolling rollback response: {}", ExceptionUtils.getMessage(e), e);
       throw e;
@@ -87,11 +89,12 @@ public class AsgRollingRollbackStep extends CdTaskExecutable<AsgCommandResponse>
       stepHelper.sendRollbackTelemetryEvent(
           ambiance, stepResponse == null ? Status.FAILED : stepResponse.getStatus(), accountName);
     }
+
     return stepResponse;
   }
 
-  private StepResponse generateStepResponse(
-      AsgRollingRollbackResponse asgRollingRollbackResponse, StepResponseBuilder stepResponseBuilder) {
+  private StepResponse generateStepResponse(AsgRollingRollbackResponse asgRollingRollbackResponse,
+      StepResponseBuilder stepResponseBuilder, Ambiance ambiance) {
     StepResponse stepResponse;
 
     if (asgRollingRollbackResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {

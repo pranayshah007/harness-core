@@ -170,7 +170,7 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
             .asgLoadBalancerConfig(asgLoadBalancerConfig)
             .prodAsgName(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgName())
             .prodAsgManifestsDataForRollback(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgManifestDataForRollback())
-            .stageAsgName(asgBlueGreenDeployOutcome.getAutoScalingGroupContainer().getAutoScalingGroupName())
+            .stageAsgName(asgBlueGreenDeployOutcome.getProdAutoScalingGroupContainer().getAutoScalingGroupName())
             .stageAsgManifestsDataForRollback(
                 asgBlueGreenPrepareRollbackDataOutcome.getStageAsgManifestDataForRollback())
             .servicesSwapped(trafficShifted)
