@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
-import io.harness.common.EntityReference;
+import io.harness.beans.EntityReference;
 import io.harness.data.validator.Trimmed;
 import io.harness.encryption.Scope;
 import io.harness.mongo.index.CompoundMongoIndex;

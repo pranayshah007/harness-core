@@ -348,7 +348,7 @@ public class TerragruntRollbackStateTest extends WingsBaseTest {
         .isEqualTo(ACTIVITY_ID);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(i)).queueTask(captor.capture());
+    verify(delegateService, times(i)).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask.getData().getParameters().length).isEqualTo(1);
     TerragruntProvisionParameters parameters =

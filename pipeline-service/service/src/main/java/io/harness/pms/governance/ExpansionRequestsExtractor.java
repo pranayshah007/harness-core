@@ -139,7 +139,7 @@ public class ExpansionRequestsExtractor {
     String stageType = stageNodeInternal.getType();
     List<LocalFQNExpansionInfo> currStageRequestsData = getRequestsDataForStageType(localFQNRequestMetadata, stageType);
     if (EmptyPredicate.isNotEmpty(currStageRequestsData)) {
-      getServiceCalls(stageNodeInternal, currStageRequestsData, serviceCalls);
+      getServiceCalls(stageNode, currStageRequestsData, serviceCalls);
     }
   }
 

@@ -708,8 +708,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
   private void validateFailureStrategy(DeploymentStageNode stageNode) {
     // Failure strategy should be present.
-    List<FailureStrategyConfig> stageFailureStrategies = stageNode.getFailureStrategies();
-    if (EmptyPredicate.isEmpty(stageFailureStrategies)) {
+    ParameterField<List<FailureStrategyConfig>> stageFailureStrategies = stageNode.getFailureStrategies();
+    if (ParameterField.isNull(stageFailureStrategies) || isEmpty(stageFailureStrategies.getValue())) {
       throw new InvalidRequestException("There should be at least one failure strategy configured at stage level.");
     }
 

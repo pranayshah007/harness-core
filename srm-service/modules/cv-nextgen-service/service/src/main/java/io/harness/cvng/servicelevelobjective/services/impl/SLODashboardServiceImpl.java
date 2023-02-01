@@ -15,6 +15,10 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.utils.DateTimeUtils;
+import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
+import io.harness.cvng.downtime.services.api.DowntimeService;
+import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
@@ -30,6 +34,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveResponse
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
+import io.harness.cvng.servicelevelobjective.beans.UnavailabilityInstancesResponse;
 import io.harness.cvng.servicelevelobjective.beans.UserJourneyDTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
@@ -47,6 +52,7 @@ import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorServ
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
+import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
 import io.harness.ng.beans.PageResponse;
 import io.harness.utils.PageUtils;
 
@@ -73,6 +79,11 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   @Inject private NextGenService nextGenService;
   @Inject private SLOErrorBudgetResetService sloErrorBudgetResetService;
   @Inject private UserJourneyService userJourneyService;
+
+  @Inject private DowntimeService downtimeService;
+  @Inject private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
+
+  @Inject private Map<ServiceLevelObjectiveType, SLOV2Transformer> serviceLevelObjectiveTypeSLOV2TransformerMap;
 
   @Override
   public PageResponse<SLODashboardWidget> getSloDashboardWidgets(
@@ -457,6 +468,63 @@ public class SLODashboardServiceImpl implements SLODashboardService {
             .collect(Collectors.toList());
 
     return PageUtils.offsetAndLimit(msDropdownResponseList, pageParams.getPage(), pageParams.getSize());
+  }
+
+  @Override
+  public List<UnavailabilityInstancesResponse> getUnavailabilityInstances(
+      ProjectParams projectParams, long startTime, long endTime, String identifier) {
+    ServiceLevelObjectiveV2Response sloResponse = serviceLevelObjectiveV2Service.get(projectParams, identifier);
+    ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO = sloResponse.getServiceLevelObjectiveV2DTO();
+    List<String> sliIds;
+    Set<String> monitoredServiceIdentifiers;
+    if (serviceLevelObjectiveV2DTO.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+      sliIds = Collections.singletonList(serviceLevelObjectiveV2DTO.getIdentifier());
+      monitoredServiceIdentifiers = Collections.singleton(
+          ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec()).getMonitoredServiceRef());
+    } else {
+      List<String> sloIdentifiers = serviceLevelObjectiveV2Service.getReferencedSimpleSLOs(projectParams,
+          (CompositeServiceLevelObjective) serviceLevelObjectiveTypeSLOV2TransformerMap
+              .get(ServiceLevelObjectiveType.COMPOSITE)
+              .getSLOV2(projectParams, serviceLevelObjectiveV2DTO, true));
+      List<AbstractServiceLevelObjective> serviceLevelObjectiveList =
+          serviceLevelObjectiveV2Service.get(projectParams, sloIdentifiers);
+      sliIds = serviceLevelObjectiveList.stream()
+                   .filter(slo -> slo.getType().equals(ServiceLevelObjectiveType.SIMPLE))
+                   .map(slo -> ((SimpleServiceLevelObjective) slo).getServiceLevelIndicators().get(0))
+                   .collect(Collectors.toList());
+      monitoredServiceIdentifiers =
+          serviceLevelObjectiveV2Service.getReferencedMonitoredServices(serviceLevelObjectiveList);
+    }
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getAllInstances(projectParams, startTime, endTime);
+
+    // Adding downtime Instances
+    List<EntityUnavailabilityStatusesDTO> failureInstances =
+        entityUnavailabilityStatusesDTOS.stream()
+            .filter(statusesDTO -> statusesDTO.getEntityType().equals(EntityType.MAINTENANCE_WINDOW))
+            .collect(Collectors.toList());
+    failureInstances = downtimeService.filterDowntimeInstancesOnMonitoredServices(
+        projectParams, failureInstances, monitoredServiceIdentifiers);
+
+    // Adding Data collection failure Instances
+    failureInstances.addAll(
+        entityUnavailabilityStatusesDTOS.stream()
+            .filter(statusesDTO
+                -> statusesDTO.getEntityType().equals(EntityType.SLO) && sliIds.contains(statusesDTO.getEntityId()))
+            .collect(Collectors.toList()));
+
+    return failureInstances.stream()
+        .map(instance
+            -> UnavailabilityInstancesResponse.builder()
+                   .orgIdentifier(instance.getOrgIdentifier())
+                   .projectIdentifier(instance.getProjectIdentifier())
+                   .entityType(instance.getEntityType())
+                   .entityIdentifier(instance.getEntityId())
+                   .status(instance.getStatus())
+                   .startTime(instance.getStartTime())
+                   .endTime(instance.getEndTime())
+                   .build())
+        .collect(Collectors.toList());
   }
 
   private MSDropdownResponse getMSDropdownResponse(MonitoredServiceDTO monitoredServiceDTO) {

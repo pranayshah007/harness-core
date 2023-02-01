@@ -69,6 +69,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -501,6 +502,12 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
 
     Map<ClusterType, Long> eventCountByEventTypeMap = new HashMap<>();
 
+    Long baselineCount =
+        logAnalysisResults.stream()
+            .filter(logAnalysisRadarChartListDTO -> !Objects.isNull(logAnalysisRadarChartListDTO.getBaseline()))
+            .count();
+
+    eventCountByEventTypeMap.put(ClusterType.BASELINE, baselineCount);
     eventCountByEventTypeMap.putAll(logAnalysisResults.stream()
                                         .map(logAnalysisClusterDTO -> logAnalysisClusterDTO.getClusterType())
                                         .collect(Collectors.groupingBy(Function.identity(), Collectors.counting())));
@@ -580,6 +587,11 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
       logAnalysisRadarChartListDTO.setAngle(angle);
       logAnalysisRadarChartListDTO.setRadius(
           getRandomRadiusInExpectedRange(logAnalysisRadarChartListDTO.getClusterType(), random));
+      if (logAnalysisRadarChartListDTO.hasControlData()) {
+        logAnalysisRadarChartListDTO.getBaseline().setAngle(angle);
+        logAnalysisRadarChartListDTO.getBaseline().setRadius(
+            getRandomRadiusInExpectedRange(logAnalysisRadarChartListDTO.getBaseline().getClusterType(), random));
+      }
       angle += angleDifference;
       angle = Math.min(angle, 360);
     }
@@ -657,7 +669,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
                 .risk(testClusterSummary.getRiskLevel())
                 .totalTestFrequencyData(totalTestFrequencyData)
                 .testHostFrequencyData(testHostFrequencyData)
-                .count(testClusterSummary.getCount())
+                .count(getCountFromTotalTestFrequencyData(totalTestFrequencyData))
                 .averageControlFrequencyData(averageControlFrequencyData);
         if (testClusterSummary.getClusterType().equals(ClusterType.KNOWN_EVENT)
             || testClusterSummary.getClusterType().equals(ClusterType.UNEXPECTED_FREQUENCY)) {
@@ -667,6 +679,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
                   .message(labelToClusterMap.get(testClusterSummary.getLabel()).getText())
                   .clusterType(ClusterType.BASELINE)
                   .risk(Risk.NO_ANALYSIS);
+          logAnalysisRadarChartListDTOBuilder.baseline(controlLogAnalysisChartListDTOBuilder.build());
         }
         logAnalysisRadarChartListDTOList.add(logAnalysisRadarChartListDTOBuilder.build());
       }
@@ -681,6 +694,10 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
           logAnalysisRadarChartListDTOList.size() <= 1, "clusterId filter should result in one or zero cluster");
     }
     return logAnalysisRadarChartListDTOList;
+  }
+
+  private int getCountFromTotalTestFrequencyData(List<TimestampFrequencyCount> totalTestFrequencyData) {
+    return totalTestFrequencyData.stream().map(TimestampFrequencyCount::getCount).mapToInt(Double::intValue).sum();
   }
 
   private List<HostFrequencyData> getTestHostFrequencyData(

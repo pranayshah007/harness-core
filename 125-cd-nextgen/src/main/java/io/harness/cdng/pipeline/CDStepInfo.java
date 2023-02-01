@@ -38,6 +38,10 @@ import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
+import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepInfo;
+import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepInfo;
+import io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStepInfo;
+import io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStepInfo;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.rollback.HelmRollbackStepInfo;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepInfo;
@@ -64,6 +68,7 @@ import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformDestroyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepInfo;
+import io.harness.cdng.provision.terraformcloud.TerraformCloudRunStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntDestroyStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntPlanStepInfo;
@@ -115,7 +120,9 @@ import io.swagger.annotations.ApiModel;
         TasAppResizeStepInfo.class, TasRollbackStepInfo.class, AsgRollingDeployStepInfo.class,
         AsgRollingRollbackStepInfo.class, AsgBlueGreenDeployStepInfo.class, AsgBlueGreenRollbackStepInfo.class,
         TasRollingDeployStepInfo.class, TasRollingRollbackStepInfo.class, K8sDryRunManifestStepInfo.class,
-        AsgBlueGreenSwapServiceStepInfo.class})
+        AsgBlueGreenSwapServiceStepInfo.class, TerraformCloudRunStepInfo.class, GoogleFunctionsDeployStepInfo.class,
+        GoogleFunctionsDeployWithoutTrafficStepInfo.class, GoogleFunctionsTrafficShiftStepInfo.class,
+        GoogleFunctionsRollbackStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 // keeping this class because of the swagger annotation and UI dependency on it

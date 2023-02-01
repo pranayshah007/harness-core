@@ -27,6 +27,7 @@ public class HelmChartManifestDelegateConfig implements ManifestDelegateConfig {
   private boolean useRepoFlags;
   private boolean deleteRepoCacheDir;
   private boolean skipApplyHelmDefaultValues;
+  String subChartName;
 
   @Override
   public ManifestType getManifestType() {

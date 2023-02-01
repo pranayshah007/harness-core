@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
 @OwnedBy(DX)
 public interface WebhookEvent {
-  enum Type { PR, PUSH, ISSUE_COMMENT }
+  enum Type { PR, PUSH, ISSUE_COMMENT, RELEASE }
   WebhookEvent.Type getType();
   WebhookBaseAttributes getBaseAttributes();
 }

@@ -20,9 +20,14 @@ import io.harness.audit.api.AuditYamlService;
 import io.harness.audit.api.impl.AuditServiceImpl;
 import io.harness.audit.api.impl.AuditSettingsServiceImpl;
 import io.harness.audit.api.impl.AuditYamlServiceImpl;
+import io.harness.audit.api.streaming.AggregateStreamingService;
 import io.harness.audit.api.streaming.StreamingService;
+import io.harness.audit.api.streaming.impl.AggregateStreamingServiceImpl;
 import io.harness.audit.api.streaming.impl.StreamingServiceImpl;
 import io.harness.audit.client.remote.AuditClientModule;
+import io.harness.audit.repositories.streaming.StreamingBatchRepository;
+import io.harness.audit.repositories.streaming.StreamingBatchRepositoryImpl;
+import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.govern.ProviderModule;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
@@ -35,6 +40,7 @@ import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.platform.PlatformConfiguration;
 import io.harness.queue.QueueController;
+import io.harness.remote.client.ClientMode;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.NGAuditServiceRegistrars;
 import io.harness.springdata.HTransactionTemplate;
@@ -138,8 +144,13 @@ public class AuditServiceModule extends AbstractModule {
     bind(AuditService.class).to(AuditServiceImpl.class);
     bind(AuditSettingsService.class).to(AuditSettingsServiceImpl.class);
     bind(StreamingService.class).to(StreamingServiceImpl.class);
+    bind(AggregateStreamingService.class).to(AggregateStreamingServiceImpl.class);
+    bind(StreamingBatchRepository.class).to(StreamingBatchRepositoryImpl.class);
     install(
         AccessControlClientModule.getInstance(appConfig.getAccessControlClientConfig(), AUDIT_SERVICE.getServiceId()));
+    install(new ConnectorResourceClientModule(this.appConfig.getNgManagerServiceConfig(),
+        this.appConfig.getPlatformSecrets().getNgManagerServiceSecret(), AUDIT_SERVICE.toString(),
+        ClientMode.PRIVILEGED));
     install(new TokenClientModule(this.appConfig.getManagerServiceConfig(),
         this.appConfig.getPlatformSecrets().getNgManagerServiceSecret(), AUDIT_SERVICE.getServiceId()));
   }

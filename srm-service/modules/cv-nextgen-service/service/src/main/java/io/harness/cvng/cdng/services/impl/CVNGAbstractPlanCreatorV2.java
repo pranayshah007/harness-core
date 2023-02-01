@@ -7,7 +7,6 @@
 
 package io.harness.cvng.cdng.services.impl;
 
-import static io.harness.pms.yaml.YAMLFieldNameConstants.FAILURE_STRATEGIES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
@@ -19,7 +18,6 @@ import io.harness.advisers.retry.RetryAdviserRollbackParameters;
 import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
-import io.harness.advisers.rollback.OnFailRollbackParameters.OnFailRollbackParametersBuilder;
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,7 +26,6 @@ import io.harness.cvng.cdng.beans.CVStepInfoBase;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
-import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.steps.AbstractStepPlanCreator;
 import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
@@ -56,9 +53,9 @@ import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
+import io.harness.utils.PlanCreatorUtilsCommon;
 import io.harness.utils.TimeoutUtils;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig;
@@ -68,13 +65,10 @@ import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventio
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
 import io.harness.yaml.core.timeout.Timeout;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.protobuf.ByteString;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -194,7 +188,8 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
       stepElement.setTimeout(TimeoutUtils.getTimeout(stepElement.getTimeout()));
       return ((CVStepInfoBase) stepElement.getStepSpecType())
           .getStepParameters(stepElement,
-              getRollbackParameters(ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN));
+              PlanCreatorUtilsCommon.getRollbackParameters(
+                  ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN));
     }
 
     return stepElement.getStepSpecType().getStepParameters();
@@ -210,7 +205,7 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
                 .nextNodeId(nextNodeUuid)
                 .repairActionCodeAfterRetry(GenericPlanCreatorUtils.toRepairAction(actionUnderRetry))
                 .retryCount(retryCount.getValue())
-                .strategyToUuid(getRollbackStrategyMap(currentField))
+                .strategyToUuid(PlanCreatorUtilsCommon.getRollbackStrategyMap(currentField))
                 .waitIntervalList(retryAction.getSpecConfig()
                                       .getRetryIntervals()
                                       .getValue()
@@ -234,45 +229,15 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
         .build();
   }
 
-  private List<FailureStrategyConfig> getFieldFailureStrategies(
-      YamlField currentField, String fieldName, boolean isStepInsideRollback) {
-    YamlNode fieldNode = YamlUtils.getGivenYamlNodeFromParentPath(currentField.getNode(), fieldName);
-    if (isStepInsideRollback && fieldNode != null) {
-      // Check if found fieldNode is within rollbackSteps section
-      YamlNode rollbackNode = YamlUtils.findParentNode(fieldNode, ROLLBACK_STEPS);
-      if (rollbackNode == null) {
-        return Collections.emptyList();
-      }
-    }
-    if (fieldNode != null) {
-      return getFailureStrategies(fieldNode);
-    }
-    return Collections.emptyList();
-  }
-
-  private List<FailureStrategyConfig> getFailureStrategies(YamlNode node) {
-    YamlField failureStrategy = node.getField(FAILURE_STRATEGIES);
-    List<FailureStrategyConfig> failureStrategyConfigs = null;
-
-    try {
-      if (failureStrategy != null) {
-        failureStrategyConfigs =
-            YamlUtils.read(failureStrategy.getNode().toString(), new TypeReference<List<FailureStrategyConfig>>() {});
-      }
-    } catch (IOException e) {
-      throw new InvalidRequestException("Invalid yaml", e);
-    }
-    return failureStrategyConfigs;
-  }
-
   protected List<AdviserObtainment> getAdviserObtainmentForFailureStrategy(
       YamlField currentField, boolean isStepInsideRollback) {
     List<AdviserObtainment> adviserObtainmentList = new ArrayList<>();
     List<FailureStrategyConfig> stageFailureStrategies =
-        getFieldFailureStrategies(currentField, STAGE, isStepInsideRollback);
+        PlanCreatorUtilsCommon.getFieldFailureStrategies(currentField, STAGE, isStepInsideRollback);
     List<FailureStrategyConfig> stepGroupFailureStrategies =
-        getFieldFailureStrategies(currentField, STEP_GROUP, isStepInsideRollback);
-    List<FailureStrategyConfig> stepFailureStrategies = getFailureStrategies(currentField.getNode());
+        PlanCreatorUtilsCommon.getFieldFailureStrategies(currentField, STEP_GROUP, isStepInsideRollback);
+    List<FailureStrategyConfig> stepFailureStrategies =
+        PlanCreatorUtilsCommon.getFailureStrategies(currentField.getNode());
 
     Map<FailureStrategyActionConfig, Collection<FailureType>> actionMap;
     FailureStrategiesUtils.priorityMergeFailureStrategies(
@@ -337,7 +302,7 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
           break;
         case STAGE_ROLLBACK:
           OnFailRollbackParameters rollbackParameters =
-              getRollbackParameters(currentField, failureTypes, RollbackStrategy.STAGE_ROLLBACK);
+              PlanCreatorUtilsCommon.getRollbackParameters(currentField, failureTypes, RollbackStrategy.STAGE_ROLLBACK);
           adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
                                         .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
                                         .build());
@@ -351,7 +316,8 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
               failureTypes, adviserObtainmentBuilder, actionConfig, actionUnderManualIntervention));
           break;
         case PIPELINE_ROLLBACK:
-          rollbackParameters = getRollbackParameters(currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
+          rollbackParameters = PlanCreatorUtilsCommon.getRollbackParameters(
+              currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
           adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
                                         .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
                                         .build());
@@ -381,26 +347,5 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
     } else {
       return ParameterField.createValueField(timeout.getValue().getTimeoutString());
     }
-  }
-
-  protected OnFailRollbackParameters getRollbackParameters(
-      YamlField currentField, Set<FailureType> failureTypes, RollbackStrategy rollbackStrategy) {
-    OnFailRollbackParametersBuilder rollbackParametersBuilder = OnFailRollbackParameters.builder();
-    rollbackParametersBuilder.applicableFailureTypes(failureTypes);
-    rollbackParametersBuilder.strategy(rollbackStrategy);
-    rollbackParametersBuilder.strategyToUuid(getRollbackStrategyMap(currentField));
-    return rollbackParametersBuilder.build();
-  }
-
-  protected Map<RollbackStrategy, String> getRollbackStrategyMap(YamlField currentField) {
-    String stageNodeId = GenericPlanCreatorUtils.getStageNodeId(currentField);
-    Map<RollbackStrategy, String> rollbackStrategyStringMap = new HashMap<>();
-    rollbackStrategyStringMap.put(
-        RollbackStrategy.STAGE_ROLLBACK, stageNodeId + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX);
-    rollbackStrategyStringMap.put(
-        RollbackStrategy.STEP_GROUP_ROLLBACK, GenericPlanCreatorUtils.getStepGroupRollbackStepsNodeId(currentField));
-    rollbackStrategyStringMap.put(
-        RollbackStrategy.PIPELINE_ROLLBACK, GenericPlanCreatorUtils.getRollbackStageNodeId(currentField));
-    return rollbackStrategyStringMap;
   }
 }

@@ -15,11 +15,14 @@ import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.sto.variables.STOYamlLogLevel;
 import io.harness.yaml.sto.variables.STOYamlLogSerializer;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 @Data
 @OwnedBy(STO)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class STOYamlLog {
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlLogLevel")

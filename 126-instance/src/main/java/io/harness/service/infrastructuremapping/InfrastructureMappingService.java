@@ -13,6 +13,8 @@ import io.harness.dtos.InfrastructureMappingDTO;
 
 import java.util.List;
 import java.util.Optional;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
 @OwnedBy(HarnessTeam.DX)
 public interface InfrastructureMappingService {
@@ -22,4 +24,15 @@ public interface InfrastructureMappingService {
       InfrastructureMappingDTO infrastructureMappingDTO);
 
   List<InfrastructureMappingDTO> getAllByInfrastructureKey(String accountIdentifier, String infrastructureKey);
+
+  /**
+   * Deletes all infrastructure mappings linked to a particular harness project.
+   * @param accountIdentifier  the account id
+   * @param orgIdentifier the organization identifier
+   * @param projectIdentifier the project identifier
+   * @return boolean to indicate if deletion was successful
+   */
+  @NotNull
+  boolean deleteAllFromProj(
+      @NotEmpty String accountIdentifier, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier);
 }

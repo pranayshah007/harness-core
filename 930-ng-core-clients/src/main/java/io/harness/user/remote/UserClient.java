@@ -50,6 +50,7 @@ public interface UserClient {
   String USERS_SIGNUP_INVITE_API = "ng/user/signup-invite";
   String USER_SIGNUP_COMMUNITY = "ng/user/signup-invite/community";
   String USER_BATCH_LIST_API = "ng/user/batch";
+  String USER_EMAILS_BATCH_LIST_API = "ng/user/batch-emails";
   String SCIM_USER_SEARCH = "ng/user/scim/search";
   String SCIM_USER_PATCH_UPDATE = "ng/user/scim/patch";
   String SCIM_USER_PATCH_UPDATE_DETAILS = "ng/user/scim/patch/details";
@@ -115,6 +116,9 @@ public interface UserClient {
 
   @POST(USER_BATCH_LIST_API)
   Call<RestResponse<List<UserInfo>>> listUsers(@Query("accountId") String accountId, @Body UserFilterNG userFilterNG);
+
+  @POST(USER_EMAILS_BATCH_LIST_API)
+  Call<RestResponse<List<UserInfo>>> listUsersEmails(@Query("accountId") String accountId);
 
   @GET(SCIM_USER_SEARCH)
   Call<RestResponse<ScimListResponse<ScimUser>>> searchScimUsers(@Query("accountId") String accountId,

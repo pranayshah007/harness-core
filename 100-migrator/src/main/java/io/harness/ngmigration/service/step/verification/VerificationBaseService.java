@@ -14,8 +14,8 @@ import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.core.beans.CVVerifyStepNode;
 import io.harness.cvng.core.beans.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
@@ -25,7 +25,7 @@ import software.wings.sm.states.AbstractLogAnalysisState;
 import software.wings.sm.states.AbstractMetricAnalysisState;
 
 @OwnedBy(HarnessTeam.CDC)
-public abstract class VerificationBaseService implements StepMapper {
+public abstract class VerificationBaseService extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
     return WorkflowStepSupportStatus.MANUAL_EFFORT;

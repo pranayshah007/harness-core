@@ -8,8 +8,10 @@
 package io.harness.auditevent.streaming.entities;
 
 import io.harness.annotations.StoreIn;
-import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.auditevent.streaming.beans.BatchFailureInfo;
+import io.harness.auditevent.streaming.beans.BatchStatus;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -23,7 +25,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -45,23 +49,21 @@ public class StreamingBatch {
   Long lastSuccessfulRecordTimestamp;
   Long numberOfRecords;
   Long numberOfRecordsPublished;
+  Long lastStreamedAt;
   @NotNull BatchStatus status;
   int retryCount;
   @Valid BatchFailureInfo failureInfo;
+  @CreatedDate long createdAt;
+  @LastModifiedDate long lastModifiedAt;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("accountId_streamingDestinationIdentifier_unique_index")
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_createdAt_streamingDestinationId_status_index")
                  .field(StreamingBatchKeys.accountIdentifier)
+                 .descSortField(StreamingBatchKeys.createdAt)
                  .field(StreamingBatchKeys.streamingDestinationIdentifier)
-                 .unique(true)
-                 .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("accountId_status_retryCount_index")
-                 .field(StreamingBatchKeys.accountIdentifier)
                  .field(StreamingBatchKeys.status)
-                 .field(StreamingBatchKeys.retryCount)
                  .build())
         .build();
   }

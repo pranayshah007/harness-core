@@ -93,11 +93,6 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     Status status = event.getStatus();
     ciRatelimitHandlerExecutor.submit(() -> { updateDailyBuildCount(level, status, serviceName, accountId); });
     executorService.submit(() -> {
-      try {
-        queueExecutionUtils.addActiveExecutionBuild(event, accountId, level.getRuntimeId());
-      } catch (Exception ex) {
-        log.error("Failed to add Execution record for {}", level.getRuntimeId(), ex);
-      }
       sendGitStatus(level, ambiance, status, event, accountId);
       sendCleanupRequest(level, ambiance, status, accountId);
     });
@@ -111,7 +106,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       Failsafe.with(retryPolicy).run(() -> {
         if (level.getStepType().getStepCategory() == StepCategory.STAGE && isFinalStatus(status)) {
           // TODO: Once Robust Cleanup implementation is done shift this after response from delegate is received.
-          queueExecutionUtils.deleteActiveExecutionRecord(level.getRuntimeId());
+          queueExecutionUtils.deleteActiveExecutionRecord(ambiance.getStageExecutionId());
           CICleanupTaskParams ciCleanupTaskParams = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
 
           log.info("Received event with status {} to clean planExecutionId {}, stage {}", status,

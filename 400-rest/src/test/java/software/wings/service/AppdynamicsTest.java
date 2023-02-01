@@ -93,7 +93,8 @@ public class AppdynamicsTest extends WingsBaseTest {
     persistence.save(user);
     UserThreadLocal.set(user);
     FieldUtils.writeField(appdynamicsDelegateService, "encryptionService", encryptionService, true);
-    when(appdDelegateProxyFactory.get(anyObject(), any(SyncTaskContext.class))).thenReturn(appdynamicsDelegateService);
+    when(appdDelegateProxyFactory.getV2(anyObject(), any(SyncTaskContext.class)))
+        .thenReturn(appdynamicsDelegateService);
     FieldUtils.writeField(appdynamicsService, "delegateProxyFactory", appdDelegateProxyFactory, true);
     FieldUtils.writeField(newRelicService, "delegateProxyFactory", appdDelegateProxyFactory, true);
 

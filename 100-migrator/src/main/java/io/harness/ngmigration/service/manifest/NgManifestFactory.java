@@ -37,6 +37,7 @@ public class NgManifestFactory {
   @Inject K8sManifestLocalStoreService k8sManifestLocalStoreService;
   @Inject KustomizeSourceRepoStoreService kustomizeSourceRepoStoreService;
   @Inject OpenshiftSourceRepoStoreService openshiftSourceRepoStoreService;
+  @Inject HelmChartOverrideRepoStoreService helmChartOverrideRepoStoreService;
 
   private static String ERROR_STRING = "%s storetype is currently not supported for %s appManifestKind";
 
@@ -83,6 +84,11 @@ public class NgManifestFactory {
           default:
             throw new InvalidRequestException(String.format(ERROR_STRING, storeType, appManifestKind));
         }
+      case HELM_CHART_OVERRIDE:
+        if (storeType == StoreType.HelmChartRepo) {
+          return helmChartOverrideRepoStoreService;
+        }
+        throw new InvalidRequestException(String.format(ERROR_STRING, storeType, appManifestKind));
       default:
         throw new InvalidRequestException(
             String.format("%s appManifestKind is currently not supported", appManifestKind));

@@ -80,6 +80,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -218,9 +219,13 @@ public class UserGroupResource {
         Resource.of(USERGROUP, identifier), VIEW_USERGROUP_PERMISSION);
     Optional<UserGroup> userGroupOptional =
         userGroupService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    return userGroupOptional
-        .map(userGroup -> ResponseDTO.newResponse(Long.toString(userGroup.getVersion()), toDTO(userGroup)))
-        .orElseGet(() -> ResponseDTO.newResponse(null));
+    if (userGroupOptional.isPresent()) {
+      return ResponseDTO.newResponse(
+          Long.toString(userGroupOptional.get().getVersion()), toDTO(userGroupOptional.get()));
+    } else {
+      throw new NotFoundException(
+          String.format("User Group with identifier [%s] is not found in the given scope", identifier));
+    }
   }
 
   @DELETE

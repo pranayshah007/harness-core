@@ -9,7 +9,6 @@ package io.harness.cvng.core.beans.monitoredService.changeSourceSpec;
 
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
-import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -42,10 +41,13 @@ public class ChangeSourceDTODeserializer extends JsonDeserializer<ChangeSourceDT
     String name = tree.has(ChangeSourceDTO.Fields.name) ? tree.get(ChangeSourceDTO.Fields.name).asText() : null;
     String identifier =
         tree.has(ChangeSourceDTO.Fields.identifier) ? tree.get(ChangeSourceDTO.Fields.identifier).asText() : null;
-    ChangeSourceDTO changeSourceDTO = ChangeSourceDTO.builder().name(name).identifier(identifier).type(type).build();
+    boolean enabled =
+        tree.has(ChangeSourceDTO.Fields.enabled) ? tree.get(ChangeSourceDTO.Fields.enabled).asBoolean() : false;
+    ChangeSourceDTO changeSourceDTO =
+        ChangeSourceDTO.builder().name(name).identifier(identifier).type(type).enabled(enabled).build();
     JsonNode spec = tree.get(ChangeSourceDTO.Fields.spec);
     if (spec == null) {
-      throw new BadRequestException("Spec is not serializable.");
+      throw new BadRequestException("Spec is not serializable");
     }
     Class<?> deserializationClass = deserializationMapper.get(type);
     if (deserializationClass == null) {

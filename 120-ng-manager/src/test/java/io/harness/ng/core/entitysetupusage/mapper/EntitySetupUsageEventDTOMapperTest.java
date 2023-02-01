@@ -21,8 +21,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.NgManagerTestBase;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EntityReference;
 import io.harness.category.element.UnitTests;
-import io.harness.common.EntityReference;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;

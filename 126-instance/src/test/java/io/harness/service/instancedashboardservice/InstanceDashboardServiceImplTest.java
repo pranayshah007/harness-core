@@ -35,8 +35,10 @@ import io.harness.models.BuildsByEnvironment;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.EnvironmentInstanceCountModel;
+import io.harness.models.InstanceDetailGroupedByPipelineExecutionList;
 import io.harness.models.InstanceDetailsByBuildId;
 import io.harness.models.InstanceDetailsDTO;
+import io.harness.models.InstanceGroupedByPipelineExecution;
 import io.harness.models.InstancesByBuildId;
 import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.models.dashboard.InstanceCountDetails;
@@ -70,21 +72,42 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   private static final String DISPLAY_NAME = "displayName";
   private static final String ENV_1 = "env1";
   private static final String ENV_2 = "env2";
+  private static final String PIPELINE_1 = "pipeline1";
+  private static final String PIPELINE_2 = "pipeline2";
+  private static final String PIPELINE_EXECUTION_1 = "pipelineExecution1";
+  private static final String PIPELINE_EXECUTION_2 = "pipelineExecution2";
   private static final String INFRASTRUCTURE_ID = "infraId";
   private static final String CLUSTER_ID = "clusterId";
   private static final String AGENT_ID = "agentId";
+
   private static final List<String> BUILD_IDS = Arrays.asList("id1", "id2");
   private static final List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels =
       Arrays.asList(new ArtifactDeploymentDetailModel(ENV_1, DISPLAY_NAME, 2l),
           new ArtifactDeploymentDetailModel(ENV_2, DISPLAY_NAME, 1l));
   private static final List<EnvironmentInstanceCountModel> environmentInstanceCountModels =
       Arrays.asList(new EnvironmentInstanceCountModel(ENV_1, 2), new EnvironmentInstanceCountModel(ENV_2, 1));
+  private final List<Instance> instanceList = Arrays.asList(Instance.builder()
+                                                                .id("1")
+                                                                .createdAt(1l)
+                                                                .lastModifiedAt(1l)
+                                                                .instanceInfo(K8sInstanceInfo.builder().build())
+                                                                .build(),
+      Instance.builder()
+          .id("2")
+          .createdAt(2l)
+          .lastModifiedAt(2l)
+          .instanceInfo(K8sInstanceInfo.builder().build())
+          .build());
+
   private static final List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList =
       Arrays.asList(
           new ActiveServiceInstanceInfoWithEnvType(ENV_IDENTIFIER, ENV_IDENTIFIER, EnvironmentType.PreProduction,
               INFRASTRUCTURE_ID, INFRASTRUCTURE_ID, CLUSTER_ID, AGENT_ID, 1l, DISPLAY_NAME, 1));
   private AggregationResults<ArtifactDeploymentDetailModel> artifactDeploymentDetailModelAggregationResults;
   private AggregationResults<EnvironmentInstanceCountModel> environmentInstanceCountModelAggregationResults;
+  private AggregationResults<InstanceGroupedByPipelineExecution>
+      instanceDetailGroupedByPipelineExecutionAggregationResults;
+
   private AggregationResults<ActiveServiceInstanceInfoWithEnvType>
       activeServiceInstanceInfoWithEnvTypeAggregationResults;
   @Mock InstanceService instanceService;
@@ -99,6 +122,13 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
         new AggregationResults<>(artifactDeploymentDetailModels, new Document());
     environmentInstanceCountModelAggregationResults =
         new AggregationResults<>(environmentInstanceCountModels, new Document());
+    InstanceGroupedByPipelineExecution instanceDetailGroupedByPipelineExecution1 =
+        new InstanceGroupedByPipelineExecution(PIPELINE_1, PIPELINE_EXECUTION_1, 1l, instanceList);
+    InstanceGroupedByPipelineExecution instanceDetailGroupedByPipelineExecution2 =
+        new InstanceGroupedByPipelineExecution(PIPELINE_2, PIPELINE_EXECUTION_2, 2l, instanceList);
+    instanceDetailGroupedByPipelineExecutionAggregationResults = new AggregationResults<>(
+        Arrays.asList(instanceDetailGroupedByPipelineExecution1, instanceDetailGroupedByPipelineExecution2),
+        new Document());
     activeServiceInstanceInfoWithEnvTypeAggregationResults =
         new AggregationResults<>(activeServiceInstanceInfoWithEnvTypeList, new Document());
   }
@@ -274,6 +304,29 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
         serviceId, serviceName, "env2", "env2", null, null, "infra2", "infra2", "2", "b", 1l, "2", "artifact2:2", 1);
     activeServiceInstanceInfo.add(instance1);
     return activeServiceInstanceInfo;
+  }
+
+  List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
+  getSampleInstanceDetailGroupedByPipelineExecutionList() {
+    List<InstanceDetailsDTO> instanceDetailsDTOList = Arrays.asList(
+        InstanceDetailsDTO.builder().podName("1").build(), InstanceDetailsDTO.builder().podName("2").build());
+    InstanceDetailGroupedByPipelineExecutionList
+        .InstanceDetailGroupedByPipelineExecution instanceDetailGroupedByPipelineExecution1 =
+        InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution.builder()
+            .pipelineId(PIPELINE_1)
+            .planExecutionId(PIPELINE_EXECUTION_1)
+            .lastDeployedAt(1l)
+            .instances(instanceDetailsDTOList)
+            .build();
+    InstanceDetailGroupedByPipelineExecutionList
+        .InstanceDetailGroupedByPipelineExecution instanceDetailGroupedByPipelineExecution2 =
+        InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution.builder()
+            .pipelineId(PIPELINE_2)
+            .planExecutionId(PIPELINE_EXECUTION_2)
+            .lastDeployedAt(2l)
+            .instances(instanceDetailsDTOList)
+            .build();
+    return Arrays.asList(instanceDetailGroupedByPipelineExecution1, instanceDetailGroupedByPipelineExecution2);
   }
 
   @Test
@@ -749,5 +802,26 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
         .getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ENV_IDENTIFIER,
             SERVICE_IDENTIFIER, DISPLAY_NAME, true);
     assertThat(activeServiceInstanceInfoWithEnvTypeList).isEqualTo(activeServiceInstanceInfoWithEnvTypeList1);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getActiveInstanceDetailGroupedByPipelineExecution_NonGitOps() {
+    List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
+        instanceDetailGroupedByPipelineExecutionList = getSampleInstanceDetailGroupedByPipelineExecutionList();
+    when(instanceService.getActiveInstanceGroupedByPipelineExecution(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
+             PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, ENV_IDENTIFIER, EnvironmentType.Production, INFRASTRUCTURE_ID,
+             null, DISPLAY_NAME))
+        .thenReturn(instanceDetailGroupedByPipelineExecutionAggregationResults);
+    when(instanceDetailsMapper.toInstanceDetailsDTOList(anyList(), anyBoolean()))
+        .thenReturn(instanceDetailGroupedByPipelineExecutionList.get(0).getInstances());
+    List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
+        instanceDetailGroupedByPipelineExecutionListResult =
+            instanceDashboardService.getActiveInstanceDetailGroupedByPipelineExecution(ACCOUNT_IDENTIFIER,
+                ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, ENV_IDENTIFIER, EnvironmentType.Production,
+                INFRASTRUCTURE_ID, null, DISPLAY_NAME, false);
+    assertThat(instanceDetailGroupedByPipelineExecutionList)
+        .isEqualTo(instanceDetailGroupedByPipelineExecutionListResult);
   }
 }

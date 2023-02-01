@@ -64,6 +64,9 @@ public class EventsFrameworkModule extends AbstractModule {
       bind(Producer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.CUSTOM_CHANGE_EVENT))
           .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
+      bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_FF))
+          .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
       bind(Consumer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.CUSTOM_CHANGE_EVENT))
           .toInstance(
@@ -90,6 +93,11 @@ public class EventsFrameworkModule extends AbstractModule {
           .toInstance(RedisConsumer.of(EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_FF, CV_NEXT_GEN.getServiceId(),
               redissonClient, EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_MAX_PROCESSING_TIME,
               EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_FF_BATCH_SIZE, redisConfig.getEnvNamespace()));
+      bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_FF))
+          .toInstance(RedisProducer.of(EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_FF, redissonClient, 5000,
+              "internal_change_publisher", redisConfig.getEnvNamespace()));
+
       bind(Producer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.SETUP_USAGE))
           .toInstance(RedisProducer.of(EventsFrameworkConstants.SETUP_USAGE, redissonClient,

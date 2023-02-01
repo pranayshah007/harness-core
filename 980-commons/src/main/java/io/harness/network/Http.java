@@ -121,14 +121,14 @@ public class Http {
             }
           });
 
-  LoadingCache<String, Integer> responseCodeForValidationWithoutFollowingRedirect =
+  LoadingCache<HttpURLHeaderInfo, Integer> responseCodeForValidationWithoutFollowingRedirect =
       CacheBuilder.newBuilder()
           .maximumSize(1000)
-          .expireAfterWrite(1, TimeUnit.MINUTES)
-          .build(new CacheLoader<String, Integer>() {
+          .expireAfterWrite(5, TimeUnit.MINUTES)
+          .build(new CacheLoader<HttpURLHeaderInfo, Integer>() {
             @Override
-            public Integer load(String url) throws IOException {
-              log.info("Testing connectivity without follow redirect");
+            public Integer load(HttpURLHeaderInfo httpURLHeaderInfo) throws IOException {
+              log.info("Testing connectivity using headers without follow redirect");
 
               // Create a trust manager that does not validate certificate chains
               // Install the all-trusting trust manager
@@ -137,7 +137,7 @@ public class Http {
               HostnameVerifier allHostsValid = (s, sslSession) -> true;
               // Install the all-trusting host verifier
               HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
-              HttpURLConnection connection = getHttpsURLConnection(url);
+              HttpURLConnection connection = getHttpsURLConnection(httpURLHeaderInfo.getUrl());
               try {
                 // Changed to GET as some providers like artifactory SAAS is not
                 // accepting HEAD requests
@@ -145,6 +145,13 @@ public class Http {
                 connection.setConnectTimeout(15000);
                 connection.setReadTimeout(15000);
                 connection.setInstanceFollowRedirects(false);
+
+                // set headers
+                if (isNotEmpty(httpURLHeaderInfo.getHeaders())) {
+                  for (KeyValuePair header : httpURLHeaderInfo.getHeaders()) {
+                    connection.setRequestProperty(header.getKey(), header.getValue());
+                  }
+                }
                 int responseCode = connection.getResponseCode();
                 log.info("Returned code {}", responseCode);
                 return responseCode;
@@ -240,15 +247,20 @@ public class Http {
     return false;
   }
 
-  public static boolean connectableHttpUrlWithoutFollowingRedirect(String url) {
+  public static boolean connectableHttpUrlWithoutFollowingRedirect(String url, List<KeyValuePair> headers) {
     try (UrlLogContext ignore = new UrlLogContext(url, OVERRIDE_ERROR)) {
       try {
-        return checkResponseCode(responseCodeForValidationWithoutFollowingRedirect.get(url));
+        return checkResponseCode(responseCodeForValidationWithoutFollowingRedirect.get(
+            HttpURLHeaderInfo.builder().url(url).headers(headers).build()));
       } catch (Exception e) {
         log.info("Could not connect: {}", e.getMessage());
       }
     }
     return false;
+  }
+
+  public static boolean connectableHttpUrlWithoutFollowingRedirect(String url) {
+    return connectableHttpUrlWithoutFollowingRedirect(url, null);
   }
 
   public static boolean connectableHttpUrlWithHeaders(String url, List<KeyValuePair> headers) {

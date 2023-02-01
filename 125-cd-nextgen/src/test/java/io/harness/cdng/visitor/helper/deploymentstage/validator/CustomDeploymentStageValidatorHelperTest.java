@@ -22,9 +22,9 @@ import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.creator.plan.stage.CustomDeploymentStageValidatorHelper;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
-import io.harness.cdng.visitor.helpers.deploymentstage.validator.CustomDeploymentStageValidatorHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateEntityType;

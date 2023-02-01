@@ -13,6 +13,7 @@ import io.harness.cvng.analysis.beans.CanaryBlueGreenAdditionalInfo.HostSummaryI
 import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
+import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.v2.AbstractAnalysedNode;
 import io.harness.cvng.cdng.beans.v2.AnalysedDeploymentNode;
@@ -35,6 +36,7 @@ import io.harness.cvng.resources.VerifyStepResource;
 import io.harness.cvng.verificationjob.beans.AdditionalInfo;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.PageUtils;
@@ -69,9 +71,10 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
         .stream()
         .map(dto
             -> HealthSource.builder()
-                   .healthSourceName(dto.getName())
-                   .healthSourceIdentifier(dto.getIdentifier())
-                   .providerName(dto.getType())
+                   .name(dto.getName())
+                   .identifier(dto.getIdentifier())
+                   .type(MonitoredServiceDataSourceType.dataSourceTypeMonitoredServiceDataSourceTypeMap.get(
+                       dto.getType()))
                    .providerType(ProviderType.fromVerificationType(dto.getVerificationType()))
                    .build())
         .collect(Collectors.toList());
@@ -243,7 +246,7 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
   @Override
   public PageResponse<MetricsAnalysis> getMetricsAnalysisForVerifyStepExecutionId(
       VerifyStepPathParams verifyStepPathParams, boolean anomalousMetricsOnly, List<String> healthSources,
-      List<String> transactionGroups, List<String> nodes, int limit, int page) {
+      List<String> transactionGroups, List<String> nodes, PageRequest pageRequest) {
     List<MetricsAnalysis> metricsAnalyses =
         deploymentTimeSeriesAnalysisService.getFilteredMetricAnalysesForVerifyStepExecutionId(
             verifyStepPathParams.getAccountIdentifier(), verifyStepPathParams.getVerifyStepExecutionId(),
@@ -255,6 +258,6 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                 .anomalousNodesOnly(anomalousMetricsOnly)
                 .build());
 
-    return PageUtils.offsetAndLimit(metricsAnalyses, page - 1, limit);
+    return PageUtils.offsetAndLimit(metricsAnalyses, pageRequest.getPageIndex(), pageRequest.getPageSize());
   }
 }

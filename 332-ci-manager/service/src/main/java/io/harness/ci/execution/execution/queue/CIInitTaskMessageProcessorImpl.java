@@ -44,6 +44,7 @@ public class CIInitTaskMessageProcessorImpl implements CIInitTaskMessageProcesso
       }
       initTaskExecutor.submit(() -> {
         String taskId = initializeTaskStepV2.executeBuild(ambiance, ciInitTaskArgs.getStepElementParameters());
+        asyncWaitEngine.taskAcquired(ciInitTaskArgs.getCallbackId());
         CIInitDelegateTaskStatusNotifier ciInitDelegateTaskStatusNotifier =
             CIInitDelegateTaskStatusNotifier.builder().waitId(ciInitTaskArgs.getCallbackId()).build();
         asyncWaitEngine.waitForAllOn(ciInitDelegateTaskStatusNotifier, null, Arrays.asList(taskId), 0);

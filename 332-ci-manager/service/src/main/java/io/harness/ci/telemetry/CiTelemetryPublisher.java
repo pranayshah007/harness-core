@@ -23,6 +23,7 @@ import io.harness.repositories.CITelemetryStatusRepository;
 import io.harness.repositories.ModuleLicenseRepository;
 
 import com.google.inject.Inject;
+import java.lang.instrument.Instrumentation;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +37,7 @@ public class CiTelemetryPublisher {
   @Inject AccountClient accountClient;
   @Inject CITelemetryStatusRepository ciTelemetryStatusRepository;
   @Inject ModuleLicenseRepository moduleLicenseRepository;
+
   String COUNT_ACTIVE_DEVELOPERS = "ci_license_developers_used";
   String ACCOUNT_DEPLOY_TYPE = "account_deploy_type";
   // Locking for a bit less than one day. It's ok to send a bit more than less considering downtime/etc

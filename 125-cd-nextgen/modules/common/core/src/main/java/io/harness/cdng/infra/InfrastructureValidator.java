@@ -18,6 +18,7 @@ import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
+import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -79,6 +80,10 @@ public class InfrastructureValidator {
 
       case InfrastructureKind.ECS:
         validateEcsInfrastructure((EcsInfrastructure) infrastructure);
+        break;
+
+      case InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS:
+        validateGoogleFunctionsInfrastructure((GoogleFunctionsInfrastructure) infrastructure);
         break;
 
       case InfrastructureKind.ELASTIGROUP:
@@ -255,6 +260,18 @@ public class InfrastructureValidator {
     }
     if (!hasValueOrExpression(infrastructure.getRegion())) {
       throw new InvalidArgumentsException(Pair.of("region", CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+  }
+
+  private void validateGoogleFunctionsInfrastructure(GoogleFunctionsInfrastructure infrastructure) {
+    if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
+      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+    }
+    if (!hasValueOrExpression(infrastructure.getProject())) {
+      throw new InvalidArgumentsException(Pair.of("project", "cannot be empty"));
+    }
+    if (!hasValueOrExpression(infrastructure.getRegion())) {
+      throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
     }
   }
 

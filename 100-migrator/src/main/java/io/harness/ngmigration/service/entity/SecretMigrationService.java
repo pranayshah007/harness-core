@@ -29,8 +29,8 @@ import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.ngmigration.service.MigratorMappingService;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secrets.SecretService;
@@ -107,7 +107,11 @@ public class SecretMigrationService extends NgMigrationService {
 
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
-    return discover(secretService.getSecretById(accountId, entityId).orElse(null));
+    try {
+      return discover(secretService.getSecretById(accountId, entityId).orElse(null));
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   @Override

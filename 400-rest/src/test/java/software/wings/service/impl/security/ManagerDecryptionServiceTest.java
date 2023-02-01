@@ -53,7 +53,7 @@ public class ManagerDecryptionServiceTest extends CategoryTest {
     initMocks(this);
     managerDecryptionService = new ManagerDecryptionServiceImpl(delegateProxyFactory);
 
-    when(delegateProxyFactory.get(eq(EncryptionService.class), any(SyncTaskContext.class)))
+    when(delegateProxyFactory.getV2(eq(EncryptionService.class), any(SyncTaskContext.class)))
         .thenReturn(encryptionService);
 
     when(encryptionConfig.getEncryptionType()).thenReturn(EncryptionType.KMS);

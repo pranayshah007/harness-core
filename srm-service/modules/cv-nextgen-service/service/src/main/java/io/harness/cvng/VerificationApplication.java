@@ -161,7 +161,6 @@ import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
-import io.harness.pms.annotations.PipelineServiceAuthIfHasApiKey;
 import io.harness.pms.contracts.plan.ExpansionRequestType;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.contracts.steps.StepCategory;

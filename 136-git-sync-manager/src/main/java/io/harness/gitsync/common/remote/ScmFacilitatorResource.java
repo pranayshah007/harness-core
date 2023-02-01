@@ -33,10 +33,16 @@ import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
 import io.harness.gitsync.common.dtos.GitRepositoryResponseDTO;
 import io.harness.gitsync.common.dtos.SaasGitDTO;
+import io.harness.gitsync.common.dtos.ScmBatchGetFileRequestDTO;
+import io.harness.gitsync.common.dtos.ScmBatchGetFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
+import io.harness.gitsync.common.dtos.ScmGetBatchFileRequestIdentifier;
+import io.harness.gitsync.common.dtos.ScmGetBatchFilesByBranchRequestDTO;
+import io.harness.gitsync.common.dtos.ScmGetBatchFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
+import io.harness.gitsync.common.dtos.ScmGetFileResponseV2DTO;
 import io.harness.gitsync.common.dtos.ScmGetFileUrlRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileUrlResponseDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
@@ -68,7 +74,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
@@ -488,5 +496,44 @@ public class ScmFacilitatorResource {
                                              .repoName(repoName)
                                              .build());
     return ResponseDTO.newResponse(scmGetFileUrlResponseDTO.getFileURL());
+  }
+
+  @POST
+  @Path("get-batch-file")
+  @ApiOperation(value = "Get file url", nickname = "getFileURL")
+  @Hidden
+  public ResponseDTO<ScmBatchGetFileResponseDTO> getBatchFile(
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotBlank @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY)
+      String accountIdentifier, ScmBatchGetFileRequestDTO scmBatchGetFileRequestDTO) {
+    Map<ScmGetBatchFileRequestIdentifier, ScmGetFileByBranchRequestDTO> scmGetFileByBranchRequestDTOMap =
+        new HashMap<>();
+    scmBatchGetFileRequestDTO.getScmGetFileRequestDTOMap().forEach((identifier, scmGetFileRequestDTO) -> {
+      ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO =
+          ScmGetFileByBranchRequestDTO.builder()
+              .branchName(scmGetFileRequestDTO.getBranch())
+              .repoName(scmGetFileRequestDTO.getRepoName())
+              .filePath(scmGetFileRequestDTO.getFilepath())
+              .useCache(scmGetFileRequestDTO.getUseCache())
+              .connectorRef(scmGetFileRequestDTO.getConnectorRef())
+              .scope(Scope.builder()
+                         .accountIdentifier(scmGetFileRequestDTO.getAccountIdentifier())
+                         .projectIdentifier(scmGetFileRequestDTO.getProjectIdentifier())
+                         .orgIdentifier(scmGetFileRequestDTO.getOrgIdentifier())
+                         .build())
+              .build();
+      scmGetFileByBranchRequestDTOMap.put(
+          ScmGetBatchFileRequestIdentifier.builder().identifier(identifier).build(), scmGetFileByBranchRequestDTO);
+    });
+    ScmGetBatchFilesResponseDTO response = scmFacilitatorService.getBatchFilesByBranch(
+        ScmGetBatchFilesByBranchRequestDTO.builder()
+            .accountIdentifier(accountIdentifier)
+            .scmGetFileByBranchRequestDTOMap(scmGetFileByBranchRequestDTOMap)
+            .build());
+    Map<String, ScmGetFileResponseV2DTO> scmGetFileResponseV2DTOMap = new HashMap<>();
+    response.getScmGetFileResponseV2DTOMap().forEach((requestIdentifier, batchResponse) -> {
+      scmGetFileResponseV2DTOMap.put(requestIdentifier.getIdentifier(), batchResponse);
+    });
+    return ResponseDTO.newResponse(
+        ScmBatchGetFileResponseDTO.builder().scmGetFileResponseV2DTOMap(scmGetFileResponseV2DTOMap).build());
   }
 }

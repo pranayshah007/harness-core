@@ -18,4 +18,5 @@ import lombok.Value;
 public class IACMServiceConfig {
   String baseUrl;
   String globalToken;
+  String externalUrl;
 }

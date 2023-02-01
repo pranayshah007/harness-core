@@ -12,6 +12,7 @@ import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.HostFreque
 import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.TimestampFrequencyCount;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -40,6 +41,16 @@ public class LogAnalysisRadarChartListDTO implements Comparable<LogAnalysisRadar
   List<TimestampFrequencyCount> totalTestFrequencyData;
 
   List<TimestampFrequencyCount> averageControlFrequencyData;
+
+  LogAnalysisRadarChartListDTO baseline;
+
+  @JsonProperty(value = "hasControlData")
+  public boolean hasControlData() {
+    if (baseline != null) {
+      return true;
+    }
+    return false;
+  }
 
   @Override
   public int compareTo(@NotNull LogAnalysisRadarChartListDTO o) {

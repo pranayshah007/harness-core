@@ -67,7 +67,7 @@ public class LogVerificationServiceImplTest extends CategoryTest {
 
     // setup
     when(mockSettingsService.get(anyString())).thenReturn(attribute);
-    when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockBugsnagDelegateService);
+    when(mockDelegateProxyFactory.getV2(any(), any())).thenReturn(mockBugsnagDelegateService);
     when(mockSecretManager.getEncryptionDetails(any(EncryptableSetting.class), anyString(), anyString()))
         .thenReturn(null);
     when(mockBugsnagDelegateService.getOrganizations(config, new ArrayList<>(), null))
@@ -93,7 +93,7 @@ public class LogVerificationServiceImplTest extends CategoryTest {
 
     // setup
     when(mockSettingsService.get(anyString())).thenReturn(attribute);
-    when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockBugsnagDelegateService);
+    when(mockDelegateProxyFactory.getV2(any(), any())).thenReturn(mockBugsnagDelegateService);
     when(mockSecretManager.getEncryptionDetails(any(EncryptableSetting.class), anyString(), anyString()))
         .thenReturn(null);
     when(mockBugsnagDelegateService.getProjects(config, "orgId", new ArrayList<>(), null))
@@ -119,7 +119,7 @@ public class LogVerificationServiceImplTest extends CategoryTest {
 
     // setup
     when(mockSettingsService.get(anyString())).thenReturn(attribute);
-    when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockBugsnagDelegateService);
+    when(mockDelegateProxyFactory.getV2(any(), any())).thenReturn(mockBugsnagDelegateService);
     when(mockSecretManager.getEncryptionDetails(any(EncryptableSetting.class), anyString(), anyString()))
         .thenReturn(null);
     when(mockBugsnagDelegateService.getOrganizations(config, null, null))

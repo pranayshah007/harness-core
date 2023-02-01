@@ -73,7 +73,7 @@ public class SplunkAnalysisServiceImpl extends AnalysisServiceImpl implements Sp
     List<EncryptedDataDetail> encryptedDataDetails = getEncryptionDetails(settingAttribute);
     SyncTaskContext taskContext = getSyncTaskContext(accountId);
     List<LogElement> responseWithoutHost =
-        delegateProxyFactory.get(SplunkDelegateService.class, taskContext)
+        delegateProxyFactory.getV2(SplunkDelegateService.class, taskContext)
             .getLogResults((SplunkConfig) settingAttribute.getValue(), encryptedDataDetails,
                 setupTestNodeData.getQuery(), setupTestNodeData.getHostNameField(), null, startTime, endTime,
                 apiCallLog, 0, setupTestNodeData.isAdvancedQuery());
@@ -96,7 +96,7 @@ public class SplunkAnalysisServiceImpl extends AnalysisServiceImpl implements Sp
 
     String hostName = mlServiceUtils.getHostName(setupTestNodeData);
     List<LogElement> responseWithHost =
-        delegateProxyFactory.get(SplunkDelegateService.class, taskContext)
+        delegateProxyFactory.getV2(SplunkDelegateService.class, taskContext)
             .getLogResults((SplunkConfig) settingAttribute.getValue(), encryptedDataDetails,
                 setupTestNodeData.getQuery(), setupTestNodeData.getHostNameField(), hostName, startTime, endTime,
                 apiCallLog, 0, setupTestNodeData.isAdvancedQuery());
@@ -119,7 +119,7 @@ public class SplunkAnalysisServiceImpl extends AnalysisServiceImpl implements Sp
     List<EncryptedDataDetail> encryptedDataDetails =
         ngSecretService.getEncryptionDetails(basicNGAccessObject, splunkConnectorDTO);
     SyncTaskContext taskContext = getSyncTaskContext(splunkConnectorDTO.getAccountId());
-    return delegateProxyFactory.get(SplunkDelegateService.class, taskContext)
+    return delegateProxyFactory.getV2(SplunkDelegateService.class, taskContext)
         .getSavedSearches(splunkConnectorDTO, encryptedDataDetails, requestGuid);
   }
 
@@ -134,7 +134,7 @@ public class SplunkAnalysisServiceImpl extends AnalysisServiceImpl implements Sp
     List<EncryptedDataDetail> encryptedDataDetails =
         ngSecretService.getEncryptionDetails(basicNGAccessObject, splunkConnectorDTO);
     SyncTaskContext taskContext = getSyncTaskContext(splunkConnectorDTO.getAccountId());
-    return delegateProxyFactory.get(SplunkDelegateService.class, taskContext)
+    return delegateProxyFactory.getV2(SplunkDelegateService.class, taskContext)
         .getValidationResponse(splunkConnectorDTO, encryptedDataDetails, query, requestGuid);
   }
 

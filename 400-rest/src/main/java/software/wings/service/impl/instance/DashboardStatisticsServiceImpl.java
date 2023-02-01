@@ -1352,7 +1352,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
   private ManifestSummary prepareManifestSummaryFromHelmChart(HelmChart helmChart) {
     helmChart.setMetadata(applicationManifestService.fetchAppManifestProperties(
         helmChart.getAppId(), helmChart.getApplicationManifestId()));
-    return ManifestSummary.prepareSummaryFromHelmChart(helmChart);
+    return ManifestSummary.prepareSummaryFromHelmChart(helmChart.toDto());
   }
 
   private EntitySummary getEntitySummary(String name, String id, String type) {

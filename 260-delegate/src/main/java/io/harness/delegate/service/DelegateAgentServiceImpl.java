@@ -1802,6 +1802,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                                           .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
                                           .delegateConnectionId(delegateConnectionId)
                                           .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
+                                          .version(getVersion())
                                           .build();
       lastHeartbeatSentAt.set(clock.millis());
       sentFirstHeartbeat.set(true);
@@ -1830,10 +1831,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       setSwitchStorage(receivedDelegateResponse.isUseCdn());
       updateJreVersion(receivedDelegateResponse.getJreVersion());
 
-      HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter, Duration.ofSeconds(15),
-          ()
-              -> executeRestCall(
-                  delegateAgentManagerClient.doConnectionHeartbeat(delegateId, accountId, connectionHeartbeat)));
       lastHeartbeatSentAt.set(clock.millis());
 
     } catch (UncheckedTimeoutException ex) {

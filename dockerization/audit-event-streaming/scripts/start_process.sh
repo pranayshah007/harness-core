@@ -51,7 +51,7 @@ if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
 fi
 
 if [[ "${DEPLOY_MODE}" == "KUBERNETES" || "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" || "${DEPLOY_VERSION}" == "COMMUNITY" ]]; then
-    java $JAVA_OPTS -Dspring.config.location=/opt/harness/application.yml -jar $CAPSULE_JAR
+    java $JAVA_OPTS -Dspring.config.location=/opt/harness/application.yml -Dspring.main.allow-bean-definition-overriding=true -Dspring.guice.dedup=true -Dspring.main.web-application-type=none -jar $CAPSULE_JAR
 else
-    java $JAVA_OPTS -Dspring.config.location=/opt/harness/application.yml -jar $CAPSULE_JAR  > /opt/harness/logs/audit-event-streaming.log 2>&1
+    java $JAVA_OPTS -Dspring.config.location=/opt/harness/application.yml -Dspring.main.allow-bean-definition-overriding=true -Dspring.guice.dedup=true -Dspring.main.web-application-type=none -jar $CAPSULE_JAR  > /opt/harness/logs/audit-event-streaming.log 2>&1
 fi

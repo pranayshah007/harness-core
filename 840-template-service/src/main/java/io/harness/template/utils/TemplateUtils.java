@@ -7,11 +7,14 @@
 
 package io.harness.template.utils;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import static java.lang.String.format;
 
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ScmException;
+import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -19,6 +22,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.yaml.validator.InvalidYamlException;
@@ -119,5 +123,18 @@ public class TemplateUtils {
                 Collections.singletonList(YamlSchemaErrorDTO.builder().message(errorMessage).fqn("$.template").build()))
             .build();
     return new InvalidYamlException(errorMessage, errorWrapperDTO, pipelineYaml);
+  }
+
+  public static YamlNode validateAndGetYamlNode(String yaml) {
+    if (isEmpty(yaml)) {
+      throw new NGTemplateException("Yaml to applyTemplates cannot be empty.");
+    }
+    YamlNode yamlNode;
+    try {
+      yamlNode = YamlUtils.readTree(yaml).getNode();
+    } catch (IOException e) {
+      throw new NGTemplateException("Could not convert yaml to JsonNode: " + e.getMessage());
+    }
+    return yamlNode;
   }
 }

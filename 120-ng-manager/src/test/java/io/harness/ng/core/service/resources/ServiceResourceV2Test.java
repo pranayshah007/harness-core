@@ -13,6 +13,7 @@ import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
+import static io.harness.rule.OwnerRule.VED;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,6 +34,8 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceServiceImpl;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.beans.ServiceV2YamlMetadata;
@@ -58,6 +61,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.PageImpl;
 
@@ -432,5 +437,102 @@ public class ServiceResourceV2Test extends CategoryTest {
                                                .build();
     serviceResourceV2.update("IF_MATCH", ACCOUNT_ID, serviceRequestDTO1);
     verify(serviceSchemaHelper, times(2)).validateSchema(any(), any());
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testUpdateArtifactoryRegistryUrlIfEmpty() {
+    String serviceYaml = "service:\n"
+        + "  name: arf4\n"
+        + "  identifier: arf4\n"
+        + "  tags: {}\n"
+        + "  serviceDefinition:\n"
+        + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          primaryArtifactRef: <+input>\n"
+        + "          sources:\n"
+        + "            - spec:\n"
+        + "                connectorRef: artifconn1\n"
+        + "                artifactPath: adoptopenjdk/openjdk8\n"
+        + "                tag: <+input>\n"
+        + "                repository: docker\n"
+        + "                repositoryFormat: docker\n"
+        + "              identifier: s\n"
+        + "              type: ArtifactoryRegistry\n"
+        + "            - spec:\n"
+        + "                connectorRef: account.harnessImage\n"
+        + "                imagePath: library/nginx\n"
+        + "                tag: <+input>\n"
+        + "              identifier: sfdff\n"
+        + "              type: DockerRegistry\n"
+        + "            - spec:\n"
+        + "                connectorRef: artifconn1\n"
+        + "                artifactPath: adoptopenjdk/openjdk8\n"
+        + "                tag: <+input>\n"
+        + "                repository: docker\n"
+        + "                repositoryFormat: docker\n"
+        + "              identifier: dhjjadnck\n"
+        + "              type: ArtifactoryRegistry\n"
+        + "    type: Kubernetes\n";
+
+    ServiceEntity service = ServiceEntity.builder()
+                                .accountId("accountId")
+                                .name("service")
+                                .description("description")
+                                .orgIdentifier("orgIdentifier")
+                                .projectIdentifier("projectIdentifier")
+                                .yaml(serviceYaml)
+                                .build();
+
+    ArtifactoryConnectorDTO artifactoryConnectorDTO =
+        ArtifactoryConnectorDTO.builder().artifactoryServerUrl("https://harness.jfrog.io/harness").build();
+
+    try (MockedStatic<ArtifactoryResourceServiceImpl> utilities =
+             Mockito.mockStatic(ArtifactoryResourceServiceImpl.class)) {
+      utilities.when(() -> ArtifactoryResourceServiceImpl.getConnector(any())).thenReturn(artifactoryConnectorDTO);
+
+      service = serviceResourceV2.updateArtifactoryRegistryUrlIfEmpty(
+          service, "accountId", "orgIdentifier", "projectIdentifier");
+    }
+
+    String updatedYaml = "service:\n"
+        + "  name: \"arf4\"\n"
+        + "  identifier: \"arf4\"\n"
+        + "  tags: {}\n"
+        + "  serviceDefinition:\n"
+        + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          primaryArtifactRef: \"<+input>\"\n"
+        + "          sources:\n"
+        + "          - spec:\n"
+        + "              connectorRef: \"artifconn1\"\n"
+        + "              artifactPath: \"adoptopenjdk/openjdk8\"\n"
+        + "              tag: \"<+input>\"\n"
+        + "              repository: \"docker\"\n"
+        + "              repositoryFormat: \"docker\"\n"
+        + "              repositoryUrl: \"https://harness-docker.jfrog.io\"\n"
+        + "            identifier: \"s\"\n"
+        + "            type: \"ArtifactoryRegistry\"\n"
+        + "          - spec:\n"
+        + "              connectorRef: \"account.harnessImage\"\n"
+        + "              imagePath: \"library/nginx\"\n"
+        + "              tag: \"<+input>\"\n"
+        + "            identifier: \"sfdff\"\n"
+        + "            type: \"DockerRegistry\"\n"
+        + "          - spec:\n"
+        + "              connectorRef: \"artifconn1\"\n"
+        + "              artifactPath: \"adoptopenjdk/openjdk8\"\n"
+        + "              tag: \"<+input>\"\n"
+        + "              repository: \"docker\"\n"
+        + "              repositoryFormat: \"docker\"\n"
+        + "              repositoryUrl: \"https://harness-docker.jfrog.io\"\n"
+        + "            identifier: \"dhjjadnck\"\n"
+        + "            type: \"ArtifactoryRegistry\"\n"
+        + "    type: \"Kubernetes\"\n";
+
+    assertThat(updatedYaml).isEqualTo(service.getYaml());
   }
 }

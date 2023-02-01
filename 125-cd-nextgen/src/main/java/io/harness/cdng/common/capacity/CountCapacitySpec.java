@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.math.BigDecimal;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -42,6 +43,7 @@ public class CountCapacitySpec implements CapacitySpec {
   @YamlSchemaTypes(value = {expression})
   @JsonProperty("count")
   @Min(0)
+  @NotNull
   ParameterField<Integer> count;
 
   @Override

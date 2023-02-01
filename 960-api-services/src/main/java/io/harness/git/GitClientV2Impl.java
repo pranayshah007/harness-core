@@ -149,6 +149,7 @@ public class GitClientV2Impl implements GitClientV2 {
   private static final String INVALID_ADVERTISEMENT_ERROR = "invalid advertisement of";
   private static final String REDIRECTION_BLOCKED_ERROR = "Redirection blocked";
   private static final String TIMEOUT_ERROR = "Connection time out";
+  private static final int SOCKET_CONNECTION_READ_TIMEOUT_SECONDS = 60;
 
   @Inject private GitClientHelper gitClientHelper;
   /**
@@ -1422,6 +1423,14 @@ public class GitClientV2Impl implements GitClientV2 {
       gitCommand.setTransportConfigCallback(transport -> {
         if (transport instanceof TransportHttp) {
           TransportHttp http = (TransportHttp) transport;
+          // Without proper timeout socket can get hang (ref: java.net.SocketInputStream.socketRead0) indefinitely
+          // during packet loss. In some scenarios even if connection is established back this may still remain stuck.
+          // Since socketRead0 ignores the thread interruptions, the original task thread will remain in running state
+          // forever. As all of our operations are synchronized stuck thread will block other git tasks to execute
+          // This timeout is used for setting connection and read timeout based on current implementation. A better
+          // option for further improvements is to have a custom connection factory where will use a more granular
+          // configuration of these timeouts parameters
+          http.setTimeout(SOCKET_CONNECTION_READ_TIMEOUT_SECONDS);
           http.setHttpConnectionFactory(connectionFactory);
         }
       });

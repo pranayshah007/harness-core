@@ -32,6 +32,9 @@ import static io.harness.delegate.beans.connector.ConnectorType.GIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
 import static io.harness.delegate.beans.connector.scm.adapter.AzureRepoToGitMapper.mapToGitConnectionType;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.CI;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.CI_CODE_BASE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.PROPERTIES;
 
 import static java.lang.String.format;
 import static org.springframework.util.StringUtils.trimLeadingCharacter;
@@ -45,6 +48,7 @@ import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
+import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
@@ -93,13 +97,16 @@ import io.harness.k8s.model.ImageDetails;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.triggers.ParsedPayload;
 import io.harness.pms.contracts.triggers.TriggerPayload;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -213,6 +220,47 @@ public class IntegrationStageUtils {
     }
   }
 
+  public static ExecutionSource buildExecutionSourceV2(Ambiance ambiance, ExecutionTriggerInfo executionTriggerInfo,
+      TriggerPayload triggerPayload, String identifier, ParameterField<Build> parameterFieldBuild,
+      String connectorIdentifier, ConnectorUtils connectorUtils, CodeBase codeBase) {
+    if (!executionTriggerInfo.getIsRerun()) {
+      if (executionTriggerInfo.getTriggerType() == TriggerType.MANUAL
+          || executionTriggerInfo.getTriggerType() == TriggerType.SCHEDULER_CRON) {
+        return handleManualExecution(parameterFieldBuild, identifier);
+      } else if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK) {
+        ParsedPayload parsedPayload = triggerPayload.getParsedPayload();
+        if (treatWebhookAsManualExecutionWithContextV2(
+                ambiance, connectorIdentifier, connectorUtils, parsedPayload, codeBase, triggerPayload.getVersion())) {
+          return handleManualExecution(parameterFieldBuild, identifier);
+        }
+
+        return WebhookTriggerProcessorUtils.convertWebhookResponse(parsedPayload);
+      } else if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK_CUSTOM) {
+        return buildCustomExecutionSource(identifier, parameterFieldBuild);
+      } else {
+        throw new InvalidRequestException(
+            "CI stage cannot be triggered by trigger of type: " + executionTriggerInfo.getTriggerType());
+      }
+    } else {
+      if (executionTriggerInfo.getRerunInfo().getRootTriggerType() == TriggerType.MANUAL
+          || executionTriggerInfo.getRerunInfo().getRootTriggerType() == TriggerType.SCHEDULER_CRON) {
+        return handleManualExecution(parameterFieldBuild, identifier);
+      } else if (executionTriggerInfo.getRerunInfo().getRootTriggerType() == TriggerType.WEBHOOK) {
+        ParsedPayload parsedPayload = triggerPayload.getParsedPayload();
+        if (treatWebhookAsManualExecutionWithContextV2(
+                ambiance, connectorIdentifier, connectorUtils, parsedPayload, codeBase, triggerPayload.getVersion())) {
+          return handleManualExecution(parameterFieldBuild, identifier);
+        }
+        return WebhookTriggerProcessorUtils.convertWebhookResponse(parsedPayload);
+      } else if (executionTriggerInfo.getRerunInfo().getRootTriggerType() == TriggerType.WEBHOOK_CUSTOM) {
+        return buildCustomExecutionSource(identifier, parameterFieldBuild);
+      } else {
+        throw new InvalidRequestException("CI stage cannot be triggered by trigger of type: "
+            + executionTriggerInfo.getRerunInfo().getRootTriggerType());
+      }
+    }
+  }
+
   /* In case codebase and trigger connectors are different then treat it as manual execution
    */
 
@@ -267,6 +315,63 @@ public class IntegrationStageUtils {
     }
   }
 
+  public static boolean treatWebhookAsManualExecutionV2(
+      ConnectorDetails connectorDetails, CodeBase codeBase, ParsedPayload parsedPayload, long version) {
+    String url = getGitURLFromConnector(connectorDetails, codeBase);
+    WebhookExecutionSource webhookExecutionSource = WebhookTriggerProcessorUtils.convertWebhookResponse(parsedPayload);
+
+    // if url is not same then always treat as manual execution
+    if (!isURLSame(webhookExecutionSource, url)) {
+      return true;
+    }
+
+    Build build = RunTimeInputHandler.resolveBuild(codeBase.getBuild());
+    if (build != null) {
+      if (build.getType() == BuildType.PR) {
+        ParameterField<String> number = ((PRBuildSpec) build.getSpec()).getNumber();
+        String numberString =
+            RunTimeInputHandler.resolveStringParameter("number", "Git Clone", "identifier", number, false);
+        if (webhookExecutionSource.getWebhookEvent().getType() == PR) {
+          PRWebhookEvent prWebhookEvent = (PRWebhookEvent) webhookExecutionSource.getWebhookEvent();
+          if (isNotEmpty(numberString) && !numberString.equals(String.valueOf(prWebhookEvent.getPullRequestId()))) {
+            return true;
+          }
+        } else if (webhookExecutionSource.getWebhookEvent().getType() == BRANCH) {
+          throw new CIStageExecutionException(
+              "Building PR with expression <+trigger.prNumber> for push event is not supported");
+        }
+      }
+
+      if (build.getType() == BuildType.BRANCH) {
+        ParameterField<String> branch = ((BranchBuildSpec) build.getSpec()).getBranch();
+        String branchString =
+            RunTimeInputHandler.resolveStringParameter("branch", "Git Clone", "identifier", branch, false);
+        if (isNotEmpty(branchString)) {
+          if (webhookExecutionSource.getWebhookEvent().getType() == BRANCH) {
+            BranchWebhookEvent branchWebhookEvent = (BranchWebhookEvent) webhookExecutionSource.getWebhookEvent();
+            if (!branchString.equals(branchWebhookEvent.getBranchName())) {
+              return true;
+            }
+          }
+        } else {
+          throw new CIStageExecutionException("Branch should not be empty for branch build type");
+        }
+      }
+
+      if (build.getType() == BuildType.TAG) {
+        ParameterField<String> tag = ((TagBuildSpec) build.getSpec()).getTag();
+        String tagString = RunTimeInputHandler.resolveStringParameter("tag", "Git Clone", "identifier", tag, false);
+        if (isNotEmpty(tagString)) {
+          return true;
+        } else {
+          throw new CIStageExecutionException("Tag should not be empty for tag build type");
+        }
+      }
+    }
+
+    return false;
+  }
+
   public static boolean isURLSame(WebhookExecutionSource webhookExecutionSource, String url) {
     if (webhookExecutionSource.getWebhookEvent().getType() == PR) {
       PRWebhookEvent prWebhookEvent = (PRWebhookEvent) webhookExecutionSource.getWebhookEvent();
@@ -303,6 +408,13 @@ public class IntegrationStageUtils {
 
     ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(baseNGAccess, connectorIdentifier);
     return treatWebhookAsManualExecution(connectorDetails, codeBase, parsedPayload, version);
+  }
+
+  private static boolean treatWebhookAsManualExecutionWithContextV2(Ambiance ambiance, String connectorIdentifier,
+      ConnectorUtils connectorUtils, ParsedPayload parsedPayload, CodeBase codeBase, long version) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier);
+    return treatWebhookAsManualExecutionV2(connectorDetails, codeBase, parsedPayload, version);
   }
 
   public static BaseNGAccess getBaseNGAccess(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -818,5 +930,32 @@ public class IntegrationStageUtils {
       default:
     }
     return DEFAULT_BUILD_MULTIPLIER;
+  }
+
+  public static CodeBase getCICodebase(PlanCreationContext ctx) {
+    CodeBase ciCodeBase = null;
+    try {
+      YamlNode properties = YamlUtils.getGivenYamlNodeFromParentPath(ctx.getCurrentField().getNode(), PROPERTIES);
+      YamlNode ciCodeBaseNode = properties.getField(CI).getNode().getField(CI_CODE_BASE).getNode();
+      ciCodeBase = IntegrationStageUtils.getCiCodeBase(ciCodeBaseNode);
+    } catch (Exception ex) {
+      // Ignore exception because code base is not mandatory in case git clone is false
+      log.warn("Failed to retrieve ciCodeBase from pipeline");
+    }
+
+    return ciCodeBase;
+  }
+
+  public static String retrieveLastCommitSha(WebhookExecutionSource webhookExecutionSource) {
+    if (webhookExecutionSource.getWebhookEvent().getType() == WebhookEvent.Type.PR) {
+      PRWebhookEvent prWebhookEvent = (PRWebhookEvent) webhookExecutionSource.getWebhookEvent();
+      return prWebhookEvent.getBaseAttributes().getAfter();
+    } else if (webhookExecutionSource.getWebhookEvent().getType() == WebhookEvent.Type.BRANCH) {
+      BranchWebhookEvent branchWebhookEvent = (BranchWebhookEvent) webhookExecutionSource.getWebhookEvent();
+      return branchWebhookEvent.getBaseAttributes().getAfter();
+    }
+
+    log.error("Non supported event type, status will be empty");
+    return "";
   }
 }

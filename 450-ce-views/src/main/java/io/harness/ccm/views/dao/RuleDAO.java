@@ -141,7 +141,7 @@ public class RuleDAO {
     UpdateOperations<Rule> updateOperations = hPersistence.createUpdateOperations(Rule.class);
 
     if (rule.getName() != null) {
-      if (fetchByName(accountId, rule.getName(), false) != null) {
+      if (fetchByName(accountId, rule.getName(), true) != null) {
         throw new InvalidRequestException("Rule with given name already exits");
       }
       updateOperations.set(RuleId.name, rule.getName());

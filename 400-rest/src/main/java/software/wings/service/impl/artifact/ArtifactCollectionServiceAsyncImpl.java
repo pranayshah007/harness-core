@@ -181,7 +181,7 @@ public class ArtifactCollectionServiceAsyncImpl implements ArtifactCollectionSer
     waitNotifyEngine.waitForAllOn(GENERAL,
         new BuildSourceCallback(accountId, artifactStream.getUuid(), permitId, artifactStream.getSettingId()), waitId);
     log.info("Queuing delegate task for artifactStream with waitId {}", waitId);
-    final String taskId = delegateService.queueTask(delegateTaskBuilder.build());
+    final String taskId = delegateService.queueTaskV2(delegateTaskBuilder.build());
     log.info("Queued delegate taskId {} for artifactStream type: {} and source: {}", taskId,
         artifactStream.getArtifactStreamType(), artifactStream.getSourceName());
   }

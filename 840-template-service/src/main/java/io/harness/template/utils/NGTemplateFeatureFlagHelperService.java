@@ -25,7 +25,7 @@ public class NGTemplateFeatureFlagHelperService {
 
   @Inject AccountClient accountClient;
 
-  public boolean isEnabled(String accountId, FeatureName featureName) {
+  public boolean isFeatureFlagEnabled(String accountId, FeatureName featureName) {
     try {
       return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId), ERROR_MESSAGE);
     } catch (InvalidRequestException e) {

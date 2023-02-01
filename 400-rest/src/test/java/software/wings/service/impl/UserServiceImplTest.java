@@ -20,6 +20,7 @@ import static io.harness.ng.core.invites.dto.InviteOperationResponse.INVITE_INVA
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_ADDED;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.HEN;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.NANDAN;
@@ -592,6 +593,21 @@ public class UserServiceImplTest extends WingsBaseTest {
 
     userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "PqR", 0, 30, false, true);
     assertThat(userList.size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = HEN)
+  @Category(UnitTests.class)
+  public void listUsersEmails() {
+    setup();
+
+    List<User> userList = userServiceImpl.getUsersEmails("ACCOUNT_ID");
+
+    for (User user : userList) {
+      assertThat(user.getName()).isNull();
+      assertThat(user.getAccountName()).isNull();
+      assertThat(user.getEmail()).isNotNull();
+    }
   }
 
   @Test

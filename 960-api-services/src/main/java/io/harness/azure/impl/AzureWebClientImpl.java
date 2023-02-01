@@ -32,6 +32,7 @@ import io.harness.azure.model.AzureAppServiceConnectionString;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.WebAppHostingOS;
 import io.harness.azure.utility.AzureResourceUtility;
+import io.harness.azure.utility.AzureUtils;
 import io.harness.exception.runtime.azure.AzureAppServicesDeploymentSlotNotFoundException;
 import io.harness.exception.runtime.azure.AzureAppServicesWebAppNotFoundException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
@@ -1061,6 +1062,8 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     return new WebSiteManagementClientBuilder()
         .subscriptionId(subscriptionId)
         .pipeline(getAzureHttpPipeline(azureConfig, subscriptionId))
+        .endpoint(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getResourceManagerEndpoint())
+        .environment(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()))
         .buildClient();
   }
 }

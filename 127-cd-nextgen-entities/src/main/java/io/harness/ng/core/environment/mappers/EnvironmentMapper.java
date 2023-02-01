@@ -53,6 +53,9 @@ public class EnvironmentMapper {
   ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
   Validator validator = factory.getValidator();
 
+  private static final String TOO_MANY_HELM_OVERRIDES_PRESENT_ERROR_MESSAGE =
+      "You cannot configure multiple Helm Repo Overrides at the Environment Level. Overrides provided: [%s]";
+
   public Environment toEnvironmentEntity(String accountId, EnvironmentRequestDTO environmentRequestDTO) {
     final Environment environment;
     if (isNotEmpty(environmentRequestDTO.getYaml())) {
@@ -235,7 +238,8 @@ public class EnvironmentMapper {
       final NGEnvironmentGlobalOverride environmentGlobalOverride =
           ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride();
       checkDuplicateManifestIdentifiersWithIn(environmentGlobalOverride.getManifests());
-      validateNoMoreThanOneHelmOverridePresent(environmentGlobalOverride.getManifests());
+      validateNoMoreThanOneHelmOverridePresent(
+          environmentGlobalOverride.getManifests(), TOO_MANY_HELM_OVERRIDES_PRESENT_ERROR_MESSAGE);
       checkDuplicateConfigFilesIdentifiersWithIn(environmentGlobalOverride.getConfigFiles());
     }
   }
