@@ -25,7 +25,7 @@ import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 import io.harness.observer.Subject;
 
-import software.wings.service.impl.DelegateConnectionDao;
+import software.wings.service.impl.DelegateDao;
 import software.wings.service.impl.DelegateObserver;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
@@ -50,7 +50,7 @@ public class DelegateDisconnectDetectorIterator
   @Inject private MorphiaPersistenceProvider<Delegate> persistenceProvider;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
   @Inject private DelegateService delegateService;
-  @Inject private DelegateConnectionDao delegateConnectionDao;
+  @Inject private DelegateDao delegateDao;
   @Inject private DelegateMetricsService delegateMetricsService;
 
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
@@ -94,10 +94,8 @@ public class DelegateDisconnectDetectorIterator
          AccountLogContext ignore2 = new AccountLogContext(delegate.getAccountId(), OVERRIDE_ERROR)) {
       // trigger disconnect event which marks started delegate task as expired and PT's as unassigned
       delegateService.onDelegateDisconnected(delegate.getAccountId(), delegate.getUuid());
-      // update delegateConnections
-      delegateConnectionDao.list(delegate.getAccountId(), delegate.getUuid())
-          .forEach(
-              connection -> delegateConnectionDao.delegateDisconnected(delegate.getAccountId(), connection.getUuid()));
+      // mark delegate as disconnected
+      delegateDao.delegateDisconnected(delegate.getAccountId(), delegate.getUuid());
       delegateService.updateLastExpiredEventHeartbeatTime(
           delegate.getLastHeartBeat(), delegate.getUuid(), delegate.getAccountId());
     }

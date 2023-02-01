@@ -10,12 +10,10 @@ package io.harness.ngmigration.service.step.terraform;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.executions.steps.StepSpecTypeConstants;
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.plancreator.steps.AbstractStepNode;
 
 import software.wings.beans.GraphNode;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 import software.wings.sm.states.provision.ApplyTerraformState;
 
@@ -48,9 +46,8 @@ public class TerraformApplyStepMapperImpl extends BaseTerraformProvisionerMapper
   }
 
   @Override
-  public AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
-    return getStepNode(entities, migratedEntities, graphNode);
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+    return getStepNode(context.getEntities(), context.getMigratedEntities(), graphNode);
   }
 
   @Override

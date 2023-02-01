@@ -278,7 +278,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
     when(workflowStandardParamsExtensionService.getEnv(workflowStandardParams))
         .thenReturn(anEnvironment().uuid(ENV_ID).name(ENV_NAME).environmentType(NON_PROD).build());
 
-    doReturn("TASKID").when(delegateService).queueTask(any());
+    doReturn("TASKID").when(delegateService).queueTaskV2(any());
     ExecutionResponse response = shellScriptState.execute(executionContext);
     assertThat(response).isNotNull().extracting(ExecutionResponse::isAsync).isEqualTo(true);
     assertThat(response.getStateExecutionData())
@@ -289,7 +289,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
     assertThat(response.getDelegateTaskId()).isEqualTo("TASKID");
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     ShellScriptParameters shellScriptParameters = (ShellScriptParameters) delegateTask.getData().getParameters()[0];
     assertThat(shellScriptParameters.getScript()).isEqualTo("echo \"John Doe\"");
@@ -334,7 +334,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
     when(workflowStandardParamsExtensionService.getEnv(workflowStandardParams))
         .thenReturn(anEnvironment().uuid(ENV_ID).name(ENV_NAME).environmentType(NON_PROD).build());
 
-    doReturn("TASKID").when(delegateService).queueTask(any());
+    doReturn("TASKID").when(delegateService).queueTaskV2(any());
     ExecutionResponse response = shellScriptState.execute(executionContext);
     assertThat(response).isNotNull().extracting(ExecutionResponse::isAsync).isEqualTo(true);
     assertThat(response.getStateExecutionData())
@@ -345,7 +345,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
     assertThat(response.getDelegateTaskId()).isEqualTo("TASKID");
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     ShellScriptParameters shellScriptParameters = (ShellScriptParameters) delegateTask.getData().getParameters()[0];
     assertThat(shellScriptParameters.getScript()).isEqualTo("echo \"John Doe\"");
@@ -363,7 +363,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
     when(executionContext.renderExpression(eq("${workflow.variables.mustExecuteOnDelegateId}"))).thenReturn("null");
     shellScriptState.execute(executionContext);
     captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(2)).queueTask(captor.capture());
+    verify(delegateService, times(2)).queueTaskV2(captor.capture());
     delegateTask = captor.getValue();
   }
 
@@ -379,7 +379,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
     when(templateUtils.processTemplateVariables(any(), any())).thenReturn(variableMap);
     shellScriptConditions("echo ${var1}", "echo \"John Doe\"");
 
-    doReturn("TASKID").when(delegateService).queueTask(any());
+    doReturn("TASKID").when(delegateService).queueTaskV2(any());
     HostConnectionAttributes hostConnectionAttributes = HostConnectionAttributes.Builder.aHostConnectionAttributes()
                                                             .withUserName("TestUser")
                                                             .withKeyPath("KEY_PATH")
@@ -404,7 +404,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
     assertThat(response.getDelegateTaskId()).isEqualTo("TASKID");
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     assertSSH(delegateTask);
@@ -428,7 +428,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
     when(templateUtils.processTemplateVariables(any(), any())).thenReturn(variableMap);
     when(templateExpressionProcessor.getTemplateExpression(any(), eq("sshKeyRef"))).thenReturn(templateExpression);
 
-    doReturn("TASKID").when(delegateService).queueTask(any());
+    doReturn("TASKID").when(delegateService).queueTaskV2(any());
     HostConnectionAttributes hostConnectionAttributes = HostConnectionAttributes.Builder.aHostConnectionAttributes()
                                                             .withUserName("TestUser")
                                                             .withKeyPath("KEY_PATH")
@@ -461,7 +461,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
     assertThat(response.getDelegateTaskId()).isEqualTo("TASKID");
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     assertSSH(delegateTask);
@@ -479,7 +479,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
     when(templateUtils.processTemplateVariables(any(), any())).thenReturn(variableMap);
     shellScriptConditions("Write-Host ${var1}", "Write-Host \"John Doe\"");
 
-    doReturn("TASKID").when(delegateService).queueTask(any());
+    doReturn("TASKID").when(delegateService).queueTaskV2(any());
     WinRmConnectionAttributes winRmConnectionAttributes = new WinRmConnectionAttributes(
         null, "", "TestUser", new char[10], true, 80, true, false, null, true, ACCOUNT_ID, "", null);
 
@@ -501,7 +501,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
     assertThat(response.getDelegateTaskId()).isEqualTo("TASKID");
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     assertWinRm(delegateTask);
@@ -528,7 +528,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
     when(templateExpressionProcessor.getTemplateExpression(any(), eq("connectionAttributes")))
         .thenReturn(templateExpression);
 
-    doReturn("TASKID").when(delegateService).queueTask(any());
+    doReturn("TASKID").when(delegateService).queueTaskV2(any());
     WinRmConnectionAttributes winRmConnectionAttributes = new WinRmConnectionAttributes(
         null, "", "TestUser", new char[10], true, 80, true, false, null, true, ACCOUNT_ID, "", null);
     when(templateExpressionProcessor.resolveSettingAttribute(any(), any()))
@@ -556,7 +556,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
     assertThat(response.getDelegateTaskId()).isEqualTo("TASKID");
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     assertWinRm(delegateTask);
@@ -580,7 +580,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
     when(templateExpressionProcessor.getTemplateExpression(any(), eq("connectionAttributes")))
         .thenReturn(templateExpression);
 
-    doReturn("TASKID").when(delegateService).queueTask(any());
+    doReturn("TASKID").when(delegateService).queueTaskV2(any());
     WinRmConnectionAttributes winRmConnectionAttributes = new WinRmConnectionAttributes(
         null, "", "TestUser", new char[10], true, 80, true, false, null, true, ACCOUNT_ID, "", null);
     when(templateExpressionProcessor.resolveSettingAttribute(any(), any()))
@@ -726,7 +726,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
         .thenReturn(anApplication().uuid(APP_ID).name(APP_NAME).build());
     when(workflowStandardParamsExtensionService.getEnv(workflowStandardParams))
         .thenReturn(anEnvironment().uuid(ENV_ID).name(ENV_NAME).environmentType(NON_PROD).build());
-    doReturn("TASKID").when(delegateService).queueTask(any());
+    doReturn("TASKID").when(delegateService).queueTaskV2(any());
 
     ShellScriptState newShellScriptState = spy(shellScriptState);
 

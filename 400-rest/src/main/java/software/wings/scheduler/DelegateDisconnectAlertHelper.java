@@ -94,6 +94,9 @@ public class DelegateDisconnectAlertHelper implements DelegateObserver {
   @Override
   public void onDisconnected(String accountId, String delegateId) {
     Delegate delegate = delegateCache.get(accountId, delegateId, true);
+    if (delegate == null) {
+      return;
+    }
     checkIfAnyDelegatesAreDown(accountId, Collections.singletonList(delegate));
   }
 

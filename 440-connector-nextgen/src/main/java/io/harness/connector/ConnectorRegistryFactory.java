@@ -36,6 +36,7 @@ import io.harness.connector.heartbeat.ScmConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.ServiceNowValidationParamsProvider;
 import io.harness.connector.heartbeat.SpotValidationParamsProvider;
 import io.harness.connector.heartbeat.TasConnectorValidationParamsProvider;
+import io.harness.connector.heartbeat.TerraformCloudValidationParamsProvider;
 import io.harness.connector.heartbeat.VaultConnectorValidationParamsProvider;
 import io.harness.connector.mappers.ConnectorDTOToEntityMapper;
 import io.harness.connector.mappers.ConnectorEntityToDTOMapper;
@@ -131,6 +132,8 @@ import io.harness.connector.mappers.sumologicmapper.SumoLogicDTOToEntity;
 import io.harness.connector.mappers.sumologicmapper.SumoLogicEntityToDTO;
 import io.harness.connector.mappers.tasmapper.TasDTOToEntity;
 import io.harness.connector.mappers.tasmapper.TasEntityToDTO;
+import io.harness.connector.mappers.terraformcloudmapper.TerraformCloudDTOToEntity;
+import io.harness.connector.mappers.terraformcloudmapper.TerraformCloudEntityToDTO;
 import io.harness.connector.task.ConnectorValidationHandler;
 import io.harness.connector.task.NotSupportedValidationHandler;
 import io.harness.connector.task.artifactory.ArtifactoryValidationHandler;
@@ -141,8 +144,39 @@ import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.connector.task.git.GitValidationHandler;
 import io.harness.connector.task.spot.SpotValidationHandler;
 import io.harness.connector.task.tas.TasValidationHandler;
-import io.harness.connector.validator.*;
-import io.harness.connector.validator.scmValidators.*;
+import io.harness.connector.task.terraformcloud.TerraformCloudValidationHandler;
+import io.harness.connector.validator.ArtifactoryConnectionValidator;
+import io.harness.connector.validator.AwsConnectorValidator;
+import io.harness.connector.validator.AzureArtifactsConnectorValidator;
+import io.harness.connector.validator.AzureConnectorValidator;
+import io.harness.connector.validator.BambooConnectionValidator;
+import io.harness.connector.validator.BambooConnectorValidationsParamsProvider;
+import io.harness.connector.validator.CCMConnectorValidator;
+import io.harness.connector.validator.CEKubernetesConnectionValidator;
+import io.harness.connector.validator.CVConnectorValidator;
+import io.harness.connector.validator.ConnectionValidator;
+import io.harness.connector.validator.DockerConnectionValidator;
+import io.harness.connector.validator.ErrorTrackingConnectorValidator;
+import io.harness.connector.validator.GcpConnectorValidator;
+import io.harness.connector.validator.HttpHelmRepoConnectionValidator;
+import io.harness.connector.validator.JenkinsConnectionValidator;
+import io.harness.connector.validator.JiraConnectorValidator;
+import io.harness.connector.validator.KubernetesConnectionValidator;
+import io.harness.connector.validator.NexusConnectorValidator;
+import io.harness.connector.validator.OciHelmRepoConnectionValidator;
+import io.harness.connector.validator.PhysicalDataCenterConnectorValidator;
+import io.harness.connector.validator.SecretManagerConnectorValidator;
+import io.harness.connector.validator.ServiceNowConnectorValidator;
+import io.harness.connector.validator.SpotConnectorValidator;
+import io.harness.connector.validator.TerraformCloudConnectorValidator;
+import io.harness.connector.validator.scmValidators.AwsCodeCommitValidator;
+import io.harness.connector.validator.scmValidators.AzureRepoConnectorValidator;
+import io.harness.connector.validator.scmValidators.BitbucketConnectorValidator;
+import io.harness.connector.validator.scmValidators.GitConnectorValidator;
+import io.harness.connector.validator.scmValidators.GithubConnectorValidator;
+import io.harness.connector.validator.scmValidators.GitlabConnectorValidator;
+import io.harness.connector.validator.scmValidators.JenkinsConnectorValidationsParamsProvider;
+import io.harness.connector.validator.scmValidators.TasConnectorValidator;
 import io.harness.delegate.beans.connector.ConnectorType;
 
 import java.util.HashMap;
@@ -336,6 +370,10 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.SECRET_MANAGER, SecretManagerConnectorValidator.class,
             GcpSecretManagerValidationParamProvider.class, GcpSecretManagerDTOToEntity.class,
             GcpSecretManagerEntityToDTO.class, NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.TERRAFORM_CLOUD,
+        new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, TerraformCloudConnectorValidator.class,
+            TerraformCloudValidationParamsProvider.class, TerraformCloudDTOToEntity.class,
+            TerraformCloudEntityToDTO.class, TerraformCloudValidationHandler.class));
   }
 
   public static Class<? extends ConnectionValidator> getConnectorValidator(ConnectorType connectorType) {

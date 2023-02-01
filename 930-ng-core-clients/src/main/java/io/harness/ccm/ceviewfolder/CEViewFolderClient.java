@@ -21,9 +21,7 @@ import retrofit2.http.Query;
 
 @OwnedBy(CE)
 public interface CEViewFolderClient {
-  String BASE_API = "ccm/api";
-
-  @GET(BASE_API + "/perspectiveFolders")
+  @GET("perspectiveFolders")
   Call<ResponseDTO<List<CEViewFolderResponseDTO>>> getFolders(
       @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
 }

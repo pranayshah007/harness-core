@@ -27,6 +27,7 @@ import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
 import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.ng.core.customDeployment.CustomDeploymentVariableProperties;
 import io.harness.ng.core.customDeployment.CustomDeploymentVariableResponseDTO;
 import io.harness.ng.core.customDeployment.CustomDeploymentYamlRequestDTO;
@@ -71,6 +72,7 @@ import org.springframework.data.domain.PageImpl;
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class CustomDeploymentYamlHelper {
+  public static final String INSTANCE_NAME_KEY = "instancename";
   private static final String ACCOUNT_IDENTIFIER = "account.";
   private static final String INPUT_STRING = "<+input>";
   private static final String ORG_IDENTIFIER = "org.";
@@ -172,6 +174,24 @@ public class CustomDeploymentYamlHelper {
                                               .getCurrJsonNode()
                                               .get("infrastructure")
                                               .get("fetchInstancesScript");
+      JsonNode instanceAttributesNode = YamlUtils.getTopRootFieldInYaml(entityYaml)
+                                            .getNode()
+                                            .getCurrJsonNode()
+                                            .get("infrastructure")
+                                            .get("instanceAttributes");
+      if (isNull(instanceAttributesNode)) {
+        throw new InvalidYamlException("instanceAttributes cannot be empty");
+      }
+      boolean instanceNameAttributeFound = false;
+      for (JsonNode instanceAttribute : instanceAttributesNode) {
+        if (INSTANCE_NAME_KEY.equals(instanceAttribute.get("name").asText())) {
+          instanceNameAttributeFound = true;
+          break;
+        }
+      }
+      if (!instanceNameAttributeFound) {
+        throw new InvalidYamlException("instancename value in the Field Name setting is mandatory");
+      }
       if (isNull(fetchInstancesScriptNode)) {
         throw new InvalidRequestException("Template yaml provided does not have Fetch Instance Script in it.");
       }

@@ -25,7 +25,7 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.secretmanagerclient.ValueType;
 
 import software.wings.beans.VaultConfig;
@@ -77,7 +77,9 @@ public class VaultSecretMigrator implements SecretMigrator {
             .namespace(StringUtils.isNotBlank(vaultConfig.getNamespace()) ? vaultConfig.getNamespace() : "/")
             .basePath(vaultConfig.getBasePath())
             .vaultUrl(vaultConfig.getVaultUrl())
-            .renewalIntervalMinutes(vaultConfig.getRenewalInterval())
+            // Setting renewal interval to `0` as per PL team's recommendation instead of
+            // vaultConfig.getRenewalInterval()
+            .renewalIntervalMinutes(0)
             .secretEngineManuallyConfigured(vaultConfig.isEngineManuallyEntered())
             .secretEngineName(vaultConfig.getSecretEngineName())
             .secretEngineVersion(vaultConfig.getSecretEngineVersion())

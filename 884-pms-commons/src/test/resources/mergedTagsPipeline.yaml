@@ -1,0 +1,71 @@
+pipeline:
+  identifier: "notificationtestpipeline"
+  name: "notificationtestpipeline"
+  projectIdentifier: "Yuvrajtest"
+  orgIdentifier: "default"
+  tags:
+    reverted_execution_id: "id"
+    foo: "bar"
+    run: ""
+  stages:
+    - stage:
+        identifier: "stage1"
+        type: "Deployment"
+        name: "stage1"
+        description: ""
+        spec:
+          serviceConfig:
+            serviceRef: "newService"
+            serviceDefinition:
+              type: "Kubernetes"
+              spec:
+                variables: []
+          infrastructure:
+            environmentRef: "newenv"
+            infrastructureDefinition:
+              type: "KubernetesDirect"
+              spec:
+                connectorRef: "Connector"
+                namespace: "default"
+                releaseName: "release-<+INFRA_KEY>"
+            allowSimultaneousDeployments: false
+          execution:
+            steps:
+              - step:
+                  identifier: "HarnessApproval"
+                  type: "HarnessApproval"
+                  name: "Harness Approval"
+                  spec:
+                    approvalMessage: "Please review the following information and approve\
+                  \ the pipeline progression"
+                    includePipelineExecutionHistory: true
+                    approvers:
+                      userGroups:
+                        - "account._account_all_users"
+                      minimumCount: 1
+                      disallowPipelineExecutor: false
+                    approverInputs: []
+                  timeout: "1d"
+              - step:
+                  identifier: "ShellScript"
+                  type: "ShellScript"
+                  name: "Shell Script"
+                  spec:
+                    shell: "Bash"
+                    onDelegate: true
+                    source:
+                      type: "Inline"
+                      spec:
+                        script: "echo \"Hello\""
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: "10m"
+            rollbackSteps: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - "AllErrors"
+              action:
+                type: "StageRollback"
+  notificationRules: []

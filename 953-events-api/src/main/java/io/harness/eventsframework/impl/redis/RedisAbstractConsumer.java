@@ -26,13 +26,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.PendingEntry;
 import org.redisson.api.RStream;
 import org.redisson.api.RedissonClient;
+import org.redisson.api.StreamGroup;
 import org.redisson.api.StreamMessageId;
 import org.redisson.client.RedisException;
 
@@ -44,6 +47,7 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
   protected RStream<String, String> deadLetterQueue;
   protected RedissonClient redissonClient;
   protected Duration maxProcessingTime;
+  protected Set<String> consumerGroupNames;
   protected int batchSize;
   private Retry retry;
   @Inject RedisEventMetricPublisher redisEventMetricPublisher;
@@ -77,16 +81,22 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
     this.batchSize = batchSize;
     RetryConfig retryConfig =
         RetryConfig.custom().intervalFunction(IntervalFunction.ofExponentialBackoff(1000, 1.5)).maxAttempts(5).build();
-
     this.retry = Retry.of("redisConsumer:" + topicName, retryConfig);
+    this.consumerGroupNames = stream.listGroups().stream().map(StreamGroup::getName).collect(Collectors.toSet());
     createConsumerGroup();
   }
 
   private void createConsumerGroup() {
     String groupName = getGroupName();
     try {
-      stream.createGroup(groupName, StreamMessageId.ALL);
+      if (!consumerGroupNames.contains(getGroupName())) {
+        stream.createGroup(groupName, StreamMessageId.ALL);
+      } else {
+        log.info(
+            "[REDIS-UPGRADE]: Consumer group {} already exists, continuing with consumer operations...", groupName);
+      }
     } catch (RedisException e) {
+      // TODO: Review if this code is still required and remove in the next commit
       log.info("Consumer group {} already exists, continuing with consumer operations...", groupName);
     }
   }

@@ -11,9 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
-import io.harness.delegate.task.aws.asg.AsgLoadBalancerConfig;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -28,13 +28,15 @@ import org.springframework.data.annotation.TypeAlias;
 public class AsgBlueGreenExecutionPassThroughData extends AsgExecutionPassThroughData {
   AsgLoadBalancerConfig loadBalancerConfig;
   String asgName;
+  boolean firstDeployment;
 
   @Builder(builderMethodName = "blueGreenBuilder")
   public AsgBlueGreenExecutionPassThroughData(InfrastructureOutcome infrastructure,
       UnitProgressData lastActiveUnitProgressData, AsgManifestFetchData asgManifestFetchData,
-      AsgLoadBalancerConfig loadBalancerConfig, String asgName) {
+      AsgLoadBalancerConfig loadBalancerConfig, String asgName, boolean firstDeployment) {
     super(infrastructure, lastActiveUnitProgressData, asgManifestFetchData);
     this.loadBalancerConfig = loadBalancerConfig;
     this.asgName = asgName;
+    this.firstDeployment = firstDeployment;
   }
 }

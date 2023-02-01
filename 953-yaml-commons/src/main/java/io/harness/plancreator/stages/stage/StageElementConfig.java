@@ -8,6 +8,7 @@
 package io.harness.plancreator.stages.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -80,7 +81,9 @@ public class StageElementConfig {
 
   @VariableExpression StageWhenCondition when;
 
-  @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
+  @VariableExpression(skipVariableExpression = true)
+  @YamlSchemaTypes(value = {runtime, list})
+  ParameterField<List<FailureStrategyConfig>> failureStrategies;
 
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @JsonProperty("skipInstances")
@@ -104,8 +107,8 @@ public class StageElementConfig {
 
   @Builder
   public StageElementConfig(String uuid, String identifier, String name, ParameterField<String> description,
-      List<FailureStrategyConfig> failureStrategies, List<NGVariable> variables, String type, StageInfoConfig stageType,
-      ParameterField<String> skipCondition, StageWhenCondition when,
+      ParameterField<List<FailureStrategyConfig>> failureStrategies, List<NGVariable> variables, String type,
+      StageInfoConfig stageType, ParameterField<String> skipCondition, StageWhenCondition when,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     this.uuid = uuid;
     this.identifier = identifier;

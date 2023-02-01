@@ -9,7 +9,7 @@ package io.harness.ngmigration.service.workflow;
 
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.step.StepMapperFactory;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.GraphNode;
@@ -27,16 +27,10 @@ import java.util.Map;
 
 public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   @Inject MultiServiceWorkflowYamlHandler multiServiceWorkflowYamlHandler;
-  @Inject private StepMapperFactory stepMapperFactory;
 
   @Override
   public TemplateEntityType getTemplateType(Workflow workflow) {
     return TemplateEntityType.PIPELINE_TEMPLATE;
-  }
-
-  @Override
-  public boolean areSimilar(Workflow workflow1, Workflow workflow2) {
-    return areSimilar(stepMapperFactory, workflow1, workflow2);
   }
 
   @Override
@@ -62,6 +56,6 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   @Override
   public JsonNode getTemplateSpec(
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
-    return buildMultiStagePipelineTemplate(entities, migratedEntities, stepMapperFactory, workflow);
+    return buildMultiStagePipelineTemplate(WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow));
   }
 }

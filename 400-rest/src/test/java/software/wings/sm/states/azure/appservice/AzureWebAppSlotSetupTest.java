@@ -150,7 +150,7 @@ public class AzureWebAppSlotSetupTest extends WingsBaseTest {
     mockArtifactoryData(artifact, context);
     mockUserDataSpecification();
 
-    doReturn(delegateResult).when(delegateService).queueTask(any());
+    doReturn(delegateResult).when(delegateService).queueTaskV2(any());
     doReturn(Collections.emptyMap())
         .when(azureAppServiceManifestUtils)
         .getAppServiceConfigurationManifests(eq(context));

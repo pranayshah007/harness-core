@@ -270,6 +270,6 @@ public class UrlAnnotationTest {
             -> Arrays.stream(aClass.getDeclaredFields())
                    .filter(field -> field.isAnnotationPresent(URL.class))
                    .forEach(field -> classUrlFieldPairList.add(new Pair<>(aClass, field))));
-    assertThat(classUrlFieldPairList.size()).isEqualTo(17);
+    assertThat(classUrlFieldPairList.size()).isEqualTo(18);
   }
 }

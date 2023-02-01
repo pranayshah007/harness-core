@@ -67,6 +67,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.apache.commons.lang3.tuple.Pair;
@@ -202,7 +203,8 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
         serviceAccountRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     if (serviceAccount == null) {
-      throw new InvalidArgumentsException(String.format("Service account [%s] doesn't exist in scope", identifier));
+      throw new NotFoundException(
+          String.format("Secret with identifier [%s] is not found in the given scope", identifier));
     }
 
     return ServiceAccountDTOMapper.getDTOFromServiceAccount(serviceAccount);

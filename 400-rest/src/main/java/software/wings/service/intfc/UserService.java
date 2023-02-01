@@ -287,6 +287,8 @@ public interface UserService extends OwnedByAccount {
 
   User getUserByEmail(String email, String accountId);
 
+  List<User> getUsersEmails(String accountId);
+
   User getUserWithAcceptedInviteByEmail(String email, String accountId);
 
   UserInvite getUserInviteByEmailAndAccount(String email, String accountId);

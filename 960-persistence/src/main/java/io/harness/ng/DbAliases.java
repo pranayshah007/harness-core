@@ -28,4 +28,5 @@ public class DbAliases {
   public static final String ANALYSER = "analyser";
   public static final String HARNESS = "harness";
   public static final String TEST = "test";
+  public static final String IDP = "idp-harness";
 }

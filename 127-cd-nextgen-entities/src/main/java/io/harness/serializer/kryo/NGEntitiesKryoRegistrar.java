@@ -68,6 +68,7 @@ import io.harness.cdng.customdeployment.CustomDeploymentStringNGVariable;
 import io.harness.cdng.infra.beans.AsgInfrastructureOutcome;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
+import io.harness.cdng.infra.beans.GoogleFunctionsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
@@ -375,6 +376,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(AsgInfrastructure.class, 140067);
     kryo.register(GoogleCloudFunctionDefinitionManifest.class, 140068);
     kryo.register(GoogleCloudFunctionDefinitionManifestOutcome.class, 140069);
+    kryo.register(GoogleFunctionsInfrastructureOutcome.class, 1500001);
     kryo.register(CfCliVersionNG.class, 140070);
     kryo.register(BambooArtifactConfig.class, 150070);
   }

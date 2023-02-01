@@ -16,7 +16,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.cdng.moduleversioninfo.entity.MicroservicesVersionInfo;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo;
-import io.harness.cdng.moduleversioninfo.service.ModuleVersionInfoService;
+import io.harness.ng.moduleversioninfo.service.ModuleVersionInfoService;
 import io.harness.spec.server.ng.v1.ModuleVersionsApi;
 import io.harness.spec.server.ng.v1.model.MicroserviceVersionInfo;
 import io.harness.spec.server.ng.v1.model.ModuleVersionsResponse;

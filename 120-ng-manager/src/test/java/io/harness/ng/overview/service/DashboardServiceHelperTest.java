@@ -15,6 +15,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
+import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
@@ -261,6 +262,95 @@ public class DashboardServiceHelperTest {
     return activeServiceInstanceInfoWithEnvTypeList;
   }
 
+  private InstanceGroupedOnArtifactList getInstanceGroupedOnArtifactList(boolean isGitOps) {
+    List<InstanceGroupedOnArtifactList.InstanceGroupedOnInfrastructure> instanceGroupedOnInfrastructure2 =
+        new ArrayList<>();
+    List<InstanceGroupedOnArtifactList.InstanceGroupedOnInfrastructure> instanceGroupedOnInfrastructure3 =
+        new ArrayList<>();
+    List<InstanceGroupedOnArtifactList.InstanceGroupedOnInfrastructure> instanceGroupedOnInfrastructure4 =
+        new ArrayList<>();
+    List<InstanceGroupedOnArtifactList.InstanceGroupedOnInfrastructure> instanceGroupedOnInfrastructure1 =
+        new ArrayList<>();
+    InstanceGroupedOnArtifactList.InstanceGroupedOnInfrastructure
+        .InstanceGroupedOnInfrastructureBuilder infrastructureBuilder =
+        InstanceGroupedOnArtifactList.InstanceGroupedOnInfrastructure.builder().count(1);
+
+    if (isGitOps) {
+      instanceGroupedOnInfrastructure1.add(
+          infrastructureBuilder.clusterId(INFRA_2).agentId(INFRA_2).lastDeployedAt(3l).build());
+      instanceGroupedOnInfrastructure1.add(
+          infrastructureBuilder.clusterId(INFRA_1).agentId(INFRA_1).lastDeployedAt(1l).build());
+    } else {
+      instanceGroupedOnInfrastructure1.add(
+          infrastructureBuilder.infrastructureId(INFRA_2).infrastructureName(INFRA_2).lastDeployedAt(3l).build());
+      instanceGroupedOnInfrastructure1.add(
+          infrastructureBuilder.infrastructureId(INFRA_1).infrastructureName(INFRA_1).lastDeployedAt(1l).build());
+    }
+
+    instanceGroupedOnInfrastructure2.add(infrastructureBuilder.lastDeployedAt(4l).build());
+    instanceGroupedOnInfrastructure3.add(infrastructureBuilder.lastDeployedAt(2l).build());
+    instanceGroupedOnInfrastructure4.add(infrastructureBuilder.lastDeployedAt(5l).build());
+
+    InstanceGroupedOnArtifactList.InstanceGroupedOnEnvironmentType
+        .InstanceGroupedOnEnvironmentTypeBuilder environmentTypeBuilder =
+        InstanceGroupedOnArtifactList.InstanceGroupedOnEnvironmentType.builder().environmentType(
+            EnvironmentType.Production);
+    List<InstanceGroupedOnArtifactList.InstanceGroupedOnEnvironmentType> instanceGroupedOnEnvironmentType1 =
+        new ArrayList<>();
+    instanceGroupedOnEnvironmentType1.add(
+        environmentTypeBuilder.instanceGroupedOnInfrastructureList(instanceGroupedOnInfrastructure2)
+            .lastDeployedAt(4l)
+            .build());
+    instanceGroupedOnEnvironmentType1.add(environmentTypeBuilder.environmentType(EnvironmentType.PreProduction)
+                                              .lastDeployedAt(3l)
+                                              .instanceGroupedOnInfrastructureList(instanceGroupedOnInfrastructure1)
+                                              .build());
+    List<InstanceGroupedOnArtifactList.InstanceGroupedOnEnvironmentType> instanceGroupedOnEnvironmentType2 =
+        new ArrayList<>();
+    instanceGroupedOnEnvironmentType2.add(
+        environmentTypeBuilder.instanceGroupedOnInfrastructureList(instanceGroupedOnInfrastructure3)
+            .lastDeployedAt(2l)
+            .build());
+    List<InstanceGroupedOnArtifactList.InstanceGroupedOnEnvironmentType> instanceGroupedOnEnvironmentType3 =
+        new ArrayList<>();
+    instanceGroupedOnEnvironmentType3.add(environmentTypeBuilder.environmentType(EnvironmentType.Production)
+                                              .instanceGroupedOnInfrastructureList(instanceGroupedOnInfrastructure4)
+                                              .lastDeployedAt(5l)
+                                              .build());
+
+    InstanceGroupedOnArtifactList.InstanceGroupedOnEnvironment.InstanceGroupedOnEnvironmentBuilder environmentBuilder =
+        InstanceGroupedOnArtifactList.InstanceGroupedOnEnvironment.builder()
+            .envId(ENV_2)
+            .envName(ENV_2)
+            .lastDeployedAt(5l)
+            .instanceGroupedOnEnvironmentTypeList(instanceGroupedOnEnvironmentType3);
+    List<InstanceGroupedOnArtifactList.InstanceGroupedOnEnvironment> instanceGroupedOnEnvironment1 = new ArrayList<>();
+    instanceGroupedOnEnvironment1.add(environmentBuilder.build());
+    instanceGroupedOnEnvironment1.add(environmentBuilder.envId(ENV_1)
+                                          .envName(ENV_1)
+                                          .lastDeployedAt(4l)
+                                          .instanceGroupedOnEnvironmentTypeList(instanceGroupedOnEnvironmentType1)
+                                          .build());
+    List<InstanceGroupedOnArtifactList.InstanceGroupedOnEnvironment> instanceGroupedOnEnvironment2 = new ArrayList<>();
+    instanceGroupedOnEnvironment2.add(environmentBuilder.lastDeployedAt(2l)
+                                          .instanceGroupedOnEnvironmentTypeList(instanceGroupedOnEnvironmentType2)
+                                          .build());
+
+    InstanceGroupedOnArtifactList.InstanceGroupedOnArtifact.InstanceGroupedOnArtifactBuilder artifactBuilder =
+        InstanceGroupedOnArtifactList.InstanceGroupedOnArtifact.builder()
+            .artifact(DISPLAY_NAME_1)
+            .lastDeployedAt(5l)
+            .instanceGroupedOnEnvironmentList(instanceGroupedOnEnvironment1);
+    List<InstanceGroupedOnArtifactList.InstanceGroupedOnArtifact> instanceGroupedOnArtifact = new ArrayList<>();
+    instanceGroupedOnArtifact.add(artifactBuilder.build());
+    instanceGroupedOnArtifact.add(artifactBuilder.artifact(DISPLAY_NAME_2)
+                                      .lastDeployedAt(2l)
+                                      .instanceGroupedOnEnvironmentList(instanceGroupedOnEnvironment2)
+                                      .build());
+
+    return InstanceGroupedOnArtifactList.builder().instanceGroupedOnArtifactList(instanceGroupedOnArtifact).build();
+  }
+
   private Map<String, Map<EnvironmentType, Map<String, Map<String, Pair<Integer, Long>>>>> getInstanceCountMap() {
     Map<String, Pair<Integer, Long>> buildToCountMap1 = new HashMap<>();
     buildToCountMap1.put(DISPLAY_NAME_1, MutablePair.of(1, 1l));
@@ -386,5 +476,25 @@ public class DashboardServiceHelperTest {
         DashboardServiceHelper.groupedByArtifacts(
             instanceCountMap.get(ENV_1).get(EnvironmentType.PreProduction).get(INFRA_1));
     assertThat(instanceGroupedByArtifactListResult).isEqualTo(instanceGroupedByArtifactList1);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getInstanceGroupedByArtifactListHelper_NonGitOps() {
+    InstanceGroupedOnArtifactList instanceGroupedOnArtifactList =
+        DashboardServiceHelper.getInstanceGroupedByArtifactListHelper(
+            getActiveServiceInstanceInfoWithEnvTypeListNonGitOps(), false);
+    assertThat(instanceGroupedOnArtifactList).isEqualTo(getInstanceGroupedOnArtifactList(false));
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getInstanceGroupedByArtifactListHelper_GitOps() {
+    InstanceGroupedOnArtifactList instanceGroupedOnArtifactList =
+        DashboardServiceHelper.getInstanceGroupedByArtifactListHelper(
+            getActiveServiceInstanceInfoWithEnvTypeListGitOps(), true);
+    assertThat(instanceGroupedOnArtifactList).isEqualTo(getInstanceGroupedOnArtifactList(true));
   }
 }

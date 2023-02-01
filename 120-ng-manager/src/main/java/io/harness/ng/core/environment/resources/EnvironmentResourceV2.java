@@ -189,6 +189,9 @@ public class EnvironmentResourceV2 {
 
   public static final String ENVIRONMENT_PARAM_MESSAGE = "Environment Identifier for the entity";
 
+  private static final String TOO_MANY_HELM_OVERRIDES_PRESENT_ERROR_MESSAGE =
+      "You cannot configure multiple Helm Repo Overrides for the service. Overrides provided: [%s]";
+
   @GET
   @Path("{environmentIdentifier}")
   @NGAccessControlCheck(resourceType = ENVIRONMENT, permission = "core_environment_view")
@@ -669,7 +672,8 @@ public class EnvironmentResourceV2 {
       }
 
       checkDuplicateManifestIdentifiersWithIn(serviceOverrideInfoConfig.getManifests());
-      validateNoMoreThanOneHelmOverridePresent(serviceOverrideInfoConfig.getManifests());
+      validateNoMoreThanOneHelmOverridePresent(
+          serviceOverrideInfoConfig.getManifests(), TOO_MANY_HELM_OVERRIDES_PRESENT_ERROR_MESSAGE);
       checkDuplicateConfigFilesIdentifiersWithIn(serviceOverrideInfoConfig.getConfigFiles());
     }
   }

@@ -58,14 +58,7 @@ public class FreezeTimeUtils {
   private CurrentOrUpcomingWindow fetchCurrentOrUpcomingTimeWindow(FreezeWindow freezeWindow) {
     TimeZone timeZone = TimeZone.getTimeZone(freezeWindow.getTimeZone());
     LocalDateTime firstWindowStartTime = LocalDateTime.parse(freezeWindow.getStartTime(), dtf);
-    LocalDateTime firstWindowEndTime;
-    if (freezeWindow.getEndTime() == null) {
-      FreezeDuration freezeDuration = FreezeDuration.fromString(freezeWindow.getDuration());
-      Long endTime = getEpochValueFromDateString(firstWindowStartTime, timeZone) + freezeDuration.getTimeoutInMillis();
-      firstWindowEndTime = Instant.ofEpochMilli(endTime).atZone(timeZone.toZoneId()).toLocalDateTime();
-    } else {
-      firstWindowEndTime = LocalDateTime.parse(freezeWindow.getEndTime(), dtf);
-    }
+    LocalDateTime firstWindowEndTime = getLocalDateTime(freezeWindow, timeZone, firstWindowStartTime);
     if (freezeWindow.getRecurrence() == null) {
       if (getCurrentTime() > getEpochValueFromDateString(firstWindowEndTime, timeZone)) {
         return null;
@@ -289,15 +282,7 @@ public class FreezeTimeUtils {
     TimeZone timeZone = TimeZone.getTimeZone(freezeWindow.getTimeZone());
     validateTimeZone(freezeWindow.getTimeZone(), timeZone);
     LocalDateTime firstWindowStartTime = LocalDateTime.parse(freezeWindow.getStartTime(), dtf);
-    LocalDateTime firstWindowEndTime;
-    if (freezeWindow.getEndTime() == null) {
-      FreezeDuration freezeDuration = FreezeDuration.fromString(freezeWindow.getDuration());
-      Long endTime = FreezeTimeUtils.getEpochValueFromDateString(firstWindowStartTime, timeZone)
-          + freezeDuration.getTimeoutInMillis();
-      firstWindowEndTime = Instant.ofEpochMilli(endTime).atZone(timeZone.toZoneId()).toLocalDateTime();
-    } else {
-      firstWindowEndTime = LocalDateTime.parse(freezeWindow.getEndTime(), dtf);
-    }
+    LocalDateTime firstWindowEndTime = getLocalDateTime(freezeWindow, timeZone, firstWindowStartTime);
 
     long timeDifferenceFromStartTime =
         FreezeTimeUtils.getEpochValueFromDateString(firstWindowStartTime, timeZone) - getCurrentTime();

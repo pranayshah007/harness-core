@@ -330,7 +330,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       // NOTE: We are ignoring the status of steps inside strategy because of max concurrency defined.
       // We need to run all the steps inside strategy once
       if (includeChildrenOfStrategy || child.getStepType().getStepCategory() != StepCategory.STRATEGY) {
-        extractChildList(parentChildrenMap, child.getUuid(), finalList, true);
+        extractChildList(parentChildrenMap, child.getUuid(), finalList, includeChildrenOfStrategy);
       }
     });
   }

@@ -85,7 +85,7 @@ public class CustomChangeEventConsumer extends AbstractStreamConsumer {
             .customChangeEvent(
                 CustomChangeEvent.builder()
                     .changeEventDetailsLink(customChangeEventDTO.getEventDetails().getChangeEventDetailsLink())
-                    .internalLinkToEntity(customChangeEventDTO.getEventDetails().getExternalLinkToEntity())
+                    .externalLinkToEntity(customChangeEventDTO.getEventDetails().getExternalLinkToEntity())
                     .description(customChangeEventDTO.getEventDetails().getDescription())
                     .build())
             .type(changeSource.getType());

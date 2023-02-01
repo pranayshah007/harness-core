@@ -436,6 +436,40 @@ public class ViewBillingServiceHelper {
         .build();
   }
 
+  public QLCEViewTrendInfo getCostBillingStats(ViewCostData costData, ViewCostData prevCostData,
+      List<QLCEViewTimeFilter> filters, Instant trendFilterStartTime, boolean isClusterTableQuery) {
+    Instant startInstant = Instant.ofEpochMilli(viewsQueryHelper.getTimeFilter(filters, AFTER).getValue().longValue());
+    Instant endInstant = Instant.ofEpochMilli(costData.getMaxStartTime() / 1000);
+    if (costData.getMaxStartTime() == 0) {
+      endInstant = Instant.ofEpochMilli(
+          viewsQueryHelper.getTimeFilter(filters, QLCEViewTimeFilterOperator.BEFORE).getValue().longValue());
+    }
+
+    boolean isYearRequired = viewsQueryHelper.isYearRequired(startInstant, endInstant);
+    String startInstantFormat = viewsQueryHelper.getTotalCostFormattedDate(startInstant, isYearRequired);
+    String endInstantFormat = viewsQueryHelper.getTotalCostFormattedDate(endInstant, isYearRequired);
+    String totalCostDescription = format(COST_DESCRIPTION, startInstantFormat, endInstantFormat);
+    String totalCostValue = format(
+        COST_VALUE, "$", viewsQueryHelper.formatNumber(viewsQueryHelper.getRoundedDoubleValue(costData.getCost())));
+
+    double forecastCost = viewsQueryHelper.getForecastCost(ViewCostData.builder()
+                                                               .cost(costData.getCost())
+                                                               .minStartTime(costData.getMinStartTime() / 1000)
+                                                               .maxStartTime(costData.getMaxStartTime() / 1000)
+                                                               .build(),
+        Instant.ofEpochMilli(
+            viewsQueryHelper.getTimeFilter(filters, QLCEViewTimeFilterOperator.BEFORE).getValue().longValue()));
+
+    return QLCEViewTrendInfo.builder()
+        .statsLabel(isClusterTableQuery ? TOTAL_CLUSTER_COST_LABEL : TOTAL_COST_LABEL)
+        .statsDescription(totalCostDescription)
+        .statsValue(totalCostValue)
+        .statsTrend(
+            viewsQueryHelper.getBillingTrend(costData.getCost(), forecastCost, prevCostData, trendFilterStartTime))
+        .value(costData.getCost())
+        .build();
+  }
+
   // ----------------------------------------------------------------------------------------------------------------
   // Methods to modify perspective query parameters and obtain query
   // ----------------------------------------------------------------------------------------------------------------
@@ -459,6 +493,7 @@ public class ViewBillingServiceHelper {
       List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort, String cloudProviderTableName,
       ViewQueryParams queryParams, BusinessMapping sharedCostBusinessMapping) {
     List<ViewRule> viewRuleList = new ArrayList<>();
+    log.info("Filters now: {}", filters);
 
     // Removing group by none if present
     boolean skipDefaultGroupBy = queryParams.isSkipDefaultGroupBy();
@@ -500,6 +535,8 @@ public class ViewBillingServiceHelper {
         AwsAccountFieldHelper.removeAccountNameFromAWSAccountIdFilter(viewParametersHelper.getIdFilters(filters));
     List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
 
+    log.info("Filters now: {}", idFilters);
+
     // account id is not passed in current gen queries
     if (queryParams.getAccountId() != null) {
       boolean isPodQuery = false;
@@ -510,12 +547,15 @@ public class ViewBillingServiceHelper {
         }
         modifiedGroupBy = viewParametersHelper.addAdditionalRequiredGroupBy(modifiedGroupBy);
         // Changes column name for product to clusterName in case of cluster perspective
+        log.info("Filters now: {}", idFilters);
+
         idFilters = viewParametersHelper.getModifiedIdFilters(
             viewParametersHelper.addNotNullFilters(idFilters, modifiedGroupBy), true);
         viewRuleList = viewParametersHelper.getModifiedRuleFilters(viewRuleList);
         // Changes column name for cost to billingAmount
         aggregateFunction = viewParametersHelper.getModifiedAggregations(aggregateFunction);
         sort = viewParametersHelper.getModifiedSort(sort);
+        log.info("Filters now: {}", idFilters);
       }
       cloudProviderTableName = getUpdatedCloudProviderTableName(filters, modifiedGroupBy, aggregateFunction,
           queryParams.getAccountId(), cloudProviderTableName, queryParams.isClusterQuery(), isPodQuery);
@@ -530,7 +570,7 @@ public class ViewBillingServiceHelper {
       return viewsQueryBuilder.getTotalCountQuery(
           viewRuleList, idFilters, timeFilters, modifiedGroupBy, cloudProviderTableName);
     }
-
+    log.info("Cloud provider table name: {}", cloudProviderTableName);
     return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters,
         viewParametersHelper.getInExpressionFilters(filters), modifiedGroupBy, aggregateFunction, sort,
         cloudProviderTableName, queryParams.getTimeOffsetInDays());

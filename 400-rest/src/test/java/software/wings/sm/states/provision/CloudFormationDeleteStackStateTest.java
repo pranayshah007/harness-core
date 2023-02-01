@@ -156,7 +156,7 @@ public class CloudFormationDeleteStackStateTest extends WingsBaseTest {
   private void verifyDelegate(ExecutionResponse executionResponse, boolean checkTags, int i) {
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(i)).queueTask(captor.capture());
+    verify(delegateService, times(i)).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
     assertThat(delegateTask.getAccountId()).isEqualTo(ACCOUNT_ID);
@@ -222,7 +222,7 @@ public class CloudFormationDeleteStackStateTest extends WingsBaseTest {
 
     state.buildAndQueueDelegateTask(mockContext, provisioner, AwsConfig.builder().tag(TAG_NAME).build(), ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     CloudFormationDeleteStackRequest request =
         (CloudFormationDeleteStackRequest) delegateTask.getData().getParameters()[0];
@@ -242,7 +242,7 @@ public class CloudFormationDeleteStackStateTest extends WingsBaseTest {
 
     state.buildAndQueueDelegateTask(mockContext, provisioner, AwsConfig.builder().tag(TAG_NAME).build(), ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     CloudFormationDeleteStackRequest request =
         (CloudFormationDeleteStackRequest) delegateTask.getData().getParameters()[0];

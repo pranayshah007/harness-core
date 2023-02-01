@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
+import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
 import static io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy.HIDE;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.graphql.QLCEViewFilterOperator.IN;
@@ -38,10 +39,12 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_GRANULARITY;
 import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_NAME;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
+import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.currency.Currency;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.entities.CostTarget;
@@ -134,6 +137,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   @Inject private ViewBillingServiceHelper viewBillingServiceHelper;
   @Inject private ViewParametersHelper viewParametersHelper;
   @Inject private ViewBusinessMappingResponseHelper viewBusinessMappingResponseHelper;
+  @Inject BigQueryService bigQueryService;
+  @Inject BigQueryHelper bigQueryHelper;
 
   private static final String IDLE_COST_LABEL = "Idle Cost";
   private static final String UNALLOCATED_COST_LABEL = "Unallocated Cost";
@@ -145,15 +150,15 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   // Methods to get data for filter panel
   // ----------------------------------------------------------------------------------------------------------------
   @Override
-  public List<String> getFilterValueStats(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
-      String cloudProviderTableName, Integer limit, Integer offset) {
-    return getFilterValueStatsNg(
-        bigQuery, filters, cloudProviderTableName, limit, offset, viewsQueryHelper.buildQueryParams(null, false));
+  public List<String> getFilterValueStats(List<QLCEViewFilterWrapper> filters, Integer limit, Integer offset) {
+    return getFilterValueStatsNg(filters, limit, offset, viewsQueryHelper.buildQueryParams(null, false));
   }
 
   @Override
-  public List<String> getFilterValueStatsNg(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
-      String cloudProviderTableName, Integer limit, Integer offset, ViewQueryParams queryParams) {
+  public List<String> getFilterValueStatsNg(
+      List<QLCEViewFilterWrapper> filters, Integer limit, Integer offset, ViewQueryParams queryParams) {
+    BigQuery bigQuery = bigQueryService.get();
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     // Check if cost category filter values are requested
     String businessMappingId = viewsQueryHelper.getBusinessMappingIdFromFilters(filters);
     if (businessMappingId != null) {
@@ -211,20 +216,20 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   // Methods to get data for Grid
   // ----------------------------------------------------------------------------------------------------------------
   @Override
-  public List<QLCEViewEntityStatsDataPoint> getEntityStatsDataPoints(BigQuery bigQuery,
-      List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction,
-      List<QLCEViewSortCriteria> sort, String cloudProviderTableName, Integer limit, Integer offset) {
+  public List<QLCEViewEntityStatsDataPoint> getEntityStatsDataPoints(List<QLCEViewFilterWrapper> filters,
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort,
+      Integer limit, Integer offset) {
     ViewQueryParams queryParams = viewsQueryHelper.buildQueryParams(null, false, false, false, false);
     // account id is not required for query builder of current-gen, therefore is passed null
-    return getEntityStatsDataPointsNg(
-        bigQuery, filters, groupBy, aggregateFunction, sort, cloudProviderTableName, limit, offset, queryParams)
-        .getData();
+    return getEntityStatsDataPointsNg(filters, groupBy, aggregateFunction, sort, limit, offset, queryParams).getData();
   }
 
   @Override
-  public QLCEViewGridData getEntityStatsDataPointsNg(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
-      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort,
-      String cloudProviderTableName, Integer limit, Integer offset, ViewQueryParams queryParams) {
+  public QLCEViewGridData getEntityStatsDataPointsNg(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
+      List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort, Integer limit, Integer offset,
+      ViewQueryParams queryParams) {
+    BigQuery bigQuery = bigQueryService.get();
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     boolean isClusterPerspective = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
     String businessMappingId = viewsQueryHelper.getBusinessMappingIdFromGroupBy(groupBy);
     BusinessMapping businessMapping = businessMappingId != null ? businessMappingService.get(businessMappingId) : null;
@@ -535,9 +540,10 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   // Method to get data for Chart
   // ----------------------------------------------------------------------------------------------------------------
   @Override
-  public TableResult getTimeSeriesStats(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
-      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort,
-      String cloudProviderTableName) {
+  public TableResult getTimeSeriesStats(String accountId, List<QLCEViewFilterWrapper> filters,
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort) {
+    BigQuery bigQuery = bigQueryService.get();
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
     SelectQuery query =
         viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction, sort, cloudProviderTableName, true);
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
@@ -551,17 +557,19 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   }
 
   @Override
-  public TableResult getTimeSeriesStatsNg(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
-      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort,
-      String cloudProviderTableName, boolean includeOthers, Integer limit, ViewQueryParams queryParams) {
+  public TableResult getTimeSeriesStatsNg(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
+      List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort, boolean includeOthers,
+      Integer limit, ViewQueryParams queryParams) {
     QLCEViewGridData gridData = null;
+    BigQuery bigQuery = bigQueryService.get();
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     List<QLCEViewGroupBy> groupByExcludingGroupByTime =
         groupBy.stream().filter(g -> g.getEntityGroupBy() != null).collect(Collectors.toList());
 
     ViewQueryParams queryParamsForGrid =
         viewsQueryHelper.buildQueryParams(queryParams.getAccountId(), false, true, queryParams.isClusterQuery(), false);
-    gridData = getEntityStatsDataPointsNg(bigQuery, filters, groupByExcludingGroupByTime, aggregateFunction, sort,
-        cloudProviderTableName, limit, 0, queryParamsForGrid);
+    gridData = getEntityStatsDataPointsNg(
+        filters, groupByExcludingGroupByTime, aggregateFunction, sort, limit, 0, queryParamsForGrid);
 
     SelectQuery query = viewBillingServiceHelper.getQuery(
         viewBillingServiceHelper.getModifiedFiltersForTimeSeriesStats(filters, gridData, groupByExcludingGroupByTime),
@@ -624,9 +632,10 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   // Methods to get cost overview and forecasted cost
   // ----------------------------------------------------------------------------------------------------------------
   @Override
-  public Map<Long, Double> getUnallocatedCostDataNg(final BigQuery bigQuery, final List<QLCEViewFilterWrapper> filters,
-      final List<QLCEViewGroupBy> groupBy, final List<QLCEViewSortCriteria> sort, final String cloudProviderTableName,
-      final ViewQueryParams queryParams) {
+  public Map<Long, Double> getUnallocatedCostDataNg(final List<QLCEViewFilterWrapper> filters,
+      final List<QLCEViewGroupBy> groupBy, final List<QLCEViewSortCriteria> sort, final ViewQueryParams queryParams) {
+    BigQuery bigQuery = bigQueryService.get();
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     if (viewBillingServiceHelper.shouldShowUnallocatedCost(groupBy)
         && viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams)) {
       final List<QLCEViewAggregation> aggregateFunction =
@@ -650,9 +659,10 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   }
 
   @Override
-  public Map<Long, Double> getOthersTotalCostDataNg(final BigQuery bigQuery, final List<QLCEViewFilterWrapper> filters,
-      final List<QLCEViewGroupBy> groupBy, final List<QLCEViewSortCriteria> sort, final String cloudProviderTableName,
-      final ViewQueryParams queryParams) {
+  public Map<Long, Double> getOthersTotalCostDataNg(final List<QLCEViewFilterWrapper> filters,
+      final List<QLCEViewGroupBy> groupBy, final List<QLCEViewSortCriteria> sort, final ViewQueryParams queryParams) {
+    BigQuery bigQuery = bigQueryService.get();
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     final List<QLCEViewAggregation> aggregateFunction =
         Collections.singletonList(QLCEViewAggregation.builder()
                                       .operationType(QLCEViewAggregateOperation.SUM)
@@ -779,17 +789,18 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   }
 
   @Override
-  public QLCEViewTrendInfo getTrendStatsData(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
-      List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName) {
-    return getTrendStatsDataNg(bigQuery, filters, Collections.emptyList(), aggregateFunction, cloudProviderTableName,
-        viewsQueryHelper.buildQueryParams(null, false))
+  public QLCEViewTrendInfo getTrendStatsData(
+      List<QLCEViewFilterWrapper> filters, List<QLCEViewAggregation> aggregateFunction) {
+    return getTrendStatsDataNg(
+        filters, Collections.emptyList(), aggregateFunction, viewsQueryHelper.buildQueryParams(null, false))
         .getTotalCost();
   }
 
   @Override
-  public QLCEViewTrendData getTrendStatsDataNg(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
-      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName,
-      ViewQueryParams queryParams) {
+  public QLCEViewTrendData getTrendStatsDataNg(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
+      List<QLCEViewAggregation> aggregateFunction, ViewQueryParams queryParams) {
+    BigQuery bigQuery = bigQueryService.get();
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     boolean isClusterTableQuery = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
     List<ViewRule> viewRuleList = new ArrayList<>();
     List<QLCEViewFilter> idFilters = AwsAccountFieldHelper.removeAccountNameFromAWSAccountIdFilter(
@@ -849,12 +860,13 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   }
 
   @Override
-  public QLCEViewTrendInfo getForecastCostData(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
-      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName,
-      ViewQueryParams queryParams) {
+  public QLCEViewTrendInfo getForecastCostData(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
+      List<QLCEViewAggregation> aggregateFunction, ViewQueryParams queryParams) {
+    BigQuery bigQuery = bigQueryService.get();
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     Instant endInstantForForecastCost = viewsQueryHelper.getEndInstantForForecastCost(filters);
-    ViewCostData currentCostData = getCostData(bigQuery, viewsQueryHelper.getFiltersForForecastCost(filters), groupBy,
-        aggregateFunction, cloudProviderTableName, queryParams);
+    ViewCostData currentCostData =
+        getCostData(viewsQueryHelper.getFiltersForForecastCost(filters), groupBy, aggregateFunction, queryParams);
     Double forecastCost = viewBillingServiceHelper.getForecastCost(currentCostData, endInstantForForecastCost);
     Currency currency = getDestinationCurrency(queryParams.getAccountId());
     return viewBillingServiceHelper.getForecastCostBillingStats(forecastCost, currentCostData.getCost(),
@@ -866,7 +878,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   // Method to get columns of given table
   // ----------------------------------------------------------------------------------------------------------------
   @Override
-  public List<String> getColumnsForTable(BigQuery bigQuery, String informationSchemaView, String table) {
+  public List<String> getColumnsForTable(String informationSchemaView, String table) {
+    BigQuery bigQuery = bigQueryService.get();
     SelectQuery query = viewsQueryBuilder.getInformationSchemaQueryForColumns(informationSchemaView, table);
     return getColumnsData(bigQuery, query);
   }
@@ -904,14 +917,16 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   // Methods to get cost data
   // ----------------------------------------------------------------------------------------------------------------
   @Override
-  public ViewCostData getCostData(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
-      List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams) {
-    return getCostData(bigQuery, filters, null, aggregateFunction, cloudProviderTableName, queryParams);
+  public ViewCostData getCostData(
+      List<QLCEViewFilterWrapper> filters, List<QLCEViewAggregation> aggregateFunction, ViewQueryParams queryParams) {
+    return getCostData(filters, null, aggregateFunction, queryParams);
   }
 
   @Override
-  public ViewCostData getCostData(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
-      List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams) {
+  public ViewCostData getCostData(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
+      List<QLCEViewAggregation> aggregateFunction, ViewQueryParams queryParams) {
+    BigQuery bigQuery = bigQueryService.get();
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     boolean isClusterTableQuery = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
     List<ViewRule> viewRuleList = new ArrayList<>();
     List<QLCEViewFilter> idFilters =
@@ -964,9 +979,11 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         result, isClusterTableQuery, businessMappingFromGroupBy, sharedCostFromFiltersAndRules);
   }
 
-  public List<ValueDataPoint> getActualCostGroupedByPeriod(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
-      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName,
-      ViewQueryParams queryParams) {
+  @Override
+  public List<ValueDataPoint> getActualCostGroupedByPeriod(List<QLCEViewFilterWrapper> filters,
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, ViewQueryParams queryParams) {
+    BigQuery bigQuery = bigQueryService.get();
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     boolean isClusterTableQuery = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
     List<QLCEViewFilter> idFilters =
         viewParametersHelper.getModifiedIdFilters(viewParametersHelper.getIdFilters(filters), isClusterTableQuery);
@@ -1003,8 +1020,10 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   // Method to get total count of rows returned by the query
   // ----------------------------------------------------------------------------------------------------------------
   @Override
-  public Integer getTotalCountForQuery(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
-      List<QLCEViewGroupBy> groupBy, String cloudProviderTableName, ViewQueryParams queryParams) {
+  public Integer getTotalCountForQuery(
+      List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy, ViewQueryParams queryParams) {
+    BigQuery bigQuery = bigQueryService.get();
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     SelectQuery query = viewBillingServiceHelper.getQuery(
         filters, groupBy, Collections.EMPTY_LIST, Collections.emptyList(), cloudProviderTableName, queryParams);
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
@@ -1036,7 +1055,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   // ----------------------------------------------------------------------------------------------------------------
   @Override
   public Map<String, Map<String, String>> getLabelsForWorkloads(
-      BigQuery bigQuery, Set<String> workloads, String cloudProviderTableName, List<QLCEViewFilterWrapper> filters) {
+      String accountId, Set<String> workloads, List<QLCEViewFilterWrapper> filters) {
+    BigQuery bigQuery = bigQueryService.get();
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
     List<QLCEViewFilter> idFilters = filters != null ? viewParametersHelper.getIdFilters(filters) : new ArrayList<>();
     if (!workloads.isEmpty()) {
       idFilters.add(QLCEViewFilter.builder()
@@ -1084,10 +1105,11 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   // Method to get shared cost per timestamp for charts (Cost category)
   // ----------------------------------------------------------------------------------------------------------------
   @Override
-  public Map<String, Map<Timestamp, Double>> getSharedCostPerTimestampFromFilters(BigQuery bigQuery,
-      List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction,
-      List<QLCEViewSortCriteria> sort, String cloudProviderTableName, ViewQueryParams queryParams,
-      boolean skipRoundOff) {
+  public Map<String, Map<Timestamp, Double>> getSharedCostPerTimestampFromFilters(List<QLCEViewFilterWrapper> filters,
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort,
+      ViewQueryParams queryParams, boolean skipRoundOff) {
+    BigQuery bigQuery = bigQueryService.get();
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     // Fetching business mapping Ids from filters
     List<ViewRule> viewRules = getViewRules(filters);
     Map<String, Map<Timestamp, Double>> entitySharedCostsPerTimestamp = new HashMap<>();
@@ -1373,7 +1395,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         }
       }
     }
-
     return sharedCostsFromFilters;
   }
 

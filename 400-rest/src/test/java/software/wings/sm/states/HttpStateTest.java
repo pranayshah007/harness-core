@@ -833,7 +833,7 @@ public class HttpStateTest extends WingsBaseTest {
       return null;
     })
         .when(delegateService)
-        .queueTask(any(DelegateTask.class));
+        .queueTaskV2(any(DelegateTask.class));
 
     return httpState;
   }

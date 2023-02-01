@@ -109,6 +109,7 @@ import io.harness.connector.entities.embedded.splunkconnector.SplunkConnector;
 import io.harness.connector.entities.embedded.spotconnector.SpotConfig;
 import io.harness.connector.entities.embedded.sumologic.SumoLogicConnector;
 import io.harness.connector.entities.embedded.tasconnector.TasConfig;
+import io.harness.connector.entities.embedded.terraformcloudconncetor.TerraformCloudConfig;
 import io.harness.connector.entities.embedded.vaultconnector.VaultConnector;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
@@ -166,6 +167,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(GcpSecretManagerConnector.class);
     set.add(AzureArtifactsConnector.class);
     set.add(BambooConnector.class);
+    set.add(TerraformCloudConfig.class);
   }
 
   @Override

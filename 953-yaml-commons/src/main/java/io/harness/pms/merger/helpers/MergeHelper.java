@@ -69,6 +69,12 @@ public class MergeHelper {
         originalYamlConfig, inputSetConfig, appendInputSetValidator, false);
   }
 
+  public YamlConfig mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(YamlConfig originalYamlConfig,
+      YamlConfig inputSetConfig, boolean appendInputSetValidator, boolean checkIfPipelineValueIsRuntime) {
+    return mergeRuntimeInputValuesIntoOriginalYamlInternal(
+        originalYamlConfig, inputSetConfig, appendInputSetValidator, false, checkIfPipelineValueIsRuntime);
+  }
+
   public JsonNode mergeExecutionInputIntoOriginalYamlJsonNode(
       String originalYaml, String inputSetPipelineCompYaml, boolean appendInputSetValidator) {
     YamlConfig mergedYamlConfig = mergeRuntimeInputValuesIntoOriginalYamlInternal(
@@ -87,6 +93,21 @@ public class MergeHelper {
 
   private YamlConfig mergeRuntimeInputValuesIntoOriginalYamlInternal(YamlConfig originalYamlConfig,
       YamlConfig inputSetConfig, boolean appendInputSetValidator, boolean isAtExecutionTime) {
+    return mergeRuntimeInputValuesIntoOriginalYamlInternal(
+        originalYamlConfig, inputSetConfig, appendInputSetValidator, isAtExecutionTime, false);
+  }
+
+  // checkIfPipelineValueIsRuntime is supposed to be true if the values from inputSetConfig are to be merged only if the
+  // corresponding value in originalYamlConfig are <+input>. For example, if the originalYamlConfig is a pipeline yaml,
+  // then the runtime input values from inputSetConfig should be merged only if the corresponding value in
+  // originalYamlConfig is <+input>, because of which in this case the value of checkIfPipelineValueIsRuntime should be
+  // true. On the other hand, if originalYamlConfig is the merged yaml of a pipeline and an input set, and
+  // inputSetConfig is that of a second input set, then the values from inputSetConfig can override those from
+  // originalYamlConfig, because this second input set should be allowed to override the values given by the first input
+  // set. Hence, in this case checkIfPipelineValueIsRuntime is false
+  private YamlConfig mergeRuntimeInputValuesIntoOriginalYamlInternal(YamlConfig originalYamlConfig,
+      YamlConfig inputSetConfig, boolean appendInputSetValidator, boolean isAtExecutionTime,
+      boolean checkIfPipelineValueIsRuntime) {
     Map<FQN, Object> inputSetFQNMap = inputSetConfig.getFqnToValueMap();
 
     Map<FQN, Object> pipelineYamlFQNMap = originalYamlConfig.getFqnToValueMap();
@@ -95,6 +116,13 @@ public class MergeHelper {
       if (inputSetFQNMap.containsKey(key)) {
         Object valueFromRuntimeInputYaml = inputSetFQNMap.get(key);
         Object valueFromPipelineYaml = pipelineYamlFQNMap.get(key);
+        if (checkIfPipelineValueIsRuntime
+            && (!(valueFromPipelineYaml instanceof TextNode)
+                || !NGExpressionUtils.matchesInputSetPattern(((TextNode) valueFromPipelineYaml).asText()))) {
+          // if the value from the pipeline YAML is fixed, then we need to ignore the value from the runtime input yaml.
+          // The above if condition is true if the value from the pipeline YAML is fixed
+          return;
+        }
         // input sets can now have <+input> in them as we will not remove those fields anymore. So if the first input
         // set provides some value and the second does not, then the first value should and not be overriden by the
         // <+input> in the second input set

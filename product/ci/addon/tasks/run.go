@@ -248,6 +248,8 @@ func (r *runTask) getShell(ctx context.Context) (string, string, error) {
 		return "powershell", "-Command", nil
 	} else if r.shellType == pb.ShellType_PWSH {
 		return "pwsh", "-Command", nil
+	} else if r.shellType == pb.ShellType_PYTHON {
+		return "python3", "-c", nil
 	}
 	return "", "", fmt.Errorf("Unknown shell type: %s", r.shellType)
 }
@@ -257,22 +259,30 @@ func (r *runTask) getEarlyExitCommand() (string, error) {
 		return "set -xe\n", nil
 	} else if r.shellType == pb.ShellType_POWERSHELL || r.shellType == pb.ShellType_PWSH {
 		return "$ErrorActionPreference = 'Stop' \n", nil
+	} else if r.shellType == pb.ShellType_PYTHON {
+		return "", nil
 	}
 	return "", fmt.Errorf("Unknown shell type: %s", r.shellType)
 }
 
 func (r *runTask) getOutputVarCmd(outputVars []string, outputFile string) string {
 	isPsh := r.isPowershell()
+	isPython := r.isPython()
 
 	cmd := ""
 	if isPsh {
 		cmd += fmt.Sprintf("\nNew-Item %s", outputFile)
+	} else if isPython {
+		cmd += "\nimport os\n"
 	}
+	
 	for _, o := range outputVars {
 		if isPsh {
 			cmd += fmt.Sprintf("\n$val = \"%s $Env:%s\" \nAdd-Content -Path %s -Value $val", o, o, outputFile)
-		} else {
+		} else if (r.isBash() || r.isSh()){
 			cmd += fmt.Sprintf("\necho \"%s $%s\" >> %s", o, o, outputFile)
+		} else if isPython {
+			cmd += fmt.Sprintf("with open('%s', 'a') as out_file:\n\tout_file.write('%s ' + os.getenv('%s') + '\\n')\n", outputFile, o, o)
 		}
 	}
 
@@ -281,6 +291,27 @@ func (r *runTask) getOutputVarCmd(outputVars []string, outputFile string) string
 
 func (r *runTask) isPowershell() bool {
 	if r.shellType == pb.ShellType_POWERSHELL || r.shellType == pb.ShellType_PWSH {
+		return true
+	}
+	return false
+}
+
+func (r *runTask) isBash() bool {
+	if r.shellType == pb.ShellType_BASH {
+		return true
+	}
+	return false
+}
+
+func (r *runTask) isSh() bool {
+	if r.shellType == pb.ShellType_SH {
+		return true
+	}
+	return false
+}
+
+func (r *runTask) isPython() bool {
+	if r.shellType == pb.ShellType_PYTHON {
 		return true
 	}
 	return false

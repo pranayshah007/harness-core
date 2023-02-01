@@ -760,7 +760,7 @@ public class CommandStateTest extends WingsBaseTest {
     DelegateTaskBuilder delegateBuilder = getDelegateBuilder(artifact, artifactStreamAttributes, command);
     DelegateTask delegateTask = delegateBuilder.build();
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
 
     verify(context, times(4)).getContextElement(ContextElementType.STANDARD);
     verify(context, times(1)).getContextElement(ContextElementType.INSTANCE);
@@ -935,7 +935,7 @@ public class CommandStateTest extends WingsBaseTest {
     DelegateTaskBuilder delegateBuilder = getDelegateBuilder(artifact, artifactStreamAttributes, command);
     DelegateTask delegateTask = delegateBuilder.build();
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
 
     verify(context, times(4)).getContextElement(ContextElementType.STANDARD);
     verify(context, times(1)).getContextElement(ContextElementType.INSTANCE);
@@ -1045,7 +1045,7 @@ public class CommandStateTest extends WingsBaseTest {
     DelegateTaskBuilder delegateBuilder = getDelegateBuilder(artifact, artifactStreamAttributes, command);
     DelegateTask delegateTask = delegateBuilder.build();
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
 
     verify(context, times(4)).getContextElement(ContextElementType.STANDARD);
     verify(context, times(3)).getContextElement(ContextElementType.INSTANCE);
@@ -2341,7 +2341,7 @@ public class CommandStateTest extends WingsBaseTest {
     DelegateTaskBuilder delegateBuilder = getDelegateBuilder(artifact, artifactStreamAttributes, command);
     DelegateTask delegateTask = delegateBuilder.build();
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
 
     verify(context, times(4)).getContextElement(ContextElementType.STANDARD);
     verify(context, times(1)).getContextElement(ContextElementType.INSTANCE);

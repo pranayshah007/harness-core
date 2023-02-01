@@ -1,0 +1,38 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//960-api-services/src/main/java/io/harness/gcp/helpers:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/network:module",
+        "//980-commons/src/main/java/io/harness/serializer:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_google_api_client_google_api_client",
+        "@maven//:com_google_api_gax",
+        "@maven//:com_google_api_gax_grpc",
+        "@maven//:com_google_api_grpc_proto_google_cloud_functions_v2",
+        "@maven//:com_google_api_grpc_proto_google_cloud_run_v2",
+        "@maven//:com_google_apis_google_api_services_container",
+        "@maven//:com_google_auth_google_auth_library_oauth2_http",
+        "@maven//:com_google_cloud_google_cloud_core_http",
+        "@maven//:com_google_cloud_google_cloud_functions",
+        "@maven//:com_google_cloud_google_cloud_run",
+        "@maven//:com_google_inject_guice",
+        "@maven//:com_google_protobuf_protobuf_java",
+        "@maven//:commons_io_commons_io",
+    ],
+)
+
+run_analysis_per_module()

@@ -87,7 +87,7 @@ public class RollbackStagePlanCreatorTest extends CategoryTest {
     assertThat(planNode).isNotNull();
     assertThat(planNode.getUuid()).isEqualTo("uuid1_rollbackStage");
     assertThat(planNode.getName()).isEqualTo("s one (Rollback Stage)");
-    assertThat(planNode.getStepType().getType()).isEqualTo("NG_SECTION");
+    assertThat(planNode.getStepType().getType()).isEqualTo("ROLLBACK_STAGE");
     assertThat(((NGSectionStepParameters) planNode.getStepParameters()).getChildNodeId())
         .isEqualTo("uuid1_combinedRollback");
     assertThat(planNode.getAdviserObtainments()).hasSize(0);
@@ -113,7 +113,7 @@ public class RollbackStagePlanCreatorTest extends CategoryTest {
     assertThat(planNode).isNotNull();
     assertThat(planNode.getUuid()).isEqualTo("uuid4_rollbackStage");
     assertThat(planNode.getName()).isEqualTo("s four (Rollback Stage)");
-    assertThat(planNode.getStepType().getType()).isEqualTo("NG_SECTION");
+    assertThat(planNode.getStepType().getType()).isEqualTo("ROLLBACK_STAGE");
     assertThat(((NGSectionStepParameters) planNode.getStepParameters()).getChildNodeId())
         .isEqualTo("uuid4_combinedRollback");
     assertThat(planNode.getAdviserObtainments()).hasSize(1);

@@ -22,6 +22,7 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GITHUB_PACKAGES_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS2_REGISTRY_NAME;
@@ -74,6 +75,7 @@ import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GithubPackagesArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
@@ -91,7 +93,7 @@ import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.ManifestStoreType;
-import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
@@ -1466,6 +1468,7 @@ public class TasStepHelper {
       case JENKINS_NAME:
       case AZURE_ARTIFACTS_NAME:
       case CUSTOM_ARTIFACT_NAME:
+      case GITHUB_PACKAGES_NAME:
         if (isPackageArtifactType(artifactOutcome)) {
           return getTasPackageArtifactConfig(ambiance, artifactOutcome);
         } else {
@@ -1518,6 +1521,13 @@ public class TasStepHelper {
         artifactConfigBuilder.image(acrArtifactOutcome.getImage());
         artifactConfigBuilder.tag(acrArtifactOutcome.getTag());
         artifactConfigBuilder.registryHostname(acrArtifactOutcome.getRegistry());
+        break;
+      case GITHUB_PACKAGES_NAME:
+        GithubPackagesArtifactOutcome githubPackagesArtifactOutcome = (GithubPackagesArtifactOutcome) artifactOutcome;
+        connectorInfo = cdStepHelper.getConnector(githubPackagesArtifactOutcome.getConnectorRef(), ambiance);
+        artifactConfigBuilder.registryType(TasArtifactRegistryType.GITHUB_PACKAGE_REGISTRY);
+        artifactConfigBuilder.image(githubPackagesArtifactOutcome.getImage());
+        artifactConfigBuilder.tag(githubPackagesArtifactOutcome.getTag());
         break;
       case ECR_NAME:
         EcrArtifactOutcome ecrArtifactOutcome = (EcrArtifactOutcome) artifactOutcome;

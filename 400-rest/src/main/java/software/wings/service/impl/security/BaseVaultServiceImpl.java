@@ -138,7 +138,7 @@ public class BaseVaultServiceImpl extends AbstractSecretServiceImpl {
                 .projectIdentifier(baseVaultConfig.getProjectIdentifier())
                 .build();
 
-        return delegateProxyFactory.get(SecretManagementDelegateService.class, syncTaskContext)
+        return delegateProxyFactory.getV2(SecretManagementDelegateService.class, syncTaskContext)
             .appRoleLogin(baseVaultConfig);
       } catch (WingsException e) {
         failedAttempts++;
@@ -169,7 +169,7 @@ public class BaseVaultServiceImpl extends AbstractSecretServiceImpl {
                 .projectIdentifier(baseVaultConfig.getProjectIdentifier())
                 .build();
 
-        return delegateProxyFactory.get(SecretManagementDelegateService.class, syncTaskContext)
+        return delegateProxyFactory.getV2(SecretManagementDelegateService.class, syncTaskContext)
             .tokenLookup(baseVaultConfig);
       } catch (WingsException e) {
         failedAttempts++;
@@ -198,7 +198,7 @@ public class BaseVaultServiceImpl extends AbstractSecretServiceImpl {
             .build();
     boolean isCertValidationRequired = accountService.isCertValidationRequired(accountId);
     baseVaultConfig.setCertValidationRequired(isCertValidationRequired);
-    delegateProxyFactory.get(SecretManagementDelegateService.class, syncTaskContext)
+    delegateProxyFactory.getV2(SecretManagementDelegateService.class, syncTaskContext)
         .renewVaultToken(decryptedVaultConfig);
     wingsPersistence.updateField(SecretManagerConfig.class, baseVaultConfig.getUuid(), BaseVaultConfigKeys.renewedAt,
         System.currentTimeMillis());
@@ -394,7 +394,7 @@ public class BaseVaultServiceImpl extends AbstractSecretServiceImpl {
                 .ngTask(isNgTask(vaultConfig.getOrgIdentifier(), vaultConfig.getProjectIdentifier()))
                 .build();
 
-        return delegateProxyFactory.get(SecretManagementDelegateService.class, syncTaskContext)
+        return delegateProxyFactory.getV2(SecretManagementDelegateService.class, syncTaskContext)
             .listSecretEngines(vaultConfig);
       } catch (WingsException e) {
         failedAttempts++;

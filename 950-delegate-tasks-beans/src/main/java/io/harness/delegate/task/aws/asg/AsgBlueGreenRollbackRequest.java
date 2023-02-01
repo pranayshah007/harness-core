@@ -11,6 +11,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.expression.Expression;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
@@ -29,11 +30,11 @@ public class AsgBlueGreenRollbackRequest implements AsgCommandRequest, NestedAnn
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   Integer timeoutIntervalInMin;
-  Map<String, List<String>> asgManifestsDataForRollback;
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
   AsgLoadBalancerConfig asgLoadBalancerConfig;
   String prodAsgName;
   String stageAsgName;
-  boolean stageAsgCreated;
+  Map<String, List<String>> stageAsgManifestsDataForRollback;
+  Map<String, List<String>> prodAsgManifestsDataForRollback;
   boolean servicesSwapped;
 }

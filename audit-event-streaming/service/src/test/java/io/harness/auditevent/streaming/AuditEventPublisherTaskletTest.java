@@ -10,7 +10,7 @@ package io.harness.auditevent.streaming;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.ACCOUNT_IDENTIFIER_PARAMETER_KEY;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.JOB_START_TIME_PARAMETER_KEY;
 import static io.harness.rule.OwnerRule.NISHANT;
-import static io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum.ACTIVE;
+import static io.harness.spec.server.audit.v1.model.StreamingDestinationStatus.ACTIVE;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;

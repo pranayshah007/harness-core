@@ -29,6 +29,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
@@ -39,8 +40,9 @@ import lombok.experimental.FieldNameConstants;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
 @StoreIn(DbAliases.CVNG)
-@Entity(value = "entityUnavailabilityStatuses", noClassnameStored = true)
+@Entity(value = "entityUnavailabilityStatuses")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
 public class EntityUnavailabilityStatuses implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware {
@@ -48,9 +50,8 @@ public class EntityUnavailabilityStatuses implements PersistentEntity, UuidAware
   @NotNull String accountId;
   String orgIdentifier;
   String projectIdentifier;
-  private String entityId;
+  private String entityIdentifier;
   private EntityType entityType;
-  private List<String> affectedEntities;
   private long startTime;
   private long endTime;
   private EntityUnavailabilityStatus status;
@@ -60,8 +61,8 @@ public class EntityUnavailabilityStatuses implements PersistentEntity, UuidAware
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("entity_downtime_start_end")
-                 .field(EntityUnavailabilityStatusesKeys.entityId)
+                 .name("entity_unavailability_start_end")
+                 .field(EntityUnavailabilityStatusesKeys.entityIdentifier)
                  .field(EntityUnavailabilityStatusesKeys.startTime)
                  .field(EntityUnavailabilityStatusesKeys.endTime)
                  .build())
