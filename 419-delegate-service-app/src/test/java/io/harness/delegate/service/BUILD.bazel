@@ -12,6 +12,7 @@ java_library(
     testonly = True,
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
+    data = [ "//419-delegate-service-app/src/test/resources:resource"],
     resources = [ "//419-delegate-service-app/src/test/resources:resource"],
     deps = [
         "//980-commons/src/main/java/io/harness/network:module",
@@ -24,7 +25,8 @@ java_library(
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_glassfish_jersey_core_jersey_client",
         "@maven//:org_mockito_mockito_core",
-        "@maven//:io_dropwizard_dropwizard_testing"
+        "@maven//:io_dropwizard_dropwizard_testing",
+        "@bazel_tools//tools/java/runfiles:runfiles",
     ],
 )
 

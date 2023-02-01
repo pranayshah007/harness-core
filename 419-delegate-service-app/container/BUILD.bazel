@@ -24,8 +24,7 @@ container_image(
 pkg_tar(
     name = "files",
     srcs = [
-        "//419-delegate-service-app/config:config.yml",
-        "//419-delegate-service-app/config:keystore.jks"
+        "//419-delegate-service-app/config:config.yml"
     ],
     files = {
         "//419-delegate-service-app/src/main/java/io/harness/dms/app:module_deploy.jar": "delegate-service-capsule.jar",

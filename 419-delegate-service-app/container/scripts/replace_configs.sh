@@ -15,8 +15,6 @@ replace_key_value () {
   fi
 }
 
-yq -i 'del(.server.applicationConnectors[0])' $CONFIG_FILE
-
 if [[ "" != "$LOGGING_LEVEL" ]]; then
     export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi

@@ -15,6 +15,7 @@ java_library(
             "//980-commons/src/main/resources:resource",
              "//419-delegate-service-app/src/main/resources:resource",
         ],
+    data = [ "//419-delegate-service-app/src/main/resources:resource"],
     deps = [
         "//970-grpc:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
@@ -45,7 +46,8 @@ java_library(
         "@maven//:javax_ws_rs_javax_ws_rs_api",
         "@maven//:net_sourceforge_argparse4j_argparse4j",
         "@maven//:org_apache_commons_commons_lang3",
-        "@maven//:io_dropwizard_dropwizard_http2"
+        "@maven//:io_dropwizard_dropwizard_http2",
+        "@maven//:org_apache_logging_log4j_log4j_to_slf4j",
     ],
 )
 

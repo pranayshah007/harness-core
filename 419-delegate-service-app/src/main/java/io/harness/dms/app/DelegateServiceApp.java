@@ -11,17 +11,11 @@ import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
+import io.harness.delegate.utils.DelegateServiceSwaggerGenerator;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 
-import software.wings.jersey.JsonViews;
-
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.introspect.Annotated;
-import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
-import com.fasterxml.jackson.databind.jsontype.NamedType;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -31,7 +25,6 @@ import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.serializer.HObjectMapper;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
@@ -70,7 +63,7 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
       @Override
       protected SwaggerBundleConfiguration getSwaggerBundleConfiguration(
           DelegateServiceConfiguration delegateServiceConfig) {
-        return delegateServiceConfig.getSwaggerBundleConfiguration();
+        return DelegateServiceSwaggerGenerator.getSwaggerBundleConfiguration();
       }
     });
     configureObjectMapper(bootstrap.getObjectMapper());

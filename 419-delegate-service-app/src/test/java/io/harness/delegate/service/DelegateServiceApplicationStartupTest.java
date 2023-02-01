@@ -15,13 +15,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.dms.app.DelegateServiceApp;
 import io.harness.dms.app.DelegateServiceConfiguration;
 import io.harness.network.Http;
-import io.harness.resource.Project;
 import io.harness.rule.Owner;
 
 import io.dropwizard.testing.DropwizardTestSupport;
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.client.JerseyClientBuilder;
@@ -35,19 +32,8 @@ public class DelegateServiceApplicationStartupTest {
 
   @BeforeClass
   public static void beforeClass() throws Exception {
-    String directoryPath = Project.moduleDirectory(DelegateServiceApplicationStartupTest.class);
-
-    String configPath = Paths.get(directoryPath, "/src/test/resources/test-config.yml").toString();
-
-    // Handle sandboxed bazel path - remove path starting from /sandbox till execroot. This is because the source
-    // code is present outside the sandbox directory created by bazel.
-    if (!Files.exists(Paths.get(configPath)) && configPath.contains("/sandbox/")) {
-      configPath = configPath.substring(0, configPath.indexOf("/sandbox/"))
-          + configPath.substring(configPath.indexOf("/execroot"));
-    }
-
-    SUPPORT = new DropwizardTestSupport<DelegateServiceConfiguration>(
-        DelegateServiceApp.class, String.valueOf(new File(configPath)));
+    SUPPORT = new DropwizardTestSupport<DelegateServiceConfiguration>(DelegateServiceApp.class,
+        String.valueOf(new File("419-delegate-service-app/src/test/resources/test-config.yml")));
     SUPPORT.before();
   }
 
