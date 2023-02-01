@@ -9,6 +9,8 @@ package io.harness.ng.moduleversioninfo.runnable;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static org.springframework.data.mongodb.core.query.Update.update;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo.ModuleVersionInfoKeys;
@@ -37,6 +39,7 @@ import org.json.JSONObject;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(CDP)
 @ValidateOnExecution
@@ -48,8 +51,6 @@ public class UpdateVersionInfoTask {
 
   List<ModuleVersionInfo> allModulesFromDB;
   private static final String pathToFile = "mvi/baseinfo.json";
-  // Edit here for adding new module
-  private static final String totalModules = "CCM_CD_CI_FF_Platform_SRM_SRT_Delegate";
 
   public UpdateVersionInfoTask() {
     allModulesFromDB = new ArrayList<>();
@@ -60,16 +61,6 @@ public class UpdateVersionInfoTask {
   }
 
   private void checkVersionChange() {
-    // read from DB
-    List<String> moduleNames = new ArrayList<>(List.of(totalModules.split("_")));
-    moduleNames.forEach(moduleName -> {
-      Criteria criteria = Criteria.where(ModuleVersionInfoKeys.moduleName).is(moduleName);
-      ModuleVersionInfo newModule = mongoTemplate.findOne(new Query(criteria), ModuleVersionInfo.class);
-      if (newModule != null) {
-        allModulesFromDB.add(newModule);
-      }
-    });
-
     if (allModulesFromDB.isEmpty()) {
       // read from base file
       readFromFile();
@@ -93,9 +84,8 @@ public class UpdateVersionInfoTask {
         }
         module.setVersion(currentVersion);
       }
+      updateModuleVersionInfoCollection(module);
     });
-
-    mongoTemplate.insertAll(allModulesFromDB);
   }
 
   private void readFromFile() {
@@ -155,5 +145,21 @@ public class UpdateVersionInfoTask {
     JSONObject versionInfojsonObject = (JSONObject) resourcejsonObject.get("versionInfo");
 
     return versionInfojsonObject.getString("version");
+  }
+
+  private void updateModuleVersionInfoCollection(ModuleVersionInfo module) {
+    Criteria criteria = Criteria.where(ModuleVersionInfoKeys.moduleName).is(module.getModuleName());
+
+    Update update = update(ModuleVersionInfoKeys.version, module.getVersion());
+
+    update.set(ModuleVersionInfoKeys.uuid, module.getUuid())
+        .set(ModuleVersionInfoKeys.versionUrl, module.getVersionUrl())
+        .set(ModuleVersionInfoKeys.microservicesVersionInfo, module.getMicroservicesVersionInfo())
+        .set(ModuleVersionInfoKeys.moduleName, module.getModuleName())
+        .set(ModuleVersionInfoKeys.releaseNotesLink, module.getReleaseNotesLink())
+        .set(ModuleVersionInfoKeys.lastModifiedAt, module.getLastModifiedAt())
+        .set(ModuleVersionInfoKeys.displayName, module.getDisplayName());
+
+    mongoTemplate.upsert(new Query(criteria), update, ModuleVersionInfo.class);
   }
 }
