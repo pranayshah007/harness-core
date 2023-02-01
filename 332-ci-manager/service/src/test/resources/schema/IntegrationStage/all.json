@@ -624,7 +624,8 @@
                     "Sh",
                     "Bash",
                     "Powershell",
-                    "Pwsh"
+                    "Pwsh",
+                    "Python"
                   ]
                 },
                 {
@@ -767,7 +768,8 @@
                     "sh",
                     "bash",
                     "powershell",
-                    "pwsh"
+                    "pwsh",
+                    "python"
                   ]
                 },
                 {
@@ -7338,7 +7340,8 @@
                     "Sh",
                     "Bash",
                     "Powershell",
-                    "Pwsh"
+                    "Pwsh",
+                    "Python"
                   ]
                 },
                 {
@@ -7561,7 +7564,8 @@
                     "Sh",
                     "Bash",
                     "Powershell",
-                    "Pwsh"
+                    "Pwsh",
+                    "Python"
                   ]
                 },
                 {
@@ -8338,7 +8342,8 @@
                     "sh",
                     "bash",
                     "powershell",
-                    "pwsh"
+                    "pwsh",
+                    "python"
                   ]
                 },
                 {
@@ -10701,7 +10706,8 @@
                     "sh",
                     "bash",
                     "powershell",
-                    "pwsh"
+                    "pwsh",
+                    "python"
                   ]
                 },
                 {
