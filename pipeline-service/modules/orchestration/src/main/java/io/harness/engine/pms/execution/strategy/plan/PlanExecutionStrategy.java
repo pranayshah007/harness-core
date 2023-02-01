@@ -188,10 +188,11 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
 
   private PipelineStartEvent getPipelineStartEvent(Ambiance ambiance) {
     return PipelineStartEvent.builder()
+        .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
+        .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
+        .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
         .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
         .pipelineExecutionUuid(ambiance.getPlanExecutionId())
-        .triggerType(ambiance.getMetadata().getTriggerInfo().getTriggerType())
-        .triggeredBy(ambiance.getMetadata().getTriggerInfo().getTriggeredBy())
         .startTs(ambiance.getStartTs())
         .build();
   }
@@ -222,10 +223,11 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
 
   private PipelineEndEvent getPipelineEndEvent(Ambiance ambiance) {
     return PipelineEndEvent.builder()
+        .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
+        .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
+        .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
         .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
         .pipelineExecutionUuid(ambiance.getPlanExecutionId())
-        .triggerType(ambiance.getMetadata().getTriggerInfo().getTriggerType())
-        .triggeredBy(ambiance.getMetadata().getTriggerInfo().getTriggeredBy())
         .startTs(ambiance.getStartTs())
         .build();
   }
