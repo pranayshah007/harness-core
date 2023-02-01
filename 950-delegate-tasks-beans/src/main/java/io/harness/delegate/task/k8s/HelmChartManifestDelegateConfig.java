@@ -7,21 +7,25 @@
 
 package io.harness.delegate.task.k8s;
 
+import static io.harness.expression.Expression.ALLOW_SECRETS;
+
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.task.helm.HelmCommandFlag;
+import io.harness.expression.Expression;
 import io.harness.k8s.model.HelmVersion;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
-public class HelmChartManifestDelegateConfig implements ManifestDelegateConfig {
+public class HelmChartManifestDelegateConfig implements ManifestDelegateConfig, NestedAnnotationResolver {
   StoreDelegateConfig storeDelegateConfig;
   String chartName;
   String chartVersion;
   HelmVersion helmVersion;
-  HelmCommandFlag helmCommandFlag;
+  @Expression(ALLOW_SECRETS) HelmCommandFlag helmCommandFlag;
   private boolean checkIncorrectChartVersion;
   private boolean useCache;
   private boolean useRepoFlags;

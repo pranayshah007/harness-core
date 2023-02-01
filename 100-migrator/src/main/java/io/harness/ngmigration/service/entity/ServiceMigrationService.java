@@ -364,7 +364,7 @@ public class ServiceMigrationService extends NgMigrationService {
       ServiceResponseDTO responseDTO = response.getService();
       return YamlPipelineUtils.read(responseDTO.getYaml(), NGServiceConfig.class);
     } catch (Exception ex) {
-      log.error("Error when getting service - ", ex);
+      log.warn("Error when getting service - ", ex);
       return null;
     }
   }

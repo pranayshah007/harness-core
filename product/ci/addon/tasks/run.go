@@ -279,10 +279,10 @@ func (r *runTask) getOutputVarCmd(outputVars []string, outputFile string) string
 	for _, o := range outputVars {
 		if isPsh {
 			cmd += fmt.Sprintf("\n$val = \"%s $Env:%s\" \nAdd-Content -Path %s -Value $val", o, o, outputFile)
-		} else if (r.isBash() || r.isSh()){
-			cmd += fmt.Sprintf("\necho \"%s $%s\" >> %s", o, o, outputFile)
 		} else if isPython {
 			cmd += fmt.Sprintf("with open('%s', 'a') as out_file:\n\tout_file.write('%s ' + os.getenv('%s') + '\\n')\n", outputFile, o, o)
+		} else {
+			cmd += fmt.Sprintf("\necho \"%s $%s\" >> %s", o, o, outputFile)
 		}
 	}
 
@@ -291,20 +291,6 @@ func (r *runTask) getOutputVarCmd(outputVars []string, outputFile string) string
 
 func (r *runTask) isPowershell() bool {
 	if r.shellType == pb.ShellType_POWERSHELL || r.shellType == pb.ShellType_PWSH {
-		return true
-	}
-	return false
-}
-
-func (r *runTask) isBash() bool {
-	if r.shellType == pb.ShellType_BASH {
-		return true
-	}
-	return false
-}
-
-func (r *runTask) isSh() bool {
-	if r.shellType == pb.ShellType_SH {
 		return true
 	}
 	return false

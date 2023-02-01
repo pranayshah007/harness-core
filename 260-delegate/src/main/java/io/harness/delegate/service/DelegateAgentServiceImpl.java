@@ -71,6 +71,7 @@ import static io.harness.network.Localhost.getLocalHostName;
 import static io.harness.network.SafeHttpCall.execute;
 import static io.harness.threading.Morpheus.sleep;
 import static io.harness.utils.MemoryPerformanceUtils.memoryUsage;
+import static io.harness.utils.SecretUtils.isBase64SecretIdentifier;
 
 import static software.wings.beans.TaskType.SCRIPT;
 import static software.wings.beans.TaskType.SHELL_SCRIPT_TASK_NG;
@@ -98,6 +99,7 @@ import io.harness.beans.DelegateHeartbeatResponseStreaming;
 import io.harness.beans.DelegateTaskEventsResponse;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.configuration.DeployMode;
+import io.harness.data.encoding.EncodingUtils;
 import io.harness.data.structure.NullSafeImmutableMap;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.DelegateAgentCommonVariables;
@@ -2663,7 +2665,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         secretUuidToValues.put(key, secretValue);
 
         // Adds secret values from the 3 phase decryption to the list of task secrets to be masked
-        delegateTaskPackage.getSecrets().add(String.valueOf(secretValue));
+        String secretValueStr =
+            isBase64SecretIdentifier(key) ? EncodingUtils.encodeBase64(secretValue) : String.valueOf(secretValue);
+        delegateTaskPackage.getSecrets().add(secretValueStr);
       });
 
       DelegateExpressionEvaluator delegateExpressionEvaluator = new DelegateExpressionEvaluator(

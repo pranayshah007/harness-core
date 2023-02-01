@@ -207,7 +207,7 @@ public class ExecutionHelper {
           break;
         case PipelineVersion.V0:
           TemplateMergeResponseDTO templateMergeResponseDTO =
-              getPipelineYamlAndValidate(mergedRuntimeInputYaml, pipelineEntity);
+              getPipelineYamlAndValidateStaticallyReferredEntities(mergedRuntimeInputYaml, pipelineEntity);
           pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
           pipelineYamlWithTemplateRef = templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
           BasicPipeline basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
@@ -218,11 +218,7 @@ public class ExecutionHelper {
           throw new InvalidRequestException("version not supported");
       }
 
-      StagesExecutionInfo stagesExecutionInfo = StagesExecutionInfo.builder()
-                                                    .isStagesExecution(false)
-                                                    .pipelineYamlToRun(pipelineYaml)
-                                                    .allowStagesExecution(allowedStageExecution)
-                                                    .build();
+      StagesExecutionInfo stagesExecutionInfo;
       if (isNotEmpty(stagesToRun)) {
         if (!allowedStageExecution) {
           throw new InvalidRequestException(
@@ -234,7 +230,24 @@ public class ExecutionHelper {
         stagesExecutionInfo = StagesExecutionHelper.getStagesExecutionInfo(pipelineYaml, stagesToRun, expressionValues);
         pipelineYamlWithTemplateRef =
             InputSetMergeHelper.removeNonRequiredStages(pipelineYamlWithTemplateRef, stagesToRun);
+      } else {
+        stagesExecutionInfo = StagesExecutionInfo.builder()
+                                  .isStagesExecution(false)
+                                  .pipelineYamlToRun(pipelineYaml)
+                                  .allowStagesExecution(allowedStageExecution)
+                                  .build();
       }
+
+      /*
+    For schema validations, we don't want input set validators to be appended. For example, if some timeout field in
+    the pipeline is <+input>.allowedValues(12h, 1d), and the runtime input gives a value 12h, the value for this field
+    in pipelineYamlConfig will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
+    give an error in schema validation. That's why we need a value that doesn't have this validator appended.
+     */
+      String yamlToRunWithoutRuntimeInputs =
+          YamlUtils.getYamlWithoutInputs(new YamlConfig(stagesExecutionInfo.getPipelineYamlToRun()));
+      pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+          pipelineEntity.getProjectIdentifier(), yamlToRunWithoutRuntimeInputs);
 
       Builder planExecutionMetadataBuilder = obtainPlanExecutionMetadata(mergedRuntimeInputYaml, executionId,
           stagesExecutionInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, version);
@@ -290,15 +303,9 @@ public class ExecutionHelper {
     return builder.build();
   }
 
-  /*
-      For schema validations, we don't want input set validators to be appended. For example, if some timeout field in
-      the pipeline is <+input>.allowedValues(12h, 1d), and the runtime input gives a value 12h, the value for this field
-      in pipelineYamlConfig will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
-      give an error in schema validation. That's why we need a value that doesn't have this validator appended.
-       */
   @VisibleForTesting
-  TemplateMergeResponseDTO getPipelineYamlAndValidate(String mergedRuntimeInputYaml, PipelineEntity pipelineEntity)
-      throws IOException {
+  TemplateMergeResponseDTO getPipelineYamlAndValidateStaticallyReferredEntities(
+      String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) throws IOException {
     YamlConfig pipelineYamlConfig;
 
     long start = System.currentTimeMillis();
@@ -329,9 +336,6 @@ public class ExecutionHelper {
           ? pipelineYaml
           : templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
     }
-    String yamlWithoutRuntimeInputs = YamlUtils.getYamlWithoutInputs(new YamlConfig(pipelineYaml));
-    pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-        pipelineEntity.getProjectIdentifier(), yamlWithoutRuntimeInputs);
     if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType() == StoreType.INLINE) {
       // For REMOTE Pipelines, entity setup usage framework cannot be relied upon. That is because the setup usages can
       // be outdated wrt the YAML we find on Git during execution. This means the fail fast approach that we have for

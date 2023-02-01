@@ -30,11 +30,13 @@ import io.harness.ccm.audittrails.events.RuleDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleUpdateEvent;
 import io.harness.ccm.governance.faktory.FaktoryProducer;
 import io.harness.ccm.utils.LogAccountIdentifier;
+import io.harness.ccm.views.dto.CloneRuleDTO;
 import io.harness.ccm.views.dto.CreateRuleDTO;
 import io.harness.ccm.views.dto.GovernanceEnqueueResponseDTO;
 import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ccm.views.dto.ListDTO;
 import io.harness.ccm.views.entities.Rule;
+import io.harness.ccm.views.entities.RuleClone;
 import io.harness.ccm.views.entities.RuleEnforcement;
 import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.entities.RuleSet;
@@ -142,6 +144,7 @@ import org.springframework.transaction.support.TransactionTemplate;
     })
 
 @NextGenManagerAuth
+
 public class GovernanceRuleResource {
   private final GovernanceRuleService governanceRuleService;
   private final RuleSetService ruleSetService;
@@ -235,6 +238,44 @@ public class GovernanceRuleResource {
           outboxService.save(new RuleCreateEvent(accountId, rule.toDTO()));
           return governanceRuleService.fetchByName(accountId, rule.getName(), false);
         })));
+  }
+
+  @POST
+  @Path("ruleClone")
+  @Timed
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ExceptionMetered
+  @ApiOperation(value = "Clone a rule", nickname = "CloneRule")
+  @LogAccountIdentifier
+  @Operation(operationId = "CloneRule", description = "Clone a Rule with the given ID.", summary = "Clone a rule",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "newly created rule", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<Rule>
+  clone(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(
+          required = true, description = "Request body containing Rule uuid") @Valid CloneRuleDTO cloneRuleDTO) {
+    if (cloneRuleDTO == null) {
+      throw new InvalidRequestException(MALFORMED_ERROR);
+    }
+    RuleClone ruleClone = cloneRuleDTO.getRuleClone();
+    Rule existingRule = governanceRuleService.fetchById(accountId, ruleClone.getUuid(), false);
+    Rule newRule = Rule.builder().build();
+    newRule.setIsOOTB(false);
+    newRule.setName(existingRule.getName() + "-clone");
+    if (governanceRuleService.fetchByName(accountId, newRule.getName(), true) != null) {
+      throw new InvalidRequestException("A clone with the given name already exists");
+    }
+    newRule.setCloudProvider(existingRule.getCloudProvider());
+    newRule.setRulesYaml(existingRule.getRulesYaml());
+    newRule.setDescription(existingRule.getDescription());
+    newRule.setTags(existingRule.getTags());
+    CreateRuleDTO createRuleDTO = CreateRuleDTO.builder().rule(newRule).build();
+    return create(accountId, createRuleDTO);
   }
 
   @PUT

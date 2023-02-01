@@ -87,7 +87,7 @@ public class ShellScriptTemplateService implements NgTemplateService {
   }
 
   static String valueOrDefaultEmpty(String val) {
-    return StringUtils.isNotBlank(val) ? val : "";
+    return StringUtils.isNotBlank(val) ? val.replace('-', '_') : "";
   }
 
   static String valueOrDefaultRuntime(String val) {

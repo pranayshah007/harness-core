@@ -17,8 +17,10 @@ import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackRequest;
@@ -46,6 +48,7 @@ import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -67,6 +70,7 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
   @Inject private AccountService accountService;
   @Inject private StepHelper stepHelper;
   @Inject private CDStepHelper cdStepHelper;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -92,9 +96,20 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
                                  .build())
                 .build();
       } else {
+        InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+        List<ServerInstanceInfo> serverInstanceInfos = asgStepCommonHelper.getServerInstanceInfos(
+            asgBlueGreenRollbackResponse, infrastructureOutcome.getInfrastructureKey(),
+            asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance).getRegion());
+
+        StepResponse.StepOutcome stepOutcome =
+            instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
+
         stepResponse =
             stepResponseBuilder.status(Status.SUCCEEDED)
                 .stepOutcome(StepResponse.StepOutcome.builder().name(OutcomeExpressionConstants.OUTPUT).build())
+                .stepOutcome(stepOutcome)
                 .build();
       }
     } finally {
@@ -170,7 +185,7 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
             .asgLoadBalancerConfig(asgLoadBalancerConfig)
             .prodAsgName(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgName())
             .prodAsgManifestsDataForRollback(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgManifestDataForRollback())
-            .stageAsgName(asgBlueGreenDeployOutcome.getAutoScalingGroupContainer().getAutoScalingGroupName())
+            .stageAsgName(asgBlueGreenDeployOutcome.getProdAutoScalingGroupContainer().getAutoScalingGroupName())
             .stageAsgManifestsDataForRollback(
                 asgBlueGreenPrepareRollbackDataOutcome.getStageAsgManifestDataForRollback())
             .servicesSwapped(trafficShifted)

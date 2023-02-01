@@ -33,8 +33,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@Slf4j
 public class HttpStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
@@ -74,6 +76,12 @@ public class HttpStepMapperImpl extends StepMapper {
     HttpState state = (HttpState) getState(graphNode);
     HttpStepNode httpStepNode = new HttpStepNode();
     baseSetup(graphNode, httpStepNode);
+
+    if (StringUtils.isNotBlank(graphNode.getTemplateUuid())) {
+      log.error(String.format("Trying to link a step which is not a step template - %s", graphNode.getTemplateUuid()));
+      return null;
+    }
+
     HttpStepInfoBuilder httpStepInfoBuilder =
         HttpStepInfo.infoBuilder()
             .url(ParameterField.createValueField(state.getUrl()))
