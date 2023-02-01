@@ -63,7 +63,7 @@ public class CVNGStepTaskServiceImpl implements CVNGStepTaskService {
 
   @Override
   public void create(CVNGStepTask cvngStepTask) {
-    log.info("Creating CVNGStepTask {}", cvngStepTask.toString());
+    log.info("Creating CVNGStepTask {}", cvngStepTask);
     cvngStepTask.validate();
     hPersistence.save(cvngStepTask);
   }
