@@ -452,7 +452,7 @@ public abstract class WorkflowHandler {
     return getDeploymentStageConfig(inferServiceDefinitionType(workflow), steps, rollbackSteps);
   }
 
-  List<FailureStrategyConfig> getDefaultFailureStrategy() {
+  ParameterField<List<FailureStrategyConfig>> getDefaultFailureStrategy() {
     FailureStrategyConfig failureStrategyConfig =
         FailureStrategyConfig.builder()
             .onFailure(OnFailureConfig.builder()
@@ -460,7 +460,7 @@ public abstract class WorkflowHandler {
                            .action(AbortFailureActionConfig.builder().build())
                            .build())
             .build();
-    return Collections.singletonList(failureStrategyConfig);
+    return ParameterField.createValueField(Collections.singletonList(failureStrategyConfig));
   }
 
   JsonNode getDeploymentStageTemplateSpec(WorkflowMigrationContext context) {

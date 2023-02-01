@@ -916,7 +916,9 @@ import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
 import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
 import io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO;
 import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
@@ -2247,6 +2249,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerraformCloudDelegateTaskResponse.class, 680002);
     kryo.register(TerraformCloudValidateTaskResponse.class, 680003);
     kryo.register(TerraformCloudValidationParams.class, 680004);
+    kryo.register(TerraformCloudOrganizationsTaskResponse.class, 680005);
+    kryo.register(TerraformCloudWorkspacesTaskResponse.class, 680006);
 
     kryo.register(AwsSamInstallationCapability.class, 10000401);
   }

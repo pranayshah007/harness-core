@@ -95,6 +95,9 @@ public enum NGStepType {
   @JsonProperty("SHELL_SCRIPT_PROVISIONER")
   SHELL_SCRIPT_PROVISIONER("Shell Script Provisioner", Arrays.asList(ServiceDefinitionType.values()),
       "Infrastructure Provisioners/Shell Script Provisioner", StepSpecTypeConstants.PLACEHOLDER),
+  @JsonProperty(StepSpecTypeConstants.TERRAFORM_CLOUD_RUN)
+  TERRAFORM_CLOUD_RUN("Terraform Cloud Run", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/Terraform Cloud", StepSpecTypeConstants.TERRAFORM_CLOUD_RUN),
   // Issue Tracking
   @JsonProperty("JIRA")
   JIRA("Jira", Arrays.asList(ServiceDefinitionType.values()), "Issue Tracking", StepSpecTypeConstants.PLACEHOLDER),

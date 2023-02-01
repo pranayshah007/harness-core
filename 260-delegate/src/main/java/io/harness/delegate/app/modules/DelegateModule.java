@@ -489,6 +489,8 @@ import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.SpotInstHelperServiceDelegateImpl;
 import io.harness.terraform.TerraformClient;
 import io.harness.terraform.TerraformClientImpl;
+import io.harness.terraformcloud.TerraformCloudClient;
+import io.harness.terraformcloud.TerraformCloudClientImpl;
 import io.harness.terragrunt.TerragruntClient;
 import io.harness.terragrunt.TerragruntClientImpl;
 import io.harness.threading.ThreadPool;
@@ -1212,6 +1214,7 @@ public class DelegateModule extends AbstractModule {
     bind(CloudformationBaseHelper.class).to(CloudformationBaseHelperImpl.class);
     bind(HelmDeployServiceNG.class).to(HelmDeployServiceImplNG.class);
     bind(AwsCliClient.class).to(AwsCliClientImpl.class);
+    bind(TerraformCloudClient.class).to(TerraformCloudClientImpl.class);
 
     MapBinder<String, CommandUnitExecutorService> serviceCommandExecutorServiceMapBinder =
         MapBinder.newMapBinder(binder(), String.class, CommandUnitExecutorService.class);

@@ -68,8 +68,9 @@ public class InitializeStepNode extends CIAbstractStepNode {
   }
 
   @Builder
-  public InitializeStepNode(String uuid, String identifier, String name, List<FailureStrategyConfig> failureStrategies,
-      InitializeStepInfo initializeStepInfo, StepType type, ParameterField<Timeout> timeout) {
+  public InitializeStepNode(String uuid, String identifier, String name,
+      ParameterField<List<FailureStrategyConfig>> failureStrategies, InitializeStepInfo initializeStepInfo,
+      StepType type, ParameterField<Timeout> timeout) {
     this.setFailureStrategies(failureStrategies);
     this.initializeStepInfo = initializeStepInfo;
     this.type = type;

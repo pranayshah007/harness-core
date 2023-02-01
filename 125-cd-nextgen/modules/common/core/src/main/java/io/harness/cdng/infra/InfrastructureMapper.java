@@ -21,6 +21,7 @@ import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
+import io.harness.cdng.infra.beans.GoogleFunctionsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcomeAbstract;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -44,6 +45,7 @@ import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
+import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -239,6 +241,22 @@ public class InfrastructureMapper {
         setInfraIdentifierAndName(
             ecsInfrastructureOutcome, ecsInfrastructure.getInfraIdentifier(), ecsInfrastructure.getInfraName());
         infrastructureOutcome = ecsInfrastructureOutcome;
+        break;
+
+      case InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS:
+        GoogleFunctionsInfrastructure googleFunctionsInfrastructure = (GoogleFunctionsInfrastructure) infrastructure;
+        GoogleFunctionsInfrastructureOutcome googleFunctionsInfrastructureOutcome =
+            GoogleFunctionsInfrastructureOutcome.builder()
+                .connectorRef(googleFunctionsInfrastructure.getConnectorRef().getValue())
+                .environment(environmentOutcome)
+                .region(googleFunctionsInfrastructure.getRegion().getValue())
+                .project(googleFunctionsInfrastructure.getProject().getValue())
+                .infrastructureKey(InfrastructureKey.generate(
+                    service, environmentOutcome, googleFunctionsInfrastructure.getInfrastructureKeyValues()))
+                .build();
+        setInfraIdentifierAndName(googleFunctionsInfrastructureOutcome,
+            googleFunctionsInfrastructure.getInfraIdentifier(), googleFunctionsInfrastructure.getInfraName());
+        infrastructureOutcome = googleFunctionsInfrastructureOutcome;
         break;
 
       case InfrastructureKind.ELASTIGROUP:

@@ -10,6 +10,7 @@ package io.harness.pms.sdk.core.execution;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.tasks.ProgressData;
 
@@ -24,4 +25,6 @@ public class ProgressPackage {
   @NonNull Ambiance ambiance;
   StepParameters stepParameters;
   ProgressData progressData;
+  // status of the node (not null if to be updated)
+  Status status;
 }

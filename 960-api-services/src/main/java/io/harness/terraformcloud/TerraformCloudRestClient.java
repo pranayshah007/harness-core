@@ -21,7 +21,6 @@ import io.harness.terraformcloud.model.StateVersionOutputData;
 import io.harness.terraformcloud.model.TerraformCloudResponse;
 import io.harness.terraformcloud.model.WorkspaceData;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -30,15 +29,17 @@ import retrofit2.http.Header;
 import retrofit2.http.Headers;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
+import retrofit2.http.Query;
 
 @OwnedBy(CDP)
 public interface TerraformCloudRestClient {
   @GET("api/v2/organizations")
-  Call<TerraformCloudResponse<List<OrganizationData>>> listOrganizations(@Header("Authorization") String authorization);
+  Call<TerraformCloudResponse<List<OrganizationData>>> listOrganizations(
+      @Header("Authorization") String authorization, @Query("page[number]") int page);
 
   @GET("api/v2/organizations/{organization}/workspaces")
-  Call<TerraformCloudResponse<List<WorkspaceData>>> listWorkspaces(
-      @Header("Authorization") String authorization, @Path("organization") String organization);
+  Call<TerraformCloudResponse<List<WorkspaceData>>> listWorkspaces(@Header("Authorization") String authorization,
+      @Path("organization") String organization, @Query("page[number]") int page);
 
   @Headers({"Content-Type: application/vnd.api+json"})
   @POST("api/v2/runs")
@@ -75,7 +76,7 @@ public interface TerraformCloudRestClient {
 
   @GET("api/v2/runs/{runId}/policy-checks")
   Call<TerraformCloudResponse<List<PolicyCheckData>>> listPolicyChecks(
-      @Header("Authorization") String authorization, @Path("runId") String runId);
+      @Header("Authorization") String authorization, @Path("runId") String runId, @Query("page[number]") int page);
 
   @GET("/api/v2/policy-checks/{policyCheckId}/output")
   Call<String> getPolicyCheckOutput(

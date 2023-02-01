@@ -22,6 +22,7 @@ import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
 import static io.harness.pms.contracts.execution.Status.PAUSED;
 import static io.harness.pms.contracts.execution.Status.PAUSING;
 import static io.harness.pms.contracts.execution.Status.QUEUED;
+import static io.harness.pms.contracts.execution.Status.QUEUED_LICENSE_LIMIT_REACHED;
 import static io.harness.pms.contracts.execution.Status.RESOURCE_WAITING;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.contracts.execution.Status.SKIPPED;
@@ -161,7 +162,8 @@ public class StatusUtils {
     switch (status) {
       case RUNNING:
         return EnumSet.of(QUEUED, ASYNC_WAITING, APPROVAL_WAITING, RESOURCE_WAITING, TASK_WAITING, TIMED_WAITING,
-            INTERVENTION_WAITING, PAUSED, PAUSING, APPROVAL_REJECTED, INPUT_WAITING, WAIT_STEP_RUNNING);
+            INTERVENTION_WAITING, PAUSED, PAUSING, APPROVAL_REJECTED, INPUT_WAITING, WAIT_STEP_RUNNING,
+            QUEUED_LICENSE_LIMIT_REACHED);
       case INTERVENTION_WAITING:
         return BROKE_STATUSES;
       case TIMED_WAITING:
@@ -178,7 +180,7 @@ public class StatusUtils {
         return EnumSet.of(QUEUED, RUNNING, PAUSING);
       case DISCONTINUING:
         return EnumSet.of(QUEUED, RUNNING, INTERVENTION_WAITING, TIMED_WAITING, ASYNC_WAITING, TASK_WAITING, PAUSING,
-            RESOURCE_WAITING, APPROVAL_WAITING, WAIT_STEP_RUNNING, QUEUED, PAUSED, FAILED, SUSPENDED, EXPIRED,
+            RESOURCE_WAITING, APPROVAL_WAITING, WAIT_STEP_RUNNING, PAUSED, FAILED, SUSPENDED, EXPIRED,
             APPROVAL_REJECTED, INPUT_WAITING);
       case QUEUED:
         return EnumSet.of(PAUSED, PAUSING);
@@ -194,6 +196,8 @@ public class StatusUtils {
         return EnumSet.of(INTERVENTION_WAITING, RUNNING, QUEUED);
       case IGNORE_FAILED:
         return EnumSet.of(EXPIRED, FAILED, INTERVENTION_WAITING, RUNNING, APPROVAL_REJECTED, QUEUED);
+      case QUEUED_LICENSE_LIMIT_REACHED: // Final Status and Running is not added to prevent any race condition
+        return EnumSet.of(QUEUED, ASYNC_WAITING);
       default:
         throw new IllegalStateException("Unexpected value: " + status);
     }
@@ -269,6 +273,8 @@ public class StatusUtils {
       return RESOURCE_WAITING;
     } else if (statuses.stream().anyMatch(status -> status == WAIT_STEP_RUNNING)) {
       return WAIT_STEP_RUNNING;
+    } else if (statuses.stream().anyMatch(status -> status == QUEUED_LICENSE_LIMIT_REACHED)) {
+      return QUEUED_LICENSE_LIMIT_REACHED;
     } else if (statuses.stream().anyMatch(status -> status == QUEUED)) {
       return QUEUED;
     } else if (!Collections.disjoint(statuses, FLOWING_STATUSES)) {

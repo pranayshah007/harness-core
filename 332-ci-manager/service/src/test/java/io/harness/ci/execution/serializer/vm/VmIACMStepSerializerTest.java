@@ -35,6 +35,7 @@ import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.iacmserviceclient.IACMServiceUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import java.util.HashMap;
@@ -75,7 +76,10 @@ public class VmIACMStepSerializerTest extends CategoryTest {
     Map<String, String> tfVars = new HashMap<>();
     tfVars.put("tfvar1", "TfValue1");
     tfVars.put("tfvar2", "Value1");
-    IACMTerraformPlanInfo stepInfo = IACMTerraformPlanInfo.builder().identifier("id").name("name").build();
+    Map<String, String> env = new HashMap<>();
+    env.put("command", "Apply");
+    IACMTerraformPlanInfo stepInfo =
+        IACMTerraformPlanInfo.builder().env(ParameterField.createValueField(env)).identifier("id").name("name").build();
     StackVariables[] stackVariables = new StackVariables[] {StackVariables.builder()
                                                                 .stack("123")
                                                                 .account("abc")
@@ -124,7 +128,7 @@ public class VmIACMStepSerializerTest extends CategoryTest {
 
     VmPluginStep vmPluginStep =
         vmIACMPluginCompatibleStepSerializer.serialize(ambiance, stepInfo, null, "foobar", null);
-    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(7);
+    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(8);
     assertThat(vmPluginStep.getEnvVariables().get("ENV_SECRETS_keytest1")).contains("${ngSecretManager.obtain");
     assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_keytest2")).isEqualTo("keyValue2");
     assertThat(vmPluginStep.getEnvVariables().get("TFVARS_SECRETS_keytest3")).contains("${ngSecretManager.obtain");
@@ -135,7 +139,10 @@ public class VmIACMStepSerializerTest extends CategoryTest {
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testIACMGetConnectorRef() {
-    IACMTerraformPlanInfo stepInfo = IACMTerraformPlanInfo.builder().identifier("id").name("name").build();
+    Map<String, String> env = new HashMap<>();
+    env.put("command", "Apply");
+    IACMTerraformPlanInfo stepInfo =
+        IACMTerraformPlanInfo.builder().identifier("id").env(ParameterField.createValueField(env)).name("name").build();
 
     Mockito.mockStatic(CIStepInfoUtils.class);
     when(CIStepInfoUtils.getPluginCustomStepImage(any(), any(), any(), any())).thenReturn("imageName");
@@ -157,7 +164,7 @@ public class VmIACMStepSerializerTest extends CategoryTest {
 
     VmPluginStep vmPluginStep =
         vmIACMPluginCompatibleStepSerializer.serialize(ambiance, stepInfo, null, "foobar", null);
-    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(3);
+    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(4);
     assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_ROOT_DIR")).isEqualTo("root");
     assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_TF_VERSION")).isEqualTo("1.2.3");
     assertThat(vmPluginStep.getConnector().getConnectorType()).isEqualTo(ConnectorType.AWS);

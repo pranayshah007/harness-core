@@ -40,6 +40,7 @@ public class DelegateHeartbeatDao {
     setUnset(updateOperations, DelegateKeys.version, params.getVersion());
     setUnset(updateOperations, DelegateKeys.location, params.getLocation());
     setUnset(updateOperations, DelegateKeys.delegateConnectionId, params.getDelegateConnectionId());
+    setUnset(updateOperations, DelegateKeys.disconnected, false);
 
     persistence.update(persistence.createQuery(Delegate.class)
                            .filter(DelegateKeys.accountId, accountId)

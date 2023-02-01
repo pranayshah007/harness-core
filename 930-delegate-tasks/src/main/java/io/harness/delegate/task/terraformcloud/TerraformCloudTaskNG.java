@@ -21,11 +21,15 @@ import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformClou
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
 import io.harness.exception.InvalidRequestException;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.terraformcloud.TerraformCloudConfig;
 
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
   @Inject private TerraformCloudValidationHandler terraformCloudValidationHandler;
   @Inject private TerraformCloudConfigMapper terraformCloudConfigMapper;
+  @Inject private TerraformCloudTaskHelper terraformCloudTaskHelper;
 
   public TerraformCloudTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -47,7 +52,7 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
   }
 
   @Override
-  public DelegateResponseData run(TaskParameters parameters) {
+  public DelegateResponseData run(TaskParameters parameters) throws IOException {
     TerraformCloudTaskParams taskParameters = (TerraformCloudTaskParams) parameters;
 
     TerraformCloudConnectorDTO terraformCloudConnectorDTO = taskParameters.getTerraformCloudConnectorDTO();
@@ -60,6 +65,18 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
         connectorValidationResult.setDelegateId(getDelegateId());
         return TerraformCloudValidateTaskResponse.builder()
             .connectorValidationResult(connectorValidationResult)
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .build();
+      case GET_ORGANIZATIONS:
+        return TerraformCloudOrganizationsTaskResponse.builder()
+            .organizations(terraformCloudTaskHelper.getOrganizationsMap(terraformCloudConfig))
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .build();
+      case GET_WORKSPACES:
+        return TerraformCloudWorkspacesTaskResponse.builder()
+            .workspaces(
+                terraformCloudTaskHelper.getWorkspacesMap(terraformCloudConfig, taskParameters.getOrganization()))
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .build();
       default:
         throw new InvalidRequestException("Task type not identified");

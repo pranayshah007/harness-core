@@ -39,7 +39,6 @@ import io.harness.yaml.core.variables.OutputNGVariable;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -51,8 +50,7 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
-  private static List<String> INFORMATICA_ACCOUNT_IDS =
-      new ArrayList<>(List.of("0imfjG07TR2hVBcS5AZpCQ", "z40YS0M5RCCOybahmyEVgQ"));
+
   public UnitStep serializeStepWithStepParameters(RunStepInfo runStepInfo, Integer port, String callbackId,
       String logKey, String identifier, ParameterField<Timeout> parameterFieldTimeout, String accountId,
       String stepName, Ambiance ambiance) {
@@ -70,8 +68,7 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
     String command = null;
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()
-        && (INFORMATICA_ACCOUNT_IDS.contains(ngAccess.getAccountIdentifier())
-            || featureFlagService.isEnabled(FeatureName.CI_REMOTE_DEBUG, accountId))) {
+        && featureFlagService.isEnabled(FeatureName.CI_REMOTE_DEBUG, accountId)) {
       command = SerializerUtils.getK8sDebugCommand(ciExecutionServiceConfig.getRemoteDebugTimeout())
           + System.lineSeparator()
           + RunTimeInputHandler.resolveStringParameter("Command", "Run", identifier, runStepInfo.getCommand(), true);

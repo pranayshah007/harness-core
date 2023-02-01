@@ -11,19 +11,21 @@ import static io.harness.annotations.dev.HarnessTeam.IACM;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
 @OwnedBy(IACM)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Stack {
   Long created;
   String name;
   String account;
   String org;
   String project;
-  String slug;
+  String identifier;
   Long updated;
   String provisioner;
   String provisioner_version;

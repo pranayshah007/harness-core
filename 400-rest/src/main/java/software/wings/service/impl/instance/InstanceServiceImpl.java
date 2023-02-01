@@ -235,10 +235,16 @@ public class InstanceServiceImpl implements InstanceService {
   public void deleteByAccountId(String accountId) {
     pruneByEntity("accountId", accountId);
     deleteManualSyncJobsByAccountId(accountId);
+    deleteContainerDeploymentInfo(accountId);
   }
 
   private void deleteManualSyncJobsByAccountId(String accountId) {
     wingsPersistence.delete(wingsPersistence.createQuery(ManualSyncJob.class).filter(ACCOUNT_ID_KEY2, accountId));
+  }
+
+  private void deleteContainerDeploymentInfo(String accountId) {
+    wingsPersistence.delete(
+        wingsPersistence.createQuery(ContainerDeploymentInfo.class).filter(ACCOUNT_ID_KEY2, accountId));
   }
 
   @Override

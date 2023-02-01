@@ -20,4 +20,5 @@ public class IACMCommonEndpointConstants {
   public static final String IACM_SERVICE_GET_STACK_ENDPOINT = "/api/orgs/{org}/projects/{project}/stacks/{stackId}";
   public static final String IACM_SERVICE_GET_STACK_VARIABLES_ENDPOINT =
       "/api/orgs/{org}/projects/{project}/stacks/{stackId}/variables";
+  public static final String IACM_SERVICE_POST_EXECUTION = "/api/orgs/{org}/projects/{project}/executions";
 }

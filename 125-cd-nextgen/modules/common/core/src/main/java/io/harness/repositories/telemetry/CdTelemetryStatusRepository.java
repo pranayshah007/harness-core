@@ -10,8 +10,11 @@ package io.harness.repositories.telemetry;
 import io.harness.annotation.HarnessRepo;
 import io.harness.telemetry.beans.CdTelemetrySentStatus;
 
+import java.util.List;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 @HarnessRepo
 public interface CdTelemetryStatusRepository
-    extends PagingAndSortingRepository<CdTelemetrySentStatus, String>, CdTelemetryStatusRepositoryCustom {}
+    extends PagingAndSortingRepository<CdTelemetrySentStatus, String>, CdTelemetryStatusRepositoryCustom {
+  List<CdTelemetrySentStatus> findAllByAccountId(String accountId);
+}

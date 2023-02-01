@@ -722,6 +722,28 @@ public class AccountResource {
     }
   }
 
+  @POST
+  @Path("{accountId}/is-smp-account")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Boolean> updateIsSmpAccount(@PathParam("accountId") String accountId,
+      @QueryParam("customerAccountId") @NotNull String customerAccountId,
+      @QueryParam("isSmpAccount") @DefaultValue("false") boolean isSmpAccount) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(accountService.updateIsSmpAccount(customerAccountId, isSmpAccount));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(Lists.newArrayList(
+              ResponseMessage.builder().message("User not allowed to update account smp status").build()))
+          .build();
+    }
+  }
+
   @GET
   @Path("{accountId}/reset-cache")
   public RestResponse<Boolean> resetCache(@PathParam("accountId") String accountId) {

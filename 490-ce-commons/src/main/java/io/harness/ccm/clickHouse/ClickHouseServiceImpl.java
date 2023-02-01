@@ -11,7 +11,6 @@ import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 
 import com.clickhouse.jdbc.ClickHouseDataSource;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -29,7 +28,8 @@ public class ClickHouseServiceImpl implements ClickHouseService {
 
   @Override
   public Connection getConnection(ClickHouseConfig clickHouseConfig, Properties properties) throws SQLException {
-    return DriverManager.getConnection(clickHouseConfig.getUrl(), properties);
+    ClickHouseDataSource dataSource = new ClickHouseDataSource(clickHouseConfig.getUrl(), new Properties());
+    return dataSource.getConnection(clickHouseConfig.getUsername(), clickHouseConfig.getPassword());
   }
 
   @Override

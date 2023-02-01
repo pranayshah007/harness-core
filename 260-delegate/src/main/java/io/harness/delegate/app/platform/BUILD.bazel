@@ -44,6 +44,7 @@ java_binary(
     main_class = "io.harness.delegate.app.platform.DelegatePlatformApplication",
     resources = [
         "//260-delegate/src/main/resources:resource",
+        "//980-commons/src/main/resources:resource",
     ],
     visibility = ["//visibility:public"],
     runtime_deps = [":module"],

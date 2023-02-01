@@ -2396,9 +2396,9 @@ public class K8sTaskHelperBase {
           manifestOverrideFiles.remove(index);
         }
         return renderTemplateForHelm(k8sDelegateTaskParams.getHelmPath(),
-            getManifestDirectoryForHelmChart(manifestFilesDirectory, helmChartManifest), manifestOverrideFiles,
-            releaseName, namespace, executionLogCallback, helmChartManifest.getHelmVersion(), timeoutInMillis,
-            helmChartManifest.getHelmCommandFlag());
+            getManifestDirectoryForHelmChartWithSubCharts(manifestFilesDirectory, helmChartManifest),
+            manifestOverrideFiles, releaseName, namespace, executionLogCallback, helmChartManifest.getHelmVersion(),
+            timeoutInMillis, helmChartManifest.getHelmCommandFlag(), helmChartManifest.getSubChartName());
 
       case KUSTOMIZE:
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
@@ -2450,7 +2450,7 @@ public class K8sTaskHelperBase {
           manifestOverrideFiles.remove(index);
         }
         return renderTemplateForHelmChartFiles(k8sDelegateTaskParams.getHelmPath(),
-            getManifestDirectoryForHelmChart(manifestFilesDirectory, helmChartManifest), filesList,
+            getManifestDirectoryForHelmChartWithSubCharts(manifestFilesDirectory, helmChartManifest), filesList,
             manifestOverrideFiles, releaseName, namespace, executionLogCallback, helmChartManifest.getHelmVersion(),
             timeoutInMillis, helmChartManifest.getHelmCommandFlag());
 
@@ -2869,7 +2869,7 @@ public class K8sTaskHelperBase {
 
   public List<FileData> renderTemplateForHelm(String helmPath, String manifestFilesDirectory, List<String> valuesFiles,
       String releaseName, String namespace, LogCallback executionLogCallback, HelmVersion helmVersion,
-      long timeoutInMillis, HelmCommandFlag helmCommandFlag) throws Exception {
+      long timeoutInMillis, HelmCommandFlag helmCommandFlag, String subChartName) throws Exception {
     String valuesFileOptions = createValuesFileOptions(manifestFilesDirectory, valuesFiles, executionLogCallback);
     log.info("Values file options: " + valuesFileOptions);
 
@@ -2892,7 +2892,14 @@ public class K8sTaskHelperBase {
             new HelmClientException(getErrorMessageIfProcessFailed("Failed to render template. ", processResult), USER,
                 HelmCliCommandType.RENDER_CHART));
       }
-      result.add(FileData.builder().fileName("manifest.yaml").fileContent(processResult.outputUTF8()).build());
+      int index = isEmpty(subChartName)
+          ? -1
+          : helmTaskHelperBase.checkForDependencyUpdateFlag(helmCommandFlag.getValueMap(), processResult.outputUTF8());
+      result.add(
+          FileData.builder()
+              .fileName("manifest.yaml")
+              .fileContent(index == -1 ? processResult.outputUTF8() : processResult.outputUTF8().substring(index))
+              .build());
     }
 
     return result;
@@ -3025,8 +3032,16 @@ public class K8sTaskHelperBase {
     if (GIT != helmChartManifest.getStoreDelegateConfig().getType()) {
       return HelmTaskHelperBase.getChartDirectory(baseManifestDirectory, helmChartManifest.getChartName());
     }
-
     return baseManifestDirectory;
+  }
+
+  private String getManifestDirectoryForHelmChartWithSubCharts(
+      String baseManifestDirectory, HelmChartManifestDelegateConfig helmChartManifest) {
+    String manifestDir = getManifestDirectoryForHelmChart(baseManifestDirectory, helmChartManifest);
+    if (isEmpty(helmChartManifest.getSubChartName())) {
+      return manifestDir;
+    }
+    return Paths.get(manifestDir, "charts", helmChartManifest.getSubChartName()).toString();
   }
 
   @NotNull
