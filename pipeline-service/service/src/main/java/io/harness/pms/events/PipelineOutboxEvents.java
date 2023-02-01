@@ -18,12 +18,4 @@ public class PipelineOutboxEvents {
   public static final String PIPELINE_CREATED = "PipelineCreated";
   public static final String PIPELINE_UPDATED = "PipelineUpdated";
   public static final String PIPELINE_DELETED = "PipelineDeleted";
-  public static final String PIPELINE_START = "PipelineStart";
-  public static final String PIPELINE_PAUSE = "PipelinePause";
-  public static final String PIPELINE_RESUME = "PipelineResume";
-  public static final String PIPELINE_END = "PipelineEnd";
-  public static final String PIPELINE_TIMEOUT = "PipelineTimeout";
-  public static final String PIPELINE_ABORT = "PipelineAbort";
-  public static final String STAGE_START = "StageStart";
-  public static final String STAGE_END = "StageEnd";
 }

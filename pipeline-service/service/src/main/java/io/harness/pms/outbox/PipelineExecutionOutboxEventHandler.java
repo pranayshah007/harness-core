@@ -16,9 +16,9 @@ import io.harness.audit.beans.ResourceDTO;
 import io.harness.audit.beans.ResourceScopeDTO;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
+import io.harness.engine.pms.events.PipelineExecutionOutboxEvents;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
-import io.harness.pms.events.PipelineOutboxEvents;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -70,9 +70,9 @@ public class PipelineExecutionOutboxEventHandler implements OutboxEventHandler {
   public boolean handle(OutboxEvent outboxEvent) {
     try {
       switch (outboxEvent.getEventType()) {
-        case PipelineOutboxEvents.PIPELINE_START:
+        case PipelineExecutionOutboxEvents.PIPELINE_START:
           return handlePipelineStartEvent(outboxEvent);
-        case PipelineOutboxEvents.PIPELINE_END:
+        case PipelineExecutionOutboxEvents.PIPELINE_END:
           return handlePipelineEndEvent(outboxEvent);
         default:
           return false;

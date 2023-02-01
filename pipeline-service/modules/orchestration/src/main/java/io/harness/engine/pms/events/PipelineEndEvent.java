@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.events;
+package io.harness.engine.pms.events;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
@@ -16,6 +16,7 @@ import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.ResourceScope;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.plan.TriggeredBy;
 
@@ -28,27 +29,31 @@ import lombok.NoArgsConstructor;
 @OwnedBy(PIPELINE)
 @Getter
 @NoArgsConstructor
-public class PipelineStartEvent implements Event {
+public class PipelineEndEvent implements Event {
   private String accountIdentifier;
   private String orgIdentifier;
   private String projectIdentifier;
   private String pipelineIdentifier;
-  private String pipelineExecutionUuid;
+  private String executionUuid;
   private TriggerType triggerType;
   private TriggeredBy triggeredBy;
+  private Status status;
   private Long startTs;
+  private Long endTs;
 
-  public PipelineStartEvent(String orgIdentifier, String accountIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String pipelineExecutionUuid, TriggerType triggerType, TriggeredBy triggeredBy,
-      Long startTs) {
+  public PipelineEndEvent(String orgIdentifier, String accountIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String executionUuid, TriggerType triggerType, TriggeredBy triggeredBy, Status status,
+      Long startTs, Long endTs) {
     this.orgIdentifier = orgIdentifier;
     this.accountIdentifier = accountIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.pipelineIdentifier = pipelineIdentifier;
-    this.pipelineExecutionUuid = pipelineExecutionUuid;
+    this.executionUuid = executionUuid;
     this.triggerType = triggerType;
     this.triggeredBy = triggeredBy;
+    this.status = status;
     this.startTs = startTs;
+    this.endTs = endTs;
   }
 
   @JsonIgnore
@@ -72,6 +77,6 @@ public class PipelineStartEvent implements Event {
   @JsonIgnore
   @Override
   public String getEventType() {
-    return PipelineOutboxEvents.PIPELINE_START;
+    return PipelineExecutionOutboxEvents.PIPELINE_END;
   }
 }

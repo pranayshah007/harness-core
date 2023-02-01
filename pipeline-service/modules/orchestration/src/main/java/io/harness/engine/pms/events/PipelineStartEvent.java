@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.events;
+package io.harness.engine.pms.events;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
@@ -16,6 +16,8 @@ import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.ResourceScope;
+import io.harness.pms.contracts.plan.TriggerType;
+import io.harness.pms.contracts.plan.TriggeredBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
@@ -26,20 +28,27 @@ import lombok.NoArgsConstructor;
 @OwnedBy(PIPELINE)
 @Getter
 @NoArgsConstructor
-public class PipelineTimeoutEvent implements Event {
+public class PipelineStartEvent implements Event {
   private String accountIdentifier;
   private String orgIdentifier;
   private String projectIdentifier;
   private String pipelineIdentifier;
   private String pipelineExecutionUuid;
+  private TriggerType triggerType;
+  private TriggeredBy triggeredBy;
+  private Long startTs;
 
-  public PipelineTimeoutEvent(String orgIdentifier, String accountIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String pipelineExecutionUuid) {
+  public PipelineStartEvent(String orgIdentifier, String accountIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String pipelineExecutionUuid, TriggerType triggerType, TriggeredBy triggeredBy,
+      Long startTs) {
     this.orgIdentifier = orgIdentifier;
     this.accountIdentifier = accountIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.pipelineIdentifier = pipelineIdentifier;
     this.pipelineExecutionUuid = pipelineExecutionUuid;
+    this.triggerType = triggerType;
+    this.triggeredBy = triggeredBy;
+    this.startTs = startTs;
   }
 
   @JsonIgnore
@@ -55,7 +64,7 @@ public class PipelineTimeoutEvent implements Event {
     labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, pipelineIdentifier);
     return Resource.builder()
         .identifier(pipelineIdentifier)
-        .type(ResourceTypeConstants.PIPELINE)
+        .type(ResourceTypeConstants.PIPELINE_EXECUTION)
         .labels(labels)
         .build();
   }
@@ -63,6 +72,6 @@ public class PipelineTimeoutEvent implements Event {
   @JsonIgnore
   @Override
   public String getEventType() {
-    return PipelineOutboxEvents.PIPELINE_TIMEOUT;
+    return PipelineExecutionOutboxEvents.PIPELINE_START;
   }
 }
