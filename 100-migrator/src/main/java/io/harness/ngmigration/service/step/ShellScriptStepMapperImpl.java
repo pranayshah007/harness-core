@@ -45,8 +45,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@Slf4j
 public class ShellScriptStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
@@ -97,7 +99,8 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     baseSetup(graphNode, shellScriptStepNode);
 
     if (StringUtils.isNotBlank(graphNode.getTemplateUuid())) {
-      throw new IllegalStateException("Trying to map template step to actual step");
+      log.error(String.format("Trying to link a step which is not a step template - %s", graphNode.getTemplateUuid()));
+      return null;
     }
 
     ExecutionTarget executionTarget = null;

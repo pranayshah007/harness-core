@@ -139,7 +139,8 @@ public class SerializerUtils {
         safeDirScript = "import subprocess\n"
             + "try:\n"
             + "\tsubprocess.run(['git', 'config', '--global', '--add', 'safe.directory', '*'])\n"
-            + "except:\n";
+            + "except:\n"
+            + "\tpass\n";
       } else {
         safeDirScript = "try\n"
             + "{\n"

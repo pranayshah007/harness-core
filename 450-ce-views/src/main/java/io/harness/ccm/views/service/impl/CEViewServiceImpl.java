@@ -304,7 +304,11 @@ public class CEViewServiceImpl implements CEViewService {
       filters.add(
           viewFilterBuilderHelper.getViewTimeFilter(startEndTime.getEndTime(), QLCEViewTimeFilterOperator.BEFORE));
 
-      QLCEViewTrendInfo trendData = viewsBillingService.getTrendStatsData(filters, totalCostAggregationFunction);
+      QLCEViewTrendInfo trendData =
+          viewsBillingService
+              .getTrendStatsDataNg(filters, Collections.emptyList(), totalCostAggregationFunction,
+                  viewsQueryHelper.buildQueryParams(ceView.getAccountId(), false))
+              .getTotalCost();
       double totalCost = trendData.getValue().doubleValue();
       log.info("Total cost of view {}", totalCost);
       return ceViewDao.updateTotalCost(ceView.getUuid(), ceView.getAccountId(), totalCost);

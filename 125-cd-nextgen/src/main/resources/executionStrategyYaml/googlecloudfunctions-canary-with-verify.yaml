@@ -1,0 +1,46 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - stepGroup:
+          name: Canary Deployment
+          identifier: canaryDepoyment
+          steps:
+            - step:
+                name: "Deploy Cloud Function With No Traffic"
+                identifier: deployCloudFunctionWithNoTraffic
+                type: DeployCloudFunctionWithNoTraffic
+                timeout: 10m
+                spec: {}
+            - step:
+                name: "Cloud Function Traffic Shift"
+                identifier: cloudFunctionTrafficShift
+                type: CloudFunctionTrafficShift
+                timeout: 10m
+                spec:
+                  trafficPercent: 10
+            - step:
+                type: Verify
+                name: Verify
+                identifier: Verify
+                timeout: 2h
+                spec: { }
+            - step:
+                name: "Cloud Function Traffic Shift"
+                identifier: cloudFunctionTrafficShift
+                type: CloudFunctionTrafficShift
+                timeout: 10m
+                spec:
+                  trafficPercent: 100
+    rollbackSteps:
+      - step:
+          name: "Rollback Cloud Function"
+          identifier: cloudFunctionRollback
+          type: CloudFunctionRollback
+          timeout: 10m
+          spec: {}

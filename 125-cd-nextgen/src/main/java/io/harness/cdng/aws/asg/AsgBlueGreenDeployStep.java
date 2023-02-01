@@ -15,8 +15,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployRequest;
@@ -66,6 +68,7 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
   @Inject private AsgStepCommonHelper asgStepCommonHelper;
   @Inject private AsgStepHelper asgStepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -200,15 +203,19 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
 
     AsgBlueGreenDeployOutcome asgBlueGreenDeployOutcome =
         AsgBlueGreenDeployOutcome.builder()
-            .autoScalingGroupContainer(asgBlueGreenDeployResult.getAutoScalingGroupContainer())
+            .prodAutoScalingGroupContainer(asgBlueGreenDeployResult.getProdAutoScalingGroupContainer())
             .build();
 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_BLUE_GREEN_DEPLOY_OUTCOME,
         asgBlueGreenDeployOutcome, StepOutcomeGroup.STEP.name());
 
-    // TODO saveServerInstancesIntoSweepingOutput
+    List<ServerInstanceInfo> serverInstanceInfos = asgStepCommonHelper.getServerInstanceInfos(
+        asgBlueGreenDeployResponse, infrastructureOutcome.getInfrastructureKey(),
+        asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance).getRegion());
+    StepResponse.StepOutcome stepOutcome =
+        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
 
-    return stepResponseBuilder.status(Status.SUCCEEDED).build();
+    return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
   }
 
   @Override

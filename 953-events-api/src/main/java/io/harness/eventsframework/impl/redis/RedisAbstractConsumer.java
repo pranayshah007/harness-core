@@ -24,6 +24,7 @@ import io.vavr.control.Try;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,7 +83,9 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
     RetryConfig retryConfig =
         RetryConfig.custom().intervalFunction(IntervalFunction.ofExponentialBackoff(1000, 1.5)).maxAttempts(5).build();
     this.retry = Retry.of("redisConsumer:" + topicName, retryConfig);
-    this.consumerGroupNames = stream.listGroups().stream().map(StreamGroup::getName).collect(Collectors.toSet());
+    this.consumerGroupNames = stream.isExists()
+        ? stream.listGroups().stream().map(StreamGroup::getName).collect(Collectors.toSet())
+        : new HashSet<>();
     createConsumerGroup();
   }
 
