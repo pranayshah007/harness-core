@@ -99,9 +99,6 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     log.info("ExecuteAsync called for CVNGStep");
-    String stepUuid = stepElementParameters.getUuid();
-    log.info("executeAsyncAfterRbac called with StepElementParameters {} StepInputPackage {}", stepElementParameters,
-        inputPackage);
     CVNGStepParameter stepParameters = (CVNGStepParameter) stepElementParameters.getSpec();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
@@ -128,7 +125,7 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
     String monitoredServiceTemplateIdentifier = resolvedCVConfigInfo.getMonitoredServiceTemplateIdentifier();
     String monitoredServiceTemplateVersionLabel = resolvedCVConfigInfo.getMonitoredServiceTemplateVersionLabel();
     List<CVConfig> cvConfigs = resolvedCVConfigInfo.getCvConfigs();
-    log.info("Step {} ResolvedCVConfigInfo {}", stepUuid, resolvedCVConfigInfo);
+    log.info("ResolvedCVConfigInfo {}", resolvedCVConfigInfo);
     Instant deploymentStartTime = Instant.ofEpochMilli(
         AmbianceUtils.getStageLevelFromAmbiance(ambiance)
             .orElseThrow(() -> new IllegalStateException("verify step needs to be part of a stage."))
@@ -146,18 +143,14 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
                                       .status(CVNGStepTask.Status.IN_PROGRESS)
                                       .deploymentStartTime(deploymentStartTime)
                                       .build();
-      log.info("Step {} creating CVNGStepTask", stepUuid);
       cvngStepTaskService.create(cvngStepTask);
       return AsyncExecutableResponse.newBuilder().addCallbackIds(cvngStepTaskBuilder.build().getCallbackId()).build();
     } else {
       String verificationJobInstanceId;
-      log.info("Step {} getDeploymentActivity called", stepUuid);
       DeploymentActivity activity = getDeploymentActivity(stepParameters, serviceEnvironmentParams, ambiance,
           deploymentStartTime, monitoredServiceIdentifier, monitoredServiceTemplateIdentifier,
           monitoredServiceTemplateVersionLabel, cvConfigs);
-      log.info("Step {} getDeploymentActivity returned with activity {}", stepUuid, activity);
       boolean isDemoEnabled = isDemoEnabled(accountId, ambiance);
-      log.info("Step {} isDemoEnabled {}", stepUuid, isDemoEnabled);
       boolean shouldFailVerification = false;
       if (isDemoEnabled) {
         shouldFailVerification = shouldFailVerification(ambiance, stepParameters.getSensitivity());
@@ -177,18 +170,12 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
             getVerificationJobInstanceBuilder(AmbianceUtils.obtainCurrentLevel(ambiance).getIdentifier(),
                 stepParameters, serviceEnvironmentParams, deploymentStartTime, monitoredServiceIdentifier,
                 monitoredServiceTemplateIdentifier, monitoredServiceTemplateVersionLabel, cvConfigs);
-        log.info("Step {} fillInVerificationJobInstanceDetails called", stepUuid);
         activity.fillInVerificationJobInstanceDetails(verificationJobInstanceBuilder);
-        log.info("Step {} creating VerificationJobInstance", stepUuid);
         verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstanceBuilder.build());
       }
-      log.info("Step {} managePerpetualTasks called", stepUuid);
       verifyStepCvConfigServiceMap.get(monitoredServiceType)
           .managePerpetualTasks(serviceEnvironmentParams, resolvedCVConfigInfo, verificationJobInstanceId);
-      log.info("Step {} setVerificationJobInstanceIds called with verificationJobInstanceId {}", stepUuid,
-          verificationJobInstanceId);
       activity.setVerificationJobInstanceIds(Arrays.asList(verificationJobInstanceId));
-      log.info("Step {} creating DeploymentActivity", stepUuid);
       String activityId = activityService.upsert(activity);
       CVNGStepTask cvngStepTask = CVNGStepTask.builder()
                                       .accountId(serviceEnvironmentParams.getAccountIdentifier())
@@ -202,7 +189,6 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
                                       .callbackId(verificationJobInstanceId)
                                       .verificationJobInstanceId(verificationJobInstanceId)
                                       .build();
-      log.info("Step {} creating CVNGStepTask", stepUuid);
       cvngStepTaskService.create(cvngStepTask);
       if (isDemoEnabled && !shouldFailVerification) {
         sideKickService.schedule(DemoActivitySideKickData.builder().deploymentActivityId(activityId).build(),

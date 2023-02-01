@@ -22,10 +22,7 @@ import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
-import lombok.extern.slf4j.Slf4j;
-
 @Singleton
-@Slf4j
 public class CVNGStepTaskHandler implements MongoPersistenceIterator.Handler<CVNGStepTask> {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MorphiaPersistenceProvider<CVNGStepTask> persistenceProvider;
@@ -52,7 +49,6 @@ public class CVNGStepTaskHandler implements MongoPersistenceIterator.Handler<CVN
   }
   @Override
   public void handle(CVNGStepTask entity) {
-    log.info("handle called for CVNGStepTask {}", entity.toString());
     cvngStepTaskService.notifyCVNGStep(entity);
   }
 }

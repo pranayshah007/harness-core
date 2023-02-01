@@ -70,7 +70,6 @@ public class CVNGStepTaskServiceImpl implements CVNGStepTaskService {
 
   @Override
   public void notifyCVNGStep(CVNGStepTask entity) {
-    log.info("notifyCVNGStep called {}", entity.toString());
     if (entity.isSkip()) {
       waitNotifyEngine.doneWith(entity.getCallbackId(), CVNGResponseData.builder().skip(true).build());
       markDone(entity.getUuid());
