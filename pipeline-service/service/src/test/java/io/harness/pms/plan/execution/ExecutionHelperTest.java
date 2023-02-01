@@ -450,7 +450,17 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(pipelineGovernanceService, times(1))
         .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYamlForS2, true);
 
-    buildExecutionMetadataVerifications(pipelineEntity);
+    verify(principalInfoHelper, times(1)).getPrincipalInfoFromSecurityContext();
+    verify(pmsGitSyncHelper, times(1))
+        .getGitSyncBranchContextBytesThreadLocal(pipelineEntity, pipelineEntity.getStoreType(), null);
+    verify(pmsYamlSchemaService, times(1)).validateYamlSchema(accountId, orgId, projectId, mergedPipelineYamlForS2);
+    if (pipelineEntity.getStoreType() != StoreType.REMOTE) {
+      verify(pipelineRbacServiceImpl, times(1))
+          .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, mergedPipelineYaml);
+    }
+    verify(pipelineRbacServiceImpl, times(0))
+        .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, pipelineYaml);
+    verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());
   }
 
   @Test
@@ -491,7 +501,7 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(principalInfoHelper, times(1)).getPrincipalInfoFromSecurityContext();
     verify(pmsGitSyncHelper, times(1))
         .getGitSyncBranchContextBytesThreadLocal(pipelineEntityWithExpressions, null, null);
-    verify(pmsYamlSchemaService, times(1)).validateYamlSchema(accountId, orgId, projectId, pipelineYamlWithExpressions);
+    verify(pmsYamlSchemaService, times(1)).validateYamlSchema(accountId, orgId, projectId, mergedPipelineYamlForS2);
     verify(pipelineRbacServiceImpl, times(1))
         .extractAndValidateStaticallyReferredEntities(
             accountId, orgId, projectId, pipelineId, pipelineYamlWithExpressions);
@@ -561,7 +571,7 @@ public class ExecutionHelperTest extends CategoryTest {
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
                                         .build();
-    executionHelper.getPipelineYamlAndValidate(mergedRuntimeInputYaml, pipelineEntity);
+    executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities(mergedRuntimeInputYaml, pipelineEntity);
     verify(pipelineRbacServiceImpl, times(1))
         .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, mergedRuntimeInputYaml);
     verify(pipelineRbacServiceImpl, times(0))
@@ -582,11 +592,6 @@ public class ExecutionHelperTest extends CategoryTest {
         + "  - stage:\n"
         + "      identifier: \"s1\"\n"
         + "      description: \"a\"\n";
-    String mergedYamlWithoutValidators = "pipeline:\n"
-        + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "      description: \"a\"\n";
     String mergedYamlWithValidators = "pipeline:\n"
         + "  stages:\n"
         + "  - stage:\n"
@@ -598,11 +603,10 @@ public class ExecutionHelperTest extends CategoryTest {
                                         .projectIdentifier(projectId)
                                         .yaml(pipelineYamlWithAllowedValues)
                                         .build();
-    TemplateMergeResponseDTO response = executionHelper.getPipelineYamlAndValidate(runtimeInputYaml, pipelineEntity);
+    TemplateMergeResponseDTO response =
+        executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities(runtimeInputYaml, pipelineEntity);
     assertThat(response.getMergedPipelineYaml()).isEqualTo(mergedYamlWithValidators);
     assertThat(response.getMergedPipelineYamlWithTemplateRef()).isEqualTo(mergedYamlWithValidators);
-    verify(pmsYamlSchemaService, times(0)).validateYamlSchema(accountId, orgId, projectId, mergedYamlWithValidators);
-    verify(pmsYamlSchemaService, times(1)).validateYamlSchema(accountId, orgId, projectId, mergedYamlWithoutValidators);
   }
 
   @Test
@@ -618,7 +622,7 @@ public class ExecutionHelperTest extends CategoryTest {
                                 .runSequence(394)
                                 .storeType(StoreType.INLINE)
                                 .build();
-    executionHelper.getPipelineYamlAndValidate("", inline);
+    executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities("", inline);
 
     doThrow(
         new InvalidRequestException(
@@ -634,7 +638,7 @@ public class ExecutionHelperTest extends CategoryTest {
                                 .runSequence(394)
                                 .storeType(StoreType.REMOTE)
                                 .build();
-    executionHelper.getPipelineYamlAndValidate("", remote);
+    executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities("", remote);
   }
 
   @Test
@@ -650,7 +654,8 @@ public class ExecutionHelperTest extends CategoryTest {
                                         .projectIdentifier(projectId)
                                         .yaml(pipelineYaml)
                                         .build();
-    assertThatThrownBy(() -> executionHelper.getPipelineYamlAndValidate(inputSetYaml, pipelineEntity))
+    assertThatThrownBy(
+        () -> executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities(inputSetYaml, pipelineEntity))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -680,7 +685,8 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
             pipelineEntity.getProjectIdentifier(), yamlWithTempRef, true, false, BOOLEAN_FALSE_VALUE);
-    TemplateMergeResponseDTO templateMergeResponseDTO = executionHelper.getPipelineYamlAndValidate("", pipelineEntity);
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities("", pipelineEntity);
     assertThat(templateMergeResponseDTO.getMergedPipelineYaml())
         .isEqualTo(templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef());
   }

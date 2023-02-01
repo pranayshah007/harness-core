@@ -192,7 +192,9 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     String logKey = getLogKey(ambiance);
     String taskId;
 
-    if (ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, AmbianceUtils.getAccountId(ambiance))) {
+    boolean queueConcurrencyEnabled =
+        ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, AmbianceUtils.getAccountId(ambiance));
+    if (queueConcurrencyEnabled) {
       log.info("start executeAsyncAfterRbac for initialize step with queue");
       taskId = generateUuid();
       String topic = "ci";
@@ -223,11 +225,16 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     sdkGraphVisualizationDataService.publishStepDetailInformation(
         ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
-    return AsyncExecutableResponse.newBuilder()
-        .setStatus(Status.QUEUED_LICENSE_LIMIT_REACHED)
-        .addCallbackIds(taskId)
-        .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))
-        .build();
+    AsyncExecutableResponse.Builder responseBuilder =
+        AsyncExecutableResponse.newBuilder().addCallbackIds(taskId).addAllLogKeys(
+            CollectionUtils.emptyIfNull(singletonList(logKey)));
+
+    // Sending the status if feature flag is enabled
+    if (queueConcurrencyEnabled) {
+      return responseBuilder.setStatus(Status.QUEUED_LICENSE_LIMIT_REACHED).build();
+    }
+
+    return responseBuilder.build();
   }
 
   public String executeBuild(Ambiance ambiance, StepElementParameters stepParameters) {

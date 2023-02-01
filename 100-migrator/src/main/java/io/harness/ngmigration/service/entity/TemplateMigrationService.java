@@ -206,7 +206,7 @@ public class TemplateMigrationService extends NgMigrationService {
       }
       return YamlUtils.read(response.getYaml(), NGTemplateConfig.class);
     } catch (Exception ex) {
-      log.error("Error when getting templates - ", ex);
+      log.warn("Error when getting templates - ", ex);
       return null;
     }
   }

@@ -255,7 +255,8 @@ public class HelmChartServiceTest extends WingsBaseTest {
   public void testFetchChartsFromRepo() throws InterruptedException {
     HelmChart helmChart2 = generateHelmChartWithVersion("2.1");
     when(delegateService.executeTaskV2(any()))
-        .thenReturn(HelmCollectChartResponse.builder().helmCharts(asList(helmChart, helmChart2)).build());
+        .thenReturn(
+            HelmCollectChartResponse.builder().helmCharts(asList(helmChart.toDto(), helmChart2.toDto())).build());
     when(manifestCollectionUtils.prepareCollectTaskParamsWithChartVersion(
              APPLICATION_MANIFEST_ID, APP_ID, HelmChartCollectionType.ALL, null))
         .thenReturn(HelmChartCollectionParams.builder()
@@ -301,7 +302,7 @@ public class HelmChartServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testFetchChartByVersion() throws InterruptedException {
     when(delegateService.executeTaskV2(any()))
-        .thenReturn(HelmCollectChartResponse.builder().helmCharts(asList(helmChart)).build());
+        .thenReturn(HelmCollectChartResponse.builder().helmCharts(asList(helmChart.toDto())).build());
     when(manifestCollectionUtils.prepareCollectTaskParamsWithChartVersion(
              APPLICATION_MANIFEST_ID, APP_ID, HelmChartCollectionType.SPECIFIC_VERSION, helmChart.getVersion()))
         .thenReturn(HelmChartCollectionParams.builder()
@@ -315,6 +316,9 @@ public class HelmChartServiceTest extends WingsBaseTest {
         .thenReturn(applicationManifest);
     HelmChart helmChartReturned = helmChartService.fetchByChartVersion(
         ACCOUNT_ID, APP_ID, SERVICE_ID, APPLICATION_MANIFEST_ID, helmChart.getVersion());
+    // since now dto is passed in delegateService.executeTask in this test, createdAt and lastUpdatedAt will not be set
+    helmChart.setCreatedAt(helmChartReturned.getCreatedAt());
+    helmChart.setLastUpdatedAt(helmChartReturned.getLastUpdatedAt());
     assertThat(helmChartReturned).isEqualTo(helmChart);
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     verify(delegateService).executeTaskV2(delegateTaskArgumentCaptor.capture());

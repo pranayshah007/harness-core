@@ -32,7 +32,9 @@ import io.harness.spotinst.model.SpotInstListElastiGroupsResponse;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.inject.Singleton;
+import java.io.IOException;
 import java.lang.reflect.Type;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -40,6 +42,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.FailsafeException;
+import net.jodah.failsafe.RetryPolicy;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.Retrofit;
@@ -60,12 +66,30 @@ public class SpotInstHelperServiceDelegateImpl implements SpotInstHelperServiceD
     return retrofit.create(SpotInstRestClient.class);
   }
 
-  private <T> T executeRestCall(Call<T> restRequest) throws Exception {
-    Response<T> restResponse = restRequest.execute();
-    if (!restResponse.isSuccessful()) {
-      throw new WingsException(restResponse.errorBody().string(), EnumSet.of(ReportTarget.UNIVERSAL));
+  public static <T> T executeRestCall(Call<T> restRequest) {
+    RetryPolicy<Response<T>> retryPolicy =
+        new RetryPolicy<Response<T>>()
+            .withBackoff(1, 20, ChronoUnit.SECONDS)
+            .withMaxAttempts(5)
+            .handle(IOException.class)
+            .onRetry(e -> log.warn("Failure #{}. Retrying. Exception {}", e.getAttemptCount(), e.getLastFailure()))
+            .onRetriesExceeded(e -> log.warn("Failed to connect. Max retries exceeded"));
+
+    try {
+      Response<T> response = Failsafe.with(retryPolicy).get(() -> restRequest.clone().execute());
+      if (!response.isSuccessful()) {
+        String error = null;
+        try (ResponseBody responseBody = response.errorBody()) {
+          if (null != responseBody) {
+            error = responseBody.string();
+          }
+        }
+        throw new WingsException(error, EnumSet.of(ReportTarget.UNIVERSAL));
+      }
+      return response.body();
+    } catch (FailsafeException | IOException ex) {
+      throw new WingsException("Failsafe failure", ex.getCause());
     }
-    return restResponse.body();
   }
 
   private String getAuthToken(String spotInstToken) {

@@ -28,6 +28,10 @@ public interface EntitySetupUsageService {
   Page<EntitySetupUsageDTO> listAllEntityUsage(int page, int size, String accountIdentifier, String referredEntityFQN,
       EntityType referredEntityType, EntityType referredByEntityType, String searchTerm, Sort sort);
 
+  Page<EntitySetupUsageDTO> listAllEntityUsageWithSupportForTwoFqnForASingleEntity(int page, int size,
+      String accountIdentifier, String referredEntityFQN1, String referredEntityFQN2, EntityType referredEntityType,
+      String searchTerm);
+
   List<EntitySetupUsageDTO> listAllReferredUsages(int page, int size, String accountIdentifier,
       String referredByEntityFQN, EntityType referredEntityType, String searchTerm);
 

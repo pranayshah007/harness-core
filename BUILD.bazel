@@ -88,6 +88,21 @@ go_path(
 ########################################  JAVA Starts Here    ##########################################
 ########################################################################################################
 
+load(
+    "@bazel_tools//tools/jdk:default_java_toolchain.bzl",
+    "BASE_JDK9_JVM_OPTS",
+    "DEFAULT_TOOLCHAIN_CONFIGURATION",
+    "default_java_toolchain",
+)
+
+default_java_toolchain(
+    name = "harness_no_fdLimit_jdk11_toolchain",
+    configuration = DEFAULT_TOOLCHAIN_CONFIGURATION,  # One of predefined configurations
+    jvm_opts = BASE_JDK9_JVM_OPTS + ["-XX:-MaxFDLimit"],  # Additional JDK options
+    source_version = "11",
+    target_version = "11",
+)
+
 java_plugin(
     name = "lombok_plugin",
     processor_class = "lombok.launch.AnnotationProcessorHider$AnnotationProcessor",

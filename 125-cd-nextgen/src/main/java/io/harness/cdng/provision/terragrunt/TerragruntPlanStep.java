@@ -135,6 +135,8 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
     builder.accountId(accountId);
     String entityId = helper.generateFullIdentifier(
         ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance);
+    builder.tgModuleSourceInheritSSH(
+        helper.isExportCredentialForSourceModule(configuration.getConfigFiles(), stepParameters.getType()));
     ParameterField<Boolean> exportTgPlanJsonField = planStepParameters.getConfiguration().getExportTerragruntPlanJson();
 
     builder.entityId(entityId)

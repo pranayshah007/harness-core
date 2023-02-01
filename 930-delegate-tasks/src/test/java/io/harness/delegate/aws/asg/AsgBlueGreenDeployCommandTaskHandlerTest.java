@@ -107,7 +107,7 @@ public class AsgBlueGreenDeployCommandTaskHandlerTest extends CategoryTest {
 
     AsgBlueGreenDeployResult result = response.getAsgBlueGreenDeployResult();
 
-    assertThat(result.getAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME);
+    assertThat(result.getProdAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME);
   }
 
   @Test
@@ -124,7 +124,7 @@ public class AsgBlueGreenDeployCommandTaskHandlerTest extends CategoryTest {
 
     AsgBlueGreenDeployResult result = response.getAsgBlueGreenDeployResult();
 
-    assertThat(result.getAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME);
+    assertThat(result.getProdAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME);
   }
 
   private AsgLoadBalancerConfig getAsgLoadBalancerConfig() {

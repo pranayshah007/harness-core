@@ -1843,7 +1843,7 @@
 71103:io.harness.logging.LogLevel
 71104:software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse
 71105:software.wings.delegatetasks.manifest.ManifestCollectionResponse
-71106:software.wings.beans.appmanifest.HelmChart
+71106:software.wings.beans.dto.HelmChart
 71111:software.wings.helpers.ext.helm.response.HelmCollectChartResponse
 71123:java.time.ZonedDateTime
 72100:software.wings.beans.GcpSecretsManagerConfig
@@ -2407,7 +2407,7 @@
 573596:io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceRequest
 573597:io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResponse
 573598:io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResult
-
+573599:io.harness.delegate.beans.instancesync.info.AsgServerInstanceInfo
 573600:io.harness.delegate.exception.ElastigroupNGException
 573601:io.harness.delegate.task.elastigroup.response.SpotInstConfig
 573602:io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse

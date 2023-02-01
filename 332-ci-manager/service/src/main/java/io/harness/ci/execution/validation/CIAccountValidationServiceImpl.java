@@ -8,6 +8,7 @@
 package io.harness.ci.validation;
 
 import io.harness.account.AccountClient;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ng.core.account.AccountTrustLevel;
 import io.harness.ng.core.user.UserInfo;
@@ -18,35 +19,46 @@ import com.google.inject.Inject;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
 public class CIAccountValidationServiceImpl implements CIAccountValidationService {
   @Inject private CIMiningPatternJob ciMiningPatternJob;
   @Inject private UserClient userClient;
   @Inject private AccountClient accountClient;
+  @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
 
   @Inject
   public CIAccountValidationServiceImpl() {}
 
   @Override
   public boolean isAccountValidForExecution(String accountId) {
-    Integer trustLevel = CGRestUtils.getResponse(accountClient.getAccountTrustLevel(accountId));
+    Integer trustLevel = AccountTrustLevel.UNINITIALIZED;
+    try {
+      trustLevel = CGRestUtils.getResponse(accountClient.getAccountTrustLevel(accountId));
 
-    if (AccountTrustLevel.UNINITIALIZED.equals(trustLevel)) {
-      trustLevel = initializeAccountTrustLevel(accountId);
-      Boolean result = CGRestUtils.getResponse(accountClient.updateAccountTrustLevel(accountId, trustLevel));
-      if (result == false) {
-        throw new CIStageExecutionException("Account is not trusted for CI build. Please reach support@harness.io");
+      if (AccountTrustLevel.UNINITIALIZED.equals(trustLevel)) {
+        trustLevel = initializeAccountTrustLevel(accountId);
+        Boolean result = CGRestUtils.getResponse(accountClient.updateAccountTrustLevel(accountId, trustLevel));
+        if (result == false) {
+          log.info("Error updating account trust level");
+        }
       }
+    } catch (Exception e) {
+      log.info("Error retrieving account trust level. Proceeding as regular. {}", e);
+      trustLevel = AccountTrustLevel.BASIC_USER;
     }
 
-    if (trustLevel.equals(AccountTrustLevel.NEW_USER)) {
-      throw new CIStageExecutionException("Account is not trusted for CI build. Please reach support@harness.io");
+    if (trustLevel < AccountTrustLevel.BASIC_USER) {
+      throw new CIStageExecutionException("Account is not trusted for CI builds. Please reach support@harness.io");
     }
 
     return true;
   }
 
   private Integer initializeAccountTrustLevel(String accountId) {
+    if (ciExecutionServiceConfig.isLocal()) {
+      return AccountTrustLevel.BASIC_USER;
+    }
     Set<String> domains = ciMiningPatternJob.getValidDomains();
 
     List<UserInfo> users = CGRestUtils.getResponse(userClient.listUsersEmails(accountId));

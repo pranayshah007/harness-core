@@ -91,7 +91,7 @@ public interface TerraformBaseHelper {
 
   String getBaseDir(String entityId);
 
-  void configureCredentialsForModuleSource(TerraformTaskNGParameters taskParameters,
+  void configureCredentialsForModuleSource(String baseDir, Map<String, String> envVars,
       GitStoreDelegateConfig conFileFileGitStore, LogCallback logCallback) throws IOException;
 
   String uploadTfPlanJson(String accountId, String delegateId, String taskId, String entityId, String planName,

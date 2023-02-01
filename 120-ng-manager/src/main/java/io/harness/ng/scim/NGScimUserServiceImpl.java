@@ -345,11 +345,12 @@ public class NGScimUserServiceImpl implements ScimUserService {
     if (CGRestUtils.getResponse(
             accountClient.isFeatureFlagEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM.name(), accountId))
         && "userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
-        && !userMetadataDTO.getEmail().equals(patchOperation.getValue(String.class))) {
-      userMetadataDTO.setEmail(patchOperation.getValue(String.class));
+        && !userMetadataDTO.getEmail().equalsIgnoreCase(patchOperation.getValue(String.class))) {
+      String updatedEmail = patchOperation.getValue(String.class).toLowerCase();
+      userMetadataDTO.setEmail(updatedEmail);
       userMetadataDTO.setExternallyManaged(true);
       ngUserService.updateUserMetadata(userMetadataDTO);
-      log.info("SCIM: Updated user's {}, email to id: {}", userId, patchOperation.getValue(String.class));
+      log.info("SCIM: Updated user's {}, email to id: {}", userId, updatedEmail);
     }
 
     if (patchOperation.getValue(ScimMultiValuedObject.class) != null
@@ -393,7 +394,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
   private boolean shouldUpdateUser(ScimUser userQuery, UserMetadataDTO user) {
     return user.isDisabled() || !StringUtils.equals(user.getName(), userQuery.getDisplayName())
-        || !StringUtils.equals(user.getEmail(), userQuery.getUserName());
+        || !StringUtils.equalsIgnoreCase(user.getEmail(), userQuery.getUserName());
   }
 
   private ScimUser buildUserResponse(UserInfo user) {

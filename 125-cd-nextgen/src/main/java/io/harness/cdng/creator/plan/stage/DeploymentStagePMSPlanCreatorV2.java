@@ -352,7 +352,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         && ParameterField.isNotNull(deploymentStageConfig.getService().getServiceRef());
     boolean serviceV2UseFromStage = deploymentStageConfig.getService() != null
         && deploymentStageConfig.getService().getUseFromStage() != null
-        && EmptyPredicate.isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getStage());
+        && deploymentStageConfig.getService().getUseFromStage().getValue() != null
+        && EmptyPredicate.isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getValue().getStage());
     boolean isServices = deploymentStageConfig.getServices() != null;
     return isServices || isServiceV2 || serviceV2UseFromStage;
   }

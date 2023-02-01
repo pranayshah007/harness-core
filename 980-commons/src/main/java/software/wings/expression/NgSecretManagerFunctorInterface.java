@@ -11,4 +11,6 @@ package software.wings.expression;
 public interface NgSecretManagerFunctorInterface {
   String FUNCTOR_NAME = "ngSecretManager";
   Object obtain(String secretIdentifier, int token);
+  Object obtainSecretFileAsString(String secretIdentifier, int token);
+  Object obtainSecretFileAsBase64(String secretIdentifier, int token);
 }

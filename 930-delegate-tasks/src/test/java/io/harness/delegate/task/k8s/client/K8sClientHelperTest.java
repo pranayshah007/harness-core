@@ -22,6 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
@@ -61,8 +62,11 @@ public class K8sClientHelperTest extends CategoryTest {
     resourceIds = List.of(KubernetesResourceId.builder().name("some-resource-name").namespace("ns1").build(),
         KubernetesResourceId.builder().name("some-other-resource-name").namespace("ns1").build());
     K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().build();
-    k8sSteadyStateDTO =
-        K8sSteadyStateDTO.builder().resourceIds(resourceIds).k8sDelegateTaskParams(k8sDelegateTaskParams).build();
+    k8sSteadyStateDTO = K8sSteadyStateDTO.builder()
+                            .resourceIds(resourceIds)
+                            .k8sDelegateTaskParams(k8sDelegateTaskParams)
+                            .request(K8sRollingDeployRequest.builder().releaseName("releaseName").build())
+                            .build();
   }
 
   @Test

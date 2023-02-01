@@ -10,6 +10,8 @@ package io.harness.ng.core.entitysetupusage.resource;
 import static io.harness.NGConstants.REFERRED_BY_ENTITY_FQN;
 import static io.harness.NGConstants.REFERRED_BY_ENTITY_TYPE;
 import static io.harness.NGConstants.REFERRED_ENTITY_FQN;
+import static io.harness.NGConstants.REFERRED_ENTITY_FQN1;
+import static io.harness.NGConstants.REFERRED_ENTITY_FQN2;
 import static io.harness.NGConstants.REFERRED_ENTITY_TYPE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
@@ -84,6 +86,22 @@ public class EntitySetupUsageResource {
       @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
     return ResponseDTO.newResponse(entitySetupUsageService.listAllEntityUsage(
         page, size, accountIdentifier, referredEntityFQN, entityType, searchTerm));
+  }
+
+  @GET
+  @Path("internal/listAllEntityUsageV2With2Fqn")
+  @ApiOperation(value = "Get Entities referring this resource if fqns are provided",
+      nickname = "listAllEntityUsageWithTwoFqns", hidden = true)
+  public ResponseDTO<Page<EntitySetupUsageDTO>>
+  listAllEntityUsageWith2Fqns(@QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(REFERRED_ENTITY_FQN1) String referredEntityFQN1,
+      @NotNull @QueryParam(REFERRED_ENTITY_FQN2) String referredEntityFQN2,
+      @QueryParam(REFERRED_ENTITY_TYPE) EntityType entityType,
+      @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
+    return ResponseDTO.newResponse(entitySetupUsageService.listAllEntityUsageWithSupportForTwoFqnForASingleEntity(
+        page, size, accountIdentifier, referredEntityFQN1, referredEntityFQN2, entityType, searchTerm));
   }
 
   @GET
