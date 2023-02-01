@@ -17,6 +17,7 @@ import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
+import io.harness.cdng.creator.plan.rollback.DeploymentStageRollbackPlanCreator;
 import io.harness.cdng.creator.plan.service.ServiceAllInOnePlanCreatorUtils;
 import io.harness.cdng.creator.plan.service.ServicePlanCreatorHelper;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
@@ -212,6 +213,11 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       builder.executionInputTemplate(ctx.getExecutionInputTemplate());
     }
     return builder.build();
+  }
+
+  @Override
+  protected PlanCreationResponse createPlanForRollback(PlanCreationContext ctx, DeploymentStageNode config) {
+    return DeploymentStageRollbackPlanCreator.createPlanForRollbackFromStageField(ctx.getCurrentField());
   }
 
   public String getIdentifierWithExpression(PlanCreationContext ctx, DeploymentStageNode node, String identifier) {

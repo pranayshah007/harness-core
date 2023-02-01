@@ -8,6 +8,7 @@
 package io.harness.cdng.creator.plan.stage;
 
 import static io.harness.cdng.service.beans.ServiceDefinitionType.KUBERNETES;
+import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static java.util.Arrays.asList;
@@ -28,6 +29,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
+import io.harness.cdng.creator.plan.rollback.DeploymentStageRollbackPlanCreator;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.filters.Entity;
 import io.harness.cdng.environment.filters.FilterType;
@@ -92,6 +94,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -546,5 +550,22 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                .build();
     assertThat(deploymentStagePMSPlanCreator.getIdentifierWithExpression(context, node, "id1"))
         .isEqualTo("id1<+strategy.identifierPostFix>");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testCreatePlanForRollback() throws IOException {
+    String yaml = "Pipeline: YAML";
+    YamlField yamlField = YamlUtils.injectUuidInYamlField(yaml);
+    PlanCreationContext ctx = PlanCreationContext.builder().build();
+    ctx.setCurrentField(yamlField);
+    MockedStatic<DeploymentStageRollbackPlanCreator> mockSettings =
+        Mockito.mockStatic(DeploymentStageRollbackPlanCreator.class);
+    PlanCreationResponse dummy =
+        PlanCreationResponse.builder().planNode(PlanNode.builder().uuid("uuid").build()).build();
+    when(DeploymentStageRollbackPlanCreator.createPlanForRollbackFromStageField(yamlField)).thenReturn(dummy);
+    assertThat(deploymentStagePMSPlanCreator.createPlanForRollback(ctx, null)).isEqualTo(dummy);
+    mockSettings.close();
   }
 }

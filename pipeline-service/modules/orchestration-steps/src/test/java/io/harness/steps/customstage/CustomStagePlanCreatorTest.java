@@ -7,6 +7,7 @@
 
 package io.harness.steps.customstage;
 
+import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,7 +15,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.category.element.UnitTests;
+import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
@@ -25,6 +28,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 import org.junit.Before;
 import org.junit.Rule;
@@ -95,5 +99,27 @@ public class CustomStagePlanCreatorTest {
     customStageNode.setUuid("tempid");
     doReturn("temp".getBytes()).when(kryoSerializer).asDeflatedBytes(any());
     assertThat(customStagePlanCreator.createPlanForChildrenNodes(ctx, customStageNode)).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testCreatePlanForRollback() throws IOException {
+    String yamlWithUuid = YamlUtils.injectUuid(SOURCE_PIPELINE_YAML);
+    YamlField fullYamlFieldWithUuiD = YamlUtils.injectUuidInYamlField(yamlWithUuid);
+    PlanCreationContext ctx = PlanCreationContext.builder().yaml(yamlWithUuid).build();
+    ctx.setCurrentField(fullYamlFieldWithUuiD);
+    CustomStageNode customStageNode = new CustomStageNode();
+    customStageNode.setUuid("tempid");
+    doReturn("temp".getBytes()).when(kryoSerializer).asDeflatedBytes(any());
+    PlanCreationResponse planForField = customStagePlanCreator.createPlanForField(ctx, customStageNode);
+    assertThat(planForField).isNotNull();
+    Map<String, PlanNode> nodes = planForField.getNodes();
+    assertThat(nodes).hasSize(2);
+    PlanNode planNode = nodes.get("tempid_combinedRollback");
+    assertThat(planNode).isNotNull();
+    assertThat(planNode.getUuid()).isEqualTo("tempid_combinedRollback");
+    assertThat(planNode.getStepType().getType()).isEqualTo("NOOP");
+    assertThat(planNode.isSkipUnresolvedExpressionsCheck()).isTrue();
   }
 }

@@ -13,12 +13,17 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
+import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
+import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -27,6 +32,7 @@ import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.common.noop.NoopStep;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -56,6 +62,34 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
       return Collections.emptyMap();
     }
     return Collections.singletonMap(YAMLFieldNameConstants.STAGE, stageTypes);
+  }
+
+  @Override
+  public PlanCreationResponse createPlanForField(PlanCreationContext ctx, T config) {
+    PlanCreationResponse planCreationResponse = super.createPlanForField(ctx, config);
+    PlanCreationResponse rollbackPlan = createPlanForRollback(ctx, config);
+    planCreationResponse.merge(rollbackPlan);
+    return planCreationResponse;
+  }
+
+  protected PlanCreationResponse createPlanForRollback(PlanCreationContext ctx, T config) {
+    // RollbackStagePlanCreator assumes that its child we be a node with uuid = (config.getUuid() +
+    // NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX)
+    PlanNode noopRollbackStepsNode =
+        PlanNode.builder()
+            .uuid(config.getUuid() + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX)
+            .name(NGCommonUtilPlanCreationConstants.ROLLBACK_NODE_NAME)
+            .identifier(YAMLFieldNameConstants.ROLLBACK_STEPS)
+            .stepType(NoopStep.STEP_TYPE)
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                    .build())
+            .skipExpressionChain(true)
+            .skipGraphType(SkipType.SKIP_NODE)
+            .build();
+
+    return PlanCreationResponse.builder().node(noopRollbackStepsNode.getUuid(), noopRollbackStepsNode).build();
   }
 
   @Override

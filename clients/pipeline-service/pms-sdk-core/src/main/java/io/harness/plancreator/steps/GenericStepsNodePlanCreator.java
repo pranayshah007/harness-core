@@ -20,7 +20,9 @@ import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.serializer.KryoSerializer;
 
+import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -30,6 +32,8 @@ import java.util.Set;
 
 @OwnedBy(PIPELINE)
 public abstract class GenericStepsNodePlanCreator extends ChildrenPlanCreator<StepsExecutionConfig> {
+  @Inject protected KryoSerializer kryoSerializer;
+
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, StepsExecutionConfig config) {
