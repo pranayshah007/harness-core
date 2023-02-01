@@ -23,18 +23,20 @@ import io.harness.pms.contracts.plan.TriggeredBy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.Getter;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @OwnedBy(PIPELINE)
-@Getter
+@Data
+@Builder
 @NoArgsConstructor
 public class PipelineEndEvent implements Event {
   private String accountIdentifier;
   private String orgIdentifier;
   private String projectIdentifier;
   private String pipelineIdentifier;
-  private String executionUuid;
+  private String pipelineExecutionUuid;
   private TriggerType triggerType;
   private TriggeredBy triggeredBy;
   private Status status;
@@ -48,7 +50,7 @@ public class PipelineEndEvent implements Event {
     this.accountIdentifier = accountIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.pipelineIdentifier = pipelineIdentifier;
-    this.executionUuid = executionUuid;
+    this.pipelineExecutionUuid = executionUuid;
     this.triggerType = triggerType;
     this.triggeredBy = triggeredBy;
     this.status = status;

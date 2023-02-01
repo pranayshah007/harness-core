@@ -180,10 +180,20 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
 
   private OutboxEvent fireInformAndSendAuditOnStart(Ambiance ambiance, PlanExecutionMetadata planExecutionMetadata) {
     // Sending AuditEvent
-    OutboxEvent outboxEvent = outboxService.save(new PipelineStartEvent());
+    OutboxEvent outboxEvent = outboxService.save(getPipelineStartEvent(ambiance));
     orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
         OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(planExecutionMetadata).build());
     return outboxEvent;
+  }
+
+  private PipelineStartEvent getPipelineStartEvent(Ambiance ambiance) {
+    return PipelineStartEvent.builder()
+        .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
+        .pipelineExecutionUuid(ambiance.getPlanExecutionId())
+        .triggerType(ambiance.getMetadata().getTriggerInfo().getTriggerType())
+        .triggeredBy(ambiance.getMetadata().getTriggerInfo().getTriggeredBy())
+        .startTs(ambiance.getStartTs())
+        .build();
   }
 
   @Override
@@ -205,9 +215,19 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
 
   private OutboxEvent fireInformAndSendAuditOnEnd(Ambiance ambiance) {
     // Sending AuditEvent
-    OutboxEvent outboxEvent = outboxService.save(new PipelineEndEvent());
+    OutboxEvent outboxEvent = outboxService.save(getPipelineEndEvent(ambiance));
     orchestrationEndSubject.fireInform(OrchestrationEndObserver::onEnd, ambiance);
     return outboxEvent;
+  }
+
+  private PipelineEndEvent getPipelineEndEvent(Ambiance ambiance) {
+    return PipelineEndEvent.builder()
+        .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
+        .pipelineExecutionUuid(ambiance.getPlanExecutionId())
+        .triggerType(ambiance.getMetadata().getTriggerInfo().getTriggerType())
+        .triggeredBy(ambiance.getMetadata().getTriggerInfo().getTriggeredBy())
+        .startTs(ambiance.getStartTs())
+        .build();
   }
 
   private OrchestrationEvent buildEndEvent(Ambiance ambiance, Status status) {
