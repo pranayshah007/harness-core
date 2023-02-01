@@ -8,6 +8,7 @@ package java
 import (
 	"context"
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 
@@ -19,6 +20,9 @@ import (
 
 var (
 	mavenCmd = "mvn"
+	javaAgent = "/addon/bin/java-agent.jar"
+	javaMavenInstaller = "/addon/bin/java-maven-installer.jar"
+	javaAgentArgMaven = "export MAVEN_OPTS=\"-javaagent%s=%s=%s\""
 )
 
 type mavenRunner struct {
@@ -76,6 +80,11 @@ func (m *mavenRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, us
 		if ignoreInstr {
 			return strings.TrimSpace(fmt.Sprintf("%s %s", mavenCmd, inputUserArgs)), nil
 		}
+		// backward compatability
+		if _, err := os.Stat(javaMavenInstaller); err == nil {
+			// i.e. export MAVEN_OPTS="-javaagent:/addon/bin/java-maven-installer.jar=/addon/bin/java-agent.jar=./config.ini"
+			return fmt.Sprintf(javaAgentArgMaven + ";%s %s", javaMavenInstaller, javaAgent, agentConfigPath, mavenCmd, inputUserArgs), nil
+		}
 		return strings.TrimSpace(fmt.Sprintf("%s -am -DharnessArgLine=%s -DargLine=%s %s", mavenCmd, instrArg, instrArg, userArgs)), nil
 	}
 	if len(tests) == 0 {
@@ -101,6 +110,10 @@ func (m *mavenRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, us
 
 	if ignoreInstr {
 		return strings.TrimSpace(fmt.Sprintf("%s -Dtest=%s %s", mavenCmd, testStr, inputUserArgs)), nil
+	}
+	if _, err := os.Stat(javaMavenInstaller); err == nil {
+		// i.e. export MAVEN_OPTS="-javaagent:/addon/bin/java-maven-installer.jar=/addon/bin/java-agent.jar=./config.ini"
+		return fmt.Sprintf(javaAgentArgMaven + ";%s -Dtest=%s -am %s", javaMavenInstaller, javaAgent, agentConfigPath, mavenCmd, testStr, inputUserArgs), nil
 	}
 	return strings.TrimSpace(fmt.Sprintf("%s -Dtest=%s -am -DharnessArgLine=%s -DargLine=%s %s", mavenCmd, testStr, instrArg, instrArg, userArgs)), nil
 }
