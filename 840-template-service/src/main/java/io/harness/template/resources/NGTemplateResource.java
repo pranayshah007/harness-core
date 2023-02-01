@@ -712,6 +712,7 @@ public class NGTemplateResource {
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull TemplateApplyRequestDTO templateApplyRequestDTO,
       @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache) {
     log.info("Applying templates V2 to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
+    log.info(String.format("LoadFromCache in NGTemplateResource: %s", loadFromCache));
     long start = System.currentTimeMillis();
     TemplateMergeResponseDTO templateMergeResponseDTO =
         templateMergeService.applyTemplatesToYamlV2(accountId, orgId, projectId,

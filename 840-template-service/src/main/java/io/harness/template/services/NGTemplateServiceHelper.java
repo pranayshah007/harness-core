@@ -87,6 +87,8 @@ public class NGTemplateServiceHelper {
   public Optional<TemplateEntity> getTemplateOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
       boolean loadFromCache) {
+    log.info(String.format(
+        "LoadFromCache in NGTemplateServiceHelper getTemplateOrThrowExceptionIfInvalid: %b", loadFromCache));
     return getOrThrowExceptionIfInvalid(
         accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false, loadFromCache);
   }
@@ -100,6 +102,7 @@ public class NGTemplateServiceHelper {
   public Optional<TemplateEntity> getOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
       boolean getMetadataOnly, boolean loadFromCache) {
+    log.info(String.format("LoadFromCache in NGTemplateServiceHelper getOrThrowExceptionIfInvalid: %b", loadFromCache));
     try {
       Optional<TemplateEntity> optionalTemplate = getTemplate(accountId, orgIdentifier, projectIdentifier,
           templateIdentifier, versionLabel, deleted, getMetadataOnly, loadFromCache, false);
@@ -437,6 +440,7 @@ public class NGTemplateServiceHelper {
   public Optional<TemplateEntity> getTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, String versionLabel, boolean deleted, boolean getMetadataOnly, boolean loadFromCache,
       boolean loadFromFallbackBranch) {
+    log.info(String.format("LoadFromCache in NGTemplateServiceHelper getTemplate: %b", loadFromCache));
     if (EmptyPredicate.isEmpty(versionLabel)) {
       return getStableTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier, deleted,
           getMetadataOnly, loadFromCache, loadFromFallbackBranch);
