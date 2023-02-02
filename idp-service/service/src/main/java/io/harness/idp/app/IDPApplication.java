@@ -8,6 +8,7 @@
 package io.harness.idp.app;
 
 import static io.harness.annotations.dev.HarnessTeam.IDP;
+import static io.harness.idp.app.IDPConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.glassfish.jersey.server.ServerProperties;
 
 /**
  * The main application - entry point for the entire Wings Application.
@@ -88,6 +90,7 @@ public class IDPApplication extends Application<IDPConfiguration> {
     List<Module> modules = new ArrayList<>();
     modules.add(new IDPModule(configuration));
     Injector injector = Guice.createInjector(modules);
+    registerResources(environment, injector);
     registerHealthChecksManager(environment, injector);
     log.info("Starting app done");
     log.info("IDP Service is running on JRE: {}", System.getProperty("java.version"));
@@ -97,5 +100,12 @@ public class IDPApplication extends Application<IDPConfiguration> {
     final HealthService healthService = injector.getInstance(HealthService.class);
     environment.healthChecks().register("IDP Service", healthService);
     healthService.registerMonitor(injector.getInstance(HPersistence.class));
+  }
+
+  private void registerResources(Environment environment, Injector injector) {
+    for (Class<?> resource : HARNESS_RESOURCE_CLASSES) {
+      environment.jersey().register(injector.getInstance(resource));
+    }
+    environment.jersey().property(ServerProperties.RESOURCE_VALIDATION_DISABLE, true);
   }
 }

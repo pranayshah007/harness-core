@@ -121,7 +121,7 @@ public class IDPModule extends AbstractModule {
     bind(AppConfigService.class).to(AppConfigServiceImpl.class);
     bind(EnvironmentVariableService.class).to(EnvironmentVariableServiceImpl.class);
     bind(ConfigManagerResource.class).to(ConfigManagerResourceImpl.class);
-    bind(SecretManagerResource.class).to(SecretManagerResourceImpl.class);
+    //    bind(SecretManagerResource.class).to(SecretManagerResourceImpl.class);
   }
 
   @Provides
