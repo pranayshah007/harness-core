@@ -17,8 +17,6 @@ import io.harness.idp.secret.resource.SecretManagerResource;
 import io.harness.idp.secret.resources.SecretManagerResourceImpl;
 import io.harness.idp.secret.service.EnvironmentVariableService;
 import io.harness.idp.secret.service.EnvironmentVariableServiceImpl;
-import io.harness.idp.utils.k8s.client.K8sAPIClient;
-import io.harness.idp.utils.k8s.client.K8sClient;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
@@ -29,6 +27,8 @@ import io.harness.persistence.UserProvider;
 import io.harness.serializer.IDPServiceRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.threading.ThreadPool;
+import io.harness.utils.k8s.client.K8sAPIClient;
+import io.harness.utils.k8s.client.K8sClient;
 import io.harness.version.VersionModule;
 
 import com.google.common.collect.ImmutableList;

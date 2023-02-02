@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.utils.k8s.client;
+package io.harness.utils.k8s.client;
 
 import io.kubernetes.client.openapi.ApiException;
 import java.util.Map;

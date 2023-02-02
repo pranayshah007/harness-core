@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.utils.k8s.exception;
+package io.harness.utils.k8s.exception;
 
 import static io.harness.eraro.ErrorCode.CLUSTER_CREDENTIALS_NOT_FOUND;
 

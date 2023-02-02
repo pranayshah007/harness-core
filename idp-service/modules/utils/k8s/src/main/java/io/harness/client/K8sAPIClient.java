@@ -5,13 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.utils.k8s.client;
+package io.harness.utils.k8s.client;
 
 import io.harness.exception.InvalidRequestException;
-import io.harness.idp.utils.k8s.exception.ClusterCredentialsNotFoundException;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesConfig.KubernetesConfigBuilder;
+import io.harness.utils.k8s.exception.ClusterCredentialsNotFoundException;
 
 import com.google.inject.Inject;
 import io.kubernetes.client.openapi.ApiClient;
