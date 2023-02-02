@@ -586,7 +586,8 @@ public enum FeatureName {
   DISABLE_INSTANCE_STATS_JOB_CG("Disable Instance Stats Job from CG", HarnessTeam.CDP),
   PL_REMOVE_EXTERNAL_USER_ORG_PROJECT(
       "Allow deletion of externally managed user from orgs and projects", HarnessTeam.PL),
-  CI_REMOTE_DEBUG("Enable the option for remote debug for CI users.", HarnessTeam.CI);
+  CI_REMOTE_DEBUG("Enable the option for remote debug for CI users.", HarnessTeam.CI),
+  CCM_CLUSTER_ORCH("Show/ Hide navigation link for cluster orchestrator page", HarnessTeam.CE);
 
   @Deprecated
   FeatureName() {
