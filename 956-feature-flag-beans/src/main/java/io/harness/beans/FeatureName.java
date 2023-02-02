@@ -362,7 +362,6 @@ public enum FeatureName {
   STO_STEP_PALETTE_V2("Enable second iteration of individual steps for STO", HarnessTeam.STO),
   STO_JIRA_INTEGRATION("Enable Jira integration for STO", HarnessTeam.STO),
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
-  CD_ONBOARDING_ENABLED,
   SPOT_ELASTIGROUP_NG("Enables Spot Elastigroup implementation on NG", HarnessTeam.CDP),
   ATTRIBUTE_TYPE_ACL_ENABLED("Enable attribute filter on NG UI for ACL", HarnessTeam.PL),
   CREATE_DEFAULT_PROJECT("Enables auto create default project after user signup", HarnessTeam.GTM),
