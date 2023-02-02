@@ -1,7 +1,8 @@
 /*
  * Copyright 2021 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
- * that can be found in the licenses directory at the root of this repository, also available at
+ * that can be found in the licenses directory at the root of this repository,
+ * also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
@@ -93,6 +94,8 @@ public class LicenseResource {
   @Path("/modules/{accountIdentifier}")
   @ApiOperation(
       value = "Gets Module Licenses By Account And ModuleType", nickname = "getModuleLicensesByAccountAndModuleType")
+  @Hidden
+  @InternalApi
   @Operation(operationId = "getModuleLicensesByAccountAndModuleType",
       summary = "Gets Module Licenses By Account And ModuleType",
       responses =
@@ -104,7 +107,7 @@ public class LicenseResource {
   public ResponseDTO<List<ModuleLicenseDTO>>
   getModuleLicenses(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @PathParam(
                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(required = true, description = "A Harness Platform module.") @NotNull @QueryParam(
+      @Parameter(required = true, description = "A Harness " "Platform " "module.") @NotNull @QueryParam(
           MODULE_TYPE_KEY) ModuleType moduleType) {
     validateModuleType(moduleType);
     return ResponseDTO.newResponse(licenseService.getModuleLicenses(accountIdentifier, moduleType));
@@ -114,6 +117,8 @@ public class LicenseResource {
   @Path("{accountIdentifier}/summary")
   @ApiOperation(
       value = "Gets Module Licenses With Summary By Account And ModuleType", nickname = "getLicensesAndSummary")
+  @Hidden
+  @InternalApi
   @Operation(operationId = "getLicensesAndSummary",
       summary = "Gets Module Licenses With Summary By Account And ModuleType",
       responses =
@@ -125,7 +130,7 @@ public class LicenseResource {
   public ResponseDTO<LicensesWithSummaryDTO>
   getLicensesWithSummary(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @PathParam(
                              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(required = true, description = "A Harness Platform module.") @NotNull @QueryParam(
+      @Parameter(required = true, description = "A " "Harness " "Platform " "module.") @NotNull @QueryParam(
           MODULE_TYPE_KEY) ModuleType moduleType) {
     validateModuleType(moduleType);
     return ResponseDTO.newResponse(licenseService.getLicenseSummary(accountIdentifier, moduleType));
@@ -134,6 +139,8 @@ public class LicenseResource {
   @GET
   @Path("account")
   @ApiOperation(value = "Gets All Module License Information in Account", nickname = "getAccountLicenses")
+  @Hidden
+  @InternalApi
   @Operation(operationId = "getAccountLicenses", summary = "Gets All Module License Information in Account",
       responses =
       {
@@ -169,6 +176,8 @@ public class LicenseResource {
   @GET
   @Path("{identifier}")
   @ApiOperation(value = "Gets Module License", nickname = "getModuleLicenseById")
+  @Hidden
+  @InternalApi
   @Operation(operationId = "getModuleLicenseById", summary = "Gets Module License",
       responses =
       {
@@ -177,7 +186,7 @@ public class LicenseResource {
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<ModuleLicenseDTO>
-  get(@Parameter(required = true, description = "The module license identifier") @PathParam(
+  get(@Parameter(required = true, description = "The module license " "identifier") @PathParam(
           "identifier") String identifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
           required = true, description = ACCOUNT_PARAM_MESSAGE) @AccountIdentifier String accountIdentifier) {
@@ -188,6 +197,8 @@ public class LicenseResource {
   @POST
   @Path("free")
   @ApiOperation(value = "Starts Free License For A Module", nickname = "startFreeLicense")
+  @Hidden
+  @InternalApi
   @Operation(operationId = "startFreeLicense", summary = "Starts Free License For A Module",
       responses =
       {
@@ -198,11 +209,11 @@ public class LicenseResource {
   public ResponseDTO<ModuleLicenseDTO>
   startFreeLicense(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(required = true, description = "A Harness Platform module.") @NotNull @QueryParam(
+      @Parameter(required = true, description = "A Harness Platform " "module.") @NotNull @QueryParam(
           NGCommonEntityConstants.MODULE_TYPE) ModuleType moduleType,
       @Parameter(required = true, description = "Referer URL") @QueryParam(
           NGCommonEntityConstants.REFERER) String referer,
-      @Parameter(required = true, description = "Google Analytics Client Id") @QueryParam(
+      @Parameter(required = true, description = "Google Analytics " "Client Id") @QueryParam(
           NGLicensingEntityConstants.GA_CLIENT_ID) String gaClientId) {
     return ResponseDTO.newResponse(licenseService.startFreeLicense(accountIdentifier, moduleType, referer, gaClientId));
   }
@@ -221,6 +232,8 @@ public class LicenseResource {
   @POST
   @Path("trial")
   @ApiOperation(value = "Starts Trial License For A Module", nickname = "startTrialLicense")
+  @Hidden
+  @InternalApi
   @Operation(operationId = "startTrialLicense", summary = "Starts Trial License For A Module",
       responses =
       {
@@ -232,8 +245,8 @@ public class LicenseResource {
   startTrialLicense(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
-          description = "This is the details of the Trial License. ModuleType and edition are mandatory") @NotNull
-      @Valid @Body StartTrialDTO startTrialRequestDTO,
+          description = "This is the " "details of the " "Trial License. " "ModuleType and " "edition are " "mandatory")
+      @NotNull @Valid @Body StartTrialDTO startTrialRequestDTO,
       @Parameter(description = "Referrer URL") @QueryParam(NGCommonEntityConstants.REFERER) String referer) {
     return ResponseDTO.newResponse(licenseService.startTrialLicense(accountIdentifier, startTrialRequestDTO, referer));
   }
@@ -241,6 +254,8 @@ public class LicenseResource {
   @POST
   @Path("extend-trial")
   @ApiOperation(value = "Extends Trail License For A Module", nickname = "extendTrialLicense")
+  @Hidden
+  @InternalApi
   @Operation(operationId = "extendTrialLicense", summary = "Extends Trial License For A Module",
       responses =
       {
@@ -252,14 +267,16 @@ public class LicenseResource {
   extendTrialLicense(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
-          description = "This is the details of the Trial License. ModuleType and edition are mandatory") @NotNull
-      @Valid @Body StartTrialDTO startTrialRequestDTO) {
+          description = "This is the " "details of the " "Trial License. " "ModuleType and " "edition are " "mandatory")
+      @NotNull @Valid @Body StartTrialDTO startTrialRequestDTO) {
     return ResponseDTO.newResponse(licenseService.extendTrialLicense(accountIdentifier, startTrialRequestDTO));
   }
 
   @GET
   @Path("actions")
   @ApiOperation(value = "Get Allowed Actions Under Each Edition", nickname = "getEditionActions")
+  @Hidden
+  @InternalApi
   @Operation(operationId = "getEditionActions", summary = "Get Allowed Actions Under Each Edition",
       responses =
       {
@@ -270,7 +287,7 @@ public class LicenseResource {
   public ResponseDTO<Map<Edition, Set<EditionActionDTO>>>
   getEditionActions(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(required = true, description = "A Harness Platform module.") @NotNull @QueryParam(
+      @Parameter(required = true, description = "A Harness " "Platform " "module.") @NotNull @QueryParam(
           NGCommonEntityConstants.MODULE_TYPE) ModuleType moduleType) {
     return ResponseDTO.newResponse(licenseService.getEditionActions(accountIdentifier, moduleType));
   }
@@ -279,6 +296,8 @@ public class LicenseResource {
   @Path("versions")
   @ApiOperation(
       value = "Get Last Modified Time For All Module Types", nickname = "getLastModifiedTimeForAllModuleTypes")
+  @Hidden
+  @InternalApi
   @Operation(operationId = "getLastModifiedTimeForAllModuleTypes",
       summary = "Get Last Modified Time Under Each ModuleType",
       responses =
@@ -317,7 +336,8 @@ public class LicenseResource {
   @GET
   @Path("{moduleType}/enabled")
   @ApiOperation(
-      value = "Get Module Licenses for Specific Module Type which Expiry Time is Greater or Equal to the Provided Time",
+      value =
+          "Get Module Licenses for Specific Module Type which Expiry Time " "is Greater or Equal to the Provided Time",
       nickname = "getModuleLicenseForSpecificModuleType", hidden = true)
   @InternalApi
   @Hidden
@@ -325,7 +345,7 @@ public class LicenseResource {
   getModuleLicensesByModuleType(@Parameter(required = true, description = "A Harness Platform module.") @NotNull
                                 @PathParam(NGCommonEntityConstants.MODULE_TYPE) ModuleType moduleType,
       @Parameter(
-          required = true, description = "Find All module licenses expiry time greater or equals to provided time")
+          required = true, description = "Find All module licenses expiry time " "greater or equals to provided time")
       @NotNull @QueryParam(NGCommonEntityConstants.EXPIRY_TIME) long expiryTime) {
     return ResponseDTO.newResponse(licenseService.getEnabledModuleLicensesByModuleType(moduleType, expiryTime));
   }
