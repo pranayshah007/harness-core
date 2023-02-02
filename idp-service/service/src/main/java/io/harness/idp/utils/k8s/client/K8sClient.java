@@ -7,8 +7,6 @@
 
 package io.harness.idp.utils.k8s.client;
 
-import io.harness.k8s.model.KubernetesConfig;
-
 import io.kubernetes.client.openapi.ApiException;
 import java.util.Map;
 

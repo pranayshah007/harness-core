@@ -7,6 +7,7 @@
 
 package io.harness.idp.utils.k8s.client;
 
+import io.harness.exception.InvalidRequestException;
 import io.harness.idp.utils.k8s.exception.ClusterCredentialsNotFoundException;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.model.KubernetesConfig;
@@ -19,6 +20,7 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Secret;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -28,29 +30,40 @@ public class K8sAPIClient implements K8sClient {
 
   @Override
   public void updateSecret(String namespace, String secretName, Map<String, byte[]> data) throws ApiException {
-    KubernetesConfig kubernetesConfig = getKubernetesConfig();
+    KubernetesConfig kubernetesConfig = getKubernetesConfig(namespace);
     ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
     CoreV1Api coreV1Api = new CoreV1Api(apiClient);
-    V1Secret secret;
-    try {
-      secret = coreV1Api.readNamespacedSecret(secretName, namespace, null);
-    } catch (ApiException e) {
-      log.error("Secret {} not found in namespace {}", secretName, namespace, e);
-      throw e;
-    }
+    V1Secret secret = getSecret(coreV1Api, namespace, secretName);
     Map<String, byte[]> secretData = secret.getData();
     secretData = secretData == null ? new HashMap<>() : secretData;
     secretData.putAll(data);
     secret.setData(secretData);
+    replaceSecret(coreV1Api, namespace, secret);
+  }
+
+  private V1Secret getSecret(CoreV1Api coreV1Api, String namespace, String secretName) throws ApiException {
     try {
-      coreV1Api.replaceNamespacedSecret(secretName, namespace, secret, null, null, null, null);
+      return coreV1Api.readNamespacedSecret(secretName, namespace, null);
     } catch (ApiException e) {
-      log.error("Secret {} cannot be updated in namespace {}", secretName, namespace, e);
+      log.error("Error fetching Secret {} in namespace {}", secretName, namespace, e);
       throw e;
     }
   }
 
-  private KubernetesConfig getKubernetesConfig() {
+  private void replaceSecret(CoreV1Api coreV1Api, String namespace, V1Secret secret) throws ApiException {
+    String secretName = Objects.requireNonNull(secret.getMetadata()).getName();
+    try {
+      coreV1Api.replaceNamespacedSecret(secretName, namespace, secret, null, null, null, null);
+    } catch (ApiException e) {
+      log.error("Error updating secret {} in namespace {}", secretName, namespace, e);
+      throw e;
+    }
+  }
+
+  private KubernetesConfig getKubernetesConfig(String namespace) {
+    if (StringUtils.isBlank(namespace)) {
+      throw new InvalidRequestException("Empty namespace");
+    }
     String masterURL = System.getenv("MASTER_URL");
     String token = System.getenv("TOKEN");
     if (StringUtils.isBlank(masterURL)) {
