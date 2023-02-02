@@ -355,15 +355,17 @@ public class AzureUtils {
     return retrofitBuilder.build().create(clazz);
   }
 
-  public String getAuthorityHost(AzureEnvironmentType azureEnvironmentType, String tenantId) {
-    if (azureEnvironmentType != null && tenantId != null) {
-      String authorityHost =
-          format("%s%s", getAzureEnvironment(azureEnvironmentType).getActiveDirectoryEndpoint(), tenantId);
+  public String getAuthorityHost(AzureEnvironment azureEnvironment, String tenantId) {
+    if (azureEnvironment != null && tenantId != null) {
+      String authorityHost = format("%s%s", azureEnvironment.getActiveDirectoryEndpoint(), tenantId);
       log.info(format("Using authority host [%s]", authorityHost));
       return authorityHost;
     }
-    log.error(
-        format("Failed to create authority host [AzureEnvType=%s], [TenantId=%s]", azureEnvironmentType, tenantId));
+    log.error(format("Failed to create authority host [AzureEnvType=%s], [TenantId=%s]", azureEnvironment, tenantId));
     return null;
+  }
+
+  public String getAuthorityHost(AzureEnvironmentType azureEnvironmentType, String tenantId) {
+    return getAuthorityHost(getAzureEnvironment(azureEnvironmentType), tenantId);
   }
 }
