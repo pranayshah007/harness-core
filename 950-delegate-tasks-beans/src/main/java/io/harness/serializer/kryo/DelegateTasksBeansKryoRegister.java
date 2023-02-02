@@ -321,6 +321,7 @@ import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.gitapi.GitRepoType;
 import io.harness.delegate.beans.helm.HelmChartVersionDetails;
+import io.harness.delegate.beans.instancesync.info.AsgServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
@@ -952,6 +953,7 @@ import io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTa
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
+import io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException;
 import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
 import io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO;
 import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
@@ -1114,6 +1116,7 @@ import software.wings.yaml.gitSync.YamlGitConfig;
 
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.esotericsoftware.kryo.Kryo;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.protobuf.UnknownFieldSet;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.SneakyThrows;
@@ -1650,6 +1653,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GcpProjectListTaskResponse.class, 673600);
     kryo.register(GcsListBucketsRequest.class, 673601);
     kryo.register(GcsBucketListResponse.class, 673602);
+    kryo.register(HashiCorpVaultRuntimeException.class, 673603);
+    kryo.register(UncheckedTimeoutException.class, 673604);
 
     kryo.register(ScmPushTaskParams.class, 553286);
     kryo.register(ScmPushTaskResponseData.class, 553287);
@@ -2149,6 +2154,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AsgBlueGreenSwapServiceRequest.class, 573596);
     kryo.register(AsgBlueGreenSwapServiceResponse.class, 573597);
     kryo.register(AsgBlueGreenSwapServiceResult.class, 573598);
+    kryo.register(AsgServerInstanceInfo.class, 573599);
 
     kryo.register(AsgLoadBalancerConfig.class, 5731600);
     kryo.register(AsgBlueGreenRollbackRequest.class, 5731601);

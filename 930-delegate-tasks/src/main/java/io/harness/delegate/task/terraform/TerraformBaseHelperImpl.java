@@ -1002,7 +1002,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
         gitStoreDelegateConfig.getSshKeySpecDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
   }
 
-  public void configureCredentialsForModuleSource(TerraformTaskNGParameters taskParameters,
+  public void configureCredentialsForModuleSource(String baseDir, Map<String, String> envVars,
       GitStoreDelegateConfig conFileFileGitStore, LogCallback logCallback) throws IOException {
     GitConfigDTO gitConfigDTO = (GitConfigDTO) conFileFileGitStore.getGitConfigDTO();
     if (gitConfigDTO.getGitAuthType() == SSH) {
@@ -1015,9 +1015,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
       }
       if (!sshSessionConfig.isKeyLess() && isNotEmpty(sshSessionConfig.getKey())) {
         String sshKey = String.valueOf(sshSessionConfig.getKey());
-        String workingDir = getBaseDir(taskParameters.getEntityId());
-        Files.createDirectories(Paths.get(workingDir, SSH_KEY_DIR));
-        sshKeyPath = Paths.get(workingDir, SSH_KEY_DIR, SSH_KEY_FILENAME).toAbsolutePath().toString();
+        Files.createDirectories(Paths.get(baseDir, SSH_KEY_DIR));
+        sshKeyPath = Paths.get(baseDir, SSH_KEY_DIR, SSH_KEY_FILENAME).toAbsolutePath().toString();
         FileIo.writeUtf8StringToFile(sshKeyPath, sshKey);
 
       } else if (sshSessionConfig.isKeyLess() && isNotEmpty(sshSessionConfig.getKeyPath())) {
@@ -1028,15 +1027,14 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
             color("\nExporting Username and Password with SSH for Module Source is not Supported", Yellow), WARN);
         return;
       }
-      exportSSHKey(taskParameters, sshKeyPath, logCallback);
+      exportSSHKey(envVars, sshKeyPath, logCallback);
     } else {
       logCallback.saveExecutionLog(
           color("\nExporting Username and Password for Module Source is not Supported", Yellow), WARN);
     }
   }
 
-  public void exportSSHKey(TerraformTaskNGParameters taskParameters, String sshKeyPath, LogCallback logCallback)
-      throws IOException {
+  public void exportSSHKey(Map<String, String> envVars, String sshKeyPath, LogCallback logCallback) throws IOException {
     logCallback.saveExecutionLog(color("\nExporting SSH Key:", White), INFO);
 
     File file = new File(Paths.get(sshKeyPath).toString());
@@ -1052,7 +1050,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     String sshCommand = System.getenv(GIT_SSH_COMMAND) == null ? SSH_COMMAND_PREFIX + newSSHArg
                                                                : System.getenv(GIT_SSH_COMMAND) + newSSHArg;
 
-    taskParameters.getEnvironmentVariables().put(GIT_SSH_COMMAND, sshCommand);
+    envVars.put(GIT_SSH_COMMAND, sshCommand);
 
     logCallback.saveExecutionLog(color("\n   Successfully Exported SSH Key:", White), INFO);
   }

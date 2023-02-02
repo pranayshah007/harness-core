@@ -248,7 +248,7 @@ public class ConnectorMigrationService extends NgMigrationService {
               ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier()));
       return response.orElse(null);
     } catch (Exception ex) {
-      log.error("Error when getting connector - ", ex);
+      log.warn("Error when getting connector - ", ex);
       return null;
     }
   }

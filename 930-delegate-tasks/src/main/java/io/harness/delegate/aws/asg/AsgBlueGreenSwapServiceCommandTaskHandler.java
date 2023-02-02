@@ -39,6 +39,7 @@ import io.harness.delegate.task.aws.asg.AsgCommandRequest;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.delegate.task.aws.asg.AsgTaskHelper;
+import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -91,64 +92,54 @@ public class AsgBlueGreenSwapServiceCommandTaskHandler extends AsgCommandTaskNGH
 
       AutoScalingGroup autoScalingGroup = asgSdkManager.getASG(asgBlueGreenSwapServiceRequest.getOldAsgName());
 
-      AsgManifestHandlerChainState chainState;
-      // check downsize old flag and downsize it
+      AsgManifestHandlerChainFactory asgManifestHandlerChainFactory =
+          (AsgManifestHandlerChainFactory) AsgManifestHandlerChainFactory.builder()
+              .initialChainState(AsgManifestHandlerChainState.builder()
+                                     .asgName(asgBlueGreenSwapServiceRequest.getOldAsgName())
+                                     .newAsgName(asgBlueGreenSwapServiceRequest.getNewAsgName())
+                                     .build())
+              .asgSdkManager(asgSdkManager)
+              .build()
+              .addHandler(AsgSwapService,
+                  AsgSwapServiceManifestRequest.builder()
+                      .asgLoadBalancerConfig(asgBlueGreenSwapServiceRequest.getAsgLoadBalancerConfig())
+                      .region(asgInfraConfig.getRegion())
+                      .awsInternalConfig(awsInternalConfig)
+                      .build());
+
       if (asgBlueGreenSwapServiceRequest.isDownsizeOldAsg() && autoScalingGroup != null) {
         // if its not a first deployment, update old asg with zero desired instance count (if downsize flag is enabled)
         // and change its tag
-        // Chain factory code to handle each manifest one by one in a chain
         String asgConfigurationContent = "{}";
-        Map<String, Object> asgConfigurationOverrideProperties = new HashMap<>() {
-          {
-            put(AsgConfigurationManifestHandler.OverrideProperties.minSize, 0);
-            put(AsgConfigurationManifestHandler.OverrideProperties.maxSize, 0);
-            put(AsgConfigurationManifestHandler.OverrideProperties.desiredCapacity, 0);
-          }
-        };
+
+        Map<String, Object> asgConfigurationOverrideProperties = new HashMap<>();
+
+        asgConfigurationOverrideProperties.put(AsgConfigurationManifestHandler.OverrideProperties.minSize, 0);
+        asgConfigurationOverrideProperties.put(AsgConfigurationManifestHandler.OverrideProperties.maxSize, 0);
+        asgConfigurationOverrideProperties.put(AsgConfigurationManifestHandler.OverrideProperties.desiredCapacity, 0);
         List<String> asgScalingPolicyContentList = null;
 
-        chainState = AsgManifestHandlerChainFactory.builder()
-                         .initialChainState(AsgManifestHandlerChainState.builder()
-                                                .asgName(asgBlueGreenSwapServiceRequest.getOldAsgName())
-                                                .newAsgName(asgBlueGreenSwapServiceRequest.getNewAsgName())
-                                                .build())
-                         .asgSdkManager(asgSdkManager)
-                         .build()
-                         .addHandler(AsgSwapService,
-                             AsgSwapServiceManifestRequest.builder()
-                                 .asgLoadBalancerConfig(asgBlueGreenSwapServiceRequest.getAsgLoadBalancerConfig())
-                                 .region(asgInfraConfig.getRegion())
-                                 .awsInternalConfig(awsInternalConfig)
-                                 .build())
-                         .addHandler(AsgScalingPolicy,
-                             AsgScalingPolicyManifestRequest.builder().manifests(asgScalingPolicyContentList).build())
-                         .addHandler(AsgConfiguration,
-                             AsgConfigurationManifestRequest.builder()
-                                 .manifests(Arrays.asList(asgConfigurationContent))
-                                 .overrideProperties(asgConfigurationOverrideProperties)
-                                 .build())
-
-                         .executeUpsert();
-      } else {
-        // Chain factory code to handle each manifest one by one in a chain
-        chainState = AsgManifestHandlerChainFactory.builder()
-                         .initialChainState(AsgManifestHandlerChainState.builder()
-                                                .asgName(asgBlueGreenSwapServiceRequest.getOldAsgName())
-                                                .newAsgName(asgBlueGreenSwapServiceRequest.getNewAsgName())
-                                                .build())
-                         .asgSdkManager(asgSdkManager)
-                         .build()
-                         .addHandler(AsgSwapService,
-                             AsgSwapServiceManifestRequest.builder()
-                                 .asgLoadBalancerConfig(asgBlueGreenSwapServiceRequest.getAsgLoadBalancerConfig())
-                                 .region(asgInfraConfig.getRegion())
-                                 .awsInternalConfig(awsInternalConfig)
-                                 .build())
-                         .executeUpsert();
+        asgManifestHandlerChainFactory
+            .addHandler(AsgScalingPolicy,
+                AsgScalingPolicyManifestRequest.builder().manifests(asgScalingPolicyContentList).build())
+            .addHandler(AsgConfiguration,
+                AsgConfigurationManifestRequest.builder()
+                    .manifests(Arrays.asList(asgConfigurationContent))
+                    .overrideProperties(asgConfigurationOverrideProperties)
+                    .build());
       }
 
+      AsgManifestHandlerChainState chainState = asgManifestHandlerChainFactory.executeUpsert();
+
+      AutoScalingGroup newAutoScalingGroup = asgSdkManager.getASG(chainState.getNewAsgName());
+      AutoScalingGroupContainer newAutoScalingGroupContainer =
+          asgTaskHelper.mapToAutoScalingGroupContainer(newAutoScalingGroup);
+
       AsgBlueGreenSwapServiceResult asgBlueGreenSwapServiceResult =
-          AsgBlueGreenSwapServiceResult.builder().trafficShifted(true).build();
+          AsgBlueGreenSwapServiceResult.builder()
+              .autoScalingGroupContainer(newAutoScalingGroupContainer)
+              .trafficShifted(true)
+              .build();
 
       AsgBlueGreenSwapServiceResponse asgBlueGreenSwapServiceResponse =
           AsgBlueGreenSwapServiceResponse.builder()

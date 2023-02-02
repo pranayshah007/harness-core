@@ -12,6 +12,7 @@ import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.delegate.aws.asg.AsgBlueGreenPrepareRollbackCommandTaskHandler.VERSION_DELIMITER;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
@@ -111,8 +112,23 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
       AutoScalingGroupContainer autoScalingGroupContainer = executeBGDeploy(asgSdkManager, asgStoreManifestsContent,
           asgName, amiImageId, targetGroupArnsList, isFirstDeployment, awsInternalConfig, region);
 
+      String asgNameWithoutSuffix = asgName.substring(0, asgName.length() - 3);
+      String asgNameSuffix = asgName.substring(asgName.length() - 1);
+      String stageAsgName = asgNameWithoutSuffix + VERSION_DELIMITER + 1;
+      if (asgNameSuffix.equalsIgnoreCase(String.valueOf(1))) {
+        stageAsgName = asgNameWithoutSuffix + VERSION_DELIMITER + 2;
+      }
+
+      AutoScalingGroupContainer stageAutoScalingGroupContainer = null;
+      if (!isFirstDeployment) {
+        stageAutoScalingGroupContainer =
+            asgTaskHelper.mapToAutoScalingGroupContainer(asgSdkManager.getASG(stageAsgName));
+      }
       AsgBlueGreenDeployResult asgBlueGreenDeployResult =
-          AsgBlueGreenDeployResult.builder().autoScalingGroupContainer(autoScalingGroupContainer).build();
+          AsgBlueGreenDeployResult.builder()
+              .stageAutoScalingGroupContainer(stageAutoScalingGroupContainer)
+              .prodAutoScalingGroupContainer(autoScalingGroupContainer)
+              .build();
 
       logCallback.saveExecutionLog(
           color("Blue Green Deployment Finished Successfully", Green, Bold), INFO, CommandExecutionStatus.SUCCESS);

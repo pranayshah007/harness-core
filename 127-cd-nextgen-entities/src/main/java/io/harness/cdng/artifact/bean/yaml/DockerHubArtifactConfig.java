@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -71,7 +72,10 @@ public class DockerHubArtifactConfig implements ArtifactConfig, Visitable, WithC
   /**
    * Tag regex is used to get latest build from builds matching regex.
    */
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> tagRegex;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Wither
+  @Pattern(regexp = "^[a-zA-Z0-9 .*/#_-]*$", message = "Invalid regular expression.")
+  ParameterField<String> tagRegex;
   /**
    * Digest refers to the SHA256 digest of the docker image file.
    */

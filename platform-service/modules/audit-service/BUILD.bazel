@@ -17,6 +17,7 @@ java_library(
     ],
     deps = [
         "//:lombok",
+        "//930-ng-core-clients:module",
         "//953-events-api:module",
         "//955-filters-sdk:module",
         "//955-outbox-sdk:module",
@@ -56,6 +57,7 @@ java_library(
     deps = [
         ":module",
         "//:lombok",
+        "//930-ng-core-clients:module",
         "//960-persistence:module",
         "//960-persistence:supporter-test",
         "//970-ng-commons:module",

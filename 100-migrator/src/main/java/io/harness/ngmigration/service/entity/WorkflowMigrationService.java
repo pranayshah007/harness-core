@@ -279,7 +279,7 @@ public class WorkflowMigrationService extends NgMigrationService {
       }
       return YamlUtils.read(response.getYaml(), NGTemplateConfig.class);
     } catch (Exception ex) {
-      log.error("Error when getting workflow templates - ", ex);
+      log.warn("Error when getting workflow templates - ", ex);
       return null;
     }
   }

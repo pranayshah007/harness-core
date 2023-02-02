@@ -119,6 +119,8 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
       protoShellType = ShellType.PWSH;
     } else if (shellType == CIShellType.POWERSHELL) {
       protoShellType = ShellType.POWERSHELL;
+    } else if (shellType == CIShellType.PYTHON) {
+      protoShellType = ShellType.PYTHON;
     }
 
     runStepBuilder.setShellType(protoShellType);

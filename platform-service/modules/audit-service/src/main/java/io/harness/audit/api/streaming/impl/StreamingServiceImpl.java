@@ -31,6 +31,9 @@ import io.harness.audit.events.StreamingDestinationDeleteEvent;
 import io.harness.audit.events.StreamingDestinationUpdateEvent;
 import io.harness.audit.mapper.streaming.StreamingDestinationMapper;
 import io.harness.audit.repositories.streaming.StreamingDestinationRepository;
+import io.harness.beans.IdentifierRef;
+import io.harness.connector.ConnectorDTO;
+import io.harness.connector.ConnectorResourceClient;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.exception.DuplicateFieldException;
@@ -38,7 +41,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.ng.core.dto.EntityScopeInfo;
 import io.harness.outbox.api.OutboxService;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
@@ -66,21 +71,33 @@ public class StreamingServiceImpl implements StreamingService {
   private final StreamingDestinationRepository streamingDestinationRepository;
   OutboxService outboxService;
   TransactionTemplate transactionTemplate;
+  private final ConnectorResourceClient connectorResourceClient;
   private final AccessControlClient accessControlClient;
 
   @Inject
   public StreamingServiceImpl(StreamingDestinationMapper streamingDestinationMapper,
       StreamingDestinationRepository streamingDestinationRepository, OutboxService outboxService,
-      TransactionTemplate transactionTemplate, AccessControlClient accessControlClient) {
+      TransactionTemplate transactionTemplate, ConnectorResourceClient connectorResourceClient,
+      AccessControlClient accessControlClient) {
     this.streamingDestinationMapper = streamingDestinationMapper;
     this.streamingDestinationRepository = streamingDestinationRepository;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
+    this.connectorResourceClient = connectorResourceClient;
     this.accessControlClient = accessControlClient;
   }
 
   @Override
   public StreamingDestination create(String accountIdentifier, @Valid StreamingDestinationDTO streamingDestinationDTO) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(streamingDestinationDTO.getConnectorRef(), accountIdentifier, null, null);
+    Optional<ConnectorDTO> connectorDTO = NGRestUtils.getResponse(
+        connectorResourceClient.get(connectorRef.getIdentifier(), accountIdentifier, null, null));
+    if (connectorDTO.isEmpty()) {
+      String message = String.format("Connector with identifier [%s] doesn't exist.", connectorRef.getIdentifier());
+      throw new InvalidRequestException(message);
+    }
+
     StreamingDestination streamingDestination =
         streamingDestinationMapper.toStreamingDestinationEntity(accountIdentifier, streamingDestinationDTO);
     try {

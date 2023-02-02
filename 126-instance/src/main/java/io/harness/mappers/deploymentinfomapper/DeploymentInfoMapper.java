@@ -9,6 +9,7 @@ package io.harness.mappers.deploymentinfomapper;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.dtos.deploymentinfo.AsgDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.AwsSshWinrmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.AzureSshWinrmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.AzureWebAppDeploymentInfoDTO;
@@ -22,6 +23,7 @@ import io.harness.dtos.deploymentinfo.ReferenceK8sPodInfoDTO;
 import io.harness.dtos.deploymentinfo.ServerlessAwsLambdaDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.SpotDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.TasDeploymentInfoDTO;
+import io.harness.entities.deploymentinfo.AsgDeploymentInfo;
 import io.harness.entities.deploymentinfo.AwsSshWinrmDeploymentInfo;
 import io.harness.entities.deploymentinfo.AzureSshWinrmDeploymentInfo;
 import io.harness.entities.deploymentinfo.AzureWebAppNGDeploymentInfo;
@@ -67,6 +69,8 @@ public class DeploymentInfoMapper {
       return TasDeploymentInfoMapper.toDTO((TasDeploymentInfo) deploymentInfo);
     } else if (deploymentInfo instanceof SpotDeploymentInfo) {
       return SpotDeploymentInfoMapper.toDTO((SpotDeploymentInfo) deploymentInfo);
+    } else if (deploymentInfo instanceof AsgDeploymentInfo) {
+      return AsgDeploymentInfoMapper.toDTO((AsgDeploymentInfo) deploymentInfo);
     }
     throw new InvalidRequestException("No DeploymentInfoMapper toDTO found for deploymentInfo : {}" + deploymentInfo);
   }
@@ -96,6 +100,8 @@ public class DeploymentInfoMapper {
       return TasDeploymentInfoMapper.toEntity((TasDeploymentInfoDTO) deploymentInfoDTO);
     } else if (deploymentInfoDTO instanceof SpotDeploymentInfoDTO) {
       return SpotDeploymentInfoMapper.toEntity((SpotDeploymentInfoDTO) deploymentInfoDTO);
+    } else if (deploymentInfoDTO instanceof AsgDeploymentInfoDTO) {
+      return AsgDeploymentInfoMapper.toEntity((AsgDeploymentInfoDTO) deploymentInfoDTO);
     }
     throw new InvalidRequestException(
         "No DeploymentInfoMapper toEntity found for deploymentInfo : {}" + deploymentInfoDTO);

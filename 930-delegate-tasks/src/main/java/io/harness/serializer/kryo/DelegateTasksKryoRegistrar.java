@@ -177,6 +177,7 @@ import software.wings.beans.delegation.TerragruntProvisionParameters;
 import software.wings.beans.dto.Command;
 import software.wings.beans.dto.EcsContainerTask;
 import software.wings.beans.dto.EcsServiceSpecification;
+import software.wings.beans.dto.HelmChart;
 import software.wings.beans.dto.HelmChartSpecification;
 import software.wings.beans.dto.KubernetesContainerTask;
 import software.wings.beans.dto.LdapSettings;
@@ -949,6 +950,7 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(BugsnagSetupTestData.class, 7168);
     kryo.register(ManifestCollectionExecutionResponse.class, 71104);
     kryo.register(ManifestCollectionResponse.class, 71105);
+    kryo.register(HelmChart.class, 71106);
     kryo.register(HelmCollectChartResponse.class, 71111);
     kryo.register(HelmChartCollectionParams.HelmChartCollectionType.class, 400134);
     kryo.register(AzureVMSSCommandRequest.class, 8035);

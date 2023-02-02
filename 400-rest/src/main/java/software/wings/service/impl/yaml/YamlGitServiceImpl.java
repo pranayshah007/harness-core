@@ -8,7 +8,6 @@
 package software.wings.service.impl.yaml;
 
 import static io.harness.beans.FeatureName.NOTIFY_GIT_SYNC_ERRORS_PER_APP;
-import static io.harness.beans.FeatureName.REMOVE_HINT_YAML_GIT_COMMITS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -1405,12 +1404,6 @@ public class YamlGitServiceImpl implements YamlGitService {
   private GitCommit fetchLastProcessedGitCommitId(String accountId, List<String> yamlGitConfigIds) {
     // After MultiGit support gitCommit record would have list of yamlGitConfigs.
 
-    FindOptions findOptions = new FindOptions();
-    if (featureFlagService.isNotEnabled(REMOVE_HINT_YAML_GIT_COMMITS, accountId)) {
-      findOptions.hint(
-          BasicDBUtils.getIndexObject(GitCommit.mongoIndexes(), "gitCommitAccountIdStatusYgcLastUpdatedIdx"));
-    }
-
     GitCommit gitCommit = wingsPersistence.createQuery(GitCommit.class)
                               .filter(GitCommitKeys.accountId, accountId)
                               .field(GitCommitKeys.status)
@@ -1418,7 +1411,7 @@ public class YamlGitServiceImpl implements YamlGitService {
                               .field(GitCommitKeys.yamlGitConfigIds)
                               .hasAnyOf(yamlGitConfigIds)
                               .order("-lastUpdatedAt")
-                              .get(findOptions);
+                              .get();
 
     // This is to handle the old git commit records which doesn't have yamlGitConfigId
     if (gitCommit == null) {

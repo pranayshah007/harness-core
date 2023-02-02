@@ -46,6 +46,7 @@ import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 import software.wings.beans.Account;
 import software.wings.beans.UserInvite;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.ws.rs.core.Response;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -61,6 +63,7 @@ import org.mockito.Mock;
 import retrofit2.Call;
 
 @OwnedBy(PL)
+@Slf4j
 public class NGScimUserServiceImplTest extends NgManagerTestBase {
   private NgUserService ngUserService;
 
@@ -70,6 +73,9 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
   @Mock private AccountClient accountClient;
 
   private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+
+  ObjectMapper mapper = new ObjectMapper();
+  private static final String USERNAME = "userName";
 
   @Before
   public void setup() throws IOException {
@@ -372,6 +378,32 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     userMetadataDTO.setName(updatedName);
     userMetadataDTO.setExternallyManaged(true);
     userMetadataDTO.setEmail(updatedEmail);
+    verify(ngUserService, times(1)).updateUserMetadata(userMetadataDTO);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testEmailUpdateShouldConvertToLowerCase() {
+    String email = "username@harness.io";
+    String updatedEmail = "USERNAME123@harness.io";
+    String userId = randomAlphabetic(10);
+    String accountId = randomAlphabetic(10);
+
+    UserInfo userInfo = UserInfo.builder().admin(true).email(email).uuid(userId).build();
+
+    UserMetadataDTO userMetadataDTO = UserMetadataDTO.builder().email(email).build();
+    ScimUser scimUser = new ScimUser();
+    scimUser.setUserName(updatedEmail);
+
+    when(ngUserService.getUserById(userId)).thenReturn(Optional.of(userInfo));
+    when(ngUserService.getUserMetadata(userId)).thenReturn(Optional.of(userMetadataDTO));
+    when(ngUserService.updateScimUser(accountId, userId, scimUser)).thenReturn(true);
+
+    scimUserService.updateUser(userId, accountId, scimUser);
+
+    userMetadataDTO.setExternallyManaged(true);
+    userMetadataDTO.setEmail(updatedEmail.toLowerCase());
     verify(ngUserService, times(1)).updateUserMetadata(userMetadataDTO);
   }
 }

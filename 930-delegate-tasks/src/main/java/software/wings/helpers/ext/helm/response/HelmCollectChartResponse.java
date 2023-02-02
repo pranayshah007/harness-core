@@ -16,7 +16,7 @@ import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.logging.CommandExecutionStatus;
 
-import software.wings.beans.appmanifest.HelmChart;
+import software.wings.beans.dto.HelmChart;
 
 import java.util.List;
 import lombok.Builder;

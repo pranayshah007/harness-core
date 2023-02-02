@@ -20,7 +20,6 @@ import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.template.TemplateStepNode;
-import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.yaml.TemplateLinkConfig;
 import io.harness.yaml.core.timeout.Timeout;
 
@@ -72,12 +71,13 @@ public abstract class StepMapper {
     }
     NGYamlFile template = context.getMigratedEntities().get(
         CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
-    NGTemplateConfig templateConfig = (NGTemplateConfig) template.getYaml();
+    if (template == null) {
+      return null;
+    }
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(template.getNgEntityDetail()));
-    templateLinkConfig.setVersionLabel(templateConfig.getTemplateInfoConfig().getVersionLabel());
-    templateLinkConfig.setTemplateInputs(migrationTemplateUtils.getTemplateInputs(
-        template, context.getWorkflow().getAccountId(), templateConfig.getTemplateInfoConfig().getVersionLabel()));
+    templateLinkConfig.setTemplateInputs(
+        migrationTemplateUtils.getTemplateInputs(template, context.getWorkflow().getAccountId()));
 
     TemplateStepNode templateStepNode = new TemplateStepNode();
     templateStepNode.setIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()));

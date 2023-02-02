@@ -7,8 +7,16 @@
 
 package io.harness.audit.api.streaming;
 
+import io.harness.audit.entities.streaming.StreamingDestinationFilterProperties;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationAggregateDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationCards;
+
+import java.util.List;
+import org.springframework.data.domain.Pageable;
 
 public interface AggregateStreamingService {
   StreamingDestinationCards getStreamingDestinationCards(String accountIdentifier);
+
+  List<StreamingDestinationAggregateDTO> getAggregatedList(
+      String accountIdentifier, Pageable pageable, StreamingDestinationFilterProperties filterProperties);
 }
