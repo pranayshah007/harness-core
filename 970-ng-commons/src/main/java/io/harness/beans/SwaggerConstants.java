@@ -25,6 +25,8 @@ public interface SwaggerConstants {
       "[Lio.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;";
   String CLUSTER_YAML_NODE_LIST_CLASSPATH = "[Lio.harness.cdng.gitops.yaml.ClusterYaml;";
 
+  String USE_FROM_STAGE = "io.harness.cdng.service.beans.ServiceUseFromStageV2";
+
   String SERVICE_YAML_LIST_CLASSPATH = "[Lio.harness.cdng.service.beans.ServiceYamlV2;";
 
   String ENVIRONMENT_YAML_LIST_CLASSPATH = "[Lio.harness.cdng.environment.yaml.EnvironmentYamlV2;";

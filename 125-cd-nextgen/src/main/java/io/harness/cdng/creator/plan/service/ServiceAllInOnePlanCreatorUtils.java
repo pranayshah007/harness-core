@@ -11,6 +11,9 @@ import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE
 import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_REF_EXPRESSION;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.harness.cdng.artifact.steps.ArtifactsStepV2;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
@@ -31,6 +34,7 @@ import io.harness.cdng.service.steps.ServiceStepV3Parameters;
 import io.harness.cdng.service.steps.ServiceStepV3Parameters.ServiceStepV3ParametersBuilder;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -76,8 +80,16 @@ public class ServiceAllInOnePlanCreatorUtils {
   public LinkedHashMap<String, PlanCreationResponse> addServiceNode(YamlField specField, KryoSerializer kryoSerializer,
       ServiceYamlV2 serviceYamlV2, EnvironmentYamlV2 environmentYamlV2, String serviceNodeId, String nextNodeId,
       ServiceDefinitionType serviceType, ParameterField<String> envGroupRef) {
+    if (isConcreteServiceRefUnavailable(serviceYamlV2) && isConcreteUseFromStageUnavailable(serviceYamlV2)) {
+      throw new InvalidRequestException("At least on of serviceRef and useFromStage fields is required.");
+    }
+
+    if (serviceYamlV2.getServiceRef() != null && isNotBlank(serviceYamlV2.getServiceRef().getValue())
+        && serviceYamlV2.getUseFromStage() != null && serviceYamlV2.getUseFromStage().getValue() != null) {
+      throw new InvalidRequestException("Only one of serviceRef and useFromStage fields are allowed.");
+    }
     final ServiceYamlV2 finalServiceYaml = useFromStage(serviceYamlV2)
-        ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage(), specField)
+        ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage().getValue(), specField)
         : serviceYamlV2;
 
     final LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
@@ -108,7 +120,7 @@ public class ServiceAllInOnePlanCreatorUtils {
       KryoSerializer kryoSerializer, ServiceYamlV2 serviceYamlV2, EnvironmentGroupYaml environmentGroupYaml,
       String serviceNodeId, String nextNodeId, ServiceDefinitionType serviceType) {
     final ServiceYamlV2 finalServiceYaml = useFromStage(serviceYamlV2)
-        ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage(), specField)
+        ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage().getValue(), specField)
         : serviceYamlV2;
 
     final LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
@@ -146,7 +158,7 @@ public class ServiceAllInOnePlanCreatorUtils {
       KryoSerializer kryoSerializer, ServiceYamlV2 serviceYamlV2, EnvironmentsYaml environmentsYaml,
       String serviceNodeId, String nextNodeId, ServiceDefinitionType serviceType) {
     final ServiceYamlV2 finalServiceYaml = useFromStage(serviceYamlV2)
-        ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage(), specField)
+        ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage().getValue(), specField)
         : serviceYamlV2;
 
     final LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
@@ -208,7 +220,8 @@ public class ServiceAllInOnePlanCreatorUtils {
   }
 
   private boolean useFromStage(ServiceYamlV2 serviceYamlV2) {
-    return serviceYamlV2.getUseFromStage() != null && isNotEmpty(serviceYamlV2.getUseFromStage().getStage());
+    return serviceYamlV2.getUseFromStage() != null && serviceYamlV2.getUseFromStage().getValue() != null
+        && isNotEmpty(serviceYamlV2.getUseFromStage().getValue().getStage());
   }
 
   private List<String> addChildrenNodes(
@@ -347,8 +360,14 @@ public class ServiceAllInOnePlanCreatorUtils {
     }
 
     try {
-      DeploymentStageNode stageElementConfig = YamlUtils.read(
-          PlanCreatorUtils.getStageConfig(serviceField, stage).getNode().toString(), DeploymentStageNode.class);
+      YamlField propagatedFromStageConfig = PlanCreatorUtils.getStageConfig(serviceField, stage);
+      if (propagatedFromStageConfig == null) {
+        throw new InvalidArgumentsException("Invalid identifier [" + stage
+            + "] given in useFromStage. Cannot reference a stage which also has useFromStage parameter");
+      }
+
+      DeploymentStageNode stageElementConfig =
+          YamlUtils.read(propagatedFromStageConfig.getNode().toString(), DeploymentStageNode.class);
       DeploymentStageConfig deploymentStage = stageElementConfig.getDeploymentStageConfig();
       if (deploymentStage != null) {
         if (deploymentStage.getService() != null && useFromStage(deploymentStage.getService())) {
@@ -364,6 +383,19 @@ public class ServiceAllInOnePlanCreatorUtils {
           throw new InvalidRequestException(String.format(
               "Could not find service in stage [%s], hence not possible to propagate service from that stage", stage));
         }
+
+        if (deploymentStage.getDeploymentType() != null && isNotBlank(deploymentStage.getDeploymentType().getYamlName())
+            && specField.getNode().getField("deploymentType").getNode() != null) {
+          if (!deploymentStage.getDeploymentType().getYamlName().equals(
+                  specField.getNode().getField("deploymentType").getNode().asText())) {
+            throw new InvalidRequestException(String.format(
+                "Deployment type: [%s] of stage: [%s] does not match with deployment type: [%s] of stage: [%s] from which service propagation is configured",
+                specField.getNode().getField("deploymentType").getNode().asText(),
+                specField.getNode().getParentNode().getIdentifier(), deploymentStage.getDeploymentType().getYamlName(),
+                stage));
+          }
+        }
+
         return deploymentStage.getService();
       } else {
         throw new InvalidArgumentsException("Stage identifier given in useFromStage doesn't exist");
@@ -371,5 +403,15 @@ public class ServiceAllInOnePlanCreatorUtils {
     } catch (IOException ex) {
       throw new InvalidRequestException("Cannot parse stage: " + stage);
     }
+  }
+
+  private boolean isConcreteServiceRefUnavailable(@NonNull ServiceYamlV2 serviceYamlV2) {
+    return serviceYamlV2.getServiceRef() == null || isBlank(serviceYamlV2.getServiceRef().getValue())
+        || NGExpressionUtils.matchesRawInputSetPatternV2(serviceYamlV2.getServiceRef().getExpressionValue());
+  }
+
+  private boolean isConcreteUseFromStageUnavailable(@NonNull ServiceYamlV2 serviceYamlV2) {
+    return serviceYamlV2.getUseFromStage() == null || serviceYamlV2.getUseFromStage().getValue() == null
+        || NGExpressionUtils.matchesRawInputSetPatternV2(serviceYamlV2.getUseFromStage().getExpressionValue());
   }
 }
