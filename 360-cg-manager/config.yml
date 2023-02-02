@@ -732,7 +732,7 @@ dataReconciliation:
 
 disableDelegateMgmtInManager: false
 
-enableRedisForDelegateService: true
+enableRedisForDelegateService: false
 
 secretsConfiguration:
   secretResolutionEnabled: false
