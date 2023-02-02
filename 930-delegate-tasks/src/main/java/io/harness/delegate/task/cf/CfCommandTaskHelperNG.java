@@ -841,10 +841,9 @@ public class CfCommandTaskHelperNG {
     }
   }
 
-  public void downSizeListOfInstancesAndUnmapRoutes(LogCallback executionLogCallback,
-      List<CfServiceData> cfServiceDataUpdated, CfRequestConfig cfRequestConfig, TasApplicationInfo newAppInfo,
-      CfRollbackCommandRequestNG cfRollbackCommandRequestNG, CfAppAutoscalarRequestData autoscalarRequestData)
-      throws PivotalClientApiException {
+  public void downSizeListOfInstancesAndUnmapRoutes(LogCallback executionLogCallback, CfRequestConfig cfRequestConfig,
+      TasApplicationInfo newAppInfo, CfRollbackCommandRequestNG cfRollbackCommandRequestNG,
+      CfAppAutoscalarRequestData autoscalarRequestData) throws PivotalClientApiException {
     executionLogCallback.saveExecutionLog("\n");
     executionLogCallback.saveExecutionLog(color("# Downsizing application:", White, Bold));
     executionLogCallback.saveExecutionLog(format("Downsizing the %s app to zero", newAppInfo.getApplicationName()));

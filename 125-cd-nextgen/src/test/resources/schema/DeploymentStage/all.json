@@ -1251,6 +1251,10 @@
         },
         {
           "type": "object",
+          "required": [
+            "connectorRef",
+            "region"
+          ],
           "properties": {
             "connectorRef": {
               "type": "string"
@@ -1295,6 +1299,13 @@
         },
         {
           "type": "object",
+          "required": [
+            "loadBalancer",
+            "prodListenerPort",
+            "prodListenerRuleArn",
+            "stageListenerPort",
+            "stageListenerRuleArn"
+          ],
           "properties": {
             "loadBalancer": {
               "type": "string"
@@ -2953,6 +2964,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "count"
+          ],
           "properties": {
             "count": {
               "oneOf": [
@@ -3908,7 +3922,8 @@
               "type": "string"
             },
             "tagRegex": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9 .*/#_-]*$"
             }
           }
         },
@@ -4412,8 +4427,7 @@
           "required": [
             "connectedCloudProvider",
             "instances",
-            "loadBalancers",
-            "name"
+            "loadBalancers"
           ],
           "properties": {
             "connectedCloudProvider": {
@@ -4444,7 +4458,16 @@
               }
             },
             "name": {
-              "type": "string"
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -4484,6 +4507,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "newService"
+          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [
@@ -4521,6 +4547,11 @@
         },
         {
           "type": "object",
+          "required": [
+            "desired",
+            "max",
+            "min"
+          ],
           "properties": {
             "desired": {
               "oneOf": [
@@ -4733,7 +4764,16 @@
               "$ref": "#/definitions/ElastigroupInstances"
             },
             "name": {
-              "type": "string"
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -5817,6 +5857,68 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GoogleFunctionsDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "updateFieldMask": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GoogleFunctionsDeployWithoutTrafficStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "updateFieldMask": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "GoogleFunctionsInfrastructure": {
       "allOf": [
         {
@@ -5844,6 +5946,66 @@
             "region": {
               "type": "string",
               "minLength": 1
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GoogleFunctionsRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GoogleFunctionsTrafficShiftStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "trafficPercent": {
+              "type": "integer",
+              "format": "int32"
             }
           }
         }
@@ -9717,6 +9879,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "percentage"
+          ],
           "properties": {
             "percentage": {
               "oneOf": [
@@ -11065,26 +11230,19 @@
           "type": "string"
         },
         "useFromStage": {
-          "$ref": "#/definitions/ServiceUseFromStageV2"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
           "oneOf": [
             {
-              "required": [
-                "useFromStage"
-              ]
+              "$ref": "#/definitions/ServiceUseFromStageV2"
             },
             {
-              "required": [
-                "serviceRef"
-              ]
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
             }
           ]
         }
-      ]
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ServicesMetadata": {
       "type": "object",
@@ -12161,6 +12319,38 @@
           "if": {
             "properties": {
               "type": {
+                "const": "CloudFunctionRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleFunctionsRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CloudFunctionTrafficShift"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleFunctionsTrafficShiftStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Command"
               }
             }
@@ -12217,6 +12407,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/CloudformationDeleteStackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "DeployCloudFunction"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleFunctionsDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "DeployCloudFunctionWithNoTraffic"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleFunctionsDeployWithoutTrafficStepInfo"
               }
             }
           }

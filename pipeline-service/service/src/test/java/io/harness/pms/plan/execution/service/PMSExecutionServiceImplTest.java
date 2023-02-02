@@ -12,8 +12,10 @@ import static io.harness.rule.OwnerRule.DEVESH;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAMARTH;
+import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -372,5 +374,18 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
     assertThatThrownBy(() -> pmsExecutionService.getExecutionData(planExecutionID))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format("Execution with id [%s] is not present or deleted", planExecutionID));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetInputSetYamlForRerun() {
+    doReturn(Optional.of(PipelineExecutionSummaryEntity.builder().inputSetYaml("inputSetYaml").build()))
+        .when(pmsExecutionSummaryRepository)
+        .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID, true);
+    assertEquals("inputSetYaml",
+        pmsExecutionService.getInputSetYamlForRerun(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID, false));
   }
 }

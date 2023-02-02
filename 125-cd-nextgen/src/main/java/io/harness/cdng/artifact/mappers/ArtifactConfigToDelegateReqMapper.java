@@ -537,9 +537,6 @@ public class ArtifactConfigToDelegateReqMapper {
     if (StringUtils.isBlank(bucket)) {
       throw new InvalidRequestException("Please input bucket name.");
     }
-    if (StringUtils.isBlank(artifactPath)) {
-      throw new InvalidRequestException("Please input artifact path.");
-    }
     return ArtifactDelegateRequestUtils.getGoogleCloudStorageArtifactDelegateRequest(bucket, project, artifactPath,
         gcpConnectorDTO, connectorRef, encryptedDataDetails, ArtifactSourceType.GOOGLE_CLOUD_STORAGE_ARTIFACT);
   }

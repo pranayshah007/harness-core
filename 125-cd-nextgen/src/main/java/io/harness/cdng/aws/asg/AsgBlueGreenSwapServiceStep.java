@@ -18,6 +18,7 @@ import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -67,6 +68,7 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
   @Inject private AsgStepCommonHelper asgStepCommonHelper;
   @Inject private AccountService accountService;
   @Inject private StepHelper stepHelper;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -192,7 +194,7 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .asgLoadBalancerConfig(asgLoadBalancerConfig)
             .oldAsgName(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgName())
-            .newAsgName(asgBlueGreenDeployDataOutcome.getAutoScalingGroupContainer().getAutoScalingGroupName())
+            .newAsgName(asgBlueGreenDeployDataOutcome.getProdAutoScalingGroupContainer().getAutoScalingGroupName())
             .downsizeOldAsg(asgBlueGreenSwapServiceStepParameters.getDownsizeOldAsg().getValue() != null
                 && asgBlueGreenSwapServiceStepParameters.getDownsizeOldAsg().getValue())
             .build();

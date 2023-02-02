@@ -308,11 +308,7 @@ public class TemplateMergeServiceHelper {
     Map<String, GetTemplateEntityRequest> getBatchRequest = prepareBatchGetTemplatesRequest(
         accountIdentifier, orgIdentifier, projectIdentifier, templatesToGet, loadFromCache);
 
-    Map<String, TemplateEntity> remoteTemplates = getBatchTemplates(accountIdentifier, getBatchRequest);
-
-    validateAndAddToQueue(remoteTemplates, yamlNodeQueue);
-
-    return remoteTemplates;
+    return getBatchTemplatesAndProcessTemplates(accountIdentifier, getBatchRequest, yamlNodeQueue);
   }
 
   private void validateAndAddToQueue(Map<String, TemplateEntity> remoteTemplates, Queue<YamlField> yamlNodeQueue) {
@@ -388,10 +384,11 @@ public class TemplateMergeServiceHelper {
   }
 
   @VisibleForTesting
-  Map<String, TemplateEntity> getBatchTemplates(
-      String accountIdentifier, Map<String, GetTemplateEntityRequest> getBatchRequest) {
+  Map<String, TemplateEntity> getBatchTemplatesAndProcessTemplates(
+      String accountIdentifier, Map<String, GetTemplateEntityRequest> getBatchRequest, Queue<YamlField> yamlNodeQueue) {
     Map<String, FetchRemoteEntityRequest> remoteTemplatesRequestList = new HashMap<>();
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
+    Map<String, TemplateEntity> inlineTemplateResponseList = new HashMap<>();
 
     for (Map.Entry<String, GetTemplateEntityRequest> getFileRequest : getBatchRequest.entrySet()) {
       Scope scope = getFileRequest.getValue().getScope();
@@ -410,10 +407,21 @@ public class TemplateMergeServiceHelper {
             getFileRequest.getKey(), buildFetchRemoteEntityRequest(scope, savedEntity, loadFromCache));
       } else {
         templateCacheMap.put(getFileRequest.getKey(), templateEntity.get());
+        inlineTemplateResponseList.put(getFileRequest.getKey(), savedEntity);
       }
     }
+    //    process inline templates
+    if (!inlineTemplateResponseList.isEmpty()) {
+      validateAndAddToQueue(inlineTemplateResponseList, yamlNodeQueue);
+    }
 
-    templateCacheMap.putAll(performBatchGetTemplateAndValidate(accountIdentifier, remoteTemplatesRequestList));
+    //    process remote templates
+    if (!remoteTemplatesRequestList.isEmpty()) {
+      Map<String, TemplateEntity> remoteTemplateResponseList =
+          new HashMap<>(performBatchGetTemplateAndValidate(accountIdentifier, remoteTemplatesRequestList));
+      templateCacheMap.putAll(remoteTemplateResponseList);
+      validateAndAddToQueue(remoteTemplateResponseList, yamlNodeQueue);
+    }
     return templateCacheMap;
   }
 
@@ -496,7 +504,7 @@ public class TemplateMergeServiceHelper {
         resMapWithTemplateRef.put(fieldName, value);
       } else if (value.isArray()) {
         ArrayListForMergedTemplateRef arrayLists = mergeTemplateInputsInArrayWithOpaPolicy(
-            accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth);
+            accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth, loadFromCache);
         resMap.put(fieldName, arrayLists.getArrayList());
         resMapWithTemplateRef.put(fieldName, arrayLists.getArrayListWithTemplateRef());
       } else {
@@ -525,7 +533,8 @@ public class TemplateMergeServiceHelper {
   }
 
   private ArrayListForMergedTemplateRef mergeTemplateInputsInArrayWithOpaPolicy(String accountId, String orgId,
-      String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth) {
+      String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth,
+      boolean loadFromCache) {
     List<Object> arrayList = new ArrayList<>();
     List<Object> arrayListWithTemplateRef = new ArrayList<>();
     for (YamlNode arrayElement : yamlNode.asArray()) {
@@ -533,13 +542,13 @@ public class TemplateMergeServiceHelper {
         arrayList.add(arrayElement);
         arrayListWithTemplateRef.add(arrayElement);
       } else if (arrayElement.isArray()) {
-        ArrayListForMergedTemplateRef arrayListForMergedTemplateRef =
-            mergeTemplateInputsInArrayWithOpaPolicy(accountId, orgId, projectId, arrayElement, templateCacheMap, depth);
+        ArrayListForMergedTemplateRef arrayListForMergedTemplateRef = mergeTemplateInputsInArrayWithOpaPolicy(
+            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, loadFromCache);
         arrayList.add(arrayListForMergedTemplateRef.getArrayList());
         arrayListWithTemplateRef.add(arrayListForMergedTemplateRef.getArrayListWithTemplateRef());
       } else {
         MergeTemplateInputsInObject temp = mergeTemplateInputsInObjectAlongWithOpaPolicy(
-            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, false);
+            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, loadFromCache);
         arrayList.add(temp.getResMap());
         arrayListWithTemplateRef.add(temp.getResMapWithOpaResponse());
       }

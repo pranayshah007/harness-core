@@ -279,7 +279,7 @@ public class ScimUserServiceImpl implements ScimUserService {
 
     if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId)
         && "userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
-        && !user.getEmail().equals(patchOperation.getValue(String.class))) {
+        && !user.getEmail().equalsIgnoreCase(patchOperation.getValue(String.class))) {
       updateUser(patchOperation, user, UserKeys.email);
       log.info("SCIM: Updated user's {}, email from {} to email id: {}", userId, user.getEmail(),
           patchOperation.getValue(String.class));
@@ -330,7 +330,11 @@ public class ScimUserServiceImpl implements ScimUserService {
 
   private void updateUser(PatchOperation patchOperation, User user, String key) throws JsonProcessingException {
     UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
-    updateOperation.set(key, patchOperation.getValue(String.class));
+    String value = patchOperation.getValue(String.class);
+    if ("userName".equals(patchOperation.getPath())) {
+      value = value.toLowerCase();
+    }
+    updateOperation.set(key, value);
     userService.updateUser(user.getUuid(), updateOperation);
   }
 
@@ -416,9 +420,9 @@ public class ScimUserServiceImpl implements ScimUserService {
           && userResource.getEmails() != null && userResource.getEmails().get(0) != null
           && userResource.getEmails().get(0).get("value") != null
           && userResource.getEmails().get(0).get("value").asText() != null
-          && !user.getEmail().equals(userResource.getEmails().get(0).get("value").asText())) {
+          && !user.getEmail().equalsIgnoreCase(userResource.getEmails().get(0).get("value").asText())) {
         userUpdate = true;
-        String emailFromScim = userResource.getEmails().get(0).get("value").asText();
+        String emailFromScim = userResource.getEmails().get(0).get("value").asText().toLowerCase();
         updateOperations.set(UserKeys.email, emailFromScim);
         log.info("SCIM: Updating user's {}, email from {} to email id: {}", userId, user.getEmail(), emailFromScim);
       }

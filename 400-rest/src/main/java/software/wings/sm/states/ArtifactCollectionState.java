@@ -777,7 +777,7 @@ public class ArtifactCollectionState extends State {
       HelmCollectChartResponse helmCollectChartResponse = (HelmCollectChartResponse) notifyResponseData;
       if (CommandExecutionStatus.SUCCESS.equals(helmCollectChartResponse.getCommandExecutionStatus())
           && isNotEmpty(helmCollectChartResponse.getHelmCharts())) {
-        HelmChart helmChart = helmCollectChartResponse.getHelmCharts().get(0);
+        HelmChart helmChart = HelmChart.fromDto(helmCollectChartResponse.getHelmCharts().get(0));
         HelmChart savedHelmChart = helmChartService.createOrUpdateAppVersion(helmChart);
         AppManifestCollectionExecutionData appManifestCollectionExecutionData =
             AppManifestCollectionExecutionData.builder()

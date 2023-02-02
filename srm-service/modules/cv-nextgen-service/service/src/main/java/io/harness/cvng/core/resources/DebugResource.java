@@ -19,10 +19,12 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealth
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.entities.DataCollectionTask;
+import io.harness.cvng.core.jobs.FakeFeatureFlagSRMProducer;
 import io.harness.cvng.core.services.api.DebugService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
+import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -98,9 +100,18 @@ public class DebugResource {
   @POST
   @Timed
   @Path("health-source-spec")
-  @ApiOperation(value = "get health source spec", nickname = "getHealthSourceSpec")
+  @ApiOperation(value = "get health source spec", nickname = "getHealthSourceSpec", hidden = true)
   public RestResponse<HealthSourceSpec> validateHealthSourceSpec(
       @NotNull @BeanParam ProjectScopedProjectParams projectParams) {
     return new RestResponse<>(NextGenHealthSourceSpec.builder().build());
+  }
+
+  @POST
+  @Path("register-ff-change-event")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "register fake ff event in srm queue", nickname = "register", hidden = true)
+  public void register(@Body FakeFeatureFlagSRMProducer.FFEventBody ffEventBody) {
+    debugService.registerFFChangeEvent(ffEventBody);
   }
 }

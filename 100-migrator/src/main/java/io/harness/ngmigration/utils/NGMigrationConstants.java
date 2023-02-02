@@ -13,4 +13,5 @@ public interface NGMigrationConstants {
   String ZIP_FILE_PATH = "/yamls.zip";
   String VIZ_TEMP_DIR_PREFIX = "viz-output";
   String VIZ_FILE_NAME = "/viz.png";
+  String PLEASE_FIX_ME = "__PLEASE_FIX_ME__";
 }

@@ -151,15 +151,14 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
 
   @Hidden
   public ResponseDTO<VariableMergeServiceResponse> createVariables(@NotNull String accountId, @NotNull String orgId,
-      @NotNull String projectId, GitEntityFindInfoDTO gitEntityBasicInfo,
+      @NotNull String projectId, GitEntityFindInfoDTO gitEntityBasicInfo, String loadFromCache,
       @NotNull @ApiParam(hidden = true) String yaml) {
     log.info("Creating variables for pipeline.");
 
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml);
     // Apply all the templateRefs(if any) then check for variables.
     String resolveTemplateRefsInPipeline =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, BOOLEAN_FALSE_VALUE)
-            .getMergedPipelineYaml();
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, loadFromCache).getMergedPipelineYaml();
     VariableMergeServiceResponse variablesResponse =
         variableCreatorMergeService.createVariablesResponses(resolveTemplateRefsInPipeline, false);
 
@@ -170,14 +169,13 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<VariableMergeServiceResponse> createVariablesV2(
       @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
       @NotNull String accountId, @NotNull String orgId, @NotNull String projectId,
-      GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull @ApiParam(hidden = true) String yaml) {
+      GitEntityFindInfoDTO gitEntityBasicInfo, String loadFromCache, @NotNull @ApiParam(hidden = true) String yaml) {
     log.info("Creating variables for pipeline v2 version.");
 
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml);
     // Apply all the templateRefs(if any) then check for variables.
     String resolveTemplateRefsInPipeline =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, BOOLEAN_FALSE_VALUE)
-            .getMergedPipelineYaml();
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, loadFromCache).getMergedPipelineYaml();
     VariableMergeServiceResponse variablesResponse = variableCreatorMergeService.createVariablesResponsesV2(
         accountId, orgId, projectId, resolveTemplateRefsInPipeline);
     return ResponseDTO.newResponse(variablesResponse);

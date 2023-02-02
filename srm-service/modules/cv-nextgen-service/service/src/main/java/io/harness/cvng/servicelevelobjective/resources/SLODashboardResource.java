@@ -21,6 +21,7 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
+import io.harness.cvng.servicelevelobjective.beans.UnavailabilityInstancesResponse;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -39,6 +40,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
@@ -203,5 +205,24 @@ public class SLODashboardResource {
   public ResponseDTO<PageResponse<MSDropdownResponse>>
   getSLOAssociatedMonitoredServices(@BeanParam ProjectParams projectParams, @BeanParam PageParams pageParams) {
     return ResponseDTO.newResponse(sloDashboardService.getSLOAssociatedMonitoredServices(projectParams, pageParams));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @Path("/unavailable-instances/{identifier}")
+  @ApiOperation(value = "Get Unavailability Instances for SLO", nickname = "getUnavailabilityInstances")
+  @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
+  /*  @Operation(operationId = "get Unavailability Instances", summary = "Get Unavailability Instances for SLO",
+        responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Get Unavailability Instances
+     for SLO")
+     })*/
+  public ResponseDTO<List<UnavailabilityInstancesResponse>> getUnavailabilityInstances(
+      @Parameter(description = CVConstants.SLO_PARAM_MESSAGE) @ApiParam(required = true) @NotNull @PathParam(
+          "identifier") @ResourceIdentifier String identifier,
+      @NotNull @Valid @QueryParam("startTime") Long startTime, @NotNull @Valid @QueryParam("endTime") Long endTime,
+      @Valid @BeanParam ProjectParams projectParams) {
+    return ResponseDTO.newResponse(
+        sloDashboardService.getUnavailabilityInstances(projectParams, startTime, endTime, identifier));
   }
 }

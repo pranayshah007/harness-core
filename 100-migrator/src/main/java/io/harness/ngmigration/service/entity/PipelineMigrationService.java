@@ -281,8 +281,7 @@ public class PipelineMigrationService extends NgMigrationService {
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(wfTemplate.getNgEntityDetail()));
     templateLinkConfig.setVersionLabel(wfTemplateConfig.getTemplateInfoConfig().getVersionLabel());
-    templateLinkConfig.setTemplateInputs(
-        migrationTemplateUtils.getTemplateInputs(wfTemplate, accountId, WorkflowMigrationService.VERSION));
+    templateLinkConfig.setTemplateInputs(migrationTemplateUtils.getTemplateInputs(wfTemplate, accountId));
 
     TemplateStageNode templateStageNode = new TemplateStageNode();
     templateStageNode.setName(stageElement.getName());
@@ -304,7 +303,7 @@ public class PipelineMigrationService extends NgMigrationService {
       }
       return YamlUtils.read(response.getYamlPipeline(), PipelineConfig.class);
     } catch (Exception ex) {
-      log.error("Error when getting pipeline - ", ex);
+      log.warn("Error when getting pipeline - ", ex);
       return null;
     }
   }

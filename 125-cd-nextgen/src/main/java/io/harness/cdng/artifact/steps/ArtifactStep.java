@@ -13,7 +13,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.mappers.ArtifactResponseToOutcomeMapper;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
-import io.harness.cdng.service.steps.ServiceStepsHelper;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;

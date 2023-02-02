@@ -34,6 +34,7 @@ public class ServiceExecutionSummary {
   @RecasterAlias("io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary$ArtifactsSummary")
   public static class ArtifactsSummary {
     private ArtifactSummary primary;
+    private String artifactDisplayName;
     @Singular private List<ArtifactSummary> sidecars;
   }
 }

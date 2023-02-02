@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
-import io.harness.cdng.service.steps.ServiceStepsHelper;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;

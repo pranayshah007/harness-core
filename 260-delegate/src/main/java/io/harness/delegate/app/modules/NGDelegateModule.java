@@ -30,6 +30,8 @@ import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactTaskHan
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsTaskHandler;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactTaskHandler;
 import io.harness.http.HttpService;
@@ -60,5 +62,7 @@ public class NGDelegateModule extends AbstractModule {
     bind(ArtifactoryArtifactTaskHandler.class);
     bind(AzureArtifactsTaskHandler.class);
     bind(AMIArtifactTaskHandler.class);
+    bind(GoogleCloudStorageArtifactTaskHandler.class);
+    bind(GoogleCloudSourceArtifactTaskHandler.class);
   }
 }

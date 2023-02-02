@@ -66,6 +66,23 @@ public class EntitySetupUsageQueryFilterHelper {
     return criteria;
   }
 
+  public Criteria createCriteriaWithTwoFqnsEntityFilter(String accountIdentifier, String referredEntityFQN1,
+      String referredEntityFQN2, EntityType referredEntityType, String searchTerm) {
+    Criteria criteria = new Criteria();
+    criteria.and(EntitySetupUsageKeys.accountIdentifier).is(accountIdentifier);
+    criteria.orOperator(Criteria.where(EntitySetupUsageKeys.referredEntityFQN).is(referredEntityFQN1),
+        Criteria.where(EntitySetupUsageKeys.referredEntityFQN).is(referredEntityFQN2));
+    if (referredEntityType != null) {
+      criteria.and(EntitySetupUsageKeys.referredEntityType).is(referredEntityType.getYamlName());
+    }
+    if (isNotBlank(searchTerm)) {
+      criteria.orOperator(Criteria.where(EntitySetupUsageKeys.referredEntityName).regex(searchTerm),
+          Criteria.where(EntitySetupUsageKeys.referredByEntityName).regex(searchTerm));
+    }
+    populateGitCriteriaForReferredEntity(criteria);
+    return criteria;
+  }
+
   private Criteria createCriteriaForDefaultReferredEntity() {
     return new Criteria().orOperator(Criteria.where(EntitySetupUsageKeys.referredEntityIsDefault).is(true),
         Criteria.where(EntitySetupUsageKeys.referredEntityIsDefault).exists(false));

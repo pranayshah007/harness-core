@@ -101,7 +101,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
   public void testObtainTaskSkippedRollback() {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", "test-account").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
@@ -125,7 +125,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
@@ -170,7 +170,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
@@ -216,7 +216,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
@@ -263,7 +263,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
@@ -314,7 +314,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
@@ -350,7 +350,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
@@ -386,7 +386,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
     UnitProgressData unitProgressData = UnitProgressData.builder().build();
     TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()

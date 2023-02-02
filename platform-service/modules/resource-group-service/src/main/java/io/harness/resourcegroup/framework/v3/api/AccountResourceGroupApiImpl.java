@@ -90,7 +90,7 @@ public class AccountResourceGroupApiImpl implements AccountResourceGroupsApi {
         resourceGroupService.list(Scope.of(account, null, null), pageRequest, searchTerm);
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks =
-        ApiUtils.addLinksHeader(responseBuilder, "/v1/resource-groups", pageResponse.getContent().size(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotalElements(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getContent()
                     .stream()

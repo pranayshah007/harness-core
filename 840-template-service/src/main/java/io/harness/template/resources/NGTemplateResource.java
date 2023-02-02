@@ -41,6 +41,7 @@ import io.harness.ng.core.customDeployment.CustomDeploymentYamlRequestDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateListType;
@@ -61,6 +62,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.FilterParamsDTO;
+import io.harness.template.beans.NGTemplateConstants;
 import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.TemplateDeleteListRequestDTO;
@@ -94,6 +96,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -239,7 +242,12 @@ public class NGTemplateResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = "This contains details of Git Entity like Git Branch, Git Repository to be created")
       @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo,
-      @Parameter(description = "Template YAML") @NotNull String templateYaml,
+      @RequestBody(required = true, description = "Template YAML",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Create", summary = "Sample Create Template YAML",
+                         value = NGTemplateConstants.API_SAMPLE_TEMPLATE_YAML, description = "Sample Template YAML"))
+          }) @NotNull String templateYaml,
       @Parameter(description = "Specify true if Default Template is to be set") @QueryParam(
           "setDefaultTemplate") @DefaultValue("false") boolean setDefaultTemplate,
       @Parameter(description = "Comments") @QueryParam("comments") String comments) {
@@ -319,7 +327,12 @@ public class NGTemplateResource {
           NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
       @Parameter(description = "This contains details of Git Entity like Git Branch information to be updated")
       @BeanParam GitEntityUpdateInfoDTO gitEntityInfo,
-      @Parameter(description = "Template YAML") @NotNull String templateYaml,
+      @RequestBody(required = true, description = "Template YAML",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Update", summary = "Sample Update Template YAML",
+                         value = NGTemplateConstants.API_SAMPLE_TEMPLATE_YAML, description = "Sample Template YAML"))
+          }) @NotNull String templateYaml,
       @Parameter(description = "Specify true if Default Template is to be set") @QueryParam(
           "setDefaultTemplate") @DefaultValue("false") boolean setDefaultTemplate,
       @Parameter(description = "Comments") @QueryParam("comments") String comments) {
@@ -604,6 +617,28 @@ public class NGTemplateResource {
         templateIdentifier, projectId, orgId, accountId));
     return ResponseDTO.newResponse(templateMergeService.getTemplateInputs(accountId, orgId, projectId,
         templateIdentifier, templateLabel, NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache)));
+  }
+
+  @GET
+  @Path("/entitySetupUsage/{templateIdentifier}")
+  @ApiOperation(value = "Get Entities referring this template", nickname = "listTemplateUsage")
+  @Hidden
+  public ResponseDTO<List<EntitySetupUsageDTO>> listTemplateEntityUsage(
+      @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
+          "templateIdentifier") @ResourceIdentifier String templateIdentifier,
+      @Parameter(description = "Version Label") @QueryParam(
+          NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
+      @Parameter(description = "Is Stable Template") @QueryParam(NGCommonEntityConstants.IS_STABLE_TEMPLATE)
+      boolean isStableTemplate, @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
+    return ResponseDTO.newResponse(templateService.listTemplateReferences(page, size, accountIdentifier, orgIdentifier,
+        projectIdentifier, templateIdentifier, versionLabel, searchTerm, isStableTemplate));
   }
 
   @GET

@@ -30,17 +30,17 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_MEMORY
 import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_MEMORY_UTILIZATION_VALUE;
 
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
-import io.harness.ccm.graphql.dto.common.DataPoint;
-import io.harness.ccm.graphql.dto.common.DataPoint.DataPointBuilder;
-import io.harness.ccm.graphql.dto.common.Reference;
-import io.harness.ccm.graphql.dto.common.SharedCostParameters;
-import io.harness.ccm.graphql.dto.common.TimeSeriesDataPoints;
-import io.harness.ccm.graphql.dto.perspectives.PerspectiveTimeSeriesData;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.entities.CostTarget;
 import io.harness.ccm.views.businessMapping.entities.SharedCost;
+import io.harness.ccm.views.businessMapping.entities.SharedCostParameters;
 import io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.dto.DataPoint;
+import io.harness.ccm.views.dto.DataPoint.DataPointBuilder;
+import io.harness.ccm.views.dto.PerspectiveTimeSeriesData;
+import io.harness.ccm.views.dto.Reference;
+import io.harness.ccm.views.dto.TimeSeriesDataPoints;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
 import io.harness.ccm.views.graphql.QLCEViewTimeTruncGroupBy;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;

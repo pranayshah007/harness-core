@@ -250,7 +250,23 @@ public enum NGStepType {
       StepSpecTypeConstants.ASG_BLUE_GREEN_DEPLOY),
   @JsonProperty(StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK)
   ASG_BLUE_GREEN_ROLLBACK("Asg Blue Green Rollback", Arrays.asList(ServiceDefinitionType.ASG), "ASG",
-      StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK);
+      StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY)
+  GOOGLE_CLOUD_FUNCTIONS_DEPLOY("Google Cloud Functions Deploy",
+      Arrays.asList(ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS), "Google Functions",
+      StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY),
+  @JsonProperty(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC)
+  GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC("Google Cloud Functions Deploy Without Traffic",
+      Arrays.asList(ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS), "Google Functions",
+      StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC),
+  @JsonProperty(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT)
+  GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT("Google Cloud Functions Deploy Traffic Shift",
+      Arrays.asList(ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS), "Google Functions",
+      StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT),
+  @JsonProperty(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK)
+  GOOGLE_CLOUD_FUNCTIONS_ROLLBACK("Google Cloud Functions Rollback",
+      Arrays.asList(ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS), "Google Functions",
+      StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

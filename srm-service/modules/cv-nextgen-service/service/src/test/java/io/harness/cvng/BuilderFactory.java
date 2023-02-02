@@ -1883,4 +1883,18 @@ public class BuilderFactory {
         .orgIdentifier(context.getOrgIdentifier())
         .build();
   }
+
+  public EntityUnavailabilityStatusesDTO getSLOEntityUnavailabilityStatusesDTO() {
+    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    long endTime = startTime + Duration.ofMinutes(30).toSeconds();
+    return EntityUnavailabilityStatusesDTO.builder()
+        .entityType(EntityType.SLO)
+        .entityId("sliId")
+        .status(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)
+        .startTime(startTime)
+        .endTime(endTime)
+        .projectIdentifier(context.getProjectIdentifier())
+        .orgIdentifier(context.getOrgIdentifier())
+        .build();
+  }
 }

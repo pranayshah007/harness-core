@@ -46,6 +46,7 @@ import io.harness.ng.overview.dto.HealthDeploymentDashboard;
 import io.harness.ng.overview.dto.HealthDeploymentDashboardV2;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
+import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
 import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
 import io.harness.ng.overview.dto.ServiceDeploymentListInfo;
@@ -376,6 +377,22 @@ public class CDDashboardOverviewResource {
       @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String environmentId) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getInstanceGroupedByEnvironmentList(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, environmentId));
+  }
+
+  @GET
+  @Path("/getActiveInstanceGroupedByArtifact")
+  @ApiOperation(value = "Get active instance count for a service grouped on artifact, environment, infrastructure",
+      nickname = "getActiveInstanceGroupedByArtifact")
+  public ResponseDTO<InstanceGroupedOnArtifactList>
+  getActiveInstanceGroupedByEnvironment(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
+      @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String environmentId,
+      @QueryParam(NGCommonEntityConstants.ARTIFACT) String displayName) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getInstanceGroupedOnArtifactList(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, environmentId, displayName));
   }
 
   @GET

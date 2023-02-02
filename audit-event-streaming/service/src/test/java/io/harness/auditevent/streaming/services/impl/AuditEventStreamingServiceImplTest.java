@@ -12,10 +12,8 @@ import static io.harness.audit.entities.AuditEvent.AuditEventKeys.createdAt;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.ACCOUNT_IDENTIFIER_PARAMETER_KEY;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.AWS_S3_STREAMING_PUBLISHER;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.JOB_START_TIME_PARAMETER_KEY;
-import static io.harness.auditevent.streaming.beans.BatchStatus.FAILED;
 import static io.harness.auditevent.streaming.beans.BatchStatus.IN_PROGRESS;
 import static io.harness.auditevent.streaming.beans.BatchStatus.READY;
-import static io.harness.auditevent.streaming.beans.BatchStatus.SUCCESS;
 import static io.harness.auditevent.streaming.entities.StreamingBatch.StreamingBatchKeys.lastStreamedAt;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO.TypeEnum.AWS_S3;
@@ -32,11 +30,13 @@ import io.harness.CategoryTest;
 import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.auditevent.streaming.AuditEventRepository;
 import io.harness.auditevent.streaming.BatchConfig;
 import io.harness.auditevent.streaming.beans.BatchStatus;
+import io.harness.auditevent.streaming.beans.PublishResponse;
+import io.harness.auditevent.streaming.beans.PublishResponseStatus;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
-import io.harness.auditevent.streaming.entities.outgoing.OutgoingAuditMessage;
 import io.harness.auditevent.streaming.publishers.StreamingPublisher;
 import io.harness.auditevent.streaming.publishers.impl.AwsS3StreamingPublisher;
 import io.harness.auditevent.streaming.services.BatchProcessorService;
@@ -111,34 +111,7 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
         .getLastStreamingBatch(streamingDestination, jobParameters.getLong(JOB_START_TIME_PARAMETER_KEY));
     verify(auditEventRepository, times(0)).loadAuditEvents(any(), any());
     verify(streamingBatchService, times(0)).update(ACCOUNT_IDENTIFIER, streamingBatch);
-    verify(batchProcessorService, times(0)).processAuditEvent(any());
-  }
-
-  @Test
-  @Owner(developers = NISHANT)
-  @Category(UnitTests.class)
-  public void testStream_whenStatusFailedAndRetriesExhausted() {
-    long now = System.currentTimeMillis();
-    StreamingDestination streamingDestination = getStreamingDestination();
-    StreamingBatch streamingBatch = getStreamingBatch(streamingDestination, FAILED, now);
-    streamingBatch.setRetryCount(1);
-    JobParameters jobParameters = getJobParameters();
-    when(streamingBatchService.getLastStreamingBatch(
-             streamingDestination, jobParameters.getLong(JOB_START_TIME_PARAMETER_KEY)))
-        .thenReturn(streamingBatch);
-    when(batchConfig.getMaxRetries()).thenReturn(1);
-    StreamingBatch streamingBatchAsReturned = auditEventStreamingService.stream(streamingDestination, jobParameters);
-
-    assertThat(streamingBatchAsReturned).isEqualToComparingFieldByField(streamingBatch);
-
-    verify(streamingBatchService, times(1))
-        .getLastStreamingBatch(streamingDestination, jobParameters.getLong(JOB_START_TIME_PARAMETER_KEY));
-    verify(streamingDestinationService, times(1))
-        .disableStreamingDestination(streamingDestinationArgumentCaptor.capture());
-    assertThat(streamingDestinationArgumentCaptor.getValue()).isEqualTo(streamingDestination);
-    verify(auditEventRepository, times(0)).loadAuditEvents(any(), any());
-    verify(streamingBatchService, times(0)).update(ACCOUNT_IDENTIFIER, streamingBatch);
-    verify(batchProcessorService, times(0)).processAuditEvent(any());
+    verify(batchProcessorService, times(0)).processAuditEvent(eq(streamingBatch), any());
   }
 
   @Test
@@ -162,7 +135,8 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
     assertLoadAuditEventsCallAndCriteria(streamingBatch, streamingBatch.getStartTime());
 
     verify(streamingBatchService, times(1)).update(eq(ACCOUNT_IDENTIFIER), streamingBatchArgumentCaptor.capture());
-    assertThat(streamingBatchArgumentCaptor.getValue().getStatus()).isEqualTo(SUCCESS);
+    assertThat(streamingBatchArgumentCaptor.getValue().getStatus()).isEqualTo(BatchStatus.SUCCESS);
+    assertThat(streamingBatchArgumentCaptor.getValue().getLastStreamedAt()).isGreaterThan(0);
   }
 
   @Test
@@ -185,8 +159,10 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
     when(template.getConverter().read(AuditEvent.class, document))
         .thenReturn(AuditEvent.builder().createdAt(streamingBatch.getStartTime() + MINUTES_15_IN_MILLS).build());
     when(auditEventRepository.loadAuditEvents(any(), any())).thenReturn(mongoCursor);
-    when(batchProcessorService.processAuditEvent(any())).thenReturn(List.of(OutgoingAuditMessage.builder().build()));
-    when(awsS3StreamingPublisher.publish(any(), any())).thenReturn(true);
+    when(batchProcessorService.processAuditEvent(eq(streamingBatch), any()))
+        .thenReturn(List.of(OutgoingAuditMessage.builder().build()));
+    when(awsS3StreamingPublisher.publish(any(), any(), any()))
+        .thenReturn(PublishResponse.builder().status(PublishResponseStatus.SUCCESS).build());
     when(streamingBatchService.update(any(), any())).thenReturn(streamingBatch);
 
     StreamingBatch streamingBatchAsReturned = auditEventStreamingService.stream(streamingDestination, jobParameters);
@@ -198,7 +174,7 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
     verify(streamingBatchService, times(wantedNumberOfInvocations))
         .update(eq(ACCOUNT_IDENTIFIER), streamingBatchArgumentCaptor.capture());
     StreamingBatch streamingBatchCaptured = streamingBatchArgumentCaptor.getValue();
-    assertThat(streamingBatchCaptured.getStatus()).isEqualTo(SUCCESS);
+    assertThat(streamingBatchCaptured.getStatus()).isEqualTo(BatchStatus.SUCCESS);
     assertThat(streamingBatchCaptured.getLastSuccessfulRecordTimestamp())
         .isEqualTo(streamingBatch.getStartTime() + MINUTES_15_IN_MILLS);
     assertThat(streamingBatchCaptured.getNumberOfRecordsPublished()).isEqualTo(1);
@@ -222,7 +198,7 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
     assertLoadAuditEventsCallAndCriteria(streamingBatch, expectedStartTime);
 
     verify(streamingBatchService, times(1)).update(eq(ACCOUNT_IDENTIFIER), streamingBatchArgumentCaptor.capture());
-    StreamingBatch streamingBatchExpected = getStreamingBatch(streamingDestination, FAILED, now);
+    StreamingBatch streamingBatchExpected = getStreamingBatch(streamingDestination, BatchStatus.FAILED, now);
     streamingBatchExpected.setLastSuccessfulRecordTimestamp(streamingBatch.getStartTime() + MINUTES_15_IN_MILLS);
     StreamingBatch streamingBatchCaptured = streamingBatchArgumentCaptor.getValue();
     assertThat(streamingBatchCaptured).isEqualToIgnoringGivenFields(streamingBatchExpected, lastStreamedAt);
@@ -235,7 +211,7 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
   public void testStream_whenStatusFailedAndNewAuditRecordsPublishFailed() {
     long now = System.currentTimeMillis();
     StreamingDestination streamingDestination = getStreamingDestination();
-    StreamingBatch streamingBatch = getStreamingBatch(streamingDestination, FAILED, now);
+    StreamingBatch streamingBatch = getStreamingBatch(streamingDestination, BatchStatus.FAILED, now);
     streamingBatch.setLastSuccessfulRecordTimestamp(streamingBatch.getStartTime() + MINUTES_15_IN_MILLS);
     long expectedStartTime = streamingBatch.getLastSuccessfulRecordTimestamp();
     JobParameters jobParameters = getJobParameters();
@@ -248,7 +224,7 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
     assertLoadAuditEventsCallAndCriteria(streamingBatch, expectedStartTime);
 
     verify(streamingBatchService, times(1)).update(eq(ACCOUNT_IDENTIFIER), streamingBatchArgumentCaptor.capture());
-    StreamingBatch streamingBatchExpected = getStreamingBatch(streamingDestination, FAILED, now);
+    StreamingBatch streamingBatchExpected = getStreamingBatch(streamingDestination, BatchStatus.FAILED, now);
     streamingBatchExpected.setLastSuccessfulRecordTimestamp(streamingBatch.getStartTime() + MINUTES_15_IN_MILLS);
     streamingBatchExpected.setRetryCount(1);
     StreamingBatch streamingBatchCaptured = streamingBatchArgumentCaptor.getValue();
@@ -267,8 +243,10 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
     when(template.getConverter().read(AuditEvent.class, document))
         .thenReturn(AuditEvent.builder().createdAt(streamingBatch.getStartTime() + MINUTES_10_IN_MILLS).build());
     when(auditEventRepository.loadAuditEvents(any(), any())).thenReturn(mongoCursor);
-    when(batchProcessorService.processAuditEvent(any())).thenReturn(List.of(OutgoingAuditMessage.builder().build()));
-    when(awsS3StreamingPublisher.publish(any(), any())).thenReturn(false);
+    when(batchProcessorService.processAuditEvent(eq(streamingBatch), any()))
+        .thenReturn(List.of(OutgoingAuditMessage.builder().build()));
+    when(awsS3StreamingPublisher.publish(any(), any(), any()))
+        .thenReturn(PublishResponse.builder().status(PublishResponseStatus.FAILED).build());
     when(streamingBatchService.update(any(), any())).thenReturn(streamingBatch);
   }
 

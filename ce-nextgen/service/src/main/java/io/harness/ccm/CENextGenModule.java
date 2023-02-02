@@ -18,6 +18,7 @@ import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_FOLDER;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_REPORT;
 import static io.harness.authorization.AuthorizationServiceHeader.CE_NEXT_GEN;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.configuration.DeployMode.KUBERNETES_ONPREM;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
@@ -50,6 +51,7 @@ import io.harness.ccm.budgetGroup.service.BudgetGroupService;
 import io.harness.ccm.budgetGroup.service.BudgetGroupServiceImpl;
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.clickHouse.ClickHouseServiceImpl;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.commons.service.impl.ClusterRecordServiceImpl;
 import io.harness.ccm.commons.service.impl.EntityMetadataServiceImpl;
@@ -116,12 +118,14 @@ import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
+import io.harness.ccm.views.service.impl.ClickHouseViewsBillingServiceImpl;
 import io.harness.ccm.views.service.impl.GovernanceRuleServiceImpl;
 import io.harness.ccm.views.service.impl.RuleEnforcementServiceImpl;
 import io.harness.ccm.views.service.impl.RuleExecutionServiceImpl;
 import io.harness.ccm.views.service.impl.RuleSetServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
 import io.harness.ccm.views.service.impl.ViewsBillingServiceImpl;
+import io.harness.configuration.DeployMode;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
@@ -273,6 +277,20 @@ public class CENextGenModule extends AbstractModule {
       GcpConfig gcpConfig() {
         return configuration.getGcpConfig();
       }
+
+      @Provides
+      @Singleton
+      @Named("clickHouseConfig")
+      ClickHouseConfig clickHouseConfig() {
+        return configuration.getClickHouseConfig();
+      }
+
+      @Provides
+      @Singleton
+      @Named("deployMode")
+      DeployMode deployMode() {
+        return configuration.getDeployMode();
+      }
     });
 
     // Bind Services
@@ -343,7 +361,6 @@ public class CENextGenModule extends AbstractModule {
     bind(CEGcpServiceAccountService.class).to(CEGcpServiceAccountServiceImpl.class);
     bind(GcpServiceAccountService.class).to(GcpServiceAccountServiceImpl.class);
     bind(GcpResourceManagerService.class).to(GcpResourceManagerServiceImpl.class);
-    bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
     bind(CEViewService.class).to(CEViewServiceImpl.class);
     bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(ClusterRecordService.class).to(ClusterRecordServiceImpl.class);
@@ -372,6 +389,12 @@ public class CENextGenModule extends AbstractModule {
     bind(CurrencyPreferenceService.class).to(CurrencyPreferenceServiceImpl.class);
     bind(BudgetGroupService.class).to(BudgetGroupServiceImpl.class);
     bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
+
+    if (configuration.getDeployMode() != KUBERNETES_ONPREM) {
+      bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
+    } else {
+      bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);
+    }
 
     try {
       bind(TimeScaleDBService.class)

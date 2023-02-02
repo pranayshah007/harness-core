@@ -18,6 +18,7 @@ import io.harness.ngmigration.beans.NGYamlFile;
 
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,7 +29,8 @@ public interface InfraDefMapper {
   ServiceDefinitionType getServiceDefinition(InfrastructureDefinition infrastructureDefinition);
   InfrastructureType getInfrastructureType(InfrastructureDefinition infrastructureDefinition);
   Infrastructure getSpec(MigrationInputDTO inputDTO, InfrastructureDefinition infrastructureDefinition,
-      Map<CgEntityId, NGYamlFile> migratedEntities, List<ElastigroupConfiguration> elastigroupConfigurations);
+      Map<CgEntityId, NGYamlFile> migratedEntities, Map<CgEntityId, CgEntityNode> entities,
+      List<ElastigroupConfiguration> elastigroupConfigurations);
 
   default List<String> getConnectorIds(InfrastructureDefinition infrastructureDefinition) {
     return Collections.emptyList();

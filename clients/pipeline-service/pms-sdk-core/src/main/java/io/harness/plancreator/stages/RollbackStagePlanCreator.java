@@ -26,6 +26,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.common.NGSectionStep;
 import io.harness.steps.common.NGSectionStepParameters;
+import io.harness.steps.common.rollback.RollbackStageStep;
 import io.harness.steps.fork.ForkStepParameters;
 import io.harness.steps.fork.NGForkStep;
 
@@ -55,7 +56,7 @@ public class RollbackStagePlanCreator {
             .uuid(stageNode.getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
             .name(stageNode.getName() + " " + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_NODE_NAME)
             .identifier(stageNode.getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
-            .stepType(NGSectionStep.STEP_TYPE)
+            .stepType(RollbackStageStep.STEP_TYPE)
             .stepParameters(
                 NGSectionStepParameters.builder()
                     .childNodeId(stageNode.getUuid() + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX)

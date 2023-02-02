@@ -38,6 +38,7 @@ import io.harness.yaml.core.variables.StringNGVariable;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariableType;
+import software.wings.beans.Variable;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 
@@ -131,6 +132,7 @@ public class MigratorUtility {
     if (StringUtils.isBlank(name)) {
       return "";
     }
+    name = StringUtils.stripAccents(name);
     String generated = CaseUtils.toCamelCase(name.replaceAll("[^A-Za-z0-9]", " ").trim(), false, ' ');
     return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
   }
@@ -267,6 +269,14 @@ public class MigratorUtility {
     return "org." + identifier;
   }
 
+  public static List<NGVariable> getVariables(List<Variable> cgVariables) {
+    List<NGVariable> variables = new ArrayList<>();
+    if (EmptyPredicate.isNotEmpty(cgVariables)) {
+      cgVariables.forEach(serviceVariable -> variables.add(getNGVariable(serviceVariable)));
+    }
+    return variables;
+  }
+
   public static List<NGVariable> getVariables(
       List<ServiceVariable> serviceVariables, Map<CgEntityId, NGYamlFile> migratedEntities) {
     List<NGVariable> variables = new ArrayList<>();
@@ -274,6 +284,20 @@ public class MigratorUtility {
       serviceVariables.forEach(serviceVariable -> variables.add(getNGVariable(serviceVariable, migratedEntities)));
     }
     return variables;
+  }
+
+  public static NGVariable getNGVariable(Variable variable) {
+    String value = "<+input>";
+    if (EmptyPredicate.isNotEmpty(variable.getValue())) {
+      value = String.valueOf(MigratorExpressionUtils.render(variable.getValue(), new HashMap<>()));
+    }
+    String name = variable.getName();
+    name = name.replace('-', '_');
+    return StringNGVariable.builder()
+        .type(NGVariableType.STRING)
+        .name(name)
+        .value(ParameterField.createValueField(value))
+        .build();
   }
 
   public static NGVariable getNGVariable(
@@ -291,9 +315,11 @@ public class MigratorUtility {
         value =
             String.valueOf(MigratorExpressionUtils.render(String.valueOf(serviceVariable.getValue()), new HashMap<>()));
       }
+      String name = serviceVariable.getName();
+      name = name.replace('-', '_');
       return StringNGVariable.builder()
           .type(NGVariableType.STRING)
-          .name(serviceVariable.getName())
+          .name(name)
           .value(ParameterField.createValueField(value))
           .build();
     }
@@ -382,6 +408,7 @@ public class MigratorUtility {
     if (StringUtils.isBlank(str)) {
       return str;
     }
+    str = StringUtils.stripAccents(str);
     Pattern p = Pattern.compile("[^-0-9a-zA-Z_\\s]", Pattern.CASE_INSENSITIVE);
     Matcher m = p.matcher(str);
     String generated = m.replaceAll("_");

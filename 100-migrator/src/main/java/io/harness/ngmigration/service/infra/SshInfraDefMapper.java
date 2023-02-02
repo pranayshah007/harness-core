@@ -41,6 +41,7 @@ import software.wings.infra.InfraMappingInfrastructureProvider;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.infra.PhysicalInfra;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 
 import java.util.Collections;
 import java.util.List;
@@ -100,7 +101,8 @@ public class SshInfraDefMapper implements InfraDefMapper {
 
   @Override
   public Infrastructure getSpec(MigrationInputDTO inputDTO, InfrastructureDefinition infrastructureDefinition,
-      Map<CgEntityId, NGYamlFile> migratedEntities, List<ElastigroupConfiguration> elastigroupConfiguration) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, Map<CgEntityId, CgEntityNode> entities,
+      List<ElastigroupConfiguration> elastigroupConfiguration) {
     switch (infrastructureDefinition.getCloudProviderType()) {
       case AWS:
         return getAwsSshInfra(migratedEntities, infrastructureDefinition.getInfrastructure());

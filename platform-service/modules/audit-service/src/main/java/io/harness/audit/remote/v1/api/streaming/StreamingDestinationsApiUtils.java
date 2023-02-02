@@ -18,6 +18,7 @@ import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys;
 import io.harness.audit.entities.streaming.StreamingDestinationFilterProperties;
+import io.harness.auditevent.streaming.beans.BatchStatus;
 import io.harness.beans.SortOrder;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.ng.beans.PageRequest;
@@ -26,6 +27,7 @@ import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationResponse;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationStatus;
+import io.harness.spec.server.audit.v1.model.StreamingDetails;
 import io.harness.utils.PageUtils;
 
 import java.util.List;
@@ -36,6 +38,20 @@ import org.springframework.data.domain.Pageable;
 public class StreamingDestinationsApiUtils {
   public StreamingDestinationFilterProperties getFilterProperties(String searchTerm, String status) {
     return StreamingDestinationFilterProperties.builder().searchTerm(searchTerm).status(getStatusEnum(status)).build();
+  }
+
+  public StreamingDetails.StatusEnum getStatusEnum(BatchStatus batchStatus) {
+    switch (batchStatus) {
+      case READY:
+        return StreamingDetails.StatusEnum.READY;
+      case IN_PROGRESS:
+        return StreamingDetails.StatusEnum.IN_PROGRESS;
+      case SUCCESS:
+        return StreamingDetails.StatusEnum.SUCCESS;
+      case FAILED:
+        return StreamingDetails.StatusEnum.FAILED;
+    }
+    throw new UnknownEnumTypeException("Streaming status", batchStatus.toString());
   }
 
   private StreamingDestinationStatus getStatusEnum(String status) {

@@ -10,6 +10,7 @@ package io.harness.auditevent.streaming.services.impl;
 import static io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys.accountIdentifier;
 import static io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys.identifier;
 import static io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys.name;
+import static io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys.status;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO.TypeEnum.AWS_S3;
 import static io.harness.spec.server.audit.v1.model.StreamingDestinationStatus.ACTIVE;
@@ -134,6 +135,20 @@ public class StreamingDestinationServiceImplTest extends CategoryTest {
         .hasMessage(
             String.format("Error disabling streaming destination. [streamingDestination = %s] [accountIdentifier = %s]",
                 streamingDestination.getIdentifier(), ACCOUNT_IDENTIFIER));
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testDistinctAccounts() {
+    when(streamingDestinationRepository.findDistinctAccounts(any())).thenReturn(List.of(ACCOUNT_IDENTIFIER));
+    List<String> accountIdentifiers = streamingDestinationsService.distinctAccounts();
+    assertThat(accountIdentifiers).isNotEmpty().hasSize(1);
+    verify(streamingDestinationRepository, times(1)).findDistinctAccounts(criteriaArgumentCaptor.capture());
+    Criteria capturedCriteria = criteriaArgumentCaptor.getValue();
+    assertThat(capturedCriteria).isNotNull();
+    Document document = capturedCriteria.getCriteriaObject();
+    assertThat(document).containsExactly(Map.entry(status, ACTIVE));
   }
 
   private void assertListCriteria(Criteria criteria, StreamingDestinationStatus status, String searchTerm) {

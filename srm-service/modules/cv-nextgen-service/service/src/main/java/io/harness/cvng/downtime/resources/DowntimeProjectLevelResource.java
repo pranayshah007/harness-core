@@ -178,7 +178,7 @@ public class DowntimeProjectLevelResource {
   @PUT
   @Timed
   @ExceptionMetered
-  @Path("{identifier}/flag")
+  @Path("/flag/{identifier}")
   @ApiOperation(value = "Enables disables downtime", nickname = "enablesDisablesDowntime")
   /*  @Operation(operationId = "enableDisableDowntime", summary = "Enables or Disables Downtime",
         responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Enables or Disables Downtime")

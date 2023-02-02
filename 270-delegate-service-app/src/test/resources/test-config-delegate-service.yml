@@ -234,7 +234,7 @@ featureFlagConfig:
 
 cfMigrationConfig:
   enabled: false
-  adminUrl : "http://localhost:3000/api/1.0"
+  adminUrl: "http://localhost:3000/api/1.0"
   apiKey: ""
   account: "default"
   org: "default_org"

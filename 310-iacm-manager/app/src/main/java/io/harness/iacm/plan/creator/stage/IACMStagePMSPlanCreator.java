@@ -7,21 +7,20 @@
 
 package io.harness.iacm.plan.creator.stage;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.CI_CODE_BASE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.EXECUTION;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.PROPERTIES;
+import static io.harness.yaml.extended.ci.codebase.Build.BuildBuilder;
+import static io.harness.yaml.extended.ci.codebase.CodeBase.CodeBaseBuilder;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.build.BuildStatusUpdateParameter;
+import io.harness.beans.entities.Stack;
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
 import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
-import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IACMStageNode;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
@@ -31,7 +30,6 @@ import io.harness.beans.steps.stepinfo.IACMTerraformPlanInfo;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.CIIntegrationStageModifier;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
 import io.harness.ci.states.CISpecStep;
 import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.ci.utils.CIStagePlanCreationUtils;
@@ -39,6 +37,7 @@ import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.IACMStageExecutionException;
+import io.harness.iacmserviceclient.IACMServiceUtils;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
@@ -68,7 +67,12 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.core.timeout.Timeout;
+import io.harness.yaml.extended.ci.codebase.Build;
+import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
+import io.harness.yaml.extended.ci.codebase.PRCloneStrategy;
+import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
+import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -93,11 +97,11 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   private static final String TERRAFORM_APPLY = "IACMTerraformApply";
   private static final String TERRAFORM_DESTROY = "IACMTerraformDestroy";
 
-  private static final String IACM = "iacm";
-
   @Inject private CIIntegrationStageModifier ciIntegrationStageModifier;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
+
+  @Inject private IACMServiceUtils serviceUtils;
 
   /**
    This function seems to be what is called by the pmsSDK in order to create an execution plan
@@ -121,28 +125,21 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     YamlField executionField = specField.getNode().getField(EXECUTION);
     YamlNode parentNode = executionField.getNode().getParentNode();
     String childNodeId = executionField.getNode().getUuid();
-    ExecutionSource executionSource = buildExecutionSource(ctx, stageNode);
-
     String stackId = parentNode.getField("stackID").getNode().getCurrJsonNode().asText();
     String workflow = parentNode.getField("workflow").getNode().getCurrJsonNode().asText();
+
+    // Force the stage execution to clone the codebase
+    stageNode.getIacmStageConfig().setCloneCodebase(ParameterField.<Boolean>builder().value(true).build());
+
+    CodeBase codeBase = getIACMCodebase(ctx, stackId);
+    ExecutionSource executionSource = buildExecutionSource(ctx, stageNode);
 
     // Because we are using a CI stage, the Stage is of type IntegrationStageConfig. From here we are only interested
     // on 3 elements, cloneCodebase, Infrastructure (to use the dlite delegates) and Execution. I think that if any of
     // the other values are present we should fail the execution
-    IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageNode.getStageInfoConfig();
-    boolean cloneCodebase =
-        RunTimeInputHandler.resolveBooleanParameter(integrationStageConfig.getCloneCodebase(), true);
-
-    if (cloneCodebase) {
-      String codeBaseNodeUUID =
-          fetchCodeBaseNodeUUID(ctx, executionField.getNode().getUuid(), executionSource, planCreationResponseMap);
-      if (isNotEmpty(codeBaseNodeUUID)) {
-        childNodeId = codeBaseNodeUUID; // Change the child of security stage to codebase node
-      }
-    }
 
     ExecutionElementConfig modifiedExecutionPlan =
-        modifyYAMLWithImplicitSteps(ctx, executionSource, executionField, stageNode);
+        modifyYAMLWithImplicitSteps(ctx, executionSource, executionField, stageNode, codeBase);
 
     ExecutionElementConfig cleanedExecutionPlan = CleanTemplateStep(modifiedExecutionPlan);
 
@@ -157,7 +154,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
         executionField, planCreationResponseMap, modifiedExecutionPlanWithStackID, parentNode);
 
     BuildStatusUpdateParameter buildStatusUpdateParameter =
-        obtainBuildStatusUpdateParameter(ctx, stageNode, executionSource);
+        obtainBuildStatusUpdateParameter(ctx, stageNode, executionSource, stackId);
     PlanNode specPlanNode = getSpecPlanNode(specField,
         IntegrationStageStepParametersPMS.getStepParameters(
             getIntegrationStageNode(stageNode), childNodeId, buildStatusUpdateParameter, ctx));
@@ -298,8 +295,8 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
    * */
   public SpecParameters getSpecParameters(String childNodeId, PlanCreationContext ctx, IACMStageNode stageNode) {
     ExecutionSource executionSource = buildExecutionSource(ctx, stageNode);
-    BuildStatusUpdateParameter buildStatusUpdateParameter =
-        obtainBuildStatusUpdateParameter(ctx, stageNode, executionSource);
+    BuildStatusUpdateParameter buildStatusUpdateParameter = obtainBuildStatusUpdateParameter(
+        ctx, stageNode, executionSource, stageNode.getIacmStageConfig().getStackID().getValue());
     return IntegrationStageStepParametersPMS.getStepParameters(
         getIntegrationStageNode(stageNode), childNodeId, buildStatusUpdateParameter, ctx);
   }
@@ -371,8 +368,8 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   if we want or need this.
   TODO: Marked for investigation of its utility
    */
-  private ExecutionElementConfig modifyYAMLWithImplicitSteps(
-      PlanCreationContext ctx, ExecutionSource executionSource, YamlField executionYAMLField, IACMStageNode stageNode) {
+  private ExecutionElementConfig modifyYAMLWithImplicitSteps(PlanCreationContext ctx, ExecutionSource executionSource,
+      YamlField executionYAMLField, IACMStageNode stageNode, CodeBase codeBase) {
     ExecutionElementConfig executionElementConfig;
     try {
       executionElementConfig = YamlUtils.read(executionYAMLField.getNode().toString(), ExecutionElementConfig.class);
@@ -380,30 +377,8 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
       throw new InvalidRequestException("Invalid yaml", e);
     }
     IntegrationStageNode integrationStageNode = getIntegrationStageNode(stageNode);
-    return ciIntegrationStageModifier.modifyExecutionPlan(executionElementConfig, integrationStageNode, ctx,
-        getIACMCodebase(ctx), IntegrationStageStepParametersPMS.getInfrastructure(integrationStageNode, ctx),
-        executionSource);
-  }
-
-  /**
-    This seems to be related with the codebase node so i guess that we need this but I don't understand its utility
-   */
-  private String fetchCodeBaseNodeUUID(PlanCreationContext ctx, String executionNodeUUid,
-      ExecutionSource executionSource, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap) {
-    YamlField ciCodeBaseField = getCodebaseYamlField(ctx);
-    if (ciCodeBaseField != null) {
-      String codeBaseNodeUUID = generateUuid();
-      List<PlanNode> codeBasePlanNodeList = CodebasePlanCreator.createPlanForCodeBase(
-          ciCodeBaseField, executionNodeUUid, kryoSerializer, codeBaseNodeUUID, executionSource);
-      if (isNotEmpty(codeBasePlanNodeList)) {
-        for (PlanNode planNode : codeBasePlanNodeList) {
-          planCreationResponseMap.put(
-              planNode.getUuid(), PlanCreationResponse.builder().node(planNode.getUuid(), planNode).build());
-        }
-        return codeBaseNodeUUID;
-      }
-    }
-    return null;
+    return ciIntegrationStageModifier.modifyExecutionPlan(executionElementConfig, integrationStageNode, ctx, codeBase,
+        IntegrationStageStepParametersPMS.getInfrastructure(integrationStageNode, ctx), executionSource);
   }
 
   /**
@@ -434,7 +409,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   private ExecutionSource buildExecutionSource(PlanCreationContext ctx, IACMStageNode stageNode) {
     PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
 
-    CodeBase codeBase = getIACMCodebase(ctx);
+    CodeBase codeBase = getIACMCodebase(ctx, stageNode.getIacmStageConfig().getStackID().getValue());
 
     if (codeBase == null) {
       //  code base is not mandatory in case git clone is false, Sending status won't be possible
@@ -452,8 +427,8 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   TODO: Needs investigation
    */
   private BuildStatusUpdateParameter obtainBuildStatusUpdateParameter(
-      PlanCreationContext ctx, IACMStageNode stageNode, ExecutionSource executionSource) {
-    CodeBase codeBase = getIACMCodebase(ctx);
+      PlanCreationContext ctx, IACMStageNode stageNode, ExecutionSource executionSource, String stackId) {
+    CodeBase codeBase = getIACMCodebase(ctx, stackId);
 
     if (codeBase == null) {
       //  code base is not mandatory in case git clone is false, Sending status won't be possible
@@ -504,30 +479,53 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
         codebase:
    NOTE: If we want to add information at this level, the way to do it will be similar to this method
    */
-  private CodeBase getIACMCodebase(PlanCreationContext ctx) {
-    CodeBase iacmCodeBase = null;
+  private CodeBase getIACMCodebase(PlanCreationContext ctx, String stackId) {
     try {
-      YamlNode properties = YamlUtils.getGivenYamlNodeFromParentPath(ctx.getCurrentField().getNode(), PROPERTIES);
-      YamlNode iacmCodeBaseNode = properties.getField(IACM).getNode().getField(CI_CODE_BASE).getNode();
-      iacmCodeBase = IntegrationStageUtils.getCiCodeBase(iacmCodeBaseNode);
+      CodeBaseBuilder iacmCodeBase = CodeBase.builder();
+      Stack stack = serviceUtils.getIACMStackInfo(
+          ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), stackId);
+      // If the repository name is empty, it means that the connector is an account connector and the repo needs to be
+      // defined
+      if (!Objects.equals(stack.getRepository(), "")) {
+        iacmCodeBase.repoName(ParameterField.<String>builder().value(stack.getRepository()).build());
+      } else {
+        iacmCodeBase.repoName(ParameterField.<String>builder().value(null).build());
+      }
+
+      iacmCodeBase.connectorRef(ParameterField.<String>builder().value(stack.getRepository_connector()).build());
+      iacmCodeBase.depth(ParameterField.<Integer>builder().value(50).build());
+      iacmCodeBase.prCloneStrategy(ParameterField.<PRCloneStrategy>builder().value(null).build());
+      iacmCodeBase.sslVerify(ParameterField.<Boolean>builder().value(null).build());
+      iacmCodeBase.uuid(generateUuid());
+
+      // Now we need to build the Build type for the Codebase.
+      // We support 2,
+
+      BuildBuilder build = Build.builder();
+      if (!Objects.equals(stack.getRepository_branch(), "")) {
+        build.type(BuildType.BRANCH);
+        build.spec(BranchBuildSpec.builder()
+                       .branch(ParameterField.<String>builder().value(stack.getRepository_branch()).build())
+                       .build());
+      } else if (!Objects.equals(stack.getRepository_commit(), "")) {
+        build.type(BuildType.TAG);
+        build.spec(TagBuildSpec.builder()
+                       .tag(ParameterField.<String>builder().value(stack.getRepository_commit()).build())
+                       .build());
+      } else {
+        throw new IACMStageExecutionException(
+            "Unexpected connector information while writing the CodeBase block. There was not repository branch nor commit id defined in the stack "
+            + stackId);
+      }
+
+      return iacmCodeBase.build(ParameterField.<Build>builder().value(build.build()).build()).build();
+
     } catch (Exception ex) {
       // Ignore exception because code base is not mandatory in case git clone is false
       log.warn("Failed to retrieve iacmCodeBase from pipeline");
+      throw new IACMStageExecutionException(
+          "Unexpected error building the connector information from the stack: " + stackId + " ." + ex.getMessage());
     }
-
-    return iacmCodeBase;
-  }
-
-  private YamlField getCodebaseYamlField(PlanCreationContext ctx) {
-    YamlField ciCodeBaseYamlField = null;
-    try {
-      YamlNode properties = YamlUtils.getGivenYamlNodeFromParentPath(ctx.getCurrentField().getNode(), PROPERTIES);
-      ciCodeBaseYamlField = properties.getField(IACM).getNode().getField(CI_CODE_BASE);
-    } catch (Exception ex) {
-      // Ignore exception because code base is not mandatory in case git clone is false
-      log.warn("Failed to retrieve iacmCodeBase from pipeline");
-    }
-    return ciCodeBaseYamlField;
   }
   /**
   This is the step that creates the integrationStageNode class from the stageNode yaml file. Important note is that

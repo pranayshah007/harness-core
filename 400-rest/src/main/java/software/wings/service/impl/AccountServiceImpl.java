@@ -2155,4 +2155,39 @@ public class AccountServiceImpl implements AccountService {
     log.info("Failed to update ring name to {} for accountId = {} ", ringName, accountId);
     return false;
   }
+
+  @Override
+  public Integer getTrustLevel(String accountId) {
+    Account account = get(accountId);
+
+    if (account == null) {
+      throw new AccountNotFoundException(
+          "Account is not found for the given id: " + accountId, null, ACCOUNT_DOES_NOT_EXIST, Level.ERROR, USER, null);
+    }
+    return account.getTrustLevel();
+  }
+
+  @Override
+  public boolean updateTrustLevel(String accountId, Integer trustLevel) {
+    Account account = get(accountId);
+
+    if (account == null) {
+      throw new AccountNotFoundException(
+          "Account is not found for the given id: " + accountId, null, ACCOUNT_DOES_NOT_EXIST, Level.ERROR, USER, null);
+    }
+
+    UpdateOperations<Account> updateOperations = wingsPersistence.createUpdateOperations(Account.class);
+    updateOperations.set(AccountKeys.trustLevel, trustLevel);
+
+    UpdateResults updateResults = wingsPersistence.update(
+        wingsPersistence.createQuery(Account.class).filter(Mapper.ID_KEY, accountId), updateOperations);
+
+    if (updateResults != null && updateResults.getUpdatedCount() > 0) {
+      log.info("Successfully updated account trust level to {} for accountId = {} ", trustLevel, accountId);
+      return true;
+    }
+
+    log.info("Failed to update account trust level to {} for accountId = {} ", trustLevel, accountId);
+    return false;
+  }
 }

@@ -56,4 +56,8 @@ public class TerraformPlanJsonFunctor implements SdkFunctor {
   public static String getExpression(String baseFqn, String outputName) {
     return String.format("%s%s.\"%s.%s\"%s", EXPR_START, TERRAFORM_PLAN_JSON, baseFqn, outputName, EXPR_END);
   }
+
+  public static String getExpressionV2(String outputName) {
+    return String.format("%s%s.\"%s\"%s", EXPR_START, TERRAFORM_PLAN_JSON, outputName, EXPR_END);
+  }
 }

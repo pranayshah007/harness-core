@@ -7,6 +7,7 @@
 
 package software.wings.expression;
 
+import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -77,5 +78,14 @@ public class ShellScriptFunctorTest extends WingsBaseTest {
     ShellScriptFunctor shellScriptFunctor = new ShellScriptFunctor(ScriptType.BASH);
     final String s = shellScriptFunctor.escape(() -> DON_T);
     assertThat(s).isEqualTo("don\\'t");
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testEscapeChars() {
+    ShellScriptFunctor shellScriptFunctor = new ShellScriptFunctor(ScriptType.BASH);
+    final String s = shellScriptFunctor.escapeChars("Use `host.name` for local host name.", "`U");
+    assertThat(s).isEqualTo("\\Use \\`host.name\\` for local host name.");
   }
 }

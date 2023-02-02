@@ -41,9 +41,9 @@ import io.harness.exception.ArtifactoryServerException;
 import io.harness.exception.WingsException.ReportTarget;
 import io.harness.network.Http;
 
-import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
+import software.wings.beans.dto.HelmChart;
 import software.wings.common.BuildDetailsComparatorAscending;
 import software.wings.delegatetasks.collect.artifacts.ArtifactCollectionCommonTaskHelper;
 import software.wings.helpers.ext.jenkins.BuildDetails;
