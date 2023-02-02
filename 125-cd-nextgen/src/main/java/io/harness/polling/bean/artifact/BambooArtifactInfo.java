@@ -15,6 +15,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.polling.bean.ArtifactInfo;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
@@ -24,7 +25,7 @@ import lombok.Value;
 public class BambooArtifactInfo implements ArtifactInfo {
   String connectorRef;
   String planKey;
-  String artifactPath;
+  List<String> artifactPath;
 
   @Override
   public ArtifactSourceType getType() {
@@ -36,7 +37,7 @@ public class BambooArtifactInfo implements ArtifactInfo {
     return BambooArtifactConfig.builder()
         .connectorRef(ParameterField.<String>builder().value(connectorRef).build())
         .planKey(ParameterField.<String>builder().value(planKey).build())
-        .artifactPath(ParameterField.<String>builder().value(artifactPath).build())
+        .artifactPath(ParameterField.<List<String>>builder().value(artifactPath).build())
         .build();
   }
 }

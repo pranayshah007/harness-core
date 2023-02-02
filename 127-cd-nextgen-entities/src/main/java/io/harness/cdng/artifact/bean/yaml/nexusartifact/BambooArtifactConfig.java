@@ -68,7 +68,9 @@ public class BambooArtifactConfig implements ArtifactConfig, Visitable, WithConn
   /**
    * Artifact FilePaths
    */
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> artifactPath;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  @Wither
+  ParameterField<List<String>> artifactPath;
 
   /**
    * Identifier for artifact.
@@ -87,7 +89,7 @@ public class BambooArtifactConfig implements ArtifactConfig, Visitable, WithConn
 
   @Override
   public String getUniqueHash() {
-    List<String> valuesList = Arrays.asList(connectorRef.getValue(), artifactPath.getValue());
+    List<String> valuesList = Arrays.asList(connectorRef.getValue(), planKey.getValue());
     return ArtifactUtils.generateUniqueHashFromStringList(valuesList);
   }
 

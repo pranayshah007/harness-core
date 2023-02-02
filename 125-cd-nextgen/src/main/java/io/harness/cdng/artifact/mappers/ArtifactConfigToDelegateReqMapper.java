@@ -225,11 +225,12 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public BambooArtifactDelegateRequest getBambooDelegateRequest(BambooArtifactConfig artifactConfig,
       BambooConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
-    String artifactPath = artifactConfig.getArtifactPath() != null ? artifactConfig.getArtifactPath().getValue() : "";
+    List<String> artifactPath = artifactConfig.getArtifactPath() != null ? artifactConfig.getArtifactPath().getValue()
+                                                                         : Collections.emptyList();
     String planKey = artifactConfig.getPlanKey() != null ? artifactConfig.getPlanKey().getValue() : "";
     String buildNumber = artifactConfig.getBuild() != null ? artifactConfig.getBuild().getValue() : "";
     return ArtifactDelegateRequestUtils.getBambooDelegateArtifactRequest(connectorRef, connectorDTO,
-        encryptedDataDetails, ArtifactSourceType.BAMBOO, planKey, Arrays.asList(artifactPath), buildNumber);
+        encryptedDataDetails, ArtifactSourceType.BAMBOO, planKey, artifactPath, buildNumber);
   }
   public CustomArtifactDelegateRequest getCustomDelegateRequest(
       CustomArtifactConfig artifactConfig, Ambiance ambiance) {

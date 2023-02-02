@@ -15,6 +15,7 @@ import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.BambooArtifactSummary;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -36,7 +37,7 @@ public class BambooArtifactOutcome implements ArtifactOutcome {
   String planKey;
 
   /** artifactPath */
-  String artifactPath;
+  List<String> artifactPath;
 
   /** Build */
   String build;
