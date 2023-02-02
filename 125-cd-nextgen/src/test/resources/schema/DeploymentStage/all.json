@@ -11230,26 +11230,19 @@
           "type": "string"
         },
         "useFromStage": {
-          "$ref": "#/definitions/ServiceUseFromStageV2"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
           "oneOf": [
             {
-              "required": [
-                "useFromStage"
-              ]
+              "$ref": "#/definitions/ServiceUseFromStageV2"
             },
             {
-              "required": [
-                "serviceRef"
-              ]
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
             }
           ]
         }
-      ]
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ServicesMetadata": {
       "type": "object",

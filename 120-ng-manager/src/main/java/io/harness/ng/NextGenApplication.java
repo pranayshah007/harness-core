@@ -116,6 +116,7 @@ import io.harness.ng.core.exceptionmappers.OptimisticLockingFailureExceptionMapp
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
+import io.harness.ng.core.handler.NGVaultUnsetRenewalHandler;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
 import io.harness.ng.core.migration.UserGroupMigrationProvider;
@@ -615,6 +616,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     //  injector.getInstance(NgDeploymentFreezeActivationHandler.class).registerIterators();
     injector.getInstance(OAuthTokenRefresher.class)
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
+    injector.getInstance(NGVaultUnsetRenewalHandler.class).registerIterators(5);
   }
 
   public void registerJobs(Injector injector) {

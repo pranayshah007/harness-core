@@ -369,7 +369,10 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
 
     when(sshSessionConfigMapper.getSSHSessionConfig(any(), any())).thenReturn(sshSessionConfig);
 
-    terraformBaseHelper.configureCredentialsForModuleSource(taskNGParameters, gitStoreDelegateConfig, logCallback);
+    String baseDir = "./terraform-working-dir/entityId";
+
+    terraformBaseHelper.configureCredentialsForModuleSource(
+        baseDir, taskNGParameters.getEnvironmentVariables(), gitStoreDelegateConfig, logCallback);
     assertThat(taskNGParameters.getEnvironmentVariables().size()).isEqualTo(1);
     assertThat(taskNGParameters.getEnvironmentVariables().get(TerraformBaseHelperImpl.GIT_SSH_COMMAND))
         .contains("ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o PasswordAuthentication=no -i");
@@ -405,7 +408,10 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
 
     when(sshSessionConfigMapper.getSSHSessionConfig(any(), any())).thenReturn(sshSessionConfig);
 
-    terraformBaseHelper.configureCredentialsForModuleSource(taskNGParameters, gitStoreDelegateConfig, logCallback);
+    String baseDir = "./terraform-working-dir/entityId";
+
+    terraformBaseHelper.configureCredentialsForModuleSource(
+        baseDir, taskNGParameters.getEnvironmentVariables(), gitStoreDelegateConfig, logCallback);
     assertThat(taskNGParameters.getEnvironmentVariables().size()).isEqualTo(1);
     assertThat(taskNGParameters.getEnvironmentVariables().get(TerraformBaseHelperImpl.GIT_SSH_COMMAND))
         .contains("ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o PasswordAuthentication=no -i");
@@ -441,7 +447,10 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
 
     when(sshSessionConfigMapper.getSSHSessionConfig(any(), any())).thenReturn(sshSessionConfig);
 
-    terraformBaseHelper.configureCredentialsForModuleSource(taskNGParameters, gitStoreDelegateConfig, logCallback);
+    String baseDir = "./terraform-working-dir/entityId";
+
+    terraformBaseHelper.configureCredentialsForModuleSource(
+        baseDir, taskNGParameters.getEnvironmentVariables(), gitStoreDelegateConfig, logCallback);
     verify(logCallback, times(1))
         .saveExecutionLog(
             color("\nExporting SSH Key with Passphrase for Module Source is not Supported", Yellow), WARN);
@@ -476,7 +485,10 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
 
     when(sshSessionConfigMapper.getSSHSessionConfig(any(), any())).thenReturn(sshSessionConfig);
 
-    terraformBaseHelper.configureCredentialsForModuleSource(taskNGParameters, gitStoreDelegateConfig, logCallback);
+    String baseDir = "./terraform-working-dir/entityId";
+
+    terraformBaseHelper.configureCredentialsForModuleSource(
+        baseDir, taskNGParameters.getEnvironmentVariables(), gitStoreDelegateConfig, logCallback);
     verify(logCallback, times(1))
         .saveExecutionLog(
             color("\nExporting Username and Password with SSH for Module Source is not Supported", Yellow), WARN);
@@ -504,7 +516,10 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
               .sshKeySpecDTO(SSHKeySpecDTO.builder().build())
               .build();
 
-      terraformBaseHelper.configureCredentialsForModuleSource(taskNGParameters, gitStoreDelegateConfig, logCallback);
+      String baseDir = "./terraform-working-dir/entityId";
+
+      terraformBaseHelper.configureCredentialsForModuleSource(
+          baseDir, taskNGParameters.getEnvironmentVariables(), gitStoreDelegateConfig, logCallback);
       verify(logCallback, times(1))
           .saveExecutionLog(
               color("\nExporting Username and Password for Module Source is not Supported", Yellow), WARN);
