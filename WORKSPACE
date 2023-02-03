@@ -20,10 +20,10 @@ http_archive(
 
 http_archive(
     name = "com_google_protobuf",
-    sha256 = "d0f5f605d0d656007ce6c8b5a82df3037e1d8fe8b121ed42e536f569dec16113",
-    strip_prefix = "protobuf-3.14.0",
+    sha256 = "6aff9834fd7c540875e1836967c8d14c6897e3785a2efac629f69860fb7834ff",
+    strip_prefix = "protobuf-3.15.0",
     urls = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/protobuf-github/archive/v3.14.0.tar.gz",
+        "http://jfrogdev.dev.harness.io:80/artifactory/protobuf-github/archive/v3.15.0.tar.gz",
         #"https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v3.14.0.tar.gz",
         #"https://github.com/protocolbuffers/protobuf/archive/v3.14.0.tar.gz",
     ],
@@ -44,21 +44,21 @@ openapi_repositories(
 # Download the Go rules
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "2b1641428dff9018f9e85c0384f03ec6c10660d935b750e3fa1492a281a53b0f",
+    sha256 = "56d8c5a5c91e1af73eca71a6fab2ced959b67c86d12ba37feedb0a2dfea441a6",
     urls = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/rules-go-github/download/v0.29.0/rules_go-v0.29.0.zip",
-        # "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.29.0/rules_go-v0.29.0.zip",
-        # "https://github.com/bazelbuild/rules_go/releases/download/v0.29.0/rules_go-v0.29.0.zip",
+        "http://jfrogdev.dev.harness.io:80/artifactory/rules-go-github/download/v0.37.0/rules_go-v0.37.0.zip",
+        #"https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.37.0/rules_go-v0.37.0.zip",
+        #"https://github.com/bazelbuild/rules_go/releases/download/v0.37.0/rules_go-v0.37.0.zip",
     ],
 )
 
 http_archive(
     name = "bazel_gazelle",
-    sha256 = "222e49f034ca7a1d1231422cdb67066b885819885c356673cb1f72f748a3c9d4",
+    sha256 = "448e37e0dbf61d6fa8f00aaa12d191745e14f07c31cabfa731f0c8e8a4f41b97",
     urls = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/bazel-gazelle-github/download/v0.22.3/bazel-gazelle-v0.22.3.tar.gz",
-        #"https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.22.3/bazel-gazelle-v0.22.3.tar.gz",
-        #"https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.22.3/bazel-gazelle-v0.22.3.tar.gz",
+        "http://jfrogdev.dev.harness.io:80/artifactory/bazel-gazelle-github/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
+        #"https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
+        #"https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
     ],
 )
 
@@ -358,40 +358,6 @@ go_repository(
     importpath = "cloud.google.com/go/profiler",
     sum = "h1:R6y/xAeifaUXxd2x6w+jIwKxoKl8Cv5HJvcvASTPWJo=",
     version = "v0.3.0",
-)
-
-go_rules_dependencies()
-
-go_register_toolchains(version = "1.18.7")
-
-gazelle_dependencies()
-
-http_archive(
-    name = "rules_proto_grpc",
-    sha256 = "5f0f2fc0199810c65a2de148a52ba0aff14d631d4e8202f41aff6a9d590a471b",
-    strip_prefix = "rules_proto_grpc-1.0.2",
-    urls = ["http://jfrogdev.dev.harness.io:80/artifactory/rules-proto-grpc-github/archive/1.0.2.tar.gz"],
-)
-
-load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
-
-rules_proto_grpc_toolchains()
-
-rules_proto_grpc_repos()
-
-load("@rules_proto_grpc//java:repositories.bzl", rules_proto_grpc_java_repos = "java_repos")
-
-rules_proto_grpc_java_repos()
-
-load("@io_grpc_grpc_java//:repositories.bzl", "grpc_java_repositories")
-
-grpc_java_repositories()
-
-http_archive(
-    name = "com_github_query_builder_generator",
-    sha256 = "d72449d0ed7848260c6421be3677633946de46dc69af6588dbb4bc938e9714db",
-    strip_prefix = "query-builder-generator-0.1.23",
-    urls = ["https://github.com/wings-software/query-builder-generator/archive/refs/tags/v0.1.23.zip"],
 )
 
 # Add a go repository
@@ -1023,13 +989,6 @@ go_repository(
     importpath = "google.golang.org/grpc",
     sum = "h1:Eeu7bZtDZ2DpRCsLhUlcrLnvYaMK1Gz86a+hMVvELmM=",
     version = "v1.43.0",
-)
-
-go_repository(
-    name = "org_golang_google_protobuf",
-    importpath = "google.golang.org/protobuf",
-    sum = "h1:4MY060fB1DLGMB/7MBTLnwQUY6+F09GEiz6SsrNqyzM=",
-    version = "v1.23.0",
 )
 
 go_repository(
@@ -4600,6 +4559,47 @@ go_repository(
     importpath = "github.com/blendle/zapdriver",
     sum = "h1:C3dydBOWYRiOk+B8X9IVZ5IOe+7cl+tGOexN4QqHfpE=",
     version = "v1.3.1",
+)
+
+go_rules_dependencies()
+
+go_register_toolchains(version = "1.19.4")
+
+gazelle_dependencies()
+
+http_archive(
+    name = "rules_proto_grpc",
+    sha256 = "5f0f2fc0199810c65a2de148a52ba0aff14d631d4e8202f41aff6a9d590a471b",
+    strip_prefix = "rules_proto_grpc-1.0.2",
+    urls = ["http://jfrogdev.dev.harness.io:80/artifactory/rules-proto-grpc-github/archive/1.0.2.tar.gz"],
+)
+
+load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
+
+rules_proto_grpc_toolchains()
+
+rules_proto_grpc_repos()
+
+load("@rules_proto_grpc//java:repositories.bzl", rules_proto_grpc_java_repos = "java_repos")
+
+rules_proto_grpc_java_repos()
+
+load("@io_grpc_grpc_java//:repositories.bzl", "grpc_java_repositories")
+
+grpc_java_repositories()
+
+http_archive(
+    name = "com_github_query_builder_generator",
+    sha256 = "d72449d0ed7848260c6421be3677633946de46dc69af6588dbb4bc938e9714db",
+    strip_prefix = "query-builder-generator-0.1.23",
+    urls = ["https://github.com/wings-software/query-builder-generator/archive/refs/tags/v0.1.23.zip"],
+)
+
+go_repository(
+    name = "org_golang_google_protobuf",
+    importpath = "google.golang.org/protobuf",
+    sum = "h1:4MY060fB1DLGMB/7MBTLnwQUY6+F09GEiz6SsrNqyzM=",
+    version = "v1.23.0",
 )
 
 ###########################################################################################
