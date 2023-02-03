@@ -14,8 +14,7 @@ import io.harness.idp.config.resource.ConfigManagerResource;
 import io.harness.idp.config.resources.ConfigManagerResourceImpl;
 import io.harness.idp.config.service.AppConfigService;
 import io.harness.idp.config.service.AppConfigServiceImpl;
-import io.harness.idp.secret.resource.SecretManagerResource;
-import io.harness.idp.secret.resources.SecretManagerResourceImpl;
+import io.harness.idp.secret.resources.SecretManagerApiImpl;
 import io.harness.idp.secret.service.EnvironmentVariableService;
 import io.harness.idp.secret.service.EnvironmentVariableServiceImpl;
 import io.harness.idp.status.resource.IDPStatusResource;
@@ -31,6 +30,7 @@ import io.harness.persistence.UserProvider;
 import io.harness.queue.QueueController;
 import io.harness.serializer.IdpServiceRegistrars;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.spec.server.idp.v1.SecretManagerApi;
 import io.harness.threading.ThreadPool;
 import io.harness.version.VersionModule;
 
@@ -144,7 +144,7 @@ public class IdpModule extends AbstractModule {
     bind(AppConfigService.class).to(AppConfigServiceImpl.class);
     bind(EnvironmentVariableService.class).to(EnvironmentVariableServiceImpl.class);
     bind(ConfigManagerResource.class).to(ConfigManagerResourceImpl.class);
-    bind(SecretManagerResource.class).to(SecretManagerResourceImpl.class);
+    bind(SecretManagerApi.class).to(SecretManagerApiImpl.class);
     bind(IDPStatusResource.class).to(IDPStatusResourceImpl.class);
   }
 

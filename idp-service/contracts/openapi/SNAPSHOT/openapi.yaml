@@ -8,110 +8,121 @@ info:
 servers:
   - url: 'https://api.harness.io'
 paths:
-  /v1/token:
+  /v1/secret:
     get:
-      summary: Your GET endpoint
-      tags: []
+      summary: GetSecrets
       responses:
         '200':
-          $ref: '#/components/responses/TokenResponseList'
-      operationId: get-v1-token
-      description: Get all tokens for a given account
+          $ref: '#/components/responses/SecretResponseList'
+      operationId: get-secrets
+      description: Get all secret for a given account
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Sort'
       requestBody:
-        $ref: '#/components/requestBodies/TokenRequest'
+        $ref: '#/components/requestBodies/SecretRequest'
       security:
         - x-api-key: []
+      tags:
+        - SecretManager
     post:
-      summary: ''
-      operationId: post-v1-token
+      summary: CreateSecret
+      operationId: create-secret
       responses:
         '201':
-          $ref: '#/components/responses/TokenResponse'
-      description: Creates a token
+          $ref: '#/components/responses/SecretResponse'
+      description: Creates a secret
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
         - x-api-key: []
       requestBody:
-        $ref: '#/components/requestBodies/TokenRequest'
-  '/v1/token/{token}':
+        $ref: '#/components/requestBodies/SecretRequest'
+      tags:
+        - SecretManager
+    parameters: []
+  '/v1/secret/{secret}':
     parameters:
       - schema:
           type: string
-        name: token
+        name: secret
         in: path
         required: true
     get:
-      summary: Your GET endpoint
-      tags: []
+      summary: GetSecret
       responses:
         '200':
-          $ref: '#/components/responses/TokenResponse'
-      operationId: get-v1-token-token
-      description: Retrieves the specified token
+          $ref: '#/components/responses/SecretResponse'
+      operationId: get-secret
+      description: Get secret for a given secret name
       security:
         - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - SecretManager
     put:
-      summary: ''
-      operationId: put-v1-token-token
+      summary: UpdateSecret
+      operationId: update-secret
       responses:
         '200':
-          $ref: '#/components/responses/TokenResponse'
+          $ref: '#/components/responses/SecretResponse'
       security:
         - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
-        $ref: '#/components/requestBodies/TokenRequest'
-      description: Updates the specified token
+        $ref: '#/components/requestBodies/SecretRequest'
+      description: Updates the specified secret
+      tags:
+        - SecretManager
     delete:
-      summary: ''
-      operationId: delete-v1-token-token
+      summary: DeleteSecret
+      operationId: delete-secret
       responses:
         '200':
-          $ref: '#/components/responses/TokenResponse'
-      description: Deletes the requested token
+          $ref: '#/components/responses/SecretResponse'
+      description: Deletes the requested secret
       security:
         - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - SecretManager
 components:
   schemas:
-    Token:
-      title: Token
+    Secret:
+      title: Secret
       x-stoplight:
-        id: nfzxik84auzqi
+        id: 1avd7teg9jznm
       type: object
       properties:
         name:
           type: string
         secretIdentifier:
           type: string
-    TokenRequest:
-      title: TokenRequest
-      x-stoplight:
-        id: jmiar0p7kinb2
-      type: object
-      properties:
-        name:
-          type: string
         description:
           type: string
-    TokenResponse:
-      title: TokenResponse
+        account:
+          type: string
+    SecretRequest:
+      title: SecretRequest
       x-stoplight:
-        id: uf6lxsrsk2duk
+        id: 0q9h14r875kg2
       type: object
       properties:
-        token:
-          $ref: '#/components/schemas/Token'
+        secret:
+          $ref: '#/components/schemas/Secret'
+    SecretResponse:
+      title: SecretResponse
+      x-stoplight:
+        id: a3p63xmqmdp42
+      type: object
+      properties:
+        secret:
+          $ref: '#/components/schemas/Secret'
         created:
           type: integer
           format: int64
@@ -147,34 +158,34 @@ components:
       schema:
         type: string
       description: Parameter on the basis of which sorting is done.
-    TokenPathParam:
-      name: token
+    SecretPathParam:
+      name: secret
       in: path
       required: true
       schema:
         type: string
-      description: Identifier field of the token the resource is scoped to
+      description: Identifier field of the secret the resource is scoped to
   requestBodies:
-    TokenRequest:
+    SecretRequest:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/TokenRequest'
+            $ref: '#/components/schemas/SecretRequest'
   responses:
-    TokenResponse:
+    SecretResponse:
       description: Example response
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/TokenResponse'
-    TokenResponseList:
+            $ref: '#/components/schemas/SecretResponse'
+    SecretResponseList:
       description: Example response
       content:
         application/json:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/TokenResponse'
+              $ref: '#/components/schemas/SecretResponse'
       headers:
         X-Total-Elements:
           schema:
