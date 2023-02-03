@@ -35,6 +35,8 @@ import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableMergeServiceResponse;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
 
@@ -626,4 +628,53 @@ public interface PipelineResource {
       @PathParam(NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier @Parameter(
           description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) String pipelineIdentifier,
       @BeanParam MoveConfigRequestDTO moveConfigRequestDTO);
+
+  @POST
+  @Path("/{pipelineIdentifier}/validate")
+  @Hidden
+  @ApiOperation(value = "Start a validation event for a Pipeline", nickname = "validatePipeline")
+  @Operation(operationId = "validatePipeline",
+      description = "Start a validation event for a Pipeline and return the uuid of the event",
+      summary = "Start a validation event for a Pipeline",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Return uuid of the started event")
+      })
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  ResponseDTO<PipelineValidationUUIDResponseBody>
+  startPipelineValidationEvent(
+      @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true) @PathParam(
+          NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineId,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+
+  @POST
+  @Path("validate/{uuid}")
+  @Hidden
+  @ApiOperation(value = "Get Pipeline validation event data", nickname = "getPipelineValidateResult")
+  @Operation(operationId = "getPipelineValidateResult",
+      description = "Get Pipeline validation event data for the given uuid",
+      summary = "Get Pipeline validation event data",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Return uuid of the started event")
+      })
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  ResponseDTO<PipelineValidationResponseBody>
+  getPipelineValidateResult(
+      @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true) @PathParam(
+          NGCommonEntityConstants.UUID) String uuid);
 }
