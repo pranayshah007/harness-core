@@ -7,7 +7,9 @@
 
 package io.harness.testlib.module;
 
+import static io.harness.testlib.module.FakeLegacyMongoCreator.takeFakeLegacyMongo;
 import static io.harness.testlib.module.FakeMongoCreator.takeFakeMongo;
+import static io.harness.testlib.module.RealLegacyMongoCreator.takeRealLegacyMongo;
 import static io.harness.testlib.module.RealMongoCreator.takeRealMongo;
 
 import io.harness.factory.ClosingFactory;
@@ -42,13 +44,25 @@ public interface MongoRuleMixin {
         "dbName", String.format("unit_tests_%d_%d", 1000 + random.nextInt(8999), System.currentTimeMillis() / 1000));
   }
 
-  default MongoClient fakeMongoClient(ClosingFactory closingFactory) {
+  default MongoClient fakeLegacyMongoClient(ClosingFactory closingFactory) {
+    FakeLegacyMongoCreator.FakeLegacyMongo fakeMongo = takeFakeLegacyMongo();
+    closingFactory.addServer(fakeMongo);
+    return fakeMongo.getMongoClient();
+  }
+
+  default MongoClient realLegacyMongoClient(ClosingFactory closingFactory, String databaseName) {
+    RealLegacyMongoCreator.RealLegacyMongo realMongo = takeRealLegacyMongo(databaseName);
+    closingFactory.addServer(realMongo);
+    return realMongo.getMongoClient();
+  }
+
+  default com.mongodb.client.MongoClient fakeMongoClient(ClosingFactory closingFactory) {
     FakeMongoCreator.FakeMongo fakeMongo = takeFakeMongo();
     closingFactory.addServer(fakeMongo);
     return fakeMongo.getMongoClient();
   }
 
-  default MongoClient realMongoClient(ClosingFactory closingFactory, String databaseName) {
+  default com.mongodb.client.MongoClient realMongoClient(ClosingFactory closingFactory, String databaseName) {
     RealMongoCreator.RealMongo realMongo = takeRealMongo(databaseName);
     closingFactory.addServer(realMongo);
     return realMongo.getMongoClient();

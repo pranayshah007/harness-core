@@ -62,6 +62,7 @@ import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
+import static io.fabric8.utils.Files.getFileName;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -117,6 +118,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationTy
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
+import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -186,6 +188,7 @@ import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import io.harness.manifest.CustomManifestSource;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
@@ -297,6 +300,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   private static final String DEFAULT = "default";
   private static final HelmCommandFlag TEST_HELM_COMMAND =
       HelmCommandFlag.builder().valueMap(ImmutableMap.of(TEMPLATE, "--debug")).build();
+  private static final HelmCommandFlag HELM_DEPENDENCY_UPDATE =
+      HelmCommandFlag.builder().valueMap(ImmutableMap.of(TEMPLATE, "--dependency-update")).build();
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock private KubernetesContainerService mockKubernetesContainerService;
@@ -330,6 +335,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   public void setup() throws Exception {
     HTimeLimiterMocker.mockCallInterruptible(mockTimeLimiter)
         .thenAnswer(invocation -> invocation.getArgument(0, Callable.class).call());
+    doReturn(-1).when(helmTaskHelperBase).skipDefaultHelmValuesYaml(anyString(), any(), anyBoolean(), any());
   }
 
   @Test
@@ -2748,7 +2754,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn("").when(spyHelperBase).writeValuesToFile(any(), any());
 
     final List<FileData> manifestFiles = spyHelperBase.renderTemplateForHelm("helm", "./chart", new ArrayList<>(),
-        "release", "namespace", executionLogCallback, HelmVersion.V3, 9000, commandFlag);
+        "release", "namespace", executionLogCallback, HelmVersion.V3, 9000, commandFlag, "");
 
     verify(spyHelperBase, times(1)).executeShellCommand(eq("./chart"), anyString(), any(), anyLong());
     assertThat(manifestFiles.size()).isEqualTo(1);
@@ -3021,6 +3027,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                         .helmVersion(HelmVersion.V3)
                                         .storeDelegateConfig(GitStoreDelegateConfig.builder().build())
                                         .helmCommandFlag(TEST_HELM_COMMAND)
+                                        .subChartName("")
                                         .build(),
         "manifest", "manifest");
   }
@@ -3034,8 +3041,18 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                         .storeDelegateConfig(HttpHelmStoreDelegateConfig.builder().build())
                                         .helmCommandFlag(TEST_HELM_COMMAND)
                                         .chartName("chart-name")
+                                        .subChartName("")
                                         .build(),
         "manifest", "manifest/chart-name");
+
+    testRenderTemplateWithHelmSubChart(HelmChartManifestDelegateConfig.builder()
+                                           .helmVersion(HelmVersion.V3)
+                                           .storeDelegateConfig(HttpHelmStoreDelegateConfig.builder().build())
+                                           .helmCommandFlag(HELM_DEPENDENCY_UPDATE)
+                                           .chartName("chart-name")
+                                           .subChartName("first-child")
+                                           .build(),
+        "manifest", "manifest/chart-name/charts/first-child");
   }
 
   private void testRenderTemplateWithHelmChart(ManifestDelegateConfig manifestDelegateConfig, String manifestDirectory,
@@ -3048,7 +3065,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(spyHelper)
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND);
+            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND, "");
 
     List<FileData> result = spyHelper.renderTemplate(K8sDelegateTaskParams.builder().helmPath(helmPath).build(),
         manifestDelegateConfig, manifestDirectory, valuesList, "release", "namespace", executionLogCallback, 10);
@@ -3056,7 +3073,28 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isEqualTo(renderedFiles);
     verify(spyHelper, times(1))
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND);
+            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND, "");
+  }
+
+  private void testRenderTemplateWithHelmSubChart(ManifestDelegateConfig manifestDelegateConfig,
+      String manifestDirectory, String expectedManifestDirectory) throws Exception {
+    K8sTaskHelperBase spyHelper = spy(k8sTaskHelperBase);
+    String helmPath = "/usr/bin/helm";
+    List<String> valuesList = new ArrayList<>();
+    List<FileData> renderedFiles = new ArrayList<>();
+
+    doReturn(renderedFiles)
+        .when(spyHelper)
+        .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
+            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "first-child");
+
+    List<FileData> result = spyHelper.renderTemplate(K8sDelegateTaskParams.builder().helmPath(helmPath).build(),
+        manifestDelegateConfig, manifestDirectory, valuesList, "release", "namespace", executionLogCallback, 10);
+
+    assertThat(result).isEqualTo(renderedFiles);
+    verify(spyHelper, times(1))
+        .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
+            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "first-child");
   }
 
   @Test
@@ -3170,6 +3208,61 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isEqualTo(renderedFiles);
     verify(openShiftDelegateService, times(1))
         .processTemplatization("manifest", ocPath, ocTemplatePath, executionLogCallback, valuesList);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testRenderTemplateOpenshiftHarnessStore() throws Exception {
+    String ocPath = "/usr/bin/openshift";
+    String ocTemplatePath = "/usr/bin/openshift/template/openshiftTemplate.yaml";
+    List<String> valuesList = new ArrayList<>();
+    List<ManifestFiles> manifestFileList = asList(ManifestFiles.builder().filePath(ocTemplatePath).build());
+    ManifestDelegateConfig manifestDelegateConfig =
+        OpenshiftManifestDelegateConfig.builder()
+            .storeDelegateConfig(LocalFileStoreDelegateConfig.builder().manifestFiles(manifestFileList).build())
+            .build();
+    K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().ocPath(ocPath).build();
+    List<FileData> renderedFiles = new ArrayList<>();
+    doReturn(renderedFiles)
+        .when(openShiftDelegateService)
+        .processTemplatization("manifest", ocPath, ocTemplatePath.substring(1), executionLogCallback, valuesList);
+
+    List<FileData> result = k8sTaskHelperBase.renderTemplate(delegateTaskParams, manifestDelegateConfig, "manifest",
+        valuesList, "release", "namespace", executionLogCallback, 10);
+
+    assertThat(result).isEqualTo(renderedFiles);
+    verify(openShiftDelegateService, times(1))
+        .processTemplatization("manifest", ocPath, ocTemplatePath.substring(1), executionLogCallback, valuesList);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testRenderTemplateOpenshiftCustomRemoteStore() throws Exception {
+    String ocPath = "/usr/bin/openshift";
+    String ocTemplatePath = "/usr/bin/openshift/template.yaml";
+    List<String> valuesList = new ArrayList<>();
+    ManifestDelegateConfig manifestDelegateConfig =
+        OpenshiftManifestDelegateConfig.builder()
+            .storeDelegateConfig(
+                CustomRemoteStoreDelegateConfig.builder()
+                    .customManifestSource(CustomManifestSource.builder().filePaths(asList(ocTemplatePath)).build())
+                    .build())
+            .build();
+    K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().ocPath(ocPath).build();
+    List<FileData> renderedFiles = new ArrayList<>();
+    String templateFileName = getFileName(ocTemplatePath);
+    doReturn(renderedFiles)
+        .when(openShiftDelegateService)
+        .processTemplatization("manifest", ocPath, templateFileName, executionLogCallback, valuesList);
+
+    List<FileData> result = k8sTaskHelperBase.renderTemplate(delegateTaskParams, manifestDelegateConfig, "manifest",
+        valuesList, "release", "namespace", executionLogCallback, 10);
+
+    assertThat(result).isEqualTo(renderedFiles);
+    verify(openShiftDelegateService, times(1))
+        .processTemplatization("manifest", ocPath, templateFileName, executionLogCallback, valuesList);
   }
 
   @Test

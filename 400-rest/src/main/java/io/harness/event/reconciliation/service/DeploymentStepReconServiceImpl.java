@@ -19,6 +19,7 @@ import io.harness.event.reconciliation.deployment.DeploymentReconRecordRepositor
 import io.harness.event.timeseries.processor.DeploymentStepEventProcessor;
 import io.harness.event.timeseries.processor.StepEventProcessor;
 import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
+import io.harness.ff.FeatureFlagService;
 import io.harness.lock.PersistentLocker;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
@@ -58,6 +59,7 @@ public class DeploymentStepReconServiceImpl implements DeploymentReconService {
   @Inject private DataFetcherUtils utils;
   @Inject private DeploymentReconRecordRepository deploymentReconRecordRepository;
   @Inject private DeploymentStepEventProcessor deploymentStepEventProcessor;
+  @Inject private FeatureFlagService featureFlagService;
 
   private static final String FIND_DEPLOYMENT_STEP_IN_TSDB = "SELECT ID,START_TIME FROM DEPLOYMENT_STEP WHERE ID=?";
 
@@ -65,7 +67,7 @@ public class DeploymentStepReconServiceImpl implements DeploymentReconService {
   public ReconciliationStatus performReconciliation(
       String accountId, long durationStartTs, long durationEndTs, ExecutionEntity executionEntity) {
     return performReconciliationHelper(accountId, durationStartTs, durationEndTs, timeScaleDBService,
-        deploymentReconRecordRepository, persistence, persistentLocker, utils, executionEntity);
+        deploymentReconRecordRepository, persistence, persistentLocker, utils, executionEntity, featureFlagService);
   }
 
   @Override
@@ -121,6 +123,12 @@ public class DeploymentStepReconServiceImpl implements DeploymentReconService {
       }
     }
     return statusMismatch;
+  }
+
+  @Override
+  public boolean isStatusMismatchedAndUpdatedV2(String accountId, long durationStartTs, long durationEndTs,
+      String sourceEntityClass, String completedExecutionsQuery, DataFetcherUtils utils) {
+    return false;
   }
 
   public void updateRunningWFsFromTSDB(StateExecutionInstance stateExecutionInstance) {

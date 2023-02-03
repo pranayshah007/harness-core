@@ -131,4 +131,6 @@ public interface UserGroupService {
    * @return UserGroup This returns created user group.
    */
   UserGroup updateDefaultUserGroup(UserGroup userGroup);
+
+  Long countUserGroups(String accountIdentifier);
 }

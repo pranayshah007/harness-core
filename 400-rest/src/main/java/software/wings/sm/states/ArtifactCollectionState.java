@@ -303,7 +303,7 @@ public class ArtifactCollectionState extends State {
     String waitId = generateUuid();
 
     // if collection enabled and buildno is empty, get last collected artifact from db and return.
-    if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled()) && isBlank(evaluatedBuildNo)) {
+    if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled()) && (isBlank(evaluatedBuildNo) || isRegex())) {
       Artifact lastCollectedArtifact =
           artifactService.fetchLastCollectedApprovedArtifactForArtifactStream(artifactStream);
       if (lastCollectedArtifact != null) {
@@ -382,7 +382,7 @@ public class ArtifactCollectionState extends State {
                                           .build());
     }
 
-    String delegateTaskId = delegateService.queueTask(delegateTaskBuilder.build());
+    String delegateTaskId = delegateService.queueTaskV2(delegateTaskBuilder.build());
 
     ArtifactCollectionExecutionData artifactCollectionExecutionData =
         ArtifactCollectionExecutionData.builder()
@@ -523,7 +523,7 @@ public class ArtifactCollectionState extends State {
                       .timeout(timeout)
                       .build());
 
-    String delegateTaskId = delegateService.queueTask(delegateTaskBuilder.build());
+    String delegateTaskId = delegateService.queueTaskV2(delegateTaskBuilder.build());
 
     AppManifestCollectionExecutionData appManifestCollectionExecutionData =
         AppManifestCollectionExecutionData.builder()
@@ -569,6 +569,18 @@ public class ArtifactCollectionState extends State {
       resolveArtifactStreamId(context);
     }
     ArtifactStream artifactStream = artifactStreamService.get(artifactStreamId);
+    if (artifactStream == null) {
+      artifactStream = artifactStreamService.fetchByArtifactSourceVariableValue(context.getAppId(), artifactStreamId);
+      if (artifactStream != null && artifactStream.isArtifactStreamParameterized()
+          && isNotEmpty(getTemplateExpressions())) {
+        log.info("Artifact Stream {} is Parameterized", artifactStreamId);
+        return ExecutionResponse.builder()
+            .executionStatus(ExecutionStatus.FAILED)
+            .errorMessage("Parameterized Artifact Source " + artifactStream.getName()
+                + " cannot be used as a value for templatized artifact variable")
+            .build();
+      }
+    }
     notNullCheck("ArtifactStream was deleted", artifactStream);
 
     String evaluatedBuildNo = getEvaluatedBuildNo(context);
@@ -765,7 +777,7 @@ public class ArtifactCollectionState extends State {
       HelmCollectChartResponse helmCollectChartResponse = (HelmCollectChartResponse) notifyResponseData;
       if (CommandExecutionStatus.SUCCESS.equals(helmCollectChartResponse.getCommandExecutionStatus())
           && isNotEmpty(helmCollectChartResponse.getHelmCharts())) {
-        HelmChart helmChart = helmCollectChartResponse.getHelmCharts().get(0);
+        HelmChart helmChart = HelmChart.fromDto(helmCollectChartResponse.getHelmCharts().get(0));
         HelmChart savedHelmChart = helmChartService.createOrUpdateAppVersion(helmChart);
         AppManifestCollectionExecutionData appManifestCollectionExecutionData =
             AppManifestCollectionExecutionData.builder()

@@ -9,6 +9,7 @@ package io.harness.mappers.instanceinfo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.dtos.instanceinfo.AsgInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AwsSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
@@ -23,6 +24,7 @@ import io.harness.dtos.instanceinfo.ReferenceInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.SpotInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.TasInstanceInfoDTO;
+import io.harness.entities.instanceinfo.AsgInstanceInfo;
 import io.harness.entities.instanceinfo.AwsSshWinrmInstanceInfo;
 import io.harness.entities.instanceinfo.AzureSshWinrmInstanceInfo;
 import io.harness.entities.instanceinfo.AzureWebAppNGInstanceInfo;
@@ -71,6 +73,8 @@ public class InstanceInfoMapper {
       return SpotInstanceInfoMapper.toDTO((SpotInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof TasInstanceInfo) {
       return TasInstanceInfoMapper.toDTO((TasInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof AsgInstanceInfo) {
+      return AsgInstanceInfoMapper.toDTO((AsgInstanceInfo) instanceInfo);
     }
     throw new InvalidRequestException("No InstanceInfoMapper toDTO found for instanceInfo : {}" + instanceInfo);
   }
@@ -102,6 +106,8 @@ public class InstanceInfoMapper {
       return SpotInstanceInfoMapper.toEntity((SpotInstanceInfoDTO) instanceInfoDTO);
     } else if (instanceInfoDTO instanceof TasInstanceInfoDTO) {
       return TasInstanceInfoMapper.toEntity((TasInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof AsgInstanceInfoDTO) {
+      return AsgInstanceInfoMapper.toEntity((AsgInstanceInfoDTO) instanceInfoDTO);
     }
     throw new InvalidRequestException(
         "No InstanceInfoMapper toEntity found for instanceInfoDTO : {}" + instanceInfoDTO);

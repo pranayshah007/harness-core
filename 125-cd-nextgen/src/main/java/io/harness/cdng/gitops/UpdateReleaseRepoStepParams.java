@@ -20,11 +20,11 @@ import lombok.Getter;
 
 @OwnedBy(HarnessTeam.GITOPS)
 public class UpdateReleaseRepoStepParams extends UpdateReleaseRepoBaseStepInfo implements GitOpsSpecParameters {
-  @SkipAutoEvaluation @Getter ParameterField<Map<String, Object>> variables;
+  @SkipAutoEvaluation @Getter Map<String, Object> variables;
   @Builder(builderMethodName = "infoBuilder")
   public UpdateReleaseRepoStepParams(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Map<String, String>> stringMap, Map<String, Object> variables) {
     super(stringMap, delegateSelectors);
-    this.variables = ParameterField.createValueField(variables);
+    this.variables = variables;
   }
 }

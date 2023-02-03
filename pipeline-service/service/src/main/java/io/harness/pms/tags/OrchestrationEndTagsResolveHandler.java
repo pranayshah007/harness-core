@@ -14,16 +14,15 @@ import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Update;
@@ -38,13 +37,10 @@ public class OrchestrationEndTagsResolveHandler implements OrchestrationEndObser
 
   @Override
   public void onEnd(Ambiance ambiance) {
-    String accountId = AmbianceUtils.getAccountId(ambiance);
-    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
-    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
-    Optional<PipelineExecutionSummaryEntity> optional = pmsExecutionSummaryService.getPipelineExecutionSummary(
-        accountId, orgId, projectId, ambiance.getPlanExecutionId());
-    if (optional.isPresent()) {
-      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = optional.get();
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
+        pmsExecutionSummaryService.getPipelineExecutionSummaryWithProjections(
+            ambiance.getPlanExecutionId(), Sets.newHashSet(PlanExecutionSummaryKeys.tags));
+    if (pipelineExecutionSummaryEntity != null) {
       List<NGTag> resolvedTags =
           (List<NGTag>) pmsEngineExpressionService.resolve(ambiance, pipelineExecutionSummaryEntity.getTags(), true);
       Update update = new Update().set(PlanExecutionSummaryKeys.tags, resolvedTags);

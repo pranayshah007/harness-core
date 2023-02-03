@@ -25,6 +25,7 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.TableResult;
 import com.google.inject.Inject;
+import java.io.File;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
@@ -79,6 +80,11 @@ public class LicenseUsageInterfaceImpl implements LicenseUsageInterface<CELicens
   public Page<CELicenseUsageDTO> listLicenseUsage(
       String accountIdentifier, ModuleType module, long currentTS, PageableUsageRequestParams usageRequest) {
     throw new NotImplementedException("List license usage is not implemented yet for CE module");
+  }
+
+  @Override
+  public File getLicenseUsageCSVReport(String accountIdentifier, ModuleType moduleType, long currentTsInMs) {
+    throw new NotImplementedException("Get license usage CSV report is not implemented yet for CE module");
   }
 
   private Long getActiveSpend(long timestamp, String accountIdentifier) {

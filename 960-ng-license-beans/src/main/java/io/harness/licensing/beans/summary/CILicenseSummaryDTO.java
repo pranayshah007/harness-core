@@ -34,4 +34,5 @@ import lombok.experimental.SuperBuilder;
     description = "This contains details of the Continuous Integration License Summary in Harness")
 public class CILicenseSummaryDTO extends LicensesWithSummaryDTO {
   public int totalDevelopers;
+  public long cacheSizeAllowance;
 }

@@ -20,6 +20,7 @@ import io.harness.cdng.provision.terraform.TerraformConfigDAL;
 import io.harness.cdng.provision.terraform.TerraformConfigHelper;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformCommandUnit;
@@ -53,9 +54,11 @@ import io.harness.provision.TerraformConstants;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -69,7 +72,7 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private TerraformConfigHelper terraformConfigHelper;
   @Inject private TerraformStepHelper terraformStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
@@ -84,9 +87,9 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     TerraformRollbackStepParameters stepParametersSpec = (TerraformRollbackStepParameters) stepParameters.getSpec();
     log.info("Running Obtain Inline Task for the Rollback Step");
-    String provisionerIdentifier = stepParametersSpec.getProvisionerIdentifier();
-    String entityId =
-        terraformStepHelper.generateFullIdentifier(stepParametersSpec.getProvisionerIdentifier(), ambiance);
+    String provisionerIdentifier =
+        ParameterFieldHelper.getParameterFieldValue(stepParametersSpec.getProvisionerIdentifier());
+    String entityId = terraformStepHelper.generateFullIdentifier(provisionerIdentifier, ambiance);
     try (HIterator<TerraformConfig> configIterator = terraformConfigHelper.getIterator(ambiance, entityId)) {
       if (!configIterator.hasNext()) {
         return TaskRequest.newBuilder()
@@ -174,7 +177,7 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
               .build();
 
       ParameterField<List<TaskSelectorYaml>> delegateSelectors = stepParametersSpec.getDelegateSelectors();
-      return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+      return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
           Collections.singletonList(TerraformCommandUnit.Rollback.name()),
           terraformTaskNGParameters.getDelegateTaskType().getDisplayName(),
           TaskSelectorYaml.toTaskSelector(delegateSelectors), stepHelper.getEnvironmentType(ambiance));

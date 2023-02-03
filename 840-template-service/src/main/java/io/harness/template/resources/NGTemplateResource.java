@@ -7,6 +7,7 @@
 
 package io.harness.template.resources;
 
+import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
@@ -28,7 +29,6 @@ import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
-import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitsync.beans.StoreType;
@@ -41,6 +41,7 @@ import io.harness.ng.core.customDeployment.CustomDeploymentYamlRequestDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateListType;
@@ -61,6 +62,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.FilterParamsDTO;
+import io.harness.template.beans.NGTemplateConstants;
 import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.TemplateDeleteListRequestDTO;
@@ -94,6 +96,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -107,6 +110,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -215,7 +219,7 @@ public class NGTemplateResource {
     }
     TemplateResponseDTO templateResponseDTO = NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity.orElseThrow(
         ()
-            -> new InvalidRequestException(String.format(
+            -> new NotFoundException(String.format(
                 "Template with the given Identifier: %s and %s does not exist or has been deleted", templateIdentifier,
                 EmptyPredicate.isEmpty(versionLabel) ? "stable versionLabel" : "versionLabel: " + versionLabel))));
     return ResponseDTO.newResponse(version, templateResponseDTO);
@@ -238,7 +242,12 @@ public class NGTemplateResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = "This contains details of Git Entity like Git Branch, Git Repository to be created")
       @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo,
-      @Parameter(description = "Template YAML") @NotNull String templateYaml,
+      @RequestBody(required = true, description = "Template YAML",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Create", summary = "Sample Create Template YAML",
+                         value = NGTemplateConstants.API_SAMPLE_TEMPLATE_YAML, description = "Sample Template YAML"))
+          }) @NotNull String templateYaml,
       @Parameter(description = "Specify true if Default Template is to be set") @QueryParam(
           "setDefaultTemplate") @DefaultValue("false") boolean setDefaultTemplate,
       @Parameter(description = "Comments") @QueryParam("comments") String comments) {
@@ -318,7 +327,12 @@ public class NGTemplateResource {
           NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
       @Parameter(description = "This contains details of Git Entity like Git Branch information to be updated")
       @BeanParam GitEntityUpdateInfoDTO gitEntityInfo,
-      @Parameter(description = "Template YAML") @NotNull String templateYaml,
+      @RequestBody(required = true, description = "Template YAML",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Update", summary = "Sample Update Template YAML",
+                         value = NGTemplateConstants.API_SAMPLE_TEMPLATE_YAML, description = "Sample Template YAML"))
+          }) @NotNull String templateYaml,
       @Parameter(description = "Specify true if Default Template is to be set") @QueryParam(
           "setDefaultTemplate") @DefaultValue("false") boolean setDefaultTemplate,
       @Parameter(description = "Comments") @QueryParam("comments") String comments) {
@@ -367,13 +381,15 @@ public class NGTemplateResource {
       @Parameter(description = "Version Label") @NotNull @PathParam(
           NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
       @Parameter(description = "This contains details of Git Entity like Git Branch information to be deleted")
-      @BeanParam GitEntityDeleteInfoDTO entityDeleteInfo, @QueryParam("comments") String comments) {
+      @BeanParam GitEntityDeleteInfoDTO entityDeleteInfo, @QueryParam("comments") String comments,
+      @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
+          "false") boolean forceDelete) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_DELETE_PERMISSION);
     log.info(String.format("Deleting Template with identifier %s and versionLabel %s in project %s, org %s, account %s",
         templateIdentifier, versionLabel, projectId, orgId, accountId));
     return ResponseDTO.newResponse(templateService.delete(accountId, orgId, projectId, templateIdentifier, versionLabel,
-        isNumeric(ifMatch) ? parseLong(ifMatch) : null, comments));
+        isNumeric(ifMatch) ? parseLong(ifMatch) : null, comments, forceDelete));
   }
 
   @DELETE
@@ -400,14 +416,16 @@ public class NGTemplateResource {
       @Body TemplateDeleteListRequestDTO templateDeleteListRequestDTO,
       @Parameter(description = "This contains details of Git Entity like Git Branch information to be deleted")
       @BeanParam GitEntityDeleteInfoDTO entityDeleteInfo,
-      @Parameter(description = "Comments") @QueryParam("comments") String comments) {
+      @Parameter(description = "Comments") @QueryParam("comments") String comments,
+      @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
+          "false") boolean forceDelete) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_DELETE_PERMISSION);
     log.info(
         String.format("Deleting Template with identifier %s and versionLabel list %s in project %s, org %s, account %s",
             templateIdentifier, templateDeleteListRequestDTO.toString(), projectId, orgId, accountId));
     return ResponseDTO.newResponse(templateService.deleteTemplates(accountId, orgId, projectId, templateIdentifier,
-        new HashSet<>(templateDeleteListRequestDTO.getTemplateVersionLabels()), comments));
+        new HashSet<>(templateDeleteListRequestDTO.getTemplateVersionLabels()), comments, forceDelete));
   }
 
   @POST
@@ -602,6 +620,28 @@ public class NGTemplateResource {
   }
 
   @GET
+  @Path("/entitySetupUsage/{templateIdentifier}")
+  @ApiOperation(value = "Get Entities referring this template", nickname = "listTemplateUsage")
+  @Hidden
+  public ResponseDTO<List<EntitySetupUsageDTO>> listTemplateEntityUsage(
+      @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
+          "templateIdentifier") @ResourceIdentifier String templateIdentifier,
+      @Parameter(description = "Version Label") @QueryParam(
+          NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
+      @Parameter(description = "Is Stable Template") @QueryParam(NGCommonEntityConstants.IS_STABLE_TEMPLATE)
+      boolean isStableTemplate, @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
+    return ResponseDTO.newResponse(templateService.listTemplateReferences(page, size, accountIdentifier, orgIdentifier,
+        projectIdentifier, templateIdentifier, versionLabel, searchTerm, isStableTemplate));
+  }
+
+  @GET
   @Path("/templateWithInputs/{templateIdentifier}")
   @ApiOperation(value = "Get Template along with Input Set YAML", nickname = "getTemplateAlongWithInputSetYaml")
   @Operation(operationId = "getTemplateAlongWithInputSetYaml", summary = "Gets Template along with Input Set YAML",
@@ -623,7 +663,8 @@ public class NGTemplateResource {
       @Parameter(description = "Template Label") @NotNull @QueryParam(
           NGCommonEntityConstants.VERSION_LABEL_KEY) String templateLabel,
       @Parameter(
-          description = "This contains details of Git Entity") @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+          description = "This contains details of Git Entity") @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
     // if label not given, then consider stable template label
@@ -631,8 +672,8 @@ public class NGTemplateResource {
     log.info(String.format(
         "Gets Template along with Template inputs for template with identifier %s in project %s, org %s, account %s",
         templateIdentifier, projectId, orgId, accountId));
-    TemplateWithInputsResponseDTO templateWithInputs =
-        templateService.getTemplateWithInputs(accountId, orgId, projectId, templateIdentifier, templateLabel);
+    TemplateWithInputsResponseDTO templateWithInputs = templateService.getTemplateWithInputs(accountId, orgId,
+        projectId, templateIdentifier, templateLabel, NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     String version = "0";
     if (templateWithInputs != null && templateWithInputs.getTemplateResponseDTO() != null
         && templateWithInputs.getTemplateResponseDTO().getVersion() != null) {

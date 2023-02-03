@@ -124,7 +124,8 @@ public class GitOpsRequestDTOMapper {
         .serviceIdentifier(svcId)
         .serviceName(service != null ? service.getName() : null)
         .infrastructureKind(InfrastructureKind.GITOPS)
-        .primaryArtifact(ArtifactDetails.builder().tag(gitOpsInstance.getBuildId()).build())
+        .primaryArtifact(
+            ArtifactDetails.builder().tag(gitOpsInstance.getBuildId()).displayName(gitOpsInstance.getBuildId()).build())
         .instanceKey(InstanceSyncKey.builder()
                          .clazz(GitOpsInstanceRequest.class)
                          .part(gitOpsInstance.getInstanceInfo().getNamespace())

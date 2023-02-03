@@ -10,8 +10,8 @@ package io.harness.template.gitsync;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EntityReference;
 import io.harness.beans.NGTemplateReference;
-import io.harness.common.EntityReference;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
@@ -109,7 +109,7 @@ public class TemplateEntityGitSyncHandler extends AbstractGitSdkEntityHandler<Te
       NGTemplateReference reference = (NGTemplateReference) entityReference;
       return templateService.delete(entityReference.getAccountIdentifier(), entityReference.getOrgIdentifier(),
           entityReference.getProjectIdentifier(), entityReference.getIdentifier(), reference.getVersionLabel(), null,
-          "");
+          "", false);
     } catch (EventsFrameworkDownException ex) {
       throw new UnexpectedException("Producer shutdown: " + ExceptionUtils.getMessage(ex));
     }

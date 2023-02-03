@@ -251,7 +251,7 @@ public class AzureWebAppSlotSwapTest extends WingsBaseTest {
     doReturn(managerExecutionLogCallback).when(azureVMSSStateHelper).getExecutionLogCallback(activity);
     doReturn(appServiceStateData).when(azureVMSSStateHelper).populateAzureAppServiceData(eq(mockContext), any());
     doReturn("service-template-id").when(serviceTemplateHelper).fetchServiceTemplateId(any());
-    doReturn(delegateResult).when(delegateService).queueTask(any());
+    doReturn(delegateResult).when(delegateService).queueTaskV2(any());
     doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
 
     when(mockContext.renderExpression(any())).thenAnswer((Answer<String>) invocation -> {
@@ -259,7 +259,7 @@ public class AzureWebAppSlotSwapTest extends WingsBaseTest {
       return (String) args[0];
     });
     if (!successEnequeueDelegateTask) {
-      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTask(any());
+      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTaskV2(any());
     }
     return mockContext;
   }
@@ -326,7 +326,7 @@ public class AzureWebAppSlotSwapTest extends WingsBaseTest {
 
   private void verifyDelegateTaskCreationResult(ExecutionResponse response) {
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
 
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();

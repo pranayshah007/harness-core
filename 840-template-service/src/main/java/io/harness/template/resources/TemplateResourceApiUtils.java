@@ -14,7 +14,6 @@ import static io.harness.ng.core.template.TemplateEntityConstants.LAST_UPDATES_T
 import static io.harness.ng.core.template.TemplateEntityConstants.STABLE_TEMPLATE;
 
 import static java.lang.Long.parseLong;
-import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 import io.harness.accesscontrol.AccountIdentifier;
@@ -56,6 +55,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AccessLevel;
@@ -93,13 +93,13 @@ public class TemplateResourceApiUtils {
       getInputYaml = false;
     }
 
-    if (getInputYaml == true) {
+    if (getInputYaml) {
       // returns template along with templateInputs yaml
       log.info(String.format(
           "Gets Template along with Template inputs for template with identifier %s in project %s, org %s, account %s",
           templateIdentifier, project, org, account));
       TemplateWithInputsResponseDTO templateWithInputs =
-          templateService.getTemplateWithInputs(account, org, project, templateIdentifier, versionLabel);
+          templateService.getTemplateWithInputs(account, org, project, templateIdentifier, versionLabel, false);
       String version = "0";
       if (templateWithInputs != null && templateWithInputs.getTemplateResponseDTO() != null
           && templateWithInputs.getTemplateResponseDTO().getVersion() != null) {
@@ -122,7 +122,7 @@ public class TemplateResourceApiUtils {
       }
       TemplateResponseDTO templateResponseDTO = NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity.orElseThrow(
           ()
-              -> new InvalidRequestException(String.format(
+              -> new NotFoundException(String.format(
                   "Template with the given Identifier: %s and %s does not exist or has been deleted",
                   templateIdentifier,
                   EmptyPredicate.isEmpty(versionLabel) ? "stable versionLabel" : "versionLabel: " + versionLabel))));
@@ -190,14 +190,14 @@ public class TemplateResourceApiUtils {
 
   public Response deleteTemplate(@AccountIdentifier String account, @OrgIdentifier String org,
       @ProjectIdentifier String project, @ResourceIdentifier String templateIdentifier, String versionLabel,
-      String comments) {
+      String comments, boolean forceDelete) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_DELETE_PERMISSION);
     log.info(String.format("Deleting Template with identifier %s and versionLabel %s in project %s, org %s, account %s",
         templateIdentifier, versionLabel, project, org, account));
 
     templateService.delete(account, org, project, templateIdentifier, versionLabel,
-        isNumeric("ifMatch") ? parseLong("ifMatch") : null, comments);
+        isNumeric("ifMatch") ? parseLong("ifMatch") : null, comments, forceDelete);
     return Response.status(Response.Status.NO_CONTENT).build();
   }
 
@@ -210,7 +210,7 @@ public class TemplateResourceApiUtils {
     log.info(String.format("Get List of templates in project: %s, org: %s, account: %s", project, org, account));
     TemplateFilterPropertiesDTO filterProperties = new TemplateFilterPropertiesDTO();
     List<TemplateEntityType> templateEntityTypes =
-        entityTypes.stream().map(x -> TemplateEntityType.getTemplateType(x)).collect(Collectors.toList());
+        entityTypes.stream().map(TemplateEntityType::getTemplateType).collect(Collectors.toList());
     filterProperties.setTemplateEntityTypes(templateEntityTypes);
     filterProperties.setTemplateNames(names);
     filterProperties.setDescription(description);
@@ -235,35 +235,29 @@ public class TemplateResourceApiUtils {
         templateMetadataSummaryResponseDTOS.map(templateResourceApiMapper::mapToTemplateMetadataResponse);
     List<TemplateMetadataSummaryResponse> templateList = templateMetadataSummaryResponses.getContent();
     ResponseBuilder responseBuilder = Response.ok();
-    if (isEmpty(org)) {
-      ResponseBuilder responseBuilderWithLinks =
-          ApiUtils.addLinksHeader(responseBuilder, "/v1/templates", templateList.size(), page, limit);
-      return responseBuilderWithLinks.entity(templateList).build();
-    } else if (isEmpty(project)) {
-      ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
-          responseBuilder, format("/v1/orgs/%s/templates", org), templateList.size(), page, limit);
-      return responseBuilderWithLinks.entity(templateList).build();
-    } else {
-      ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
-          responseBuilder, format("/v1/orgs/%s/projects/%s/templates", org, project), templateList.size(), page, limit);
-      return responseBuilderWithLinks.entity(templateList).build();
-    }
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, templateMetadataSummaryResponses.getTotalElements(), page, limit);
+    return responseBuilderWithLinks.entity(templateList).build();
   }
   public String toListType(String listType) {
     String type;
     if (isEmpty(listType)) {
       listType = "ALL";
     }
-    if (listType.equals("LAST_UPDATES_TEMPLATE")) {
-      type = LAST_UPDATES_TEMPLATE;
-    } else if (listType.equals("STABLE_TEMPLATE")) {
-      type = STABLE_TEMPLATE;
-    } else if (listType.equals("ALL")) {
-      type = ALL;
-    } else {
-      throw new InvalidRequestException(String.format(
-          "Expected query param 'type' to be of value LAST_UPDATES_TEMPLATE, STABLE_TEMPLATE, ALL. [%s] value Not allowed",
-          listType));
+    switch (listType) {
+      case "LAST_UPDATES_TEMPLATE":
+        type = LAST_UPDATES_TEMPLATE;
+        break;
+      case "STABLE_TEMPLATE":
+        type = STABLE_TEMPLATE;
+        break;
+      case "ALL":
+        type = ALL;
+        break;
+      default:
+        throw new InvalidRequestException(String.format(
+            "Expected query param 'type' to be of value LAST_UPDATES_TEMPLATE, STABLE_TEMPLATE, ALL. [%s] value Not allowed",
+            listType));
     }
     return type;
   }

@@ -8,17 +8,25 @@
 package io.harness.gitsync.common.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.Scope;
+import io.harness.beans.request.GitFileRequestV2;
+import io.harness.beans.response.GitFileBatchResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.services.ConnectorService;
@@ -50,13 +58,19 @@ import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCreateFileRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
+import io.harness.gitsync.common.dtos.ScmGetBatchFileRequestIdentifier;
+import io.harness.gitsync.common.dtos.ScmGetBatchFilesByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByCommitIdRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
+import io.harness.gitsync.common.dtos.ScmGetFileUrlRequestDTO;
+import io.harness.gitsync.common.dtos.ScmGetFileUrlResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
 import io.harness.gitsync.common.helper.GitClientEnabledHelper;
+import io.harness.gitsync.common.helper.GitFilePathHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
+import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.ng.beans.PageRequest;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
@@ -72,12 +86,16 @@ import io.harness.rule.Owner;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -110,13 +128,19 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   ScmConnector scmConnector;
   @Mock GitFileCacheService gitFileCacheService;
   ExecutorService executorService = Executors.newFixedThreadPool(1);
+  DelegateServiceGrpcClient delegateServiceGrpcClient;
+
+  @InjectMocks GitFilePathHelper gitFilePathHelper;
+  @Mock GitFilePathHelper gitFilePathHelperMock;
+
+  String fileUrl = "https://github.com/harness/repoName/blob/branch/filePath";
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
-    scmFacilitatorService =
-        new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, connectorService, scmOrchestratorService,
-            ngFeatureFlagHelperService, gitClientEnabledHelper, gitFileCacheService, executorService);
+    scmFacilitatorService = new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, connectorService,
+        scmOrchestratorService, ngFeatureFlagHelperService, gitClientEnabledHelper, gitFileCacheService,
+        executorService, gitFilePathHelper, delegateServiceGrpcClient);
     pageRequest = PageRequest.builder().build();
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
                                              .connectionType(GitConnectionType.ACCOUNT)
@@ -504,11 +528,85 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
         .isInstanceOf(InvalidRequestException.class);
   }
 
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetFileUrl() {
+    ScmGetFileUrlRequestDTO fileUrlRequestDTO = ScmGetFileUrlRequestDTO.builder()
+                                                    .scope(scope)
+                                                    .branch(branch)
+                                                    .connectorRef(connectorRef)
+                                                    .commitId(commitId)
+                                                    .filePath(filePath)
+                                                    .repoName(repoName)
+                                                    .build();
+    ScmGetFileUrlResponseDTO scmGetFileUrlResponseDTO = scmFacilitatorService.getFileUrl(fileUrlRequestDTO);
+    assertEquals(fileUrl, scmGetFileUrlResponseDTO.getFileURL());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetFileUrlWhenConnectorRefISWrong() {
+    ScmGetFileUrlRequestDTO fileUrlRequestDTO = ScmGetFileUrlRequestDTO.builder()
+                                                    .scope(scope)
+                                                    .connectorRef(connectorRef)
+                                                    .commitId(commitId)
+                                                    .filePath(filePath)
+                                                    .repoName(repoName)
+                                                    .build();
+    on(gitFilePathHelper).set("gitSyncConnectorHelper", gitSyncConnectorHelper);
+    when(gitSyncConnectorHelper.getScmConnectorForGivenRepo(any(), any(), any(), any(), any()))
+        .thenThrow(InvalidRequestException.class);
+    assertThatThrownBy(() -> scmFacilitatorService.getFileUrl(fileUrlRequestDTO));
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetBatchFiles_Validations() {
+    Map<ScmGetBatchFileRequestIdentifier, ScmGetFileByBranchRequestDTO> scmGetFileByBranchRequestDTOMap =
+        new HashMap<>();
+    scmGetFileByBranchRequestDTOMap.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder().scope(getDefaultScope()).build());
+    assertThatThrownBy(()
+                           -> scmFacilitatorService.getBatchFilesByBranch(
+                               ScmGetBatchFilesByBranchRequestDTO.builder()
+                                   .accountIdentifier(UUID.randomUUID().toString())
+                                   .scmGetFileByBranchRequestDTOMap(scmGetFileByBranchRequestDTOMap)
+                                   .build()))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testProcessGitFileBatchRequest() {
+    GitFileBatchResponse gitFileBatchResponse =
+        scmFacilitatorService.processGitFileBatchRequest(null, new HashMap<>(), true);
+    assertThat(gitFileBatchResponse.getGetBatchFileRequestIdentifierGitFileResponseMap()).isEmpty();
+
+    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> gitFileRequestMap = new HashMap<>();
+    gitFileRequestMap.put(GetBatchFileRequestIdentifier.builder().identifier(UUID.randomUUID().toString()).build(),
+        GitFileRequestV2.builder().build());
+    scmFacilitatorService.processGitFileBatchRequest(null, gitFileRequestMap, true);
+    verify(scmOrchestratorService, times(1)).processScmRequestUsingManager(any());
+    verify(scmOrchestratorService, times(0)).processScmRequestUsingDelegate(any());
+
+    scmFacilitatorService.processGitFileBatchRequest(null, gitFileRequestMap, false);
+    verify(scmOrchestratorService, times(1)).processScmRequestUsingManager(any());
+    verify(scmOrchestratorService, times(1)).processScmRequestUsingDelegate(any());
+  }
+
   private Scope getDefaultScope() {
     return Scope.builder()
         .accountIdentifier(accountIdentifier)
         .orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
         .build();
+  }
+
+  private ScmGetBatchFileRequestIdentifier getBatchFileRequestIdentifier(String identifier) {
+    return ScmGetBatchFileRequestIdentifier.builder().identifier(identifier).build();
   }
 }

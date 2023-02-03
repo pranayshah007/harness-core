@@ -408,7 +408,7 @@ public class AccountResource {
   public RestResponse<Boolean> disableAccount(
       @QueryParam("accountId") String accountId, @QueryParam("migratedTo") String migratedToClusterUrl) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
-      log.info("Disabling account");
+      log.info("Disabling account: {}", accountId);
       RestResponse<Boolean> response = accountPermissionUtils.checkIfHarnessUser("User not allowed to disable account");
       if (response == null) {
         response = new RestResponse<>(accountService.disableAccount(accountId, urlDecode(migratedToClusterUrl)));
@@ -718,6 +718,28 @@ public class AccountResource {
       return RestResponse.Builder.aRestResponse()
           .withResponseMessages(
               Lists.newArrayList(ResponseMessage.builder().message("User not allowed to validate smp license").build()))
+          .build();
+    }
+  }
+
+  @POST
+  @Path("{accountId}/is-smp-account")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Boolean> updateIsSmpAccount(@PathParam("accountId") String accountId,
+      @QueryParam("customerAccountId") @NotNull String customerAccountId,
+      @QueryParam("isSmpAccount") @DefaultValue("false") boolean isSmpAccount) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(accountService.updateIsSmpAccount(customerAccountId, isSmpAccount));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(Lists.newArrayList(
+              ResponseMessage.builder().message("User not allowed to update account smp status").build()))
           .build();
     }
   }

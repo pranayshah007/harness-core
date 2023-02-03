@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.shell.winrm;
 
+import static io.harness.utils.SecretUtils.validateDecryptedValue;
+
 import io.harness.delegate.task.winrm.AuthenticationScheme;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.delegate.task.winrm.WinRmSessionConfig.WinRmSessionConfigBuilder;
@@ -59,6 +61,8 @@ public class WinRmConfigAuthEnhancer {
     NTLMConfigDTO decryptedNTLMConfigDTO =
         (NTLMConfigDTO) secretDecryptionService.decrypt(ntlmConfigDTO, encryptionDetails);
 
+    char[] decryptedValue = decryptedNTLMConfigDTO.getPassword().getDecryptedValue();
+    validateDecryptedValue(decryptedValue, decryptedNTLMConfigDTO.getPassword().getIdentifier());
     builder.authenticationScheme(AuthenticationScheme.NTLM)
         .domain(ntlmConfigDTO.getDomain())
         .port(port)
@@ -66,7 +70,7 @@ public class WinRmConfigAuthEnhancer {
         .useSSL(ntlmConfigDTO.isUseSSL())
         .useNoProfile(ntlmConfigDTO.isUseNoProfile())
         .skipCertChecks(ntlmConfigDTO.isSkipCertChecks())
-        .password(String.valueOf(decryptedNTLMConfigDTO.getPassword().getDecryptedValue()));
+        .password(String.valueOf(decryptedValue));
 
     return builder.build();
   }
@@ -85,7 +89,9 @@ public class WinRmConfigAuthEnhancer {
           TGTPasswordSpecDTO passwordSpecDTO =
               (TGTPasswordSpecDTO) secretDecryptionService.decrypt(tgtPasswordSpecDTO, encryptionDetails);
 
-          password = String.valueOf(passwordSpecDTO.getPassword().getDecryptedValue());
+          char[] decryptedValue = passwordSpecDTO.getPassword().getDecryptedValue();
+          validateDecryptedValue(decryptedValue, passwordSpecDTO.getPassword().getIdentifier());
+          password = String.valueOf(decryptedValue);
           break;
 
         case KeyTabFilePath:

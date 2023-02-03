@@ -122,7 +122,7 @@ public class StackDriverStateTest extends APMStateVerificationTestBase {
   public void testTriggerAnalysisDataCollection_whenConnectorIdIsValid() {
     stackDriverState.triggerAnalysisDataCollection(executionContext, analysisContext, executionData, hosts);
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(delegateTaskArgumentCaptor.capture());
 
     DelegateTask task = delegateTaskArgumentCaptor.getValue();
     StackDriverDataCollectionInfo dataCollectionInfo =

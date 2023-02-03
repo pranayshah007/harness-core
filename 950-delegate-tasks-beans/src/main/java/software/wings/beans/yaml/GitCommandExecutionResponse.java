@@ -13,6 +13,7 @@ import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.eraro.ErrorCode;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -26,6 +27,7 @@ public class GitCommandExecutionResponse implements DelegateTaskNotifyResponseDa
   private GitCommandResult gitCommandResult;
   private GitCommandRequest gitCommandRequest;
   private GitCommandStatus gitCommandStatus;
+  private Map<String, String> fetchedCommitIdsMap;
   private String errorMessage;
   private ErrorCode errorCode;
   private DelegateMetaInfo delegateMetaInfo;

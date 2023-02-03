@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
+import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.TimeGraphResponse;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
@@ -119,6 +120,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject private SLOErrorBudgetResetService sloErrorBudgetResetService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private CVNGLogService cvngLogService;
+
+  @Inject private NextGenService nextGenService;
   @Inject
   private Map<ServiceLevelObjectiveType, AbstractServiceLevelObjectiveUpdatableEntity>
       serviceLevelObjectiveTypeUpdatableEntityTransformerMap;
@@ -128,6 +131,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject private ServiceLevelObjectiveDetailsTransformer serviceLevelObjectiveDetailsTransformer;
   @Inject private SLIRecordServiceImpl sliRecordService;
   @Inject private CompositeSLORecordServiceImpl compositeSLORecordService;
+  private Query<AbstractServiceLevelObjective> sloQuery;
 
   @Override
   public TimeGraphResponse getOnboardingGraph(CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec) {
@@ -488,6 +492,11 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   }
 
   @Override
+  public List<AbstractServiceLevelObjective> get(ProjectParams projectParams, List<String> identifiers) {
+    return get(projectParams, Filter.builder().identifiers(identifiers).build());
+  }
+
+  @Override
   public List<AbstractServiceLevelObjective> getByMonitoredServiceIdentifier(
       ProjectParams projectParams, String monitoredServiceIdentifier) {
     return get(projectParams, Filter.builder().monitoredServiceIdentifier(monitoredServiceIdentifier).build());
@@ -528,11 +537,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     if (isNotEmpty(filter.getCompositeSLOIdentifier())) {
       CompositeServiceLevelObjective compositeSLO = (CompositeServiceLevelObjective) checkIfSLOPresentWithType(
           projectParams, filter.getCompositeSLOIdentifier(), ServiceLevelObjectiveType.COMPOSITE);
-
-      simpleSLOIdentifiers = compositeSLO.getServiceLevelObjectivesDetails()
-                                 .stream()
-                                 .map(ServiceLevelObjectivesDetail::getServiceLevelObjectiveRef)
-                                 .collect(Collectors.toList());
+      simpleSLOIdentifiers = getReferencedSimpleSLOs(projectParams, compositeSLO);
       serviceLevelObjectivesDetailList = compositeSLO.getServiceLevelObjectivesDetails();
     }
     return getResponse(projectParams, pageParams.getPage(), pageParams.getSize(), serviceLevelObjectivesDetailList,
@@ -551,6 +556,23 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                     : null)
             .childResource(filter.isChildResource())
             .build());
+  }
+
+  @Override
+  public List<String> getReferencedSimpleSLOs(
+      ProjectParams projectParams, CompositeServiceLevelObjective compositeServiceLevelObjective) {
+    return compositeServiceLevelObjective.getServiceLevelObjectivesDetails()
+        .stream()
+        .map(ServiceLevelObjectivesDetail::getServiceLevelObjectiveRef)
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public Set<String> getReferencedMonitoredServices(List<AbstractServiceLevelObjective> serviceLevelObjectiveList) {
+    return serviceLevelObjectiveList.stream()
+        .filter(slo -> slo.getType().equals(ServiceLevelObjectiveType.SIMPLE))
+        .map(slo -> ((SimpleServiceLevelObjective) slo).getMonitoredServiceIdentifier())
+        .collect(Collectors.toSet());
   }
 
   @Override
@@ -865,7 +887,19 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
               .filter(slo -> filter.getErrorBudgetRisks().contains(sloIdToRiskMap.get(slo.getIdentifier())))
               .collect(Collectors.toList());
     }
-    return serviceLevelObjectiveList;
+    List<String> accessibleProjects =
+        nextGenService.listAccessibleProjects(projectParams.getAccountIdentifier())
+            .stream()
+            .map(projectDTO
+                -> ScopedInformation.getScopedInformation(
+                    projectParams.getAccountIdentifier(), projectDTO.getOrgIdentifier(), projectDTO.getIdentifier()))
+            .collect(Collectors.toList());
+    return serviceLevelObjectiveList.stream()
+        .filter(slo
+            -> slo.getType().equals(ServiceLevelObjectiveType.COMPOSITE)
+                || accessibleProjects.contains(ScopedInformation.getScopedInformation(
+                    slo.getAccountId(), slo.getOrgIdentifier(), slo.getProjectIdentifier())))
+        .collect(Collectors.toList());
   }
 
   private PageResponse<AbstractServiceLevelObjective> getResponse(ProjectParams projectParams, Integer offset,

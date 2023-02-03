@@ -9,12 +9,8 @@ package io.harness.ccm.graphql.query.perspectives;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
-import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
-import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ccm.bigQuery.BigQueryService;
-import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.perspectives.PerspectiveFieldsHelper;
 import io.harness.ccm.graphql.core.perspectives.PerspectiveOverviewStatsHelper;
 import io.harness.ccm.graphql.core.perspectives.PerspectiveTimeSeriesHelper;
@@ -24,11 +20,11 @@ import io.harness.ccm.graphql.dto.perspectives.PerspectiveEntityStatsData;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveFieldsData;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveFilterData;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveOverviewStatsData;
-import io.harness.ccm.graphql.dto.perspectives.PerspectiveTimeSeriesData;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveTrendStats;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
 import io.harness.ccm.rbac.CCMRbacHelper;
+import io.harness.ccm.views.dto.PerspectiveTimeSeriesData;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
@@ -41,11 +37,12 @@ import io.harness.ccm.views.graphql.QLCEViewTrendInfo;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewsBillingService;
+import io.harness.ccm.views.service.impl.ClickHouseViewsBillingServiceImpl;
 
 import com.google.cloud.Timestamp;
-import com.google.cloud.bigquery.BigQuery;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import io.leangen.graphql.annotations.GraphQLArgument;
 import io.leangen.graphql.annotations.GraphQLEnvironment;
 import io.leangen.graphql.annotations.GraphQLQuery;
@@ -67,12 +64,12 @@ public class PerspectivesQuery {
   @Inject ViewsBillingService viewsBillingService;
   @Inject private CEViewService viewService;
   @Inject ViewsQueryHelper viewsQueryHelper;
-  @Inject BigQueryService bigQueryService;
-  @Inject BigQueryHelper bigQueryHelper;
   @Inject PerspectiveOverviewStatsHelper perspectiveOverviewStatsHelper;
   @Inject PerspectiveTimeSeriesHelper perspectiveTimeSeriesHelper;
   @Inject PerspectiveFieldsHelper perspectiveFieldsHelper;
   @Inject CCMRbacHelper rbacHelper;
+  @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
+  @Inject ClickHouseViewsBillingServiceImpl clickHouseViewsBillingService;
   private static final int MAX_LIMIT_VALUE = 10_000;
 
   @GraphQLQuery(name = "perspectiveTrendStats", description = "Trend stats for perspective")
@@ -83,8 +80,6 @@ public class PerspectivesQuery {
       @GraphQLArgument(name = "isClusterQuery") Boolean isClusterQuery,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
-    BigQuery bigQuery = bigQueryService.get();
     isClusterQuery = isClusterQuery != null && isClusterQuery;
     groupBy = groupBy != null ? groupBy : Collections.emptyList();
 
@@ -93,8 +88,8 @@ public class PerspectivesQuery {
       groupBy = Collections.emptyList();
     }
 
-    QLCEViewTrendData trendStatsData = viewsBillingService.getTrendStatsDataNg(bigQuery, filters, groupBy,
-        aggregateFunction, cloudProviderTableName, viewsQueryHelper.buildQueryParams(accountId, isClusterQuery));
+    QLCEViewTrendData trendStatsData = viewsBillingService.getTrendStatsDataNg(
+        filters, groupBy, aggregateFunction, viewsQueryHelper.buildQueryParams(accountId, isClusterQuery));
     return PerspectiveTrendStats.builder()
         .cost(getStats(trendStatsData.getTotalCost()))
         .idleCost(getStats(trendStatsData.getIdleCost()))
@@ -113,8 +108,6 @@ public class PerspectivesQuery {
       @GraphQLArgument(name = "isClusterQuery") Boolean isClusterQuery,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
-    BigQuery bigQuery = bigQueryService.get();
     isClusterQuery = isClusterQuery != null && isClusterQuery;
     groupBy = groupBy != null ? groupBy : Collections.emptyList();
 
@@ -123,8 +116,8 @@ public class PerspectivesQuery {
       groupBy = Collections.emptyList();
     }
 
-    QLCEViewTrendInfo forecastCostData = viewsBillingService.getForecastCostData(bigQuery, filters, groupBy,
-        aggregateFunction, cloudProviderTableName, viewsQueryHelper.buildQueryParams(accountId, isClusterQuery));
+    QLCEViewTrendInfo forecastCostData = viewsBillingService.getForecastCostData(
+        filters, groupBy, aggregateFunction, viewsQueryHelper.buildQueryParams(accountId, isClusterQuery));
     return PerspectiveTrendStats.builder()
         .cost(StatsInfo.builder()
                   .statsTrend(forecastCostData.getStatsTrend())
@@ -147,16 +140,13 @@ public class PerspectivesQuery {
       @GraphQLArgument(name = "skipRoundOff") Boolean skipRoundOff,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
-    BigQuery bigQuery = bigQueryService.get();
     isClusterQuery = isClusterQuery != null && isClusterQuery;
     skipRoundOff = skipRoundOff != null && skipRoundOff;
     final int maxLimit = Objects.isNull(limit) ? MAX_LIMIT_VALUE : Integer.min(limit, MAX_LIMIT_VALUE);
 
     return PerspectiveEntityStatsData.builder()
         .data(viewsBillingService
-                  .getEntityStatsDataPointsNg(bigQuery, filters, groupBy, aggregateFunction, sortCriteria,
-                      cloudProviderTableName, maxLimit, offset,
+                  .getEntityStatsDataPointsNg(filters, groupBy, aggregateFunction, sortCriteria, maxLimit, offset,
                       viewsQueryHelper.buildQueryParams(accountId, isClusterQuery, skipRoundOff))
                   .getData())
         .build();
@@ -172,13 +162,11 @@ public class PerspectivesQuery {
       @GraphQLArgument(name = "isClusterQuery") Boolean isClusterQuery,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
-    BigQuery bigQuery = bigQueryService.get();
     isClusterQuery = isClusterQuery != null && isClusterQuery;
 
     return PerspectiveFilterData.builder()
-        .values(viewsBillingService.getFilterValueStatsNg(bigQuery, filters, cloudProviderTableName, limit, offset,
-            viewsQueryHelper.buildQueryParams(accountId, isClusterQuery)))
+        .values(viewsBillingService.getFilterValueStatsNg(
+            filters, limit, offset, viewsQueryHelper.buildQueryParams(accountId, isClusterQuery)))
         .build();
   }
 
@@ -203,8 +191,6 @@ public class PerspectivesQuery {
     final boolean includeUnallocatedCost =
         Objects.nonNull(preferences) && Boolean.TRUE.equals(preferences.getIncludeUnallocatedCost());
     final int maxLimit = Objects.isNull(limit) ? MAX_LIMIT_VALUE : Integer.min(limit, MAX_LIMIT_VALUE);
-    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
-    BigQuery bigQuery = bigQueryService.get();
     long timePeriod = perspectiveTimeSeriesHelper.getTimePeriod(groupBy);
     String conversionField = null;
     if (viewsBillingService.isDataGroupedByAwsAccount(filters, groupBy)) {
@@ -218,8 +204,8 @@ public class PerspectivesQuery {
 
     ViewQueryParams viewQueryParams = viewsQueryHelper.buildQueryParams(accountId, true, false, isClusterQuery, false);
     Map<String, Map<Timestamp, Double>> sharedCostFromFilters =
-        viewsBillingService.getSharedCostPerTimestampFromFilters(bigQuery, filters, groupBy, aggregateFunction,
-            sortCriteria, cloudProviderTableName, viewQueryParams, viewQueryParams.isSkipRoundOff());
+        viewsBillingService.getSharedCostPerTimestampFromFilters(
+            filters, groupBy, aggregateFunction, sortCriteria, viewQueryParams, viewQueryParams.isSkipRoundOff());
 
     ViewQueryParams viewQueryParamsWithSkipDefaultGroupBy =
         viewsQueryHelper.buildQueryParams(accountId, true, false, isClusterQuery, false, true);
@@ -230,22 +216,29 @@ public class PerspectivesQuery {
     businessMappingIdsFromRulesAndFilters.addAll(businessMappingIdsFromRules);
     boolean addSharedCostFromGroupBy = !businessMappingIdsFromRulesAndFilters.contains(businessMappingId);
 
-    PerspectiveTimeSeriesData data = perspectiveTimeSeriesHelper.fetch(
-        viewsBillingService.getTimeSeriesStatsNg(bigQuery, filters, groupBy, aggregateFunction, sortCriteria,
-            cloudProviderTableName, includeOthers, maxLimit, viewQueryParams),
-        timePeriod, conversionField, businessMappingId, accountId, groupBy, sharedCostFromFilters,
-        addSharedCostFromGroupBy);
+    PerspectiveTimeSeriesData data = null;
+    if (isClickHouseEnabled) {
+      data = clickHouseViewsBillingService.getClickHouseTimeSeriesStatsNg(filters, groupBy, aggregateFunction,
+          sortCriteria, includeOthers, maxLimit, viewQueryParams, timePeriod, conversionField, businessMappingId,
+          sharedCostFromFilters, addSharedCostFromGroupBy);
+    } else {
+      data = perspectiveTimeSeriesHelper.fetch(
+          viewsBillingService.getTimeSeriesStatsNg(
+              filters, groupBy, aggregateFunction, sortCriteria, includeOthers, maxLimit, viewQueryParams),
+          timePeriod, conversionField, businessMappingId, accountId, groupBy, sharedCostFromFilters,
+          addSharedCostFromGroupBy);
+    }
 
     Map<Long, Double> othersTotalCost = Collections.emptyMap();
     if (includeOthers) {
-      othersTotalCost = viewsBillingService.getOthersTotalCostDataNg(bigQuery, filters, groupBy,
-          Collections.emptyList(), cloudProviderTableName, viewQueryParamsWithSkipDefaultGroupBy);
+      othersTotalCost = viewsBillingService.getOthersTotalCostDataNg(
+          filters, groupBy, Collections.emptyList(), viewQueryParamsWithSkipDefaultGroupBy);
     }
 
     Map<Long, Double> unallocatedCost = Collections.emptyMap();
     if (includeUnallocatedCost) {
-      unallocatedCost = viewsBillingService.getUnallocatedCostDataNg(bigQuery, filters, groupBy,
-          Collections.emptyList(), cloudProviderTableName, viewQueryParamsWithSkipDefaultGroupBy);
+      unallocatedCost = viewsBillingService.getUnallocatedCostDataNg(
+          filters, groupBy, Collections.emptyList(), viewQueryParamsWithSkipDefaultGroupBy);
     }
 
     return perspectiveTimeSeriesHelper.postFetch(data, includeOthers, othersTotalCost, unallocatedCost);
@@ -278,12 +271,10 @@ public class PerspectivesQuery {
       @GraphQLArgument(name = "isClusterQuery") Boolean isClusterQuery,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
-    BigQuery bigQuery = bigQueryService.get();
     isClusterQuery = isClusterQuery != null && isClusterQuery;
 
-    return viewsBillingService.getTotalCountForQuery(bigQuery, filters, groupBy, cloudProviderTableName,
-        viewsQueryHelper.buildQueryParams(accountId, false, false, isClusterQuery, true));
+    return viewsBillingService.getTotalCountForQuery(
+        filters, groupBy, viewsQueryHelper.buildQueryParams(accountId, false, false, isClusterQuery, true));
   }
 
   @GraphQLQuery(name = "workloadLabels", description = "Labels for workloads")
@@ -291,10 +282,7 @@ public class PerspectivesQuery {
       @GraphQLArgument(name = "filters") List<QLCEViewFilterWrapper> filters,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, CLUSTER_TABLE);
-    BigQuery bigQuery = bigQueryService.get();
-
-    return viewsBillingService.getLabelsForWorkloads(bigQuery, workloads, cloudProviderTableName, filters);
+    return viewsBillingService.getLabelsForWorkloads(accountId, workloads, filters);
   }
 
   private StatsInfo getStats(QLCEViewTrendInfo trendInfo) {

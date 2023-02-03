@@ -20,4 +20,5 @@ import org.springframework.data.annotation.TypeAlias;
 public class HostedVmConfig {
   boolean splitLinuxAmd64Pool;
   boolean splitLinuxArm64Pool;
+  boolean splitWindowsAmd64Pool;
 }

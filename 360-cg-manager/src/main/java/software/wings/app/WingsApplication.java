@@ -16,6 +16,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.lock.mongo.MongoPersistentLocker.LOCKS_STORE;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.microservice.NotifyEngineTarget.GENERAL;
+import static io.harness.ng.DbAliases.DMS;
 import static io.harness.persistence.HPersistence.ANALYTICS_STORE_NAME;
 import static io.harness.time.DurationUtils.durationTillDayTime;
 import static io.harness.waiter.OrchestrationNotifyEventListener.ORCHESTRATION;
@@ -163,10 +164,8 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.service.DelegateServiceModule;
 import io.harness.service.impl.DelegateNgTokenServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
-import io.harness.service.impl.DelegateTaskServiceImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
 import io.harness.service.intfc.DelegateProfileObserver;
-import io.harness.service.intfc.DelegateTaskService;
 import io.harness.service.intfc.DelegateTokenService;
 import io.harness.springdata.SpringPersistenceModule;
 import io.harness.state.inspection.StateInspectionListener;
@@ -219,6 +218,7 @@ import software.wings.resources.SearchResource;
 import software.wings.resources.graphql.GraphQLResource;
 import software.wings.scheduler.AccessRequestHandler;
 import software.wings.scheduler.AccountPasswordExpirationJob;
+import software.wings.scheduler.DelegateDisconnectAlertHelper;
 import software.wings.scheduler.DeletedEntityHandler;
 import software.wings.scheduler.InstancesPurgeJob;
 import software.wings.scheduler.LdapGroupScheduledHandler;
@@ -234,6 +234,7 @@ import software.wings.scheduler.events.segment.SegmentGroupEventJob;
 import software.wings.scheduler.marketplace.gcp.GCPBillingHandler;
 import software.wings.scheduler.persistance.PersistentLockCleanup;
 import software.wings.search.framework.ElasticsearchSyncService;
+import software.wings.search.redisConsumer.ApplicationTimeScaleRedisChangeEventConsumer;
 import software.wings.security.AuthResponseFilter;
 import software.wings.security.AuthRuleFilter;
 import software.wings.security.AuthenticationFilter;
@@ -254,6 +255,7 @@ import software.wings.service.impl.CloudProviderObserver;
 import software.wings.service.impl.DelegateObserver;
 import software.wings.service.impl.DelegateProfileServiceImpl;
 import software.wings.service.impl.DelegateServiceImpl;
+import software.wings.service.impl.DelegateTaskServiceClassicImpl;
 import software.wings.service.impl.ExecutionEventListener;
 import software.wings.service.impl.InfrastructureMappingServiceImpl;
 import software.wings.service.impl.SettingAttributeObserver;
@@ -937,7 +939,8 @@ public class WingsApplication extends Application<MainConfiguration> {
     modules.add(new IndexMigratorModule());
     modules.add(new YamlModule());
     modules.add(new ManagerQueueModule());
-    modules.add(new ManagerEventsFrameworkModule(configuration.getEventsFrameworkConfiguration()));
+    modules.add(new ManagerEventsFrameworkModule(
+        configuration.getEventsFrameworkConfiguration(), configuration.getDebeziumConsumerConfigs()));
 
     modules.add(new ManagerExecutorModule());
     modules.add(new TemplateModule());
@@ -1124,6 +1127,11 @@ public class WingsApplication extends Application<MainConfiguration> {
         && !configuration.getEventsMongo().getUri().equals(configuration.getMongoConnectionFactory().getUri())) {
       persistence.register(Store.builder().name("events").build(), configuration.getEventsMongo().getUri());
     }
+
+    if (isNotEmpty(configuration.getDmsMongo().getUri())
+        && !configuration.getDmsMongo().getUri().equals(configuration.getMongoConnectionFactory().getUri())) {
+      persistence.register(Store.builder().name(DMS).build(), configuration.getDmsMongo().getUri());
+    }
   }
 
   private void registerDataStores(Injector injector) {
@@ -1270,6 +1278,8 @@ public class WingsApplication extends Application<MainConfiguration> {
     RedisConsumerControllerCg controller = injector.getInstance(RedisConsumerControllerCg.class);
     controller.register(injector.getInstance(NotifyEventConsumerCg.class), listenerConfig.getNotifyConsumerCount());
     controller.register(injector.getInstance(GeneralEventConsumerCg.class), listenerConfig.getGeneralConsumerCount());
+    controller.register(injector.getInstance(ApplicationTimeScaleRedisChangeEventConsumer.class),
+        configuration.getDebeziumConsumerConfigs().getApplicationTimescaleStreaming().getThreads());
   }
 
   private void scheduleJobsManager(
@@ -1288,9 +1298,15 @@ public class WingsApplication extends Application<MainConfiguration> {
         .scheduleWithFixedDelay(
             injector.getInstance(GitChangeSetRunnable.class), random.nextInt(5), 5L, TimeUnit.SECONDS);
 
-    injector.getInstance(DeploymentReconExecutorService.class)
-        .scheduleWithFixedDelay(
-            injector.getInstance(DeploymentReconTask.class), random.nextInt(60), 15 * 60L, TimeUnit.SECONDS);
+    if (configuration.getDataReconciliationConfig() == null) {
+      injector.getInstance(DeploymentReconExecutorService.class)
+          .scheduleWithFixedDelay(
+              injector.getInstance(DeploymentReconTask.class), random.nextInt(60), 15 * 60L, TimeUnit.SECONDS);
+    } else if (configuration.getDataReconciliationConfig().isEnabled()) {
+      injector.getInstance(DeploymentReconExecutorService.class)
+          .scheduleWithFixedDelay(injector.getInstance(DeploymentReconTask.class), random.nextInt(60),
+              configuration.getDataReconciliationConfig().getDuration(), TimeUnit.SECONDS);
+    }
 
     injector.getInstance(LookerEntityReconExecutorService.class)
         .scheduleWithFixedDelay(
@@ -1369,7 +1385,7 @@ public class WingsApplication extends Application<MainConfiguration> {
           (DelegateServiceImpl) injector.getInstance(Key.get(DelegateService.class));
 
       if (isManager()) {
-        registerManagerObservers(injector, delegateServiceImpl);
+        registerManagerObservers(injector);
       }
 
       if (shouldEnableDelegateMgmt(configuration)) {
@@ -1389,8 +1405,6 @@ public class WingsApplication extends Application<MainConfiguration> {
    * @param delegateServiceImpl
    */
   private void registerDelegateServiceObservers(Injector injector, DelegateServiceImpl delegateServiceImpl) {
-    DelegateTaskServiceImpl delegateTaskService =
-        (DelegateTaskServiceImpl) injector.getInstance(Key.get(DelegateTaskService.class));
     DelegateProfileServiceImpl delegateProfileService =
         (DelegateProfileServiceImpl) injector.getInstance(Key.get(DelegateProfileService.class));
     DelegateProfileEventHandler delegateProfileEventHandler =
@@ -1404,6 +1418,9 @@ public class WingsApplication extends Application<MainConfiguration> {
     perpetualTaskService.getPerpetualTaskCrudSubject().register(
         injector.getInstance(Key.get(PerpetualTaskRecordHandler.class)));
     delegateServiceImpl.getSubject().register(perpetualTaskService);
+    DelegateDisconnectAlertHelper delegateDisconnectAlertHelper =
+        injector.getInstance(Key.get(DelegateDisconnectAlertHelper.class));
+    delegateServiceImpl.getSubject().register(delegateDisconnectAlertHelper);
 
     ClusterRecordHandler clusterRecordHandler = injector.getInstance(Key.get(ClusterRecordHandler.class));
     SettingsServiceImpl settingsService = (SettingsServiceImpl) injector.getInstance(Key.get(SettingsService.class));
@@ -1411,6 +1428,10 @@ public class WingsApplication extends Application<MainConfiguration> {
 
     KubernetesClusterHandler kubernetesClusterHandler = injector.getInstance(Key.get(KubernetesClusterHandler.class));
     delegateServiceImpl.getSubject().register(kubernetesClusterHandler);
+
+    DelegateTaskServiceClassicImpl delegateTaskServiceClassic =
+        injector.getInstance(Key.get(DelegateTaskServiceClassicImpl.class));
+    delegateServiceImpl.getSubject().register(delegateTaskServiceClassic);
 
     CEPerpetualTaskHandler cePerpetualTaskHandler = injector.getInstance(Key.get(CEPerpetualTaskHandler.class));
     ClusterRecordServiceImpl clusterRecordService =
@@ -1435,10 +1456,10 @@ public class WingsApplication extends Application<MainConfiguration> {
 
   /**
    * All the observers that belong to manager
+   *
    * @param injector
-   * @param delegateServiceImpl
    */
-  private void registerManagerObservers(Injector injector, DelegateServiceImpl delegateServiceImpl) {
+  private void registerManagerObservers(Injector injector) {
     YamlPushServiceImpl yamlPushService = (YamlPushServiceImpl) injector.getInstance(Key.get(YamlPushService.class));
     AuditServiceImpl auditService = (AuditServiceImpl) injector.getInstance(Key.get(AuditService.class));
     yamlPushService.getEntityCrudSubject().register(auditService);

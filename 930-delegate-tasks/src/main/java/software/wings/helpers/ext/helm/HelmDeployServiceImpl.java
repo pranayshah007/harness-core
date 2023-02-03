@@ -195,6 +195,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       fetchValuesYamlFromGitRepo(commandRequest, executionLogCallback);
       prepareRepoAndCharts(commandRequest, commandRequest.getTimeoutInMillis(), executionLogCallback);
 
+      skipApplyDefaultValuesYaml(commandRequest);
+
       printHelmChartKubernetesResources(commandRequest);
 
       executionLogCallback =
@@ -338,16 +340,32 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       throws Exception {
     String workingDirPath = Paths.get(commandRequest.getWorkingDir()).normalize().toAbsolutePath().toString();
 
-    List<FileData> manifestFiles = k8sTaskHelperBase.renderTemplateForHelm(
-        helmClient.getHelmPath(commandRequest.getHelmVersion()), workingDirPath, variableOverridesYamlFiles,
-        commandRequest.getReleaseName(), commandRequest.getContainerServiceParams().getNamespace(),
-        executionLogCallback, commandRequest.getHelmVersion(), timeoutInMillis, commandRequest.getHelmCommandFlag());
+    List<FileData> manifestFiles =
+        k8sTaskHelperBase.renderTemplateForHelm(helmClient.getHelmPath(commandRequest.getHelmVersion()), workingDirPath,
+            variableOverridesYamlFiles, commandRequest.getReleaseName(),
+            commandRequest.getContainerServiceParams().getNamespace(), executionLogCallback,
+            commandRequest.getHelmVersion(), timeoutInMillis, commandRequest.getHelmCommandFlag(), "");
 
     List<KubernetesResource> resources = k8sTaskHelperBase.readManifests(manifestFiles, executionLogCallback);
     k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(
         resources, commandRequest.getContainerServiceParams().getNamespace());
 
     return filterWorkloads(resources).stream().map(KubernetesResource::getResourceId).collect(Collectors.toList());
+  }
+
+  private void skipApplyDefaultValuesYaml(HelmInstallCommandRequest commandRequest) {
+    K8sDelegateManifestConfig manifestDelegateConfig = commandRequest.getRepoConfig();
+    if (manifestDelegateConfig == null) {
+      return;
+    }
+    int index = helmTaskHelperBase.skipDefaultHelmValuesYaml(commandRequest.getWorkingDir(),
+        commandRequest.getVariableOverridesYamlFiles(), manifestDelegateConfig.isSkipApplyHelmDefaultValues(),
+        commandRequest.getHelmVersion());
+    if (index != -1) {
+      List<String> valuesYamlList = commandRequest.getVariableOverridesYamlFiles();
+      valuesYamlList.remove(index);
+      commandRequest.setVariableOverridesYamlFiles(valuesYamlList);
+    }
   }
 
   private void prepareRepoAndCharts(

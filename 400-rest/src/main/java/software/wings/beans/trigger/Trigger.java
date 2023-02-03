@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.beans.trigger.TriggerConditionType.WEBHOOK;
+import static software.wings.ngmigration.NGMigrationEntityType.TRIGGER;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
@@ -42,6 +43,8 @@ import software.wings.beans.trigger.ArtifactSelection.ArtifactSelectionKeys;
 import software.wings.beans.trigger.ArtifactTriggerCondition.ArtifactTriggerConditionKeys;
 import software.wings.beans.trigger.ManifestTriggerCondition.ManifestTriggerConditionKeys;
 import software.wings.beans.trigger.TriggerCondition.TriggerConditionKeys;
+import software.wings.ngmigration.CgBasicInfo;
+import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.scheduler.ScheduledTriggerJob;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.yaml.BaseEntityYaml;
@@ -77,8 +80,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Entity(value = "triggers")
 @HarnessEntity(exportable = true)
 @TargetModule(HarnessModule._815_CG_TRIGGERS)
-public class Trigger extends Base
-    implements NameAccess, TagAware, AccountAccess, ApplicationAccess, EncryptableSetting, PersistentCronIterable {
+public class Trigger extends Base implements NameAccess, TagAware, AccountAccess, ApplicationAccess, EncryptableSetting,
+                                             PersistentCronIterable, NGMigrationEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -228,6 +231,18 @@ public class Trigger extends Base
   @Override
   public Long obtainNextIteration(String fieldName) {
     return EmptyPredicate.isEmpty(nextIterations) ? null : nextIterations.get(0);
+  }
+
+  @JsonIgnore
+  @Override
+  public String getMigrationEntityName() {
+    return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder().id(getUuid()).name(getName()).type(TRIGGER).accountId(getAccountId()).build();
   }
 
   @Data

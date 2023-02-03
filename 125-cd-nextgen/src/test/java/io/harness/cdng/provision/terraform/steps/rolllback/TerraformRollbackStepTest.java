@@ -59,6 +59,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.telemetry.TelemetryReporter;
 
 import java.util.Collections;
@@ -100,7 +101,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
   public void testObtainTaskSkippedRollback() {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", "test-account").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
@@ -124,7 +125,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
@@ -143,8 +144,8 @@ public class TerraformRollbackStepTest extends CategoryTest {
     GitFetchFilesConfig gitFetchFilesConfig = GitFetchFilesConfig.builder().build();
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
@@ -152,8 +153,8 @@ public class TerraformRollbackStepTest extends CategoryTest {
 
     assertThat(taskRequest).isNotNull();
 
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     TerraformTaskNGParameters taskParameters =
@@ -169,7 +170,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
@@ -190,16 +191,16 @@ public class TerraformRollbackStepTest extends CategoryTest {
     GitFetchFilesConfig gitFetchFilesConfig = GitFetchFilesConfig.builder().build();
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
     TaskRequest taskRequest = terraformRollbackStep.obtainTask(ambiance, stepElementParameters, null);
 
     assertThat(taskRequest).isNotNull();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     TerraformTaskNGParameters taskParameters =
@@ -215,7 +216,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
@@ -236,16 +237,16 @@ public class TerraformRollbackStepTest extends CategoryTest {
     GitFetchFilesConfig gitFetchFilesConfig = GitFetchFilesConfig.builder().build();
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
     TaskRequest taskRequest = terraformRollbackStep.obtainTask(ambiance, stepElementParameters, null);
 
     assertThat(taskRequest).isNotNull();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     TerraformTaskNGParameters taskParameters =
@@ -262,7 +263,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
@@ -286,16 +287,16 @@ public class TerraformRollbackStepTest extends CategoryTest {
         .when(terraformStepHelper)
         .getFileStoreFetchFilesConfig(any(), any(), any());
     doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
     TaskRequest taskRequest = terraformRollbackStep.obtainTask(ambiance, stepElementParameters, null);
 
     assertThat(taskRequest).isNotNull();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     TerraformTaskNGParameters taskParameters =
@@ -313,7 +314,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
@@ -349,7 +350,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
@@ -385,7 +386,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
     UnitProgressData unitProgressData = UnitProgressData.builder().build();
     TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()

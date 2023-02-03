@@ -68,7 +68,7 @@ public class TemplateResourceApiMapper {
     templateResponse.setAccount(templateResponseDTO.getAccountId());
     templateResponse.setOrg(templateResponseDTO.getOrgIdentifier());
     templateResponse.setProject(templateResponseDTO.getProjectIdentifier());
-    templateResponse.setSlug(templateResponseDTO.getIdentifier());
+    templateResponse.setIdentifier(templateResponseDTO.getIdentifier());
     templateResponse.setName(templateResponseDTO.getName());
     templateResponse.setDescription(templateResponseDTO.getDescription());
     templateResponse.setTags(templateResponseDTO.getTags());
@@ -102,7 +102,7 @@ public class TemplateResourceApiMapper {
     templateMetadataSummaryResponse.setAccount(templateMetadataSummaryResponseDTO.getAccountId());
     templateMetadataSummaryResponse.setOrg(templateMetadataSummaryResponseDTO.getOrgIdentifier());
     templateMetadataSummaryResponse.setProject(templateMetadataSummaryResponseDTO.getProjectIdentifier());
-    templateMetadataSummaryResponse.setSlug(templateMetadataSummaryResponseDTO.getIdentifier());
+    templateMetadataSummaryResponse.setIdentifier(templateMetadataSummaryResponseDTO.getIdentifier());
     templateMetadataSummaryResponse.setName(templateMetadataSummaryResponseDTO.getName());
     templateMetadataSummaryResponse.setDescription(templateMetadataSummaryResponseDTO.getDescription());
     templateMetadataSummaryResponse.setTags(templateMetadataSummaryResponseDTO.getTags());
@@ -162,7 +162,7 @@ public class TemplateResourceApiMapper {
       order = "DESC";
     }
     switch (sort) {
-      case "slug":
+      case "identifier":
         property = TemplateEntityKeys.identifier;
         break;
       case "name":
@@ -173,7 +173,7 @@ public class TemplateResourceApiMapper {
         break;
       default:
         throw new InvalidRequestException(
-            "Field provided for sorting unidentified. Accepted values: slug / name / updated");
+            "Field provided for sorting unidentified. Accepted values: identifier / name / updated");
     }
     return property + ',' + order;
   }

@@ -10,6 +10,7 @@ package io.harness.steps.http;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
@@ -30,6 +31,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
@@ -39,12 +41,15 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executables.PipelineTaskExecutable;
 import io.harness.supplier.ThrowingSupplier;
+import io.harness.utils.PmsFeatureFlagHelper;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,8 +61,10 @@ import lombok.extern.slf4j.Slf4j;
 public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.HTTP_STEP_TYPE;
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject private PmsFeatureFlagHelper pmsFeatureFlagHelper;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -94,6 +101,10 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
       httpTaskParametersNgBuilder.body(httpStepParameters.getRequestBody().getValue());
     }
 
+    boolean shouldAvoidCapabilityUsingHeaders = pmsFeatureFlagHelper.isEnabled(
+        AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY);
+    httpTaskParametersNgBuilder.shouldAvoidHeadersInCapability(shouldAvoidCapabilityUsingHeaders);
+
     final TaskData taskData =
         TaskData.builder()
             .async(true)
@@ -102,8 +113,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
             .parameters(new Object[] {httpTaskParametersNgBuilder.build()})
             .build();
 
-    return StepUtils.prepareTaskRequestWithTaskSelector(
-        ambiance, taskData, kryoSerializer, TaskSelectorYaml.toTaskSelector(httpStepParameters.delegateSelectors));
+    return TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
+        TaskSelectorYaml.toTaskSelector(httpStepParameters.delegateSelectors));
   }
 
   @Override
@@ -194,7 +205,4 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     }
     return outputVariablesEvaluated;
   }
-
-  @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 }

@@ -20,4 +20,8 @@ public class ChangeConsumerConfig {
   // oneOf { EventsFrameworkConfiguration, HttpConfig }
   ConsumerType consumerType;
   EventsFrameworkConfiguration eventsFrameworkConfiguration;
+  // Length of redis stream
+  int redisStreamSize;
+  // Mode of consumer can be either one of snapshot or streaming
+  ConsumerMode consumerMode;
 }

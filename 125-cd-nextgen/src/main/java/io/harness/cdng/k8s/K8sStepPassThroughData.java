@@ -82,4 +82,20 @@ public class K8sStepPassThroughData implements PassThroughData {
     }
     return openshiftParamManifestOutcomes;
   }
+
+  public void updateOpenFetchFilesStreamStatus() {
+    this.shouldOpenFetchFilesStream = this.shouldOpenFetchFilesStream == null;
+  }
+
+  public void updateNativeHelmCloseFetchFilesStreamStatus(Set<String> manifestStoreTypeList) {
+    this.manifestStoreTypeVisited.addAll(manifestStoreTypeList);
+    boolean updatedCloseFetchFilesStreamStatus = true;
+    if (!this.shouldCloseFetchFilesStream) {
+      for (ManifestOutcome individualManifestOutcome : this.getManifestOutcomeList()) {
+        updatedCloseFetchFilesStreamStatus = updatedCloseFetchFilesStreamStatus
+            && this.manifestStoreTypeVisited.contains(individualManifestOutcome.getStore().getKind());
+      }
+    }
+    this.shouldCloseFetchFilesStream = updatedCloseFetchFilesStreamStatus;
+  }
 }

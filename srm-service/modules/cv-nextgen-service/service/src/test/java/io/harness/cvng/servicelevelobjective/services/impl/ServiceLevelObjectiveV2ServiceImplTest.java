@@ -165,6 +165,8 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     when(compositeSLOService.shouldReset(any(), any())).thenCallRealMethod();
     when(compositeSLOService.shouldRecalculate(any(), any())).thenCallRealMethod();
     builderFactory = BuilderFactory.getDefault();
+    builderFactory.getContext().setProjectIdentifier("project");
+    builderFactory.getContext().setOrgIdentifier("orgIdentifier");
     accountId = builderFactory.getContext().getAccountId();
     orgIdentifier = builderFactory.getContext().getOrgIdentifier();
     projectIdentifier = builderFactory.getContext().getProjectIdentifier();

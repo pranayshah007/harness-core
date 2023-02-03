@@ -11,6 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.CUSTOM_DASHBOARD_DEPLOYMENT_FETCH_LONGER_RETENTION_DATA;
 import static io.harness.beans.FeatureName.CUSTOM_DASHBOARD_INSTANCE_FETCH_LONGER_RETENTION_DATA;
 
+import static software.wings.beans.datatretention.LongerDataRetentionState.DEPLOYMENT_LONGER_RETENTION;
+import static software.wings.beans.datatretention.LongerDataRetentionState.INSTANCE_LONGER_RETENTION;
+import static software.wings.beans.datatretention.LongerDataRetentionState.LongerDataRetentionStateKeys;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
@@ -24,6 +28,7 @@ import software.wings.beans.datatretention.LongerDataRetentionState.LongerDataRe
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +50,7 @@ public class CreateLongerDataRetention implements Migration {
                  new AccountLogContext(account.getUuid(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
           createLongerDataRetention(account);
         } catch (Exception e) {
-          log.info("Error in running migration for account: {}", account.getUuid());
+          log.info("Error in running migration for account: {}", account.getUuid(), e);
         }
       }
     } catch (Exception ex) {
@@ -57,18 +62,29 @@ public class CreateLongerDataRetention implements Migration {
   private void createLongerDataRetention(Account account) {
     LongerDataRetentionStateBuilder longerDataRetentionStateBuilder =
         LongerDataRetentionState.builder().accountId(account.getUuid());
+
     Map<String, Boolean> keyRetentionCompletedMap = new HashMap<>();
+
     if (featureFlagService.isEnabled(CUSTOM_DASHBOARD_INSTANCE_FETCH_LONGER_RETENTION_DATA, account.getUuid())) {
-      keyRetentionCompletedMap.put(LongerDataRetentionState.INSTANCE_LONGER_RETENTION, true);
+      keyRetentionCompletedMap.put(INSTANCE_LONGER_RETENTION, true);
     } else {
-      keyRetentionCompletedMap.put(LongerDataRetentionState.INSTANCE_LONGER_RETENTION, false);
+      keyRetentionCompletedMap.put(INSTANCE_LONGER_RETENTION, false);
     }
 
     if (featureFlagService.isEnabled(CUSTOM_DASHBOARD_DEPLOYMENT_FETCH_LONGER_RETENTION_DATA, account.getUuid())) {
-      keyRetentionCompletedMap.put(LongerDataRetentionState.DEPLOYMENT_LONGER_RETENTION, true);
+      keyRetentionCompletedMap.put(DEPLOYMENT_LONGER_RETENTION, true);
     } else {
-      keyRetentionCompletedMap.put(LongerDataRetentionState.DEPLOYMENT_LONGER_RETENTION, false);
+      keyRetentionCompletedMap.put(DEPLOYMENT_LONGER_RETENTION, false);
     }
-    wingsPersistence.save(longerDataRetentionStateBuilder.build());
+    longerDataRetentionStateBuilder.keyRetentionCompletedMap(keyRetentionCompletedMap);
+
+    UpdateOperations<LongerDataRetentionState> longerDataRetentionStateUpdateOperations =
+        wingsPersistence.createUpdateOperations(LongerDataRetentionState.class)
+            .set(LongerDataRetentionStateKeys.keyRetentionCompletedMap, keyRetentionCompletedMap)
+            .set(LongerDataRetentionStateKeys.accountId, account.getUuid());
+    wingsPersistence.upsert(wingsPersistence.createQuery(LongerDataRetentionState.class)
+                                .field(LongerDataRetentionStateKeys.accountId)
+                                .equal(account.getUuid()),
+        longerDataRetentionStateUpdateOperations);
   }
 }

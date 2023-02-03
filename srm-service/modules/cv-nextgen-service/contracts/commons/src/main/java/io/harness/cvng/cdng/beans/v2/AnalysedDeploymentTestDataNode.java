@@ -27,4 +27,6 @@ public class AnalysedDeploymentTestDataNode {
   List<String> appliedThresholds;
   List<MetricValue> controlData;
   List<MetricValue> testData;
+  List<MetricValue> normalisedControlData;
+  List<MetricValue> normalisedTestData;
 }

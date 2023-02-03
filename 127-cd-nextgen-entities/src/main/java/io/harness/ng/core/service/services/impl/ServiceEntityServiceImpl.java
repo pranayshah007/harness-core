@@ -33,10 +33,12 @@ import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
+import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.DuplicateKeyExceptionParser;
@@ -45,6 +47,7 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.events.ServiceCreateEvent;
 import io.harness.ng.core.events.ServiceDeleteEvent;
+import io.harness.ng.core.events.ServiceForceDeleteEvent;
 import io.harness.ng.core.events.ServiceUpdateEvent;
 import io.harness.ng.core.events.ServiceUpsertEvent;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
@@ -89,6 +92,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
@@ -153,6 +157,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       validatePresenceOfRequiredFields(serviceEntity.getAccountId(), serviceEntity.getIdentifier());
       setNameIfNotPresent(serviceEntity);
       modifyServiceRequest(serviceEntity);
+      Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(serviceEntity);
       ServiceEntityValidator serviceEntityValidator =
           serviceEntityValidatorFactory.getServiceEntityValidator(serviceEntity);
       serviceEntityValidator.validate(serviceEntity);
@@ -167,7 +172,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
                                    .build());
             return service;
           }));
-      entitySetupUsageHelper.updateSetupUsages(createdService);
+      entitySetupUsageHelper.createSetupUsages(createdService, referredEntities);
       publishEvent(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(),
           serviceEntity.getIdentifier(), EventsFrameworkMetadataConstants.CREATE_ACTION);
       return createdService;
@@ -176,6 +181,17 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
           getDuplicateServiceExistsErrorMessage(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
               serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier()),
           USER_SRE, ex);
+    }
+  }
+
+  private Set<EntityDetailProtoDTO> getAndValidateReferredEntities(ServiceEntity serviceEntity) {
+    try {
+      return entitySetupUsageHelper.getAllReferredEntities(serviceEntity);
+    } catch (RuntimeException ex) {
+      throw new InvalidRequestException(
+          String.format(
+              "Exception while retrieving referred entities for service: [%s]. ", serviceEntity.getIdentifier())
+          + ex.getMessage());
     }
   }
 
@@ -207,6 +223,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     validatePresenceOfRequiredFields(requestService.getAccountId(), requestService.getIdentifier());
     setNameIfNotPresent(requestService);
     modifyServiceRequest(requestService);
+    Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(requestService);
     Criteria criteria = getServiceEqualityCriteria(requestService, requestService.getDeleted());
     Optional<ServiceEntity> serviceEntityOptional =
         get(requestService.getAccountId(), requestService.getOrgIdentifier(), requestService.getProjectIdentifier(),
@@ -245,7 +262,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
                                    .build());
             return updatedResult;
           }));
-      entitySetupUsageHelper.updateSetupUsages(updatedService);
+      entitySetupUsageHelper.updateSetupUsages(updatedService, referredEntities);
       publishEvent(requestService.getAccountId(), requestService.getOrgIdentifier(),
           requestService.getProjectIdentifier(), requestService.getIdentifier(),
           EventsFrameworkMetadataConstants.UPDATE_ACTION);
@@ -262,6 +279,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     validatePresenceOfRequiredFields(requestService.getAccountId(), requestService.getIdentifier());
     setNameIfNotPresent(requestService);
     modifyServiceRequest(requestService);
+    Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(requestService);
+
     Criteria criteria = getServiceEqualityCriteria(requestService, requestService.getDeleted());
 
     Optional<ServiceEntity> serviceEntityOptional =
@@ -305,7 +324,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
           return result;
         }));
     if (upsertOptions.isPublishSetupUsages()) {
-      entitySetupUsageHelper.updateSetupUsages(upsertedService);
+      entitySetupUsageHelper.updateSetupUsages(upsertedService, referredEntities);
     }
     publishEvent(requestService.getAccountId(), requestService.getOrgIdentifier(),
         requestService.getProjectIdentifier(), requestService.getIdentifier(),
@@ -324,8 +343,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
-  public boolean delete(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, Long version) {
+  public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String serviceRef,
+      Long version, boolean forceDelete) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
     checkArgument(isNotEmpty(serviceRef), "serviceRef must be present");
 
@@ -336,7 +355,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
                                       .identifier(serviceRef)
                                       .version(version)
                                       .build();
-    checkThatServiceIsNotReferredByOthers(serviceEntity);
+    if (!forceDelete) {
+      checkThatServiceIsNotReferredByOthers(serviceEntity);
+    }
     Criteria criteria = getServiceEqualityCriteria(serviceEntity, false);
     Optional<ServiceEntity> serviceEntityOptional = get(accountId, orgIdentifier, projectIdentifier, serviceRef, false);
 
@@ -349,9 +370,13 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
               String.format("Service [%s] under Project[%s], Organization [%s] couldn't be deleted.",
                   serviceEntity.getIdentifier(), projectIdentifier, orgIdentifier));
         }
-
-        outboxService.save(new ServiceDeleteEvent(accountId, serviceEntityRetrieved.getOrgIdentifier(),
-            serviceEntityRetrieved.getProjectIdentifier(), serviceEntityRetrieved));
+        if (forceDelete) {
+          outboxService.save(new ServiceForceDeleteEvent(accountId, serviceEntityRetrieved.getOrgIdentifier(),
+              serviceEntityRetrieved.getProjectIdentifier(), serviceEntityRetrieved));
+        } else {
+          outboxService.save(new ServiceDeleteEvent(accountId, serviceEntityRetrieved.getOrgIdentifier(),
+              serviceEntityRetrieved.getProjectIdentifier(), serviceEntityRetrieved));
+        }
         return true;
       }));
       processQuietly(()
@@ -469,16 +494,29 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       validateTheServicesList(serviceEntities);
       populateDefaultNameIfNotPresent(serviceEntities);
       modifyServiceRequestBatch(serviceEntities);
+      List<Set<EntityDetailProtoDTO>> referredEntityList = new ArrayList<>();
+      for (ServiceEntity serviceEntity : serviceEntities) {
+        referredEntityList.add(getAndValidateReferredEntities(serviceEntity));
+      }
       List<ServiceEntity> outputServiceEntitiesList = (List<ServiceEntity>) serviceRepository.saveAll(serviceEntities);
+      int i = 0;
       for (ServiceEntity serviceEntity : serviceEntities) {
         publishEvent(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
             serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier(),
             EventsFrameworkMetadataConstants.CREATE_ACTION);
+        entitySetupUsageHelper.createSetupUsages(serviceEntity, referredEntityList.get(i));
+        i++;
       }
       return new PageImpl<>(outputServiceEntitiesList);
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
           getDuplicateServiceExistsErrorMessage(accountId, ex.getMessage()), USER_SRE, ex);
+    } catch (WingsException ex) {
+      String serviceNames = serviceEntities.stream().map(ServiceEntity::getName).collect(Collectors.joining(","));
+      log.info(
+          "Encountered exception while saving the service entity records of [{}], with exception", serviceNames, ex);
+      throw new InvalidRequestException(
+          "Encountered exception while saving the service entity records. " + ex.getMessage());
     } catch (Exception ex) {
       String serviceNames = serviceEntities.stream().map(ServiceEntity::getName).collect(Collectors.joining(","));
       log.info(
@@ -770,8 +808,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     primaryArtifactObjectNode.set(YamlTypes.ARTIFACT_SOURCES, filteredArtifactSourcesNode);
   }
 
-  @Override
-  public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
+  private boolean forceDeleteInternal(String accountId, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
     List<String> services = getServiceIdentifiers(accountId, orgIdentifier, projectIdentifier);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -791,6 +828,23 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       }
       return true;
     }));
+  }
+
+  @Override
+  public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
+
+    return forceDeleteInternal(accountId, orgIdentifier, projectIdentifier);
+  }
+
+  @Override
+  public boolean forceDeleteAllInOrg(String accountId, String orgIdentifier) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
+
+    return forceDeleteInternal(accountId, orgIdentifier, null);
   }
 
   @Override
@@ -925,6 +979,11 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   private void modifyServiceRequest(ServiceEntity requestService) {
     requestService.setName(requestService.getName().trim());
+    // handle empty scope identifiers
+    requestService.setOrgIdentifier(
+        EmptyPredicate.isEmpty(requestService.getOrgIdentifier()) ? null : requestService.getOrgIdentifier());
+    requestService.setProjectIdentifier(
+        EmptyPredicate.isEmpty(requestService.getProjectIdentifier()) ? null : requestService.getProjectIdentifier());
   }
 
   private void modifyServiceRequestBatch(List<ServiceEntity> serviceEntities) {

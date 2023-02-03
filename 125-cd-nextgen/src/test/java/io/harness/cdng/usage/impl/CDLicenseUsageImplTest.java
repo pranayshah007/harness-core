@@ -7,6 +7,7 @@
 
 package io.harness.cdng.usage.impl;
 
+import static io.harness.filesystem.FileIo.deleteFileIfExists;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.DISPLAY_NAME;
 import static io.harness.rule.OwnerRule.IVAN;
 
@@ -46,12 +47,18 @@ import io.harness.timescaledb.tables.pojos.ServiceInfraInfo;
 import io.harness.timescaledb.tables.pojos.Services;
 
 import com.google.inject.Inject;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,6 +70,8 @@ import org.springframework.data.domain.Page;
 
 @OwnedBy(HarnessTeam.CDP)
 public class CDLicenseUsageImplTest extends CategoryTest {
+  private static final String ACCOUNT_IDENTIFIER_BLANK_ERROR_MSG = "Account Identifier cannot be null or empty";
+
   @Mock private TimeScaleDAL timeScaleDAL;
   @Mock private CDLicenseUsageDAL utils;
   @InjectMocks @Inject private CDLicenseUsageImpl cdLicenseUsage;
@@ -648,7 +657,109 @@ public class CDLicenseUsageImplTest extends CategoryTest {
 
     assertThatThrownBy(
         () -> cdLicenseUsage.listLicenseUsage(null, ModuleType.CD, System.currentTimeMillis(), usageRequestParam))
-        .hasMessage("Account Identifier cannot be null or empty")
+        .hasMessage(ACCOUNT_IDENTIFIER_BLANK_ERROR_MSG)
         .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetLicenseUsageCSVReportWithInvalidRequest() {
+    when(utils.fetchActiveServices(any()))
+        .thenThrow(new CgLicenseUsageException("Failed to fetch active services", new SQLException("Invalid query")));
+
+    assertThatThrownBy(
+        () -> cdLicenseUsage.getLicenseUsageCSVReport(orgIdentifier, ModuleType.CD, System.currentTimeMillis()))
+        .hasMessage("Failed to fetch active services")
+        .isInstanceOf(CgLicenseUsageException.class);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetLicenseUsageCSVReportInvalidAccountArgument() {
+    assertThatThrownBy(() -> cdLicenseUsage.getLicenseUsageCSVReport(null, ModuleType.CD, System.currentTimeMillis()))
+        .hasMessage(ACCOUNT_IDENTIFIER_BLANK_ERROR_MSG)
+        .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetLicenseUsageCSVReportInvalidModule() {
+    assertThatThrownBy(
+        () -> cdLicenseUsage.getLicenseUsageCSVReport(accountIdentifier, ModuleType.SRM, System.currentTimeMillis()))
+        .hasMessage("Invalid Module type SRM provided, expected CD")
+        .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetLicenseUsageCSVReportInvalidTimestamp() {
+    assertThatThrownBy(() -> cdLicenseUsage.getLicenseUsageCSVReport(accountIdentifier, ModuleType.CD, 0))
+        .hasMessage("Invalid timestamp 0 while downloading CD active services report")
+        .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetLicenseUsageCSVReport() throws IOException {
+    long currentTimeMillis = System.currentTimeMillis();
+    when(utils.fetchActiveServices(any()))
+        .thenReturn(ActiveServiceResponse.<List<ActiveServiceBase>>builder()
+                        .activeServiceItems(Collections.singletonList(ActiveServiceBase.builder()
+                                                                          .identifier(serviceIdentifier)
+                                                                          .orgIdentifier(orgIdentifier)
+                                                                          .projectIdentifier(projectIdentifier)
+                                                                          .instanceCount(2)
+                                                                          .lastDeployed(currentTimeMillis)
+                                                                          .build()))
+                        .totalCountOfItems(1)
+                        .build());
+    when(utils.fetchActiveServicesNameOrgAndProjectName(eq(accountIdentifier), any(), any()))
+        .thenReturn(Collections.singletonList(ActiveService.builder()
+                                                  .identifier(serviceIdentifier)
+                                                  .name(serviceName)
+                                                  .orgName(orgName)
+                                                  .orgIdentifier(orgIdentifier)
+                                                  .projectName(projectName)
+                                                  .projectIdentifier(projectIdentifier)
+                                                  .lastDeployed(currentTimeMillis)
+                                                  .instanceCount(1)
+                                                  .build()));
+
+    File licenseUsageCSVReport = new File("path");
+    try {
+      licenseUsageCSVReport =
+          cdLicenseUsage.getLicenseUsageCSVReport(accountIdentifier, ModuleType.CD, System.currentTimeMillis());
+
+      Reader in = new FileReader(licenseUsageCSVReport.getPath());
+      Iterable<CSVRecord> records = CSVFormat.DEFAULT.parse(in);
+      List<CSVRecord> csvRecords = new ArrayList<>();
+      for (CSVRecord record : records) {
+        csvRecords.add(record);
+      }
+      CSVRecord header = csvRecords.get(0);
+      assertThat(header.get(0)).isEqualTo("SERVICE");
+      assertThat(header.get(1)).isEqualTo("ORGANIZATIONS");
+      assertThat(header.get(2)).isEqualTo("PROJECTS");
+      assertThat(header.get(3)).isEqualTo("SERVICE ID");
+      assertThat(header.get(4)).isEqualTo("SERVICE INSTANCES");
+      assertThat(header.get(5)).isEqualTo("LAST DEPLOYED");
+      assertThat(header.get(6)).isEqualTo("LICENSES CONSUMED");
+
+      CSVRecord activeServiceRecord = csvRecords.get(1);
+      assertThat(activeServiceRecord.get(0)).isEqualTo(serviceName);
+      assertThat(activeServiceRecord.get(1)).isEqualTo(orgName);
+      assertThat(activeServiceRecord.get(2)).isEqualTo(projectName);
+      assertThat(activeServiceRecord.get(3)).isEqualTo(serviceIdentifier);
+      assertThat(activeServiceRecord.get(4)).isEqualTo("1");
+      assertThat(activeServiceRecord.get(5)).isEqualTo(String.valueOf(currentTimeMillis));
+      assertThat(activeServiceRecord.get(6)).isEqualTo("1");
+    } finally {
+      deleteFileIfExists(licenseUsageCSVReport.getPath());
+    }
   }
 }

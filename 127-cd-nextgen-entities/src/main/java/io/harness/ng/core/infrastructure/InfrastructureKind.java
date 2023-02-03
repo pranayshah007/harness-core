@@ -26,4 +26,5 @@ public interface InfrastructureKind {
   String ELASTIGROUP = "Elastigroup";
   String TAS = "TAS";
   String ASG = "Asg";
+  String GOOGLE_CLOUD_FUNCTIONS = "GoogleCloudFunctions";
 }

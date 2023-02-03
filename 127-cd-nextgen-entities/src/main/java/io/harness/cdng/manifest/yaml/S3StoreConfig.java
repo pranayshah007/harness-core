@@ -110,4 +110,11 @@ public class S3StoreConfig implements StoreConfig, Visitable, WithConnectorRef {
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
   }
+
+  @Override
+  public void overrideConnectorRef(ParameterField<String> overridingConnectorRef) {
+    if (ParameterField.isNotNull(overridingConnectorRef)) {
+      connectorRef = overridingConnectorRef;
+    }
+  }
 }

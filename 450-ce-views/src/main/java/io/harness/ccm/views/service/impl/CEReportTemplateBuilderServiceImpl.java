@@ -173,11 +173,10 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
 
     // Todo: Pass default group by to cover cost categories
     // Generating Trend data
-    QLCEViewTrendInfo trendData =
-        viewsBillingService
-            .getTrendStatsDataNg(bigQuery, filters, Collections.emptyList(), aggregationFunction,
-                cloudProviderTableName, viewsQueryHelper.buildQueryParams(accountId, false))
-            .getTotalCost();
+    QLCEViewTrendInfo trendData = viewsBillingService
+                                      .getTrendStatsDataNg(filters, Collections.emptyList(), aggregationFunction,
+                                          viewsQueryHelper.buildQueryParams(accountId, false))
+                                      .getTotalCost();
     if (trendData == null) {
       throw new InvalidRequestException("Exception while generating report. No data to for cost trend");
     }
@@ -185,9 +184,8 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
     // Generating table data
     List<QLCEViewEntityStatsDataPoint> tableData =
         viewsBillingService
-            .getEntityStatsDataPointsNg(bigQuery, filters, groupBy, aggregationFunction, sortCriteria,
-                cloudProviderTableName, DEFAULT_LIMIT, DEFAULT_OFFSET,
-                viewsQueryHelper.buildQueryParams(accountId, false, false))
+            .getEntityStatsDataPointsNg(filters, groupBy, aggregationFunction, sortCriteria, DEFAULT_LIMIT,
+                DEFAULT_OFFSET, viewsQueryHelper.buildQueryParams(accountId, false, false))
             .getData();
     if (isEmpty(tableData)) {
       throw new InvalidRequestException("Exception while generating report. No data to for table");
@@ -199,9 +197,8 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
                     .timeTruncGroupBy(QLCEViewTimeTruncGroupBy.builder().resolution(QLCEViewTimeGroupType.DAY).build())
                     .build());
     List<QLCEViewTimeSeriesData> chartData = viewsBillingService.convertToQLViewTimeSeriesData(
-        viewsBillingService.getTimeSeriesStatsNg(bigQuery, filters, groupBy, aggregationFunction, sortCriteria,
-            cloudProviderTableName, false, DEFAULT_LIMIT,
-            viewsQueryHelper.buildQueryParams(accountId, true, false, false, false)),
+        viewsBillingService.getTimeSeriesStatsNg(filters, groupBy, aggregationFunction, sortCriteria, false,
+            DEFAULT_LIMIT, viewsQueryHelper.buildQueryParams(accountId, true, false, false, false)),
         accountId, groupBy);
     if (chartData == null) {
       throw new InvalidRequestException("Exception while generating report. No data to for chart");

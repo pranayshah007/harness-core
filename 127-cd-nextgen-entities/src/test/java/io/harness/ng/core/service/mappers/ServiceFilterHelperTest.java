@@ -105,7 +105,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}]}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"tags.key\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"tags.value\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}]}");
   }
 
   @Test
@@ -117,7 +117,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"type\": \"KUBERNETES\", \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}], \"gitOpsEnabled\": true}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"type\": \"KUBERNETES\", \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"tags.key\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"tags.value\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}], \"gitOpsEnabled\": true}");
   }
 
   @Test
@@ -129,6 +129,6 @@ public class ServiceFilterHelperTest extends CategoryTest {
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"type\": \"NATIVE_HELM\", \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}]}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"type\": \"NATIVE_HELM\", \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"tags.key\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"tags.value\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}]}");
   }
 }

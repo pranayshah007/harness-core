@@ -173,6 +173,7 @@ public class BudgetsQuery {
         .startTime(BudgetUtils.getBudgetStartTime(budget.getStartTime(), budget.getPeriod()))
         .budgetMonthlyBreakdown(budget.getBudgetMonthlyBreakdown())
         .isBudgetGroup(false)
+        .disableCurrencyWarning(budget.getDisableCurrencyWarning())
         .build();
   }
 

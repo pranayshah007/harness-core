@@ -1,0 +1,27 @@
+environment:
+  name: negative2
+  identifier: negative2
+  tags: {}
+  type: Production
+  orgIdentifier: default
+  projectIdentifier: helmsvcoverrides
+  variables: []
+  overrides:
+
+    manifests:
+      - manifest:
+          identifier: m1
+          type: HelmRepoOverride
+          spec:
+            store:
+              type: Http
+              spec:
+                connectorRef: account.bitnami
+      - manifest:
+          identifier: m2
+          type: HelmRepoOverride
+          spec:
+            store:
+              type: Http
+              spec:
+                connectorRef: account.bitnami

@@ -167,18 +167,28 @@ public class K8sTaskHelper {
             k8sDelegateTaskParams, manifestFiles, manifestOverrideFiles, executionLogCallback, timeoutInMillis);
 
       case HelmSourceRepo:
+        int index = helmTaskHelperBase.skipDefaultHelmValuesYaml(manifestFilesDirectory, manifestOverrideFiles,
+            k8sDelegateManifestConfig.isSkipApplyHelmDefaultValues(), k8sTaskParameters.getHelmVersion());
+        if (index != -1) {
+          manifestOverrideFiles.remove(index);
+        }
         return k8sTaskHelperBase.renderTemplateForHelm(k8sDelegateTaskParams.getHelmPath(), manifestFilesDirectory,
             manifestOverrideFiles, releaseName, namespace, executionLogCallback, k8sTaskParameters.getHelmVersion(),
-            timeoutInMillis, helmCommandFlag);
+            timeoutInMillis, helmCommandFlag, "");
 
       case HelmChartRepo:
         manifestFilesDirectory = Paths
                                      .get(getChartDirectory(manifestFilesDirectory,
                                          k8sDelegateManifestConfig.getHelmChartConfigParams().getChartName()))
                                      .toString();
+        index = helmTaskHelperBase.skipDefaultHelmValuesYaml(manifestFilesDirectory, manifestOverrideFiles,
+            k8sDelegateManifestConfig.isSkipApplyHelmDefaultValues(), k8sTaskParameters.getHelmVersion());
+        if (index != -1) {
+          manifestOverrideFiles.remove(index);
+        }
         return k8sTaskHelperBase.renderTemplateForHelm(k8sDelegateTaskParams.getHelmPath(), manifestFilesDirectory,
             manifestOverrideFiles, releaseName, namespace, executionLogCallback, k8sTaskParameters.getHelmVersion(),
-            timeoutInMillis, helmCommandFlag);
+            timeoutInMillis, helmCommandFlag, "");
 
       case KustomizeSourceRepo:
         KustomizeConfig kustomizeConfig = k8sDelegateManifestConfig.getKustomizeConfig();

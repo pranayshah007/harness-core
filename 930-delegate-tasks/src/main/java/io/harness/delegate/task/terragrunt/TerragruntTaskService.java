@@ -39,9 +39,12 @@ import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
+import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.task.terragrunt.files.DownloadResult;
 import io.harness.delegate.task.terragrunt.files.FetchFilesResult;
 import io.harness.delegate.task.terragrunt.files.TerragruntDownloadService;
@@ -100,6 +103,7 @@ public class TerragruntTaskService {
   @Inject private TerragruntClientFactory terragruntClientFactory;
   @Inject private DecryptionHelper decryptionHelper;
   @Inject private EncryptDecryptHelper encryptDecryptHelper;
+  @Inject TerraformBaseHelper terraformBaseHelper;
 
   public void decryptTaskParameters(AbstractTerragruntTaskParameters taskParameters) {
     List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails =
@@ -134,8 +138,8 @@ public class TerragruntTaskService {
     return true;
   }
 
-  public TerragruntContext prepareTerragrunt(
-      LogCallback logCallback, AbstractTerragruntTaskParameters parameters, String baseDir) {
+  public TerragruntContext prepareTerragrunt(LogCallback fetchLogCallback, AbstractTerragruntTaskParameters parameters,
+      String baseDir, LogCallback terragruntCommandLogCallback) throws IOException {
     String workingDirectory = getScriptDir(baseDir);
     String varFilesDirectory = getVarFilesDir(baseDir);
     String backendFilesDirectory = getBackendFilesDir(baseDir);
@@ -146,36 +150,42 @@ public class TerragruntTaskService {
     log.info("Using base dir: {}, script dir: {}, var files dir: {}, backend dir: {}", baseDir, workingDirectory,
         varFilesDirectory, backendFilesDirectory);
 
+    if (parameters.isTgModuleSourceInheritSSH()
+        && StoreDelegateConfigType.GIT == parameters.getConfigFilesStore().getType()) {
+      terraformBaseHelper.configureCredentialsForModuleSource(baseDir, parameters.getEnvVars(),
+          (GitStoreDelegateConfig) parameters.getConfigFilesStore(), fetchLogCallback);
+    }
+
     log.info("Downloading terragrunt config files from store type {}", parameters.getConfigFilesStore().getType());
-    logCallback.saveExecutionLog(color("Downloading terragrunt config files", LogColor.White, LogWeight.Bold));
+    fetchLogCallback.saveExecutionLog(color("Downloading terragrunt config files", LogColor.White, LogWeight.Bold));
     try {
       DownloadResult result = terragruntDownloadService.download(
-          parameters.getConfigFilesStore(), parameters.getAccountId(), workingDirectory, logCallback);
+          parameters.getConfigFilesStore(), parameters.getAccountId(), workingDirectory, fetchLogCallback);
       configFilesDirectory = defaultString(result.getRootDirectory());
       configFilesSourceReference = result.getSourceReference();
     } catch (Exception e) {
-      handleFetchFilesException(workingDirectory, "config files", logCallback, e);
+      handleFetchFilesException(workingDirectory, "config files", fetchLogCallback, e);
     }
-    logCallback.saveExecutionLog(
+    fetchLogCallback.saveExecutionLog(
         color("Successfully downloaded terragrunt config files\n", LogColor.White, LogWeight.Bold));
 
     List<String> varFiles = new ArrayList<>();
     if (isNotEmpty(parameters.getVarFiles())) {
       log.info("Downloading terragrunt var files from store types: {}",
           parameters.getVarFiles().stream().map(StoreDelegateConfig::getType));
-      logCallback.saveExecutionLog(color("Downloading var files", LogColor.White, LogWeight.Bold));
+      fetchLogCallback.saveExecutionLog(color("Downloading var files", LogColor.White, LogWeight.Bold));
       for (StoreDelegateConfig varFileStoreConfig : parameters.getVarFiles()) {
         try {
           FetchFilesResult fetchFilesResult = terragruntDownloadService.fetchFiles(
-              varFileStoreConfig, parameters.getAccountId(), varFilesDirectory, logCallback);
+              varFileStoreConfig, parameters.getAccountId(), varFilesDirectory, fetchLogCallback);
           varFiles.addAll(fetchFilesResult.getFiles());
           varFilesSourceReference.put(fetchFilesResult.getIdentifier(), fetchFilesResult.getFilesSourceReference());
         } catch (Exception e) {
-          handleFetchFilesException(varFilesDirectory, "var files", logCallback, e);
+          handleFetchFilesException(varFilesDirectory, "var files", fetchLogCallback, e);
         }
       }
 
-      logCallback.saveExecutionLog(
+      fetchLogCallback.saveExecutionLog(
           color(format("Successfully downloaded (%d) var files %n", varFiles.size()), LogColor.White, LogWeight.Bold));
     }
 
@@ -187,33 +197,38 @@ public class TerragruntTaskService {
                                  .toAbsolutePath()
                                  .toString();
 
-    TerragruntClient terragruntClient = terragruntClientFactory.getClient(scriptDirectory,
-        parameters.getTimeoutInMillis(), logCallback, parameters.getRunConfiguration().getRunType().name());
-    String terragruntWorkingDirectory = null;
     String backendFile = null;
     if (parameters.getBackendFilesStore() != null) {
       log.info("Downloading terragrunt backend file from store type: {}", parameters.getBackendFilesStore().getType());
-      logCallback.saveExecutionLog(color("Downloading backend file", LogColor.White, LogWeight.Bold));
+      fetchLogCallback.saveExecutionLog(color("Downloading backend file", LogColor.White, LogWeight.Bold));
       try {
         FetchFilesResult backendFetchResult = terragruntDownloadService.fetchFiles(
-            parameters.getBackendFilesStore(), parameters.getAccountId(), backendFilesDirectory, logCallback);
+            parameters.getBackendFilesStore(), parameters.getAccountId(), backendFilesDirectory, fetchLogCallback);
         if (backendFetchResult.getFiles().size() > 1) {
           log.warn("Downloaded multiple backend files, expected only a single file");
-          logCallback.saveExecutionLog(
+          fetchLogCallback.saveExecutionLog(
               "Found multiple backend files, only first file will be used. Please check your backend configuration",
               WARN);
         }
 
         backendFile = backendFetchResult.getFiles().get(0);
         backendFileSourceReference = backendFetchResult.getFilesSourceReference();
-        logCallback.saveExecutionLog(color("Successfully downloaded backend file\n", LogColor.White, LogWeight.Bold));
+        fetchLogCallback.saveExecutionLog(
+            color("Successfully downloaded backend file\n", LogColor.White, LogWeight.Bold));
       } catch (Exception e) {
-        handleFetchFilesException(backendFilesDirectory, "backend file", logCallback, e);
+        handleFetchFilesException(backendFilesDirectory, "backend file", fetchLogCallback, e);
       }
     }
 
+    fetchLogCallback.saveExecutionLog(color("All files downloaded successfully", LogColor.White, LogWeight.Bold),
+        LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+
     cleanupTerragruntLocalFiles(scriptDirectory);
 
+    TerragruntClient terragruntClient = terragruntClientFactory.getClient(scriptDirectory,
+        parameters.getTimeoutInMillis(), terragruntCommandLogCallback,
+        parameters.getRunConfiguration().getRunType().name(), parameters.getEnvVars());
+    String terragruntWorkingDirectory = null;
     if (TerragruntTaskRunType.RUN_MODULE == parameters.getRunConfiguration().getRunType()) {
       terragruntWorkingDirectory = terragruntClient.terragruntWorkingDirectory();
     }
@@ -221,14 +236,9 @@ public class TerragruntTaskService {
     if (isNotEmpty(parameters.getStateFileId())
         && TerragruntTaskRunType.RUN_MODULE == parameters.getRunConfiguration().getRunType()) {
       log.info("Downloading harness terraform state file: {}", parameters.getStateFileId());
-      logCallback.saveExecutionLog(color(
-          format("Downloading local state file to: %s", terragruntWorkingDirectory), LogColor.White, LogWeight.Bold));
       downloadTfStateFile(parameters.getWorkspace(), parameters.getStateFileId(), terragruntWorkingDirectory,
-          parameters.getAccountId(), logCallback);
+          parameters.getAccountId());
     }
-
-    logCallback.saveExecutionLog(color("All files downloaded successfully", LogColor.White, LogWeight.Bold),
-        LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
     return TerragruntContext.builder()
         .varFilesDirectory(varFilesDirectory)
@@ -244,7 +254,7 @@ public class TerragruntTaskService {
         .build();
   }
 
-  public void cleanupTerragruntLocalFiles(String scriptDirectory) {
+  private void cleanupTerragruntLocalFiles(String scriptDirectory) {
     FileUtils.deleteQuietly(Paths.get(scriptDirectory, TERRAGRUNT_LOCK_FILE_NAME).toFile());
     try {
       deleteDirectoryAndItsContentIfExists(Paths.get(scriptDirectory, TERRAGRUNT_INTERNAL_CACHE_FOLDER).toString());
@@ -290,7 +300,7 @@ public class TerragruntTaskService {
     return delegateFile.getFileId();
   }
 
-  public File getTerraformStateFile(String scripDirectory, String workspace) {
+  private File getTerraformStateFile(String scripDirectory, String workspace) {
     if (!StringUtils.isBlank(scripDirectory)) {
       File tfStateFile = isEmpty(workspace)
           ? Paths.get(scripDirectory, TERRAFORM_STATE_FILE_NAME).toFile()
@@ -366,7 +376,7 @@ public class TerragruntTaskService {
   }
 
   private void downloadTfStateFile(
-      String workspace, String stateFileId, String configFilesDirectory, String accountId, LogCallback logCallback) {
+      String workspace, String stateFileId, String configFilesDirectory, String accountId) {
     File tfStateFile = (isEmpty(workspace))
         ? Paths.get(configFilesDirectory, TERRAFORM_STATE_FILE_NAME).toFile()
         : Paths.get(configFilesDirectory, format(WORKSPACE_STATE_FILE_PATH_FORMAT, stateFileId)).toFile();
@@ -376,12 +386,12 @@ public class TerragruntTaskService {
       PushbackInputStream pushbackInputStream = new PushbackInputStream(stateRemoteInputStream);
       int firstByte = pushbackInputStream.read();
       if (firstByte == -1) {
-        logCallback.saveExecutionLog(format("Invalid or corrupted terraform state file %s", stateFileId), WARN);
+        log.error(format("Invalid or corrupted terraform state file %s", stateFileId));
         FileUtils.deleteQuietly(tfStateFile);
       } else {
         pushbackInputStream.unread(firstByte);
         FileUtils.copyInputStreamToFile(pushbackInputStream, tfStateFile);
-        logCallback.saveExecutionLog("Successfully downloaded terraform state file");
+        log.info("Successfully downloaded terraform state file");
       }
     } catch (IOException exception) {
       throw new TerragruntFetchFilesRuntimeException(

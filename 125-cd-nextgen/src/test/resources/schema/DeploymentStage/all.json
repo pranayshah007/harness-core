@@ -26,10 +26,22 @@
       "type": "string"
     },
     "failureStrategies": {
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/FailureStrategyConfig"
-      }
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FailureStrategyConfig"
+          }
+        },
+        {
+          "type": "array"
+        },
+        {
+          "type": "string",
+          "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+          "minLength": 1
+        }
+      ]
     },
     "identifier": {
       "type": "string",
@@ -437,7 +449,9 @@
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
             "AzureArtifacts",
-            "AmazonMachineImage"
+            "AmazonMachineImage",
+            "GoogleCloudStorage",
+            "GoogleCloudSource"
           ]
         }
       },
@@ -623,6 +637,38 @@
           "if": {
             "properties": {
               "type": {
+                "const": "GoogleCloudSource"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudSourceArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudStorage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudStorageArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Jenkins"
               }
             }
@@ -753,6 +799,127 @@
             },
             "repositoryName": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgBlueGreenDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "loadBalancer",
+            "prodListener",
+            "prodListenerRuleArn",
+            "stageListener",
+            "stageListenerRuleArn"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "loadBalancer": {
+              "type": "string"
+            },
+            "prodListener": {
+              "type": "string"
+            },
+            "prodListenerRuleArn": {
+              "type": "string"
+            },
+            "stageListener": {
+              "type": "string"
+            },
+            "stageListenerRuleArn": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgBlueGreenRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgBlueGreenSwapServiceStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "downsizeOldAsg"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "downsizeOldAsg": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -1087,6 +1254,10 @@
         },
         {
           "type": "object",
+          "required": [
+            "connectorRef",
+            "region"
+          ],
           "properties": {
             "connectorRef": {
               "type": "string"
@@ -1131,6 +1302,13 @@
         },
         {
           "type": "object",
+          "required": [
+            "loadBalancer",
+            "prodListenerPort",
+            "prodListenerRuleArn",
+            "stageListenerPort",
+            "stageListenerRuleArn"
+          ],
           "properties": {
             "loadBalancer": {
               "type": "string"
@@ -2789,6 +2967,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "count"
+          ],
           "properties": {
             "count": {
               "oneOf": [
@@ -3557,7 +3738,52 @@
           "$ref": "#/definitions/ServicesYaml"
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "serviceConfig"
+              ]
+            },
+            {
+              "required": [
+                "service"
+              ]
+            },
+            {
+              "required": [
+                "services"
+              ]
+            }
+          ]
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "environment"
+              ]
+            },
+            {
+              "required": [
+                "environmentGroup"
+              ]
+            },
+            {
+              "required": [
+                "environments"
+              ]
+            },
+            {
+              "required": [
+                "infrastructure"
+              ]
+            }
+          ]
+        }
+      ]
     },
     "DeploymentStageNode": {
       "type": "object",
@@ -3587,10 +3813,22 @@
           "type": "string"
         },
         "failureStrategies": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FailureStrategyConfig"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FailureStrategyConfig"
+              }
+            },
+            {
+              "type": "array"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "identifier": {
           "type": "string",
@@ -3680,6 +3918,9 @@
             "connectorRef": {
               "type": "string"
             },
+            "digest": {
+              "type": "string"
+            },
             "imagePath": {
               "type": "string"
             },
@@ -3687,7 +3928,8 @@
               "type": "string"
             },
             "tagRegex": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9 .*/#_-]*$"
             }
           }
         },
@@ -4191,8 +4433,7 @@
           "required": [
             "connectedCloudProvider",
             "instances",
-            "loadBalancers",
-            "name"
+            "loadBalancers"
           ],
           "properties": {
             "connectedCloudProvider": {
@@ -4223,7 +4464,16 @@
               }
             },
             "name": {
-              "type": "string"
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -4263,6 +4513,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "newService"
+          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [
@@ -4300,6 +4553,11 @@
         },
         {
           "type": "object",
+          "required": [
+            "desired",
+            "max",
+            "min"
+          ],
           "properties": {
             "desired": {
               "oneOf": [
@@ -4512,7 +4770,16 @@
               "$ref": "#/definitions/ElastigroupInstances"
             },
             "name": {
-              "type": "string"
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -5534,6 +5801,223 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GoogleCloudSourceArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "project",
+            "repository",
+            "sourceDirectory"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "project": {
+              "type": "string"
+            },
+            "repository": {
+              "type": "string"
+            },
+            "sourceDirectory": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GoogleCloudStorageArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "artifactPath",
+            "bucket",
+            "connectorRef",
+            "project"
+          ],
+          "properties": {
+            "artifactPath": {
+              "type": "string"
+            },
+            "bucket": {
+              "type": "string"
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "project": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GoogleFunctionsDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "updateFieldMask": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GoogleFunctionsDeployWithoutTrafficStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "updateFieldMask": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GoogleFunctionsInfrastructure": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Infrastructure"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "project",
+            "region"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string",
+              "minLength": 1
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "region": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GoogleFunctionsRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GoogleFunctionsTrafficShiftStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "trafficPercent": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HarnessFileStoreSource": {
       "allOf": [
         {
@@ -5751,6 +6235,9 @@
             "store": {
               "$ref": "#/definitions/StoreConfigWrapper"
             },
+            "subChartName": {
+              "type": "string"
+            },
             "valuesPaths": {
               "oneOf": [
                 {
@@ -5837,6 +6324,32 @@
           "type": "string"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HelmRepoOverrideManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "type"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "HelmRollbackStepInfo": {
@@ -6130,7 +6643,8 @@
             "ECS",
             "Elastigroup",
             "TAS",
-            "Asg"
+            "Asg",
+            "GoogleCloudFunctions"
           ]
         }
       },
@@ -6212,6 +6726,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ElastigroupInfrastructure"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudFunctions"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleFunctionsInfrastructure"
               }
             }
           }
@@ -7127,6 +7657,34 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "K8sDryRunManifestStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "K8sGcpInfrastructure": {
       "allOf": [
         {
@@ -7555,6 +8113,7 @@
           "type": "string",
           "enum": [
             "HelmChart",
+            "HelmRepoOverride",
             "K8sManifest",
             "Kustomize",
             "KustomizePatches",
@@ -7753,6 +8312,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/HelmChartManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "HelmRepoOverride"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HelmRepoOverrideManifest"
               }
             }
           }
@@ -8753,35 +9328,7 @@
       ],
       "properties": {
         "action": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/AbortFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/IgnoreFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ManualInterventionFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/RetryFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StageRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StepGroupFailureActionConfig"
-            }
-          ]
+          "$ref": "#/definitions/FailureStrategyActionConfig"
         },
         "errors": {
           "type": "array",
@@ -8798,7 +9345,8 @@
               "DelegateProvisioning",
               "PolicyEvaluationFailure",
               "InputTimeoutError",
-              "ApprovalRejection"
+              "ApprovalRejection",
+              "DelegateRestart"
             ]
           }
         }
@@ -8809,35 +9357,7 @@
       "type": "object",
       "properties": {
         "action": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/AbortFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/IgnoreFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ManualInterventionFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/RetryFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StageRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StepGroupFailureActionConfig"
-            }
-          ]
+          "$ref": "#/definitions/FailureStrategyActionConfig"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -8846,35 +9366,7 @@
       "type": "object",
       "properties": {
         "action": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/AbortFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/IgnoreFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ManualInterventionFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/RetryFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StageRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StepGroupFailureActionConfig"
-            }
-          ]
+          "$ref": "#/definitions/FailureStrategyActionConfig"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -9077,6 +9569,39 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ParameterFieldMatrixConfigInterface": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "$ref": "#/definitions/MatrixConfigInterface"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/MatrixConfigInterface"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ParameterFieldString": {
       "type": "object",
       "properties": {
@@ -9148,6 +9673,29 @@
                 }
               ]
             },
+            "dynamicallyProvisioned": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostAttributes": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "hostFilter": {
               "$ref": "#/definitions/HostFilter"
             }
@@ -9180,6 +9728,29 @@
                 }
               ]
             },
+            "dynamicallyProvisioned": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostAttributes": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "hostFilter": {
               "$ref": "#/definitions/HostFilter"
             },
@@ -9198,6 +9769,73 @@
             }
           },
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "credentialsRef",
+            "hostFilter",
+            "hostObjectArray"
+          ],
+          "properties": {
+            "credentialsRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "dynamicallyProvisioned": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostAttributes": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostFilter": {
+              "$ref": "#/definitions/HostFilter"
+            },
+            "hostObjectArray": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/JsonNode"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
         }
       ]
     },
@@ -9208,6 +9846,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "percentage"
+          ],
           "properties": {
             "percentage": {
               "oneOf": [
@@ -9366,7 +10007,9 @@
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
             "AzureArtifacts",
-            "AmazonMachineImage"
+            "AmazonMachineImage",
+            "GoogleCloudStorage",
+            "GoogleCloudSource"
           ]
         }
       },
@@ -9544,6 +10187,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GoogleArtifactRegistryConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudSource"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudSourceArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudStorage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudStorageArtifactConfig"
               }
             }
           }
@@ -10522,26 +11197,19 @@
           "type": "string"
         },
         "useFromStage": {
-          "$ref": "#/definitions/ServiceUseFromStageV2"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
           "oneOf": [
             {
-              "required": [
-                "useFromStage"
-              ]
+              "$ref": "#/definitions/ServiceUseFromStageV2"
             },
             {
-              "required": [
-                "serviceRef"
-              ]
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
             }
           ]
         }
-      ]
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ServicesMetadata": {
       "type": "object",
@@ -10732,7 +11400,9 @@
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
             "AzureArtifacts",
-            "AmazonMachineImage"
+            "AmazonMachineImage",
+            "GoogleCloudStorage",
+            "GoogleCloudSource"
           ]
         }
       },
@@ -10910,6 +11580,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GoogleArtifactRegistryConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudSource"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudSourceArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudStorage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudStorageArtifactConfig"
               }
             }
           }
@@ -11222,10 +11924,22 @@
           "type": "string"
         },
         "failureStrategies": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FailureStrategyConfig"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FailureStrategyConfig"
+              }
+            },
+            {
+              "type": "array"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "identifier": {
           "type": "string",
@@ -11279,6 +11993,54 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/TasRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgBlueGreenDeploy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgBlueGreenDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgBlueGreenRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgBlueGreenRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgBlueGreenSwapService"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgBlueGreenSwapServiceStepInfo"
               }
             }
           }
@@ -11527,6 +12289,38 @@
           "if": {
             "properties": {
               "type": {
+                "const": "CloudFunctionRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleFunctionsRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CloudFunctionTrafficShift"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleFunctionsTrafficShiftStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Command"
               }
             }
@@ -11583,6 +12377,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/CloudformationDeleteStackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "DeployCloudFunction"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleFunctionsDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "DeployCloudFunctionWithNoTraffic"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleFunctionsDeployWithoutTrafficStepInfo"
               }
             }
           }
@@ -11991,6 +12817,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "K8sDryRun"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/K8sDryRunManifestStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "K8sRollingDeploy"
               }
             }
@@ -12167,6 +13009,38 @@
           "if": {
             "properties": {
               "type": {
+                "const": "TasRollingDeploy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasRollingDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TasRollingRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasRollingRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "TerraformApply"
               }
             }
@@ -12175,6 +13049,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/TerraformApplyStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TerraformCloudRun"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TerraformCloudRunStepInfo"
               }
             }
           }
@@ -12316,10 +13206,22 @@
           ]
         },
         "failureStrategies": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FailureStrategyConfig"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FailureStrategyConfig"
+              }
+            },
+            {
+              "type": "array"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "identifier": {
           "type": "string",
@@ -12724,7 +13626,16 @@
       "type": "object",
       "properties": {
         "matrix": {
-          "$ref": "#/definitions/MatrixConfigInterface"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ParameterFieldMatrixConfigInterface"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "parallelism": {
           "oneOf": [
@@ -12943,8 +13854,7 @@
           "type": "object",
           "required": [
             "existingVersionToKeep",
-            "tasInstanceCountType",
-            "tempRoutes"
+            "tasInstanceCountType"
           ],
           "properties": {
             "additionalRoutes": {
@@ -13413,6 +14323,77 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TasRollingDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "additionalRoutes": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasRollingRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TasSwapRollbackStepInfo": {
       "allOf": [
         {
@@ -13600,6 +14581,577 @@
     "TerraformBackendConfigSpec": {
       "type": "object",
       "discriminator": "type",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudApplySpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerraformCloudRunExecutionSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "provisionerIdentifier"
+          ],
+          "properties": {
+            "provisionerIdentifier": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudPlanAndApplySpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerraformCloudRunExecutionSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "organization",
+            "provisionerIdentifier",
+            "workspace"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "discardPendingRuns": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "organization": {
+              "type": "string"
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            },
+            "targets": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "variables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
+            },
+            "workspace": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudPlanAndDestroySpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerraformCloudRunExecutionSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "organization",
+            "provisionerIdentifier",
+            "workspace"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "discardPendingRuns": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "organization": {
+              "type": "string"
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            },
+            "targets": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "variables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
+            },
+            "workspace": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudPlanOnlySpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerraformCloudRunExecutionSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "discardPendingRuns",
+            "organization",
+            "provisionerIdentifier",
+            "workspace"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "discardPendingRuns": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "exportTerraformPlanJson": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "organization": {
+              "type": "string"
+            },
+            "planType": {
+              "type": "string",
+              "enum": [
+                "Apply",
+                "Destroy"
+              ]
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            },
+            "targets": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "terraformVersion": {
+              "type": "string"
+            },
+            "variables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
+            },
+            "workspace": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudPlanSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerraformCloudRunExecutionSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "discardPendingRuns",
+            "organization",
+            "provisionerIdentifier",
+            "workspace"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "discardPendingRuns": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "exportTerraformPlanJson": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "organization": {
+              "type": "string"
+            },
+            "planType": {
+              "type": "string",
+              "enum": [
+                "Apply",
+                "Destroy"
+              ]
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            },
+            "targets": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "variables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
+            },
+            "workspace": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudRefreshSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerraformCloudRunExecutionSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "organization",
+            "workspace"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "discardPendingRuns": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "organization": {
+              "type": "string"
+            },
+            "variables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
+            },
+            "workspace": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudRunExecutionSpec": {
+      "type": "object",
+      "discriminator": "runType",
+      "properties": {
+        "specParams": {
+          "$ref": "#/definitions/TerraformCloudRunSpecParameters"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "RefreshState",
+            "PlanOnly",
+            "PlanAndApply",
+            "PlanAndDestroy",
+            "Plan",
+            "Apply"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudRunSpecParameters": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "RefreshState",
+            "PlanOnly",
+            "PlanAndApply",
+            "PlanAndDestroy",
+            "Plan",
+            "Apply"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudRunStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "runType",
+            "spec"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "runType": {
+              "type": "string",
+              "enum": [
+                "RefreshState",
+                "PlanOnly",
+                "PlanAndApply",
+                "PlanAndDestroy",
+                "Plan",
+                "Apply"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "runType": {
+                "const": "Apply"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TerraformCloudApplySpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "runType": {
+                "const": "Plan"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TerraformCloudPlanSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "runType": {
+                "const": "PlanAndApply"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TerraformCloudPlanAndApplySpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "runType": {
+                "const": "PlanAndDestroy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TerraformCloudPlanAndDestroySpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "runType": {
+                "const": "PlanOnly"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TerraformCloudPlanOnlySpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "runType": {
+                "const": "RefreshState"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TerraformCloudRefreshSpec"
+              }
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "TerraformConfigFilesWrapper": {

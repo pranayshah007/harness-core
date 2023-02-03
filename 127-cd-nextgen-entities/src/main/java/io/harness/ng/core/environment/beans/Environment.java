@@ -19,6 +19,7 @@ import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.ng.core.ScopeAware;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
@@ -52,7 +53,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("environmentsNG")
 @ChangeDataCapture(table = "environments", dataStore = "ng-harness", fields = {}, handler = "Environments")
 @TypeAlias("io.harness.ng.core.environment.beans.Environment")
-public class Environment implements PersistentEntity {
+public class Environment implements PersistentEntity, ScopeAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()

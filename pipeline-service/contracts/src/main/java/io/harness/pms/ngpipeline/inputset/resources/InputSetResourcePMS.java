@@ -30,6 +30,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.inputset.InputSetSchemaConstants;
+import io.harness.pms.inputset.MergeInputSetForRerunRequestDTO;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
@@ -401,6 +402,36 @@ public interface InputSetResourcePMS {
       @Parameter(description = "Github Repo identifier of the Pipeline to which the Input Sets belong")
       @QueryParam("pipelineRepoID") String pipelineRepoID, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @NotNull @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO);
+
+  @POST
+  @Path("merge-for-rerun")
+  @ApiOperation(
+      value =
+          "Merges runtime input YAML from the given planExecutionId and return Input Set template format of applied pipeline",
+      nickname = "getMergeInputSetForRun")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @Operation(operationId = "mergeInputSetsForRerun",
+      summary = "Merge runtime input YAML from the given planExecutionId into the pipeline",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Merge runtime input YAML from the given planExecutionId into the pipeline")
+      })
+  @Hidden
+  ResponseDTO<MergeInputSetResponseDTOPMS>
+  getMergeInputSetForRerun(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Parameter(
+                               description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier @Parameter(
+          description = PipelineResourceConstants.ORG_PARAM_MESSAGE) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
+          description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier @Parameter(
+          description = InputSetSchemaConstants.PIPELINE_ID_FOR_INPUT_SET_PARAM_MESSAGE) String pipelineIdentifier,
+      @Parameter(description = "Github branch of the Pipeline to which the Input Sets belong") @QueryParam(
+          "pipelineBranch") String pipelineBranch,
+      @Parameter(description = "Github Repo identifier of the Pipeline to which the Input Sets belong")
+      @QueryParam("pipelineRepoID") String pipelineRepoID, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @NotNull @Valid MergeInputSetForRerunRequestDTO mergeInputSetForRerunRequestDTO);
 
   @POST
   @Path("mergeWithTemplateYaml")

@@ -13,12 +13,11 @@ import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 
 import io.harness.beans.MigratedEntityMapping;
-import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -27,21 +26,24 @@ import io.harness.ngmigration.beans.summary.TemplateSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
-import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorMappingService;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.template.NgTemplateService;
 import io.harness.ngmigration.template.TemplateFactory;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
+import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.beans.yaml.NGTemplateInfoConfig;
+import io.harness.template.remote.TemplateResourceClient;
 
 import software.wings.beans.template.Template;
+import software.wings.beans.template.TemplateType;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -50,11 +52,11 @@ import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.template.TemplateService;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +71,7 @@ import retrofit2.Response;
 @Slf4j
 public class TemplateMigrationService extends NgMigrationService {
   @Inject TemplateService templateService;
+  @Inject private TemplateResourceClient templateResourceClient;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -130,15 +133,7 @@ public class TemplateMigrationService extends NgMigrationService {
   @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
       TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
-    if (yamlFile.isExists()) {
-      return MigrationImportSummaryDTO.builder()
-          .errors(Collections.singletonList(ImportError.builder()
-                                                .message("Template was not migrated as it was already imported before")
-                                                .entity(yamlFile.getCgBasicInfo())
-                                                .build()))
-          .build();
-    }
-    Response<ResponseDTO<ConnectorResponseDTO>> resp =
+    Response<ResponseDTO<TemplateWrapperResponseDTO>> resp =
         templateClient
             .createTemplate(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
                 inputDTO.getProjectIdentifier(),
@@ -161,30 +156,25 @@ public class TemplateMigrationService extends NgMigrationService {
     MigratorExpressionUtils.render(template, inputDTO.getCustomExpressions());
 
     NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(template);
-    if (ngTemplateService.isMigrationSupported()) {
+    JsonNode spec = ngTemplateService.getNgTemplateConfigSpec(template, orgIdentifier, projectIdentifier);
+    if (ngTemplateService.isMigrationSupported() && spec != null) {
       List<NGYamlFile> files = new ArrayList<>();
       NGYamlFile ngYamlFile =
           NGYamlFile.builder()
               .type(TEMPLATE)
               .filename("template/" + template.getName() + ".yaml")
-              .yaml(
-                  NGTemplateConfig.builder()
-                      .templateInfoConfig(
-                          NGTemplateInfoConfig.builder()
-                              .type(TemplateEntityType.STEP_TEMPLATE)
-                              .identifier(MigratorUtility.generateIdentifier(template.getName()))
-                              //                              .variables(ngTemplateService.getTemplateVariables(template))
-                              .name(template.getName())
-                              .description(ParameterField.createValueField(description))
-                              .projectIdentifier(projectIdentifier)
-                              .orgIdentifier(orgIdentifier)
-                              .versionLabel("v" + template.getVersion().toString())
-                              .spec(JsonUtils.asTree(ImmutableMap.of("spec",
-                                  ngTemplateService.getNgTemplateConfigSpec(template, orgIdentifier, projectIdentifier),
-                                  "type", ngTemplateService.getNgTemplateStepName(template), "timeout",
-                                  ngTemplateService.getTimeoutString(template))))
-                              .build())
-                      .build())
+              .yaml(NGTemplateConfig.builder()
+                        .templateInfoConfig(NGTemplateInfoConfig.builder()
+                                                .type(ngTemplateService.getTemplateEntityType())
+                                                .identifier(MigratorUtility.generateIdentifier(template.getName()))
+                                                .name(template.getName())
+                                                .description(ParameterField.createValueField(description))
+                                                .projectIdentifier(projectIdentifier)
+                                                .orgIdentifier(orgIdentifier)
+                                                .versionLabel("v" + template.getVersion().toString())
+                                                .spec(getSpec(spec, template))
+                                                .build())
+                        .build())
               .ngEntityDetail(NgEntityDetail.builder()
                                   .identifier(identifier)
                                   .orgIdentifier(orgIdentifier)
@@ -199,9 +189,31 @@ public class TemplateMigrationService extends NgMigrationService {
     return new ArrayList<>();
   }
 
+  private JsonNode getSpec(JsonNode configSpec, Template template) {
+    NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(template);
+    if (TemplateType.CUSTOM_DEPLOYMENT_TYPE.name().equals(template.getType())) {
+      return configSpec;
+    } else {
+      return JsonUtils.asTree(ImmutableMap.of("spec", configSpec, "type",
+          ngTemplateService.getNgTemplateStepName(template), "timeout", ngTemplateService.getTimeoutString(template)));
+    }
+  }
+
   @Override
   protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
-    return null;
+    try {
+      // Note: We are passing versionLabel as `null` because we do not know the version label.
+      // It will return a stable version by default.
+      TemplateResponseDTO response = NGRestUtils.getResponse(templateResourceClient.get(ngEntityDetail.getIdentifier(),
+          accountIdentifier, ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier(), null, false));
+      if (response == null || StringUtils.isBlank(response.getYaml())) {
+        return null;
+      }
+      return YamlUtils.read(response.getYaml(), NGTemplateConfig.class);
+    } catch (Exception ex) {
+      log.warn("Error when getting templates - ", ex);
+      return null;
+    }
   }
 
   @Override

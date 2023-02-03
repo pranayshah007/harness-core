@@ -74,8 +74,18 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class User extends Base implements Principal {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder().name("accountsIdx").field(UserKeys.accounts).build(),
-            CompoundMongoIndex.builder().name("pendingAccountsIdx").field(UserKeys.pendingAccounts).build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountsIdx_disabled_lastUpdatedAt")
+                 .field(UserKeys.accounts)
+                 .field(UserKeys.disabled)
+                 .descSortField("lastUpdatedAt")
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("pendingAccountsIdx_disabled_lastUpdatedAt")
+                 .field(UserKeys.pendingAccounts)
+                 .field(UserKeys.disabled)
+                 .descSortField("lastUpdatedAt")
+                 .build())
         .add(CompoundMongoIndex.builder()
                  .name("userIdAccountIdx")
                  .field(UserKeys.accounts)

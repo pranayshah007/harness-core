@@ -36,6 +36,7 @@ public class CatalogueHelper {
             .filter(enumFilter.filter(accountIdentifier, FeatureName.SSH_NG))
             .filter(enumFilter.filter(accountIdentifier, FeatureName.AZURE_ARTIFACTS_NG))
             .filter(enumFilter.filter(accountIdentifier, FeatureName.CDS_TAS_NG))
+            .filter(enumFilter.filter(accountIdentifier, FeatureName.TERRAFORM_CLOUD))
             .collect(Collectors.groupingBy(ConnectorRegistryFactory::getConnectorCategory));
     return connectorCategoryListMap.entrySet()
         .stream()

@@ -8,11 +8,16 @@
 package io.harness.filestore.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.filestore.entities.NGFile;
 import io.harness.ng.core.filestore.dto.FileDTO;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDP)
@@ -24,5 +29,29 @@ public class FileStoreUtils {
 
   public static boolean parentChanged(NGFile oldNGFile, FileDTO fileDto) {
     return !oldNGFile.getParentIdentifier().equals(fileDto.getParentIdentifier());
+  }
+
+  public static boolean isPathValid(final String path) {
+    return isNotEmpty(path) && path.charAt(0) == '/' && path.split("/").length > 1;
+  }
+
+  public static Optional<List<String>> getSubPaths(final String path) {
+    if (isEmpty(path) || path.charAt(0) != '/' || "/".equals(path)) {
+      return Optional.empty();
+    }
+
+    String[] paths = path.split("/");
+    List<String> subPathList = new ArrayList<>(paths.length - 1);
+    String fullSubPath = "";
+    for (String subPath : paths) {
+      if (isEmpty(subPath)) {
+        continue;
+      }
+
+      fullSubPath = fullSubPath + "/" + subPath;
+      subPathList.add(fullSubPath);
+    }
+
+    return Optional.of(subPathList);
   }
 }

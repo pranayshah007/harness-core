@@ -11,8 +11,8 @@ import static io.harness.beans.SortOrder.OrderType.DESC;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO.TypeEnum.AWS_S3;
 import static io.harness.utils.PageUtils.SortFields.CREATED;
+import static io.harness.utils.PageUtils.SortFields.IDENTIFIER;
 import static io.harness.utils.PageUtils.SortFields.NAME;
-import static io.harness.utils.PageUtils.SortFields.SLUG;
 import static io.harness.utils.PageUtils.SortFields.UPDATED;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -29,8 +29,8 @@ import io.harness.exception.UnknownEnumTypeException;
 import io.harness.rule.Owner;
 import io.harness.spec.server.audit.v1.model.AwsS3StreamingDestinationSpecDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
-import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationResponse;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationStatus;
 
 import java.util.Map;
 import org.apache.commons.lang3.RandomUtils;
@@ -68,7 +68,7 @@ public class StreamingDestinationsApiUtilsTest extends CategoryTest {
     StreamingDestinationFilterProperties filterProperties =
         streamingDestinationsApiUtils.getFilterProperties(searchTerm, statusString);
     assertThat(filterProperties).isNotNull();
-    assertThat(filterProperties.getStatus().value()).isEqualTo(statusString);
+    assertThat(filterProperties.getStatus().name()).isEqualTo(statusString);
     assertThat(filterProperties.getSearchTerm()).isEqualTo(searchTerm);
   }
 
@@ -103,7 +103,8 @@ public class StreamingDestinationsApiUtilsTest extends CategoryTest {
     String identifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     String name = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
     String connectorRef = "account." + randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
-    StatusEnum statusEnum = StatusEnum.values()[RandomUtils.nextInt(0, StatusEnum.values().length - 1)];
+    StreamingDestinationStatus statusEnum =
+        StreamingDestinationStatus.values()[RandomUtils.nextInt(0, StreamingDestinationStatus.values().length - 1)];
     Long createdAt = System.currentTimeMillis() - TIME_DIFFERENCE_IN_MILLS;
     Long lastModifiedAt = System.currentTimeMillis();
     StreamingDestination streamingDestination = AwsS3StreamingDestination.builder().bucket(bucket).build();
@@ -122,7 +123,7 @@ public class StreamingDestinationsApiUtilsTest extends CategoryTest {
     StreamingDestinationResponse expectedResponse =
         new StreamingDestinationResponse()
             .streamingDestination(new StreamingDestinationDTO()
-                                      .slug(identifier)
+                                      .identifier(identifier)
                                       .name(name)
                                       .status(statusEnum)
                                       .connectorRef(connectorRef)
@@ -141,7 +142,7 @@ public class StreamingDestinationsApiUtilsTest extends CategoryTest {
   public void testGetPageRequest() {
     int page = RandomUtils.nextInt(0, MAX_PAGE_NUMBER);
     int limit = RandomUtils.nextInt(1, MAX_PAGE_SIZE);
-    Map<String, String> sortToField = Map.ofEntries(Map.entry(SLUG.value(), StreamingDestinationKeys.identifier),
+    Map<String, String> sortToField = Map.ofEntries(Map.entry(IDENTIFIER.value(), StreamingDestinationKeys.identifier),
         Map.entry(NAME.value(), StreamingDestinationKeys.name),
         Map.entry(CREATED.value(), StreamingDestinationKeys.createdAt),
         Map.entry(UPDATED.value(), StreamingDestinationKeys.lastModifiedDate));

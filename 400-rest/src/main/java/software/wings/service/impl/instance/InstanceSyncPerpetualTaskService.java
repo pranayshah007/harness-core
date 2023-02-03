@@ -19,11 +19,20 @@ public interface InstanceSyncPerpetualTaskService extends OwnedByInfrastructureM
   void createPerpetualTasksForNewDeployment(
       InfrastructureMapping infrastructureMapping, List<DeploymentSummary> deploymentSummaries);
 
+  void createPerpetualTasksForNewDeploymentBackup(
+      List<DeploymentSummary> deploymentSummaries, InfrastructureMapping infrastructureMapping);
+
   void deletePerpetualTasks(InfrastructureMapping infrastructureMapping);
 
   void deletePerpetualTasks(String accountId, String infrastructureMappingId);
 
   void resetPerpetualTask(String accountId, String perpetualTaskId);
 
-  void deletePerpetualTask(String accountId, String infrastructureMappingId, String perpetualTaskId);
+  default void deletePerpetualTask(String accountId, String infrastructureMappingId, String perpetualTaskId) {
+    deletePerpetualTask(accountId, infrastructureMappingId, perpetualTaskId, false);
+  }
+
+  void deletePerpetualTask(String accountId, String infrastructureMappingId, String perpetualTaskId, boolean backup);
+
+  void restorePerpetualTasks(String accountId, InfrastructureMapping infrastructureMapping);
 }

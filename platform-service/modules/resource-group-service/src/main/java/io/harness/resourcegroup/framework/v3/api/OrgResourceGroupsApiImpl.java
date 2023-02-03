@@ -95,8 +95,8 @@ public class OrgResourceGroupsApiImpl implements OrganizationResourceGroupsApi {
     Page<ResourceGroupResponse> pageResponse =
         resourceGroupService.list(Scope.of(account, org, null), pageRequest, searchTerm);
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
-        responseBuilder, format("/v1/orgs/%s/resource-groups)", org), pageResponse.getContent().size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotalElements(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getContent()
                     .stream()
@@ -109,7 +109,7 @@ public class OrgResourceGroupsApiImpl implements OrganizationResourceGroupsApi {
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = EDIT_RESOURCEGROUP_PERMISSION)
   public Response updateResourceGroupOrg(CreateResourceGroupRequest body, @OrgIdentifier String org,
       @ResourceIdentifier String resourceGroup, @AccountIdentifier String account) {
-    if (!resourceGroup.equals(body.getSlug())) {
+    if (!resourceGroup.equals(body.getIdentifier())) {
       throw new InvalidRequestException("Resource Group identifier in the request body and the URL do not match.");
     }
     ResourceGroupRequest resourceGroupRequest = ResourceGroupApiUtils.getResourceGroupRequestOrg(org, body, account);

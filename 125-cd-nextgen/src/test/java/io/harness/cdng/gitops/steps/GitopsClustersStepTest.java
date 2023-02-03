@@ -264,9 +264,9 @@ public class GitopsClustersStepTest extends CategoryTest {
                           .build(),
             new GitopsClustersOutcome(new ArrayList<>())
                 .appendCluster(new Metadata("envGroupId", null), new Metadata("env1Id", null),
-                    EnvironmentType.PreProduction.toString(), new Metadata("c1", "c1-name"), Map.of())
+                    EnvironmentType.PreProduction.toString(), new Metadata("c1", "c1-name"), Map.of(), null)
                 .appendCluster(new Metadata("envGroupId", null), new Metadata("env1Id", null),
-                    EnvironmentType.PreProduction.toString(), new Metadata("c2", "c2-name"), Map.of())};
+                    EnvironmentType.PreProduction.toString(), new Metadata("c2", "c2-name"), Map.of(), null)};
 
     final Object[] set2 = new Object[] {ClusterStepParameters.builder()
                                             .envClusterRefs(asList(EnvClusterRefs.builder()

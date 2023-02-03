@@ -28,6 +28,7 @@ import io.harness.beans.HeaderConfig;
 import io.harness.beans.IssueCommentWebhookEvent;
 import io.harness.beans.PRWebhookEvent;
 import io.harness.beans.PushWebhookEvent;
+import io.harness.beans.ReleaseWebhookEvent;
 import io.harness.beans.Repository;
 import io.harness.beans.WebhookBaseAttributes;
 import io.harness.beans.WebhookGitUser;
@@ -43,6 +44,7 @@ import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.product.ci.scm.proto.PullRequestHook;
 import io.harness.product.ci.scm.proto.PushHook;
+import io.harness.product.ci.scm.proto.ReleaseHook;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.product.ci.scm.proto.Signature;
 import io.harness.product.ci.scm.proto.User;
@@ -100,6 +102,9 @@ public class WebhookParserSCMServiceImpl implements WebhookParserSCMService {
         && parseWebhookResponse.getComment().getIssue().getPr() != null) {
       IssueCommentHook commentHook = parseWebhookResponse.getComment();
       builder = convertComment(commentHook);
+    } else if (parseWebhookResponse.hasRelease()) {
+      ReleaseHook releaseHook = parseWebhookResponse.getRelease();
+      builder = convertRelease(releaseHook);
     } else {
       log.error("Unsupported webhook event");
       throw new InvalidRequestException("Unsupported webhook event", USER);
@@ -138,6 +143,20 @@ public class WebhookParserSCMServiceImpl implements WebhookParserSCMService {
             .repository(repository)
             .baseAttributes(
                 WebhookBaseAttributes.builder().action(commentHook.getAction().name().toLowerCase()).build())
+            .build();
+
+    return WebhookPayload.builder().webhookGitUser(webhookGitUser).repository(repository).webhookEvent(webhookEvent);
+  }
+
+  WebhookPayloadBuilder convertRelease(ReleaseHook releaseHook) {
+    Repository repository = convertRepository(releaseHook.getRepo());
+    WebhookGitUser webhookGitUser = convertUser(releaseHook.getSender());
+
+    ReleaseWebhookEvent webhookEvent =
+        ReleaseWebhookEvent.builder()
+            .repository(repository)
+            .baseAttributes(
+                WebhookBaseAttributes.builder().action(releaseHook.getAction().name().toLowerCase()).build())
             .build();
 
     return WebhookPayload.builder().webhookGitUser(webhookGitUser).repository(repository).webhookEvent(webhookEvent);

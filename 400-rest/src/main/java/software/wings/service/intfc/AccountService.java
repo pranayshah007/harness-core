@@ -260,4 +260,10 @@ public interface AccountService {
   boolean doMultipleAccountsExist();
 
   List<AccountDTO> getAllAccounts();
+
+  Integer getTrustLevel(String accountId);
+
+  boolean updateTrustLevel(String accountId, Integer trustLevel);
+
+  Boolean updateIsSmpAccount(String customerAccountId, boolean isSmpAccount);
 }

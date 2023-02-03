@@ -8,6 +8,7 @@
 package io.harness.cvng.utils;
 
 import io.harness.cvng.core.beans.params.ResourceParams;
+import io.harness.exception.InvalidArgumentsException;
 
 import com.cronutils.utils.Preconditions;
 import java.util.List;
@@ -28,6 +29,16 @@ public class ScopedInformation {
     }
   }
 
+  public static String getScopedInformation(String accountId, String orgIdentifier, String projectIdentifier) {
+    Preconditions.checkNotNull(accountId, "accountIdentifier can't be null");
+    if (orgIdentifier == null && projectIdentifier == null) {
+      return "ACCOUNT." + accountId;
+    } else if (projectIdentifier == null) {
+      return "ORG." + accountId + '.' + orgIdentifier;
+    } else {
+      return "PROJECT." + accountId + '.' + orgIdentifier + '.' + projectIdentifier;
+    }
+  }
   public static ResourceParams getResourceParamsFromScopedIdentifier(String scopedIdentifier) {
     String[] splitScopedIdentifier = scopedIdentifier.split("\\.");
     if (splitScopedIdentifier.length == 5 && splitScopedIdentifier[0].equals("PROJECT")) {
@@ -49,7 +60,7 @@ public class ScopedInformation {
           .identifier(splitScopedIdentifier[2])
           .build();
     } else {
-      throw new IllegalArgumentException("Invalid Scoped Identifier");
+      throw new InvalidArgumentsException("Invalid Scoped Identifier");
     }
   }
 

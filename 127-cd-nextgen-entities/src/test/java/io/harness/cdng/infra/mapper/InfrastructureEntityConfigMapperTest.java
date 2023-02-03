@@ -76,7 +76,7 @@ public class InfrastructureEntityConfigMapperTest {
                                                                     .name("name")
                                                                     .envIdentifier("envId")
                                                                     .tag(NGTag.builder().key("k1").value("v1").build())
-                                                                    .type(InfrastructureType.KUBERNETES_GCP)
+                                                                    .type(InfrastructureType.KUBERNETES_DIRECT)
                                                                     .yaml("infrastructureDefinition:\n"
                                                                         + "  name: \"name\"\n"
                                                                         + "  identifier: \"id\"\n"

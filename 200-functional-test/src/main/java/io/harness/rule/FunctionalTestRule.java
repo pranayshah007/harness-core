@@ -107,6 +107,7 @@ import com.google.inject.name.Named;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoClients;
 import dev.morphia.AdvancedDatastore;
 import dev.morphia.Morphia;
 import dev.morphia.converters.TypeConverter;
@@ -168,6 +169,8 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
 
     MongoClient mongoClient = new MongoClient(clientUri);
     closingFactory.addServer(mongoClient);
+
+    com.mongodb.client.MongoClient newMongoClient = MongoClients.create(mongoUri);
 
     RestResponse<ElasticsearchConfig> elasticsearchConfigRestResponse =
         Setup.portal()
@@ -290,6 +293,13 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
       @Singleton
       MongoClient mongoClient() {
         return mongoClient;
+      }
+
+      @Provides
+      @Named("primaryMongoClient")
+      @Singleton
+      com.mongodb.client.MongoClient newMongoClient() {
+        return newMongoClient;
       }
 
       @Provides

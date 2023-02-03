@@ -50,6 +50,7 @@ import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScripts;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cdng.artifact.steps.constants.ArtifactsStepV2Constants;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
@@ -57,7 +58,7 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
-import io.harness.cdng.service.steps.ServiceStepsHelper;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -210,7 +211,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     // mock delegateGrpcClientWrapper
     doAnswer(invocationOnMock -> UUIDGenerator.generateUuid())
         .when(delegateGrpcClientWrapper)
-        .submitAsyncTask(any(DelegateTaskRequest.class), any(Duration.class));
+        .submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));
 
     doCallRealMethod().when(cdStepHelper).mapTaskRequestToDelegateTaskRequest(any(), any(), anySet());
 
@@ -275,7 +276,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
     verify(delegateGrpcClientWrapper, times(1))
-        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
 
     verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(ambiance, listEntityDetail, true);
 
@@ -308,7 +309,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
-    verify(delegateGrpcClientWrapper, never()).submitAsyncTask(any(DelegateTaskRequest.class), any(Duration.class));
+    verify(delegateGrpcClientWrapper, never()).submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));
 
     ArtifactsStepV2SweepingOutput output = captor.getValue();
 
@@ -417,7 +418,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
     verify(delegateGrpcClientWrapper, times(3))
-        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -530,7 +531,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
     verify(delegateGrpcClientWrapper, times(3))
-        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -593,7 +594,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
     verify(delegateGrpcClientWrapper, times(2))
-        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -625,7 +626,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
-    verify(delegateGrpcClientWrapper, never()).submitAsyncTask(any(DelegateTaskRequest.class), any(Duration.class));
+    verify(delegateGrpcClientWrapper, never()).submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -883,7 +884,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
     // 1 primary and 1 sidecar
     verify(delegateGrpcClientWrapper, times(2))
-        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -949,7 +950,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     levels.add(Level.newBuilder()
                    .setRuntimeId(generateUuid())
                    .setSetupId(generateUuid())
-                   .setStepType(ArtifactsStepV2.STEP_TYPE)
+                   .setStepType(ArtifactsStepV2Constants.STEP_TYPE)
                    .build());
     return Ambiance.newBuilder()
         .setPlanExecutionId(generateUuid())

@@ -87,9 +87,12 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
   }
 
   @Override
-  public CompositeSLORecord getLatestCompositeSLORecordWithVersion(String sloId, int sloVersion) {
+  public CompositeSLORecord getLatestCompositeSLORecordWithVersion(
+      String sloId, Instant startTimeForCurrentRange, int sloVersion) {
     return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
         .filter(CompositeSLORecordKeys.sloId, sloId)
+        .field(CompositeSLORecordKeys.timestamp)
+        .greaterThanOrEq(startTimeForCurrentRange)
         .filter(CompositeSLORecordKeys.sloVersion, sloVersion)
         .order(Sort.descending(CompositeSLORecordKeys.timestamp))
         .get();
@@ -176,15 +179,17 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
           double goodCount = timeStampToGoodValue.getOrDefault(sliRecord.getTimestamp(), 0.0);
           goodCount += objectivesDetail.getWeightagePercentage() / 100;
           timeStampToGoodValue.put(sliRecord.getTimestamp(), goodCount);
+          timeStampToTotalValue.put(
+              sliRecord.getTimestamp(), timeStampToTotalValue.getOrDefault(sliRecord.getTimestamp(), 0) + 1);
         } else if (SLIRecord.SLIState.BAD.equals(sliRecord.getSliState())
             || (SLIRecord.SLIState.NO_DATA.equals(sliRecord.getSliState())
                 && objectivesDetailSLIMissingDataTypeMap.get(objectivesDetail).equals(SLIMissingDataType.BAD))) {
           double badCount = timeStampToBadValue.getOrDefault(sliRecord.getTimestamp(), 0.0);
           badCount += objectivesDetail.getWeightagePercentage() / 100;
           timeStampToBadValue.put(sliRecord.getTimestamp(), badCount);
+          timeStampToTotalValue.put(
+              sliRecord.getTimestamp(), timeStampToTotalValue.getOrDefault(sliRecord.getTimestamp(), 0) + 1);
         }
-        timeStampToTotalValue.put(
-            sliRecord.getTimestamp(), timeStampToTotalValue.getOrDefault(sliRecord.getTimestamp(), 0) + 1);
       }
     }
   }

@@ -132,9 +132,8 @@ public class InputSetsApiImpl implements InputSetsApi {
     Page<InputSetResponseBody> inputSetList = inputSetEntities.map(inputSetsApiUtils::getInputSetResponse);
 
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
-        String.format("/v1/orgs/%s/projects/%s/pipelines/%s/input-sets", org, project, pipeline),
-        inputSetList.getContent().size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, inputSetList.getTotalElements(), page, limit);
     return responseBuilderWithLinks.entity(inputSetList.getContent()).build();
   }
 
@@ -146,9 +145,10 @@ public class InputSetsApiImpl implements InputSetsApi {
     if (requestBody == null) {
       throw new InvalidRequestException("Input Set update request body must not be null.");
     }
-    if (!Objects.equals(inputSet, requestBody.getSlug())) {
-      throw new InvalidRequestException(String.format(
-          "Expected Input Set identifier in Request Body to be [%s], but was [%s]", inputSet, requestBody.getSlug()));
+    if (!Objects.equals(inputSet, requestBody.getIdentifier())) {
+      throw new InvalidRequestException(
+          String.format("Expected Input Set identifier in Request Body to be [%s], but was [%s]", inputSet,
+              requestBody.getIdentifier()));
     }
     GitAwareContextHelper.populateGitDetails(InputSetsApiUtils.populateGitUpdateDetails(requestBody.getGitDetails()));
     log.info(String.format("Updating input set with identifier %s for pipeline %s in project %s, org %s, account %s",

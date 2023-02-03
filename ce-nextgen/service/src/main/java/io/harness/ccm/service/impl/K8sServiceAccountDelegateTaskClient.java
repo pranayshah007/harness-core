@@ -45,7 +45,7 @@ public class K8sServiceAccountDelegateTaskClient {
     DelegateTaskRequest delegateTaskRequest =
         createK8sServiceAccountInfoTask(connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
 
-    DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
 
     checkForErrorResponse(responseData);
     return (K8sServiceAccountInfoResponse) responseData;

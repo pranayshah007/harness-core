@@ -87,6 +87,7 @@ import io.harness.connector.task.azure.AzureValidationHandler;
 import io.harness.connector.task.docker.DockerValidationHandler;
 import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.connector.task.git.GitValidationHandler;
+import io.harness.connector.task.terraformcloud.TerraformCloudValidationHandler;
 import io.harness.cvng.CVNGDataCollectionDelegateServiceImpl;
 import io.harness.cvng.K8InfoDataServiceImpl;
 import io.harness.cvng.connectiontask.CVNGConnectorValidationDelegateTask;
@@ -135,12 +136,19 @@ import io.harness.delegate.exceptionhandler.handler.SecretExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.SocketExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.TerraformRuntimeExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.TerragruntRuntimeExceptionHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionCommandTaskHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionDeployCommandTaskHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionDeployWithoutTrafficCommandTaskHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionPrepareRollbackCommandTaskHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionRollbackCommandTaskHandler;
+import io.harness.delegate.googlefunction.GoogleFunctionTrafficShiftCommandTaskHandler;
 import io.harness.delegate.http.HttpTaskNG;
 import io.harness.delegate.k8s.K8sApplyRequestHandler;
 import io.harness.delegate.k8s.K8sBGRequestHandler;
 import io.harness.delegate.k8s.K8sCanaryDeleteRequestHandler;
 import io.harness.delegate.k8s.K8sCanaryRequestHandler;
 import io.harness.delegate.k8s.K8sDeleteRequestHandler;
+import io.harness.delegate.k8s.K8sDryRunManifestRequestHandler;
 import io.harness.delegate.k8s.K8sRequestHandler;
 import io.harness.delegate.k8s.K8sRollingRequestHandler;
 import io.harness.delegate.k8s.K8sRollingRollbackRequestHandler;
@@ -195,6 +203,12 @@ import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactD
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactTaskNG;
 import io.harness.delegate.task.artifacts.googleartifactregistry.GARArtifactTaskNG;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactTaskNG;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactTaskNG;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactTaskNG;
@@ -208,6 +222,10 @@ import io.harness.delegate.task.aws.AwsCodeCommitApiDelegateTask;
 import io.harness.delegate.task.aws.AwsCodeCommitDelegateTask;
 import io.harness.delegate.task.aws.AwsDelegateTask;
 import io.harness.delegate.task.aws.S3FetchFilesTaskNG;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployTaskNG;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataTaskNG;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackTaskNG;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceTaskNG;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeleteTaskNG;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataTaskNG;
@@ -275,17 +293,22 @@ import io.harness.delegate.task.elastigroup.ElastigroupSetupCommandTaskNG;
 import io.harness.delegate.task.elastigroup.ElastigroupStartupScriptFetchRunTask;
 import io.harness.delegate.task.elastigroup.ElastigroupSwapRouteCommandTaskNG;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTask;
+import io.harness.delegate.task.gcp.GcpProjectTask;
 import io.harness.delegate.task.gcp.GcpTask;
 import io.harness.delegate.task.gcp.GcpTaskType;
-import io.harness.delegate.task.gcp.taskHandlers.GcpListBucketsTaskHandler;
-import io.harness.delegate.task.gcp.taskHandlers.GcpListClustersTaskHandler;
-import io.harness.delegate.task.gcp.taskHandlers.TaskHandler;
+import io.harness.delegate.task.gcp.GcsBucketPerProjectTask;
+import io.harness.delegate.task.gcp.taskhandlers.GcpListBucketsTaskHandler;
+import io.harness.delegate.task.gcp.taskhandlers.GcpListClustersTaskHandler;
+import io.harness.delegate.task.gcp.taskhandlers.TaskHandler;
 import io.harness.delegate.task.git.GitFetchTaskNG;
 import io.harness.delegate.task.git.NGGitCommandTask;
 import io.harness.delegate.task.git.NGGitOpsCommandTask;
 import io.harness.delegate.task.gitapi.DecryptGitAPIAccessTask;
 import io.harness.delegate.task.gitapi.GitApiTask;
+import io.harness.delegate.task.gitcommon.GitTaskNG;
 import io.harness.delegate.task.gitops.GitOpsFetchAppTask;
+import io.harness.delegate.task.googlefunction.GoogleFunctionCommandTask;
+import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
 import io.harness.delegate.task.helm.HelmCommandTaskNG;
 import io.harness.delegate.task.helm.HelmDeployServiceImplNG;
 import io.harness.delegate.task.helm.HelmDeployServiceNG;
@@ -324,6 +347,7 @@ import io.harness.delegate.task.pagerduty.PagerDutySenderDelegateTask;
 import io.harness.delegate.task.pcf.CfCommandRequest.PcfCommandType;
 import io.harness.delegate.task.pcf.TasConnectorValidationTask;
 import io.harness.delegate.task.pdc.HostConnectivityValidationDelegateTask;
+import io.harness.delegate.task.scm.ScmBatchGetFileTask;
 import io.harness.delegate.task.scm.ScmDelegateClientImpl;
 import io.harness.delegate.task.scm.ScmGitFileTask;
 import io.harness.delegate.task.scm.ScmGitPRTask;
@@ -345,6 +369,7 @@ import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNG;
 import io.harness.delegate.task.shell.ssh.ArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.ArtifactoryCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.AwsS3ArtifactCommandUnitHandler;
+import io.harness.delegate.task.shell.ssh.AzureArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
 import io.harness.delegate.task.shell.ssh.JenkinsArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.NexusArtifactCommandUnitHandler;
@@ -369,6 +394,8 @@ import io.harness.delegate.task.tas.TasBasicSetupTask;
 import io.harness.delegate.task.tas.TasCommandTask;
 import io.harness.delegate.task.tas.TasDataFetchTask;
 import io.harness.delegate.task.tas.TasRollbackTask;
+import io.harness.delegate.task.tas.TasRollingDeploymentTask;
+import io.harness.delegate.task.tas.TasRollingRollbackTask;
 import io.harness.delegate.task.tas.TasSwapRollbackTask;
 import io.harness.delegate.task.tas.TasSwapRouteTask;
 import io.harness.delegate.task.terraform.TFTaskType;
@@ -380,6 +407,7 @@ import io.harness.delegate.task.terraform.handlers.TerraformAbstractTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformApplyTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformDestroyTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformPlanTaskHandler;
+import io.harness.delegate.task.terraformcloud.TerraformCloudTaskNG;
 import io.harness.delegate.task.terragrunt.TerragruntApplyTaskNG;
 import io.harness.delegate.task.terragrunt.TerragruntDestroyTaskNG;
 import io.harness.delegate.task.terragrunt.TerragruntPlanTaskNG;
@@ -388,6 +416,7 @@ import io.harness.delegate.task.trigger.TriggerAuthenticationTask;
 import io.harness.delegate.task.winrm.ArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.ArtifactoryArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.AwsS3ArtifactDownloadHandler;
+import io.harness.delegate.task.winrm.AzureArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.JenkinsArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.NexusArtifactDownloadHandler;
 import io.harness.delegate.utils.DecryptionHelperDelegate;
@@ -430,6 +459,10 @@ import io.harness.gcp.client.GcpClient;
 import io.harness.gcp.impl.GcpClientImpl;
 import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
+import io.harness.googlefunctions.GoogleCloudFunctionClient;
+import io.harness.googlefunctions.GoogleCloudFunctionClientImpl;
+import io.harness.googlefunctions.GoogleCloudRunClient;
+import io.harness.googlefunctions.GoogleCloudRunClientImpl;
 import io.harness.helm.HelmClient;
 import io.harness.helm.HelmClientImpl;
 import io.harness.helpers.EncryptDecryptHelperImpl;
@@ -477,6 +510,8 @@ import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.SpotInstHelperServiceDelegateImpl;
 import io.harness.terraform.TerraformClient;
 import io.harness.terraform.TerraformClientImpl;
+import io.harness.terraformcloud.TerraformCloudClient;
+import io.harness.terraformcloud.TerraformCloudClientImpl;
 import io.harness.terragrunt.TerragruntClient;
 import io.harness.terragrunt.TerragruntClientImpl;
 import io.harness.threading.ThreadPool;
@@ -1200,6 +1235,7 @@ public class DelegateModule extends AbstractModule {
     bind(CloudformationBaseHelper.class).to(CloudformationBaseHelperImpl.class);
     bind(HelmDeployServiceNG.class).to(HelmDeployServiceImplNG.class);
     bind(AwsCliClient.class).to(AwsCliClientImpl.class);
+    bind(TerraformCloudClient.class).to(TerraformCloudClientImpl.class);
 
     MapBinder<String, CommandUnitExecutorService> serviceCommandExecutorServiceMapBinder =
         MapBinder.newMapBinder(binder(), String.class, CommandUnitExecutorService.class);
@@ -1329,6 +1365,8 @@ public class DelegateModule extends AbstractModule {
         .to(K8sSwapServiceSelectorsHandler.class);
     k8sTaskTypeToRequestHandler.addBinding(K8sTaskType.DELETE.name()).to(K8sDeleteRequestHandler.class);
     k8sTaskTypeToRequestHandler.addBinding(K8sTaskType.CANARY_DELETE.name()).to(K8sCanaryDeleteRequestHandler.class);
+    k8sTaskTypeToRequestHandler.addBinding(K8sTaskType.DRY_RUN_MANIFEST.name())
+        .to(K8sDryRunManifestRequestHandler.class);
 
     // Terraform Task Handlers
     MapBinder<TFTaskType, TerraformAbstractTaskHandler> tfTaskTypeToHandlerMap =
@@ -1384,6 +1422,20 @@ public class DelegateModule extends AbstractModule {
             MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
                 new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
     s3ArtifactServiceMapBinder.addBinding(S3ArtifactDelegateRequest.class).toInstance(S3ArtifactTaskHandler.class);
+
+    MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
+        googleCloudSourceArtifactServiceMapBinder =
+            MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
+                new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
+    googleCloudSourceArtifactServiceMapBinder.addBinding(GoogleCloudSourceArtifactDelegateRequest.class)
+        .toInstance(GoogleCloudSourceArtifactTaskHandler.class);
+
+    MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
+        googleCloudStorageArtifactServiceMapBinder =
+            MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
+                new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
+    googleCloudStorageArtifactServiceMapBinder.addBinding(GoogleCloudStorageArtifactDelegateRequest.class)
+        .toInstance(GoogleCloudStorageArtifactTaskHandler.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
         githubPackagesArtifactServiceMapBinder =
@@ -1554,6 +1606,7 @@ public class DelegateModule extends AbstractModule {
     artifactHandlers.addBinding(SshWinRmArtifactType.JENKINS).to(JenkinsArtifactDownloadHandler.class);
     artifactHandlers.addBinding(SshWinRmArtifactType.AWS_S3).to(AwsS3ArtifactDownloadHandler.class);
     artifactHandlers.addBinding(SshWinRmArtifactType.NEXUS_PACKAGE).to(NexusArtifactDownloadHandler.class);
+    artifactHandlers.addBinding(SshWinRmArtifactType.AZURE).to(AzureArtifactDownloadHandler.class);
 
     MapBinder<String, ArtifactCommandUnitHandler> artifactCommandHandlers =
         MapBinder.newMapBinder(binder(), String.class, ArtifactCommandUnitHandler.class);
@@ -1562,6 +1615,7 @@ public class DelegateModule extends AbstractModule {
     artifactCommandHandlers.addBinding(SshWinRmArtifactType.AWS_S3.name()).to(AwsS3ArtifactCommandUnitHandler.class);
     artifactCommandHandlers.addBinding(SshWinRmArtifactType.NEXUS_PACKAGE.name())
         .to(NexusArtifactCommandUnitHandler.class);
+    artifactCommandHandlers.addBinding(SshWinRmArtifactType.AZURE.name()).to(AzureArtifactCommandUnitHandler.class);
 
     registerSecretManagementBindings();
     registerConnectorValidatorsBindings();
@@ -1845,6 +1899,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.AWS_CF_TASK).toInstance(AwsCFTask.class);
     mapBinder.addBinding(TaskType.K8S_COMMAND_TASK).toInstance(K8sTask.class);
     mapBinder.addBinding(TaskType.K8S_COMMAND_TASK_NG).toInstance(K8sTaskNG.class);
+    mapBinder.addBinding(TaskType.K8S_DRY_RUN_MANIFEST_TASK_NG).toInstance(K8sTaskNG.class);
     mapBinder.addBinding(TaskType.K8S_WATCH_TASK).toInstance(AssignmentTask.class);
     mapBinder.addBinding(TaskType.TRIGGER_TASK).toInstance(TriggerTask.class);
     mapBinder.addBinding(TaskType.WEBHOOK_TRIGGER_TASK).toInstance(WebHookTriggerTask.class);
@@ -1856,6 +1911,10 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.BUILD_SOURCE_TASK).toInstance(BuildSourceTask.class);
     mapBinder.addBinding(TaskType.DOCKER_ARTIFACT_TASK_NG).toInstance(DockerArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.AMAZON_S3_ARTIFACT_TASK_NG).toInstance(S3ArtifactTaskNG.class);
+    mapBinder.addBinding(TaskType.GOOGLE_CLOUD_STORAGE_ARTIFACT_TASK_NG)
+        .toInstance(GoogleCloudStorageArtifactTaskNG.class);
+    mapBinder.addBinding(TaskType.GOOGLE_CLOUD_SOURCE_ARTIFACT_TASK_NG)
+        .toInstance(GoogleCloudSourceArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.JENKINS_ARTIFACT_TASK_NG).toInstance(JenkinsArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.AZURE_ARTIFACT_TASK_NG).toInstance(AzureArtifactsTaskNG.class);
     mapBinder.addBinding(TaskType.AMI_ARTIFACT_TASK_NG).toInstance(AMIArtifactTaskNG.class);
@@ -1938,6 +1997,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.SCM_PATH_FILTER_EVALUATION_TASK).toInstance(ScmPathFilterEvaluationTask.class);
     mapBinder.addBinding(TaskType.SCM_GIT_REF_TASK).toInstance(ScmGitRefTask.class);
     mapBinder.addBinding(TaskType.SCM_GIT_FILE_TASK).toInstance(ScmGitFileTask.class);
+    mapBinder.addBinding(TaskType.SCM_BATCH_GET_FILE_TASK).toInstance(ScmBatchGetFileTask.class);
     mapBinder.addBinding(TaskType.SCM_PULL_REQUEST_TASK).toInstance(ScmGitPRTask.class);
     mapBinder.addBinding(TaskType.SCM_GIT_WEBHOOK_TASK).toInstance(ScmGitWebhookTask.class);
     mapBinder.addBinding(TaskType.SERVICENOW_CONNECTIVITY_TASK_NG).toInstance(ServiceNowTestConnectionTaskNG.class);
@@ -1951,8 +2011,10 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.AZURE_WEB_APP_TASK_NG_V2).toInstance(AzureWebAppTaskNG.class);
     mapBinder.addBinding(TaskType.FETCH_INSTANCE_SCRIPT_TASK_NG).toInstance(FetchInstanceScriptTaskNG.class);
     mapBinder.addBinding(TaskType.COMMAND_TASK_NG).toInstance(CommandTaskNG.class);
+    mapBinder.addBinding(TaskType.COMMAND_TASK_NG_WITH_AZURE_ARTIFACT).toInstance(CommandTaskNG.class);
     mapBinder.addBinding(TaskType.TRIGGER_AUTHENTICATION_TASK).toInstance(TriggerAuthenticationTask.class);
     mapBinder.addBinding(TaskType.HELM_FETCH_CHART_VERSIONS_TASK_NG).toInstance(HelmFetchChartVersionTaskNG.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_CLOUD_TASK_NG).toInstance(TerraformCloudTaskNG.class);
 
     // ECS NG
     MapBinder<String, EcsCommandTaskNGHandler> ecsTaskTypeToTaskHandlerMap =
@@ -1985,15 +2047,42 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.ECS_S3_FETCH_TASK_NG).toInstance(EcsS3FetchTask.class);
     mapBinder.addBinding(TaskType.ECS_RUN_TASK_ARN).toInstance(EcsRunTaskArnTask.class);
 
+    // GIT
+    mapBinder.addBinding(TaskType.GIT_TASK_NG).toInstance(GitTaskNG.class);
+
+    MapBinder<String, GoogleFunctionCommandTaskHandler> googleFunctionCommandTaskHandlerMapBinder =
+        MapBinder.newMapBinder(binder(), String.class, GoogleFunctionCommandTaskHandler.class);
+    googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_DEPLOY.name())
+        .to(GoogleFunctionDeployCommandTaskHandler.class);
+    googleFunctionCommandTaskHandlerMapBinder
+        .addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_PREPARE_ROLLBACK.name())
+        .to(GoogleFunctionPrepareRollbackCommandTaskHandler.class);
+    googleFunctionCommandTaskHandlerMapBinder
+        .addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_WITHOUT_TRAFFIC_DEPLOY.name())
+        .to(GoogleFunctionDeployWithoutTrafficCommandTaskHandler.class);
+    googleFunctionCommandTaskHandlerMapBinder
+        .addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_TRAFFIC_SHIFT.name())
+        .to(GoogleFunctionTrafficShiftCommandTaskHandler.class);
+    googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_ROLLBACK.name())
+        .to(GoogleFunctionRollbackCommandTaskHandler.class);
+
     // ASG NG
     mapBinder.addBinding(TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG).toInstance(AsgCanaryDeployTaskNG.class);
     mapBinder.addBinding(TaskType.AWS_ASG_CANARY_DELETE_TASK_NG).toInstance(AsgCanaryDeleteTaskNG.class);
     mapBinder.addBinding(TaskType.AWS_ASG_ROLLING_DEPLOY_TASK_NG).toInstance(AsgRollingDeployTaskNG.class);
     mapBinder.addBinding(TaskType.AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG).toInstance(AsgPrepareRollbackDataTaskNG.class);
     mapBinder.addBinding(TaskType.AWS_ASG_ROLLING_ROLLBACK_TASK_NG).toInstance(AsgRollingRollbackTaskNG.class);
+    mapBinder.addBinding(TaskType.AWS_ASG_BLUE_GREEN_SWAP_SERVICE_TASK_NG)
+        .toInstance(AsgBlueGreenSwapServiceTaskNG.class);
+    mapBinder.addBinding(TaskType.AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG)
+        .toInstance(AsgBlueGreenPrepareRollbackDataTaskNG.class);
+    mapBinder.addBinding(TaskType.AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG).toInstance(AsgBlueGreenDeployTaskNG.class);
+    mapBinder.addBinding(TaskType.AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG).toInstance(AsgBlueGreenRollbackTaskNG.class);
 
     bind(EcsV2Client.class).to(EcsV2ClientImpl.class);
     bind(ElbV2Client.class).to(ElbV2ClientImpl.class);
+    bind(GoogleCloudFunctionClient.class).to(GoogleCloudFunctionClientImpl.class);
+    bind(GoogleCloudRunClient.class).to(GoogleCloudRunClientImpl.class);
     mapBinder.addBinding(TaskType.AZURE_NG_ARM).toInstance(AzureResourceCreationTaskNG.class);
     mapBinder.addBinding(TaskType.SHELL_SCRIPT_PROVISION).toInstance(ShellScriptProvisionTaskNG.class);
     mapBinder.addBinding(TaskType.ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG)
@@ -2028,6 +2117,12 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TAS_SWAP_ROLLBACK).toInstance(TasSwapRollbackTask.class);
     mapBinder.addBinding(TaskType.TANZU_COMMAND).toInstance(TasCommandTask.class);
     mapBinder.addBinding(TaskType.TAS_DATA_FETCH).toInstance(TasDataFetchTask.class);
+    mapBinder.addBinding(TaskType.TAS_ROLLING_DEPLOY).toInstance(TasRollingDeploymentTask.class);
+    mapBinder.addBinding(TaskType.TAS_ROLLING_ROLLBACK).toInstance(TasRollingRollbackTask.class);
+
+    mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_COMMAND_TASK).toInstance(GoogleFunctionCommandTask.class);
+    mapBinder.addBinding(TaskType.GCP_PROJECTS_TASK_NG).toInstance(GcpProjectTask.class);
+    mapBinder.addBinding(TaskType.GCS_BUCKETS_TASK_NG).toInstance(GcsBucketPerProjectTask.class);
   }
 
   private void registerSecretManagementBindings() {
@@ -2166,6 +2261,8 @@ public class DelegateModule extends AbstractModule {
         .to(GitValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.CUSTOM_SECRET_MANAGER.getDisplayName())
         .to(NotSupportedValidationHandler.class);
+    connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.TERRAFORM_CLOUD.getDisplayName())
+        .to(TerraformCloudValidationHandler.class);
   }
 
   private void bindExceptionHandlers() {

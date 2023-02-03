@@ -59,7 +59,7 @@ public class ShellScriptTemplateService implements NgTemplateService {
     if (EmptyPredicate.isNotEmpty(template.getVariables())) {
       template.getVariables().forEach(variable -> {
         variables.add(ImmutableMap.of("name", valueOrDefaultEmpty(variable.getName()), "type", "String", "value",
-            valueOrDefaultEmpty(variable.getValue())));
+            valueOrDefaultRuntime(variable.getValue())));
       });
     }
     Map<String, Object> templateSpec =
@@ -87,6 +87,10 @@ public class ShellScriptTemplateService implements NgTemplateService {
   }
 
   static String valueOrDefaultEmpty(String val) {
-    return StringUtils.isNotBlank(val) ? val : "";
+    return StringUtils.isNotBlank(val) ? val.replace('-', '_') : "";
+  }
+
+  static String valueOrDefaultRuntime(String val) {
+    return StringUtils.isNotBlank(val) ? val : "<+input>";
   }
 }

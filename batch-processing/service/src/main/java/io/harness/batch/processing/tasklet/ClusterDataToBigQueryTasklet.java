@@ -13,6 +13,7 @@ import io.harness.avro.ClusterBillingData;
 import io.harness.avro.Label;
 import io.harness.batch.processing.billing.timeseries.data.InstanceBillingData;
 import io.harness.batch.processing.billing.timeseries.service.impl.BillingDataServiceImpl;
+import io.harness.batch.processing.billing.timeseries.service.impl.ClickHouseClusterDataService;
 import io.harness.batch.processing.ccm.BatchJobType;
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.config.BatchMainConfig;
@@ -25,10 +26,13 @@ import io.harness.batch.processing.tasklet.support.HarnessEntitiesService.Harnes
 import io.harness.batch.processing.tasklet.support.HarnessTagService;
 import io.harness.batch.processing.tasklet.support.K8SWorkloadService;
 import io.harness.beans.FeatureName;
+import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.JobConstants;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.entities.k8s.K8sWorkload;
 import io.harness.ccm.commons.service.intf.InstanceDataService;
+import io.harness.configuration.DeployMode;
 import io.harness.ff.FeatureFlagService;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -76,7 +80,9 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
   @Autowired private HarnessEntitiesService harnessEntitiesService;
   @Autowired private WorkloadRepository workloadRepository;
   @Autowired private FeatureFlagService featureFlagService;
-
+  @Autowired private ClickHouseService clickHouseService;
+  @Autowired private ClickHouseClusterDataService clusterDataService;
+  @Autowired private ClickHouseConfig clickHouseConfig;
   private static final String defaultParentWorkingDirectory = "./avro/";
   private static final String defaultBillingDataFileNameDaily = "billing_data_%s_%s_%s.avro";
   private static final String defaultBillingDataFileNameHourly = "billing_data_hourly_%s_%s_%s_%s.avro";
@@ -127,14 +133,33 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
 
     ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(jobConstants.getJobStartTime()), ZoneId.of("GMT"));
     String billingDataFileName = "";
+    String clusterDataTableName = "";
+    String clusterDataAggregatedTableName = "";
     if (batchJobType == BatchJobType.CLUSTER_DATA_TO_BIG_QUERY) {
       billingDataFileName =
           String.format(defaultBillingDataFileNameDaily, zdt.getYear(), zdt.getMonth(), zdt.getDayOfMonth());
+      clusterDataTableName = "clusterData";
+      clusterDataAggregatedTableName = "clusterDataAggregated";
     } else if (batchJobType == BatchJobType.CLUSTER_DATA_HOURLY_TO_BIG_QUERY) {
       billingDataFileName = String.format(
           defaultBillingDataFileNameHourly, zdt.getYear(), zdt.getMonth(), zdt.getDayOfMonth(), zdt.getHour());
+      clusterDataTableName = "clusterDataHourly";
+      clusterDataAggregatedTableName = "clusterDataHourlyAggregated";
     }
 
+    log.info("ClusterDataToBigQuery Job- isDeploymentOnPrem: " + config.getDeployMode());
+
+    if (!DeployMode.isOnPrem(config.getDeployMode().name())) {
+      handleDataForBigQuery(batchJobType, jobConstants, batchSize, billingDataReader, billingDataFileName);
+    } else {
+      handleDataForClickHouse(batchJobType, jobConstants, batchSize, billingDataReader, zdt, clusterDataTableName,
+          clusterDataAggregatedTableName);
+    }
+    return null;
+  }
+
+  private void handleDataForBigQuery(BatchJobType batchJobType, JobConstants jobConstants, int batchSize,
+      BillingDataReader billingDataReader, String billingDataFileName) throws IOException {
     List<InstanceBillingData> instanceBillingDataList;
     boolean avroFileWithSchemaExists = false;
     do {
@@ -154,8 +179,63 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     File workingDirectory = new File(defaultParentWorkingDirectory + jobConstants.getAccountId());
     File billingDataFile = new File(workingDirectory, billingDataFileName);
     Files.delete(billingDataFile.toPath());
+  }
 
-    return null;
+  private void handleDataForClickHouse(BatchJobType batchJobType, JobConstants jobConstants, int batchSize,
+      BillingDataReader billingDataReader, ZonedDateTime zdt, String clusterDataTableName,
+      String clusterDataAggregatedTableName) throws Exception {
+    List<InstanceBillingData> instanceBillingDataList;
+    clusterDataService.createClickHouseDataBaseIfNotExist();
+    clusterDataService.createTableAndDeleteExistingDataFromClickHouse(jobConstants, clusterDataTableName);
+    do {
+      instanceBillingDataList = billingDataReader.getNext();
+      List<ClusterBillingData> clusterBillingDataList =
+          getClusterBillingDataForBatch(jobConstants.getAccountId(), batchJobType, instanceBillingDataList);
+
+      log.info("clusterBillingDataList size: {}", clusterBillingDataList.size());
+      ingestClusterDataTable(clusterDataTableName, clusterBillingDataList);
+      log.info("Ingestion Completed for ClusterDataTable");
+    } while (instanceBillingDataList.size() == batchSize);
+
+    deleteExistingAndIngestToClickHouse(
+        jobConstants, zdt, clusterDataTableName, clusterDataAggregatedTableName, batchJobType);
+  }
+
+  private void deleteExistingAndIngestToClickHouse(JobConstants jobConstants, ZonedDateTime zdt,
+      String clusterDataTableName, String clusterDataAggregatedTableName, BatchJobType batchJobType) throws Exception {
+    if (batchJobType != BatchJobType.CLUSTER_DATA_HOURLY_TO_BIG_QUERY) {
+      clusterDataService.processUnifiedTableToCLickHouse(zdt, clusterDataTableName);
+      ingestUnifiedTable(zdt, clusterDataTableName);
+      log.info("Ingestion Completed for UnifiedTable");
+    }
+
+    clusterDataService.processAggregatedTable(jobConstants, clusterDataAggregatedTableName);
+    ingestAggregatedTable(jobConstants, clusterDataTableName, clusterDataAggregatedTableName);
+    log.info("Ingestion Completed for AggregatedTable");
+
+    if (batchJobType != BatchJobType.CLUSTER_DATA_HOURLY_TO_BIG_QUERY) {
+      clusterDataService.processCostAggregatedData(jobConstants, zdt);
+      ingestCostAggregatedTable(zdt);
+      log.info("Ingestion Completed for CostAggregatedTable");
+    }
+  }
+
+  private void ingestCostAggregatedTable(ZonedDateTime zdt) throws Exception {
+    clusterDataService.ingestToCostAggregatedTable(zdt.toLocalDate().toString());
+  }
+
+  private void ingestAggregatedTable(
+      JobConstants jobConstants, String clusterDataTableName, String clusterDataAggregatedTableName) throws Exception {
+    clusterDataService.ingestAggregatedData(jobConstants, clusterDataTableName, clusterDataAggregatedTableName);
+  }
+
+  private void ingestUnifiedTable(ZonedDateTime zdt, String clusterDataTableName) throws Exception {
+    clusterDataService.ingestIntoUnifiedTable(zdt, clusterDataTableName);
+  }
+
+  private void ingestClusterDataTable(String clusterDataTableName, List<ClusterBillingData> allClusterBillingData)
+      throws Exception {
+    clusterDataService.ingestClusterData(clusterDataTableName, allClusterBillingData);
   }
 
   @VisibleForTesting

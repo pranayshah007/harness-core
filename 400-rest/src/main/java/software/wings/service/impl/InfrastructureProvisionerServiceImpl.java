@@ -82,7 +82,6 @@ import software.wings.beans.InfrastructureMappingBlueprint.CloudProviderType;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.InfrastructureProvisionerDetails;
 import software.wings.beans.InfrastructureProvisionerDetails.InfrastructureProvisionerDetailsBuilder;
-import software.wings.beans.Log.Builder;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.Service;
 import software.wings.beans.Service.ServiceKeys;
@@ -96,6 +95,7 @@ import software.wings.beans.TerraformSourceType;
 import software.wings.beans.TerragruntInfrastructureProvisioner;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.delegation.TerraformProvisionParameters.TerraformProvisionParametersBuilder;
+import software.wings.beans.dto.Log.Builder;
 import software.wings.beans.shellscript.provisioner.ShellScriptInfrastructureProvisioner;
 import software.wings.dl.WingsPersistence;
 import software.wings.expression.ManagerExpressionEvaluator;
@@ -821,7 +821,7 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
 
     DelegateResponseData notifyResponseData;
     try {
-      notifyResponseData = delegateService.executeTask(delegateTask);
+      notifyResponseData = delegateService.executeTaskV2(delegateTask);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new InvalidRequestException("Thread was interrupted. Please try again.");
@@ -956,7 +956,7 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
             .build();
     DelegateResponseData responseData;
     try {
-      responseData = delegateService.executeTask(delegateTask);
+      responseData = delegateService.executeTaskV2(delegateTask);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new WingsException("Thread was interrupted. Please try again.");

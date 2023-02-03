@@ -186,10 +186,12 @@ public class VmInitializeTaskParamsBuilder {
     saveStageInfraDetails(ambiance, poolId, workDir, harnessImageConnectorRef, volToMountPath, infraInfo);
     StageDetails stageDetails = getStageDetails(ambiance);
 
-    CIExecutionArgs ciExecutionArgs = CIExecutionArgs.builder()
-                                          .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
-                                          .executionSource(initializeStepInfo.getExecutionSource())
-                                          .build();
+    CIExecutionArgs ciExecutionArgs =
+        CIExecutionArgs.builder()
+            .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
+            .executionSource(initializeStepInfo.getExecutionSource() != null ? initializeStepInfo.getExecutionSource()
+                                                                             : stageDetails.getExecutionSource())
+            .build();
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
@@ -209,8 +211,16 @@ public class VmInitializeTaskParamsBuilder {
     envVars.putAll(stoEnvVars);
     envVars.putAll(commonEnvVars);
 
-    Map<String, String> stageVars = getEnvironmentVariables(
-        NGVariablesUtils.getMapOfVariables(initializeStepInfo.getVariables(), ambiance.getExpressionFunctorToken()));
+    // Order of precedence is Pipeline -> Stage -> Step
+    // First pipeline variables will be put in the map, then stage and then step variables
+    // If some pipeline variable has same name as stage variable then it will be replaced by stage variable in the map
+    // Same logic goes for stage and step variables.
+    // More details on https://harness.atlassian.net/browse/CI-6709
+    Map<String, String> stageVars = getEnvironmentVariables(NGVariablesUtils.getMapOfVariables(
+        initializeStepInfo.getPipelineVariables(), ambiance.getExpressionFunctorToken()));
+    stageVars.putAll(getEnvironmentVariables(
+        NGVariablesUtils.getMapOfVariables(initializeStepInfo.getVariables(), ambiance.getExpressionFunctorToken())));
+
     CIVmSecretEvaluator ciVmSecretEvaluator = CIVmSecretEvaluator.builder().build();
     Set<String> secrets = ciVmSecretEvaluator.resolve(stageVars, ngAccess, ambiance.getExpressionFunctorToken());
     envVars.putAll(stageVars);
@@ -498,10 +508,15 @@ public class VmInitializeTaskParamsBuilder {
     }
     boolean isLinux = os == OSType.Linux && (arch == ArchType.Amd64 || arch == ArchType.Arm64);
     boolean isMacArm = os == OSType.MacOS && arch == ArchType.Arm64;
+    boolean isWindowsAmd = os == OSType.Windows && arch == ArchType.Amd64;
 
-    if (isLinux || isMacArm) {
+    if (isLinux || isMacArm || isWindowsAmd) {
       if (isMacArm && !featureFlagService.isEnabled(FeatureName.CIE_HOSTED_VMS_MAC, accountId)) {
         throw new CIStageExecutionException(format("Mac Arm64 platform is not enabled for accountId %s", accountId));
+      }
+      if (isWindowsAmd && !featureFlagService.isEnabled(FeatureName.CIE_HOSTED_VMS_WINDOWS, accountId)) {
+        throw new CIStageExecutionException(
+            format("Windows Amd64 platform is not enabled for accountId %s", accountId));
       }
       log.info(format("%s %s platform is supported for hosted builds", os, arch));
     } else {
@@ -509,7 +524,8 @@ public class VmInitializeTaskParamsBuilder {
     }
 
     String pool = format("%s-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
-    if (isLinux && isSplitLinuxPool(arch)) {
+
+    if ((isLinux && isSplitLinuxPool(arch)) || (isWindowsAmd && isSplitWindowsPool())) {
       LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
       if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
         pool = format("%s-free-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
@@ -526,6 +542,10 @@ public class VmInitializeTaskParamsBuilder {
       return ciExecutionServiceConfig.getHostedVmConfig().isSplitLinuxArm64Pool();
     }
     return false;
+  }
+
+  private boolean isSplitWindowsPool() {
+    return ciExecutionServiceConfig.getHostedVmConfig().isSplitWindowsAmd64Pool();
   }
 
   private SetupVmRequest convertHostedSetupParams(CIVmInitializeTaskParams params) {

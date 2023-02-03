@@ -96,13 +96,13 @@ public class DockerConnectionValidatorTest extends CategoryTest {
         DockerConnectorDTO.builder().dockerRegistryUrl(dockerRegistryUrl).auth(dockerAuthenticationDTO).build();
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(DockerTestConnectionTaskResponse.builder()
                         .connectorValidationResult(ConnectorValidationResult.builder().status(SUCCESS).build())
                         .build());
     dockerConnectionValidator.validate(
         dockerConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
   }
 
   @Test

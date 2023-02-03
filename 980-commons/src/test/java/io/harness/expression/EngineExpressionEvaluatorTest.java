@@ -288,22 +288,22 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.evaluateExpression("<+a> + <+a>")).isEqualTo(10);
     assertThatThrownBy(() -> evaluator.evaluateExpression("<+a> + <+b>"))
         .isInstanceOf(HintException.class)
-        .hasMessage("Expression might contain some unresolved expressions which could not be evaluated.");
+        .hasMessage("Expression <+a> + <+b> might contain some unresolved expressions which could not be evaluated.");
     assertThatThrownBy(() -> evaluator.evaluateExpression("<+a> + <+<+b> + <+e>>"))
         .isInstanceOf(HintException.class)
-        .hasMessage("Expression might contain some unresolved expressions which could not be evaluated.");
+        .hasMessage("Expression <+b> + <+e> might contain some unresolved expressions which could not be evaluated.");
     // parsing error
     assertThatThrownBy(() -> evaluator.evaluateExpression("<+a> + <+<+b>> + <+e>>"))
         .isInstanceOf(HintException.class)
         .hasMessage(
-            "Please re-check the expressions are written in correct format of <+...> as well as for embedded expressions.");
+            "Please re-check the expression <+a> + <+<+b>> + <+e>> are written in correct format of <+...> as well as for embedded expressions.");
     assertThat(evaluator.evaluateExpression("<+a> + <+<+a> + <+e>>")).isEqualTo(15);
     assertThatThrownBy(() -> evaluator.renderExpression("<+<+a> + <+b>>"))
         .isInstanceOf(HintException.class)
-        .hasMessage("Expression might contain some unresolved expressions which could not be evaluated.");
+        .hasMessage("Expression <+a> + <+b> might contain some unresolved expressions which could not be evaluated.");
     assertThatThrownBy(() -> evaluator.renderExpression("<+<+a> + <+b>>", true))
         .isInstanceOf(HintException.class)
-        .hasMessage("Expression might contain some unresolved expressions which could not be evaluated.");
+        .hasMessage("Expression <+a> + <+b> might contain some unresolved expressions which could not be evaluated.");
 
     EngineExpressionEvaluator.PartialEvaluateResult result = evaluator.partialEvaluateExpression("<+a> + <+a>");
     assertThat(result).isNotNull();

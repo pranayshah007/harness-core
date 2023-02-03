@@ -15,14 +15,17 @@ public class OutboxEventConstants {
   public static final String SERVICE_CREATED = "ServiceCreated";
   public static final String SERVICE_UPDATED = "ServiceUpdated";
   public static final String SERVICE_DELETED = "ServiceDeleted";
+  public static final String SERVICE_FORCE_DELETED = "ServiceForceDeleted";
   public static final String SERVICE_UPSERTED = "ServiceUpserted";
   public static final String ENVIRONMENT_CREATED = "EnvironmentCreated";
   public static final String ENVIRONMENT_UPDATED = "EnvironmentUpdated";
   public static final String ENVIRONMENT_DELETED = "EnvironmentDeleted";
+  public static final String ENVIRONMENT_FORCE_DELETED = "EnvironmentForceDeleted";
   public static final String ENVIRONMENT_UPSERTED = "EnvironmentUpserted";
 
   // EnvironmentGroup
   public static final String ENVIRONMENT_GROUP_CREATED = "EnvironmentGroupCreated";
   public static final String ENVIRONMENT_GROUP_DELETED = "EnvironmentGroupDeleted";
+  public static final String ENVIRONMENT_GROUP_FORCE_DELETED = "EnvironmentGroupForceDeleted";
   public static final String ENVIRONMENT_GROUP_UPDATED = "EnvironmentGroupUpdated";
 }

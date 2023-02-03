@@ -16,6 +16,7 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployRequest;
@@ -98,6 +99,8 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
 
     AsgCanaryDeployStepParameters asgSpecParameters = (AsgCanaryDeployStepParameters) stepElementParameters.getSpec();
 
+    String amiImageId = asgStepCommonHelper.getAmiImageId(ambiance);
+
     AsgCanaryDeployRequest asgCanaryDeployRequest =
         AsgCanaryDeployRequest.builder()
             .commandName(ASG_CANARY_DEPLOY_COMMAND_NAME)
@@ -109,6 +112,7 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
             .serviceNameSuffix(CANARY_SUFFIX)
             .unitValue(asgSpecParameters.getInstanceSelection().getSpec().getInstances())
             .unitType(asgSpecParameters.getInstanceSelection().getSpec().getType())
+            .amiImageId(amiImageId)
             .build();
 
     return asgStepCommonHelper.queueAsgTask(stepElementParameters, asgCanaryDeployRequest, ambiance,
@@ -156,7 +160,21 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_CANARY_DEPLOY_OUTCOME,
         asgCanaryDeployOutcome, StepOutcomeGroup.STEP.name());
 
-    return stepResponseBuilder.status(Status.SUCCEEDED).build();
+    InfrastructureOutcome infrastructureOutcome = asgExecutionPassThroughData.getInfrastructure();
+
+    List<ServerInstanceInfo> serverInstanceInfos = asgStepCommonHelper.getServerInstanceInfos(asgCanaryDeployResponse,
+        infrastructureOutcome.getInfrastructureKey(),
+        asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance).getRegion());
+    StepResponse.StepOutcome stepOutcome =
+        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
+
+    return stepResponseBuilder.status(Status.SUCCEEDED)
+        .stepOutcome(stepOutcome)
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.OUTPUT)
+                         .outcome(asgCanaryDeployOutcome)
+                         .build())
+        .build();
   }
 
   @Override

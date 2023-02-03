@@ -11,7 +11,6 @@ import io.harness.data.validator.EntityIdentifier;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -33,7 +32,6 @@ public class EntityUnavailabilityStatusesDTO {
   @ApiModelProperty(required = true) @EntityIdentifier String projectIdentifier;
   @ApiModelProperty(required = true) @NotNull private String entityId;
   @ApiModelProperty(required = true) @NotNull private EntityType entityType;
-  @ApiModelProperty(required = true) @NotNull private List<String> affectedEntities;
   @ApiModelProperty(required = true) @NotNull private long startTime;
   @ApiModelProperty(required = true) @NotNull private long endTime;
   @ApiModelProperty(required = true) @NotNull private EntityUnavailabilityStatus status;

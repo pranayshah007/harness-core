@@ -8,6 +8,7 @@
 package io.harness.ccm.views.helper;
 
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD_ID;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
@@ -469,8 +470,7 @@ public class ViewParametersHelper {
   public List<QLCEViewFieldInput> getInFieldsList(final List<String> fields) {
     final List<QLCEViewFieldInput> qlCEViewFieldInputs = new ArrayList<>();
     for (final String field : fields) {
-      qlCEViewFieldInputs.add(
-          QLCEViewFieldInput.builder().fieldId(field.toLowerCase()).fieldName(field.toLowerCase()).build());
+      qlCEViewFieldInputs.add(QLCEViewFieldInput.builder().fieldId(field).fieldName(field.toLowerCase()).build());
     }
     return qlCEViewFieldInputs;
   }
@@ -528,12 +528,14 @@ public class ViewParametersHelper {
         if (ceView.getViewVisualization() != null) {
           ViewVisualization viewVisualization = ceView.getViewVisualization();
           ViewField defaultGroupByField = viewVisualization.getGroupBy();
-          defaultFieldCheck = defaultGroupByField.getFieldName().equals(AWS_ACCOUNT_FIELD);
+          defaultFieldCheck = defaultGroupByField.getFieldName().equals(AWS_ACCOUNT_FIELD)
+              || defaultGroupByField.getFieldId().equals(AWS_ACCOUNT_FIELD_ID);
         }
       }
     }
     return (isGroupByEntityEmpty && defaultFieldCheck)
-        || viewsQueryHelper.isGroupByFieldPresent(groupBy, AWS_ACCOUNT_FIELD);
+        || viewsQueryHelper.isGroupByFieldPresent(groupBy, AWS_ACCOUNT_FIELD)
+        || viewsQueryHelper.isGroupByFieldIdPresent(groupBy, AWS_ACCOUNT_FIELD_ID);
   }
 
   // ----------------------------------------------------------------------------------------------------------------

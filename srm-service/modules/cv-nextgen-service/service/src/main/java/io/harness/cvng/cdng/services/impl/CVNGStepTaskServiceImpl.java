@@ -48,7 +48,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class CVNGStepTaskServiceImpl implements CVNGStepTaskService {
   @Inject private HPersistence hPersistence;
   @Inject private WaitNotifyEngine waitNotifyEngine;
@@ -61,6 +63,7 @@ public class CVNGStepTaskServiceImpl implements CVNGStepTaskService {
 
   @Override
   public void create(CVNGStepTask cvngStepTask) {
+    log.info("Creating CVNGStepTask {}", cvngStepTask);
     cvngStepTask.validate();
     hPersistence.save(cvngStepTask);
   }

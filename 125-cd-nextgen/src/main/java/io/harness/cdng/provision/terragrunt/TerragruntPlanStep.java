@@ -55,10 +55,12 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -76,7 +78,7 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
   @Inject private TerragruntStepHelper helper;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public Class getStepParametersClass() {
@@ -133,6 +135,8 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
     builder.accountId(accountId);
     String entityId = helper.generateFullIdentifier(
         ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance);
+    builder.tgModuleSourceInheritSSH(
+        helper.isExportCredentialForSourceModule(configuration.getConfigFiles(), stepParameters.getType()));
     ParameterField<Boolean> exportTgPlanJsonField = planStepParameters.getConfiguration().getExportTerragruntPlanJson();
 
     builder.entityId(entityId)
@@ -158,6 +162,8 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
             && ParameterFieldHelper.getBooleanParameterFieldValue(exportTgPlanJsonField))
         .planSecretManager(helper.getEncryptionConfig(ambiance, planStepParameters))
         .stateFileId(helper.getLatestFileId(entityId))
+        .planName(helper.getTerragruntPlanName(planStepParameters.getConfiguration().getCommand(), ambiance,
+            planStepParameters.getProvisionerIdentifier().getValue()))
         .timeoutInMillis(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), DEFAULT_TIMEOUT))
         .encryptedDataDetailList(helper.getEncryptionDetails(configuration.getConfigFiles().getStore().getSpec(),
             configuration.getBackendConfig(), configuration.getVarFiles(), ambiance))
@@ -174,7 +180,7 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
     commandUnitsList.add(FETCH_CONFIG_FILES);
     commandUnitsList.add(PLAN);
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnitsList,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, commandUnitsList,
         TERRAGRUNT_PLAN_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(planStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
@@ -211,7 +217,7 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
     boolean exportTgPlanJson = !ParameterField.isNull(exportTgPlanJsonField)
         && ParameterFieldHelper.getBooleanParameterFieldValue(exportTgPlanJsonField);
 
-    if (exportTgPlanJson) {
+    if (exportTgPlanJson && terragruntTaskNGResponse.getEncryptedPlan() != null) {
       helper.saveTerragruntPlanExecutionDetails(
           ambiance, terragruntTaskNGResponse, provisionerIdentifier, planStepParameters);
 

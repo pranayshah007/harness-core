@@ -49,8 +49,8 @@ import io.harness.pcf.CfCliClient;
 import io.harness.pcf.CfSdkClient;
 import io.harness.pcf.PcfUtils;
 import io.harness.pcf.PivotalClientApiException;
-import io.harness.pcf.cfcli.CfCliCommandResolver;
 import io.harness.pcf.cfcli.CfCliCommandType;
+import io.harness.pcf.cfcli.resolver.CfCliCommandResolver;
 import io.harness.pcf.model.CfAppAutoscalarRequestData;
 import io.harness.pcf.model.CfCreateApplicationRequestData;
 import io.harness.pcf.model.CfManifestFileData;
@@ -208,6 +208,10 @@ public class CfCliClientImpl implements CfCliClient {
   private String constructCfPushCommand(CfCreateApplicationRequestData requestData, String finalFilePath) {
     CfRequestConfig pcfRequestConfig = requestData.getCfRequestConfig();
     if (!requestData.isVarsYmlFilePresent()) {
+      if (!isEmpty(requestData.getStrategy())) {
+        return CfCliCommandResolver.getRollingPushCliCommand(
+            pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), finalFilePath);
+      }
       return CfCliCommandResolver.getPushCliCommand(
           pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), finalFilePath);
     }
@@ -220,6 +224,11 @@ public class CfCliClientImpl implements CfCliClient {
           varFiles.add(String.valueOf(varsFile.getAbsoluteFile()));
         }
       });
+    }
+
+    if (!isEmpty(requestData.getStrategy())) {
+      return CfCliCommandResolver.getRollingPushCliCommand(
+          pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), finalFilePath, varFiles);
     }
 
     return CfCliCommandResolver.getPushCliCommand(

@@ -136,6 +136,9 @@ public class PMSPipelineDtoMapper {
   public PipelineEntity toSimplifiedPipelineEntity(String accountId, String orgId, String projectId, String yaml) {
     try {
       PipelineYaml pipelineYaml = YamlUtils.read(yaml, PipelineYaml.class);
+      if (EmptyPredicate.isEmpty(pipelineYaml.getName())) {
+        throw new InvalidRequestException("Pipeline name cannot be empty");
+      }
       String pipelineIdentifier = IdentifierGeneratorUtils.getId(pipelineYaml.getName());
       if (NGExpressionUtils.matchesInputSetPattern(pipelineIdentifier)) {
         throw new InvalidRequestException("Pipeline identifier cannot be runtime input");

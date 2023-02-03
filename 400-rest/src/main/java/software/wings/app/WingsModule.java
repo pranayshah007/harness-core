@@ -119,10 +119,12 @@ import io.harness.delegate.outbox.DelegateOutboxEventHandler;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
 import io.harness.delegate.queueservice.HQueueServiceClientFactory;
 import io.harness.delegate.service.impl.DelegateDownloadServiceImpl;
+import io.harness.delegate.service.impl.DelegateFeedbacksServiceImpl;
 import io.harness.delegate.service.impl.DelegateInstallationCommandServiceImpl;
 import io.harness.delegate.service.impl.DelegateRingServiceImpl;
 import io.harness.delegate.service.impl.DelegateUpgraderServiceImpl;
 import io.harness.delegate.service.intfc.DelegateDownloadService;
+import io.harness.delegate.service.intfc.DelegateFeedbacksService;
 import io.harness.delegate.service.intfc.DelegateInstallationCommandService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.service.intfc.DelegateRingService;
@@ -141,6 +143,7 @@ import io.harness.event.handler.impl.segment.SegmentGroupEventJobService;
 import io.harness.event.handler.impl.segment.SegmentGroupEventJobServiceImpl;
 import io.harness.event.reconciliation.service.DeploymentReconService;
 import io.harness.event.reconciliation.service.DeploymentReconServiceImpl;
+import io.harness.event.reconciliation.service.DeploymentReconTask;
 import io.harness.event.timeseries.processor.instanceeventprocessor.instancereconservice.IInstanceReconService;
 import io.harness.event.timeseries.processor.instanceeventprocessor.instancereconservice.InstanceReconServiceImpl;
 import io.harness.exception.ExplanationException;
@@ -529,6 +532,8 @@ import software.wings.service.impl.instance.InstanceSyncPerpetualTaskService;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskServiceImpl;
 import software.wings.service.impl.instance.ServerlessDashboardServiceImpl;
 import software.wings.service.impl.instance.ServerlessInstanceServiceImpl;
+import software.wings.service.impl.instance.backup.InstanceSyncPTBackupService;
+import software.wings.service.impl.instance.backup.InstanceSyncPTBackupServiceImpl;
 import software.wings.service.impl.instance.licensing.InstanceLimitProviderImpl;
 import software.wings.service.impl.instance.licensing.InstanceUsageLimitCheckerImpl;
 import software.wings.service.impl.instance.licensing.InstanceUsageLimitExcessHandlerImpl;
@@ -931,6 +936,13 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
   @Provides
   @Singleton
+  @Named("isClickHouseEnabled")
+  public boolean isClickHouseEnabled() {
+    return false;
+  }
+
+  @Provides
+  @Singleton
   public CdnStorageUrlGenerator cdnStorageUrlGenerator() {
     String clusterType = System.getenv("CLUSTER_TYPE");
     boolean isFreeCluster = StringUtils.equals(clusterType, "freemium");
@@ -1028,6 +1040,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(StatisticsService.class).to(StatisticsServiceImpl.class);
     bind(DashboardStatisticsService.class).to(DashboardStatisticsServiceImpl.class);
     bind(InstanceService.class).to(InstanceServiceImpl.class);
+    bind(InstanceSyncPTBackupService.class).to(InstanceSyncPTBackupServiceImpl.class);
     bind(InstanceSyncPerpetualTaskService.class).to(InstanceSyncPerpetualTaskServiceImpl.class);
     bind(InstanceHandlerFactoryService.class).to(InstanceHandlerFactory.class);
     bind(BuildSourceService.class).to(BuildSourceServiceImpl.class);
@@ -1211,6 +1224,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(InstanceDataService.class).to(InstanceDataServiceImpl.class);
     bind(EntityMetadataService.class).to(EntityMetadataServiceImpl.class);
     bind(DelegateDownloadService.class).to(DelegateDownloadServiceImpl.class);
+    bind(DelegateFeedbacksService.class).to(DelegateFeedbacksServiceImpl.class);
 
     bind(WingsMongoExportImport.class);
 
@@ -1373,6 +1387,11 @@ public class WingsModule extends AbstractModule implements ServersModule {
               configuration.getExecutorsConfig().getDataReconciliationExecutorConfig().getIdleTime(),
               configuration.getExecutorsConfig().getDataReconciliationExecutorConfig().getTimeUnit(),
               new ThreadFactoryBuilder().setNameFormat("DeploymentReconTaskExecutor-%d").build()));
+    }
+
+    if (configuration.getDataReconciliationConfig() != null) {
+      bind(DeploymentReconTask.class)
+          .toInstance(new DeploymentReconTask(configuration.getDataReconciliationConfig().getDuration()));
     }
 
     bind(ExecutorService.class)

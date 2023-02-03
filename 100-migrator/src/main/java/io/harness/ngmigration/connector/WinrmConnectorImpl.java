@@ -23,7 +23,7 @@ import io.harness.ng.core.dto.secrets.TGTPasswordSpecDTO;
 import io.harness.ng.core.dto.secrets.WinRmAuthDTO;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.WinRmAuthScheme;
 

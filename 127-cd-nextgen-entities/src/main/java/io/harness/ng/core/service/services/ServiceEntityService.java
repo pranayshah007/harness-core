@@ -41,8 +41,8 @@ public interface ServiceEntityService {
 
   List<ServiceEntity> listRunTimePermission(Criteria criteria);
 
-  boolean delete(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier, Long version);
+  boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
+      Long version, boolean forceDelete);
 
   Page<ServiceEntity> bulkCreate(String accountId, List<ServiceEntity> serviceEntities);
 
@@ -65,6 +65,14 @@ public interface ServiceEntityService {
       String accountId, String orgId, String projectId, String serviceId, String oldServiceInputsYaml);
 
   boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier);
+
+  /**
+   * Deletes all services linked to a particular harness org.
+   * @param accountId  the account id
+   * @param orgIdentifier the organization identifier
+   * @return boolean to indicate if deletion was successful
+   */
+  boolean forceDeleteAllInOrg(String accountId, String orgIdentifier);
 
   /**
    *

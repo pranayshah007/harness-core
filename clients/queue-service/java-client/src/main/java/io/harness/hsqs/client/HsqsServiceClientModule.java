@@ -29,6 +29,7 @@ public class HsqsServiceClientModule extends AbstractModule {
   private final String serviceSecret;
   private final String clientId;
 
+  // Pass ClientId as Bearer for Queue Service as Queue Service support Bearer Auth Scheme
   public HsqsServiceClientModule(
       ServiceHttpClientConfig serviceHttpClientConfig, String serviceSecret, String clientId) {
     this.serviceHttpClientConfig = serviceHttpClientConfig;

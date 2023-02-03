@@ -8,8 +8,8 @@
 package io.harness.cvng.cdng.beans.v2;
 
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricCustomThresholdActions;
-import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
 
+import io.swagger.annotations.ApiModel;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,9 +20,10 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@ApiModel("MetricThresholdV2")
 public class MetricThreshold {
-  String thresholdIdentifier;
-  MetricThresholdActionType thresholdType;
+  String id;
+  MetricThresholdType thresholdType;
   Boolean isUserDefined;
   MetricCustomThresholdActions action;
   MetricThresholdCriteria criteria;

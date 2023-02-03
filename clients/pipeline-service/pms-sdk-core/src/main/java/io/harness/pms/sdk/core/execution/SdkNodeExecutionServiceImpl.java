@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutableResponse;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.AddExecutableResponseRequest;
 import io.harness.pms.contracts.execution.events.AdviserResponseRequest;
 import io.harness.pms.contracts.execution.events.EventErrorRequest;
@@ -30,6 +31,7 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.contracts.plan.NodeExecutionEventType;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
+import io.harness.pms.sdk.core.execution.async.AsyncProgressData;
 import io.harness.pms.sdk.core.response.publishers.SdkResponseEventPublisher;
 import io.harness.pms.sdk.core.steps.io.ResponseDataMapper;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
@@ -160,13 +162,19 @@ public class SdkNodeExecutionServiceImpl implements SdkNodeExecutionService {
   @Override
   public void handleProgressResponse(Ambiance ambiance, ProgressData progressData) {
     String progressJson = RecastOrchestrationUtils.toJson(progressData);
-    sdkResponseEventPublisher.publishEvent(
-        SdkResponseEventProto.newBuilder()
-            .setSdkResponseEventType(SdkResponseEventType.HANDLE_PROGRESS)
-            .setAmbiance(ambiance)
-            .setProgressRequest(HandleProgressRequest.newBuilder().setProgressJson(progressJson).build())
+    sdkResponseEventPublisher.publishEvent(SdkResponseEventProto.newBuilder()
+                                               .setSdkResponseEventType(SdkResponseEventType.HANDLE_PROGRESS)
+                                               .setAmbiance(ambiance)
+                                               .setProgressRequest(HandleProgressRequest.newBuilder()
+                                                                       .setStatus(calculateRequestStatus(progressData))
+                                                                       .setProgressJson(progressJson)
+                                                                       .build())
 
-            .build());
+                                               .build());
+  }
+
+  private Status calculateRequestStatus(ProgressData progressData) {
+    return progressData instanceof AsyncProgressData ? ((AsyncProgressData) progressData).getStatus() : Status.NO_OP;
   }
 
   @Override

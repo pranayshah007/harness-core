@@ -99,7 +99,7 @@ public class EnvironmentPlanCreatorConfigMapper {
         .build();
   }
 
-  private List<String> getClusterRefs(EnvironmentYamlV2 environmentV2) {
+  public List<String> getClusterRefs(EnvironmentYamlV2 environmentV2) {
     if (!environmentV2.getDeployToAll().getValue()) {
       return environmentV2.getGitOpsClusters()
           .getValue()

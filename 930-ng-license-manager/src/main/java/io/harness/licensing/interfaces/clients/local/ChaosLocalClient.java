@@ -7,7 +7,6 @@
 
 package io.harness.licensing.interfaces.clients.local;
 
-import static io.harness.licensing.LicenseConstant.UNLIMITED;
 import static io.harness.licensing.interfaces.ModuleLicenseImpl.TRIAL_DURATION;
 
 import io.harness.exception.UnsupportedOperationException;
@@ -23,10 +22,9 @@ import java.time.temporal.ChronoUnit;
 
 public class ChaosLocalClient implements ChaosModuleLicenseClient {
   private static final int ENTERPRISE_TRIAL_CHAOS_EXPERIMENT_RUNS = 10000;
+  private static final int ENTERPRISE_TRIAL_CHAOS_INFRASTRUCTURES = 1000;
   private static final int TEAM_TRIAL_CHAOS_EXPERIMENT_RUNS = 10000;
-  private static final int FREE_TRIAL_CHAOS_EXPERIMENT_RUNS = 10000;
-
-  private static final int FREE_TRIAL_CHAOS_INFRASTRUCTURES = 1000;
+  private static final int TEAM_TRIAL_CHAOS_INFRASTRUCTURES = 1000;
 
   @Override
   public ChaosModuleLicenseDTO createTrialLicense(Edition edition, String accountId) {
@@ -39,18 +37,13 @@ public class ChaosLocalClient implements ChaosModuleLicenseClient {
     switch (edition) {
       case ENTERPRISE:
         return builder.totalChaosExperimentRuns(ENTERPRISE_TRIAL_CHAOS_EXPERIMENT_RUNS)
-            .totalChaosInfrastructures(Integer.valueOf(UNLIMITED))
+            .totalChaosInfrastructures(Integer.valueOf(ENTERPRISE_TRIAL_CHAOS_INFRASTRUCTURES))
             .licenseType(LicenseType.TRIAL)
             .build();
       case TEAM:
         return builder.totalChaosExperimentRuns(TEAM_TRIAL_CHAOS_EXPERIMENT_RUNS)
-            .totalChaosInfrastructures(Integer.valueOf(UNLIMITED))
+            .totalChaosInfrastructures(Integer.valueOf(TEAM_TRIAL_CHAOS_INFRASTRUCTURES))
             .licenseType(LicenseType.TRIAL)
-            .build();
-      case FREE:
-        return builder.totalChaosExperimentRuns(FREE_TRIAL_CHAOS_EXPERIMENT_RUNS)
-            .totalChaosInfrastructures(FREE_TRIAL_CHAOS_INFRASTRUCTURES)
-            .expiryTime(Long.MAX_VALUE)
             .build();
       default:
         throw new UnsupportedOperationException("Requested edition is not supported");

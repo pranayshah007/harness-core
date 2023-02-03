@@ -20,6 +20,7 @@ import static io.harness.NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY;
 import static dev.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.ChangeDataCaptureBulkMigrationHelper;
+import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -43,6 +44,7 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.Infrastruct
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
+import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.PublicApi;
 
@@ -76,6 +78,8 @@ import org.bson.conversions.Bson;
 @ExposeInternalException
 @OwnedBy(HarnessTeam.CDC)
 public class PartialSyncResource {
+  private static final String HANDLER_KEY = "handler";
+
   @Inject ChangeDataCaptureBulkMigrationHelper changeDataCaptureBulkMigrationHelper;
 
   @Inject AccountEntity accountEntity;
@@ -93,6 +97,7 @@ public class PartialSyncResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "trigger bulk sync for the account entity using supplied filters")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public RestResponse<String> triggerAccountSync(@QueryParam(ACCOUNT_KEY) @Nullable String accountId,
       @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
       @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
@@ -100,7 +105,7 @@ public class PartialSyncResource {
     addEqFilter(filters, ID_KEY, accountId);
     addTsFilter(filters, AccountKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(accountEntity, filters);
+    return triggerSync(accountEntity, filters, null);
   }
 
   @GET
@@ -109,14 +114,15 @@ public class PartialSyncResource {
   @ExceptionMetered
   @ApiOperation(value = "trigger bulk sync for the cloud account entity using supplied filters")
   public RestResponse<String> triggerCloudAccountSync(@QueryParam(IDENTIFIER_KEY) @Nullable String identifier,
-      @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
+      @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(HANDLER_KEY) @Nullable String handler,
+      @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
       @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, ID_KEY, identifier);
     addEqFilter(filters, CECloudAccountKeys.accountId, accountId);
     addTsFilter(filters, CECloudAccountKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(ceCloudAccountCDCEntity, filters);
+    return triggerSync(ceCloudAccountCDCEntity, filters, handler);
   }
 
   @GET
@@ -135,7 +141,7 @@ public class PartialSyncResource {
     addEqFilter(filters, EnvironmentKeys.projectIdentifier, projectIdentifier);
     addTsFilter(filters, EnvironmentKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(environmentCDCEntity, filters);
+    return triggerSync(environmentCDCEntity, filters, null);
   }
 
   @GET
@@ -153,7 +159,7 @@ public class PartialSyncResource {
     addEqFilter(filters, InfrastructureEntityKeys.projectIdentifier, projectIdentifier);
     addTsFilter(filters, InfrastructureEntityKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(infrastructureEntityTimeScale, filters);
+    return triggerSync(infrastructureEntityTimeScale, filters, null);
   }
 
   @GET
@@ -163,14 +169,14 @@ public class PartialSyncResource {
   @ApiOperation(value = "trigger bulk sync for the organization entity using supplied filters")
   public RestResponse<String> triggerOrganizationSync(@QueryParam(ORG_KEY) @Nullable String identifier,
       @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(PROJECT_KEY) @Nullable String projectIdentifier,
-      @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
+      @QueryParam(HANDLER_KEY) @Nullable String handler, @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
       @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, OrganizationKeys.identifier, identifier);
     addEqFilter(filters, OrganizationKeys.accountIdentifier, accountId);
     addTsFilter(filters, OrganizationKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(organizationEntity, filters);
+    return triggerSync(organizationEntity, filters, handler);
   }
 
   @GET
@@ -180,7 +186,7 @@ public class PartialSyncResource {
   @ApiOperation(value = "trigger bulk sync for the pipelines entity using supplied filters")
   public RestResponse<String> triggerPipelinesSync(@QueryParam(PIPELINE_KEY) @Nullable String identifier,
       @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(PROJECT_KEY) @Nullable String projectIdentifier,
-      @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
+      @QueryParam(HANDLER_KEY) @Nullable String handler, @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
       @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, PipelineEntityKeys.identifier, identifier);
@@ -188,7 +194,7 @@ public class PartialSyncResource {
     addEqFilter(filters, PipelineEntityKeys.projectIdentifier, projectIdentifier);
     addTsFilter(filters, PipelineEntityKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(pipelineCDCEntity, filters);
+    return triggerSync(pipelineCDCEntity, filters, handler);
   }
 
   @GET
@@ -199,8 +205,8 @@ public class PartialSyncResource {
   public RestResponse<String> triggerPipelineExecutionSync(@QueryParam(PLAN_KEY) @Nullable String identifier,
       @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(PROJECT_KEY) @Nullable String projectIdentifier,
       @QueryParam(PIPELINE_KEY) @Nullable String pipelineIdentifier,
-      @QueryParam(PLAN_KEY) @Nullable String planExecutionId, @QueryParam("startTs_from") @Nullable Long startTsFrom,
-      @QueryParam("startTs_to") @Nullable Long startTsTo) {
+      @QueryParam(PLAN_KEY) @Nullable String planExecutionId, @QueryParam(HANDLER_KEY) @Nullable String handler,
+      @QueryParam("startTs_from") @Nullable Long startTsFrom, @QueryParam("startTs_to") @Nullable Long startTsTo) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, PlanExecutionSummaryKeys.planExecutionId, planExecutionId);
     addEqFilter(filters, PlanExecutionSummaryKeys.accountId, accountId);
@@ -208,7 +214,7 @@ public class PartialSyncResource {
     addEqFilter(filters, PlanExecutionSummaryKeys.pipelineIdentifier, pipelineIdentifier);
     addTsFilter(filters, PlanExecutionSummaryKeys.startTs, startTsFrom, startTsTo);
 
-    return triggerSync(pipelineExecutionSummaryEntityCDCEntity, filters);
+    return triggerSync(pipelineExecutionSummaryEntityCDCEntity, filters, handler);
   }
 
   @GET
@@ -217,14 +223,15 @@ public class PartialSyncResource {
   @ExceptionMetered
   @ApiOperation(value = "trigger bulk sync for the projects entity using supplied filters")
   public RestResponse<String> triggerProjectsSync(@QueryParam(PROJECT_KEY) @Nullable String identifier,
-      @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
+      @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(HANDLER_KEY) @Nullable String handler,
+      @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
       @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, ProjectKeys.identifier, identifier);
     addEqFilter(filters, ProjectKeys.accountIdentifier, accountId);
     addTsFilter(filters, ProjectKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(projectEntity, filters);
+    return triggerSync(projectEntity, filters, handler);
   }
 
   @GET
@@ -233,14 +240,15 @@ public class PartialSyncResource {
   @ExceptionMetered
   @ApiOperation(value = "trigger bulk sync for the services entity using supplied filters")
   public RestResponse<String> triggerServicesSync(@QueryParam(SERVICE_IDENTIFIER_KEY) @Nullable String identifier,
-      @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
+      @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(HANDLER_KEY) @Nullable String handler,
+      @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
       @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, ServiceEntityKeys.identifier, identifier);
     addEqFilter(filters, ServiceEntityKeys.accountId, accountId);
     addTsFilter(filters, ServiceEntityKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(serviceCDCEntity, filters);
+    return triggerSync(serviceCDCEntity, filters, handler);
   }
 
   private void addEqFilter(List<Bson> filters, String key, String value) {
@@ -256,7 +264,7 @@ public class PartialSyncResource {
     }
   }
 
-  public RestResponse<String> triggerSync(CDCEntity<?> entity, List<Bson> filters) {
+  public RestResponse<String> triggerSync(CDCEntity<?> entity, List<Bson> filters, String handler) {
     if (filters.isEmpty()) {
       RestResponse<String> restResponse = new RestResponse<>();
       restResponse.setResponseMessages(List.of(ResponseMessage.builder()
@@ -270,7 +278,7 @@ public class PartialSyncResource {
       return restResponse;
     }
 
-    int count = changeDataCaptureBulkMigrationHelper.doPartialSync(Set.of(entity), Filters.and(filters));
+    int count = changeDataCaptureBulkMigrationHelper.doPartialSync(Set.of(entity), Filters.and(filters), handler);
     return new RestResponse<>(count + " events synced");
   }
 }

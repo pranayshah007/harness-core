@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
-import io.harness.artifacts.gcr.service.GcrApiServiceImpl.GcrImageTagResponse;
 
 import retrofit2.Call;
 import retrofit2.http.GET;

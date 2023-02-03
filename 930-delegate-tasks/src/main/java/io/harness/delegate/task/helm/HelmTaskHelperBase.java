@@ -38,7 +38,6 @@ import static io.harness.helm.HelmConstants.V3Commands.HELM_CACHE_HOME_PATH;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_REPO_ADD_FORCE_UPDATE;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_REPO_FLAGS;
 import static io.harness.k8s.kubectl.Utils.encloseWithQuotesIfNeeded;
-import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.WARN;
 
 import static software.wings.beans.LogColor.White;
@@ -81,9 +80,8 @@ import io.harness.helm.HelmCommandTemplateFactory;
 import io.harness.helm.HelmCommandType;
 import io.harness.helm.HelmSubCommandType;
 import io.harness.k8s.K8sGlobalConfigService;
-import io.harness.k8s.manifest.ObjectYamlUtils;
 import io.harness.k8s.model.HelmVersion;
-import io.harness.logging.CommandExecutionStatus;
+import io.harness.k8s.utils.ObjectYamlUtils;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
@@ -95,14 +93,18 @@ import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 import software.wings.helpers.ext.helm.response.ReleaseInfo;
 
 import com.esotericsoftware.yamlbeans.YamlException;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -138,6 +140,7 @@ public class HelmTaskHelperBase {
   public static final String NAME_KEY = "name:";
   public static final String REGISTRY_URL = "${REGISTRY_URL}";
   private static final String CHMOD = "chmod go-r ";
+  private static final int DEFAULT_PORT = 443;
 
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
   @Inject private NgChartmuseumClientFactory ngChartmuseumClientFactory;
@@ -685,7 +688,7 @@ public class HelmTaskHelperBase {
   }
 
   public void downloadChartFilesFromOciRepo(
-      HelmChartManifestDelegateConfig manifest, String destinationDirectory, long timeoutInMillis) {
+      HelmChartManifestDelegateConfig manifest, String destinationDirectory, long timeoutInMillis) throws Exception {
     if (!(manifest.getStoreDelegateConfig() instanceof OciHelmStoreDelegateConfig)) {
       throw new InvalidArgumentsException(
           Pair.of("storeDelegateConfig", "Must be instance of OciHelmStoreDelegateConfig"));
@@ -697,10 +700,8 @@ public class HelmTaskHelperBase {
     String cacheDir = getCacheDir(manifest, storeDelegateConfig.getRepoName(), HelmVersion.V380);
 
     try {
-      loginOciRegistry(ociHelmConnector.getHelmRepoUrl(), getOciHelmUsername(ociHelmConnector),
-          getOciHelmPassword(ociHelmConnector), HelmVersion.V380, timeoutInMillis, destinationDirectory);
-      String repoName = String.format(REGISTRY_URL_PREFIX,
-          Paths.get(ociHelmConnector.getHelmRepoUrl(), storeDelegateConfig.getBasePath()).normalize());
+      String repoName =
+          getRepoName(ociHelmConnector, storeDelegateConfig.getBasePath(), timeoutInMillis, destinationDirectory);
       fetchChartFromRepo(repoName, storeDelegateConfig.getRepoDisplayName(), manifest.getChartName(),
           manifest.getChartVersion(), destinationDirectory, HelmVersion.V380, manifest.getHelmCommandFlag(),
           timeoutInMillis, cacheDir);
@@ -714,6 +715,24 @@ public class HelmTaskHelperBase {
         }
       }
     }
+  }
+
+  private String getRepoName(OciHelmConnectorDTO ociHelmConnectorDTO, String basePath, long timeoutInMillis,
+      String destinationDirectory) throws Exception {
+    String repoName;
+    if (OciHelmAuthType.USER_PASSWORD.equals(ociHelmConnectorDTO.getAuth().getAuthType())) {
+      loginOciRegistry(ociHelmConnectorDTO.getHelmRepoUrl(), getOciHelmUsername(ociHelmConnectorDTO),
+          getOciHelmPassword(ociHelmConnectorDTO), HelmVersion.V380, timeoutInMillis, destinationDirectory);
+      repoName =
+          String.format(REGISTRY_URL_PREFIX, Paths.get(ociHelmConnectorDTO.getHelmRepoUrl(), basePath).normalize());
+    } else if (OciHelmAuthType.ANONYMOUS.equals(ociHelmConnectorDTO.getAuth().getAuthType())) {
+      String ociUrl = getParsedURI(ociHelmConnectorDTO.getHelmRepoUrl()).toString();
+      repoName = addBasePathToOciUrl(ociUrl, basePath);
+    } else {
+      throw new InvalidArgumentsException(
+          format("Invalid oci auth type  %s", ociHelmConnectorDTO.getAuth().getAuthType()));
+    }
+    return repoName;
   }
 
   private String getCacheDir(HelmChartManifestDelegateConfig manifest, String repoName, HelmVersion version) {
@@ -1083,7 +1102,7 @@ public class HelmTaskHelperBase {
       } else {
         String msg = "Exception in processing HelmValuesFetchTask. " + exceptionMsg;
         log.error(msg, ex);
-        logCallback.saveExecutionLog(msg, ERROR, CommandExecutionStatus.FAILURE);
+        logCallback.saveExecutionLog(msg, WARN);
         throw ex;
       }
     }
@@ -1493,6 +1512,68 @@ public class HelmTaskHelperBase {
       processExecutor.execute();
     } catch (Exception e) {
       log.error("Unable to revoke the readable permissions for KubeConfig file ", e);
+    }
+  }
+
+  public int skipDefaultHelmValuesYaml(
+      String chartDir, List<String> valuesYamlList, boolean skipDefaultValuesYaml, HelmVersion helmVersion) {
+    if (HelmVersion.V2.equals(helmVersion) || !skipDefaultValuesYaml || isEmpty(valuesYamlList)) {
+      return -1;
+    }
+    try {
+      String defaultValuesYaml = new String(Files.readAllBytes(Paths.get(chartDir, "values.yaml")));
+      if (isEmpty(defaultValuesYaml)) {
+        return -1;
+      }
+      String valuesYaml;
+      for (int i = 0; i < valuesYamlList.size(); i++) {
+        valuesYaml = valuesYamlList.get(i);
+        if (isNotEmpty(valuesYaml) && valuesYaml.equals(defaultValuesYaml)) {
+          return i;
+        }
+      }
+    } catch (FileNotFoundException e) {
+      log.error("Unable to find default values.yaml " + e.getMessage());
+      return -1;
+    } catch (IOException e) {
+      log.error("Unable to read default values.yaml " + e.getMessage());
+      return -1;
+    }
+    return -1;
+  }
+  public int checkForDependencyUpdateFlag(Map<HelmSubCommandType, String> helmCmdFlags, String response) {
+    /*
+      if we pass --dependency-update flag with helm template cmd, this causes extra lines to be present in o/p
+      hence we trim this and take only the rendered manifests, which start after "---"
+     */
+    if (helmCmdFlags != null) {
+      String templateFlag = helmCmdFlags.get(HelmSubCommandType.TEMPLATE);
+      if (isNotEmpty(templateFlag) && templateFlag.contains("--dependency-update")) {
+        return response.indexOf("---");
+      }
+    }
+    return -1;
+  }
+
+  @VisibleForTesting
+  URI getParsedURI(String ociUrl) throws URISyntaxException {
+    URI uri = new URI(ociUrl);
+    if (isEmpty(uri.getScheme())) {
+      uri = URI.create(format(REGISTRY_URL_PREFIX, ociUrl));
+    }
+    if (uri.getPort() < 0) {
+      uri = URI.create(uri + ":" + DEFAULT_PORT);
+    }
+    return uri;
+  }
+
+  private String addBasePathToOciUrl(String ociUrl, String basePath) {
+    if (isNotEmpty(basePath) && basePath.charAt(0) == '/') {
+      return ociUrl + basePath;
+    } else if (isNotEmpty(basePath) && basePath.charAt(0) != '/') {
+      return ociUrl + "/" + basePath;
+    } else {
+      throw new InvalidArgumentsException("Invalid oci base path cannot be empty");
     }
   }
 }

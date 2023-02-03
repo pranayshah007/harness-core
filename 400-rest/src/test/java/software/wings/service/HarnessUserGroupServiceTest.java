@@ -12,6 +12,8 @@ import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.rule.OwnerRule.NANDAN;
 import static io.harness.rule.OwnerRule.RAMA;
 
+import static software.wings.beans.Account.AccountKeys;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -189,7 +191,8 @@ public class HarnessUserGroupServiceTest extends WingsBaseTest {
   public void testListAllowedSupportAccounts() {
     Account account1 = Builder.anAccount().withUuid(accountId1).withHarnessGroupAccessAllowed(true).build();
     when(accountService.listHarnessSupportAccounts(any(), any())).thenReturn(Lists.newArrayList(account1));
-    List<Account> result = harnessUserGroupService.listAllowedSupportAccounts(Sets.newHashSet(accountId2), null);
+    List<Account> result = harnessUserGroupService.listAllowedSupportAccounts(
+        Sets.newHashSet(accountId2), Sets.newHashSet(AccountKeys.uuid));
 
     assertThat(result).isNotNull();
     assertThat(result).size().isEqualTo(1);

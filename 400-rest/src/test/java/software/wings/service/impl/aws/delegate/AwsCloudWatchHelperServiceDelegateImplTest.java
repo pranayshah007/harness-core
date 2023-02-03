@@ -23,7 +23,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 import io.harness.CategoryTest;
-import io.harness.aws.AwsCallTracker;
+import io.harness.aws.util.AwsCallTracker;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;

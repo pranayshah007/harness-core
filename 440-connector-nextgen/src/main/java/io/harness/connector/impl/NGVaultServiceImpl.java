@@ -16,8 +16,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.INVALID_AZURE_VAULT_CONFIGURATION;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
+import static io.harness.eraro.ErrorCode.SECRET_NOT_FOUND;
 import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.git.model.ChangeType.NONE;
 import static io.harness.remote.client.CGRestUtils.getResponse;
 import static io.harness.security.encryption.AccessType.APP_ROLE;
 import static io.harness.security.encryption.AccessType.AWS_IAM;
@@ -40,6 +42,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.entities.embedded.vaultconnector.VaultConnector;
 import io.harness.connector.entities.embedded.vaultconnector.VaultConnector.VaultConnectorKeys;
 import io.harness.connector.services.NGConnectorSecretManagerService;
@@ -121,6 +124,8 @@ import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PL)
 @Slf4j
@@ -285,6 +290,40 @@ public class NGVaultServiceImpl implements NGVaultService {
         sleep(ofMillis(1000));
       }
     }
+  }
+
+  @Override
+  public boolean unsetRenewalInterval(VaultConnector vaultConnector) {
+    SecretManagerConfig secretManagerConfig = getSecretManagerConfig(vaultConnector.getAccountIdentifier(),
+        vaultConnector.getOrgIdentifier(), vaultConnector.getProjectIdentifier(), vaultConnector.getIdentifier());
+    BaseVaultConfig baseVaultConfig = (BaseVaultConfig) secretManagerConfig;
+
+    setCertValidation(vaultConnector.getAccountIdentifier(), baseVaultConfig);
+
+    VaultTokenLookupResult vaultTokenLookupResult = tokenLookup(baseVaultConfig);
+
+    if (vaultTokenLookupResult == null) {
+      String message = String.format(
+          "Was not able to perform token lookup for Vault %s. Please check your credentials and try again",
+          vaultConnector.getIdentifier());
+      throw new SecretManagementException(VAULT_OPERATION_ERROR, message, USER);
+    }
+
+    if (vaultTokenLookupResult.getExpiryTime() == null || !vaultTokenLookupResult.isRenewable()) {
+      // 1st condition means that this token is a root token
+      // 2nd condition means that this token is not renewable ; both conditions imply that renewal is not required.
+
+      Criteria criteria = Criteria.where(ConnectorKeys.id).is(vaultConnector.getId());
+      Update update = new Update()
+                          .set(VaultConnectorKeys.lastTokenLookupAt, System.currentTimeMillis())
+                          .set(VaultConnectorKeys.renewalIntervalMinutes, 0L);
+      connectorRepository.update(criteria, update, NONE, vaultConnector.getProjectIdentifier(),
+          vaultConnector.getOrgIdentifier(), vaultConnector.getAccountIdentifier());
+
+      log.info("Renewal interval set to 0 for the Vault connector: {}", vaultConnector.getUuid());
+      return true;
+    }
+    return false;
   }
 
   @Override
@@ -693,7 +732,7 @@ public class NGVaultServiceImpl implements NGVaultService {
                 .accountId(accountId)
                 .taskSetupAbstractions(ngManagerEncryptorHelper.buildAbstractions(azureVaultConfig))
                 .build();
-        DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+        DelegateResponseData delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
         DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
         if (!(delegateResponseData instanceof NGAzureKeyVaultFetchEngineResponse)) {
           throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, UNKNOWN_RESPONSE, USER);
@@ -865,7 +904,7 @@ public class NGVaultServiceImpl implements NGVaultService {
             .accountId(accountIdentifier)
             .taskSetupAbstractions(ngManagerEncryptorHelper.buildAbstractions(parameters.getEncryptionConfig()))
             .build();
-    DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+    DelegateResponseData delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
     DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
     return delegateResponseData;
   }
@@ -880,6 +919,11 @@ public class NGVaultServiceImpl implements NGVaultService {
     // Get EncryptedData
     NGEncryptedData encryptedData =
         encryptedDataService.get(accountIdentifier, orgIdentifier, projectIdentifier, secretRefData.getIdentifier());
+
+    if (encryptedData == null) {
+      throw new SecretManagementException(SECRET_NOT_FOUND,
+          String.format("Secret [%s] not found or has been deleted.", secretRefData.getIdentifier()), USER);
+    }
 
     // Get KMS Config for secret Manager of encrypted data's secret manager
     EncryptionConfig encryptionConfig = getDecryptedEncryptionConfig(

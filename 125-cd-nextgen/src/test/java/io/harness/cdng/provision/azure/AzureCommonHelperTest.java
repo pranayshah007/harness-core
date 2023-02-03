@@ -60,7 +60,7 @@ import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -235,9 +235,10 @@ public class AzureCommonHelperTest extends CategoryTest {
             .configurationParameters(AzureCreateARMResourceStepConfigurationParameters.builder().build())
             .delegateSelectors(delegateSelector)
             .build();
-    Mockito.mockStatic(StepUtils.class);
+    Mockito.mockStatic(TaskRequestsUtils.class);
     TaskRequest taskRequest = TaskRequest.newBuilder().build();
-    when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any())).thenReturn(taskRequest);
+    when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(taskRequest);
     StepElementParameters steps = StepElementParameters.builder().spec(step).build();
     TaskChainResponse result = azureCommonHelper.getGitFetchFileTaskChainResponse(azureHelperTest.getAmbiance(), files,
         steps, azureCreateARMResourcePassThroughData, Arrays.asList("test"), null);

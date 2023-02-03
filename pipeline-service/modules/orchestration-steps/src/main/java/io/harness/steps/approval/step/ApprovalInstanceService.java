@@ -11,13 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
-import io.harness.servicenow.TicketNG;
+import io.harness.execution.NodeExecution;
+import io.harness.servicenow.misc.TicketNG;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityRequestDTO;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 
 import java.util.List;
+import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
@@ -50,4 +52,7 @@ public interface ApprovalInstanceService {
 
   HarnessApprovalInstance addHarnessApprovalActivity(@NotNull String approvalInstanceId, @NotNull EmbeddedUser user,
       @NotNull @Valid HarnessApprovalActivityRequestDTO request);
+
+  boolean isNodeExecutionOfApprovalStepType(NodeExecution nodeExecution);
+  void deleteByNodeExecutionIds(@NotNull Set<String> nodeExecutionIds);
 }

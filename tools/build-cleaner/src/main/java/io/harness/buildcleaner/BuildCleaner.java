@@ -33,21 +33,20 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@Slf4j
 public class BuildCleaner {
   private static final String DEFAULT_VISIBILITY = "//visibility:public";
   private static final String BUILD_CLEANER_INDEX_FILE_NAME = ".build-cleaner-index";
   private static final String DEFAULT_JAVA_LIBRARY_NAME = "module";
 
-  private static final Logger logger = LoggerFactory.getLogger(BuildCleaner.class);
   private CommandLine options;
   private MavenManifest mavenManifest;
   private MavenManifest mavenManifestOverride;
@@ -74,11 +73,11 @@ public class BuildCleaner {
   }
 
   public void run() throws IOException, ClassNotFoundException {
-    logger.info("Workspace: " + workspace());
+    log.info("Workspace: " + workspace());
 
     // Create harness code index or load from an existing index.
     SymbolDependencyMap harnessSymbolMap = buildHarnessSymbolMap();
-    logger.debug("Total Java classes found: " + harnessSymbolMap.getCacheSize());
+    log.debug("Total Java classes found: " + harnessSymbolMap.getCacheSize());
 
     // If recursive option is set, generate build file for each folder inside.
     Files
@@ -88,8 +87,8 @@ public class BuildCleaner {
           try {
             Path modulePath = workspace().relativize(path);
             Optional<BuildFile> buildFile = generateBuildForModule(modulePath, harnessSymbolMap);
-            if (!buildFile.isPresent()) {
-              logger.error("Could not generate build file for {}", modulePath);
+            if (buildFile.isEmpty()) {
+              log.error("Could not generate build file for {}", modulePath);
               return;
             }
 
@@ -97,12 +96,12 @@ public class BuildCleaner {
             Path buildFilePath = Paths.get(packagePath.toString(), "/BUILD.bazel");
 
             if (!Files.exists(buildFilePath) || options.hasOption("overwriteExistingBuildFiles")) {
-              logger.info("Writing Build file for Module: {}", path);
+              log.info("Writing Build file for Module: {}", path);
               buildFile.get().writeToPackage(workspace().resolve(path));
               return;
             }
 
-            logger.info("Updating dependencies for the existing buildFile at: {}", buildFilePath);
+            log.info("Updating dependencies for the existing buildFile at: {}", buildFilePath);
             // Need to update the existing file with new content, after replacing the dependencies.
             // Assumptions:
             // - The BUILD file has at most one java_library rule
@@ -130,7 +129,7 @@ public class BuildCleaner {
       return harnessSymbolMap;
     }
 
-    logger.info("Creating index using sources matching: {}", indexSourceGlob());
+    log.info("Creating index using sources matching: {}", indexSourceGlob());
 
     // Parse proto and BUILD files to construct Proto specific java symbols to proto target map.
     final ProtoBuildMapper protoBuildMapper = new ProtoBuildMapper(workspace());
@@ -147,7 +146,7 @@ public class BuildCleaner {
     }
 
     harnessSymbolMap.serializeToFile(indexFilePath().toString());
-    logger.info("Index creation complete.");
+    log.info("Index creation complete.");
 
     return harnessSymbolMap;
   }
@@ -163,7 +162,7 @@ public class BuildCleaner {
   @NonNull
   private SymbolDependencyMap initDependencyMap() throws IOException, ClassNotFoundException {
     if (indexFileExists() && !options.hasOption("overrideIndex")) {
-      logger.info("Loading the existing index file {} to init dependency map", indexFilePath());
+      log.info("Loading the existing index file {} to init dependency map", indexFilePath());
       return SymbolDependencyMap.deserializeFromFile(indexFilePath().toString());
     } else {
       return new SymbolDependencyMap();
@@ -186,7 +185,7 @@ public class BuildCleaner {
     // Create build for the package.
     Set<String> sourceFiles = getSourceFiles(workspace().resolve(path));
     if (sourceFiles.isEmpty()) {
-      logger.warn("No sources found for {}", path);
+      log.warn("No sources found for {}", path);
       return Optional.empty();
     }
 
@@ -213,21 +212,25 @@ public class BuildCleaner {
         continue;
       }
 
+      resolvedSymbol.ifPresent(symbol -> log.debug("Adding dependency to {} for import {}", symbol, importStatement));
       resolvedSymbol.ifPresent(dependencies::add);
       if (resolvedSymbol.isEmpty()) {
-        logger.error("No build dependency found for {}", importStatement);
+        log.error("No build dependency found for {}", importStatement);
       }
     }
 
-    BuildFile buildFile = new BuildFile();
+    final BuildFile buildFile = new BuildFile();
+    // We run analysis even for test only targets, but it will skip PMD & sonar. Will run only checkstyle
     buildFile.enableAnalysisPerModule();
 
-    JavaLibrary javaLibrary = new JavaLibrary(DEFAULT_JAVA_LIBRARY_NAME, DEFAULT_VISIBILITY, srcsGlob(), dependencies);
+    final JavaLibrary javaLibrary =
+        new JavaLibrary(DEFAULT_JAVA_LIBRARY_NAME, DEFAULT_VISIBILITY, srcsGlob(), dependencies);
     buildFile.addJavaLibrary(javaLibrary);
+    // TODO: For root level targets add additional test library
 
     // Find main files in the folder and create java binary targets.
-    for (String className : classpathParser.getMainClasses()) {
-      JavaBinary javaBinary = new JavaBinary(className, DEFAULT_VISIBILITY,
+    for (final String className : classpathParser.getMainClasses()) {
+      final JavaBinary javaBinary = new JavaBinary(className, DEFAULT_VISIBILITY,
           getPackageName(classpathParser) + "." + className, /*runTimeDeps=*/Collections.singleton(":module"),
           /*deps=*/Collections.emptySet());
       buildFile.addJavaBinary(javaBinary);
@@ -281,7 +284,7 @@ public class BuildCleaner {
    */
   private Set<String> getSourceFiles(Path directory) throws IOException {
     final var syntaxAndPattern = "glob:" + directory + "/" + srcsGlob();
-    logger.info("Scanning for files using pattern {}", syntaxAndPattern);
+    log.info("Scanning for files using pattern {}", syntaxAndPattern);
     PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(syntaxAndPattern);
     Set<String> sourceFileNames = new HashSet<>();
     try (Stream<Path> paths = Files.find(directory, Integer.MAX_VALUE, (path, f) -> pathMatcher.matches(path))) {
@@ -293,12 +296,12 @@ public class BuildCleaner {
   private String getPackageName(ClasspathParser classpathParser) {
     Set<String> packageNames = classpathParser.getPackages();
     if (packageNames.size() == 0) {
-      logger.error("No package name found for module: " + module());
+      log.error("No package name found for module: " + module());
       return "";
     }
 
     if (packageNames.size() > 1) {
-      logger.error(
+      log.error(
           "Package name not consistent across files in the module: " + module() + ". Found packages: " + packageNames);
     }
 
@@ -376,7 +379,7 @@ public class BuildCleaner {
     try {
       commandLineOptions = parser.parse(options, args);
     } catch (ParseException e) {
-      logger.error("Command line parsing failed. {}", e.getMessage());
+      log.error("Command line parsing failed. {}", e.getMessage());
       System.exit(3);
     }
     return commandLineOptions;

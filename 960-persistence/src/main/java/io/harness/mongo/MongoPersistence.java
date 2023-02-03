@@ -21,6 +21,8 @@ import static java.util.stream.Collectors.toList;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.migration.DelegateMigrationFlag;
+import io.harness.migration.DelegateMigrationFlag.DelegateMigrationFlagKeys;
 import io.harness.mongo.SampleEntity.SampleEntityKeys;
 import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.persistence.CreatedAtAware;
@@ -37,6 +39,9 @@ import io.harness.persistence.UuidAccess;
 import io.harness.persistence.UuidAware;
 import io.harness.persistence.store.Store;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -46,6 +51,7 @@ import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoExecutionTimeoutException;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteResult;
+import com.mongodb.client.MongoClient;
 import dev.morphia.AdvancedDatastore;
 import dev.morphia.DatastoreImpl;
 import dev.morphia.FindAndModifyOptions;
@@ -68,8 +74,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -77,6 +85,19 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 public class MongoPersistence implements HPersistence {
+  private final LoadingCache<String, Boolean> delegateMigrationFlagCache =
+      CacheBuilder.newBuilder()
+          .maximumSize(20)
+          .expireAfterWrite(10, TimeUnit.SECONDS)
+          .build(new CacheLoader<String, Boolean>() {
+            @Override
+            public Boolean load(@NotNull String className) {
+              DelegateMigrationFlag flag =
+                  createQuery(DelegateMigrationFlag.class).filter(DelegateMigrationFlagKeys.className, className).get();
+              return flag != null && flag.isEnabled();
+            }
+          });
+
   @Override
   public <T> PageResponse<T> query(Class<T> cls, PageRequest<T> req) {
     return query(cls, req, allChecks);
@@ -135,7 +156,9 @@ public class MongoPersistence implements HPersistence {
 
   private Map<String, Info> storeInfo = new ConcurrentHashMap<>();
   private Map<Class, Store> classStores = new ConcurrentHashMap<>();
+  private Map<Class, Store> secondaryClassStores = new ConcurrentHashMap<>();
   private Map<String, AdvancedDatastore> datastoreMap;
+  private Map<String, MongoClient> mongoClientMap;
   private final HarnessConnectionPoolListener harnessConnectionPoolListener;
   @Inject UserProvider userProvider;
 
@@ -143,6 +166,7 @@ public class MongoPersistence implements HPersistence {
   public MongoPersistence(@Named("primaryDatastore") AdvancedDatastore primaryDatastore,
       HarnessConnectionPoolListener harnessConnectionPoolListener) {
     datastoreMap = new HashMap<>();
+    mongoClientMap = new HashMap<>();
     datastoreMap.put(DEFAULT_STORE.getName(), primaryDatastore);
     this.harnessConnectionPoolListener = harnessConnectionPoolListener;
   }
@@ -187,8 +211,34 @@ public class MongoPersistence implements HPersistence {
   }
 
   @Override
+  public MongoClient getNewMongoClient(Store store) {
+    return mongoClientMap.computeIfAbsent(store.getName(), key -> {
+      Info info = storeInfo.get(store.getName());
+      if (info == null || isEmpty(info.getUri())) {
+        return getNewMongoClient(DEFAULT_STORE);
+      }
+      return MongoModule.createNewMongoCLient(info.getUri(), store.getName(), harnessConnectionPoolListener);
+    });
+  }
+
+  @Override
   public Map<Class, Store> getClassStores() {
     return classStores;
+  }
+
+  @Override
+  public Map<Class, Store> getSecondaryClassStores() {
+    return secondaryClassStores;
+  }
+
+  @Override
+  public boolean isMigrationEnabled(Class cls) {
+    try {
+      return delegateMigrationFlagCache.get(cls.getName());
+    } catch (ExecutionException e) {
+      log.error("Exception occurred while checking for delegate migration flag.", e);
+      return false;
+    }
   }
 
   @Override

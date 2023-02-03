@@ -54,7 +54,7 @@ public class InputSetsApiUtils {
   public InputSetResponseBody getInputSetResponse(InputSetEntity inputSetEntity) {
     InputSetResponseBody responseBody = new InputSetResponseBody();
     responseBody.setInputSetYaml(inputSetEntity.getYaml());
-    responseBody.setSlug(inputSetEntity.getIdentifier());
+    responseBody.setIdentifier(inputSetEntity.getIdentifier());
     responseBody.setName(inputSetEntity.getName());
     responseBody.setOrg(inputSetEntity.getOrgIdentifier());
     responseBody.setProject(inputSetEntity.getProjectIdentifier());
@@ -71,7 +71,7 @@ public class InputSetsApiUtils {
       InputSetEntity inputSetEntity, InputSetErrorWrapperDTOPMS errorWrapperDTO) {
     InputSetResponseBody responseBody = new InputSetResponseBody();
     responseBody.setInputSetYaml(inputSetEntity.getYaml());
-    responseBody.setSlug(inputSetEntity.getIdentifier());
+    responseBody.setIdentifier(inputSetEntity.getIdentifier());
     responseBody.setName(inputSetEntity.getName());
     responseBody.setOrg(inputSetEntity.getOrgIdentifier());
     responseBody.setProject(inputSetEntity.getProjectIdentifier());
@@ -176,7 +176,7 @@ public class InputSetsApiUtils {
       throw new InvalidRequestException("Create Request Body cannot be null.");
     }
     return InputSetRequestInfoDTO.builder()
-        .identifier(createRequestBody.getSlug())
+        .identifier(createRequestBody.getIdentifier())
         .name(createRequestBody.getName())
         .yaml(createRequestBody.getInputSetYaml())
         .description(createRequestBody.getDescription())
@@ -189,7 +189,7 @@ public class InputSetsApiUtils {
       throw new InvalidRequestException("Update Request Body cannot be null.");
     }
     return InputSetRequestInfoDTO.builder()
-        .identifier(updateRequestBody.getSlug())
+        .identifier(updateRequestBody.getIdentifier())
         .name(updateRequestBody.getName())
         .yaml(updateRequestBody.getInputSetYaml())
         .description(updateRequestBody.getDescription())

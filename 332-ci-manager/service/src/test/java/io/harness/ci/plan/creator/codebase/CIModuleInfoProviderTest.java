@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
@@ -36,11 +35,15 @@ import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.license.CILicenseService;
 import io.harness.ci.pipeline.executions.beans.CIBuildCommit;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
 import io.harness.ci.plan.creator.execution.CIPipelineModuleInfo;
 import io.harness.ci.states.InitializeTaskStep;
 import io.harness.ci.states.IntegrationStageStepPMS;
+import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseType;
+import io.harness.licensing.beans.summary.CILicenseSummaryDTO;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -53,7 +56,6 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
-import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -62,7 +64,9 @@ import org.apache.groovy.util.Maps;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
@@ -70,13 +74,13 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
   private CIExecutionPlanTestHelper ciExecutionPlanTestHelper = new CIExecutionPlanTestHelper();
 
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
-  @Inject private CIModuleInfoProvider ciModuleInfoProvider;
+  @InjectMocks private CIModuleInfoProvider ciModuleInfoProvider;
   @Mock private ConnectorUtils connectorUtils;
+  @Mock private CILicenseService ciLicenseService;
 
   @Before
   public void setUp() {
-    on(ciModuleInfoProvider).set("executionSweepingOutputService", executionSweepingOutputService);
-    on(ciModuleInfoProvider).set("connectorUtils", connectorUtils);
+    MockitoAnnotations.initMocks(this);
   }
 
   @Test
@@ -102,6 +106,9 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
                                     .repoUrl("https://github.com/test/repo-name")
                                     .build())
                         .build());
+    CILicenseSummaryDTO ciLicenseSummaryDTO =
+        CILicenseSummaryDTO.builder().licenseType(LicenseType.PAID).edition(Edition.ENTERPRISE).build();
+    when(ciLicenseService.getLicenseSummary(any())).thenReturn(ciLicenseSummaryDTO);
     CIPipelineModuleInfo ciPipelineModuleInfo =
         (CIPipelineModuleInfo) ciModuleInfoProvider.getPipelineLevelModuleInfo(event);
     assertThat(ciPipelineModuleInfo.getRepoName()).isEqualTo("repo-name");
@@ -114,6 +121,9 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
     assertThat(ciPipelineModuleInfo.getInfraDetailsList().size()).isEqualTo(0);
     assertThat(ciPipelineModuleInfo.getImageDetailsList().size()).isEqualTo(0);
     assertThat(ciPipelineModuleInfo.getTiBuildDetailsList().size()).isEqualTo(0);
+
+    assertThat(ciPipelineModuleInfo.getCiLicenseType()).isEqualTo(LicenseType.PAID.toString());
+    assertThat(ciPipelineModuleInfo.getCiEditionType()).isEqualTo(Edition.ENTERPRISE.toString());
   }
 
   @Test

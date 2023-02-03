@@ -7,9 +7,9 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
-import static software.wings.sm.StepType.K8S_DEPLOYMENT_ROLLING;
-import static software.wings.sm.StepType.SHELL_SCRIPT;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -17,14 +17,15 @@ import static java.util.stream.Collectors.groupingBy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
-import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.WorkflowSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -32,18 +33,23 @@ import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.step.StepMapperFactory;
 import io.harness.ngmigration.service.workflow.WorkflowHandler;
 import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
+import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.beans.yaml.NGTemplateInfoConfig;
+import io.harness.template.remote.TemplateResourceClient;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.Workflow;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
@@ -51,17 +57,16 @@ import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.service.impl.yaml.handler.workflow.RollingWorkflowYamlHandler;
 import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.WorkflowService;
-import software.wings.sm.StepType;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
-import io.fabric8.utils.Lists;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -73,6 +78,7 @@ import retrofit2.Response;
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class WorkflowMigrationService extends NgMigrationService {
+  public static final String VERSION = "v1";
   @Inject private InfraMigrationService infraMigrationService;
   @Inject private EnvironmentMigrationService environmentMigrationService;
   @Inject private ServiceMigrationService serviceMigrationService;
@@ -81,16 +87,27 @@ public class WorkflowMigrationService extends NgMigrationService {
   @Inject private ApplicationManifestService applicationManifestService;
   @Inject private StepMapperFactory stepMapperFactory;
   @Inject private WorkflowHandlerFactory workflowHandlerFactory;
-
-  private static final List<String> SUPPORTED_STEPS = Lists.newArrayList(K8S_DEPLOYMENT_ROLLING, SHELL_SCRIPT)
-                                                          .stream()
-                                                          .map(StepType::name)
-                                                          .collect(Collectors.toList());
+  @Inject private TemplateResourceClient templateResourceClient;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
-    // TODO: @deepak
-    return null;
+    CgBasicInfo basicInfo = yamlFile.getCgBasicInfo();
+    NGTemplateInfoConfig templateInfoConfig = ((NGTemplateConfig) yamlFile.getYaml()).getTemplateInfoConfig();
+    return MigratedEntityMapping.builder()
+        .appId(basicInfo.getAppId())
+        .accountId(basicInfo.getAccountId())
+        .cgEntityId(basicInfo.getId())
+        .entityType(WORKFLOW.name())
+        .accountIdentifier(basicInfo.getAccountId())
+        .orgIdentifier(templateInfoConfig.getOrgIdentifier())
+        .projectIdentifier(templateInfoConfig.getProjectIdentifier())
+        .identifier(templateInfoConfig.getIdentifier())
+        .scope(MigratorMappingService.getScope(
+            templateInfoConfig.getOrgIdentifier(), templateInfoConfig.getProjectIdentifier()))
+        .fullyQualifiedIdentifier(MigratorMappingService.getFullyQualifiedIdentifier(basicInfo.getAccountId(),
+            templateInfoConfig.getOrgIdentifier(), templateInfoConfig.getProjectIdentifier(),
+            templateInfoConfig.getIdentifier()))
+        .build();
   }
 
   @Override
@@ -147,7 +164,7 @@ public class WorkflowMigrationService extends NgMigrationService {
     Set<CgEntityId> children = new HashSet<>();
     List<CgEntityId> referencedEntities =
         workflowHandlerFactory.getWorkflowHandler(workflow).getReferencedEntities(stepMapperFactory, workflow);
-    if (EmptyPredicate.isNotEmpty(referencedEntities)) {
+    if (isNotEmpty(referencedEntities)) {
       children.addAll(referencedEntities);
     }
     return DiscoveryNode.builder().children(children).entityNode(workflowNode).build();
@@ -161,7 +178,7 @@ public class WorkflowMigrationService extends NgMigrationService {
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    if (EmptyPredicate.isNotEmpty(inputDTO.getDefaults()) && inputDTO.getDefaults().containsKey(WORKFLOW)
+    if (isNotEmpty(inputDTO.getDefaults()) && inputDTO.getDefaults().containsKey(WORKFLOW)
         && inputDTO.getDefaults().get(WORKFLOW).isSkipMigration()) {
       return Collections.emptyList();
     }
@@ -174,13 +191,32 @@ public class WorkflowMigrationService extends NgMigrationService {
     String description = StringUtils.isBlank(workflow.getDescription()) ? "" : workflow.getDescription();
 
     WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
+    List<GraphNode> steps = workflowHandler.getSteps(workflow);
+    // We will skip migration if any of the steps are unsupported
+    if (EmptyPredicate.isEmpty(steps)
+        || steps.stream()
+               .map(step -> stepMapperFactory.getStepMapper(step.getType()).stepSupportStatus(step))
+               .anyMatch(WorkflowStepSupportStatus.UNSUPPORTED::equals)) {
+      return Collections.emptyList();
+    }
 
-    JsonNode templateSpec = workflowHandler.getTemplateSpec(migratedEntities, workflow);
+    JsonNode templateSpec = workflowHandler.getTemplateSpec(entities, migratedEntities, workflow);
     if (templateSpec == null) {
       return Collections.emptyList();
     }
 
     List<NGYamlFile> files = new ArrayList<>();
+
+    if (isNotEmpty(steps)) {
+      List<NGYamlFile> additionalYamlFiles =
+          steps.stream()
+              .map(step -> stepMapperFactory.getStepMapper(step.getType()).getChildNGYamlFiles(inputDTO, step, name))
+              .flatMap(List::stream)
+              .filter(Objects::nonNull)
+              .collect(Collectors.toList());
+      files.addAll(additionalYamlFiles);
+    }
+
     NGYamlFile ngYamlFile =
         NGYamlFile.builder()
             .type(WORKFLOW)
@@ -193,7 +229,7 @@ public class WorkflowMigrationService extends NgMigrationService {
                                               .description(ParameterField.createValueField(description))
                                               .projectIdentifier(projectIdentifier)
                                               .orgIdentifier(orgIdentifier)
-                                              .versionLabel("v1")
+                                              .versionLabel(VERSION)
                                               .spec(templateSpec)
                                               .build())
                       .build())
@@ -221,7 +257,7 @@ public class WorkflowMigrationService extends NgMigrationService {
           .build();
     }
     String yaml = YamlUtils.write(yamlFile.getYaml());
-    Response<ResponseDTO<ConnectorResponseDTO>> resp =
+    Response<ResponseDTO<TemplateWrapperResponseDTO>> resp =
         templateClient
             .createTemplate(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
                 inputDTO.getProjectIdentifier(), RequestBody.create(MediaType.parse("application/yaml"), yaml))
@@ -235,7 +271,17 @@ public class WorkflowMigrationService extends NgMigrationService {
 
   @Override
   protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
-    return null;
+    try {
+      TemplateResponseDTO response = NGRestUtils.getResponse(templateResourceClient.get(ngEntityDetail.getIdentifier(),
+          accountIdentifier, ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier(), VERSION, false));
+      if (response == null || StringUtils.isBlank(response.getYaml())) {
+        return null;
+      }
+      return YamlUtils.read(response.getYaml(), NGTemplateConfig.class);
+    } catch (Exception ex) {
+      log.warn("Error when getting workflow templates - ", ex);
+      return null;
+    }
   }
 
   @Override

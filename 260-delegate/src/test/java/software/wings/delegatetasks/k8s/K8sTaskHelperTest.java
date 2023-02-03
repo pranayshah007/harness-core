@@ -190,6 +190,7 @@ public class K8sTaskHelperTest extends CategoryTest {
     spyHelperBase = Mockito.spy(k8sTaskHelperBase);
     when(helmTaskHelperBase.isHelmLocalRepoSet()).thenReturn(false);
     when(helmTaskHelperBase.getHelmLocalRepositoryPath()).thenReturn("");
+    doReturn(-1).when(helmTaskHelperBase).skipDefaultHelmValuesYaml(anyString(), any(), anyBoolean(), any());
   }
 
   private List<KubernetesResourceId> getKubernetesResourceIdList(String suffix) {
@@ -716,7 +717,7 @@ public class K8sTaskHelperTest extends CategoryTest {
         K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).helmPath("helm").build();
     doReturn(Arrays.asList(FileData.builder().filePath("test").fileContent("manifest").build()))
         .when(mockK8sTaskHelperBase)
-        .renderTemplateForHelm(any(), any(), anyList(), any(), any(), any(), any(), anyLong(), any());
+        .renderTemplateForHelm(any(), any(), anyList(), any(), any(), any(), any(), anyLong(), any(), eq(""));
 
     final List<FileData> manifestFiles = helper.renderTemplate(k8sDelegateTaskParams,
         K8sDelegateManifestConfig.builder().manifestStoreTypes(HelmSourceRepo).build(), ".", valuesFiles, "release",
@@ -725,7 +726,7 @@ public class K8sTaskHelperTest extends CategoryTest {
     assertThat(manifestFiles.size()).isEqualTo(1);
     verify(mockK8sTaskHelperBase, times(1))
         .renderTemplateForHelm(eq("helm"), eq("."), eq(valuesFiles), eq("release"), eq("namespace"),
-            eq(executionLogCallback), eq(HelmVersion.V3), anyLong(), any());
+            eq(executionLogCallback), eq(HelmVersion.V3), anyLong(), any(), eq(""));
   }
 
   @Test
@@ -781,8 +782,8 @@ public class K8sTaskHelperTest extends CategoryTest {
         ".", new ArrayList<>(), "release", "namespace", executionLogCallback, K8sApplyTaskParameters.builder().build());
 
     verify(mockK8sTaskHelperBase, times(1))
-        .renderTemplateForHelm(
-            eq("helm"), eq("./chart"), anyList(), any(), any(), eq(executionLogCallback), any(), anyLong(), any());
+        .renderTemplateForHelm(eq("helm"), eq("./chart"), anyList(), any(), any(), eq(executionLogCallback), any(),
+            anyLong(), any(), eq(""));
   }
 
   /**
@@ -804,8 +805,8 @@ public class K8sTaskHelperTest extends CategoryTest {
         ".", new ArrayList<>(), "release", "namespace", executionLogCallback, K8sApplyTaskParameters.builder().build());
 
     verify(mockK8sTaskHelperBase, times(1))
-        .renderTemplateForHelm(
-            eq("helm"), eq("./nginx"), anyList(), any(), any(), eq(executionLogCallback), any(), anyLong(), any());
+        .renderTemplateForHelm(eq("helm"), eq("./nginx"), anyList(), any(), any(), eq(executionLogCallback), any(),
+            anyLong(), any(), eq(""));
   }
 
   @Test

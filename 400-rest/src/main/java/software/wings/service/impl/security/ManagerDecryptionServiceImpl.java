@@ -23,9 +23,9 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.SecretManagementException;
 import io.harness.exception.WingsException;
 import io.harness.security.SimpleEncryption;
-import io.harness.security.encryption.EncryptableSettingWithEncryptionDetails;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.setting.EncryptableSettingWithEncryptionDetails;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.SyncTaskContext;
@@ -101,7 +101,7 @@ public class ManagerDecryptionServiceImpl implements ManagerDecryptionService {
                                           .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
                                           .build();
     try {
-      EncryptableSetting decrypted = delegateProxyFactory.get(EncryptionService.class, syncTaskContext)
+      EncryptableSetting decrypted = delegateProxyFactory.getV2(EncryptionService.class, syncTaskContext)
                                          .decrypt(object, nonLocalEncryptedDetails, false);
       replaceEncryptedFieldsWithDecryptedValues(nonLocalEncryptedDetails, object, decrypted);
     } catch (WingsException e) {
@@ -123,7 +123,7 @@ public class ManagerDecryptionServiceImpl implements ManagerDecryptionService {
         SyncTaskContext.builder().accountId(accountId).appId(GLOBAL_APP_ID).timeout(DEFAULT_ASYNC_CALL_TIMEOUT).build();
     try {
       List<EncryptableSettingWithEncryptionDetails> detailsList =
-          delegateProxyFactory.get(EncryptionService.class, syncTaskContext)
+          delegateProxyFactory.getV2(EncryptionService.class, syncTaskContext)
               .decrypt(encryptableSettingWithEncryptionDetailsList, false);
 
       Map<String, EncryptableSetting> detailsMap =

@@ -8,6 +8,7 @@
 package io.harness.agent.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -37,6 +38,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Builder
 @FieldNameConstants(innerTypeName = "AgentMtlsEndpointKeys")
 @StoreIn(DbAliases.HARNESS)
+@SecondaryStoreIn(DbAliases.DMS)
 @Entity(value = "agentMtlsEndpoint", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.DEL)

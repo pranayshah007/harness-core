@@ -257,7 +257,8 @@ public class EngineExpressionEvaluator {
         throw new EngineExpressionEvaluationException((FunctorException) ex.getCause(), createExpression(expression));
       }
       log.error(format("Failed to evaluate final expression: %s", expression), ex);
-      throw NestedExceptionUtils.hintWithExplanationException(JexlRuntimeExceptionHandler.getHintMessage(ex),
+      throw NestedExceptionUtils.hintWithExplanationException(
+          JexlRuntimeExceptionHandler.getHintMessage(ex, expression),
           JexlRuntimeExceptionHandler.getExplanationMessage(ex),
           new EngineExpressionEvaluationException("Expression evaluation failed", expression));
     }

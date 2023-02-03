@@ -11,7 +11,15 @@ HarnessTeam = "PL"
 
 shared_dependencies = [
     "//:lombok",
+    "//890-sm-core:module",
+    "//910-delegate-service-driver:module",
+    "//930-delegate-tasks:module",
+    "//930-ng-core-clients:module",
+    "//940-secret-manager-client:module",
+    "//950-delegate-tasks-beans:module",
+    "//clients/audit:module",
     "//platform-service/modules/audit-service:module",
+    "//platform-service/modules/audit-service/contracts:module",
     "@maven//:org_codehaus_janino_janino",
     "@maven//:io_opencensus_opencensus_api",
     "@maven//:io_opencensus_opencensus_impl",
@@ -57,8 +65,9 @@ java_library(
         "//:resource",
     ],
     visibility = ["//visibility:public"],
-    runtime_deps = shared_dependencies + [
+    deps = shared_dependencies + [
         ":module",
+        "//990-commons-test:module",
         "@maven//:junit_junit",
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_mockito_mockito_core",
@@ -67,6 +76,6 @@ java_library(
     ],
 )
 
-#run_tests()
+run_tests()
 
 run_analysis()

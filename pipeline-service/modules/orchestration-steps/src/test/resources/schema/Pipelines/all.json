@@ -525,7 +525,8 @@
       "type": "object",
       "required": [
         "key",
-        "operator"
+        "operator",
+        "value"
       ],
       "properties": {
         "key": {
@@ -743,7 +744,8 @@
                     "Sh",
                     "Bash",
                     "Powershell",
-                    "Pwsh"
+                    "Pwsh",
+                    "Python"
                   ]
                 },
                 {
@@ -2065,35 +2067,7 @@
       ],
       "properties": {
         "action": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/AbortFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/IgnoreFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ManualInterventionFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/RetryFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StageRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StepGroupFailureActionConfig"
-            }
-          ]
+          "$ref": "#/definitions/FailureStrategyActionConfig"
         },
         "errors": {
           "type": "array",
@@ -2110,7 +2084,8 @@
               "DelegateProvisioning",
               "PolicyEvaluationFailure",
               "InputTimeoutError",
-              "ApprovalRejection"
+              "ApprovalRejection",
+              "DelegateRestart"
             ]
           }
         }
@@ -2121,35 +2096,7 @@
       "type": "object",
       "properties": {
         "action": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/AbortFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/IgnoreFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ManualInterventionFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/RetryFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StageRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StepGroupFailureActionConfig"
-            }
-          ]
+          "$ref": "#/definitions/FailureStrategyActionConfig"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2158,35 +2105,7 @@
       "type": "object",
       "properties": {
         "action": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/AbortFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/IgnoreFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ManualInterventionFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/RetryFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StageRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StepGroupFailureActionConfig"
-            }
-          ]
+          "$ref": "#/definitions/FailureStrategyActionConfig"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2321,6 +2240,39 @@
           "additionalProperties": {
             "$ref": "#/definitions/JsonNode"
           }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldMatrixConfigInterface": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "$ref": "#/definitions/MatrixConfigInterface"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/MatrixConfigInterface"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -3701,10 +3653,22 @@
               "type": "string"
             },
             "failureStrategies": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/FailureStrategyConfig"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/FailureStrategyConfig"
+                  }
+                },
+                {
+                  "type": "array"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "identifier": {
               "type": "string",
@@ -3904,10 +3868,22 @@
           "type": "string"
         },
         "failureStrategies": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FailureStrategyConfig"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FailureStrategyConfig"
+              }
+            },
+            {
+              "type": "array"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "identifier": {
           "type": "string",
@@ -4246,10 +4222,22 @@
           ]
         },
         "failureStrategies": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FailureStrategyConfig"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FailureStrategyConfig"
+              }
+            },
+            {
+              "type": "array"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "identifier": {
           "type": "string",
@@ -4347,7 +4335,16 @@
       "type": "object",
       "properties": {
         "matrix": {
-          "$ref": "#/definitions/MatrixConfigInterface"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ParameterFieldMatrixConfigInterface"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "parallelism": {
           "oneOf": [
@@ -4557,6 +4554,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "duration"
+          ],
           "properties": {
             "duration": {
               "type": "string",
