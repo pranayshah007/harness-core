@@ -14,11 +14,13 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//920-delegate-service-beans/src/main/java/io/harness/delegate/types:module",
         "//930-delegate-tasks/src/main/java/software/wings/beans/bash:module",
         "//931-secret-providers/src/java/software/wings/beans:module",
         "//950-delegate-tasks-beans:module",
         "//960-api-services/src/main/java/io/harness/delegate/configuration:module",
         "//980-commons/src/main/java/io/harness/serializer:module",
+        "//delegate/src/main/java/io/harness/delegate/executor/config:module",
         "@maven//:com_google_guava_guava",
         "@maven//:io_kubernetes_client_java",
         "@maven//:io_kubernetes_client_java_api",

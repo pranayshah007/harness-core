@@ -16,6 +16,8 @@ import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
+import io.harness.delegate.executor.config.Configuration;
+import io.harness.network.Localhost;
 import io.harness.serializer.KryoSerializer;
 import io.harness.serializer.YamlUtils;
 
@@ -37,6 +39,8 @@ import java.util.Optional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 @Slf4j
 public class K8STaskRunner {
   private static final String HARNESS_DELEGATE_NG = "harness-delegate-ng";
@@ -50,14 +54,20 @@ public class K8STaskRunner {
   private static final String SECRETS_INPUT_FILE = "secrets.bin";
   private static final String DELEGATE_CONFIG_FILE = "config.yaml";
 
+  // FIXME: configurations should all come from DelegateConfiguration
+  private static String DELEGATE_NAME =
+      isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME") : "";
+
+  private static String DELEGATE_TYPE = System.getenv().get("DELEGATE_TYPE");
+
   private final BatchV1Api batchApi;
   private final CoreV1Api coreApi;
   private final DelegateConfiguration delegateConfiguration;
-  @Named("referenceFalseKryoSerializer") private final KryoSerializer kryoSerializer;
+  private final KryoSerializer kryoSerializer;
 
   @Inject
   public K8STaskRunner(final DelegateConfiguration delegateConfiguration, final ApiClient apiClient,
-      final KryoSerializer kryoSerializer) throws IOException {
+                       @Named("referenceFalseKryoSerializer") final KryoSerializer kryoSerializer) throws IOException {
     this.batchApi = new BatchV1Api(apiClient);
     this.coreApi = new CoreV1Api(apiClient);
     this.delegateConfiguration = delegateConfiguration;
@@ -74,9 +84,9 @@ public class K8STaskRunner {
     // TODO: Check how to refresh service account token
     taskPackage.getEncryptionConfigs().values().forEach(config -> log.info("Config: {}", config));
 
-    log.info("Creating delegate config for task {}", taskPackage.getDelegateTaskId());
-    final V1ConfigMap delegateConfigConfMap = createDelegateConfig(taskPackage.getDelegateTaskId());
-    final var delegateConfigVol = K8SVolumeUtils.fromConfigMap(delegateConfigConfMap, "delegate-configuration");
+    log.info("Creating executor config for task {}", taskPackage.getDelegateTaskId());
+    final V1ConfigMap executorConfMap = createTaskExecutorConfig(taskPackage.getDelegateTaskId());
+    final var executorConfigVol = K8SVolumeUtils.fromConfigMap(executorConfMap, "delegate-configuration");
 
     log.info("Creating task input for task {}", taskPackage.getDelegateTaskId());
     final V1ConfigMap taskPackageConfMap = createTaskConfig(taskPackage.getDelegateTaskId(), taskPackage);
@@ -84,7 +94,7 @@ public class K8STaskRunner {
 
     final var secretVolume = createSecretInputVolume(taskPackage);
 
-    createTaskJob(taskPackage.getDelegateTaskId(), taskPackageVol, delegateConfigVol, secretVolume);
+    createTaskJob(taskPackage.getDelegateTaskId(), taskPackageVol, executorConfigVol, secretVolume);
 
     log.info("Task job created for id {}!!!", taskPackage.getDelegateTaskId());
   }
@@ -131,8 +141,8 @@ public class K8STaskRunner {
           .addVolume(K8SVolumeUtils.emptyDir("secret-output"), SECRETS_OUT_MNT_PATH);
     }
 
-    job.addVolume(taskPackageVolume, TASK_INPUT_MNT_PATH)
-        .addVolume(delegateConfigVolume, DELEGATE_CONFIG_MNT_PATH)
+    job.addVolume(taskPackageVolume, "/etc/config")
+        .addVolume(delegateConfigVolume, "/etc/executor-config")
         .addEnvVar("ACCOUNT_ID", delegateConfiguration.getAccountId())
         .addEnvVar("TASK_ID", taskId)
         .addEnvVar("DELEGATE_NAME", "");
@@ -155,21 +165,33 @@ public class K8STaskRunner {
 
   private V1ConfigMap createTaskConfig(final String taskId, final DelegateTaskPackage taskData)
       throws IOException, ApiException {
-    final var configYaml = new YamlUtils().dump(taskData);
+    final var data = kryoSerializer.asBytes(taskData);
+    DelegateTaskPackage delegateTaskPackage = (DelegateTaskPackage) kryoSerializer.asObject(data);
+    log.info(delegateTaskPackage.getDelegateTaskId());
     final var configMap =
-        new K8SConfigMap(getConfigName(taskId), HARNESS_DELEGATE_NG).putDataItem(DELEGATE_CONFIG_FILE, configYaml);
+        new K8SConfigMap(getConfigName(taskId), HARNESS_DELEGATE_NG).putBinaryDataItem("taskfile", data);
 
     return coreApi.createNamespacedConfigMap(
         HARNESS_DELEGATE_NG, configMap, null, null, DELEGATE_FIELD_MANAGER, "Warn");
   }
 
-  private V1ConfigMap createDelegateConfig(final String taskId) throws IOException, ApiException {
-    final var configYaml = new YamlUtils().dump(delegateConfiguration);
-    final var configMap = new K8SConfigMap(getConfigName(taskId + "-delegate-config"), HARNESS_DELEGATE_NG)
-                              .putDataItem(DELEGATE_CONFIG_FILE, configYaml);
+  private V1ConfigMap createTaskExecutorConfig(final String taskId) throws IOException, ApiException {
+    var configBuilder =
+        Configuration.builder()
+            .delegateToken(delegateConfiguration.getDelegateToken())
+            .shouldSendResponse(true)
+            .taskInputPath("/etc/config/taskfile")
+            .delegateName(DELEGATE_NAME);
 
+    // FIXME: Use service based fqdn for kubernetes and helm delegates. Use ip for other delegates
+    configBuilder.delegateHost(Localhost.getLocalHostAddress()).delegatePort(3460);
+
+    final var configYaml = new YamlUtils().dump(
+        configBuilder.build());
+    final var configMap = new K8SConfigMap(getConfigName(taskId + "-executor-config"), HARNESS_DELEGATE_NG)
+                              .putDataItem("executor_config.yaml", configYaml);
     return coreApi.createNamespacedConfigMap(
-        HARNESS_DELEGATE_NG, configMap, null, null, DELEGATE_FIELD_MANAGER, "Warn");
+          HARNESS_DELEGATE_NG, configMap, null, null, DELEGATE_FIELD_MANAGER, "Warn");
   }
 
   private Map<EncryptionConfig, List<EncryptedRecord>> createSecretInput(
@@ -197,6 +219,6 @@ public class K8STaskRunner {
   // K8S resource name needs to contain only lowercase alphanumerics . and _, but must start and end with alphanumerics
   // Regex used by K8S for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'
   private String normalizeResourceName(final String resourceName) {
-    return resourceName.trim().toLowerCase().replaceAll("_", ".");
+    return resourceName.trim().toLowerCase().replaceAll("_", "--");
   }
 }

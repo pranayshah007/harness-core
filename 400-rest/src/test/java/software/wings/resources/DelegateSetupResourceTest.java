@@ -8,7 +8,7 @@
 package software.wings.resources;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.delegate.beans.DelegateType.DOCKER;
+import static io.harness.delegate.types.DelegateType.DOCKER;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_EDIT_PERMISSION;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_RESOURCE_TYPE;
 import static io.harness.rule.OwnerRule.BOJAN;
@@ -59,7 +59,7 @@ import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSize;
 import io.harness.delegate.beans.DelegateSizeDetails;
 import io.harness.delegate.beans.DelegateTags;
-import io.harness.delegate.beans.DelegateType;
+import io.harness.delegate.types.DelegateType;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.resources.DelegateSetupResourceV2;
 import io.harness.delegate.service.intfc.DelegateInstallationCommandService;

@@ -235,7 +235,7 @@ import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntDestroySte
 import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntPlanStepVariableCreator;
 import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntRollbackStepVariableCreator;
 import io.harness.cdng.visitor.YamlTypes;
-import io.harness.delegate.beans.DelegateType;
+import io.harness.delegate.types.DelegateType;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.EmptyAnyFilterJsonCreator;

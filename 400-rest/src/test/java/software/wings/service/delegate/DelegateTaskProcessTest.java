@@ -11,7 +11,7 @@ import static io.harness.beans.DelegateTask.DELEGATE_QUEUE_TIMEOUT;
 import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.delegate.beans.DelegateType.KUBERNETES;
+import static io.harness.delegate.types.DelegateType.KUBERNETES;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 import static io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability;

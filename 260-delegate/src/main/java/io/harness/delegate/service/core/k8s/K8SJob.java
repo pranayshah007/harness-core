@@ -15,7 +15,11 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+
+import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
+
 import lombok.NonNull;
 
 public class K8SJob extends V1Job {
@@ -42,13 +46,15 @@ public class K8SJob extends V1Job {
         container -> container.addVolumeMountsItem(volumeMount));
     return this;
   }
+  //container -> container.addVolumeMountsItem(volumeMount)
 
   public K8SJob addVolume(final V1Volume volume, final String mountPath) {
     final var volumeMount = K8SVolumeUtils.createVolumeMount(volume, mountPath);
     getSpec().getTemplate().getSpec().addVolumesItem(volume).getContainers().forEach(
         container -> container.addVolumeMountsItem(volumeMount));
-    getSpec().getTemplate().getSpec().getInitContainers().forEach(
-        container -> container.addVolumeMountsItem(volumeMount));
+    Optional.ofNullable(getSpec().getTemplate().getSpec().getInitContainers())
+        .orElse(Collections.<V1Container>emptyList())
+        .forEach(v1Container -> v1Container.addVolumeMountsItem(volumeMount));
     return this;
   }
 

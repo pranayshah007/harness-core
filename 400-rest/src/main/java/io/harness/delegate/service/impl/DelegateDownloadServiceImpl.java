@@ -9,8 +9,8 @@ package io.harness.delegate.service.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.DelegateSize.LAPTOP;
-import static io.harness.delegate.beans.DelegateType.DOCKER;
-import static io.harness.delegate.beans.DelegateType.KUBERNETES;
+import static io.harness.delegate.types.DelegateType.DOCKER;
+import static io.harness.delegate.types.DelegateType.KUBERNETES;
 import static io.harness.delegate.beans.K8sPermissionType.CLUSTER_ADMIN;
 import static io.harness.delegate.beans.K8sPermissionType.NAMESPACE_ADMIN;
 

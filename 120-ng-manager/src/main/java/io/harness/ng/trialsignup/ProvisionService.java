@@ -29,7 +29,7 @@ import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSize;
-import io.harness.delegate.beans.DelegateType;
+import io.harness.delegate.types.DelegateType;
 import io.harness.delegate.beans.K8sConfigDetails;
 import io.harness.delegate.beans.K8sPermissionType;
 import io.harness.delegate.beans.connector.ConnectorType;

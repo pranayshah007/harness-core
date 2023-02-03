@@ -21,6 +21,7 @@ java_library(
         "//931-secret-providers/src/java/io/harness/serializer/kryo:module",
         "//940-secret-manager-client:module",
         "//950-delegate-tasks-beans:module",
+        "//930-delegate-tasks:module",
         "//950-log-client:module",
         "//954-connector-beans:module",
         "//960-api-services/src/main/java/io/harness/delegate/configuration:module",

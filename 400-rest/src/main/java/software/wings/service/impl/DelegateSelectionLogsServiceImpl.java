@@ -22,7 +22,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
 import io.harness.delegate.beans.DelegateSelectionLogResponse;
-import io.harness.delegate.beans.DelegateType;
+import io.harness.delegate.types.DelegateType;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.ff.FeatureFlagService;

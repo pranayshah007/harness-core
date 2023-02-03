@@ -9,7 +9,7 @@ package software.wings.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.beans.DelegateType.DOCKER;
+import static io.harness.delegate.types.DelegateType.DOCKER;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_DELETE_PERMISSION;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_EDIT_PERMISSION;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_RESOURCE_TYPE;

@@ -8,6 +8,7 @@
 package io.harness.delegate.service.core;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static software.wings.beans.TaskType.K8S_COMMAND_TASK_NG;
 
 import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.delegate.beans.DelegateMetaInfo;
@@ -40,6 +41,11 @@ public class CoreDelegateService extends SimpleDelegateAgent {
   @Override
   protected void executeTask(final @NonNull DelegateTaskPackage taskPackage) {
     try {
+      // FIXME: remove task type restriction
+      final TaskType taskType = TaskType.valueOf(taskPackage.getData().getTaskType());
+      if (taskType != K8S_COMMAND_TASK_NG) {
+        throw new IllegalArgumentException(String.format("PlatformDelegate can only take k8s ng tasks, this is %s", taskType));
+      }
       taskRunner.launchTask(taskPackage);
     } catch (IOException e) {
       log.error("Failed to create the task {}", taskPackage.getDelegateTaskId(), e);

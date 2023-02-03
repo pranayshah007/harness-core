@@ -9,7 +9,7 @@ package io.harness.service.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.beans.DelegateType.DOCKER;
+import static io.harness.delegate.types.DelegateType.DOCKER;
 import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME_FIVE_MINS;
 import static io.harness.filter.FilterType.DELEGATEPROFILE;
 import static io.harness.mongo.MongoUtils.setUnset;

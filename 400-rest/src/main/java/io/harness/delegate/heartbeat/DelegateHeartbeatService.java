@@ -19,7 +19,7 @@ import io.harness.beans.DelegateHeartbeatParams;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateNotRegisteredException;
-import io.harness.delegate.beans.DelegateType;
+import io.harness.delegate.types.DelegateType;
 import io.harness.delegate.beans.DuplicateDelegateException;
 import io.harness.exception.WingsException;
 import io.harness.logging.Misc;

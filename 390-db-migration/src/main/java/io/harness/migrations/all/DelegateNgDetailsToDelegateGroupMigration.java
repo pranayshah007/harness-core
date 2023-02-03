@@ -7,7 +7,7 @@
 
 package io.harness.migrations.all;
 
-import static io.harness.delegate.beans.DelegateType.KUBERNETES;
+import static io.harness.delegate.types.DelegateType.KUBERNETES;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HQuery.excludeAuthority;
 

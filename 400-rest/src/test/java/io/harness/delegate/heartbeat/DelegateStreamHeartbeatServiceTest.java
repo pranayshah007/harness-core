@@ -34,7 +34,7 @@ import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateBuilder;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateParams;
-import io.harness.delegate.beans.DelegateType;
+import io.harness.delegate.types.DelegateType;
 import io.harness.delegate.heartbeat.stream.DelegateHeartbeatResponseStreamingWrapper;
 import io.harness.delegate.heartbeat.stream.DelegateStreamHeartbeatService;
 import io.harness.delegate.utils.DelegateValidityCheckHelper;

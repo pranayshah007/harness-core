@@ -9,7 +9,7 @@ spec:
     spec:
       restartPolicy: Never
       containers:
-        - image: alpine
+        - image: harnessdev/delegate-runner:latest
           name: delegate-task
           imagePullPolicy: Always
           command: [ "/bin/sh" ]
