@@ -16,7 +16,6 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.yaml.YamlNode;
 
 import com.esotericsoftware.minlog.Log;
-import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.util.Objects;
 
@@ -52,7 +51,6 @@ public class CDStageMetaDataServiceImpl implements CDStageMetaDataService {
   }
 
   private YamlNode getPipelineYamlNode(YamlNode yamlNode) {
-    Preconditions.checkNotNull(yamlNode, "Invalid yaml. Can't find pipeline.");
     if (Objects.isNull(yamlNode)) {
       return null;
     }

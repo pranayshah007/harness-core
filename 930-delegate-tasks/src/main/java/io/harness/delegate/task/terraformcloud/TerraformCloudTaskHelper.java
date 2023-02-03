@@ -8,9 +8,13 @@
 package io.harness.delegate.task.terraformcloud;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.threading.Morpheus.sleep;
+
+import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.logging.LogCallback;
 import io.harness.terraformcloud.TerraformCloudApiTokenCredentials;
 import io.harness.terraformcloud.TerraformCloudClient;
 import io.harness.terraformcloud.TerraformCloudConfig;
@@ -21,16 +25,20 @@ import io.harness.terraformcloud.model.WorkspaceData;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 @Singleton
 public class TerraformCloudTaskHelper {
+  private static final int CHUNK_SIZE = 100000;
   @Inject TerraformCloudClient terraformCloudClient;
 
   public Map<String, String> getOrganizationsMap(TerraformCloudConfig terraformCloudConfig) throws IOException {
@@ -84,5 +92,47 @@ public class TerraformCloudTaskHelper {
       pageNumber++;
     } while (response.getLinks().hasNonNull("next"));
     return organizationsData;
+  }
+
+  public void streamLogs(LogCallback logCallback, String logReadUrl) throws IOException {
+    int lastIndex = 0;
+    boolean isEndOfText = false;
+    String incompleteLine = "";
+
+    while (!isEndOfText) {
+      int finalLastIndex = lastIndex;
+      String logs = Failsafe.with(getRetryPolicy())
+                        .get(() -> terraformCloudClient.getLogs(logReadUrl, finalLastIndex, CHUNK_SIZE));
+      if (isNotEmpty(logs)) {
+        lastIndex = lastIndex + logs.length();
+        String[] logLines = (incompleteLine + logs).split("\n");
+        for (int i = 0; i < logLines.length - 1; i++) {
+          logCallback.saveExecutionLog(logLines[i]);
+        }
+        if (isEndOfText(logs)) {
+          isEndOfText = true;
+          logCallback.saveExecutionLog(logLines[logLines.length - 1]);
+        } else {
+          incompleteLine = logLines[logLines.length - 1];
+        }
+      }
+      if (logs != null && logs.length() < CHUNK_SIZE) {
+        sleep(ofSeconds(2));
+      }
+    }
+  }
+
+  private RetryPolicy<Object> getRetryPolicy() {
+    return new RetryPolicy<>()
+        .handle(Exception.class)
+        .withDelay(Duration.ofSeconds(1))
+        .withMaxAttempts(5)
+        .onFailedAttempt(event -> log.info("Failed to get logs: {}", event.getAttemptCount(), event.getLastFailure()))
+        .onFailure(event
+            -> log.error("Failed to get logs after retrying {} times", event.getAttemptCount(), event.getFailure()));
+  }
+
+  private boolean isEndOfText(String string) {
+    return string.endsWith(String.valueOf((char) 3));
   }
 }

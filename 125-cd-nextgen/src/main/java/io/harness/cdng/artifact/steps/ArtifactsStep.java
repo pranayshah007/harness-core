@@ -13,7 +13,7 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome.ArtifactsOutcomeBuilder;
 import io.harness.cdng.artifact.outcome.SidecarsOutcome;
-import io.harness.cdng.service.steps.ServiceStepsHelper;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.ExecutionNodeType;

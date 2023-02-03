@@ -5384,6 +5384,7 @@ amazon_v2_artifacts = [
         "sdk-core",
         "health",
         "elasticloadbalancingv2",
+        "lambda",
     ]
 ]
 

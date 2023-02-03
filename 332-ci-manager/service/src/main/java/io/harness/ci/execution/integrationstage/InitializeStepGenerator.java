@@ -44,7 +44,7 @@ public class InitializeStepGenerator {
         .ciCodebase(ciCodebase)
         .skipGitClone(!gitClone)
         .executionElementConfig(executionElement)
-        .timeout(buildJobEnvInfoBuilder.getTimeout(infrastructure))
+        .timeout(buildJobEnvInfoBuilder.getTimeout(infrastructure, accountId))
         .build();
   }
 }

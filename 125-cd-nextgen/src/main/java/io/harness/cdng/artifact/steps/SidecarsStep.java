@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.SidecarsOutcome;
-import io.harness.cdng.service.steps.ServiceStepsHelper;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.pms.contracts.ambiance.Ambiance;

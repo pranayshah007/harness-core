@@ -29,6 +29,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.POLLIN
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SCM;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SERVICEACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SETTINGS;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SETUP_USAGE_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SIGNUP_TOKEN;
@@ -79,6 +80,7 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
       @Named(SETUP_USAGE_ENTITY) MessageProcessor setupUsageChangeEventMessageProcessor,
       @Named(USER_ENTITY + ENTITY_CRUD) MessageListener userEntityCRUDStreamListener,
       @Named(SECRET_ENTITY + ENTITY_CRUD) MessageListener secretEntityCRUDStreamListner,
+      @Named(SERVICEACCOUNT_ENTITY + ENTITY_CRUD) MessageListener serviceAccountEntityCRUDStreamListener,
       @Named(VARIABLE_ENTITY + ENTITY_CRUD) MessageListener variableEntityCRUDStreamListener,
       @Named(USER_GROUP + ENTITY_CRUD) MessageListener userGroupEntityCRUDStreamListener,
       @Named(FILTER + ENTITY_CRUD) MessageListener filterEventListener,
@@ -110,6 +112,7 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
     messageListenersList.add(environmentGroupEntityCRUDStreamListener);
     messageListenersList.add(userEntityCRUDStreamListener);
     messageListenersList.add(secretEntityCRUDStreamListner);
+    messageListenersList.add(serviceAccountEntityCRUDStreamListener);
     messageListenersList.add(variableEntityCRUDStreamListener);
     messageListenersList.add(userGroupEntityCRUDStreamListener);
     messageListenersList.add(filterEventListener);

@@ -8,10 +8,13 @@
 package io.harness.steps.common;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.NAMANG;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -20,6 +23,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.execution.NodeExecution;
 import io.harness.rule.Owner;
+import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceService;
 import io.harness.timeout.TimeoutEngine;
 import io.harness.waiter.persistence.SpringPersistenceWrapper;
@@ -27,9 +31,11 @@ import io.harness.waiter.persistence.SpringPersistenceWrapper;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -39,6 +45,7 @@ public class NodeExecutionMetadataDeleteObserverTest extends CategoryTest {
   @Mock private SpringPersistenceWrapper springPersistenceWrapper;
   @Mock private TimeoutEngine timeoutEngine;
   @Mock private ResourceRestraintInstanceService resourceRestraintInstanceService;
+  @Mock private ApprovalInstanceService approvalInstanceService;
   @InjectMocks NodeExecutionMetadataDeleteObserver nodeExecutionMetadataDeleteObserver;
   @Before
   public void setUp() {
@@ -49,6 +56,7 @@ public class NodeExecutionMetadataDeleteObserverTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void shouldTestNodesDelete() {
+    when(approvalInstanceService.isNodeExecutionOfApprovalStepType(any())).thenReturn(false);
     nodeExecutionMetadataDeleteObserver.onNodesDelete(Collections.emptyList());
     verify(springPersistenceWrapper, times(0)).deleteWaitInstancesAndMetadata(any());
     verify(timeoutEngine, times(0)).deleteTimeouts(any());
@@ -63,5 +71,26 @@ public class NodeExecutionMetadataDeleteObserverTest extends CategoryTest {
     verify(springPersistenceWrapper, times(1)).deleteWaitInstancesAndMetadata(any());
     verify(timeoutEngine, times(1)).deleteTimeouts(any());
     verify(resourceRestraintInstanceService, times(1)).deleteInstancesForGivenReleaseType(any(), any());
+    verify(approvalInstanceService, times(1)).deleteByNodeExecutionIds(any());
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void shouldTestNodesDeleteOfApprovalStep() {
+    when(approvalInstanceService.isNodeExecutionOfApprovalStepType(any())).thenReturn(true);
+    List<NodeExecution> nodeExecutionList = new LinkedList<>();
+    nodeExecutionList.add(NodeExecution.builder().uuid(UUIDGenerator.generateUuid()).build());
+    nodeExecutionList.add(NodeExecution.builder().uuid(UUIDGenerator.generateUuid()).build());
+    nodeExecutionList.add(NodeExecution.builder().uuid(UUIDGenerator.generateUuid()).build());
+    nodeExecutionList.add(NodeExecution.builder().uuid(UUIDGenerator.generateUuid()).build());
+
+    nodeExecutionMetadataDeleteObserver.onNodesDelete(nodeExecutionList);
+    verify(springPersistenceWrapper, times(1)).deleteWaitInstancesAndMetadata(any());
+    verify(timeoutEngine, times(1)).deleteTimeouts(any());
+    verify(resourceRestraintInstanceService, times(1)).deleteInstancesForGivenReleaseType(any(), any());
+    ArgumentCaptor<Set<String> > nodeExecutionIdsArgumentCaptor = ArgumentCaptor.forClass(Set.class);
+    verify(approvalInstanceService, times(1)).deleteByNodeExecutionIds(nodeExecutionIdsArgumentCaptor.capture());
+    assertThat(nodeExecutionIdsArgumentCaptor.getValue().size()).isEqualTo(4);
   }
 }

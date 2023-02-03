@@ -149,4 +149,8 @@ public abstract class StepMapper {
   public List<NGYamlFile> getChildNGYamlFiles(MigrationInputDTO inputDTO, GraphNode graphNode, String name) {
     return new ArrayList<>();
   }
+
+  public boolean loopingSupported() {
+    return false;
+  }
 }

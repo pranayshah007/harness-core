@@ -36,7 +36,7 @@ import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.HelmRepoOverrideManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
-import io.harness.cdng.service.steps.ServiceStepV3;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorModule;
@@ -207,7 +207,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
 
   private NgManifestsMetadataSweepingOutput fetchManifestsMetadataFromSweepingOutput(Ambiance ambiance) {
     final OptionalSweepingOutput resolveOptional = sweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_MANIFESTS_SWEEPING_OUTPUT));
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT));
     if (!resolveOptional.isFound()) {
       log.info("Could not find manifestFilesSweepingOutput for the stage.");
     }

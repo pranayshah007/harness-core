@@ -8,8 +8,8 @@
 package io.harness.cdng.provision.terraformcloud.resources.service;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
-import static io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskType.GET_ORGANIZATIONS;
-import static io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskType.GET_WORKSPACES;
+import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.GET_ORGANIZATIONS;
+import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.GET_WORKSPACES;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -27,8 +27,8 @@ import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
+import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;

@@ -19,6 +19,7 @@ import io.harness.beans.ScopeLevel;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.GcrArtifactSummary;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
 import io.harness.cdng.gitops.steps.Metadata;
@@ -87,11 +88,20 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
                  .build())
         .when(outcomeService)
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("service"));
+    doReturn(OptionalOutcome.builder()
+                 .found(true)
+                 .outcome(ArtifactsOutcome.builder()
+                              .primary(DockerArtifactOutcome.builder().imagePath("imagePath").tag("tag").build())
+                              .build())
+                 .build())
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("artifacts"));
 
     OrchestrationEvent event = OrchestrationEvent.builder().ambiance(ambiance).status(Status.SUCCEEDED).build();
     CDPipelineModuleInfo pipelineLevelModuleInfo = (CDPipelineModuleInfo) provider.getPipelineLevelModuleInfo(event);
 
     assertThat(pipelineLevelModuleInfo.getServiceIdentifiers()).containsExactlyInAnyOrder("s1");
+    assertThat(pipelineLevelModuleInfo.getArtifactDisplayNames()).containsExactlyInAnyOrder("imagePath:tag");
   }
 
   @Test

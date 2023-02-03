@@ -41,6 +41,7 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class ProjectSecretApiImpl implements ProjectSecretApi {
@@ -171,18 +172,16 @@ public class ProjectSecretApiImpl implements ProjectSecretApi {
   private Response getSecrets(String account, String org, String project, List<String> secret, List<String> type,
       Boolean recursive, String searchTerm, Integer page, Integer limit) {
     List<SecretType> secretTypes = secretApiUtils.toSecretTypes(type);
-
-    List<SecretResponseWrapper> content =
-        getNGPageResponse(ngSecretService.list(account, org, project, secret, secretTypes, recursive, searchTerm, page,
-                              limit, null, false))
-            .getContent();
+    Page<SecretResponseWrapper> secretPage = ngSecretService.list(
+        account, org, project, secret, secretTypes, recursive, searchTerm, page, limit, null, false);
+    List<SecretResponseWrapper> content = getNGPageResponse(secretPage).getContent();
 
     List<SecretResponse> secretResponse =
         content.stream().map(secretApiUtils::toSecretResponse).collect(Collectors.toList());
 
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
-        responseBuilder, format("/v1/orgs/%s/projects/%s/secrets", org, project), secretResponse.size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, secretPage.getTotalElements(), page, limit);
 
     return responseBuilderWithLinks.entity(secretResponse).build();
   }

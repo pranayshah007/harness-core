@@ -33,6 +33,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNEC
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENVIRONMENT_GROUP_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SERVICEACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.TEMPLATE_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_SCOPE_RECONCILIATION;
@@ -181,6 +182,7 @@ import io.harness.ng.core.event.MessageProcessor;
 import io.harness.ng.core.event.PollingDocumentEventListener;
 import io.harness.ng.core.event.ProjectEntityCRUDStreamListener;
 import io.harness.ng.core.event.SecretEntityCRUDStreamListener;
+import io.harness.ng.core.event.ServiceAccountEntityCRUDStreamListener;
 import io.harness.ng.core.event.SettingsEventListener;
 import io.harness.ng.core.event.UserGroupEntityCRUDStreamListener;
 import io.harness.ng.core.event.UserMembershipReconciliationMessageProcessor;
@@ -978,6 +980,9 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(SECRET_ENTITY + ENTITY_CRUD))
         .to(SecretEntityCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(SERVICEACCOUNT_ENTITY + ENTITY_CRUD))
+        .to(ServiceAccountEntityCRUDStreamListener.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(VARIABLE_ENTITY + ENTITY_CRUD))
         .to(VariableEntityCRUDStreamListener.class);

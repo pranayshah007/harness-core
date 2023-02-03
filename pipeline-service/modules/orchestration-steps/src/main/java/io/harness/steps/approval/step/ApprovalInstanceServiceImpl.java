@@ -12,18 +12,20 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.NodeExecution;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.repositories.ApprovalInstanceRepository;
 import io.harness.servicenow.misc.TicketNG;
+import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.custom.beans.CustomApprovalResponseData;
@@ -40,11 +42,16 @@ import io.harness.tasks.ResponseData;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import dev.morphia.mapping.Mapper;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -65,6 +72,10 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   private final WaitNotifyEngine waitNotifyEngine;
   private final PlanExecutionService planExecutionService;
   private final LogStreamingStepClientFactory logStreamingStepClientFactory;
+  private static final int MAX_BATCH_SIZE = 500;
+  private static final Set<String> approvalStepSpecTypeConstants =
+      new HashSet<>(Arrays.asList(StepSpecTypeConstants.HARNESS_APPROVAL, StepSpecTypeConstants.SERVICENOW_APPROVAL,
+          StepSpecTypeConstants.JIRA_APPROVAL, StepSpecTypeConstants.CUSTOM_APPROVAL));
 
   @Inject
   public ApprovalInstanceServiceImpl(ApprovalInstanceRepository approvalInstanceRepository,
@@ -198,6 +209,43 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
           instance.getId(), HarnessApprovalResponseData.builder().approvalInstanceId(instance.getId()).build());
     }
     return instance;
+  }
+
+  @Override
+  public boolean isNodeExecutionOfApprovalStepType(NodeExecution nodeExecution) {
+    if (isNull(nodeExecution) || isNull(nodeExecution.getStepType())) {
+      return false;
+    }
+    if (!StepCategory.STEP.equals(nodeExecution.getStepType().getStepCategory())) {
+      return false;
+    }
+    String stepType = nodeExecution.getStepType().getType();
+    return approvalStepSpecTypeConstants.contains(stepType);
+  }
+
+  /**
+   * Deletes all approval Instances for the given nodeExecutionIds
+   * in a batch operation
+   * @param nodeExecutionIds
+   */
+  @Override
+  public void deleteByNodeExecutionIds(@NotNull Set<String> nodeExecutionIds) {
+    if (isEmpty(nodeExecutionIds)) {
+      return;
+    }
+    List<String> nodeExecutionIdsList = new ArrayList<>(nodeExecutionIds);
+    List<List<String> > batchNodeExecutionIdsList = Lists.partition(nodeExecutionIdsList, MAX_BATCH_SIZE);
+    batchNodeExecutionIdsList.forEach(
+        batchNodeExecutionIds -> deleteByNodeExecutionIdsInternal(new HashSet<>(batchNodeExecutionIds)));
+  }
+
+  private void deleteByNodeExecutionIdsInternal(Set<String> nodeExecutionIds) {
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      // uses nodeExecutionId_1 idx
+      long deletedCount = approvalInstanceRepository.deleteAllByNodeExecutionIdIn(nodeExecutionIds);
+      log.info("Successfully deleted {} approvalInstances based on nodeExecutionIds", deletedCount);
+      return null;
+    });
   }
 
   @VisibleForTesting

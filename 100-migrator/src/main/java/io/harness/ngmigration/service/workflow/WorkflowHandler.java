@@ -31,6 +31,8 @@ import io.harness.plancreator.pipeline.PipelineInfoConfig;
 import io.harness.plancreator.stages.StageElementWrapperConfig;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.StepGroupElementConfig;
+import io.harness.plancreator.strategy.HarnessForConfig;
+import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidator;
 import io.harness.steps.customstage.CustomStageConfig;
@@ -66,6 +68,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -358,17 +361,28 @@ public abstract class WorkflowHandler {
               -> EmptyPredicate.isNotEmpty(skip.getStepIds()) && StringUtils.isNotBlank(skip.getAssertionExpression()))
           .forEach(skip -> skip.getStepIds().forEach(step -> skipStrategies.put(step, skip.getAssertionExpression())));
     }
-    return stepYamls.stream()
-        .map(stepYaml
-            -> getStepElementConfig(
-                context, phase, phaseStep, stepYaml, skipStrategies.getOrDefault(stepYaml.getId(), null)))
-        .filter(Objects::nonNull)
-        .map(stepNodeJson -> ExecutionWrapperConfig.builder().step(stepNodeJson).build())
-        .collect(Collectors.toList());
+    List<ExecutionWrapperConfig> stepWrappers = new ArrayList<>();
+    boolean addLoopingStrategy = false;
+    for (GraphNode stepYaml : stepYamls) {
+      JsonNode stepNodeJson = getStepElementConfig(
+          context, phase, phaseStep, stepYaml, skipStrategies.getOrDefault(stepYaml.getId(), null), addLoopingStrategy);
+      if (stepNodeJson != null) {
+        ExecutionWrapperConfig build = ExecutionWrapperConfig.builder().step(stepNodeJson).build();
+        stepWrappers.add(build);
+        if (!addLoopingStrategy && shouldAddLoopingInNextSteps(stepYaml.getType())) {
+          addLoopingStrategy = true;
+        }
+      }
+    }
+    return stepWrappers;
+  }
+
+  private boolean shouldAddLoopingInNextSteps(String type) {
+    return Objects.equals(type, "CUSTOM_DEPLOYMENT_FETCH_INSTANCES");
   }
 
   JsonNode getStepElementConfig(WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep,
-      GraphNode step, String skipCondition) {
+      GraphNode step, String skipCondition, boolean addLoopingStrategy) {
     StepMapper stepMapper = stepMapperFactory.getStepMapper(step.getType());
     MigratorExpressionUtils.render(step, getExpressions(phase, context.getStepExpressionFunctors()));
     List<StepExpressionFunctor> expressionFunctors = stepMapper.getExpressionFunctor(context, phase, phaseStep, step);
@@ -385,6 +399,14 @@ public abstract class WorkflowHandler {
     }
     if (StringUtils.isNotBlank(skipCondition)) {
       stepNode.setWhen(StepWhenCondition.builder().condition(wrapNot(skipCondition)).stageStatus(SUCCESS).build());
+    }
+    if (addLoopingStrategy && stepMapper.loopingSupported()) {
+      stepNode.setStrategy(
+          StrategyConfig.builder()
+              .repeat(HarnessForConfig.builder()
+                          .items(ParameterField.createValueField(Arrays.asList("<+stage.output.hosts>")))
+                          .build())
+              .build());
     }
     return JsonPipelineUtils.asTree(stepNode);
   }

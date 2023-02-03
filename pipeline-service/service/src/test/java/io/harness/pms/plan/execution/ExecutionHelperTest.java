@@ -13,6 +13,7 @@ import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
@@ -170,6 +171,7 @@ public class ExecutionHelperTest extends CategoryTest {
       + "  allowStageExecutions: true\n";
   String originalExecutionId = "originalExecutionId";
   String generatedExecutionId = "newExecId";
+  String pipelineYamlV1;
 
   PipelineEntity pipelineEntity;
   PipelineEntity pipelineEntityWithExpressions;
@@ -204,6 +206,8 @@ public class ExecutionHelperTest extends CategoryTest {
     doNothing().when(pipelineEnforcementService).validateExecutionEnforcementsBasedOnStage(anyString(), any());
     aStatic = Mockito.mockStatic(UUIDGenerator.class);
     aStatic.when(UUIDGenerator::generateUuid).thenReturn(generatedExecutionId);
+
+    pipelineYamlV1 = readFile("simplified-pipeline.yaml");
   }
 
   @After
@@ -755,6 +759,41 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(pmsYamlSchemaService, times(0)).validateYamlSchema(accountId, orgId, projectId, pipelineYaml);
     verify(pipelineRbacServiceImpl, times(0))
         .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, pipelineYaml);
+    verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testBuildExecutionArgsV1Yaml() {
+    doReturn(executionPrincipalInfo).when(principalInfoHelper).getPrincipalInfoFromSecurityContext();
+    pipelineEntity.setYaml(pipelineYamlV1);
+    pipelineEntity.setHarnessVersion(PipelineVersion.V1);
+    ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, "", Collections.emptyList(),
+        null, executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false);
+    assertThat(execArgs.getMetadata().getExecutionUuid()).isEqualTo(generatedExecutionId);
+    assertThat(execArgs.getMetadata().getTriggerInfo()).isEqualTo(executionTriggerInfo);
+    assertThat(execArgs.getMetadata().getModuleType()).isEqualTo(moduleType);
+    assertThat(execArgs.getMetadata().getPipelineIdentifier()).isEqualTo(pipelineId);
+    assertThat(execArgs.getMetadata().getPrincipalInfo()).isEqualTo(executionPrincipalInfo);
+    assertThat(execArgs.getMetadata().getGitSyncBranchContext().size()).isEqualTo(0);
+    assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.UNDEFINED);
+    assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEmpty();
+    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(PipelineVersion.V1);
+
+    PlanExecutionMetadata planExecutionMetadata = execArgs.getPlanExecutionMetadata();
+    assertThat(planExecutionMetadata.getPlanExecutionId()).isEqualTo(generatedExecutionId);
+    assertThat(planExecutionMetadata.getInputSetYaml()).isEmpty();
+    assertThat(planExecutionMetadata.getYaml()).isEqualTo(pipelineYamlV1);
+    assertThat(planExecutionMetadata.getStagesExecutionMetadata().isStagesExecution()).isFalse();
+    verify(pipelineGovernanceService, times(1))
+        .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, pipelineYamlV1, true);
+    verify(principalInfoHelper, times(1)).getPrincipalInfoFromSecurityContext();
+    verify(pmsGitSyncHelper, times(1))
+        .getGitSyncBranchContextBytesThreadLocal(pipelineEntity, pipelineEntity.getStoreType(), null);
+    verify(pmsYamlSchemaService, times(0)).validateYamlSchema(accountId, orgId, projectId, pipelineYamlV1);
+    verify(pipelineRbacServiceImpl, times(0))
+        .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, pipelineYamlV1);
     verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());
   }
 

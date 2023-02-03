@@ -56,7 +56,10 @@ public class AsgInstanceSyncHandler extends AbstractInstanceSyncHandler {
     }
 
     AsgInstanceInfoDTO asgInstanceInfoDTO = (AsgInstanceInfoDTO) instanceInfoDTO;
-    return AsgInfrastructureDetails.builder().region(asgInstanceInfoDTO.getRegion()).build();
+    return AsgInfrastructureDetails.builder()
+        .region(asgInstanceInfoDTO.getRegion())
+        .asgName(asgInstanceInfoDTO.getAsgName())
+        .build();
   }
 
   @Override

@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAMARTH;
+import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -42,9 +43,9 @@ import io.harness.ng.core.Status;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
+import io.harness.pms.inputset.MergeInputSetForRerunRequestDTO;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
-import io.harness.pms.inputset.OverlayInputSetErrorWrapperDTOPMS;
 import io.harness.pms.ngpipeline.inputset.api.InputSetsApiUtils;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
@@ -58,7 +59,6 @@ import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateRequest
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlDiffDTO;
 import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
-import io.harness.pms.ngpipeline.inputset.exceptions.InvalidOverlayInputSetException;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
@@ -75,7 +75,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.junit.Before;
@@ -658,5 +657,22 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, INPUT_SET_ID, inputSetMoveConfigRequestDTO);
 
     assertEquals(movedInputSet.getData().getIdentifier(), INPUT_SET_ID);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetMergeInputSetForRerun() {
+    doReturn("mergedYaml")
+        .when(validateAndMergeHelper)
+        .mergeInputSetIntoPipelineForRerun(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "plan", "", "", Collections.emptyList());
+    ResponseDTO<MergeInputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getMergeInputSetForRerun(ACCOUNT_ID,
+        ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "", "", null,
+        MergeInputSetForRerunRequestDTO.builder()
+            .planExecutionId("plan")
+            .stageIdentifiers(Collections.emptyList())
+            .build());
+    assertEquals("mergedYaml", responseDTO.getData().getPipelineYaml());
   }
 }

@@ -344,9 +344,14 @@ public class TriggerExecutionHelper {
         executionMetaDataBuilder.setIsNotificationConfigured(EmptyPredicate.isNotEmpty(notificationRules));
         // Set Principle user as pipeline service.
         SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
-        String yamlWithoutInputs = YamlUtils.getYamlWithoutInputs(new YamlConfig(pipelineYaml));
-        pmsYamlSchemaService.validateYamlSchema(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-            ngTriggerEntity.getProjectIdentifier(), yamlWithoutInputs);
+        switch (pipelineEntity.getHarnessVersion()) {
+          case PipelineVersion.V0:
+            String yamlWithoutInputs = YamlUtils.getYamlWithoutInputs(new YamlConfig(pipelineYaml));
+            pmsYamlSchemaService.validateYamlSchema(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
+                ngTriggerEntity.getProjectIdentifier(), yamlWithoutInputs);
+            break;
+          default:
+        }
 
         executionMetaDataBuilder.setPrincipalInfo(
             ExecutionPrincipalInfo.newBuilder().setShouldValidateRbac(false).build());

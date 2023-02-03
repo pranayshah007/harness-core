@@ -100,7 +100,7 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
       String region = asgInfraConfig.getRegion();
       AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO(), region);
 
-      asgSdkManager.info(format("Starting BG Prepare Rollback", Bold));
+      asgSdkManager.info("Starting BG Prepare Rollback");
 
       String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
       CreateAutoScalingGroupRequest createAutoScalingGroupRequest =

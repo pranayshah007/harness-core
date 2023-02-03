@@ -10,7 +10,7 @@ java_library(
     name = "module",
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
-    deps = [],
+    deps = ["//127-cd-nextgen-entities:module"],
 )
 
 run_analysis_per_module()

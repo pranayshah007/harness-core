@@ -10,6 +10,7 @@ package io.harness.cvng.core.utils;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.cvng.beans.DataCollectionRequestType;
+import io.harness.cvng.beans.elk.ELKSampleDataCollectionRequest;
 import io.harness.cvng.beans.sumologic.SumologicLogSampleDataRequest;
 import io.harness.cvng.beans.sumologic.SumologicMetricSampleDataRequest;
 import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsRequest;
@@ -21,6 +22,8 @@ import io.harness.cvng.core.entities.NextGenLogCVConfig;
 import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.entities.NextGenMetricInfo;
 import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
+import io.harness.cvng.exception.NotImplementedForHealthSourceException;
+import io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
 
 import java.time.Instant;
@@ -68,6 +71,14 @@ public class HealthSourceOnboardMappingUtils {
     return request;
   }
 
+  public static DataCollectionRequest<ELKConnectorDTO> getELKLogDataCollectionRequest(
+      HealthSourceRecordsRequest healthSourceRecordsRequest) {
+    return ELKSampleDataCollectionRequest.builder()
+        .query(healthSourceRecordsRequest.getQuery())
+        .index(healthSourceRecordsRequest.getHealthSourceQueryParams().getIndex())
+        .build();
+  }
+
   public static CVConfig getCvConfigForNextGenMetric(
       QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams, List<MetricPack> metricPacks) {
     NextGenMetricCVConfig nextGenMetricCVConfig = NextGenMetricCVConfig.builder()
@@ -104,5 +115,23 @@ public class HealthSourceOnboardMappingUtils {
         .queryName("queryName")
         .connectorIdentifier(queryRecordsRequest.getConnectorIdentifier())
         .build();
+  }
+
+  public static DataCollectionRequest getDataCollectionRequest(HealthSourceRecordsRequest healthSourceRecordsRequest) {
+    DataCollectionRequest request;
+    switch (healthSourceRecordsRequest.getProviderType()) {
+      case SUMOLOGIC_METRICS:
+        request = HealthSourceOnboardMappingUtils.getSumologicMetricDataCollectionRequest(healthSourceRecordsRequest);
+        break;
+      case SUMOLOGIC_LOG:
+        request = HealthSourceOnboardMappingUtils.getSumoLogicLogDataCollectionRequest(healthSourceRecordsRequest);
+        break;
+      case ELASTICSEARCH:
+        request = HealthSourceOnboardMappingUtils.getELKLogDataCollectionRequest(healthSourceRecordsRequest);
+        break;
+      default:
+        throw new NotImplementedForHealthSourceException("Not Implemented for health source provider.");
+    }
+    return request;
   }
 }

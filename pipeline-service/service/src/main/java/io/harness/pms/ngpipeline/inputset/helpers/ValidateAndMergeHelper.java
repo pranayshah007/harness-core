@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.execution.StagesExecutionMetadata;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
@@ -30,12 +31,15 @@ import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlWithTemplateDTO;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.plan.execution.StagesExecutionHelper;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.yaml.PipelineVersion;
 
@@ -60,6 +64,7 @@ public class ValidateAndMergeHelper {
   private final PMSInputSetService pmsInputSetService;
   private final PMSPipelineTemplateHelper pipelineTemplateHelper;
   private final GitSyncSdkService gitSyncSdkService;
+  private PMSExecutionService pmsExecutionService;
 
   public PipelineEntity getPipelineEntity(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String pipelineBranch, String pipelineRepoID, boolean checkForStoreType) {
@@ -262,6 +267,27 @@ public class ValidateAndMergeHelper {
       return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineYaml, mergedRuntimeInputYaml, false);
     }
     return mergeInputSetIntoPipelineForGivenStages(pipelineYaml, mergedRuntimeInputYaml, false, stageIdentifiers);
+  }
+
+  public String mergeInputSetIntoPipelineForRerun(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String planExecutionId, String pipelineBranch, String pipelineRepoID,
+      List<String> stageIdentifiers) {
+    String pipelineYaml = getPipelineEntity(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false)
+                              .getYaml();
+    String pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
+        ? createTemplateFromPipeline(pipelineYaml)
+        : createTemplateFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
+    if (EmptyPredicate.isEmpty(pipelineTemplate)) {
+      throw new InvalidRequestException("Pipeline " + pipelineIdentifier + " or given stage identifiers "
+          + stageIdentifiers + " do not have any runtime input or given stage identifiers don't exist in the pipeline");
+    }
+    String mergedRuntimeInputYaml = pmsExecutionService.getInputSetYamlForRerun(
+        accountId, orgIdentifier, projectIdentifier, planExecutionId, false);
+    if (EmptyPredicate.isEmpty(stageIdentifiers)) {
+      return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineTemplate, mergedRuntimeInputYaml, false);
+    }
+    return mergeInputSetIntoPipelineForGivenStages(pipelineTemplate, mergedRuntimeInputYaml, false, stageIdentifiers);
   }
 
   @VisibleForTesting
