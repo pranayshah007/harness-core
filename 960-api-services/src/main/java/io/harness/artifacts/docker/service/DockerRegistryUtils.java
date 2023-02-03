@@ -46,6 +46,7 @@ import retrofit2.Response;
 @Slf4j
 public class DockerRegistryUtils {
   protected static final String GITHUB_CONTAINER_REGISTRY = "ghcr.io";
+  protected static final String ACR_CONTAINER_REGISTRY = ".azurecr.io";
   private static final String DOCKER_REGISTRY_CREDENTIAL_TEMPLATE =
       "{\"%s\":{\"username\":\"%s\",\"password\":\"%s\"}}";
 
@@ -223,6 +224,10 @@ public class DockerRegistryUtils {
 
   public static boolean isGithubContainerRegistry(DockerInternalConfig config) {
     return config.getDockerRegistryUrl().contains(GITHUB_CONTAINER_REGISTRY);
+  }
+
+  public boolean isAcrContainerRegistry(DockerInternalConfig config) {
+    return config.getDockerRegistryUrl().contains(ACR_CONTAINER_REGISTRY);
   }
 
   private Response<DockerImageManifestResponse> getImageManifestResponse(DockerInternalConfig dockerConfig,
