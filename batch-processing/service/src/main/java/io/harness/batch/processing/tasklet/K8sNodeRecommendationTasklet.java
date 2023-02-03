@@ -73,6 +73,8 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
 
     List<NodePoolId> nodePoolIdList = k8sRecommendationDAO.getUniqueNodePools(accountId);
 
+    log.info("K8S_NODE_RECOMMENDATION Size of nodePoolList: {}", nodePoolIdList.size());
+
     for (NodePoolId nodePoolId : nodePoolIdList) {
       if (nodePoolId.getNodepoolname() == null) {
         log.info("There is a node with node_pool_name as null in [accountId:{}, clusterId:{}], skipping",
