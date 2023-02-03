@@ -28,7 +28,7 @@ function download_saas_apm_binaries(){
 	fi
 }
 
-export APPD_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/appd/AppServerAgent-1.8-21.11.2.33305.zip'
+export APPD_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/appd/AppServerAgent_bt2854.zip'
 export ET_AGENT='https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz'
 export OT_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/opentelemetry/opentelemetry-javaagent.jar'
 
