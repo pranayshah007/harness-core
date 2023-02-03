@@ -142,7 +142,7 @@ public class LastAdminCheckServiceImpl implements LastAdminCheckService {
     return userGroupService.list(UserGroupFilterDTO.builder()
                                      .accountIdentifier(accountIdentifier)
                                      .identifierFilter(new HashSet<>(adminUserGroupIds))
-                                     .build());
+                                     .build(), true);
   }
 
   @VisibleForTesting

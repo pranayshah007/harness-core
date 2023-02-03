@@ -250,7 +250,7 @@ public class LastAdminCheckServiceImplTest extends CategoryTest {
       LastAdminCheckFilter lastAdminCheckFilter) {
     doReturn(principals).when(lastAdminCheckService).getAdminsFromAccessControl(accountIdentifier);
     if (userGroups != null) {
-      when(userGroupService.list(any(UserGroupFilterDTO.class))).thenReturn(userGroups);
+      when(userGroupService.list(any(UserGroupFilterDTO.class), true)).thenReturn(userGroups);
     }
     assertEquals(expected, lastAdminCheckService.doesAdminExistAfterRemoval(accountIdentifier, lastAdminCheckFilter));
   }

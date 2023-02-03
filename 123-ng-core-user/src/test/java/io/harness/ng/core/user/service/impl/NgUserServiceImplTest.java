@@ -360,7 +360,7 @@ public class NgUserServiceImplTest extends CategoryTest {
     assertEquals(
         AddUserResponse.USER_ADDED_SUCCESSFULLY, response.getAddUserResponseMap().get(emailAlreadyPartOfAccount));
 
-    verify(userGroupService, times(1)).list(any(UserGroupFilterDTO.class));
+    verify(userGroupService, times(1)).list(any(UserGroupFilterDTO.class), true);
     verify(userMetadataRepository, times(1)).findAll(any(), any());
     verify(ngUserService, times(1)).getUsersAtScope(any(), any());
 
@@ -425,7 +425,7 @@ public class NgUserServiceImplTest extends CategoryTest {
         : userGroups.stream()
               .map(userGroupIdentifier -> UserGroup.builder().identifier(userGroupIdentifier).build())
               .collect(toList());
-    when(userGroupService.list(userGroupFilterDTO)).thenReturn(userGroupsResult);
+    when(userGroupService.list(userGroupFilterDTO, true)).thenReturn(userGroupsResult);
 
     doNothing().when(userGroupService).addUserToUserGroups(scope, userId, userGroups);
   }
@@ -460,7 +460,7 @@ public class NgUserServiceImplTest extends CategoryTest {
     verify(ngUserService, times(userIds.size() * getRank(scope)))
         .addUserToScopeInternal(any(), any(), any(), any(), anyBoolean());
     verify(ngUserService, times(userIds.size() * 2)).createRoleAssignments(any(), any(), any(), anyBoolean());
-    verify(userGroupService, times(isEmpty(userGroups) ? 0 : userIds.size())).list(any(UserGroupFilterDTO.class));
+    verify(userGroupService, times(isEmpty(userGroups) ? 0 : userIds.size())).list(any(UserGroupFilterDTO.class), true);
     verify(userGroupService, times(userIds.size())).addUserToUserGroups(any(Scope.class), any(), any());
   }
 

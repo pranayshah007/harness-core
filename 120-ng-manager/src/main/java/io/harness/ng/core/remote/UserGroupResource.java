@@ -353,7 +353,7 @@ public class UserGroupResource {
       @RequestBody(
           description = "User Group Filter", required = true) @Body @NotNull UserGroupFilterDTO userGroupFilterDTO) {
     List<UserGroupDTO> userGroups =
-        userGroupService.list(userGroupFilterDTO).stream().map(UserGroupMapper::toDTO).collect(Collectors.toList());
+        userGroupService.list(userGroupFilterDTO, false).stream().map(UserGroupMapper::toDTO).collect(Collectors.toList());
     return ResponseDTO.newResponse(userGroups);
   }
 

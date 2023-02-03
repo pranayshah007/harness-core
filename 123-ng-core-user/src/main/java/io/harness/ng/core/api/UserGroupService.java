@@ -69,7 +69,7 @@ public interface UserGroupService {
 
   List<UserGroup> list(Criteria criteria, Integer skip, Integer limit);
 
-  List<UserGroup> list(UserGroupFilterDTO userGroupFilterDTO);
+  List<UserGroup> list(UserGroupFilterDTO userGroupFilterDTO, boolean skipAccessCheck);
 
   Page<UserGroup> list(List<ScopeSelector> scopeFilter, String userIdentifier, String searchTerm, Pageable pageable);
 

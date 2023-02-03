@@ -382,7 +382,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
-  public List<UserGroup> list(UserGroupFilterDTO userGroupFilterDTO) {
+  public List<UserGroup> list(UserGroupFilterDTO userGroupFilterDTO, boolean skipAccessCheck) {
     validateFilter(userGroupFilterDTO);
     Criteria criteria = createUserGroupFilterCriteria(userGroupFilterDTO.getAccountIdentifier(),
         userGroupFilterDTO.getOrgIdentifier(), userGroupFilterDTO.getProjectIdentifier(),
@@ -397,6 +397,9 @@ public class UserGroupServiceImpl implements UserGroupService {
       criteria.and(UserGroupKeys.users).in(userGroupFilterDTO.getUserIdentifierFilter());
     }
     List<UserGroup> userGroups = userGroupRepository.findAll(criteria, Pageable.unpaged()).getContent();
+    if (skipAccessCheck) {
+      return userGroups;
+    }
     if (accessControlClient.hasAccess(
             ResourceScope.of(userGroupFilterDTO.getAccountIdentifier(), userGroupFilterDTO.getOrgIdentifier(),
                 userGroupFilterDTO.getProjectIdentifier()),

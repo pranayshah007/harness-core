@@ -373,7 +373,7 @@ public class NgUserServiceImpl implements NgUserService {
                                                   .projectIdentifier(scope.getProjectIdentifier())
                                                   .identifierFilter(new HashSet<>(userGroupIds))
                                                   .build();
-      List<UserGroup> userGroups = userGroupService.list(userGroupFilterDTO);
+      List<UserGroup> userGroups = userGroupService.list(userGroupFilterDTO, true);
       userGroups.forEach(userGroup -> userIds.addAll(userGroup.getUsers()));
     }
     return getUserMetadata(new ArrayList<>(userIds));
@@ -584,7 +584,7 @@ public class NgUserServiceImpl implements NgUserService {
                                                 .projectIdentifier(scope.getProjectIdentifier())
                                                 .identifierFilter(userGroupIdentifiersFilter)
                                                 .build();
-    return userGroupService.list(userGroupFilterDTO).stream().map(UserGroup::getIdentifier).collect(toList());
+    return userGroupService.list(userGroupFilterDTO, true).stream().map(UserGroup::getIdentifier).collect(toList());
   }
 
   private List<RoleAssignmentDTO> getManagedRoleAssignments(List<RoleAssignmentDTO> roleAssignmentDTOs) {
