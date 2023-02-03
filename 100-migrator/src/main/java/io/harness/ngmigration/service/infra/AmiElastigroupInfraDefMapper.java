@@ -30,6 +30,7 @@ import io.harness.pms.yaml.ParameterField;
 import software.wings.infra.AwsAmiInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,7 +65,8 @@ public class AmiElastigroupInfraDefMapper implements InfraDefMapper {
 
   @Override
   public Infrastructure getSpec(MigrationInputDTO inputDTO, InfrastructureDefinition infrastructureDefinition,
-      Map<CgEntityId, NGYamlFile> migratedEntities, List<ElastigroupConfiguration> elastigroupConfigurations) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, Map<CgEntityId, CgEntityNode> entities,
+      List<ElastigroupConfiguration> elastigroupConfigurations) {
     NgEntityDetail connectorDetail;
     if (infrastructureDefinition.getCloudProviderType() == AWS) {
       AwsAmiInfrastructure awsAmiInfrastructure = (AwsAmiInfrastructure) infrastructureDefinition.getInfrastructure();

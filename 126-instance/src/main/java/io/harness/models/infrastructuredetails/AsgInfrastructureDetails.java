@@ -17,5 +17,6 @@ import lombok.Value;
 @Value
 @Builder
 public class AsgInfrastructureDetails extends InfrastructureDetails {
+  String asgName;
   String region;
 }

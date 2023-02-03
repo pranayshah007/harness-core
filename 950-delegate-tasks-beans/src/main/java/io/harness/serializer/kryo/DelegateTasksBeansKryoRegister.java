@@ -259,8 +259,6 @@ import io.harness.delegate.beans.connector.spotconnector.SpotValidationParams;
 import io.harness.delegate.beans.connector.tasconnector.TasTaskParams;
 import io.harness.delegate.beans.connector.tasconnector.TasTaskType;
 import io.harness.delegate.beans.connector.tasconnector.TasValidationParams;
-import io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskParams;
-import io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskType;
 import io.harness.delegate.beans.connector.terraformcloud.TerraformCloudValidationParams;
 import io.harness.delegate.beans.connector.vaultconnector.VaultValidationParams;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
@@ -378,6 +376,9 @@ import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
+import io.harness.delegate.beans.terraformcloud.PlanType;
+import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
+import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
 import io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntApplyTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntCommandType;
@@ -949,6 +950,7 @@ import io.harness.delegate.task.terraform.TerraformCommandUnit;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
+import io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
@@ -2329,6 +2331,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerraformCloudValidationParams.class, 680004);
     kryo.register(TerraformCloudOrganizationsTaskResponse.class, 680005);
     kryo.register(TerraformCloudWorkspacesTaskResponse.class, 680006);
+    kryo.register(TerraformCloudCommandUnit.class, 680007);
+    kryo.register(PlanType.class, 680008);
 
     kryo.register(AwsSamInstallationCapability.class, 10000401);
   }

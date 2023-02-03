@@ -16,12 +16,7 @@ spec:
                 identifier: AsgBlueGreenDeploy
                 type: AsgBlueGreenDeploy
                 timeout: 10m
-                spec:
-                  loadBalancer: ""
-                  prodListener: ""
-                  prodListenerRuleArn: ""
-                  stageListener: ""
-                  stageListenerRuleArn: ""
+                spec: {}
             - step:
                 type: Verify
                 name: Verify

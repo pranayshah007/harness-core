@@ -193,7 +193,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
 
     assertEquals(searchTerm, projectFilterDTO.getSearchTerm());
     assertEquals(ModuleType.CD, projectFilterDTO.getModuleType());
-    assertEquals(2, response.getLinks().size());
+    assertEquals(3, response.getHeaders().size());
     assertEquals(1, entity.size());
     assertEquals(org, entity.get(0).getProject().getOrg());
     assertEquals(identifier, entity.get(0).getProject().getIdentifier());

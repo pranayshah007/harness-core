@@ -102,7 +102,7 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
 
     } catch (Exception e) {
       logCallback.saveExecutionLog(
-          color(format("Prepare Rollback Data Operation Failed with error: %s", asgTaskHelper.getExceptionMessage(e)),
+          color(format("Prepare Rollback Data Failed with error: %s", asgTaskHelper.getExceptionMessage(e)),
               LogColor.Red, LogWeight.Bold),
           ERROR, CommandExecutionStatus.FAILURE);
       throw new AsgNGException(e);
@@ -111,7 +111,7 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
 
   private Map<String, List<String>> executePrepareRollbackData(
       AsgSdkManager asgSdkManager, LogCallback logCallback, String asgName) {
-    asgSdkManager.info("Prepare Rollback Data Operation Started");
+    asgSdkManager.info("Preparing Rollback Data");
     if (isEmpty(asgName)) {
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
     }
@@ -130,12 +130,11 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
 
     if (chainState.getAutoScalingGroup() == null) {
       logCallback.saveExecutionLog(
-          color(
-              format("Asg %s doesn't exist. Skipping Prepare Rollback Data Operation", asgName), White, LogWeight.Bold),
-          INFO, CommandExecutionStatus.SUCCESS);
-    } else {
-      logCallback.saveExecutionLog(color("Prepare Rollback Data Operation Finished Successfully", Green, Bold), INFO,
+          color(format("Asg %s doesn't exist. Skipping Prepare Rollback Data", asgName), White, LogWeight.Bold), INFO,
           CommandExecutionStatus.SUCCESS);
+    } else {
+      logCallback.saveExecutionLog(
+          color("Prepare Rollback Data Finished Successfully", Green, Bold), INFO, CommandExecutionStatus.SUCCESS);
     }
     return chainState.getAsgManifestsDataForRollback();
   }

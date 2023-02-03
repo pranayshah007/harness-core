@@ -2881,13 +2881,15 @@
 673602:io.harness.delegate.task.gcp.response.GcsBucketListResponse
 673603:io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException
 673604:com.google.common.util.concurrent.UncheckedTimeoutException
-680000:io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskParams
-680001:io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskType
+680000:io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams
+680001:io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType
 680002:io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse
 680003:io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse
 680004:io.harness.delegate.beans.connector.terraformcloud.TerraformCloudValidationParams
 680005:io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse
 680006:io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse
+680007:io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit
+680008:io.harness.delegate.beans.terraformcloud.PlanType
 878001:io.harness.steps.matrix.StrategyMetadata
 878018:io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultAdviserParameters
 878019:io.harness.pms.sdk.core.execution.AsyncTimeoutResponseData

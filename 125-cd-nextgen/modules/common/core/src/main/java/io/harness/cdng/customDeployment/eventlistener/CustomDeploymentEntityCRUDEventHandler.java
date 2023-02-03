@@ -8,6 +8,7 @@
 package io.harness.cdng.customDeployment.eventlistener;
 
 import static io.harness.cdng.customDeployment.constants.CustomDeploymentConstants.STABLE_VERSION;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static software.wings.beans.AccountType.log;
 
@@ -15,7 +16,6 @@ import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
 import io.harness.EntityType;
-import io.harness.beans.IdentifierRef;
 import io.harness.beans.InfraDefReference;
 import io.harness.beans.Scope;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
@@ -66,6 +66,9 @@ public class CustomDeploymentEntityCRUDEventHandler {
       if (!isNull(entitySetupUsage) && !isNull(entitySetupUsage.getReferredByEntity())) {
         String infraId = entitySetupUsage.getReferredByEntity().getEntityRef().getIdentifier();
         String environment = getEnvironment(entitySetupUsage);
+        if (isEmpty(environment)) {
+          continue;
+        }
         String orgIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getOrgIdentifier();
         String projectIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getProjectIdentifier();
         String infraYaml = getInfraYaml(entitySetupUsage, accountRef);
@@ -101,7 +104,7 @@ public class CustomDeploymentEntityCRUDEventHandler {
     if (entitySetupUsage.getReferredByEntity().getEntityRef() instanceof InfraDefReference) {
       return ((InfraDefReference) entitySetupUsage.getReferredByEntity().getEntityRef()).getEnvIdentifier();
     } else {
-      return ((IdentifierRef) entitySetupUsage.getReferredByEntity().getEntityRef()).getMetadata().get("envId");
+      return (entitySetupUsage.getReferredByEntity().getEntityRef()).getMetadata().get("envId");
     }
   }
   public void updateInfrasAsObsolete(Map<String, List<String>> envToInfraMap, String accountIdentifier,
@@ -140,19 +143,19 @@ public class CustomDeploymentEntityCRUDEventHandler {
   }
 
   private void validateIdentifier(String identifier) {
-    if (EmptyPredicate.isEmpty(identifier)) {
+    if (isEmpty(identifier)) {
       throw new InvalidRequestException("No identifier provided.");
     }
   }
 
   private void validateAccountIdentifier(String accountIdentifier) {
-    if (EmptyPredicate.isEmpty(accountIdentifier)) {
+    if (isEmpty(accountIdentifier)) {
       throw new InvalidRequestException("No account identifier provided.");
     }
   }
 
   private void validateOrgIdentifier(String orgIdentifier) {
-    if (EmptyPredicate.isEmpty(orgIdentifier)) {
+    if (isEmpty(orgIdentifier)) {
       throw new InvalidRequestException("No org identifier provided.");
     }
   }

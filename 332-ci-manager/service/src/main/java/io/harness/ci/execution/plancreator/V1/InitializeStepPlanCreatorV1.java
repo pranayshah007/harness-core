@@ -73,7 +73,7 @@ public class InitializeStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<Initiali
             .ciCodebase(codeBase)
             .skipGitClone(codeBase == null)
             .executionElementConfig(ExecutionElementConfig.builder().steps(executionWrapperConfigs).build())
-            .timeout(buildJobEnvInfoBuilder.getTimeout(infrastructure))
+            .timeout(buildJobEnvInfoBuilder.getTimeout(infrastructure, ctx.getAccountIdentifier()))
             .build();
 
     return InitializeStepNode.builder()

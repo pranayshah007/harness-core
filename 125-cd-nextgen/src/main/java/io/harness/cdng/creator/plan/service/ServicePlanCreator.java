@@ -18,10 +18,10 @@ import io.harness.cdng.licenserestriction.EnforcementValidator;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceUseFromStage;
 import io.harness.cdng.service.beans.ServiceYaml;
-import io.harness.cdng.service.steps.ServiceConfigStep;
 import io.harness.cdng.service.steps.ServiceConfigStepParameters;
-import io.harness.cdng.service.steps.ServiceStep;
 import io.harness.cdng.service.steps.ServiceStepParameters;
+import io.harness.cdng.service.steps.constants.ServiceConfigStepConstants;
+import io.harness.cdng.service.steps.constants.ServiceStepConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidArgumentsException;
@@ -131,7 +131,7 @@ public class ServicePlanCreator extends ChildrenPlanCreator<ServiceConfig> {
                                                                   .build();
     return PlanNode.builder()
         .uuid(serviceConfigNodeId)
-        .stepType(ServiceConfigStep.STEP_TYPE)
+        .stepType(ServiceConfigStepConstants.STEP_TYPE)
         .name(PlanCreatorConstants.SERVICE_NODE_NAME)
         .identifier(YamlTypes.SERVICE_CONFIG)
         .stepParameters(serviceConfigStepParameters)
@@ -166,7 +166,7 @@ public class ServicePlanCreator extends ChildrenPlanCreator<ServiceConfig> {
     PlanNode node =
         PlanNode.builder()
             .uuid("service-" + serviceConfigNodeId)
-            .stepType(ServiceStep.STEP_TYPE)
+            .stepType(ServiceStepConstants.STEP_TYPE)
             .name(PlanCreatorConstants.SERVICE_NODE_NAME)
             .identifier(YamlTypes.SERVICE_ENTITY)
             .stepParameters(stepParameters)

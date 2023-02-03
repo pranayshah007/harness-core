@@ -150,8 +150,8 @@ public class OrgRolesApiImpl implements OrganizationRolesApi {
     PageRequest pageRequest = ApiUtils.getPageRequest(page, limit, sort, order);
     PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter, true);
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
-        responseBuilder, format("/v1/orgs/%s/roles)", org), pageResponse.getContent().size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotalItems(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getContent()
                     .stream()

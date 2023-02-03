@@ -240,8 +240,8 @@ public class PipelinesApiImpl implements PipelinesApi {
         pipelineEntities.map(e -> PMSPipelineDtoMapper.preparePipelineSummaryForListView(e, pipelineMetadataMap));
 
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
-        String.format("/v1/orgs/%s/projects/%s/pipelines", org, project), pipelines.getContent().size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, pipelines.getTotalElements(), page, limit);
     return responseBuilderWithLinks
         .entity(pipelines.getContent()
                     .stream()

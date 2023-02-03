@@ -13,6 +13,7 @@ import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud
 import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.ScmErrorHints.REPO_NOT_FOUND;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnauthorizedException;
@@ -55,6 +56,11 @@ public class BitbucketCreateFileScmApiErrorHandler implements ScmApiErrorHandler
             ErrorMessageFormatter.formatMessage(
                 CREATE_FILE_REQUEST_FAILURE + ScmErrorExplanations.REPO_NOT_FOUND, errorMetadata),
             new ScmBadRequestException(errorMessage));
+      case 429:
+        throw NestedExceptionUtils.hintWithExplanationException(ScmErrorHints.RATE_LIMIT,
+            ScmErrorExplanations.RATE_LIMIT,
+            new ScmBadRequestException(
+                EmptyPredicate.isEmpty(errorMessage) ? ScmErrorDefaultMessage.RATE_LIMIT : errorMessage));
       default:
         log.error(String.format("Error while creating bitbucket file: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);

@@ -10,19 +10,24 @@ package io.harness.delegate.task.terraformcloud;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
+import io.harness.terraformcloud.TerraformCloudApiException;
 import io.harness.terraformcloud.TerraformCloudApiTokenCredentials;
 import io.harness.terraformcloud.TerraformCloudClient;
 import io.harness.terraformcloud.TerraformCloudConfig;
@@ -178,5 +183,58 @@ public class TerraformCloudTaskHelperTest {
     verify(terraformCloudTaskHelper).getAllOrganizations(credentials);
     assertThat(organizationsMap.get("id1")).isEqualTo("org1");
     assertThat(organizationsMap.get("id2")).isEqualTo("org2");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void getLogs() throws IOException {
+    LogCallback logCallback = mock(LogCallback.class);
+    when(terraformCloudClient.getLogs(any(), anyInt(), anyInt()))
+        .thenReturn("logLine1\nlogLine2\nlog")
+        .thenReturn("Line3\nlogLine4\nlog")
+        .thenReturn("line5" + (char) 3);
+
+    taskHelper.streamLogs(logCallback, URL);
+
+    verify(logCallback, times(5)).saveExecutionLog(any());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void getLogsRequestFailsThenSuccessfulRetry() throws IOException {
+    LogCallback logCallback = mock(LogCallback.class);
+    when(terraformCloudClient.getLogs(any(), anyInt(), anyInt()))
+        .thenReturn("logLine1\nlogLine2\nlog")
+        .thenReturn("Line3\nlogLine4\nlog")
+        .thenThrow(new TerraformCloudApiException("errorMessage", 400))
+        .thenReturn("line5" + (char) 3);
+
+    taskHelper.streamLogs(logCallback, URL);
+
+    verify(logCallback, times(5)).saveExecutionLog(any());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void getLogsRequestFailsFiveTimes() throws IOException {
+    LogCallback logCallback = mock(LogCallback.class);
+    when(terraformCloudClient.getLogs(any(), anyInt(), anyInt()))
+        .thenReturn("logLine1\nlogLine2\nlog")
+        .thenReturn("Line3\nlogLine4\nlog")
+        .thenThrow(new TerraformCloudApiException("errorMessage1", 400))
+        .thenThrow(new TerraformCloudApiException("errorMessage2", 400))
+        .thenThrow(new TerraformCloudApiException("errorMessage3", 400))
+        .thenThrow(new TerraformCloudApiException("errorMessage4", 400))
+        .thenThrow(new TerraformCloudApiException("errorMessage5", 400))
+        .thenReturn("line5" + (char) 3);
+
+    assertThatThrownBy(() -> taskHelper.streamLogs(logCallback, URL))
+        .isInstanceOf(TerraformCloudApiException.class)
+        .hasMessage("errorMessage5");
+
+    verify(logCallback, times(4)).saveExecutionLog(any());
   }
 }

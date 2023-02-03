@@ -410,6 +410,7 @@ public class K8InitializeTaskParamsBuilder {
             .type(IntegrationStageNode.StepType.CI)
             .identifier(initializeStepInfo.getStageIdentifier())
             .variables(initializeStepInfo.getVariables())
+            .pipelineVariables(initializeStepInfo.getPipelineVariables())
             .integrationStageConfig((IntegrationStageConfigImpl) initializeStepInfo.getStageElementConfig())
             .build();
     StageDetails stageDetails = getStageDetails(ambiance);

@@ -22,13 +22,18 @@ import io.harness.cvng.beans.DataCollectionInfo;
 import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.cvng.beans.DataCollectionRequestType;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.SumologicLogDataCollectionInfo;
 import io.harness.cvng.beans.SumologicMetricDataCollectionInfo;
 import io.harness.cvng.beans.SyncDataCollectionRequest;
+import io.harness.cvng.beans.elk.ELKIndexCollectionRequest;
 import io.harness.cvng.beans.sumologic.SumologicLogSampleDataRequest;
 import io.harness.cvng.beans.sumologic.SumologicMetricSampleDataRequest;
 import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
+import io.harness.cvng.core.beans.healthsource.HealthSourceParamValue;
+import io.harness.cvng.core.beans.healthsource.HealthSourceParamValuesRequest;
+import io.harness.cvng.core.beans.healthsource.HealthSourceParamValuesResponse;
 import io.harness.cvng.core.beans.healthsource.HealthSourceParamsDTO;
 import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsRequest;
 import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsResponse;
@@ -417,5 +422,60 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(logRecordsResponse.getLogRecords().size()).isEqualTo(logDataRecords.size());
     assertThat(logRecordsResponse.getLogRecords()).isEqualTo(getLogRecordFromResponse(logDataRecords));
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void fetchIndexForElasticSearchLog() throws JsonProcessingException, IllegalAccessException {
+    HealthSourceParamValuesRequest healthSourceParamValuesRequest = new HealthSourceParamValuesRequest();
+    healthSourceParamValuesRequest.setProviderType(MonitoredServiceDataSourceType.ELASTICSEARCH);
+    healthSourceParamValuesRequest.setParamName(QueryParamsDTO.QueryParamKeys.index);
+    String connectorIdentifierELK = "account.ELK_Connector";
+    healthSourceParamValuesRequest.setConnectorIdentifier(connectorIdentifierELK);
+
+    OnboardingRequestDTO onboardingRequestDTO = OnboardingRequestDTO.builder()
+                                                    .accountId(accountIdentifier)
+                                                    .connectorIdentifier(connectorIdentifierELK)
+                                                    .accountId(accountIdentifier)
+                                                    .projectIdentifier(projectIdentifier)
+                                                    .orgIdentifier(orgIdentifier)
+                                                    .tracingId(tracingId)
+                                                    .dataCollectionRequest(ELKIndexCollectionRequest.builder().build())
+                                                    .build();
+    List<String> indexList = List.of("filebeat-6.8.8-2023.01.20", "filebeat-6.8.8-2023.01.23",
+        "filebeat-6.8.8-2023.01.24", "filebeat-6.8.8-2023.01.13", "filebeat-6.8.8-2023.01.26",
+        "filebeat-6.8.8-2023.01.12", ".kibana", "filebeat-6.8.8-2023.01.27");
+    mockOnboardingService(onboardingRequestDTO, indexList);
+    Response response = RESOURCES.client()
+                            .target(baseURL + "/health-source/param-values")
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(objectMapper.writeValueAsString(healthSourceParamValuesRequest)));
+    HealthSourceParamValuesResponse paramValuesResponse =
+        response.readEntity(new GenericType<RestResponse<HealthSourceParamValuesResponse>>() {}).getResource();
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(paramValuesResponse.getParamValues()
+                   .stream()
+                   .map(HealthSourceParamValue::getValue)
+                   .collect(Collectors.toList()))
+        .isEqualTo(indexList);
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void fetchTimestampFormatForElasticSearchLog() throws JsonProcessingException {
+    HealthSourceParamValuesRequest healthSourceParamValuesRequest = new HealthSourceParamValuesRequest();
+    healthSourceParamValuesRequest.setProviderType(MonitoredServiceDataSourceType.ELASTICSEARCH);
+    healthSourceParamValuesRequest.setParamName(QueryParamsDTO.QueryParamKeys.timeStampFormat);
+    Response response = RESOURCES.client()
+                            .target(baseURL + "/health-source/param-values")
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(objectMapper.writeValueAsString(healthSourceParamValuesRequest)));
+    HealthSourceParamValuesResponse paramValuesResponse =
+        response.readEntity(new GenericType<RestResponse<HealthSourceParamValuesResponse>>() {}).getResource();
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(paramValuesResponse.getParamName()).isEqualTo(QueryParamsDTO.QueryParamKeys.timeStampFormat);
+    assertThat(paramValuesResponse.getParamValues()).isNotEmpty();
   }
 }

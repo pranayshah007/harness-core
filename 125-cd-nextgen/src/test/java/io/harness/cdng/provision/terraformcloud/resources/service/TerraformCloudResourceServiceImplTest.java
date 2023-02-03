@@ -8,8 +8,8 @@
 package io.harness.cdng.provision.terraformcloud.resources.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskType.GET_ORGANIZATIONS;
-import static io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskType.GET_WORKSPACES;
+import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.GET_ORGANIZATIONS;
+import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.GET_WORKSPACES;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,10 +32,10 @@ import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
-import io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialDTO;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO;
+import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
 import io.harness.encryption.Scope;

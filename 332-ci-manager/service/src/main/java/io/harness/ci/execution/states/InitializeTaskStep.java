@@ -387,8 +387,6 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     }
 
     for (ExecutionWrapperConfig config : executionElement.getSteps()) {
-      // Inject the envVariables before calling strategy expansion
-      IntegrationStageUtils.injectLoopEnvVariables(config);
       ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
           strategyHelper.expandExecutionWrapperConfig(config, maxExpansionLimit);
       expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
@@ -399,6 +397,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
         ExecutionElementConfig.builder().steps(expandedExecutionElement).build());
     initializeStepInfo.setStrategyExpansionMap(strategyExpansionMap);
   }
+
   private StepResponse handleVmTaskResponse(CITaskExecutionResponse ciTaskExecutionResponse) {
     VmTaskExecutionResponse vmTaskExecutionResponse = (VmTaskExecutionResponse) ciTaskExecutionResponse;
     DependencyOutcome dependencyOutcome = getVmDependencyOutcome(vmTaskExecutionResponse);

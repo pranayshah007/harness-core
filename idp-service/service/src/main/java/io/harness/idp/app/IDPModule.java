@@ -17,6 +17,8 @@ import io.harness.idp.secret.resource.SecretManagerResource;
 import io.harness.idp.secret.resources.SecretManagerResourceImpl;
 import io.harness.idp.secret.service.EnvironmentVariableService;
 import io.harness.idp.secret.service.EnvironmentVariableServiceImpl;
+import io.harness.idp.status.resource.IDPStatusResource;
+import io.harness.idp.status.resources.IDPStatusResourceImpl;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
@@ -122,6 +124,7 @@ public class IDPModule extends AbstractModule {
     bind(EnvironmentVariableService.class).to(EnvironmentVariableServiceImpl.class);
     bind(ConfigManagerResource.class).to(ConfigManagerResourceImpl.class);
     bind(SecretManagerResource.class).to(SecretManagerResourceImpl.class);
+    bind(IDPStatusResource.class).to(IDPStatusResourceImpl.class);
   }
 
   @Provides

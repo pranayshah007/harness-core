@@ -189,12 +189,10 @@ public class AsgSdkManager {
 
   public LaunchTemplate createLaunchTemplate(String asgName, CreateLaunchTemplateRequest createLaunchTemplateRequest) {
     createLaunchTemplateRequest.setLaunchTemplateName(asgName);
-    String operationName = format("Create launchTemplate %s", asgName);
-    info("Operation `%s` has started", operationName);
-
+    info("Creating launchTemplate %s", asgName);
     CreateLaunchTemplateResult createLaunchTemplateResult =
         ec2Call(ec2Client -> ec2Client.createLaunchTemplate(createLaunchTemplateRequest));
-    infoBold("Operation `%s` ended successfully", operationName);
+    infoBold("Created launchTemplate %s successfully", asgName);
     return createLaunchTemplateResult.getLaunchTemplate();
   }
 
@@ -224,11 +222,10 @@ public class AsgSdkManager {
             .withSourceVersion(launchTemplate.getLatestVersionNumber().toString())
             .withLaunchTemplateData(requestLaunchTemplateData);
 
-    String operationName = format("Create new version for launchTemplate %s", launchTemplateName);
-    info("Operation `%s` has started", operationName);
+    info("Creating new version for launchTemplate %s", launchTemplateName);
     CreateLaunchTemplateVersionResult createLaunchTemplateVersionResult =
         ec2Call(ec2Client -> ec2Client.createLaunchTemplateVersion(createLaunchTemplateVersionRequest));
-    infoBold("Operation `%s` ended successfully", operationName);
+    infoBold("Created new version for launchTemplate %s", launchTemplateName);
 
     return createLaunchTemplateVersionResult.getLaunchTemplateVersion();
   }
@@ -458,13 +455,13 @@ public class AsgSdkManager {
   }
 
   public void deleteAsg(String asgName) {
-    String operationName = format("Delete Asg %s", asgName);
-    info("Operation `%s` has started", operationName);
+    info("Deleting Asg %s", asgName);
     DeleteAutoScalingGroupRequest deleteAutoScalingGroupRequest =
         new DeleteAutoScalingGroupRequest().withAutoScalingGroupName(asgName).withForceDelete(true);
     asgCall(asgClient -> asgClient.deleteAutoScalingGroup(deleteAutoScalingGroupRequest));
-    waitReadyState(asgName, this::checkAsgDeleted, operationName);
-    infoBold("Operation `%s` ended successfully", operationName);
+    info("Waiting for deletion of Asg %s to complete", asgName);
+    waitReadyState(asgName, this::checkAsgDeleted, format("deletion of Asg %s", asgName));
+    infoBold("Deleted Asg %s successfully", asgName);
   }
 
   public boolean checkAllInstancesInReadyState(String asgName) {
@@ -486,7 +483,7 @@ public class AsgSdkManager {
   }
 
   public boolean checkAsgDeleted(String asgName) {
-    info("Checking if service `%s` is deleted", asgName);
+    info("Checking if Asg `%s` is deleted", asgName);
     AutoScalingGroup autoScalingGroup = getASG(asgName);
     return autoScalingGroup == null;
   }
@@ -526,7 +523,6 @@ public class AsgSdkManager {
   }
 
   public void waitInstanceRefreshSteadyState(String asgName, String instanceRefreshId, String operationName) {
-    info("Waiting for operation `%s` to reach steady state", operationName);
     info("Polling every %d seconds", STEADY_STATE_INTERVAL_IN_SECONDS);
     try {
       HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMinutes(steadyStateTimeOutInMinutes), () -> {
@@ -536,24 +532,23 @@ public class AsgSdkManager {
         return true;
       });
     } catch (ExecutionException | UncheckedExecutionException | ExecutionError e) {
-      String errorMessage = format("Exception while waiting for steady state for `%s` operation. Error message: [%s]",
-          operationName, e.getMessage());
+      String errorMessage =
+          format("Exception while waiting the %s to complete. Error message: [%s]", operationName, e.getMessage());
       error(errorMessage);
       throw new InvalidRequestException(errorMessage, e.getCause());
     } catch (TimeoutException | InterruptedException e) {
-      String errorMessage = format("Timed out while waiting for steady state for `%s` operation", operationName);
+      String errorMessage = format("Timed out while waiting the %s to complete", operationName);
       error(errorMessage);
       throw new InvalidRequestException(errorMessage, e);
     } catch (Exception e) {
-      String errorMessage = format("Exception while waiting for steady state for `%s` operation. Error message: [%s]",
-          operationName, e.getMessage());
+      String errorMessage =
+          format("Exception while waiting for %s to complete. Error message: [%s]", operationName, e.getMessage());
       error(errorMessage);
       throw new InvalidRequestException(errorMessage, e);
     }
   }
 
   public <T> void waitReadyState(T input, Predicate<T> predicate, String operationName) {
-    info("Waiting for `%s` to reach steady state", operationName);
     info("Polling every %d seconds", STEADY_STATE_INTERVAL_IN_SECONDS);
     try {
       HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMinutes(steadyStateTimeOutInMinutes), () -> {
@@ -563,17 +558,17 @@ public class AsgSdkManager {
         return true;
       });
     } catch (ExecutionException | UncheckedExecutionException | ExecutionError e) {
-      String errorMessage = format(
-          "Exception while waiting for steady state for `%s`. Error message: [%s]", operationName, e.getMessage());
+      String errorMessage =
+          format("Exception while waiting the %s to complete. Error message: [%s]", operationName, e.getMessage());
       error(errorMessage);
       throw new InvalidRequestException(errorMessage, e.getCause());
     } catch (TimeoutException | InterruptedException e) {
-      String errorMessage = format("Timed out while waiting for steady state for `%s`", operationName);
+      String errorMessage = format("Timed out while waiting the %s to complete", operationName);
       error(errorMessage);
       throw new InvalidRequestException(errorMessage, e);
     } catch (Exception e) {
-      String errorMessage = format(
-          "Exception while waiting for steady state for `%s`. Error message: [%s]", operationName, e.getMessage());
+      String errorMessage =
+          format("Exception while waiting for %s to complete. Error message: [%s]", operationName, e.getMessage());
       error(errorMessage);
       throw new InvalidRequestException(errorMessage, e);
     }

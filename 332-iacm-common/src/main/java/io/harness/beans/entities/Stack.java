@@ -34,4 +34,5 @@ public class Stack {
   String repository_branch;
   String repository_connector;
   String repository_path;
+  String repository_commit;
 }

@@ -98,8 +98,7 @@ public class ProjectResourceGroupsApiImpl implements ProjectResourceGroupsApi {
         resourceGroupService.list(Scope.of(account, org, project), pageRequest, searchTerm);
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks =
-        ApiUtils.addLinksHeader(responseBuilder, format("/v1/orgs/%s/projects/%s/resource-groups)", org, project),
-            pageResponse.getContent().size(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotalElements(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getContent()
                     .stream()

@@ -172,15 +172,15 @@ public class EnvironmentPlanCreatorHelper {
       String originalServiceOverrideYaml, Map<String, Object> serviceOverrideInputs) {
     Map<String, Object> serviceOverrideInputYaml = new HashMap<>();
     serviceOverrideInputYaml.put(YamlTypes.SERVICE_OVERRIDE, serviceOverrideInputs);
-    return MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
-        originalServiceOverrideYaml, YamlPipelineUtils.writeYamlString(serviceOverrideInputYaml), true);
+    return MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+        originalServiceOverrideYaml, YamlPipelineUtils.writeYamlString(serviceOverrideInputYaml), true, true);
   }
 
   public String mergeEnvironmentInputs(String originalEnvYaml, Map<String, Object> environmentInputs) {
     Map<String, Object> environmentInputYaml = new HashMap<>();
     environmentInputYaml.put(YamlTypes.ENVIRONMENT_YAML, environmentInputs);
-    return MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
-        originalEnvYaml, YamlPipelineUtils.writeYamlString(environmentInputYaml), true);
+    return MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+        originalEnvYaml, YamlPipelineUtils.writeYamlString(environmentInputYaml), true, true);
   }
 
   private List<InfrastructureConfig> getInfraStructureConfigList(String accountIdentifier, String orgIdentifier,

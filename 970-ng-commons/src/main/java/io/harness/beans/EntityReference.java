@@ -13,6 +13,7 @@ import io.harness.ng.core.NGAccess;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @ApiModel(value = "EntityReference",
@@ -26,4 +27,7 @@ public interface EntityReference extends NGAccess {
   void setBranch(String branch);
   void setRepoIdentifier(String repoIdentifier);
   void setIsDefault(Boolean isDefault);
+  default Map<String, String> getMetadata() {
+    return Map.of();
+  }
 }
