@@ -34,6 +34,7 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.service.services.impl.ServiceEntitySetupUsageHelper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.yaml.CDYamlFacade;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
@@ -45,6 +46,7 @@ import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
+import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -73,6 +75,8 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
   @Mock TransactionTemplate transactionTemplate;
   @Mock OutboxService outboxService;
   @Mock ServiceOverrideService serviceOverrideService;
+
+  @Inject CDYamlFacade cdYamlFacade;
   @Mock ServiceEntitySetupUsageHelper entitySetupUsageHelper;
   @Mock ClusterService clusterService;
   @Mock CustomDeploymentEntitySetupHelper customDeploymentEntitySetupHelper;
@@ -94,8 +98,8 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService,
         serviceEntityService, accountClient, settingsClient));
-    environmentRefreshHelper =
-        spy(new EnvironmentRefreshHelper(environmentService, infrastructureEntityService, serviceOverrideService));
+    environmentRefreshHelper = spy(new EnvironmentRefreshHelper(
+        environmentService, infrastructureEntityService, serviceOverrideService, cdYamlFacade));
     on(entityFetchHelper).set("serviceEntityService", serviceEntityService);
     on(refreshInputsHelper).set("serviceEntityService", serviceEntityService);
     on(refreshInputsHelper).set("entityFetchHelper", entityFetchHelper);

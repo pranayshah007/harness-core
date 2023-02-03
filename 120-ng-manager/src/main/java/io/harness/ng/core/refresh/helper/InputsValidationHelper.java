@@ -17,13 +17,9 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.service.entity.ServiceEntity;
-import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
-import io.harness.ng.core.template.refresh.NodeInfo;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
-import io.harness.ng.core.template.refresh.v2.NodeErrorSummary;
-import io.harness.ng.core.template.refresh.v2.ServiceNodeErrorSummary;
-import io.harness.ng.core.yaml.CDYamlUtils;
+import io.harness.ng.core.yaml.CDYamlFacade;
 import io.harness.persistence.PersistentEntity;
 import io.harness.pms.merger.helpers.RuntimeInputsValidator;
 import io.harness.pms.yaml.YamlField;
@@ -52,6 +48,7 @@ public class InputsValidationHelper {
   @Inject ServiceEntityService serviceEntityService;
   @Inject EntityFetchHelper entityFetchHelper;
   @Inject EnvironmentRefreshHelper environmentRefreshHelper;
+  @Inject private CDYamlFacade cdYamlFacade;
 
   public InputsValidationResponse validateInputsForYaml(
       String accountId, String orgId, String projectId, String yaml, String resolvedTemplatesYaml) {
@@ -178,7 +175,7 @@ public class InputsValidationHelper {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode serviceInputsNode = mapper.createObjectNode();
     serviceInputsNode.set(YamlTypes.SERVICE_INPUTS, serviceInputs);
-    String linkedServiceInputsYaml = CDYamlUtils.writeYamlString(serviceInputsNode);
+    String linkedServiceInputsYaml = cdYamlFacade.writeYamlString(serviceInputsNode);
     if (!RuntimeInputsValidator.validateInputsAgainstSourceNode(linkedServiceInputsYaml, serviceRuntimeInputYaml,
             new HashSet<>(), new HashSet<>(keysToIgnoreInNodeToValidate))) {
       errorNodeSummary.setValid(false);

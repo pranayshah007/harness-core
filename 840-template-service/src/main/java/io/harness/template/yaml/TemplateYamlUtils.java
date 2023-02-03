@@ -72,7 +72,7 @@ public class TemplateYamlUtils {
     return mapper.readValue(yaml, cls);
   }
 
-  public String writeString(Object value) throws JsonProcessingException {
+  String writeString(Object value) throws JsonProcessingException {
     return mapper.writeValueAsString(value);
   }
 
