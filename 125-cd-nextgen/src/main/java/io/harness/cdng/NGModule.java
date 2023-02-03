@@ -91,6 +91,8 @@ import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.infrastructure.services.impl.InfrastructureEntityServiceImpl;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
+import io.harness.ng.core.service.services.ServiceGitXService;
+import io.harness.ng.core.service.services.impl.ServiceGitXServiceImpl;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceImpl;
 import io.harness.service.instance.InstanceService;
@@ -139,6 +141,7 @@ public class NGModule extends AbstractModule {
     bind(LicenseUsageInterface.class).to(CDLicenseUsageImpl.class);
     bind(InstanceService.class).to(InstanceServiceImpl.class);
     bind(ServiceEntityService.class).to(ServiceEntityServiceImpl.class);
+    bind(ServiceGitXService.class).to(ServiceGitXServiceImpl.class);
     bind(EnvironmentService.class).to(EnvironmentServiceImpl.class);
     bind(ServiceNowResourceService.class).to(ServiceNowResourceServiceImpl.class);
     bind(ArtifactoryResourceService.class).to(ArtifactoryResourceServiceImpl.class);

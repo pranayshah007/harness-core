@@ -1069,10 +1069,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
     ServiceEntity serviceEntityToSave = prepareServiceEntity(serviceEntity, repoUrl);
     try {
-
-      ServiceEntity savedServiceEntity =
-              saveServiceEntityForImportedYAML(serviceEntityToSave);
-      return savedServiceEntity;
+      return saveServiceEntityForImportedYAML(serviceEntityToSave);
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
               getDuplicateServiceExistsErrorMessage(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),

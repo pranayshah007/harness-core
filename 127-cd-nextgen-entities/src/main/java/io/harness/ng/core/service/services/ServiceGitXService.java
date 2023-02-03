@@ -22,5 +22,4 @@ public interface ServiceGitXService {
 
   void performImportFlowYamlValidations(String orgIdentifier, String projectIdentifier, String serviceIdentifier,
       ServiceImportRequestDTO serviceImportRequest, String importedService);
-
 }
