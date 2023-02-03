@@ -1163,7 +1163,7 @@ public class TasStepHelper {
             .allFilesFetched(allFilesFetched)
             .commandUnits(tasStepPassThroughData.getCommandUnits())
             .rawScript(tasStepPassThroughData.getRawScript())
-            .desiredCountInFinalYaml(fetchTasInstaceCountInYaml(tasManifestsPackage))
+            .desiredCountInFinalYaml(fetchMaxCountFromManifest(tasManifestsPackage))
             .unresolvedTasManifestsPackage(unresolvedTasManifestsPackage)
             .build(),
         tasStepPassThroughData.getShouldOpenFetchFilesStream(),
@@ -1297,15 +1297,6 @@ public class TasStepHelper {
       throw new InvalidArgumentsException(Pair.of("Manifest", "contains no application name"));
     }
     return finalizeSubstitution(tasManifestsPackage, name);
-  }
-
-  public int fetchTasInstaceCountInYaml(TasManifestsPackage tasManifestsPackage) {
-    Map<String, Object> applicationYamlMap = getApplicationYamlMap(tasManifestsPackage.getManifestYml());
-    String instances = (String) applicationYamlMap.get(INSTANCE_MANIFEST_YML_ELEMENT);
-    if (isBlank(instances)) {
-      throw new InvalidArgumentsException(Pair.of("Manifest", "contains no instances info"));
-    }
-    return Integer.valueOf(finalizeSubstitution(tasManifestsPackage, instances));
   }
 
   String finalizeSubstitution(TasManifestsPackage tasManifestsPackage, String name) {
