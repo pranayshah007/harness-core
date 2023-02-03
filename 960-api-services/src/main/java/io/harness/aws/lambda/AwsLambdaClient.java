@@ -7,7 +7,7 @@
 
 package io.harness.aws.lambda;
 
-public interface AwsLambaClient {
+public interface AwsLambdaClient {
   void createFunction();
   void deleteFunction();
   void deployFunction();

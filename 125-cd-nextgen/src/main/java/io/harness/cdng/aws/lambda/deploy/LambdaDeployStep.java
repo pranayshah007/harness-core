@@ -9,12 +9,20 @@ package io.harness.cdng.aws.lambda.deploy;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.aws.lambda.AwsLambdaHelper;
 import io.harness.cdng.aws.lambda.LambdaStepExceptionPassThroughData;
 import io.harness.cdng.aws.lambda.LambdaStepExecutor;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
+import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
+import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -22,11 +30,19 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class LambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac implements LambdaStepExecutor {
+  public static final StepType STEP_TYPE = StepType.newBuilder()
+                                               .setType(ExecutionNodeType.AWS_LAMBDA_DEPLOY.getYamlType())
+                                               .setStepCategory(StepCategory.STEP)
+                                               .build();
+  @Inject private AwsLambdaHelper awsLambdaHelper;
+
+  private final String AWS_LAMBDA_DEPLOY_COMMAND_NAME = "DeployAwsLambda";
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return null;
@@ -57,6 +73,17 @@ public class LambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac imp
   @Override
   public TaskChainResponse executeTask(Ambiance ambiance, StepElementParameters stepParameters,
       LambdaStepExceptionPassThroughData lambdaStepExceptionPassThroughData, UnitProgressData unitProgressData) {
-    return null;
+    InfrastructureOutcome infrastructureOutcome = lambdaStepExceptionPassThroughData.getInfrastructureOutcome();
+
+    AwsLambdaDeployRequest awsLambdaDeployRequest =
+        AwsLambdaDeployRequest.builder()
+            .awsLambdaCommandTypeNG(AwsLambdaCommandTypeNG.AWS_LAMBDA_DEPLOY)
+            .commandName(AWS_LAMBDA_DEPLOY_COMMAND_NAME)
+            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+            .awsLambdaFunctionsInfraConfig(awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance))
+            .build();
+
+    return awsLambdaHelper.queueTask(
+        stepParameters, awsLambdaDeployRequest, ambiance, lambdaStepExceptionPassThroughData, true);
   }
 }

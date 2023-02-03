@@ -35,7 +35,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("ambdaDeployStepNode")
 @RecasterAlias("io.harness.cdng.aws.lambda.deploy.LambdaDeployStepNode")
 public class LambdaDeployStepNode extends CdAbstractStepNode {
-  @JsonProperty("type") @NotNull LambdaDeployStepNode.StepType type = StepType.LambdaDeploy;
+  @JsonProperty("type") @NotNull LambdaDeployStepNode.StepType type = StepType.AwsLambdaDeploy;
 
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
@@ -52,7 +52,7 @@ public class LambdaDeployStepNode extends CdAbstractStepNode {
   }
 
   enum StepType {
-    LambdaDeploy(StepSpecTypeConstants.AWS_LAMBDA_DEPLOY);
+    AwsLambdaDeploy(StepSpecTypeConstants.AWS_LAMBDA_DEPLOY);
 
     @Getter String name;
 

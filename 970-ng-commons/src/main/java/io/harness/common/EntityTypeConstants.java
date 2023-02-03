@@ -214,5 +214,5 @@ public interface EntityTypeConstants {
 
   String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
 
-  String AWS_LAMBDA_DEPLOY = "DeployAwsLambda";
+  String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
 }

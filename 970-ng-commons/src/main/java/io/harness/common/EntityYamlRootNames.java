@@ -220,5 +220,5 @@ public class EntityYamlRootNames {
   public static final String ASG_BLUE_GREEN_SWAP_SERVICE_STEP = "AsgBlueGreenSwapService";
   public static final String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
 
-  public static final String AWS_LAMBDA_DEPLOY = "DeployAwsLambda";
+  public static final String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
 }

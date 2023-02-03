@@ -55,7 +55,7 @@ public class LambdaDeployStepInfo extends LambdaDeployBaseStepInfo implements CD
 
   @Override
   public StepType getStepType() {
-    return null;
+    return LambdaDeployStep.STEP_TYPE;
   }
 
   @Override

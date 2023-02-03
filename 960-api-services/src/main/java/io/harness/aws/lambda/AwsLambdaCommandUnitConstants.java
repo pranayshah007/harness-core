@@ -7,13 +7,15 @@
 
 package io.harness.aws.lambda;
 
-public class AwsLambdaClientImpl implements AwsLambdaClient {
-  @Override
-  public void createFunction() {}
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 
-  @Override
-  public void deleteFunction() {}
-
-  @Override
-  public void deployFunction() {}
+@OwnedBy(HarnessTeam.CDP)
+public enum AwsLambdaCommandUnitConstants {
+  deploy {
+    @Override
+    public String toString() {
+      return "Deploy";
+    }
+  }
 }

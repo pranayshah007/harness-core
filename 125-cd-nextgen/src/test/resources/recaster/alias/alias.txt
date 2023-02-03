@@ -763,3 +763,8 @@ io.harness.cdng.googlefunctions.GoogleFunctionStepOutcome
 io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepInfo
 io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepParameters
 io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepParameters
+io.harness.cdng.aws.lambda.deploy.LambdaDeployStepInfo
+io.harness.cdng.aws.lambda.deploy.LambdaDeployStepNode
+io.harness.cdng.aws.lambda.deploy.LambdaDeployStepParameters
+io.harness.cdng.aws.lambda.LambdaStepExceptionPassThroughData
+io.harness.cdng.aws.lambda.beans.LambdaStepOutcome

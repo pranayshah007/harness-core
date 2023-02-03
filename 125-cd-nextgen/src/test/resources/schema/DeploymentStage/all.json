@@ -3704,7 +3704,8 @@
             "Elastigroup",
             "TAS",
             "Asg",
-            "GoogleCloudFunctions"
+            "GoogleCloudFunctions",
+            "AwsLambda"
           ]
         },
         "environment": {
@@ -8041,6 +8042,34 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "LambdaDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "LoadBalancer": {
       "type": "object",
       "required": [
@@ -10889,7 +10918,8 @@
             "Elastigroup",
             "TAS",
             "Asg",
-            "GoogleCloudFunctions"
+            "GoogleCloudFunctions",
+            "AwsLambda"
           ]
         }
       },
@@ -12135,6 +12165,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AsgRollingRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AwsLambdaDeploy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/LambdaDeployStepInfo"
               }
             }
           }
