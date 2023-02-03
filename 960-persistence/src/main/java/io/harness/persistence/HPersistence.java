@@ -7,6 +7,7 @@
 
 package io.harness.persistence;
 
+import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -35,6 +36,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +46,6 @@ public interface HPersistence extends HealthMonitor {
   Store DEFAULT_STORE = Store.builder().name("default").build();
   Store CG_HARNESS_STORE = Store.builder().name(DbAliases.HARNESS).build();
   Store ANALYTIC_STORE = Store.builder().name(ANALYTICS_STORE_NAME).build();
-
   static Logger logger() {
     return LoggerFactory.getLogger(HPersistence.class);
   }
@@ -83,6 +84,10 @@ public interface HPersistence extends HealthMonitor {
 
   Map<Class, Store> getClassStores();
 
+  Map<Class, Store> getSecondaryClassStores();
+
+  boolean isMigrationEnabled(Class cls);
+
   /**
    * Gets the datastore.
    *
@@ -92,14 +97,11 @@ public interface HPersistence extends HealthMonitor {
    */
 
   default AdvancedDatastore getDatastore(Class cls) {
-    return getDatastore(getClassStores().computeIfAbsent(cls, klass -> {
-      return Arrays.stream(cls.getDeclaredAnnotations())
-          .filter(annotation -> annotation.annotationType().equals(StoreIn.class))
-          .map(annotation -> ((StoreIn) annotation).value())
-          .map(name -> Store.builder().name(name).build())
-          .findFirst()
-          .orElseGet(() -> DEFAULT_STORE);
-    }));
+    Optional<Store> secondaryStore = getSecondaryStore(cls);
+    if (secondaryStore.isPresent() && isMigrationEnabled(cls)) {
+      return getDatastore(secondaryStore.get());
+    }
+    return getDatastore(getPrimaryStore(cls));
   }
 
   default AdvancedDatastore getDefaultAnalyticsDatastore(Class cls) {
@@ -118,6 +120,28 @@ public interface HPersistence extends HealthMonitor {
       return getDatastore(ANALYTIC_STORE);
     }
     return getDatastore(classStore);
+  }
+
+  default Store getPrimaryStore(Class cls) {
+    return getClassStores().computeIfAbsent(cls,
+        klass
+        -> Arrays.stream(cls.getDeclaredAnnotations())
+               .filter(annotation -> annotation.annotationType().equals(StoreIn.class))
+               .map(annotation -> ((StoreIn) annotation).value())
+               .map(name -> Store.builder().name(name).build())
+               .findFirst()
+               .orElse(DEFAULT_STORE));
+  }
+
+  default Optional<Store> getSecondaryStore(Class cls) {
+    return Optional.ofNullable(getSecondaryClassStores().computeIfAbsent(cls,
+        klass
+        -> Arrays.stream(cls.getDeclaredAnnotations())
+               .filter(annotation -> annotation.annotationType().equals(SecondaryStoreIn.class))
+               .map(annotation -> ((SecondaryStoreIn) annotation).value())
+               .map(name -> Store.builder().name(name).build())
+               .findFirst()
+               .orElse(null)));
   }
 
   /**

@@ -25,6 +25,7 @@ public class DbAliases {
   public static final String CVNG = "cvng";
   public static final String CENG = "events";
   public static final String CDC = "change-data-capture";
+  public static final String DMS = "dms-harness";
   public static final String ANALYSER = "analyser";
   public static final String HARNESS = "harness";
   public static final String TEST = "test";
