@@ -38,6 +38,7 @@ import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.K8PodDetails;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.PodCleanupDetails;
+import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
@@ -409,12 +410,16 @@ public class K8InitializeTaskParamsBuilder {
             .type(IntegrationStageNode.StepType.CI)
             .identifier(initializeStepInfo.getStageIdentifier())
             .variables(initializeStepInfo.getVariables())
+            .pipelineVariables(initializeStepInfo.getPipelineVariables())
             .integrationStageConfig((IntegrationStageConfigImpl) initializeStepInfo.getStageElementConfig())
             .build();
-    CIExecutionArgs ciExecutionArgs = CIExecutionArgs.builder()
-                                          .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
-                                          .executionSource(initializeStepInfo.getExecutionSource())
-                                          .build();
+    StageDetails stageDetails = getStageDetails(ambiance);
+    CIExecutionArgs ciExecutionArgs =
+        CIExecutionArgs.builder()
+            .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
+            .executionSource(initializeStepInfo.getExecutionSource() != null ? initializeStepInfo.getExecutionSource()
+                                                                             : stageDetails.getExecutionSource())
+            .build();
     List<ContainerDefinitionInfo> serviceCtrDefinitionInfos =
         k8InitializeServiceUtils.createServiceContainerDefinitions(stageNode, portFinder, os);
     List<ContainerDefinitionInfo> stepCtrDefinitionInfos =
@@ -461,5 +466,14 @@ public class K8InitializeTaskParamsBuilder {
       }
     }
     return k8InitializeTaskUtils.generatePodName(stageId);
+  }
+
+  private StageDetails getStageDetails(Ambiance ambiance) {
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
+    if (!optionalSweepingOutput.isFound()) {
+      throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
+    }
+    return (StageDetails) optionalSweepingOutput.getOutput();
   }
 }

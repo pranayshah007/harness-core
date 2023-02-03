@@ -10,7 +10,9 @@ package io.harness.delegate.aws.asg;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.delegate.aws.asg.AsgBlueGreenPrepareRollbackCommandTaskHandler.VERSION_DELIMITER;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
@@ -31,7 +33,10 @@ import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
+import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.AsgNGException;
@@ -40,6 +45,7 @@ import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResponse;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
+import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.delegate.task.aws.asg.AsgTaskHelper;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
 import io.harness.exception.InvalidArgumentsException;
@@ -48,6 +54,7 @@ import io.harness.logging.LogCallback;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
+import software.wings.service.impl.AwsUtils;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.google.inject.Inject;
@@ -64,6 +71,8 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
   @Inject private AsgTaskHelper asgTaskHelper;
+  @Inject private ElbV2Client elbV2Client;
+  @Inject private AwsUtils awsUtils;
 
   @Override
   protected AsgCommandResponse executeTaskInternal(AsgCommandRequest asgCommandRequest,
@@ -92,14 +101,35 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
         iLogStreamingTaskClient, AsgCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
 
     try {
-      AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback);
-      asgSdkManager.info(format("Starting Blue Green Deployment", Bold));
+      AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback, elbV2Client);
+      AsgInfraConfig asgInfraConfig = asgCommandRequest.getAsgInfraConfig();
 
-      AutoScalingGroupContainer autoScalingGroupContainer = executeBGDeploy(
-          asgSdkManager, asgStoreManifestsContent, asgName, amiImageId, targetGroupArnsList, isFirstDeployment);
+      String region = asgInfraConfig.getRegion();
+      AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO(), region);
+
+      asgSdkManager.info("Starting Blue Green Deployment");
+
+      AutoScalingGroupContainer stageAutoScalingGroupContainer =
+          executeBGDeploy(asgSdkManager, asgStoreManifestsContent, asgName, amiImageId, targetGroupArnsList,
+              isFirstDeployment, awsInternalConfig, region);
+
+      String asgNameWithoutSuffix = asgName.substring(0, asgName.length() - 3);
+      String asgNameSuffix = asgName.substring(asgName.length() - 1);
+      String prodAsgName = asgNameWithoutSuffix + VERSION_DELIMITER + 1;
+      if (asgNameSuffix.equalsIgnoreCase(String.valueOf(1))) {
+        prodAsgName = asgNameWithoutSuffix + VERSION_DELIMITER + 2;
+      }
+
+      AutoScalingGroupContainer prodAutoScalingGroupContainer = null;
+      if (!isFirstDeployment) {
+        prodAutoScalingGroupContainer = asgTaskHelper.mapToAutoScalingGroupContainer(asgSdkManager.getASG(prodAsgName));
+      }
 
       AsgBlueGreenDeployResult asgBlueGreenDeployResult =
-          AsgBlueGreenDeployResult.builder().autoScalingGroupContainer(autoScalingGroupContainer).build();
+          AsgBlueGreenDeployResult.builder()
+              .prodAutoScalingGroupContainer(prodAutoScalingGroupContainer)
+              .stageAutoScalingGroupContainer(stageAutoScalingGroupContainer)
+              .build();
 
       logCallback.saveExecutionLog(
           color("Blue Green Deployment Finished Successfully", Green, Bold), INFO, CommandExecutionStatus.SUCCESS);
@@ -118,7 +148,7 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
 
   private AutoScalingGroupContainer executeBGDeploy(AsgSdkManager asgSdkManager,
       Map<String, List<String>> asgStoreManifestsContent, String asgName, String amiImageId,
-      List<String> targetGroupArnList, boolean isFirstDeployment) {
+      List<String> targetGroupArnList, boolean isFirstDeployment, AwsInternalConfig awsInternalConfig, String region) {
     if (isEmpty(asgName)) {
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
     }
@@ -131,6 +161,7 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
     String asgLaunchTemplateContent = asgTaskHelper.getAsgLaunchTemplateContent(asgStoreManifestsContent);
     String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
     List<String> asgScalingPolicyContent = asgTaskHelper.getAsgScalingPolicyContent(asgStoreManifestsContent);
+    List<String> asgScheduledActionContent = asgTaskHelper.getAsgScheduledActionContent(asgStoreManifestsContent);
 
     Map<String, Object> asgLaunchTemplateOverrideProperties =
         Collections.singletonMap(AsgLaunchTemplateManifestHandler.OverrideProperties.amiImageId, amiImageId);
@@ -141,7 +172,11 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
     // Chain factory code to handle each manifest one by one in a chain
     AsgManifestHandlerChainState chainState =
         AsgManifestHandlerChainFactory.builder()
-            .initialChainState(AsgManifestHandlerChainState.builder().asgName(asgName).build())
+            .initialChainState(AsgManifestHandlerChainState.builder()
+                                   .asgName(asgName)
+                                   .executionStrategy("BG")
+                                   .targetGroupArnList(targetGroupArnList)
+                                   .build())
             .asgSdkManager(asgSdkManager)
             .build()
             .addHandler(AsgLaunchTemplate,
@@ -153,9 +188,13 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
                 AsgConfigurationManifestRequest.builder()
                     .manifests(Arrays.asList(asgConfigurationContent))
                     .overrideProperties(asgConfigurationOverrideProperties)
+                    .awsInternalConfig(awsInternalConfig)
+                    .region(region)
                     .build())
             .addHandler(
                 AsgScalingPolicy, AsgScalingPolicyManifestRequest.builder().manifests(asgScalingPolicyContent).build())
+            .addHandler(AsgScheduledUpdateGroupAction,
+                AsgScheduledActionManifestRequest.builder().manifests(asgScheduledActionContent).build())
             .executeUpsert();
 
     AutoScalingGroup autoScalingGroup = chainState.getAutoScalingGroup();

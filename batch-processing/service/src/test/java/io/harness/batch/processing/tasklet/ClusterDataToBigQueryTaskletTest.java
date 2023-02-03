@@ -32,6 +32,7 @@ import io.harness.batch.processing.tasklet.support.K8SWorkloadService;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.entities.k8s.K8sWorkload;
+import io.harness.configuration.DeployMode;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.testsupport.BaseTaskletTest;
@@ -94,6 +95,7 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
   public void setup() {
     InstanceBillingData instanceBillingData = createBillingData(NAME_0);
     when(config.getBatchQueryConfig()).thenReturn(BatchQueryConfig.builder().queryBatchSize(BATCH_SIZE).build());
+    when(config.getDeployMode()).thenReturn(DeployMode.KUBERNETES);
     when(billingDataService.read(ACCOUNT_ID, Instant.ofEpochMilli(START_TIME_MILLIS),
              Instant.ofEpochMilli(END_TIME_MILLIS), BATCH_SIZE, 0, BatchJobType.CLUSTER_DATA_TO_BIG_QUERY))
         .thenReturn(Collections.singletonList(instanceBillingData));

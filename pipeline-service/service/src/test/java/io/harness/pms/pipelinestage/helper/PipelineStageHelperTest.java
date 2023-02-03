@@ -215,35 +215,38 @@ public class PipelineStageHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateFailureStrategy() {
     assertThatCode(() -> pipelineStageHelper.validateFailureStrategy(null)).doesNotThrowAnyException();
-    List<FailureStrategyConfig> failureStrategyConfigs = getFailureStrategy(RetryFailureActionConfig.builder().build());
+    ParameterField<List<FailureStrategyConfig>> failureStrategyConfigs =
+        getFailureStrategy(RetryFailureActionConfig.builder().build());
 
     assertThatThrownBy(() -> pipelineStageHelper.validateFailureStrategy(failureStrategyConfigs))
         .isInstanceOf(InvalidRequestException.class);
 
-    List<FailureStrategyConfig> miFailureStrategy =
+    ParameterField<List<FailureStrategyConfig>> miFailureStrategy =
         getFailureStrategy(ManualInterventionFailureActionConfig.builder().build());
     assertThatThrownBy(() -> pipelineStageHelper.validateFailureStrategy(miFailureStrategy))
         .isInstanceOf(InvalidRequestException.class);
 
-    List<FailureStrategyConfig> pipelineRollbackFailureStrategy =
+    ParameterField<List<FailureStrategyConfig>> pipelineRollbackFailureStrategy =
         getFailureStrategy(PipelineRollbackFailureActionConfig.builder().build());
     assertThatThrownBy(() -> pipelineStageHelper.validateFailureStrategy(pipelineRollbackFailureStrategy))
         .isInstanceOf(InvalidRequestException.class);
 
-    List<FailureStrategyConfig> defaultFailureStrategy =
+    ParameterField<List<FailureStrategyConfig>> defaultFailureStrategy =
         getFailureStrategy(ProceedWithDefaultValuesFailureActionConfig.builder().build());
     assertThatCode(() -> pipelineStageHelper.validateFailureStrategy(defaultFailureStrategy))
         .doesNotThrowAnyException();
 
-    List<FailureStrategyConfig> ignoreFailureStrategy = getFailureStrategy(IgnoreFailureActionConfig.builder().build());
+    ParameterField<List<FailureStrategyConfig>> ignoreFailureStrategy =
+        getFailureStrategy(IgnoreFailureActionConfig.builder().build());
     assertThatCode(() -> pipelineStageHelper.validateFailureStrategy(ignoreFailureStrategy)).doesNotThrowAnyException();
 
-    List<FailureStrategyConfig> markAsSuccessFailureStrategy =
+    ParameterField<List<FailureStrategyConfig>> markAsSuccessFailureStrategy =
         getFailureStrategy(MarkAsSuccessFailureActionConfig.builder().build());
     assertThatCode(() -> pipelineStageHelper.validateFailureStrategy(markAsSuccessFailureStrategy))
         .doesNotThrowAnyException();
 
-    List<FailureStrategyConfig> abortFailureStrategy = getFailureStrategy(AbortFailureActionConfig.builder().build());
+    ParameterField<List<FailureStrategyConfig>> abortFailureStrategy =
+        getFailureStrategy(AbortFailureActionConfig.builder().build());
     assertThatCode(() -> pipelineStageHelper.validateFailureStrategy(abortFailureStrategy)).doesNotThrowAnyException();
   }
 
@@ -263,10 +266,11 @@ public class PipelineStageHelperTest extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class);
   }
   @NotNull
-  private List<FailureStrategyConfig> getFailureStrategy(FailureStrategyActionConfig failureStrategyActionConfig) {
-    return Collections.singletonList(
-        FailureStrategyConfig.builder()
-            .onFailure(OnFailureConfig.builder().action(failureStrategyActionConfig).build())
-            .build());
+  private ParameterField<List<FailureStrategyConfig>> getFailureStrategy(
+      FailureStrategyActionConfig failureStrategyActionConfig) {
+    return ParameterField.createValueField(
+        Collections.singletonList(FailureStrategyConfig.builder()
+                                      .onFailure(OnFailureConfig.builder().action(failureStrategyActionConfig).build())
+                                      .build()));
   }
 }

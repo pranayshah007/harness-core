@@ -51,8 +51,6 @@ public class CiTelemetryPublisherTest extends CategoryTest {
   CITelemetryStatusRepository ciTelemetryStatusRepository = mock(CITelemetryStatusRepository.class);
   ModuleLicenseRepository moduleLicenseRepository = mock(ModuleLicenseRepository.class);
 
-  Instrumentation instrumentation = mock(Instrumentation.class);
-
   @Before
   public void setUp() {
     telemetryPublisher = spy(CiTelemetryPublisher.class);
@@ -61,7 +59,6 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     telemetryPublisher.accountClient = accountClient;
     telemetryPublisher.ciTelemetryStatusRepository = ciTelemetryStatusRepository;
     telemetryPublisher.moduleLicenseRepository = moduleLicenseRepository;
-    telemetryPublisher.instrumentation = instrumentation;
   }
 
   @Test

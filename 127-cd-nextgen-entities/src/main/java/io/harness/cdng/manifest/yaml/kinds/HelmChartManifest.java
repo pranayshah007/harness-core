@@ -87,6 +87,7 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
   @SkipAutoEvaluation
   ParameterField<Boolean> skipResourceVersioning;
   @Wither List<HelmManifestCommandFlag> commandFlags;
+  @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> subChartName;
 
   @Override
   public ManifestAttributes applyOverrides(ManifestAttributes overrideConfig) {
@@ -122,6 +123,10 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
       resultantManifest = resultantManifest.withCommandFlags(new ArrayList<>(helmChartManifest.getCommandFlags()));
     }
 
+    if (helmChartManifest.getSubChartName() != null) {
+      resultantManifest = resultantManifest.withSubChartName(helmChartManifest.getSubChartName());
+    }
+
     return resultantManifest;
   }
 
@@ -146,7 +151,7 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
   public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
     return new HelmChartManifestStepParameters(identifier,
         StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), chartName, chartVersion, helmVersion,
-        valuesPaths, skipResourceVersioning, commandFlags);
+        valuesPaths, skipResourceVersioning, commandFlags, subChartName);
   }
 
   @Value
@@ -159,5 +164,6 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
     ParameterField<List<String>> valuesPaths;
     ParameterField<Boolean> skipResourceVersioning;
     List<HelmManifestCommandFlag> commandFlags;
+    ParameterField<String> subChartName;
   }
 }

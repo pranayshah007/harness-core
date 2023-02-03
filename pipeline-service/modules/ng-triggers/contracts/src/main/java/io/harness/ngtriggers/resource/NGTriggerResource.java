@@ -40,8 +40,6 @@ import io.harness.rest.RestResponse;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -100,10 +98,6 @@ public interface NGTriggerResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns details of the created Trigger.")
       })
-  @ApiImplicitParams({
-    @ApiImplicitParam(dataTypeClass = NGTriggerConfigV2.class,
-        dataType = "io.harness.ngtriggers.beans.config.NGTriggerConfigV2", paramType = "body")
-  })
   @ApiOperation(value = "Create Trigger", nickname = "createTrigger")
   ResponseDTO<NGTriggerResponseDTO>
   create(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -149,10 +143,6 @@ public interface NGTriggerResource {
         ApiResponse(responseCode = "default", description = "Returns the updated trigger")
       })
   @Path("/{triggerIdentifier}")
-  @ApiImplicitParams({
-    @ApiImplicitParam(dataTypeClass = NGTriggerConfigV2.class,
-        dataType = "io.harness.ngtriggers.beans.config.NGTriggerConfigV2", paramType = "body")
-  })
   @ApiOperation(value = "Update a trigger by identifier", nickname = "updateTrigger")
   ResponseDTO<NGTriggerResponseDTO>
   update(@HeaderParam(IF_MATCH) String ifMatch,
@@ -333,4 +323,10 @@ public interface NGTriggerResource {
       @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
           "targetIdentifier") @ResourceIdentifier String targetIdentifier,
       @PathParam("triggerIdentifier") String triggerIdentifier);
+
+  @GET
+  @Path("/dummy-NGTriggerConfigV2-api")
+  @ApiOperation(value = "This is dummy api to expose NGTriggerConfigV2", nickname = "NGTriggerConfigV2")
+  @Hidden
+  ResponseDTO<NGTriggerConfigV2> getNGTriggerConfigV2();
 }

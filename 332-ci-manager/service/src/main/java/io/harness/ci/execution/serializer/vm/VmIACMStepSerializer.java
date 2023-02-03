@@ -22,6 +22,7 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep.VmPluginStepBuilder;
+import io.harness.exception.GeneralException;
 import io.harness.exception.ngexception.IACMStageExecutionException;
 import io.harness.iacmserviceclient.IACMServiceUtils;
 import io.harness.ng.core.NGAccess;
@@ -47,12 +48,25 @@ public class VmIACMStepSerializer {
   public VmPluginStep serialize(Ambiance ambiance, IACMTerraformPlanInfo stepInfo, StageInfraDetails stageInfraDetails,
       String identifier, ParameterField<Timeout> parameterFieldTimeout) {
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, stepInfo.getDefaultTimeout());
+
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+
     Stack stackInfo = getIACMStackInfo(ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(),
         ngAccess.getAccountIdentifier(), stepInfo.getStackID());
 
+    String command = stepInfo.getEnv().getValue().get("command");
+    String action;
+    if (command.equalsIgnoreCase("plan") || command.equalsIgnoreCase("apply")) {
+      action = "provision";
+    } else if (command.equalsIgnoreCase("destroy")) {
+      action = "teardown";
+    } else {
+      throw new GeneralException("Action " + command + " on IACM Terraform step not recognized");
+    }
+    createExecution(ambiance, stackInfo.getIdentifier(), action);
+
     Map<String, String> envVars = getStackVariables(ambiance, ngAccess.getOrgIdentifier(),
-        ngAccess.getProjectIdentifier(), ngAccess.getAccountIdentifier(), stepInfo.getStackID(), stackInfo);
+        ngAccess.getProjectIdentifier(), ngAccess.getAccountIdentifier(), stepInfo.getStackID(), command, stackInfo);
 
     String image = ciExecutionConfigService.getPluginVersionForVM(
         stepInfo.getNonYamlInfo().getStepInfoType(), ngAccess.getAccountIdentifier());
@@ -79,8 +93,8 @@ public class VmIACMStepSerializer {
     return vmPluginStepBuilder.build();
   }
 
-  private Map<String, String> getStackVariables(
-      Ambiance ambiance, String org, String projectId, String accountId, String stackID, Stack stackInfo) {
+  private Map<String, String> getStackVariables(Ambiance ambiance, String org, String projectId, String accountId,
+      String stackID, String command, Stack stackInfo) {
     String pluginEnvPrefix = "PLUGIN_";
     String tfEnvPrefix = "TF_";
 
@@ -117,6 +131,7 @@ public class VmIACMStepSerializer {
     env.put("ROOT_DIR", stackInfo.getRepository_path());
     env.put("TF_VERSION", stackInfo.getProvisioner_version());
     env.put("ENDPOINT_VARIABLES", getTerraformEndpointsInfo(ambiance, stackID));
+    env.put("OPERATIONS", command);
 
     Map<String, String> envVars = prepareEnvsMaps(env, pluginEnvPrefix);
     envVars.putAll(prepareEnvsMaps(envSecrets, "ENV_SECRETS_"));
@@ -156,5 +171,9 @@ public class VmIACMStepSerializer {
 
   private String getTerraformEndpointsInfo(Ambiance ambiance, String stackId) {
     return iacmServiceUtils.GetTerraformEndpointsData(ambiance, stackId);
+  }
+
+  private void createExecution(Ambiance ambiance, String stackId, String action) {
+    iacmServiceUtils.createIACMExecution(ambiance, stackId, action);
   }
 }

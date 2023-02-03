@@ -9,6 +9,9 @@ package io.harness.pms.plan.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
+import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetIntoPipelineForGivenStages;
+import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipeline;
+import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipelineForGivenStages;
 
 import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
@@ -47,6 +50,7 @@ import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.helpers.YamlExpressionResolveHelper;
+import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlWithTemplateDTO;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
@@ -439,6 +443,24 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
         "Invalid request : Input Set did not exist or pipeline execution has been deleted");
   }
 
+  @Override
+  public String getInputSetYamlForRerun(
+      String accountId, String orgId, String projectId, String planExecutionId, boolean pipelineDeleted) {
+    // ToDo: Use Mongo Projections
+    Optional<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntityOptional =
+        pmsExecutionSummaryRespository
+            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
+                accountId, orgId, projectId, planExecutionId, !pipelineDeleted);
+    if (pipelineExecutionSummaryEntityOptional.isPresent()) {
+      PipelineExecutionSummaryEntity executionSummaryEntity = pipelineExecutionSummaryEntityOptional.get();
+
+      // InputSet yaml used during execution
+      return executionSummaryEntity.getInputSetYaml();
+    }
+    throw new InvalidRequestException(
+        "Invalid request : pipeline execution with planExecutionId " + planExecutionId + " has been deleted");
+  }
+
   private String getLatestTemplate(
       String accountId, String orgId, String projectId, PipelineExecutionSummaryEntity executionSummaryEntity) {
     EntityGitDetails entityGitDetails = executionSummaryEntity.getEntityGitDetails();
@@ -595,5 +617,27 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     String executionYaml = planExecutionMetadata.get().getYaml();
 
     return ExecutionDataResponseDTO.builder().executionYaml(executionYaml).executionId(planExecutionId).build();
+  }
+
+  @Override
+  public String mergeRuntimeInputIntoPipelineForRerun(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String planExecutionId, String pipelineBranch, String pipelineRepoID,
+      List<String> stageIdentifiers) {
+    String pipelineYaml = validateAndMergeHelper
+                              .getPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+                                  pipelineBranch, pipelineRepoID, false)
+                              .getYaml();
+    String pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
+        ? createTemplateFromPipeline(pipelineYaml)
+        : createTemplateFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
+    if (EmptyPredicate.isEmpty(pipelineTemplate)) {
+      return "";
+    }
+    String mergedRuntimeInputYaml =
+        getInputSetYamlForRerun(accountId, orgIdentifier, projectIdentifier, planExecutionId, false);
+    if (EmptyPredicate.isEmpty(stageIdentifiers)) {
+      return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineTemplate, mergedRuntimeInputYaml, false);
+    }
+    return mergeInputSetIntoPipelineForGivenStages(pipelineTemplate, mergedRuntimeInputYaml, false, stageIdentifiers);
   }
 }

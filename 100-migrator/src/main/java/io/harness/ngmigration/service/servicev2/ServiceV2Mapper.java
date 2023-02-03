@@ -33,6 +33,7 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,18 +69,24 @@ public interface ServiceV2Mapper {
     List<ArtifactStream> artifactStreams = getArtifactStream(entities, graph, service);
     List<ArtifactSource> sources = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(artifactStreams)) {
-      sources = artifactStreams.stream()
-                    .map(artifactStream -> {
-                      PrimaryArtifact artifactSource =
-                          ArtifactStreamFactory.getArtifactStreamMapper(artifactStream)
-                              .getArtifactDetails(inputDTO, entities, graph, artifactStream, migratedEntities);
-                      return ArtifactSource.builder()
-                          .sourceType(artifactSource.getSourceType())
-                          .identifier(MigratorUtility.generateIdentifier(artifactStream.getName()))
-                          .spec(artifactSource.getSpec())
-                          .build();
-                    })
-                    .collect(Collectors.toList());
+      sources =
+          artifactStreams.stream()
+              .map(artifactStream -> {
+                PrimaryArtifact artifactSource =
+                    ArtifactStreamFactory.getArtifactStreamMapper(artifactStream)
+                        .getArtifactDetails(inputDTO, entities, graph, artifactStream, migratedEntities);
+                if (isNotEmpty(artifactSource.getSources())) {
+                  return artifactSource.getSources();
+                } else {
+                  return Arrays.asList(ArtifactSource.builder()
+                                           .sourceType(artifactSource.getSourceType())
+                                           .identifier(MigratorUtility.generateIdentifier(artifactStream.getName()))
+                                           .spec(artifactSource.getSpec())
+                                           .build());
+                }
+              })
+              .flatMap(List::stream)
+              .collect(Collectors.toList());
     }
     return PrimaryArtifact.builder()
         .primaryArtifactRef(ParameterField.createValueField("<+input>"))

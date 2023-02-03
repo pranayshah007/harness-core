@@ -25,6 +25,7 @@ import static io.harness.delegate.beans.DelegateTaskEvent.DelegateTaskEventBuild
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.executioncapability.ExecutionCapability.EvaluationMode;
 import static io.harness.delegate.task.TaskFailureReason.EXPIRED;
+import static io.harness.exception.FailureType.DELEGATE_RESTART;
 import static io.harness.govern.Switch.noop;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
@@ -194,6 +195,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -1907,12 +1909,14 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
     log.warn("Marking delegate tasks {} failed since delegate went down before completion.",
         delegateTasks.stream().map(DelegateTask::getUuid).collect(Collectors.toList()));
-    final String errorMessage = "Delegate disconnected while executing the task";
+    Delegate delegate = delegateCache.get(accountId, delegateId, false);
+    final String errorMessage = "Delegate [" + delegate.getDelegateName() + "] disconnected while executing the task";
     final DelegateTaskResponse delegateTaskResponse =
         DelegateTaskResponse.builder()
             .responseCode(ResponseCode.FAILED)
             .accountId(accountId)
             .response(ErrorNotifyResponseData.builder()
+                          .failureTypes(EnumSet.of(DELEGATE_RESTART))
                           .errorMessage(errorMessage)
                           .exception(new DelegateNotAvailableException(errorMessage))
                           .delegateMetaInfo(DelegateMetaInfo.builder().id(delegateId).build())

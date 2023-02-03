@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -62,5 +63,10 @@ public class TriggerEventHistoryRepositoryCustomImpl implements TriggerEventHist
         .include(TriggerEventHistoryKeys.createdAt)
         .include(TriggerEventHistoryKeys.exceptionOccurred);
     return mongoTemplate.find(query, TriggerEventHistory.class);
+  }
+
+  public void deleteBatch(Criteria criteria) {
+    BulkOperations operations = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, TriggerEventHistory.class);
+    operations.remove(new Query(criteria)).execute();
   }
 }

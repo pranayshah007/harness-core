@@ -8,6 +8,7 @@
 package io.harness.auditevent.streaming.mappers;
 
 import static io.harness.audit.AuditCommonConstants.USER_ID;
+import static io.harness.auditevent.streaming.AuditEventStreamingConstants.METADATA_KEY_BATCH_ID;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.rule.OwnerRule.NISHANT;
 
@@ -25,15 +26,18 @@ import io.harness.audit.entities.AuditEvent.AuditEventBuilder;
 import io.harness.audit.entities.AuthenticationInfo;
 import io.harness.audit.entities.Resource;
 import io.harness.audit.entities.ResourceScope;
-import io.harness.auditevent.streaming.entities.outgoing.OutgoingAuditMessage;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
+import io.harness.auditevent.streaming.entities.StreamingBatch;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.common.beans.KeyValuePair;
 import io.harness.request.HttpRequestInfo;
 import io.harness.request.RequestMetadata;
 import io.harness.rule.Owner;
+import io.harness.serializer.JsonUtils;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,17 +58,22 @@ public class AuditEventMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testToOutgoingAuditMessage() {
     List<AuditEvent> auditEventList = getAuditEventList();
-    auditEventList.forEach(this::assertAuditEvent);
+    StreamingBatch streamingBatch = StreamingBatch.builder().id(randomAlphabetic(RANDOM_STRING_LENGTH)).build();
+    auditEventList.forEach(auditEvent -> assertAuditEvent(auditEvent, streamingBatch));
   }
 
-  private void assertAuditEvent(AuditEvent auditEvent) {
-    OutgoingAuditMessage outgoingMessage = auditEventMapper.toOutgoingAuditMessage(auditEvent);
+  private void assertAuditEvent(AuditEvent auditEvent, StreamingBatch streamingBatch) {
+    OutgoingAuditMessage outgoingMessage = auditEventMapper.toOutgoingAuditMessage(auditEvent, streamingBatch);
     assertThat(outgoingMessage.getAuditEventId()).isEqualTo(auditEvent.getId());
     assertThat(outgoingMessage.getAuditModule()).isEqualTo(auditEvent.getModule());
     assertThat(outgoingMessage.getAuditResource()).isEqualToComparingFieldByField(auditEvent.getResource());
     assertThat(outgoingMessage.getAuditResourceScope()).isEqualToComparingFieldByField(auditEvent.getResourceScope());
-    assertThat(outgoingMessage.getAuditAction()).isEqualTo(auditEvent.getAction());
+    assertThat(outgoingMessage.getAuditAction()).isEqualTo(auditEvent.getAction().name());
     assertThat(outgoingMessage.getAuditEventTime()).isEqualTo(auditEvent.getTimestamp());
+
+    assertThat(outgoingMessage.getAuditEventMetadata()).isNotNull().isInstanceOf(Map.class);
+    Map<String, Object> auditEventMetadata = JsonUtils.convertValue(outgoingMessage.getAuditEventMetadata(), Map.class);
+    assertThat(auditEventMetadata).containsEntry(METADATA_KEY_BATCH_ID, streamingBatch.getId());
 
     if (auditEvent.getHttpRequestInfo() == null && auditEvent.getRequestMetadata() == null) {
       assertThat(outgoingMessage.getAuditHttpRequestInfo()).isNull();
@@ -79,7 +88,7 @@ public class AuditEventMapperTest extends CategoryTest {
     }
 
     assertThat(outgoingMessage.getAuditEventAuthor().getPrincipal().getType())
-        .isEqualTo(auditEvent.getAuthenticationInfo().getPrincipal().getType());
+        .isEqualTo(auditEvent.getAuthenticationInfo().getPrincipal().getType().name());
     if (auditEvent.getAuthenticationInfo().getPrincipal().getType().equals(PrincipalType.USER)) {
       assertThat(outgoingMessage.getAuditEventAuthor().getPrincipal().getEmail())
           .isEqualTo(auditEvent.getAuthenticationInfo().getPrincipal().getIdentifier());

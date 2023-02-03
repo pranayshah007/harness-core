@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ABHISHEK;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.KeyValuePair;
@@ -31,6 +32,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.powermock.api.mockito.PowerMockito;
@@ -71,7 +73,8 @@ public class HttpConnectionExecutionCapabilityCheckTest {
     when(StringUtils.isNotBlank(anyString())).thenAnswer(mockBool -> false);
 
     when(Http.connectableHttpUrlWithoutFollowingRedirect(
-             httpConnectionExecutionCapability_HeaderNull_IgnoreRedirectTrue.fetchConnectableUrl()))
+             eq(httpConnectionExecutionCapability_HeaderNull_IgnoreRedirectTrue.fetchConnectableUrl()),
+             ArgumentMatchers.isNull()))
         .thenAnswer(mockBool -> true);
     CapabilityResponse response = httpConnectionExecutionCapabilityCheck.performCapabilityCheck(
         httpConnectionExecutionCapability_HeaderNull_IgnoreRedirectTrue);
@@ -124,8 +127,8 @@ public class HttpConnectionExecutionCapabilityCheckTest {
     when(Http.connectableHttpUrlWithHeaders(httpConnectionExecutionCapability_Header.fetchConnectableUrl(),
              httpConnectionExecutionCapability_Header.getHeaders()))
         .thenAnswer(mockBool -> true);
-    when(
-        Http.connectableHttpUrlWithoutFollowingRedirect(httpConnectionExecutionCapability_Header.fetchConnectableUrl()))
+    when(Http.connectableHttpUrlWithoutFollowingRedirect(
+             httpConnectionExecutionCapability_Header.fetchConnectableUrl(), new ArrayList<>()))
         .thenAnswer(mockBool -> true);
 
     CapabilityResponse response =

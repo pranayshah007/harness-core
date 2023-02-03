@@ -17,6 +17,8 @@ import io.harness.pms.yaml.ParameterField;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Value;
@@ -30,9 +32,9 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("AwsCloudProviderBasicConfig")
 @RecasterAlias("io.harness.cdng.elastigroup.AwsCloudProviderBasicConfig")
 public class AwsCloudProviderBasicConfig implements CloudProviderSpec {
-  @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> connectorRef;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) @NotEmpty @NotNull ParameterField<String> connectorRef;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> region;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) @NotEmpty @NotNull ParameterField<String> region;
 
   @Override
   @JsonIgnore

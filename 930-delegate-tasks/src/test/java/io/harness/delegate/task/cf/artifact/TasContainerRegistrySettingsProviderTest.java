@@ -13,6 +13,7 @@ import static io.harness.delegate.task.azure.AzureTestUtils.REGISTRY_HOSTNAME;
 import static io.harness.rule.OwnerRule.RISHABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -80,6 +81,21 @@ public class TasContainerRegistrySettingsProviderTest extends CategoryTest {
     assertThat(dockerSettings.getPassword()).isEqualTo("secret-key");
     assertThat(dockerSettings.getUsername()).isEqualTo(AzureTestUtils.CLIENT_ID);
     assertThat(dockerSettings.getUrl()).isEqualTo(REGISTRY_HOSTNAME);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetContainerSettingsNullCredential() {
+    final char[] secret = "secret-key".toCharArray();
+    final TasContainerArtifactConfig containerArtifactConfig = TasTestUtils.createTestContainerArtifactConfig(
+        AzureConnectorDTO.builder().build(), TasArtifactRegistryType.ACR);
+    doReturn(AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET).when(azureConfig).getAzureAuthenticationType();
+    doReturn(secret).when(azureConfig).getKey();
+    doReturn(AzureTestUtils.CLIENT_ID).when(azureConfig).getClientId();
+
+    assertThatThrownBy(() -> settingsProvider.getContainerSettings(containerArtifactConfig, decryptionHelper))
+        .hasMessage("Check if artifact is properly configured and not missing any details");
   }
 
   @Test

@@ -25,4 +25,5 @@ import lombok.experimental.SuperBuilder;
 public class TerragruntPlanTaskParameters extends AbstractTerragruntTaskParameters {
   TerragruntCommandType commandType;
   boolean exportJsonPlan;
+  String planName;
 }

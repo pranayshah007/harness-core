@@ -566,6 +566,15 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public Boolean updateIsSmpAccount(String accountId, boolean isSmpAccount) {
+    Account account = get(accountId);
+    account.setSmpAccount(isSmpAccount);
+    update(account);
+    publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
+    return true;
+  }
+
+  @Override
   public AccountDetails getAccountDetails(String accountId) {
     Account account = wingsPersistence.get(Account.class, accountId);
     if (account == null) {
@@ -900,6 +909,7 @@ public class AccountServiceImpl implements AccountService {
             .set(AccountKeys.nextGenEnabled, account.isNextGenEnabled())
             .set(AccountKeys.ceAutoCollectK8sEvents, account.isCeAutoCollectK8sEvents())
             .set("whitelistedDomains", account.getWhitelistedDomains())
+            .set("smpAccount", account.isSmpAccount())
             .set("isProductLed", account.isProductLed());
 
     if (null != account.getLicenseInfo()) {
@@ -2143,6 +2153,41 @@ public class AccountServiceImpl implements AccountService {
       return true;
     }
     log.info("Failed to update ring name to {} for accountId = {} ", ringName, accountId);
+    return false;
+  }
+
+  @Override
+  public Integer getTrustLevel(String accountId) {
+    Account account = get(accountId);
+
+    if (account == null) {
+      throw new AccountNotFoundException(
+          "Account is not found for the given id: " + accountId, null, ACCOUNT_DOES_NOT_EXIST, Level.ERROR, USER, null);
+    }
+    return account.getTrustLevel();
+  }
+
+  @Override
+  public boolean updateTrustLevel(String accountId, Integer trustLevel) {
+    Account account = get(accountId);
+
+    if (account == null) {
+      throw new AccountNotFoundException(
+          "Account is not found for the given id: " + accountId, null, ACCOUNT_DOES_NOT_EXIST, Level.ERROR, USER, null);
+    }
+
+    UpdateOperations<Account> updateOperations = wingsPersistence.createUpdateOperations(Account.class);
+    updateOperations.set(AccountKeys.trustLevel, trustLevel);
+
+    UpdateResults updateResults = wingsPersistence.update(
+        wingsPersistence.createQuery(Account.class).filter(Mapper.ID_KEY, accountId), updateOperations);
+
+    if (updateResults != null && updateResults.getUpdatedCount() > 0) {
+      log.info("Successfully updated account trust level to {} for accountId = {} ", trustLevel, accountId);
+      return true;
+    }
+
+    log.info("Failed to update account trust level to {} for accountId = {} ", trustLevel, accountId);
     return false;
   }
 }

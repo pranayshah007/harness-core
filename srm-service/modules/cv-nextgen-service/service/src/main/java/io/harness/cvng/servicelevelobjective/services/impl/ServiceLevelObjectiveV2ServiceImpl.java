@@ -492,6 +492,11 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   }
 
   @Override
+  public List<AbstractServiceLevelObjective> get(ProjectParams projectParams, List<String> identifiers) {
+    return get(projectParams, Filter.builder().identifiers(identifiers).build());
+  }
+
+  @Override
   public List<AbstractServiceLevelObjective> getByMonitoredServiceIdentifier(
       ProjectParams projectParams, String monitoredServiceIdentifier) {
     return get(projectParams, Filter.builder().monitoredServiceIdentifier(monitoredServiceIdentifier).build());
@@ -532,11 +537,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     if (isNotEmpty(filter.getCompositeSLOIdentifier())) {
       CompositeServiceLevelObjective compositeSLO = (CompositeServiceLevelObjective) checkIfSLOPresentWithType(
           projectParams, filter.getCompositeSLOIdentifier(), ServiceLevelObjectiveType.COMPOSITE);
-
-      simpleSLOIdentifiers = compositeSLO.getServiceLevelObjectivesDetails()
-                                 .stream()
-                                 .map(ServiceLevelObjectivesDetail::getServiceLevelObjectiveRef)
-                                 .collect(Collectors.toList());
+      simpleSLOIdentifiers = getReferencedSimpleSLOs(projectParams, compositeSLO);
       serviceLevelObjectivesDetailList = compositeSLO.getServiceLevelObjectivesDetails();
     }
     return getResponse(projectParams, pageParams.getPage(), pageParams.getSize(), serviceLevelObjectivesDetailList,
@@ -555,6 +556,23 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                     : null)
             .childResource(filter.isChildResource())
             .build());
+  }
+
+  @Override
+  public List<String> getReferencedSimpleSLOs(
+      ProjectParams projectParams, CompositeServiceLevelObjective compositeServiceLevelObjective) {
+    return compositeServiceLevelObjective.getServiceLevelObjectivesDetails()
+        .stream()
+        .map(ServiceLevelObjectivesDetail::getServiceLevelObjectiveRef)
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public Set<String> getReferencedMonitoredServices(List<AbstractServiceLevelObjective> serviceLevelObjectiveList) {
+    return serviceLevelObjectiveList.stream()
+        .filter(slo -> slo.getType().equals(ServiceLevelObjectiveType.SIMPLE))
+        .map(slo -> ((SimpleServiceLevelObjective) slo).getMonitoredServiceIdentifier())
+        .collect(Collectors.toSet());
   }
 
   @Override

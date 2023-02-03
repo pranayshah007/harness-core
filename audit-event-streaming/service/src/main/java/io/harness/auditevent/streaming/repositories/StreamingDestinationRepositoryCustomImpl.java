@@ -28,4 +28,11 @@ public class StreamingDestinationRepositoryCustomImpl implements StreamingDestin
     Query query = new Query(criteria);
     return template.find(query, StreamingDestination.class);
   }
+
+  @Override
+  public List<String> findDistinctAccounts(Criteria criteria) {
+    Query query = new Query(criteria);
+    return template.findDistinct(query, StreamingDestination.StreamingDestinationKeys.accountIdentifier,
+        StreamingDestination.class, String.class);
+  }
 }

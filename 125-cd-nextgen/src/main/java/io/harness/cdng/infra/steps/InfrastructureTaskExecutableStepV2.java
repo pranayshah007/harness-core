@@ -495,8 +495,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     }
     Map<String, Object> inputMap = new HashMap<>();
     inputMap.put(YamlTypes.INFRASTRUCTURE_DEF, inputs);
-    return MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
-        originalYaml, YamlPipelineUtils.writeYamlString(inputMap), true);
+    return MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+        originalYaml, YamlPipelineUtils.writeYamlString(inputMap), true, true);
   }
 
   @Override

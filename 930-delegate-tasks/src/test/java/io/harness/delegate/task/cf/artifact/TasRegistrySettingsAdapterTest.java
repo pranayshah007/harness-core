@@ -10,6 +10,7 @@ package io.harness.delegate.task.cf.artifact;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.RISHABH;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -41,6 +42,7 @@ public class TasRegistrySettingsAdapterTest extends CategoryTest {
   @Mock private TasGoogleContainerRegistrySettingsProvider tasGoogleContainerRegistrySettingsProvider;
   @Mock private TasGoogleArtifactRegistrySettingsProvider tasGoogleArtifactRegistrySettingsProvider;
   @Mock private TasNexus3RegistrySettingsProvider tasNexus3RegistrySettingsProvider;
+  @Mock private TasGithubPackageRegistrySettingsProvider tasGithubPackageRegistrySettingsProvider;
 
   @InjectMocks private TasRegistrySettingsAdapter settingsAdapter;
 
@@ -170,5 +172,37 @@ public class TasRegistrySettingsAdapterTest extends CategoryTest {
         tasArtifactoryRegistrySettingsProvider, tasContainerRegistrySettingsProvider,
         tasElasticContainerRegistrySettingsProvider, tasGoogleContainerRegistrySettingsProvider,
         tasGoogleArtifactRegistrySettingsProvider);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetContainerSettingsGithubPackageRegistry() {
+    final TasContainerArtifactConfig artifactConfig =
+        TasContainerArtifactConfig.builder().registryType(TasArtifactRegistryType.GITHUB_PACKAGE_REGISTRY).build();
+
+    settingsAdapter.getContainerSettings(artifactConfig);
+
+    verify(tasGithubPackageRegistrySettingsProvider).getContainerSettings(artifactConfig, decryptionHelper);
+    verifyNoMoreInteractions(tasDockerHubPublicRegistrySettingsProvider, tasDockerHubPrivateRegistrySettingsProvider,
+        tasArtifactoryRegistrySettingsProvider, tasContainerRegistrySettingsProvider,
+        tasElasticContainerRegistrySettingsProvider, tasGoogleContainerRegistrySettingsProvider,
+        tasGoogleArtifactRegistrySettingsProvider, tasNexus3RegistrySettingsProvider);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetContainerSettingsNullRegistry() {
+    final TasContainerArtifactConfig artifactConfig = TasContainerArtifactConfig.builder().registryType(null).build();
+
+    assertThatThrownBy(() -> settingsAdapter.getContainerSettings(artifactConfig))
+        .hasMessage("Please contact Harness support team");
+
+    verifyNoMoreInteractions(tasDockerHubPublicRegistrySettingsProvider, tasDockerHubPrivateRegistrySettingsProvider,
+        tasArtifactoryRegistrySettingsProvider, tasContainerRegistrySettingsProvider,
+        tasElasticContainerRegistrySettingsProvider, tasGoogleContainerRegistrySettingsProvider,
+        tasGoogleArtifactRegistrySettingsProvider, tasNexus3RegistrySettingsProvider,
+        tasGithubPackageRegistrySettingsProvider);
   }
 }

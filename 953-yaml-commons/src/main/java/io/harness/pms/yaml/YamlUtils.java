@@ -18,6 +18,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.harness.yaml.utils.YamlConstants;
 
@@ -611,7 +612,7 @@ public class YamlUtils {
             break;
           }
         }
-        if (!valueWithoutValidators.equals(YamlConstants.INPUT)) {
+        if (!valueWithoutValidators.equals(YamlConstants.INPUT) || checkIfSiblingHasDefaultValue(fqn, fqnToValueMap)) {
           fqnObjectMap.put(fqn, new TextNode(valueWithoutValidators));
         }
       } else {
@@ -619,6 +620,15 @@ public class YamlUtils {
       }
     }
     return new YamlConfig(fqnObjectMap, config.getYamlMap()).getYaml();
+  }
+
+  // Check if any sibling field is default key or not (handling for variables as default for them is in sibling)
+  private boolean checkIfSiblingHasDefaultValue(FQN currentNodeFqn, Map<FQN, Object> fqnToValueMap) {
+    FQN parent = currentNodeFqn.getParent();
+    // getting default key sibling to see if it exists in fqnMap or not
+    FQN defaultSiblingNode =
+        FQN.duplicateAndAddNode(parent, FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key("default").build());
+    return fqnToValueMap.containsKey(defaultSiblingNode);
   }
 
   private void removeUuidInObject(JsonNode node) {

@@ -919,8 +919,10 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   @Override
   public GitFileBatchResponse getFileBatch(GitFileBatchRequest gitFileBatchRequest) {
     ScmBatchGetFileTaskParams scmBatchGetFileTaskParams = getScmBatchGetFileTaskParams(gitFileBatchRequest);
-    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(gitFileBatchRequest.getAccountIdentifier(), null,
-        null, scmBatchGetFileTaskParams, TaskType.SCM_BATCH_GET_FILE_TASK, 5);
+    Scope eligibleDelegatesScope = getEligibleScopeOfDelegates(gitFileBatchRequest);
+    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(eligibleDelegatesScope.getAccountIdentifier(),
+        eligibleDelegatesScope.getOrgIdentifier(), eligibleDelegatesScope.getProjectIdentifier(),
+        scmBatchGetFileTaskParams, TaskType.SCM_BATCH_GET_FILE_TASK, 5);
     final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
     ScmBatchGetFileTaskResponseData scmBatchGetFileTaskResponseData =
         (ScmBatchGetFileTaskResponseData) delegateResponseData;
@@ -1133,5 +1135,36 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
       getFileTaskParamsPerConnectorList.add(getFileTaskParamsPerConnector);
     });
     return getFileTaskParamsPerConnectorList;
+  }
+
+  @VisibleForTesting
+  // Decides what all scope of delegates are eligible to pick up this task
+  Scope getEligibleScopeOfDelegates(GitFileBatchRequest gitFileBatchRequest) {
+    String orgIdentifier = null, projectIdentifier = null;
+    boolean isThereAnyTaskNotProjectScoped = false;
+    for (var entry : gitFileBatchRequest.getGetBatchFileRequestIdentifierGitFileRequestV2Map().entrySet()) {
+      String requestOrgIdentifier = entry.getValue().getScope().getOrgIdentifier();
+      if (requestOrgIdentifier == null) {
+        orgIdentifier = null;
+        projectIdentifier = null;
+        break;
+      } else {
+        orgIdentifier = requestOrgIdentifier;
+      }
+      String requestProjectIdentifier = entry.getValue().getScope().getProjectIdentifier();
+      if (isThereAnyTaskNotProjectScoped == false) {
+        if (requestProjectIdentifier == null) {
+          isThereAnyTaskNotProjectScoped = true;
+          projectIdentifier = null;
+        } else {
+          projectIdentifier = requestProjectIdentifier;
+        }
+      }
+    }
+    return Scope.builder()
+        .projectIdentifier(projectIdentifier)
+        .orgIdentifier(orgIdentifier)
+        .accountIdentifier(gitFileBatchRequest.getAccountIdentifier())
+        .build();
   }
 }

@@ -64,10 +64,6 @@ public abstract class AbstractServicesApiImpl {
   @Inject private final ServiceResourceApiUtils serviceResourceApiUtils;
   @Inject private final ServiceEntityYamlSchemaHelper serviceSchemaHelper;
 
-  private static final String projectScopedServiceUri = "/v1/orgs/%s/projects/%s/services)";
-  private static final String orgScopedServiceUri = "/v1/orgs/%s/services)";
-  private static final String accountScopedServiceUri = "/v1/services)";
-
   public Response createServiceEntity(ServiceRequest serviceRequest, String org, String project, String account) {
     throwExceptionForNoRequestDTO(serviceRequest);
     accessControlClient.checkForAccessOrThrow(
@@ -144,7 +140,7 @@ public abstract class AbstractServicesApiImpl {
       ResponseBuilder responseBuilder = Response.ok();
 
       ResponseBuilder responseBuilderWithLinks =
-          ApiUtils.addLinksHeader(responseBuilder, getScopedUri(org, project), filterserviceList.size(), page, limit);
+          ApiUtils.addLinksHeader(responseBuilder, filterserviceList.size(), page, limit);
       return responseBuilderWithLinks.entity(filterserviceList).build();
     } else {
       Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
@@ -160,21 +156,9 @@ public abstract class AbstractServicesApiImpl {
       ResponseBuilder responseBuilder = Response.ok();
 
       ResponseBuilder responseBuilderWithLinks =
-          ApiUtils.addLinksHeader(responseBuilder, getScopedUri(org, project), serviceList.size(), page, limit);
+          ApiUtils.addLinksHeader(responseBuilder, serviceResponsePage.getTotalElements(), page, limit);
 
       return responseBuilderWithLinks.entity(serviceList).build();
-    }
-  }
-
-  private String getScopedUri(String org, String project) {
-    if (isNotEmpty(project)) {
-      return format(projectScopedServiceUri, org, project);
-    } else {
-      if (isNotEmpty(org)) {
-        return format(orgScopedServiceUri, org);
-      } else {
-        return accountScopedServiceUri;
-      }
     }
   }
 

@@ -132,9 +132,8 @@ public class InputSetsApiImpl implements InputSetsApi {
     Page<InputSetResponseBody> inputSetList = inputSetEntities.map(inputSetsApiUtils::getInputSetResponse);
 
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
-        String.format("/v1/orgs/%s/projects/%s/pipelines/%s/input-sets", org, project, pipeline),
-        inputSetList.getContent().size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, inputSetList.getTotalElements(), page, limit);
     return responseBuilderWithLinks.entity(inputSetList.getContent()).build();
   }
 

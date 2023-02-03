@@ -38,16 +38,17 @@ public class AsgInstanceRefreshHandler extends AsgManifestHandler<PutScalingPoli
     String asgName = chainState.getAsgName();
     AutoScalingGroup autoScalingGroup = chainState.getAutoScalingGroup();
     if (autoScalingGroup == null) {
-      asgSdkManager.info("Asg with name [%s] does not exist. Skipping instance refresh operation", asgName);
+      asgSdkManager.info("Asg with name [%s] does not exist. Skipping instance refresh", asgName);
     } else {
-      String operationName = format("Instance Refresh Asg %s", asgName);
-      asgSdkManager.info("Operation `%s` has started", operationName);
+      asgSdkManager.info("Starting Instance Refresh for Asg %s", asgName);
       StartInstanceRefreshResult startInstanceRefreshResult = asgSdkManager.startInstanceRefresh(asgName,
           asgInstanceRefreshManifestRequest.isSkipMatching(), asgInstanceRefreshManifestRequest.getInstanceWarmup(),
           asgInstanceRefreshManifestRequest.getMinimumHealthyPercentage());
       String instanceRefreshId = startInstanceRefreshResult.getInstanceRefreshId();
-      asgSdkManager.waitInstanceRefreshSteadyState(asgName, instanceRefreshId, operationName);
-      asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
+      asgSdkManager.info("Waiting for Instance Refresh for Asg %s to reach steady state", asgName);
+      asgSdkManager.waitInstanceRefreshSteadyState(
+          asgName, instanceRefreshId, format("Instance Refresh for Asg %s", asgName));
+      asgSdkManager.infoBold("Instance Refresh for Asg %s ended successfully", asgName);
     }
 
     return chainState;

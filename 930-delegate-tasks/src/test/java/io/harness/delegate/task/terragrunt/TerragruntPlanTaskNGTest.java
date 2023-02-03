@@ -128,7 +128,7 @@ public class TerragruntPlanTaskNGTest extends CategoryTest {
     when(taskService.uploadStateFile(eq("workingDir/"), eq("test-workspace"), any(), any(), any(), any(), any()))
         .thenReturn(TG_STATE_ID);
 
-    doReturn(encryptedPlanContent).when(encryptDecryptHelper).encryptFile(any(), eq("tfplan"), any(), any());
+    doReturn(encryptedPlanContent).when(encryptDecryptHelper).encryptFile(any(), eq("test-plan-name"), any(), any());
 
     when(taskService.getPlanJsonLogOutputStream()).thenReturn(planJsonLogOutputStream);
     when(planJsonLogOutputStream.getTfPlanJsonLocalPath()).thenReturn("test-tfPlanLocalPath");

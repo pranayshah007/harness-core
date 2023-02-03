@@ -22,7 +22,6 @@ import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
-import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -230,11 +229,9 @@ public class SecretManagerMigrationService extends NgMigrationService {
           NGRestUtils.getResponse(connectorResourceClient.get(ngEntityDetail.getIdentifier(), accountIdentifier,
               ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier()));
       return response.orElse(null);
-    } catch (InvalidRequestException ex) {
-      log.error("Error when getting connector - ", ex);
-      return null;
     } catch (Exception ex) {
-      throw ex;
+      log.warn("Error when getting connector - ", ex);
+      return null;
     }
   }
 

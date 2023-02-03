@@ -18,4 +18,6 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.CDP)
 public class AsgBlueGreenSwapServiceResult {
   private boolean trafficShifted;
+  private AutoScalingGroupContainer prodAutoScalingGroupContainer;
+  private AutoScalingGroupContainer stageAutoScalingGroupContainer;
 }

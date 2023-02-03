@@ -242,4 +242,17 @@ public class AccountResourceNG {
     account.setDefaultExperience(dto.getDefaultExperience());
     return new RestResponse(AccountMapper.toAccountDTO(accountService.update(account)));
   }
+
+  @GET
+  @Path("/trustLevel")
+  public RestResponse<Integer> getAccountTrustLevel(@QueryParam("accountId") String accountId) {
+    return new RestResponse<>(accountService.getTrustLevel(accountId));
+  }
+
+  @GET
+  @Path("/update-trust-level")
+  public RestResponse<Boolean> updateAccountTrustLevel(
+      @QueryParam("accountId") String accountId, @QueryParam("trustLevel") Integer trustLevel) {
+    return new RestResponse<>(accountService.updateTrustLevel(accountId, trustLevel));
+  }
 }

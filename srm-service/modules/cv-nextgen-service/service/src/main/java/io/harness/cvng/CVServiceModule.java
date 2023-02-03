@@ -118,6 +118,7 @@ import io.harness.cvng.core.jobs.ConnectorChangeEventMessageProcessor;
 import io.harness.cvng.core.jobs.ConsumerMessageProcessor;
 import io.harness.cvng.core.jobs.CustomChangeEventPublisherService;
 import io.harness.cvng.core.jobs.CustomChangeEventPublisherServiceImpl;
+import io.harness.cvng.core.jobs.FakeFeatureFlagSRMProducer;
 import io.harness.cvng.core.jobs.OrganizationChangeEventMessageProcessor;
 import io.harness.cvng.core.jobs.ProjectChangeEventMessageProcessor;
 import io.harness.cvng.core.jobs.StateMachineEventPublisherService;
@@ -125,6 +126,7 @@ import io.harness.cvng.core.jobs.StateMachineEventPublisherServiceImpl;
 import io.harness.cvng.core.jobs.StateMachineMessageProcessor;
 import io.harness.cvng.core.jobs.StateMachineMessageProcessorImpl;
 import io.harness.cvng.core.services.CVNextGenConstants;
+import io.harness.cvng.core.services.DebugConfigService;
 import io.harness.cvng.core.services.api.AppDynamicsService;
 import io.harness.cvng.core.services.api.AwsService;
 import io.harness.cvng.core.services.api.CVConfigService;
@@ -350,6 +352,7 @@ import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIAnalyserService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityFilterService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
@@ -363,6 +366,7 @@ import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLOServiceIm
 import io.harness.cvng.servicelevelobjective.services.impl.GraphDataServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.RatioAnalyserServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIDataProcessorServiceImpl;
+import io.harness.cvng.servicelevelobjective.services.impl.SLIDataUnavailabilityFilterServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIRecordServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLODashboardServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLOErrorBudgetResetServiceImpl;
@@ -519,6 +523,13 @@ public class CVServiceModule extends AbstractModule {
       @Override
       public String getWebhookApiBaseUrl() {
         return verificationConfiguration.getWebhookConfig().getWebhookBaseUrl();
+      }
+    });
+
+    bind(DebugConfigService.class).toInstance(new DebugConfigService() {
+      @Override
+      public boolean isDebugEnabled() {
+        return verificationConfiguration.isEnableDebugAPI();
       }
     });
     MapBinder<Type, DataCollectionTaskManagementService> dataCollectionTaskServiceMapBinder =
@@ -745,6 +756,7 @@ public class CVServiceModule extends AbstractModule {
     bind(VerifyStepDemoService.class).to(VerifyStepDemoServiceImpl.class);
     bind(StateMachineEventPublisherService.class).to(StateMachineEventPublisherServiceImpl.class);
     bind(CustomChangeEventPublisherService.class).to(CustomChangeEventPublisherServiceImpl.class);
+    bind(FakeFeatureFlagSRMProducer.class);
     bind(String.class)
         .annotatedWith(Names.named("portalUrl"))
         .toInstance(verificationConfiguration.getPortalUrl().endsWith("/")
@@ -1021,6 +1033,7 @@ public class CVServiceModule extends AbstractModule {
     bind(UserJourneyService.class).to(UserJourneyServiceImpl.class);
     bind(ServiceLevelIndicatorService.class).to(ServiceLevelIndicatorServiceImpl.class).in(Singleton.class);
     bind(SLIDataProcessorService.class).to(SLIDataProcessorServiceImpl.class);
+    bind(SLIDataUnavailabilityFilterService.class).to(SLIDataUnavailabilityFilterServiceImpl.class);
     bind(ServiceLevelIndicatorEntityAndDTOTransformer.class);
     bind(CompositeSLOService.class).to(CompositeSLOServiceImpl.class);
     bind(DebugService.class).to(DebugServiceImpl.class).in(Singleton.class);

@@ -10,10 +10,10 @@ package io.harness.ngmigration.service.entity;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.api.CloudProviderType.AWS;
-import static software.wings.api.CloudProviderType.KUBERNETES_CLUSTER;
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 import static software.wings.ngmigration.NGMigrationEntityType.ELASTIGROUP_CONFIGURATION;
 import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
+import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -22,19 +22,15 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.elastigroup.ElastigroupConfiguration;
-import io.harness.cdng.infra.InfrastructureDef;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
-import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
-import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
-import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -52,13 +48,11 @@ import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.infra.InfraDefMapper;
 import io.harness.ngmigration.service.infra.InfraMapperFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.api.CloudProviderType;
 import software.wings.api.DeploymentType;
 import software.wings.infra.AwsAmiInfrastructure;
-import software.wings.infra.DirectKubernetesInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
@@ -153,11 +147,20 @@ public class InfraMigrationService extends NgMigrationService {
     }
 
     if (infra.getCloudProviderType() == AWS) {
-      AwsAmiInfrastructure awsInfra = (AwsAmiInfrastructure) infra.getInfrastructure();
-      if (isNotEmpty(awsInfra.getSpotinstCloudProvider())) {
-        children.add(CgEntityId.builder().id(infra.getUuid()).type(ELASTIGROUP_CONFIGURATION).build());
+      // AMI
+      if (infra.getInfrastructure() instanceof AwsAmiInfrastructure) {
+        AwsAmiInfrastructure awsInfra = (AwsAmiInfrastructure) infra.getInfrastructure();
+        if (isNotEmpty(awsInfra.getSpotinstCloudProvider())) {
+          children.add(CgEntityId.builder().id(infra.getUuid()).type(ELASTIGROUP_CONFIGURATION).build());
+        }
       }
+      // To Add for Traditional Deployments
     }
+
+    if (infra.getDeploymentType() == DeploymentType.CUSTOM) {
+      children.add(CgEntityId.builder().id(infra.getDeploymentTypeTemplateId()).type(TEMPLATE).build());
+    }
+
     return DiscoveryNode.builder().children(children).entityNode(infraNode).build();
   }
 
@@ -217,7 +220,8 @@ public class InfraMigrationService extends NgMigrationService {
     List<ElastigroupConfiguration> elastigroupConfigurations =
         elastigroupConfigurationMigrationService.getElastigroupConfigurations(infraSpecIds, inputDTO, entities);
 
-    Infrastructure infraSpec = infraDefMapper.getSpec(inputDTO, infra, migratedEntities, elastigroupConfigurations);
+    Infrastructure infraSpec =
+        infraDefMapper.getSpec(inputDTO, infra, migratedEntities, entities, elastigroupConfigurations);
     if (infraSpec == null) {
       log.error(String.format("We could not migrate the infra %s", infra.getUuid()));
       return Collections.emptyList();
@@ -270,37 +274,6 @@ public class InfraMigrationService extends NgMigrationService {
   @Override
   protected boolean isNGEntityExists() {
     return true;
-  }
-
-  public InfrastructureDef getInfraDef(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    InfrastructureDefinition infrastructureDefinition = (InfrastructureDefinition) entities.get(entityId).getEntity();
-    MigratorExpressionUtils.render(infrastructureDefinition, inputDTO.getCustomExpressions());
-
-    if (infrastructureDefinition.getCloudProviderType() != KUBERNETES_CLUSTER) {
-      throw new InvalidRequestException("Only support K8s deployment");
-    }
-    if (!(infrastructureDefinition.getInfrastructure() instanceof DirectKubernetesInfrastructure)) {
-      throw new InvalidRequestException("Only support Direct Infra");
-    }
-    DirectKubernetesInfrastructure k8sInfra =
-        (DirectKubernetesInfrastructure) infrastructureDefinition.getInfrastructure();
-
-    NgEntityDetail connector = migratedEntities
-                                   .get(CgEntityId.builder()
-                                            .type(CONNECTOR)
-                                            .id(infrastructureDefinition.getInfrastructure().getCloudProviderId())
-                                            .build())
-                                   .getNgEntityDetail();
-    // TODO: Fix Release Name. release-${infra.kubernetes.infraId} -> release-<+INFRA_KEY>
-    return InfrastructureDef.builder()
-        .type(InfrastructureType.KUBERNETES_DIRECT)
-        .spec(K8SDirectInfrastructure.builder()
-                  .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
-                  .namespace(ParameterField.createValueField(k8sInfra.getNamespace()))
-                  .releaseName(ParameterField.createValueField(k8sInfra.getReleaseName()))
-                  .build())
-        .build();
   }
 
   @Override

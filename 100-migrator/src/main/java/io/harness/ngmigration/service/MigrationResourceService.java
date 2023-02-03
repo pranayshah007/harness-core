@@ -103,6 +103,9 @@ public class MigrationResourceService {
 
   public SaveSummaryDTO save(String authToken, ImportDTO importDTO) {
     DiscoveryResult discoveryResult = discover(authToken, importDTO);
+    if (discoveryResult == null) {
+      return SaveSummaryDTO.builder().build();
+    }
     return discoveryService.migrateEntity(authToken, getMigrationInput(importDTO), discoveryResult);
   }
 

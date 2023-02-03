@@ -14,7 +14,6 @@ import static io.harness.ng.core.template.TemplateEntityConstants.LAST_UPDATES_T
 import static io.harness.ng.core.template.TemplateEntityConstants.STABLE_TEMPLATE;
 
 import static java.lang.Long.parseLong;
-import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 import io.harness.accesscontrol.AccountIdentifier;
@@ -236,19 +235,9 @@ public class TemplateResourceApiUtils {
         templateMetadataSummaryResponseDTOS.map(templateResourceApiMapper::mapToTemplateMetadataResponse);
     List<TemplateMetadataSummaryResponse> templateList = templateMetadataSummaryResponses.getContent();
     ResponseBuilder responseBuilder = Response.ok();
-    if (isEmpty(org)) {
-      ResponseBuilder responseBuilderWithLinks =
-          ApiUtils.addLinksHeader(responseBuilder, "/v1/templates", templateList.size(), page, limit);
-      return responseBuilderWithLinks.entity(templateList).build();
-    } else if (isEmpty(project)) {
-      ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
-          responseBuilder, format("/v1/orgs/%s/templates", org), templateList.size(), page, limit);
-      return responseBuilderWithLinks.entity(templateList).build();
-    } else {
-      ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
-          responseBuilder, format("/v1/orgs/%s/projects/%s/templates", org, project), templateList.size(), page, limit);
-      return responseBuilderWithLinks.entity(templateList).build();
-    }
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, templateMetadataSummaryResponses.getTotalElements(), page, limit);
+    return responseBuilderWithLinks.entity(templateList).build();
   }
   public String toListType(String listType) {
     String type;

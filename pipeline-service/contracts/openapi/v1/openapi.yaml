@@ -2109,13 +2109,18 @@ components:
                     file_url: www.repo/folder/file.com
                     repo_url: www.repo.com
       headers:
-        Link:
+        X-Total-Elements:
           schema:
-            type: string
-          description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.'
-          examples:
-            sample:
-              value: '</v1/orgs/{org}/projects/{project}/pipelines?page=2&limit=1>; rel="next", </v1/orgs/{org}/projects/{project}/pipelines?page=1&limit=1>; rel="self", </v1/orgs/{org}/projects/{project}/pipelines?page=0&limit=1>; rel="previous", '
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
     InputSetResponseBody:
       description: Input Set response body
       content:
@@ -2283,13 +2288,18 @@ components:
                     invalid_refs:
                       - example_invalid_input_set
       headers:
-        Link:
+        X-Total-Elements:
           schema:
-            type: string
-          description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.'
-          examples:
-            sample:
-              value: '</v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/input-sets?page=2&limit=1>; rel="next", </v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/input-sets?page=1&limit=1>; rel="self", </v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/input-sets?page=0&limit=1>; rel="previous", '
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
     InputsResponseBody:
       description: Inputs Response Body
       content:

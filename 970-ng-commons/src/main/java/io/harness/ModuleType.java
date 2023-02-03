@@ -30,7 +30,7 @@ public enum ModuleType {
   @JsonProperty("SRM") SRM("Service Reliability Management"),
 
   // TODO: Remove internal flag once licensing is added.
-  @JsonProperty("CODE") CODE("Code", true, true),
+  @JsonProperty("CODE") CODE("Code", true, false),
 
   // Internal
   @JsonProperty("CORE") CORE("Core", true, false),

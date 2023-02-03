@@ -101,6 +101,7 @@ message AddStepDetailsInstanceRequest {
 
 message HandleProgressRequest {
   string progressJson = 3;
+  io.harness.pms.contracts.execution.Status status = 4;
 }
 
 enum SdkResponseEventType {

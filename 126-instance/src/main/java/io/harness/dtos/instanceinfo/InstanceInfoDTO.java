@@ -28,7 +28,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = CustomDeploymentInstanceInfoDTO.class, name = "CustomDeployment"),
       @JsonSubTypes.Type(value = EcsInstanceInfoDTO.class, name = "ECS"),
       @JsonSubTypes.Type(value = TasInstanceInfoDTO.class, name = "TAS"),
-      @JsonSubTypes.Type(value = SpotInstanceInfoDTO.class, name = "Elastigroup")
+      @JsonSubTypes.Type(value = SpotInstanceInfoDTO.class, name = "Elastigroup"),
+      @JsonSubTypes.Type(value = AsgInstanceInfoDTO.class, name = "Asg")
 })
 public abstract class InstanceInfoDTO {
   // Create combination of fields that identifies any related instance uniquely

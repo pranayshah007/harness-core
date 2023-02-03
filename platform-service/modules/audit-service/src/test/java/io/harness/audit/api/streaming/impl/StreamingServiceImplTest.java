@@ -39,11 +39,14 @@ import io.harness.audit.events.StreamingDestinationUpdateEvent;
 import io.harness.audit.mapper.streaming.StreamingDestinationMapper;
 import io.harness.audit.repositories.streaming.StreamingDestinationRepository;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.ConnectorDTO;
+import io.harness.connector.ConnectorResourceClient;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.outbox.api.OutboxService;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.spec.server.audit.v1.model.AwsS3StreamingDestinationSpecDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
@@ -64,10 +67,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -77,6 +84,8 @@ import org.springframework.transaction.support.SimpleTransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({NGRestUtils.class})
 public class StreamingServiceImplTest extends CategoryTest {
   private static final int RANDOM_STRING_CHAR_COUNT_10 = 10;
   private static final int RANDOM_STRING_CHAR_COUNT_15 = 15;
@@ -94,6 +103,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   @Mock OutboxService outboxService;
   @Mock TransactionTemplate transactionTemplate;
   @Mock private AccessControlClient accessControlClient;
+  @Mock private ConnectorResourceClient connectorResourceClient;
 
   @Rule public ExpectedException expectedException = ExpectedException.none();
   @Captor private ArgumentCaptor<StreamingDestination> streamingDestinationArgumentCaptor;
@@ -101,10 +111,10 @@ public class StreamingServiceImplTest extends CategoryTest {
 
   @Before
   public void setup() {
+    PowerMockito.mockStatic(NGRestUtils.class);
     MockitoAnnotations.initMocks(this);
     this.streamingService = new StreamingServiceImpl(streamingDestinationMapper, streamingDestinationRepository,
-        outboxService, transactionTemplate, accessControlClient);
-
+        outboxService, transactionTemplate, connectorResourceClient, accessControlClient);
     accountIdentifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     id = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     identifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
@@ -125,6 +135,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   public void testCreate() {
     StreamingDestinationDTO streamingDestinationDTO = getStreamingDestinationDTO();
     StreamingDestination streamingDestination = getStreamingDestination();
+    when(NGRestUtils.getResponse(any())).thenAnswer(invocationOnMock -> Optional.of(ConnectorDTO.builder().build()));
 
     when(streamingDestinationMapper.toStreamingDestinationEntity(accountIdentifier, streamingDestinationDTO))
         .thenReturn(streamingDestination);
@@ -147,6 +158,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   public void testCreateForDuplicateKeyException() {
     StreamingDestination streamingDestination = getStreamingDestination();
     StreamingDestinationDTO streamingDestinationDTO = getStreamingDestinationDTO();
+    when(NGRestUtils.getResponse(any())).thenAnswer(invocationOnMock -> Optional.of(ConnectorDTO.builder().build()));
 
     when(streamingDestinationMapper.toStreamingDestinationEntity(anyString(), any())).thenReturn(streamingDestination);
     when(streamingDestinationRepository.save(any())).thenThrow(new DuplicateKeyException("duplicate key error"));

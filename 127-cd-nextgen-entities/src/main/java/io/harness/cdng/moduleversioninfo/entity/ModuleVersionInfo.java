@@ -45,12 +45,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Persistent
 @TypeAlias("io.harness.ng.core.ModuleVersionInfo.entity.ModuleVersionInfo")
 public class ModuleVersionInfo implements PersistentEntity {
-  @FdUniqueIndex
-  @Id
-  @dev.morphia.annotations.Id
-  @EntityIdentifier
-  @Schema(description = "Module Name")
-  private String moduleName;
+  @Id @dev.morphia.annotations.Id String uuid;
+  @FdUniqueIndex @EntityIdentifier @Schema(description = "Module Name") private String moduleName;
   @NotNull @Schema(description = "Module Version") private String version;
   @NotNull @Schema(description = "Module Display Name") private String displayName;
   @NotNull @Schema(description = "Module Last Modified") String lastModifiedAt;

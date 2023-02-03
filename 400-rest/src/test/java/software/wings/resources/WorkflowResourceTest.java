@@ -22,6 +22,7 @@ import static java.lang.String.format;
 import static javax.ws.rs.client.Entity.entity;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -33,6 +34,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
@@ -66,6 +68,7 @@ public class WorkflowResourceTest extends WingsBaseTest {
   private static final AuthService AUTH_SERVICE = mock(AuthService.class);
   private static final AppService APP_SERVICE = mock(AppService.class);
 
+  private static final FeatureFlagService FEATURE_FLAG_SERVICE = mock(FeatureFlagService.class);
   @Captor private ArgumentCaptor<PageRequest<Workflow>> pageRequestArgumentCaptor;
 
   /**
@@ -74,7 +77,7 @@ public class WorkflowResourceTest extends WingsBaseTest {
   @ClassRule
   public static final ResourceTestRule RESOURCES =
       ResourceTestRule.builder()
-          .instance(new WorkflowResource(WORKFLOW_SERVICE, AUTH_SERVICE, APP_SERVICE))
+          .instance(new WorkflowResource(WORKFLOW_SERVICE, AUTH_SERVICE, APP_SERVICE, FEATURE_FLAG_SERVICE))
           .type(WingsExceptionMapper.class)
           .build();
 
@@ -141,6 +144,7 @@ public class WorkflowResourceTest extends WingsBaseTest {
   public void shouldListWorkflow() {
     PageRequest<Workflow> pageRequest = aPageRequest().build();
     PageResponse<Workflow> pageResponse = aPageResponse().withResponse(Lists.newArrayList(WORKFLOW)).build();
+    when(FEATURE_FLAG_SERVICE.isEnabled(any(), anyString())).thenReturn(false);
     when(WORKFLOW_SERVICE.listWorkflows(any(PageRequest.class), any(), anyBoolean(), any())).thenReturn(pageResponse);
 
     RestResponse<PageResponse<Workflow>> restResponse =
