@@ -182,4 +182,4 @@ clickHouseConfig:
 
 deployMode: KUBERNETES
 
-isClickHouseEnabled: true
+isClickHouseEnabled: false
