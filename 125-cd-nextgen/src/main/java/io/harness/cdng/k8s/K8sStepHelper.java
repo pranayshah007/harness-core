@@ -336,15 +336,36 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
 
     ValuesManifestOutcome valuesManifestOutcome =
         ValuesManifestOutcome.builder().identifier(k8sManifestOutcome.getIdentifier()).store(storeConfig).build();
-    if (ManifestStoreType.isInGitSubset(storeConfig.getKind())
-        || shouldExecuteGitFetchTask(aggregatedValuesManifests)) {
+    if (ManifestStoreType.isInGitSubset(storeConfig.getKind()) || shouldExecuteGitFetchTask(aggregatedValuesManifests)
+        || hasStepLevelGitOverride(stepElementParameters)) {
       return prepareGitFetchValuesTaskChainResponse(ambiance, stepElementParameters, valuesManifestOutcome,
           aggregatedValuesManifests, deepCopyOfK8sPassThroughData, storeConfig);
     }
     LinkedList<ManifestOutcome> orderedValuesManifests = new LinkedList<>(aggregatedValuesManifests);
     orderedValuesManifests.addFirst(valuesManifestOutcome);
+    addInlineStepOverrideForHarnessStore(orderedValuesManifests, stepElementParameters);
     return executeK8sTask(ambiance, stepElementParameters, k8sStepExecutor, k8sStepPassThroughData,
         orderedValuesManifests, k8sManifestOutcome);
+  }
+
+  private boolean hasStepLevelGitOverride(StepElementParameters stepElementParameters) {
+    List<ManifestOutcome> stepOverrides = getStepLevelManifestOutcomes(stepElementParameters);
+    for (ManifestOutcome manifestOutcome : stepOverrides) {
+      if (ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private void addInlineStepOverrideForHarnessStore(
+      LinkedList<ManifestOutcome> orderedValuesManifests, StepElementParameters stepElementParameters) {
+    List<ManifestOutcome> stepOverrides = getStepLevelManifestOutcomes(stepElementParameters);
+    for (ManifestOutcome manifestOutcome : stepOverrides) {
+      if (ManifestStoreType.INLINE.equals(manifestOutcome.getStore().getKind())) {
+        orderedValuesManifests.add(manifestOutcome);
+      }
+    }
   }
 
   private TaskChainResponse prepareGitFetchPatchesTaskChainResponse(Ambiance ambiance,

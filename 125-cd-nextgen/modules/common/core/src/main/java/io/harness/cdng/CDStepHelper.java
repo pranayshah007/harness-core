@@ -865,7 +865,7 @@ public class CDStepHelper {
     Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents = new HashMap<>();
     LocalStoreFetchFilesResult localStoreFetchFilesResult = null;
     logCallback.saveExecutionLog(color(
-        format("%nFetching %s from Harness File Store", manifestOutcome.getType()), LogColor.White, LogWeight.Bold));
+        format("Fetching %s from Harness File Store", manifestOutcome.getType()), LogColor.White, LogWeight.Bold));
     if (ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind())) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
       localStoreFetchFilesResult = getFileContentsFromManifestOutcome(manifestOutcome, ngAccess, logCallback);
@@ -887,7 +887,7 @@ public class CDStepHelper {
     List<String> fileContents = new ArrayList<>();
     if (isNotEmpty(scopedFilePathList)) {
       logCallback.saveExecutionLog(
-          color(format("%nFetching %s files with identifier: %s", manifestType, manifestIdentifier), LogColor.White,
+          color(format("Fetching %s files with identifier: %s", manifestType, manifestIdentifier), LogColor.White,
               LogWeight.Bold));
       logCallback.saveExecutionLog(color(format("Fetching following Files :"), LogColor.White));
       printFilesFetchedFromHarnessStore(scopedFilePathList, logCallback);

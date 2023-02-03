@@ -270,9 +270,10 @@ public class AsgStepCommonHelper extends CDStepHelper {
       taskChainResponse = asgStepExecutor.executeAsgPrepareRollbackDataTask(
           ambiance, stepElementParameters, asgPrepareRollbackDataPassThroughData, unitProgressData);
     } else {
-      // TODO
-      throw new RuntimeException("Not implemented yet");
+      throw new IllegalArgumentException(
+          format("Invalid instance of AsgStepExecutor %s", asgStepExecutor.getClass()), USER);
     }
+
     return taskChainResponse;
   }
 
@@ -526,7 +527,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
       identifier = gitFetchFilesConfig.getIdentifier();
       manifestType = gitFetchFilesConfig.getManifestType();
       logger.infoBold(
-          logCallback, "%nFetching %s manifest files with identifier `%s` from Git", manifestType, identifier);
+          logCallback, "Fetching %s manifest files with identifier `%s` from Git", manifestType, identifier);
       logger.info(logCallback, "Fetching following Files:");
       gitFetchFilesConfig.getGitStoreDelegateConfig().getPaths().stream().forEach(
           fp -> logger.info(logCallback, "- %s", fp));

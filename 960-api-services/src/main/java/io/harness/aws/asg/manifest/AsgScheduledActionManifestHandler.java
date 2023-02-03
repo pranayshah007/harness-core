@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgContentParser;
@@ -47,11 +46,10 @@ public class AsgScheduledActionManifestHandler extends AsgManifestHandler<PutSch
           manifestRequest.getManifests().stream().map(this::parseContentToManifest).collect(Collectors.toList());
     }
     String asgName = chainState.getAsgName();
-    String operationName = format("Modifying scheduled actions of autoscaling group %s", asgName);
-    asgSdkManager.info("`%s` has started", operationName);
+    asgSdkManager.info("Modifying scheduled actions of autoscaling group %s", asgName);
     asgSdkManager.clearAllScheduledActionsForAsg(asgName);
     asgSdkManager.attachScheduledActionsToAsg(asgName, manifests);
-    asgSdkManager.infoBold("`%s` ended successfully", operationName);
+    asgSdkManager.infoBold("Modified scheduled actions of autoscaling group %s successfully", asgName);
     return chainState;
   }
 
