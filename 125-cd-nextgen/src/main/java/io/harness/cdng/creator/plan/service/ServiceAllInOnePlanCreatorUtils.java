@@ -14,7 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import io.harness.cdng.artifact.steps.ArtifactsStepV2;
+import io.harness.cdng.artifact.steps.constants.ArtifactsStepV2Constants;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
@@ -232,7 +232,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     final PlanNode artifactsNode =
         PlanNode.builder()
             .uuid("artifacts-" + UUIDGenerator.generateUuid())
-            .stepType(ArtifactsStepV2.STEP_TYPE)
+            .stepType(ArtifactsStepV2Constants.STEP_TYPE)
             .name(PlanCreatorConstants.ARTIFACTS_NODE_NAME)
             .identifier(YamlTypes.ARTIFACT_LIST_CONFIG)
             .stepParameters(new EmptyStepParameters())

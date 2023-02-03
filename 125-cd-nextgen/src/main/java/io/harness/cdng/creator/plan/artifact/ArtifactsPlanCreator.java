@@ -14,9 +14,9 @@ import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
-import io.harness.cdng.artifact.steps.ArtifactStepParameters;
-import io.harness.cdng.artifact.steps.ArtifactStepParameters.ArtifactStepParametersBuilder;
-import io.harness.cdng.artifact.steps.ArtifactsStep;
+import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
+import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters.ArtifactStepParametersBuilder;
+import io.harness.cdng.artifact.steps.constants.ArtifactsStepConstants;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.StageOverridesConfig;
@@ -198,7 +198,7 @@ public class ArtifactsPlanCreator extends ChildrenPlanCreator<ArtifactListConfig
     ForkStepParameters stepParameters = ForkStepParameters.builder().parallelNodeIds(childrenNodeIds).build();
     return PlanNode.builder()
         .uuid(artifactsId)
-        .stepType(ArtifactsStep.STEP_TYPE)
+        .stepType(ArtifactsStepConstants.STEP_TYPE)
         .name(PlanCreatorConstants.ARTIFACTS_NODE_NAME)
         .identifier(YamlTypes.ARTIFACT_LIST_CONFIG)
         .stepParameters(stepParameters)
