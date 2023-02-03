@@ -10,12 +10,12 @@ load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
 java_library(
     name = "library",
     srcs = glob(["*.java"]),
-    visibility = ["//visibility:public"],
+    data = ["//419-delegate-service-app/src/main/resources:resource"],
     resources = [
-            "//980-commons/src/main/resources:resource",
-             "//419-delegate-service-app/src/main/resources:resource",
-        ],
-    data = [ "//419-delegate-service-app/src/main/resources:resource"],
+        "//419-delegate-service-app/src/main/resources:resource",
+        "//980-commons/src/main/resources:resource",
+    ],
+    visibility = ["//visibility:public"],
     deps = [
         "//970-grpc:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
@@ -53,9 +53,9 @@ java_library(
 
 java_binary(
     name = "module",
+    data = ["//:resource"],
     main_class = "io.harness.dms.app.DelegateServiceApp",
     visibility = ["//visibility:public"],
-    data = ["//:resource"],
     runtime_deps = [":library"],
     deps = [],
 )
