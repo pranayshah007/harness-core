@@ -28,10 +28,10 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@TypeAlias("lambdaDeployBaseStepInfo")
-@FieldNameConstants(innerTypeName = "LambdaDeployBaseStepInfoKeys")
+@TypeAlias("awslambdaDeployBaseStepInfo")
+@FieldNameConstants(innerTypeName = "AwsLambdaDeployBaseStepInfoKeys")
 
-public class LambdaDeployBaseStepInfo {
+public class AwsLambdaDeployBaseStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;

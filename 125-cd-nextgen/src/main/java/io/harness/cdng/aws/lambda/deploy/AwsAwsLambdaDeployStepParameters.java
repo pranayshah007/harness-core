@@ -10,7 +10,7 @@ package io.harness.cdng.aws.lambda.deploy;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.aws.lambda.LambdaSpecParameters;
+import io.harness.cdng.aws.lambda.AwsLambdaSpecParameters;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 
@@ -25,11 +25,11 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@TypeAlias("lambdaDeployStepParameters")
-@RecasterAlias("io.harness.cdng.aws.lambda.deploy.LambdaDeployStepParameters")
-public class LambdaDeployStepParameters extends LambdaDeployBaseStepInfo implements LambdaSpecParameters {
+@TypeAlias("awslambdaDeployStepParameters")
+@RecasterAlias("io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepParameters")
+public class AwsAwsLambdaDeployStepParameters extends AwsLambdaDeployBaseStepInfo implements AwsLambdaSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public LambdaDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+  public AwsAwsLambdaDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     super(delegateSelectors);
   }
 }

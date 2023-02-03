@@ -56,11 +56,11 @@ public class AwsLambdaHelper extends CDStepHelper {
                             .build();
     String taskName =
         TaskType.AWS_LAMBDA_COMMAND_TASK_NG.getDisplayName() + " : " + awsLambdaCommandRequest.getCommandName();
-    LambdaSpecParameters lambdaSpecParameters = (LambdaSpecParameters) stepElementParameters.getSpec();
+    AwsLambdaSpecParameters awsLambdaSpecParameters = (AwsLambdaSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
-        referenceFalseKryoSerializer, lambdaSpecParameters.getCommandUnits(), taskName,
+        referenceFalseKryoSerializer, awsLambdaSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(
-            emptyIfNull(getParameterFieldValue(lambdaSpecParameters.getDelegateSelectors()))),
+            emptyIfNull(getParameterFieldValue(awsLambdaSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)

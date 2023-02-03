@@ -22,10 +22,10 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @TypeAlias("lambdaStepOutcome")
-@JsonTypeName("lambdaStepOutcome")
-@RecasterAlias("io.harness.cdng.aws.lambda.beans.LambdaStepOutcome")
+@JsonTypeName("awslambdaStepOutcome")
+@RecasterAlias("io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome")
 
-public class LambdaStepOutcome implements Outcome, ExecutionSweepingOutput {
+public class AwsLambdaStepOutcome implements Outcome, ExecutionSweepingOutput {
   String functionName;
   String runtime;
 }

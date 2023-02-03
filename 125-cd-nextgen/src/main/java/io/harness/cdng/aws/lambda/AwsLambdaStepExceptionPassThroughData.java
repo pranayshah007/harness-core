@@ -21,9 +21,9 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@TypeAlias("lambdaStepExceptionPassThroughData")
-@RecasterAlias("io.harness.cdng.aws.lambda.LambdaStepExceptionPassThroughData")
-public class LambdaStepExceptionPassThroughData implements PassThroughData {
+@TypeAlias("awslambdaStepExceptionPassThroughData")
+@RecasterAlias("io.harness.cdng.aws.lambda.AwsLambdaStepExceptionPassThroughData")
+public class AwsLambdaStepExceptionPassThroughData implements PassThroughData {
   String errorMsg;
   UnitProgressData unitProgressData;
   InfrastructureOutcome infrastructureOutcome;

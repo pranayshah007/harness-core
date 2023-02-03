@@ -38,9 +38,9 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @SimpleVisitorHelper(helperClass = AwsLambdaDeployStepInfoVisitorHelper.class)
 @JsonTypeName(StepSpecTypeConstants.AWS_LAMBDA_DEPLOY)
-@TypeAlias("lambdaDeployStepInfo")
-@RecasterAlias("io.harness.cdng.aws.lambda.deploy.LambdaDeployStepInfo")
-public class LambdaDeployStepInfo extends LambdaDeployBaseStepInfo implements CDAbstractStepInfo, Visitable {
+@TypeAlias("awslambdaDeployStepInfo")
+@RecasterAlias("io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepInfo")
+public class AwsLambdaDeployStepInfo extends AwsLambdaDeployBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -49,13 +49,13 @@ public class LambdaDeployStepInfo extends LambdaDeployBaseStepInfo implements CD
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public LambdaDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+  public AwsLambdaDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     super(delegateSelectors);
   }
 
   @Override
   public StepType getStepType() {
-    return LambdaDeployStep.STEP_TYPE;
+    return AwsAwsLambdaDeployStep.STEP_TYPE;
   }
 
   @Override

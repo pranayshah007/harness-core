@@ -1292,6 +1292,46 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AwsLambdaDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AwsLambdaServiceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ServiceSpec"
+        },
+        {
+          "type": "object",
+          "properties": { }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AwsLoadBalancerConfigYaml": {
       "allOf": [
         {
@@ -8042,34 +8082,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "LambdaDeployStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "LoadBalancer": {
       "type": "object",
       "required": [
@@ -10945,6 +10957,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "AwsLambda"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsLambdaServiceSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "AzureWebApp"
               }
             }
@@ -12180,7 +12208,7 @@
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/LambdaDeployStepInfo"
+                "$ref": "#/definitions/AwsLambdaDeployStepInfo"
               }
             }
           }

@@ -20,7 +20,7 @@ import java.util.List;
 import javax.annotation.Nonnull;
 
 @OwnedBy(HarnessTeam.CDP)
-public interface LambdaSpecParameters extends SpecParameters {
+public interface AwsLambdaSpecParameters extends SpecParameters {
   @JsonIgnore ParameterField<List<TaskSelectorYaml>> getDelegateSelectors();
 
   @Nonnull

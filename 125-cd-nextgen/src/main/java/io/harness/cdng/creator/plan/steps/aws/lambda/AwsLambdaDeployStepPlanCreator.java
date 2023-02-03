@@ -9,8 +9,8 @@ package io.harness.cdng.creator.plan.steps.aws.lambda;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.aws.lambda.deploy.LambdaDeployStepNode;
-import io.harness.cdng.aws.lambda.deploy.LambdaDeployStepParameters;
+import io.harness.cdng.aws.lambda.deploy.AwsAwsLambdaDeployStepParameters;
+import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepNode;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -22,27 +22,27 @@ import com.google.common.collect.Sets;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
-public class AwsLambdaDeployStepPlanCreator extends CDPMSStepPlanCreatorV2<LambdaDeployStepNode> {
+public class AwsLambdaDeployStepPlanCreator extends CDPMSStepPlanCreatorV2<AwsLambdaDeployStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(StepSpecTypeConstants.AWS_LAMBDA_DEPLOY);
   }
 
   @Override
-  public Class<LambdaDeployStepNode> getFieldClass() {
-    return LambdaDeployStepNode.class;
+  public Class<AwsLambdaDeployStepNode> getFieldClass() {
+    return AwsLambdaDeployStepNode.class;
   }
 
   @Override
-  public PlanCreationResponse createPlanForField(PlanCreationContext ctx, LambdaDeployStepNode stepNode) {
+  public PlanCreationResponse createPlanForField(PlanCreationContext ctx, AwsLambdaDeployStepNode stepNode) {
     return super.createPlanForField(ctx, stepNode);
   }
 
   @Override
-  protected StepParameters getStepParameters(PlanCreationContext ctx, LambdaDeployStepNode stepNode) {
+  protected StepParameters getStepParameters(PlanCreationContext ctx, AwsLambdaDeployStepNode stepNode) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepNode);
-    LambdaDeployStepParameters lambdaDeployStepParameters =
-        (LambdaDeployStepParameters) ((StepElementParameters) stepParameters).getSpec();
+    AwsAwsLambdaDeployStepParameters lambdaDeployStepParameters =
+        (AwsAwsLambdaDeployStepParameters) ((StepElementParameters) stepParameters).getSpec();
     lambdaDeployStepParameters.setDelegateSelectors(stepNode.getLambdaDeployStepInfo().getDelegateSelectors());
     return stepParameters;
   }

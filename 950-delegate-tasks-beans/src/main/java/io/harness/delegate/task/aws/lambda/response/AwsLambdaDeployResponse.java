@@ -27,11 +27,6 @@ public class AwsLambdaDeployResponse implements AwsLambdaCommandResponse {
   String errorMessage;
 
   @Override
-  public DelegateMetaInfo getDelegateMetaInfo() {
-    return null;
-  }
-
-  @Override
   public void setDelegateMetaInfo(DelegateMetaInfo metaInfo) {
     this.delegateMetaInfo = metaInfo;
   }

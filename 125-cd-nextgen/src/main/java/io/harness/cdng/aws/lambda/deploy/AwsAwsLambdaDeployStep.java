@@ -10,8 +10,8 @@ package io.harness.cdng.aws.lambda.deploy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.aws.lambda.AwsLambdaHelper;
-import io.harness.cdng.aws.lambda.LambdaStepExceptionPassThroughData;
-import io.harness.cdng.aws.lambda.LambdaStepExecutor;
+import io.harness.cdng.aws.lambda.AwsLambdaStepExceptionPassThroughData;
+import io.harness.cdng.aws.lambda.AwsLambdaStepExecutor;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -35,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class LambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac implements LambdaStepExecutor {
+public class AwsAwsLambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac implements AwsLambdaStepExecutor {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AWS_LAMBDA_DEPLOY.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -72,8 +72,8 @@ public class LambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac imp
 
   @Override
   public TaskChainResponse executeTask(Ambiance ambiance, StepElementParameters stepParameters,
-      LambdaStepExceptionPassThroughData lambdaStepExceptionPassThroughData, UnitProgressData unitProgressData) {
-    InfrastructureOutcome infrastructureOutcome = lambdaStepExceptionPassThroughData.getInfrastructureOutcome();
+      AwsLambdaStepExceptionPassThroughData awsLambdaStepExceptionPassThroughData, UnitProgressData unitProgressData) {
+    InfrastructureOutcome infrastructureOutcome = awsLambdaStepExceptionPassThroughData.getInfrastructureOutcome();
 
     AwsLambdaDeployRequest awsLambdaDeployRequest =
         AwsLambdaDeployRequest.builder()
@@ -84,6 +84,6 @@ public class LambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac imp
             .build();
 
     return awsLambdaHelper.queueTask(
-        stepParameters, awsLambdaDeployRequest, ambiance, lambdaStepExceptionPassThroughData, true);
+        stepParameters, awsLambdaDeployRequest, ambiance, awsLambdaStepExceptionPassThroughData, true);
   }
 }

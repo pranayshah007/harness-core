@@ -9,7 +9,7 @@ package io.harness.cdng.creator.variables.aws;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.aws.lambda.deploy.LambdaDeployStepNode;
+import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
 
@@ -17,14 +17,14 @@ import java.util.Collections;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
-public class AwsLambdaDeployStepVariableCreator extends GenericStepVariableCreator<LambdaDeployStepNode> {
+public class AwsLambdaDeployStepVariableCreator extends GenericStepVariableCreator<AwsLambdaDeployStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
     return Collections.singleton(StepSpecTypeConstants.AWS_LAMBDA_DEPLOY);
   }
 
   @Override
-  public Class<LambdaDeployStepNode> getFieldClass() {
-    return LambdaDeployStepNode.class;
+  public Class<AwsLambdaDeployStepNode> getFieldClass() {
+    return AwsLambdaDeployStepNode.class;
   }
 }

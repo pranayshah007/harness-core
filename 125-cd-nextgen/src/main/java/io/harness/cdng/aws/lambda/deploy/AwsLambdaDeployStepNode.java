@@ -32,14 +32,14 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(StepSpecTypeConstants.AWS_LAMBDA_DEPLOY)
-@TypeAlias("ambdaDeployStepNode")
-@RecasterAlias("io.harness.cdng.aws.lambda.deploy.LambdaDeployStepNode")
-public class LambdaDeployStepNode extends CdAbstractStepNode {
-  @JsonProperty("type") @NotNull LambdaDeployStepNode.StepType type = StepType.AwsLambdaDeploy;
+@TypeAlias("awslambdaDeployStepNode")
+@RecasterAlias("io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepNode")
+public class AwsLambdaDeployStepNode extends CdAbstractStepNode {
+  @JsonProperty("type") @NotNull AwsLambdaDeployStepNode.StepType type = StepType.AwsLambdaDeploy;
 
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  LambdaDeployStepInfo lambdaDeployStepInfo;
+  AwsLambdaDeployStepInfo lambdaDeployStepInfo;
 
   @Override
   public String getType() {
