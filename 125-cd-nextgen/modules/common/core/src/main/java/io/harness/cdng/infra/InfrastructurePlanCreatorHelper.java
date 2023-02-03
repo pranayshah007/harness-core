@@ -16,6 +16,7 @@ import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
+import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -54,8 +55,8 @@ public class InfrastructurePlanCreatorHelper {
       if (refToInputMap.containsKey(entity.getIdentifier())) {
         Map<String, Object> infraInputYaml = new HashMap<>();
         infraInputYaml.put(YamlTypes.INFRASTRUCTURE_DEF, refToInputMap.get(entity.getIdentifier()));
-        mergedInfraYaml = MergeHelper.mergeInputSetFormatYamlToOriginYaml(
-            entity.getYaml(), YamlPipelineUtils.writeYamlString(infraInputYaml));
+        mergedInfraYaml = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+            entity.getYaml(), YamlPipelineUtils.writeYamlString(infraInputYaml), true, true);
       }
 
       try {
