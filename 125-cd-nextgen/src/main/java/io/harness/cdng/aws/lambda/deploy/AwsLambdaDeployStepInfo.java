@@ -55,7 +55,7 @@ public class AwsLambdaDeployStepInfo extends AwsLambdaDeployBaseStepInfo impleme
 
   @Override
   public StepType getStepType() {
-    return AwsAwsLambdaDeployStep.STEP_TYPE;
+    return AwsLambdaDeployStep.STEP_TYPE;
   }
 
   @Override

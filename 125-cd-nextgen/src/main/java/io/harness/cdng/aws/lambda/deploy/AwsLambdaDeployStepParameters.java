@@ -27,9 +27,9 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @TypeAlias("awslambdaDeployStepParameters")
 @RecasterAlias("io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepParameters")
-public class AwsAwsLambdaDeployStepParameters extends AwsLambdaDeployBaseStepInfo implements AwsLambdaSpecParameters {
+public class AwsLambdaDeployStepParameters extends AwsLambdaDeployBaseStepInfo implements AwsLambdaSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public AwsAwsLambdaDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+  public AwsLambdaDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     super(delegateSelectors);
   }
 }

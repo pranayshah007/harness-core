@@ -35,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class AwsAwsLambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac implements AwsLambdaStepExecutor {
+public class AwsLambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac implements AwsLambdaStepExecutor {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AWS_LAMBDA_DEPLOY.getYamlType())
                                                .setStepCategory(StepCategory.STEP)

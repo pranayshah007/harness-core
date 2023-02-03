@@ -21,7 +21,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@TypeAlias("lambdaStepOutcome")
+@TypeAlias("awslambdaStepOutcome")
 @JsonTypeName("awslambdaStepOutcome")
 @RecasterAlias("io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome")
 

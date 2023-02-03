@@ -9,8 +9,8 @@ package io.harness.cdng.creator.plan.steps.aws.lambda;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.aws.lambda.deploy.AwsAwsLambdaDeployStepParameters;
 import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepNode;
+import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepParameters;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -41,8 +41,8 @@ public class AwsLambdaDeployStepPlanCreator extends CDPMSStepPlanCreatorV2<AwsLa
   @Override
   protected StepParameters getStepParameters(PlanCreationContext ctx, AwsLambdaDeployStepNode stepNode) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepNode);
-    AwsAwsLambdaDeployStepParameters lambdaDeployStepParameters =
-        (AwsAwsLambdaDeployStepParameters) ((StepElementParameters) stepParameters).getSpec();
+    AwsLambdaDeployStepParameters lambdaDeployStepParameters =
+        (AwsLambdaDeployStepParameters) ((StepElementParameters) stepParameters).getSpec();
     lambdaDeployStepParameters.setDelegateSelectors(stepNode.getLambdaDeployStepInfo().getDelegateSelectors());
     return stepParameters;
   }

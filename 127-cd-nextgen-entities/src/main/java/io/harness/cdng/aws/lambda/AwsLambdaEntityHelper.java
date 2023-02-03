@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.ng.core.infrastructure.InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.AWS_LAMBDA;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -77,13 +77,10 @@ public class AwsLambdaEntityHelper {
   public AwsLambdaFunctionsInfraConfig getInfraConfig(InfrastructureOutcome infrastructureOutcome, NGAccess ngAccess) {
     ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), ngAccess);
     switch (infrastructureOutcome.getKind()) {
-      case GOOGLE_CLOUD_FUNCTIONS:
-        GoogleFunctionsInfrastructureOutcome googleFunctionsInfrastructureOutcome =
-            (GoogleFunctionsInfrastructureOutcome) infrastructureOutcome;
+      case AWS_LAMBDA:
         return AwsLambdaFunctionsInfraConfig.builder()
             .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
             .awsConnectorDTO((AwsConnectorDTO) connectorDTO.getConnectorConfig())
-            .region(googleFunctionsInfrastructureOutcome.getRegion())
             .build();
       default:
         throw new UnsupportedOperationException(
