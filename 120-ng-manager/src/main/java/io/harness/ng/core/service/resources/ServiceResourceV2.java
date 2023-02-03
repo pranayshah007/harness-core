@@ -246,10 +246,9 @@ public class ServiceResourceV2 {
   public ResponseDTO<ServiceResponse>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-         @Parameter(description = "This contains details of Git Entity like Git Branch, Git Repository to be created")
-         @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo,
-         @Parameter(description = "Details of the Service to be created")
-         @Valid ServiceRequestDTO serviceRequestDTO) {
+      @Parameter(description = "This contains details of Git Entity like Git Branch, Git Repository to be created")
+      @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo,
+      @Parameter(description = "Details of the Service to be created") @Valid ServiceRequestDTO serviceRequestDTO) {
     throwExceptionForNoRequestDTO(serviceRequestDTO);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
@@ -310,25 +309,24 @@ public class ServiceResourceV2 {
   @Path("/import/{serviceIdentifier}")
   @ApiOperation(value = "import service from git", nickname = "importService")
   @Operation(operationId = "importService", summary = "import service from git",
-          responses =
-                  {
-                          @io.swagger.v3.oas.annotations.responses.
-                                  ApiResponse(responseCode = "default", description = "import service from git")
-                  })
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "import service from git")
+      })
   @Hidden
   public ResponseDTO<ServiceImportSaveResponse>
   importServiceFromGit(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-                        @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-                        @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-                        @Parameter(description = SERVICE_PARAM_MESSAGE) @PathParam(
-                                "serviceIdentifier") @ResourceIdentifier String serviceIdentifier,
-                        @BeanParam GitImportInfoDTO gitImportInfoDTO, ServiceImportRequestDTO serviceImportRequestDTO) {
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = SERVICE_PARAM_MESSAGE) @PathParam(
+          "serviceIdentifier") @ResourceIdentifier String serviceIdentifier,
+      @BeanParam GitImportInfoDTO gitImportInfoDTO, ServiceImportRequestDTO serviceImportRequestDTO) {
     ServiceEntity importedServiceFromRemote =
-            serviceEntityService.importServiceFromRemote(accountIdentifier, orgIdentifier, projectIdentifier,
-                    serviceIdentifier, serviceImportRequestDTO, gitImportInfoDTO.getIsForceImport());
-    return ResponseDTO.newResponse(ServiceImportSaveResponse.builder()
-            .serviceIdentifier(importedServiceFromRemote.getIdentifier())
-            .build());
+        serviceEntityService.importServiceFromRemote(accountIdentifier, orgIdentifier, projectIdentifier,
+            serviceIdentifier, serviceImportRequestDTO, gitImportInfoDTO.getIsForceImport());
+    return ResponseDTO.newResponse(
+        ServiceImportSaveResponse.builder().serviceIdentifier(importedServiceFromRemote.getIdentifier()).build());
   }
 
   @DELETE

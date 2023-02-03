@@ -9,20 +9,18 @@ package io.harness.ng.core.service.services;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
 import io.harness.ng.core.service.dto.ServiceImportRequestDTO;
-import io.harness.template.beans.TemplateImportRequestDTO;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface ServiceGitXService {
-    boolean isNewGitXEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  boolean isNewGitXEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
-    String checkForFileUniquenessAndGetRepoURL(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-                                               String templateIdentifier, boolean isForceImport);
+  String checkForFileUniquenessAndGetRepoURL(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, boolean isForceImport);
 
-    String importServiceFromRemote(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  String importServiceFromRemote(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
-    void performImportFlowYamlValidations(String orgIdentifier, String projectIdentifier, String serviceIdentifier,
-                                          ServiceImportRequestDTO serviceImportRequest, String importedService);
+  void performImportFlowYamlValidations(String orgIdentifier, String projectIdentifier, String serviceIdentifier,
+      ServiceImportRequestDTO serviceImportRequest, String importedService);
 
 }

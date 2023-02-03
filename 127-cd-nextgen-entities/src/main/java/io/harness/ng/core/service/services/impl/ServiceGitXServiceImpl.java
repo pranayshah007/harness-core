@@ -31,7 +31,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import software.wings.features.utils.ServiceUtils;
 
 import java.util.Collections;
@@ -107,29 +106,6 @@ public class ServiceGitXServiceImpl implements ServiceGitXService {
             changedFields.put(YAMLMetadataFieldNameConstants.NAME, nameFromGit);
         }
 
-//    String orgIdentifierFromGit = serviceInnerField.getNode().getStringValue(YAMLFieldNameConstants.ORG_IDENTIFIER);
-//    if (orgIdentifier != null && orgIdentifierFromGit != null) {
-//      if (!orgIdentifier.equals(orgIdentifierFromGit)) {
-//        changedFields.put(YAMLMetadataFieldNameConstants.ORG_IDENTIFIER, orgIdentifierFromGit);
-//      }
-//    } else if (orgIdentifier == null && orgIdentifierFromGit != null) {
-//      changedFields.put(YAMLMetadataFieldNameConstants.ORG_IDENTIFIER, orgIdentifierFromGit);
-//    } else if (orgIdentifier != null) {
-//      changedFields.put(YAMLMetadataFieldNameConstants.ORG_IDENTIFIER, orgIdentifierFromGit);
-//    }
-//
-//    String projectIdentifierFromGit =
-//            serviceInnerField.getNode().getStringValue(YAMLFieldNameConstants.PROJECT_IDENTIFIER);
-//    if (projectIdentifier != null && projectIdentifierFromGit != null) {
-//      if (!projectIdentifier.equals(projectIdentifierFromGit)) {
-//        changedFields.put(YAMLMetadataFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifierFromGit);
-//      }
-//    } else if (projectIdentifier == null && projectIdentifierFromGit != null) {
-//      changedFields.put(YAMLMetadataFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifierFromGit);
-//    } else if (projectIdentifier != null) {
-//      changedFields.put(YAMLMetadataFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifierFromGit);
-//    }
-
         if (!changedFields.isEmpty()) {
             InvalidFieldsDTO invalidFields = InvalidFieldsDTO.builder().expectedValues(changedFields).build();
             throw new InvalidRequestException(
@@ -151,9 +127,7 @@ public class ServiceGitXServiceImpl implements ServiceGitXService {
 
     private Long countFileInstances(String accountIdentifier, String repoURL, String filePath) {
         Criteria criteria = getCriteriaForFileUniquenessCheck(accountIdentifier, repoURL, filePath);
-        Query query = new Query(criteria);
         return serviceRepository.count();
-        // return serviceEntityReadHelper.findCount(query);
     }
 
     private Criteria getCriteriaForFileUniquenessCheck(String accountId, String repoURl, String filePath) {

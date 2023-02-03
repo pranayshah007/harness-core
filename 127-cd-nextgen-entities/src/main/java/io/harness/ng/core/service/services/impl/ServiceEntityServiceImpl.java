@@ -215,8 +215,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
                           serviceEntity.getOrgIdentifier(), serviceEntity.getAccountId()));
         }
       }
-      ServiceEntity savedServiceEntity= serviceRepository.save(serviceEntity);
-      return savedServiceEntity;
+      return serviceRepository.save(serviceEntity);
 
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(

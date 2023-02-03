@@ -25,7 +25,6 @@ import io.harness.ng.core.service.yaml.BasicService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.utils.YamlPipelineUtils;
 import lombok.experimental.UtilityClass;
 
 import java.io.IOException;
@@ -64,15 +63,15 @@ public class ServiceElementMapper {
         throw new InvalidRequestException("Service identifier cannot be runtime input");
       }
       return ServiceEntity.builder()
-              .yaml(serviceYaml)
-              .accountId(accountId)
-              .orgIdentifier(orgId)
-              .projectIdentifier(projectId)
-              .name(basicService.getName())
-              .identifier(basicService.getIdentifier())
-              .description(basicService.getDescription())
-              .tags(TagMapper.convertToList(basicService.getTags()))
-              .build();
+          .yaml(serviceYaml)
+          .accountId(accountId)
+          .orgIdentifier(orgId)
+          .projectIdentifier(projectId)
+          .name(basicService.getName())
+          .identifier(basicService.getIdentifier())
+          .description(basicService.getDescription())
+          .tags(TagMapper.convertToList(basicService.getTags()))
+          .build();
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create service entity due to " + e.getMessage());
     }

@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -103,6 +102,5 @@ public interface ServiceEntityService {
       String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
 
   ServiceEntity importServiceFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
-                                        String serviceIdentifier, ServiceImportRequestDTO serviceImportRequestDTO,
-                                        boolean isForceImport);
+      String serviceIdentifier, ServiceImportRequestDTO serviceImportRequestDTO, boolean isForceImport);
 }

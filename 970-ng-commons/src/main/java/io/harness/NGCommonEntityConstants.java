@@ -94,7 +94,8 @@ public class NGCommonEntityConstants {
   public static final String ORG_PARAM_MESSAGE = "Organization Identifier for the Entity.";
   public static final String ORG_LIST_PARAM_MESSAGE = "List of Organization Identifiers for the Entities.";
   public static final String PROJECT_PARAM_MESSAGE = "Project Identifier for the Entity.";
-  public static final String GIT_ENTITY_MESSAGE = "This contains details of Git Entity like Git Branch information to be deleted";
+  public static final String GIT_ENTITY_MESSAGE =
+      "This contains details of Git Entity like Git Branch information to be deleted";
   public static final String FORCE_DELETE_MESSAGE =
       "If true, the Entity will be forced delete, without checking any references/usages";
   public static final String IDENTIFIER_PARAM_MESSAGE = "Identifier for the Entity.";

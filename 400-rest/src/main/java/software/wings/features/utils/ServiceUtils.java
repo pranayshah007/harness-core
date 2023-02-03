@@ -9,12 +9,12 @@ package software.wings.features.utils;
 
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static java.lang.String.format;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.SearchFilter.Operator;
-
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
@@ -23,7 +23,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.yaml.validator.InvalidYamlException;
-import lombok.NonNull;
+
 import software.wings.beans.EntityType;
 import software.wings.beans.Service;
 import software.wings.beans.Service.ServiceKeys;
@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.NonNull;
 import org.apache.commons.lang3.StringUtils;
 
 public class ServiceUtils {
@@ -72,11 +73,11 @@ public class ServiceUtils {
 
   @NonNull
   public static YamlField getServiceYamlFieldElseThrow(
-          String orgIdentifier, String projectIdentifier, String serviceIdentifier, String importedService) {
+      String orgIdentifier, String projectIdentifier, String serviceIdentifier, String importedService) {
     if (EmptyPredicate.isEmpty(importedService)) {
       String errorMessage =
-              format("Empty YAML found on Git in branch [%s] for service [%s] under Project[%s], Organization [%s].",
-                      GitAwareContextHelper.getBranchInRequest(), serviceIdentifier, projectIdentifier, orgIdentifier);
+          format("Empty YAML found on Git in branch [%s] for service [%s] under Project[%s], Organization [%s].",
+              GitAwareContextHelper.getBranchInRequest(), serviceIdentifier, projectIdentifier, orgIdentifier);
       throw buildInvalidYamlException(errorMessage, importedService);
     }
     YamlField serviceYamlField;
@@ -84,13 +85,13 @@ public class ServiceUtils {
       serviceYamlField = YamlUtils.readTree(importedService);
     } catch (IOException e) {
       String errorMessage = format("File found on Git in branch [%s] for filepath [%s] is not a YAML.",
-              GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
+          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
       throw buildInvalidYamlException(errorMessage, importedService);
     }
     YamlField serviceInnerField = serviceYamlField.getNode().getField(YAMLFieldNameConstants.SERVICE);
     if (serviceInnerField == null) {
       String errorMessage = format("File found on Git in branch [%s] for filepath [%s] is not a Service YAML.",
-              GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
+          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
       throw buildInvalidYamlException(errorMessage, importedService);
     }
     return serviceInnerField;
@@ -98,10 +99,10 @@ public class ServiceUtils {
 
   public static InvalidYamlException buildInvalidYamlException(String errorMessage, String serviceYaml) {
     YamlSchemaErrorWrapperDTO errorWrapperDTO =
-            YamlSchemaErrorWrapperDTO.builder()
-                    .schemaErrors(
-                            Collections.singletonList(YamlSchemaErrorDTO.builder().message(errorMessage).fqn("$.service").build()))
-                    .build();
+        YamlSchemaErrorWrapperDTO.builder()
+            .schemaErrors(
+                Collections.singletonList(YamlSchemaErrorDTO.builder().message(errorMessage).fqn("$.service").build()))
+            .build();
     return new InvalidYamlException(errorMessage, errorWrapperDTO, serviceYaml);
   }
 }

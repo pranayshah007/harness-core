@@ -7,22 +7,23 @@
 
 package io.harness.ng.core.service.yaml;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeName;
+import static io.harness.annotations.dev.HarnessTeam.CDC;
+
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.WRAPPER_OBJECT;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
+
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
-
-import java.util.Map;
-
-import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.WRAPPER_OBJECT;
-import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
-import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 @OwnedBy(CDC)
 @Data
@@ -32,12 +33,12 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonTypeName("service")
 public class BasicService {
-    @EntityName String name;
-    @EntityIdentifier String identifier;
+  @EntityName String name;
+  @EntityIdentifier String identifier;
 
-    String description;
-    Map<String, String> tags;
+  String description;
+  Map<String, String> tags;
 
-    String orgIdentifier;
-    String projectIdentifier;
+  String orgIdentifier;
+  String projectIdentifier;
 }
