@@ -20,7 +20,6 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.SCMGitSyncHelper;
 import io.harness.ng.core.service.dto.ServiceImportRequestDTO;
-import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceGitXService;
 import io.harness.pms.yaml.YAMLMetadataFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -39,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.CDC)
-@AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @Inject}))
+@AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @Inject }))
 @Singleton
 @Slf4j
 public class ServiceGitXServiceImpl implements ServiceGitXService {
@@ -57,9 +56,9 @@ public class ServiceGitXServiceImpl implements ServiceGitXService {
     }
   }
 
-    @Override
-    public String checkForFileUniquenessAndGetRepoURL(String accountIdentifier, String orgIdentifier,
-        String projectIdentifier, String serviceIdentifier, boolean isForceImport) {
+  @Override
+  public String checkForFileUniquenessAndGetRepoURL(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, boolean isForceImport) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     String repoURL = gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier);
 
@@ -72,10 +71,10 @@ public class ServiceGitXServiceImpl implements ServiceGitXService {
       throw new DuplicateFileImportException(error);
     }
     return repoURL;
-    }
+  }
 
-    @Override
-    public String importServiceFromRemote(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  @Override
+  public String importServiceFromRemote(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     io.harness.beans.Scope scope = io.harness.beans.Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
     GitContextRequestParams gitContextRequestParams = GitContextRequestParams.builder()
@@ -85,11 +84,11 @@ public class ServiceGitXServiceImpl implements ServiceGitXService {
                                                           .repoName(gitEntityInfo.getRepoName())
                                                           .build();
     return gitAwareEntityHelper.fetchYAMLFromRemote(scope, gitContextRequestParams, Collections.emptyMap());
-    }
+  }
 
-    @Override
-    public void performImportFlowYamlValidations(String orgIdentifier, String projectIdentifier,
-        String serviceIdentifier, ServiceImportRequestDTO serviceImportRequest, String importedService) {
+  @Override
+  public void performImportFlowYamlValidations(String orgIdentifier, String projectIdentifier, String serviceIdentifier,
+      ServiceImportRequestDTO serviceImportRequest, String importedService) {
     YamlField serviceInnerField =
         ServiceUtils.getServiceYamlFieldElseThrow(orgIdentifier, projectIdentifier, serviceIdentifier, importedService);
 
@@ -113,29 +112,28 @@ public class ServiceGitXServiceImpl implements ServiceGitXService {
               + changedFields.keySet(),
           invalidFields);
     }
-    }
+  }
 
-    private boolean isGitSimplificationEnabledForAProject(
-        String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  private boolean isGitSimplificationEnabledForAProject(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return gitSyncSdkService.isGitSimplificationEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
-    }
+  }
 
-    private boolean isAlreadyImported(String accountIdentifier, String repoURL, String filePath) {
+  private boolean isAlreadyImported(String accountIdentifier, String repoURL, String filePath) {
     Long totalInstancesOfYAML = countFileInstances(accountIdentifier, repoURL, filePath);
     return totalInstancesOfYAML > 0;
-    }
+  }
 
-    private Long countFileInstances(String accountIdentifier, String repoURL, String filePath) {
-    Criteria criteria = getCriteriaForFileUniquenessCheck(accountIdentifier, repoURL, filePath);
+  private Long countFileInstances(String accountIdentifier, String repoURL, String filePath) {
     return serviceRepository.count();
-    }
+  }
 
-    private Criteria getCriteriaForFileUniquenessCheck(String accountId, String repoURl, String filePath) {
+  private Criteria getCriteriaForFileUniquenessCheck(String accountId, String repoURl, String filePath) {
     return Criteria.where(ServiceEntityKeys.accountId)
         .is(accountId)
         .and(ServiceEntityKeys.repoURL)
         .is(repoURl)
         .and(ServiceEntityKeys.filePath)
         .is(filePath);
-    }
+  }
 }
