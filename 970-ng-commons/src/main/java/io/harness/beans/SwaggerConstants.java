@@ -47,4 +47,5 @@ public interface SwaggerConstants {
   String LOAD_BALANCER_CONFIGURATION_CLASSPATH = "[Lio.harness.cdng.elastigroup.LoadBalancer;";
   String CLOUD_PROVIDER_CONFIGURATION_CLASSPATH = "io.harness.cdng.elastigroup.CloudProvider";
   String TAS_COMMAND_SCRIPT_YAML_CONFIGURATION_CLASSPATH = "io.harness.cdng.tas.TasCommandScript";
+  String FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH = "[Lio.harness.yaml.core.failurestrategy.FailureStrategyConfig;";
 }

@@ -27,6 +27,7 @@ import lombok.Data;
 @Data
 public abstract class DeploymentAbstractStageNode extends AbstractStageNode {
   @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
   @YamlSchemaTypes(value = {runtime, list})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;
