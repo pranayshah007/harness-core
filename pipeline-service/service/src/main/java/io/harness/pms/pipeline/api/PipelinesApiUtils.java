@@ -408,7 +408,9 @@ public class PipelinesApiUtils {
   public static PipelineValidationResponseBody buildPipelineValidationResponseBody(PipelineValidationEvent event) {
     return new PipelineValidationResponseBody()
         .status(event.getStatus().name())
-        .policyEval(event.getResult().getGovernanceResponse())
+        .policyEval(event.getResult().getGovernanceMetadata() == null
+                ? null
+                : buildGovernanceMetadataFromProto(event.getResult().getGovernanceMetadata()))
         .startTs(event.getStartTs())
         .endTs(event.getEndTs());
   }
