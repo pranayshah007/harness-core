@@ -1,0 +1,195 @@
+openapi: 3.1.0
+x-stoplight:
+  id: fy5kirl12i0n4
+info:
+  title: idp
+  version: '1.0'
+servers:
+  - url: 'https://api.harness.io'
+paths:
+  /v1/token:
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretListResponse'
+      operationId: get-v1-secrets
+      security:
+        - x-api-key: []
+      description: Get all tokens for a given account
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Sort'
+      requestBody:
+        $ref: '#/components/requestBodies/TokenRequest'
+    parameters: []
+    post:
+      summary: ''
+      operationId: post-v1-token
+      responses:
+        '201':
+          $ref: '#/components/responses/TokenResponse'
+      description: Creates a token
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/TokenRequest'
+  '/v1/token/{token}':
+    parameters:
+      - schema:
+          type: string
+        name: token
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          $ref: '#/components/responses/TokenResponse'
+      operationId: get-v1-token-token
+      description: Retrieves the specified token
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+    put:
+      summary: ''
+      operationId: put-v1-token-token
+      responses:
+        '200':
+          $ref: '#/components/responses/TokenResponse'
+      description: Updates the specified token
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/TokenRequest'
+    delete:
+      summary: ''
+      operationId: delete-v1-token-token
+      responses:
+        '200':
+          $ref: '#/components/responses/TokenResponse'
+      description: Deletes the requested token
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+components:
+  schemas:
+    Token:
+      title: Token
+      x-stoplight:
+        id: sxhetg14oguut
+      type: object
+      properties:
+        name:
+          type: string
+        secretIdentifier:
+          type: string
+    TokenResponse:
+      title: TokenResponse
+      x-stoplight:
+        id: r547jvasvif34
+      type: object
+      properties:
+        token:
+          $ref: '#/components/schemas/Token'
+        created:
+          type: integer
+          format: int64
+        updated:
+          type: integer
+          format: int64
+    TokenRequest:
+      title: TokenRequest
+      x-stoplight:
+        id: uc4kxy41vjhf8
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+  securitySchemes:
+    x-api-key:
+      name: x-api-key
+      type: apiKey
+      in: header
+  responses:
+    TokenListResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/TokenResponse'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
+    TokenResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TokenResponse'
+  requestBodies:
+    TokenRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TokenRequest'
+  parameters:
+    AccountHeader:
+      name: Harness-Account
+      in: header
+      required: false
+      schema:
+        type: string
+      description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+      description: 'Pagination: Number of items to return'
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+      description: "Pagination page number strategy: Specify the page number within the paginated collection related to the number of items in each page\t"
+    TokenPathParam:
+      name: token
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Identifier field of the token the resource is scoped to
+    Sort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Parameter on the basis of which sorting is done.
