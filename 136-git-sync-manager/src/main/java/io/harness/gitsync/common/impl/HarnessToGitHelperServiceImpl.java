@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.gitsync.common.beans.BranchSyncStatus.UNSYNCED;
 import static io.harness.gitsync.common.scmerrorhandling.ScmErrorCodeToHttpStatusCodeMapping.HTTP_200;
 
+import io.harness.ScopeIdentifiers;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EntityReference;
@@ -39,6 +40,8 @@ import io.harness.gitsync.CreatePRResponse;
 import io.harness.gitsync.ErrorDetails;
 import io.harness.gitsync.FileGitDetails;
 import io.harness.gitsync.FileInfo;
+import io.harness.gitsync.GetBatchFilesRequest;
+import io.harness.gitsync.GetBatchFilesResponse;
 import io.harness.gitsync.GetBranchHeadCommitRequest;
 import io.harness.gitsync.GetBranchHeadCommitResponse;
 import io.harness.gitsync.GetFileRequest;
@@ -68,6 +71,9 @@ import io.harness.gitsync.common.dtos.ScmCreatePRRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
 import io.harness.gitsync.common.dtos.ScmFileContentTypeDTO;
 import io.harness.gitsync.common.dtos.ScmFileGitDetailsDTO;
+import io.harness.gitsync.common.dtos.ScmGetBatchFileRequestIdentifier;
+import io.harness.gitsync.common.dtos.ScmGetBatchFilesByBranchRequestDTO;
+import io.harness.gitsync.common.dtos.ScmGetBatchFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
@@ -115,8 +121,10 @@ import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
@@ -390,18 +398,11 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   @Override
   public GetFileResponse getFileByBranch(GetFileRequest getFileRequest) {
     try {
-      Scope scope = ScopeIdentifierMapper.getScopeFromScopeIdentifiers(getFileRequest.getScopeIdentifiers());
       gitFilePathHelper.validateFilePath(getFileRequest.getFilePath());
       ScmGetFileResponseDTO scmGetFileResponseDTO =
-          scmFacilitatorService.getFileByBranch(ScmGetFileByBranchRequestDTO.builder()
-                                                    .branchName(getFileRequest.getBranchName())
-                                                    .connectorRef(getFileRequest.getConnectorRef())
-                                                    .filePath(getFileRequest.getFilePath())
-                                                    .repoName(getFileRequest.getRepoName())
-                                                    .scope(scope)
-                                                    .useCache(getFileRequest.getCacheRequestParams().getUseCache())
-                                                    .build());
-      return prepareGetFileResponse(getFileRequest, scmGetFileResponseDTO, scope);
+          scmFacilitatorService.getFileByBranch(getGetFileByBranchRequestDTO(getFileRequest));
+      return prepareGetFileResponse(getFileRequest.getScopeIdentifiers(), getFileRequest.getRepoName(),
+          getFileRequest.getFilePath(), getFileRequest.getConnectorRef(), scmGetFileResponseDTO);
     } catch (WingsException ex) {
       ScmException scmException = ScmExceptionUtils.getScmException(ex);
       GitMetaData gitMetaData = getGitMetadata(ScmExceptionUtils.getGitErrorMetadata(ex));
@@ -586,6 +587,20 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
     }
   }
 
+  @Override
+  public GetBatchFilesResponse getBatchFiles(GetBatchFilesRequest getBatchFilesRequest) {
+    try {
+      ScmGetBatchFilesByBranchRequestDTO request = getScmGetBatchFilesRequest(getBatchFilesRequest);
+      ScmGetBatchFilesResponseDTO getBatchFilesResponseDTO = scmFacilitatorService.getBatchFilesByBranch(request);
+      return prepareGetBatchFilesResponse(getBatchFilesRequest, getBatchFilesResponseDTO);
+    } catch (WingsException ex) {
+      return GetBatchFilesResponse.newBuilder()
+          .setStatusCode(ex.getCode().getStatus().getCode())
+          .setError(prepareDefaultErrorDetails(ex))
+          .build();
+    }
+  }
+
   private ListFilesResponse prepareListFilesResponse(ScmListFilesResponseDTO response) {
     return ListFilesResponse.newBuilder()
         .setStatusCode(HTTP_200)
@@ -661,34 +676,36 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
     return "";
   }
 
-  private GetFileResponse prepareGetFileResponse(
-      GetFileRequest getFileRequest, ScmGetFileResponseDTO scmGetFileResponseDTO, Scope scope) {
-    GitRepositoryDTO gitRepositoryDTO = GitRepositoryDTO.builder().name(getFileRequest.getRepoName()).build();
+  private GetFileResponse prepareGetFileResponse(ScopeIdentifiers scopeIdentifiers, String repoName, String filepath,
+      String connectorRef, ScmGetFileResponseDTO scmGetFileResponseDTO) {
+    Scope scope = ScopeIdentifierMapper.getScopeFromScopeIdentifiers(scopeIdentifiers);
+    GitRepositoryDTO gitRepositoryDTO = GitRepositoryDTO.builder().name(repoName).build();
     GetFileResponse.Builder getFileResponseOrBuilder =
         GetFileResponse.newBuilder()
             .setStatusCode(HTTP_200)
             .setFileContent(scmGetFileResponseDTO.getFileContent())
-            .setGitMetaData(GitMetaData.newBuilder()
-                                .setRepoName(getFileRequest.getRepoName())
-                                .setBranchName(scmGetFileResponseDTO.getBranchName())
-                                .setCommitId(scmGetFileResponseDTO.getCommitId())
-                                .setBlobId(scmGetFileResponseDTO.getBlobId())
-                                .setFilePath(getFileRequest.getFilePath())
-                                .setFileUrl(getFileUrl(getFileRequest, scmGetFileResponseDTO, scope, gitRepositoryDTO))
-                                .build());
+            .setGitMetaData(
+                GitMetaData.newBuilder()
+                    .setRepoName(repoName)
+                    .setBranchName(scmGetFileResponseDTO.getBranchName())
+                    .setCommitId(scmGetFileResponseDTO.getCommitId())
+                    .setBlobId(scmGetFileResponseDTO.getBlobId())
+                    .setFilePath(filepath)
+                    .setFileUrl(getFileUrl(scmGetFileResponseDTO, scope, gitRepositoryDTO, filepath, connectorRef))
+                    .build());
     if (scmGetFileResponseDTO.getCacheDetails() != null) {
       getFileResponseOrBuilder.setCacheResponse(getCacheResponse(scmGetFileResponseDTO.getCacheDetails()));
     }
     return getFileResponseOrBuilder.build();
   }
 
-  private String getFileUrl(GetFileRequest getFileRequest, ScmGetFileResponseDTO scmGetFileResponseDTO, Scope scope,
-      GitRepositoryDTO gitRepositoryDTO) {
+  private String getFileUrl(ScmGetFileResponseDTO scmGetFileResponseDTO, Scope scope, GitRepositoryDTO gitRepositoryDTO,
+      String filepath, String connectorRef) {
     if (isEmpty(scmGetFileResponseDTO.getBranchName())) {
-      return getFileRequest.getFilePath();
+      return filepath;
     }
-    return gitFilePathHelper.getFileUrl(scope, getFileRequest.getConnectorRef(), scmGetFileResponseDTO.getBranchName(),
-        getFileRequest.getFilePath(), scmGetFileResponseDTO.getCommitId(), gitRepositoryDTO);
+    return gitFilePathHelper.getFileUrl(scope, connectorRef, scmGetFileResponseDTO.getBranchName(), filepath,
+        scmGetFileResponseDTO.getCommitId(), gitRepositoryDTO);
   }
 
   private io.harness.gitsync.CreateFileResponse prepareCreateFileResponse(
@@ -741,8 +758,9 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
 
   private ErrorDetails prepareErrorDetails(WingsException ex) {
     ScmException scmException = ScmExceptionUtils.getScmException(ex);
+    String errorMessage = scmException == null ? ex.getMessage() : scmException.getMessage();
     return ErrorDetails.newBuilder()
-        .setErrorMessage(scmException.getMessage())
+        .setErrorMessage(errorMessage)
         .setExplanationMessage(ScmExceptionUtils.getExplanationMessage(ex))
         .setHintMessage(ScmExceptionUtils.getHintMessage(ex))
         .build();
@@ -788,5 +806,49 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
       default:
         return CacheState.UNKNOWN_STATE;
     }
+  }
+
+  private ScmGetFileByBranchRequestDTO getGetFileByBranchRequestDTO(GetFileRequest getFileRequest) {
+    Scope scope = ScopeIdentifierMapper.getScopeFromScopeIdentifiers(getFileRequest.getScopeIdentifiers());
+    gitFilePathHelper.validateFilePath(getFileRequest.getFilePath());
+    return ScmGetFileByBranchRequestDTO.builder()
+        .branchName(getFileRequest.getBranchName())
+        .connectorRef(getFileRequest.getConnectorRef())
+        .filePath(getFileRequest.getFilePath())
+        .repoName(getFileRequest.getRepoName())
+        .scope(scope)
+        .useCache(getFileRequest.getCacheRequestParams().getUseCache())
+        .build();
+  }
+
+  private ScmGetBatchFilesByBranchRequestDTO getScmGetBatchFilesRequest(GetBatchFilesRequest getBatchFilesRequest) {
+    Map<ScmGetBatchFileRequestIdentifier, ScmGetFileByBranchRequestDTO> scmGetFileByBranchRequestDTOMap =
+        new HashMap<>();
+    getBatchFilesRequest.getGetFileRequestMapMap().forEach((identifier, fileRequest) -> {
+      scmGetFileByBranchRequestDTOMap.put(ScmGetBatchFileRequestIdentifier.builder().identifier(identifier).build(),
+          getGetFileByBranchRequestDTO(fileRequest));
+    });
+    return ScmGetBatchFilesByBranchRequestDTO.builder()
+        .accountIdentifier(getBatchFilesRequest.getAccountIdentifier())
+        .scmGetFileByBranchRequestDTOMap(scmGetFileByBranchRequestDTOMap)
+        .build();
+  }
+
+  // Process each file response in the batch response and convert it to final GRPC response
+  private GetBatchFilesResponse prepareGetBatchFilesResponse(
+      GetBatchFilesRequest getBatchFilesRequest, ScmGetBatchFilesResponseDTO scmGetBatchFilesResponseDTO) {
+    Map<String, GetFileRequest> getFileRequestMap = getBatchFilesRequest.getGetFileRequestMapMap();
+    Map<String, GetFileResponse> getFileResponseMap = new HashMap<>();
+
+    scmGetBatchFilesResponseDTO.getScmGetFileResponseV2DTOMap().forEach((requestIdentifier, fileResponse) -> {
+      GetFileRequest fileRequest = getFileRequestMap.get(requestIdentifier.getIdentifier());
+      GetFileResponse getFileResponse = prepareGetFileResponse(fileRequest.getScopeIdentifiers(),
+          fileRequest.getRepoName(), fileRequest.getFilePath(), fileRequest.getConnectorRef(), fileResponse);
+      getFileResponseMap.put(requestIdentifier.getIdentifier(), getFileResponse);
+    });
+    return GetBatchFilesResponse.newBuilder()
+        .setStatusCode(HTTP_200)
+        .putAllGetFileResponseMap(getFileResponseMap)
+        .build();
   }
 }

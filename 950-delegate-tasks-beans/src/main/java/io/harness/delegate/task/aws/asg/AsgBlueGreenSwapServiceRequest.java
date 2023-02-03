@@ -30,7 +30,7 @@ public class AsgBlueGreenSwapServiceRequest implements AsgCommandRequest, Nested
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
   @NonFinal @Expression(ALLOW_SECRETS) AsgLoadBalancerConfig asgLoadBalancerConfig;
-  String oldAsgName;
-  String newAsgName;
+  String prodAsgName;
+  String stageAsgName;
   boolean downsizeOldAsg;
 }

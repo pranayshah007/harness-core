@@ -95,6 +95,7 @@ mktPlaceConfig:
   awsSecretKey: awsMktPlaceSecretKeyPlaceHolder
   awsMarketPlaceProductCode: awsMktPlaceProductCodePlaceHolder
   awsMarketPlaceCeProductCode: awsMktPlaceCeProductCodePlaceHolder
+  awsMarketPlaceFfProductCode: awsMktPlaceFfProductCodePlaceHolder
   azureMarketplaceAccessKey: "ZWRlZDEzMjMtYTk5Zi00MDc0LWJmMjMtOWFhZTYzN2M4ZGQy"
   azureMarketplaceSecretKey: "UmU4QmtxZkdKal9aWWhyTjlCTU5zRnFIcFNAXUI9ODc="
 
@@ -317,6 +318,16 @@ events-mongo:
   indexManagerMode: AUTO
   aliasDBName: events
 
+dms-mongo:
+  uri: mongodb://localhost:27017/harness
+  connectTimeout: 30000
+  serverSelectionTimeout: 90000
+  socketTimeout: 360000
+  maxConnectionIdleTime: 600000
+  connectionsPerHost: 300
+  indexManagerMode: AUTO
+  aliasDBName: dms-harness
+
 searchEnabled: false
 graphQLEnabled: true
 
@@ -335,7 +346,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 1658d03e
+scmVersion: bf795ebf
 
 ngAuthUIEnabled: false
 
@@ -710,6 +721,12 @@ executorsConfig:
     maxPoolSize: ${DATA_RECONCILIATION_MAX_SIZE:-5}
     idleTime: ${DATA_RECONCILIATION_IDLE_TIME:-10}
     timeUnit: ${DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+debeziumConsumersConfigs:
+  applicationTimescaleStreaming:
+    topic: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_harnessMongo.harness.applications}
+    threads: ${DEBEZIUM_CONSUMER_THREADS:-2}
+    batchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
 
 dataReconciliation:
   enabled: true

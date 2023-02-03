@@ -41,11 +41,11 @@ public class ChangeEventDTODeserializer extends JsonDeserializer<ChangeEventDTO>
     String id = tree.has(ChangeEventDTO.Fields.id) ? tree.get(ChangeEventDTO.Fields.id).asText() : null;
     String accountId =
         tree.has(ChangeEventDTO.Fields.accountId) ? tree.get(ChangeEventDTO.Fields.accountId).asText() : null;
-    String orgIdentifier = tree.has(ChangeEventDTO.Fields.projectIdentifier)
+    String orgIdentifier =
+        tree.has(ChangeEventDTO.Fields.orgIdentifier) ? tree.get(ChangeEventDTO.Fields.orgIdentifier).asText() : null;
+    String projectIdentifier = tree.has(ChangeEventDTO.Fields.projectIdentifier)
         ? tree.get(ChangeEventDTO.Fields.projectIdentifier).asText()
         : null;
-    String projectIdentifier =
-        tree.has(ChangeEventDTO.Fields.orgIdentifier) ? tree.get(ChangeEventDTO.Fields.orgIdentifier).asText() : null;
 
     String serviceIdentifier = tree.has(ChangeEventDTO.Fields.serviceIdentifier)
         ? tree.get(ChangeEventDTO.Fields.serviceIdentifier).asText()

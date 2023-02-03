@@ -7,6 +7,8 @@
 
 package io.harness.cdng.creator.plan.stage;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.beans.SwaggerConstants;
@@ -24,7 +26,11 @@ import lombok.Data;
 
 @Data
 public abstract class DeploymentAbstractStageNode extends AbstractStageNode {
-  @NotNull @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
+  @VariableExpression(skipVariableExpression = true)
+  @YamlSchemaTypes(value = {runtime, list})
+  ParameterField<List<FailureStrategyConfig>> failureStrategies;
 
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @YamlSchemaTypes({string})

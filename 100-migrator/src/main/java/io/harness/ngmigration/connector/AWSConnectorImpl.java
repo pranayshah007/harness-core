@@ -24,7 +24,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.AwsCrossAccountAttributes;

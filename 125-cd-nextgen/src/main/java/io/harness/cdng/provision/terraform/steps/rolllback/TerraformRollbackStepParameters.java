@@ -34,7 +34,9 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepParameters")
 public class TerraformRollbackStepParameters implements SpecParameters {
-  @NotNull String provisionerIdentifier;
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  private ParameterField<String> provisionerIdentifier;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 }

@@ -10,6 +10,7 @@ package io.harness.delegate.aws.asg;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgSwapService;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.ERROR;
@@ -31,6 +32,7 @@ import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgSwapServiceManifestRequest;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -40,10 +42,12 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.AsgNGException;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackRequest;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResponse;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResult;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.delegate.task.aws.asg.AsgTaskHelper;
+import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -97,7 +101,7 @@ public class AsgBlueGreenRollbackCommandTaskHandler extends AsgCommandTaskNGHand
       String region = asgInfraConfig.getRegion();
       AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO(), region);
 
-      asgSdkManager.info(format("Starting Blue Green Rollback", Bold));
+      asgSdkManager.info("Starting Blue Green Rollback");
 
       // first deployment
       if (prodAsgName == null) {
@@ -112,7 +116,7 @@ public class AsgBlueGreenRollbackCommandTaskHandler extends AsgCommandTaskNGHand
           asgSdkManager.deleteAsg(stageAsgName);
         }
 
-        if (prodAsgName != null && isNotEmpty(prodAsgManifestsDataForRollback)) {
+        if (isNotEmpty(prodAsgManifestsDataForRollback)) {
           asgSdkManager.info("Rolling back Prod ASG %s to previous version", prodAsgName);
           executeRollbackVersion(asgSdkManager, prodAsgName, prodAsgManifestsDataForRollback);
         }
@@ -123,10 +127,22 @@ public class AsgBlueGreenRollbackCommandTaskHandler extends AsgCommandTaskNGHand
         }
       }
 
+      AutoScalingGroupContainer prodAutoScalingGroupContainer =
+          asgTaskHelper.mapToAutoScalingGroupContainer(asgSdkManager.getASG(prodAsgName));
+      AutoScalingGroupContainer stageAutoScalingGroupContainer =
+          asgTaskHelper.mapToAutoScalingGroupContainer(asgSdkManager.getASG(stageAsgName));
+      AsgBlueGreenRollbackResult asgBlueGreenRollbackResult =
+          AsgBlueGreenRollbackResult.builder()
+              .prodAutoScalingGroupContainer(prodAutoScalingGroupContainer)
+              .stageAutoScalingGroupContainer(stageAutoScalingGroupContainer)
+              .build();
       logCallback.saveExecutionLog(
           color("Blue Green Rollback Finished Successfully", Green, Bold), INFO, CommandExecutionStatus.SUCCESS);
 
-      return AsgBlueGreenRollbackResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+      return AsgBlueGreenRollbackResponse.builder()
+          .asgBlueGreenRollbackResult(asgBlueGreenRollbackResult)
+          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+          .build();
     } catch (Exception e) {
       logCallback.saveExecutionLog(
           color(format("Rollback Failed"), LogColor.Red, LogWeight.Bold), ERROR, CommandExecutionStatus.FAILURE);
@@ -161,13 +177,13 @@ public class AsgBlueGreenRollbackCommandTaskHandler extends AsgCommandTaskNGHand
   private void executeRollbackVersion(
       AsgSdkManager asgSdkManager, String asgName, Map<String, List<String>> asgManifestsDataForRollback) {
     if (isNotEmpty(asgManifestsDataForRollback)) {
-      String operationName = format("Rollback to previous version of ASG %s", asgName);
-      asgSdkManager.info("%s has started", operationName);
+      asgSdkManager.info("Rolling back to previous version of ASG %s", asgName);
 
       // Get the content of all required manifest files
       String asgLaunchTemplateVersion = asgTaskHelper.getAsgLaunchTemplateContent(asgManifestsDataForRollback);
       String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgManifestsDataForRollback);
       List<String> asgScalingPolicyContent = asgTaskHelper.getAsgScalingPolicyContent(asgManifestsDataForRollback);
+      List<String> asgScheduledActionContent = asgTaskHelper.getAsgScheduledActionContent(asgManifestsDataForRollback);
 
       // Get ASG name from asg configuration manifest
       CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
@@ -190,9 +206,11 @@ public class AsgBlueGreenRollbackCommandTaskHandler extends AsgCommandTaskNGHand
                   AsgConfigurationManifestRequest.builder().manifests(Arrays.asList(asgConfigurationContent)).build())
               .addHandler(AsgScalingPolicy,
                   AsgScalingPolicyManifestRequest.builder().manifests(asgScalingPolicyContent).build())
+              .addHandler(AsgScheduledUpdateGroupAction,
+                  AsgScheduledActionManifestRequest.builder().manifests(asgScheduledActionContent).build())
               .executeUpsert();
 
-      asgSdkManager.infoBold("%s ended successfully", operationName);
+      asgSdkManager.infoBold("Rolled back to previous version of ASG %s successfully", asgName);
     } else {
       asgSdkManager.deleteAsg(asgName);
     }

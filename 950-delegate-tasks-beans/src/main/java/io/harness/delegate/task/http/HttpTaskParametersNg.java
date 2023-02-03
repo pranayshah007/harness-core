@@ -10,6 +10,8 @@ package io.harness.delegate.task.http;
 import static io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator.HttpCapabilityDetailsLevel.QUERY;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.beans.KeyValuePair;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.TaskParameters;
@@ -18,6 +20,7 @@ import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.http.HttpHeaderConfig;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import lombok.Builder;
@@ -33,10 +36,22 @@ public class HttpTaskParametersNg implements TaskParameters, ExecutionCapability
   int socketTimeoutMillis;
   boolean useProxy;
   boolean isCertValidationRequired;
+  boolean shouldAvoidHeadersInCapability;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
+    if (shouldAvoidHeadersInCapability) {
+      return Collections.singletonList(
+          HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+              url, QUERY, maskingEvaluator));
+    }
+    List<KeyValuePair> headers = new ArrayList<>();
+    if (EmptyPredicate.isNotEmpty(requestHeader)) {
+      for (HttpHeaderConfig headerConfig : requestHeader) {
+        headers.add(KeyValuePair.builder().key(headerConfig.getKey()).value(headerConfig.getValue()).build());
+      }
+    }
     return Collections.singletonList(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-        url, QUERY, maskingEvaluator));
+        url, headers, QUERY, maskingEvaluator));
   }
 }

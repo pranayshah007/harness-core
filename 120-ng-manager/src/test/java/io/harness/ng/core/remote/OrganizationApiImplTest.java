@@ -8,7 +8,6 @@
 package io.harness.ng.core.remote;
 
 import static io.harness.NGCommonEntityConstants.DIFFERENT_IDENTIFIER_IN_PAYLOAD_AND_PARAM;
-import static io.harness.NGCommonEntityConstants.SELF_REL;
 import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.remote.OrganizationMapper.toOrganization;
@@ -18,7 +17,6 @@ import static io.harness.utils.PageTestUtils.getPage;
 import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
@@ -179,8 +177,7 @@ public class OrganizationApiImplTest extends CategoryTest {
     OrganizationFilterDTO organizationFilterDTO = argumentCaptor.getValue();
 
     assertEquals(searchTerm, organizationFilterDTO.getSearchTerm());
-    assertEquals(1, response.getLinks().size());
-    assertNotNull(response.getLink(SELF_REL));
+    assertEquals(3, response.getHeaders().size());
     List<OrganizationResponse> entity = (List<OrganizationResponse>) response.getEntity();
     assertEquals(identifier, entity.get(0).getOrg().getIdentifier());
   }

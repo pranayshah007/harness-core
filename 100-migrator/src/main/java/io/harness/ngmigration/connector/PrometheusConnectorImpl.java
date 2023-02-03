@@ -14,7 +14,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO.PrometheusConnectorDTOBuilder;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 
 import software.wings.beans.PrometheusConfig;
 import software.wings.beans.SettingAttribute;

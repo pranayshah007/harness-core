@@ -114,4 +114,22 @@ public class GoogleCloudStorageArtifactTaskHandler
         .project(artifactDelegateRequest.getProject())
         .build();
   }
+
+  @Override
+  public ArtifactTaskExecutionResponse getBuilds(GoogleCloudStorageArtifactDelegateRequest artifactDelegateRequest) {
+    if (StringUtils.isBlank(artifactDelegateRequest.getProject())) {
+      throw new InvalidRequestException("Please specify the project for the GCS artifact source.");
+    }
+    if (StringUtils.isBlank(artifactDelegateRequest.getBucket())) {
+      throw new InvalidRequestException("Please specify the bucket for the GCS artifact source.");
+    }
+    GcsInternalConfig gcsInternalConfig = getGcsInternalConfig(artifactDelegateRequest);
+
+    List<BuildDetails> builds = gcsHelperService.listBuilds(gcsInternalConfig);
+
+    return ArtifactTaskExecutionResponse.builder()
+        .artifactDelegateResponses(
+            GoogleCloudStorageRequestResponseMapper.toGoogleCloudStorageResponseList(builds, artifactDelegateRequest))
+        .build();
+  }
 }

@@ -25,6 +25,7 @@ public class MarketPlaceConfig {
   @ConfigSecret private String awsSecretKey;
   @ConfigSecret private String awsMarketPlaceProductCode;
   @ConfigSecret private String awsMarketPlaceCeProductCode;
+  @ConfigSecret private String awsMarketPlaceFfProductCode;
   @ConfigSecret private String azureMarketplaceAccessKey;
   @ConfigSecret private String azureMarketplaceSecretKey;
 }

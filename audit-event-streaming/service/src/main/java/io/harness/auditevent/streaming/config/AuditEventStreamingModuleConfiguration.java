@@ -17,7 +17,8 @@ import org.springframework.guice.annotation.EnableGuiceModules;
 @EnableGuiceModules
 public class AuditEventStreamingModuleConfiguration {
   @Bean
-  public AuditEventStreamingModule auditEventStreamingModule(AuditEventStreamingConfig auditEventStreamingConfig) {
+  public static AuditEventStreamingModule auditEventStreamingModule(
+      AuditEventStreamingConfig auditEventStreamingConfig) {
     return new AuditEventStreamingModule(auditEventStreamingConfig);
   }
 }

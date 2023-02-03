@@ -34,11 +34,11 @@ import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.service.MigratorMappingService;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.step.StepMapperFactory;
 import io.harness.ngmigration.service.workflow.WorkflowHandler;
 import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
@@ -279,7 +279,7 @@ public class WorkflowMigrationService extends NgMigrationService {
       }
       return YamlUtils.read(response.getYaml(), NGTemplateConfig.class);
     } catch (Exception ex) {
-      log.error("Error when getting workflow templates - ", ex);
+      log.warn("Error when getting workflow templates - ", ex);
       return null;
     }
   }

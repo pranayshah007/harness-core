@@ -8,7 +8,6 @@
 package io.harness.iacm.plan.creator.filter;
 
 import static io.harness.filters.FilterCreatorHelper.convertToEntityDetailProtoDTO;
-import static io.harness.git.GitClientHelper.getGitRepo;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CI_CODE_BASE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PROPERTIES;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;
@@ -20,15 +19,12 @@ import io.harness.beans.steps.IACMStepSpecTypeConstants;
 import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.runtime.Runtime;
-import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
-import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
-import io.harness.ng.core.BaseNGAccess;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
@@ -38,7 +34,6 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +42,6 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.IACM)
 public class IACMStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<IACMStageNode> {
   private static final String IACM = "iacm";
-  @Inject ConnectorUtils connectorUtils;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -68,40 +62,6 @@ public class IACMStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<
   @Override
   public PipelineFilter getFilter(FilterCreationContext filterCreationContext, IACMStageNode stageNode) {
     log.info("Received filter creation request for integration stage {}", stageNode.getIdentifier());
-    String accountId = filterCreationContext.getSetupMetadata().getAccountId();
-    String orgIdentifier = filterCreationContext.getSetupMetadata().getOrgId();
-    String projectIdentifier = filterCreationContext.getSetupMetadata().getProjectId();
-
-    BaseNGAccess baseNGAccess = BaseNGAccess.builder()
-                                    .accountIdentifier(accountId)
-                                    .orgIdentifier(orgIdentifier)
-                                    .projectIdentifier(projectIdentifier)
-                                    .build();
-
-    CodeBase iacmCodeBase = null;
-    try {
-      YamlNode properties =
-          YamlUtils.getGivenYamlNodeFromParentPath(filterCreationContext.getCurrentField().getNode(), PROPERTIES);
-      YamlNode iacmCodeBaseNode = properties.getField(IACM).getNode().getField(CI_CODE_BASE).getNode();
-      iacmCodeBase = IntegrationStageUtils.getCiCodeBase(iacmCodeBaseNode);
-    } catch (Exception ex) {
-      // Ignore exception because code base is not mandatory in case git clone is false
-      log.warn("Failed to retrieve iacmCodeBase from pipeline");
-    }
-
-    if (iacmCodeBase != null && iacmCodeBase.getConnectorRef().getValue() != null) {
-      try {
-        ConnectorDetails connectorDetails =
-            connectorUtils.getConnectorDetails(baseNGAccess, iacmCodeBase.getConnectorRef().getValue());
-        getGitRepo(connectorUtils.retrieveURL(connectorDetails));
-      } catch (Exception exception) {
-        log.warn("Failed to retrieve repo");
-      }
-    } else if (iacmCodeBase == null) {
-      throw new CIStageExecutionException("IACM codebase is required for the IACM stage");
-    } else {
-      throw new CIStageExecutionException("IACM codebase connector is empty");
-    }
 
     validateStage(stageNode);
 

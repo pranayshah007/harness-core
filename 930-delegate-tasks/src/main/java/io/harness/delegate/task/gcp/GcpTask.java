@@ -60,8 +60,6 @@ public class GcpTask extends AbstractDelegateRunnableTask {
         return GcpValidationTaskResponse.builder().connectorValidationResult(connectorValidationResult).build();
       case LIST_CLUSTERS:
       case LIST_BUCKETS:
-      case LIST_PROJECTS:
-      case LIST_GCS_BUCKETS_PER_PROJECT:
         TaskHandler taskHandler = gcpTaskTypeToTaskHandlerMap.get(gcpTaskParameters.getGcpTaskType());
         return taskHandler.executeRequest(gcpRequest);
 

@@ -9,6 +9,7 @@ package io.harness.waiter;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.GeneralException;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ProgressData;
 import io.harness.waiter.persistence.PersistenceWrapper;
@@ -88,10 +89,18 @@ public class ProgressUpdateService implements Runnable {
       } catch (Exception e) {
         log.error("Exception occurred while running progress service", e);
       } finally {
-        if (progressUpdate != null) {
-          log.debug(String.format(
-              "Deleting progressUpdate record for correlationId: [%s]", progressUpdate.getCorrelationId()));
-          persistenceWrapper.delete(progressUpdate);
+        try {
+          if (progressUpdate != null) {
+            log.debug(String.format(
+                "Deleting progressUpdate record for correlationId: [%s]", progressUpdate.getCorrelationId()));
+            persistenceWrapper.delete(progressUpdate);
+          }
+        } catch (GeneralException e) {
+          // do nothing as failure in delete because of 0 count can be ignored
+        } catch (Exception e) {
+          log.error("Exception occurred while deleting progressUpdate service record for uuid "
+                  + progressUpdate.getUuid() + " and correlationId " + progressUpdate.getCorrelationId(),
+              e);
         }
       }
     }

@@ -17,7 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeMapper;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
-import io.harness.cdng.service.steps.ServiceStepsHelper;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.utils.ConnectorUtils;

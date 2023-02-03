@@ -42,6 +42,7 @@ shared_dependencies = [
     "//122-ng-authentication-settings:module",
     "//clients/resource-group:module",
     "//123-ng-core-user:module",
+    "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/enforcement/executions:module",
     "//125-cd-nextgen:module",
     "//125-freeze:module",
     "//126-instance:module",

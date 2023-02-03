@@ -7,6 +7,8 @@
 
 package io.harness.resourcegroup;
 
+import static io.harness.authorization.AuthorizationServiceHeader.PLATFORM_SERVICE;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -18,6 +20,8 @@ import io.harness.resourcegroup.commons.bootstrap.ConfigurationStateRepository;
 import io.harness.resourcegroup.framework.v2.service.ResourceGroupService;
 import io.harness.resourcegroup.v1.remote.dto.ManagedFilter;
 import io.harness.resourcegroup.v1.remote.dto.ResourceGroupFilterDTO;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -63,6 +67,7 @@ public class ResourceGroupsManagementJob {
   }
 
   public void run() {
+    SecurityContextBuilder.setContext(new ServicePrincipal(PLATFORM_SERVICE.getServiceId()));
     try (AcquiredLock<?> lock = acquireLock(RESOURCE_GROUP_CONFIG_MANAGEMENT_LOCK, true)) {
       if (lock != null) {
         runInternal();

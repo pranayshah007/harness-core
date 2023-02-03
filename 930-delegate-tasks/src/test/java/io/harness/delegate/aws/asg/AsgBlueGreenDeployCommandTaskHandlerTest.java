@@ -80,7 +80,7 @@ public class AsgBlueGreenDeployCommandTaskHandlerTest extends CategoryTest {
   @Before
   public void setup() {
     doReturn(prepareRollbackLogCallback).when(asgTaskHelper).getLogCallback(any(), anyString(), anyBoolean(), any());
-    doReturn(asgSdkManager).when(asgTaskHelper).getAsgSdkManager(any(), any());
+    doReturn(asgSdkManager).when(asgTaskHelper).getAsgSdkManager(any(), any(), any(ElbV2Client.class));
     doReturn(AwsInternalConfig.builder().build()).when(awsUtils).getAwsInternalConfig(any(), anyString());
     doReturn(LAUNCH_TEMPLATE_CONTENT).when(asgTaskHelper).getAsgLaunchTemplateContent(any());
     doReturn(CONFIG_CONTENT).when(asgTaskHelper).getAsgConfigurationContent(any());
@@ -107,7 +107,7 @@ public class AsgBlueGreenDeployCommandTaskHandlerTest extends CategoryTest {
 
     AsgBlueGreenDeployResult result = response.getAsgBlueGreenDeployResult();
 
-    assertThat(result.getAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME);
+    assertThat(result.getStageAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME);
   }
 
   @Test
@@ -124,7 +124,7 @@ public class AsgBlueGreenDeployCommandTaskHandlerTest extends CategoryTest {
 
     AsgBlueGreenDeployResult result = response.getAsgBlueGreenDeployResult();
 
-    assertThat(result.getAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME);
+    assertThat(result.getProdAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME);
   }
 
   private AsgLoadBalancerConfig getAsgLoadBalancerConfig() {

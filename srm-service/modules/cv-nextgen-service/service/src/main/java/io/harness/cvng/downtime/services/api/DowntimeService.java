@@ -14,8 +14,12 @@ import io.harness.cvng.downtime.beans.DowntimeDashboardFilter;
 import io.harness.cvng.downtime.beans.DowntimeHistoryView;
 import io.harness.cvng.downtime.beans.DowntimeListView;
 import io.harness.cvng.downtime.beans.DowntimeResponse;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.entities.Downtime;
 import io.harness.ng.beans.PageResponse;
+
+import java.util.List;
+import java.util.Set;
 
 public interface DowntimeService extends DeleteEntityByHandler<Downtime> {
   DowntimeResponse create(ProjectParams projectParams, DowntimeDTO downtimeDTO);
@@ -33,4 +37,10 @@ public interface DowntimeService extends DeleteEntityByHandler<Downtime> {
 
   PageResponse<DowntimeHistoryView> history(
       ProjectParams projectParams, PageParams pageParams, DowntimeDashboardFilter filter);
+
+  List<EntityUnavailabilityStatusesDTO> filterDowntimeInstancesOnMonitoredService(ProjectParams projectParams,
+      List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS, String monitoredServiceIdentifier);
+
+  List<EntityUnavailabilityStatusesDTO> filterDowntimeInstancesOnMonitoredServices(ProjectParams projectParams,
+      List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS, Set<String> monitoredServiceIdentifier);
 }

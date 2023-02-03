@@ -17,10 +17,13 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.api.streaming.AggregateStreamingService;
 import io.harness.audit.api.streaming.StreamingService;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestinationFilterProperties;
 import io.harness.spec.server.audit.v1.StreamingDestinationsApi;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationAggregateDTO;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationCards;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationResponse;
 import io.harness.utils.ApiUtils;
@@ -29,7 +32,6 @@ import com.google.inject.Inject;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
-import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AllArgsConstructor;
@@ -42,6 +44,7 @@ import org.springframework.data.domain.Pageable;
 @Slf4j
 public class StreamingDestinationsApiImpl implements StreamingDestinationsApi {
   private final StreamingService streamingService;
+  private final AggregateStreamingService aggregateStreamingService;
   private final StreamingDestinationsApiUtils streamingDestinationsApiUtils;
   private final AccessControlClient accessControlClient;
 
@@ -96,10 +99,31 @@ public class StreamingDestinationsApiImpl implements StreamingDestinationsApi {
         streamingDestinationPage.map(streamingDestinationsApiUtils::getStreamingDestinationResponse);
     List<StreamingDestinationResponse> streamingDestinations = streamingDestinationResponsePage.getContent();
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
-        responseBuilder, "v1/streaming-destinations", streamingDestinations.size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, streamingDestinationPage.getTotalElements(), page, limit);
 
     return responseBuilderWithLinks.entity(streamingDestinations).build();
+  }
+
+  @Override
+  public Response getStreamingDestinationsAggregate(String harnessAccount, Integer page, @Max(100L) Integer limit,
+      String sort, String order, String searchTerm, String status) {
+    StreamingDestinationFilterProperties streamingDestinationFilterProperties =
+        streamingDestinationsApiUtils.getFilterProperties(searchTerm, status);
+    Pageable pageable = streamingDestinationsApiUtils.getPageRequest(page, limit, sort, order);
+    Page<StreamingDestinationAggregateDTO> streamingDestinations =
+        aggregateStreamingService.getAggregatedList(harnessAccount, pageable, streamingDestinationFilterProperties);
+
+    ResponseBuilder responseBuilder = Response.ok();
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, streamingDestinations.getTotalElements(), page, limit);
+
+    return responseBuilderWithLinks.entity(streamingDestinations.getContent()).build();
+  }
+
+  public Response getStreamingDestinationsCards(String harnessAccount) {
+    StreamingDestinationCards cards = aggregateStreamingService.getStreamingDestinationCards(harnessAccount);
+    return Response.ok().entity(cards).build();
   }
 
   @Override

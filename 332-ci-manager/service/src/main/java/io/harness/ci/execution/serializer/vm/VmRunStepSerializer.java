@@ -10,6 +10,7 @@ package io.harness.ci.serializer.vm;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
@@ -17,6 +18,7 @@ import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.serializer.SerializerUtils;
 import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -44,8 +46,8 @@ public class VmRunStepSerializer {
   @Inject CIStepInfoUtils ciStepInfoUtils;
   @Inject ConnectorUtils connectorUtils;
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
-  private static List<String> INFORMATICA_ACCOUNT_IDS =
-      new ArrayList<>(List.of("0imfjG07TR2hVBcS5AZpCQ", "z40YS0M5RCCOybahmyEVgQ"));
+  @Inject private CIFeatureFlagService featureFlagService;
+
   public VmRunStep serialize(RunStepInfo runStepInfo, Ambiance ambiance, String identifier,
       ParameterField<Timeout> parameterFieldTimeout, String stepName, List<CIRegistry> registries) {
     String command =
@@ -77,7 +79,7 @@ public class VmRunStepSerializer {
     String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runStepInfo.getShell());
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()
-        && INFORMATICA_ACCOUNT_IDS.contains(ngAccess.getAccountIdentifier())) {
+        && featureFlagService.isEnabled(FeatureName.CI_REMOTE_DEBUG, ngAccess.getAccountIdentifier())) {
       command = earlyExitCommand + System.lineSeparator()
           + SerializerUtils.getVmDebugCommand(ciExecutionServiceConfig.getRemoteDebugTimeout()) + System.lineSeparator()
           + command;

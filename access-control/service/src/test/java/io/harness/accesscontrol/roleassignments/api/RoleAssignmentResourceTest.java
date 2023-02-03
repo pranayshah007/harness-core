@@ -141,9 +141,9 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
             scopeService, resourceGroupService, userGroupService, userService, serviceAccountService,
             mock(RoleAssignmentDTOMapper.class), accessControlClient));
     roleAssignmentResource = spy(new RoleAssignmentResourceImpl(roleAssignmentService, harnessResourceGroupService,
-        scopeService, roleService, resourceGroupService, userGroupService, mock(RoleAssignmentDTOMapper.class),
-        mock(RoleAssignmentAggregateMapper.class), mock(RoleDTOMapper.class), transactionTemplate, actionValidator,
-        mock(OutboxService.class), roleAssignmentApiUtils));
+        scopeService, roleService, resourceGroupService, userGroupService, userService,
+        mock(RoleAssignmentDTOMapper.class), mock(RoleAssignmentAggregateMapper.class), mock(RoleDTOMapper.class),
+        transactionTemplate, actionValidator, mock(OutboxService.class), roleAssignmentApiUtils));
     pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
     harnessScopeParams = HarnessScopeParams.builder()
                              .accountIdentifier(randomAlphabetic(10))

@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.TMACARI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -34,13 +35,20 @@ import io.harness.terraformcloud.model.StateVersionOutputData;
 import io.harness.terraformcloud.model.TerraformCloudResponse;
 import io.harness.terraformcloud.model.WorkspaceData;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.List;
+import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
+import org.apache.http.StatusLine;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.entity.BasicHttpEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,26 +64,36 @@ public class TerraformCloudImplTest extends CategoryTest {
 
   TerraformCloudClientImpl terraformCloudClient = spy(new TerraformCloudClientImpl());
   TerraformCloudRestClient terraformCloudRestClient = mock(TerraformCloudRestClient.class);
+  CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+  Call call;
 
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
     doReturn(terraformCloudRestClient).when(terraformCloudClient).getRestClient(any());
+    call = mock(Call.class);
+    Request request = mock(Request.class);
+    HttpUrl httpUrl = mock(HttpUrl.class);
+    URL url = mock(java.net.URL.class);
+    doReturn(request).when(call).request();
+    doReturn(httpUrl).when(request).url();
+    doReturn(url).when(httpUrl).url();
+    doReturn(URL).when(url).toString();
+    doReturn(httpClient).when(terraformCloudClient).getHttpClient(any());
   }
 
   @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testListOrganizations() throws IOException {
-    Call call = mock(Call.class);
     TerraformCloudResponse expectedResponse =
         TerraformCloudResponse.builder().data(Collections.singletonList(new OrganizationData())).build();
-    doReturn(call).when(terraformCloudRestClient).listOrganizations(any());
+    doReturn(call).when(terraformCloudRestClient).listOrganizations(any(), anyInt());
     doReturn(Response.success(expectedResponse)).when(call).execute();
 
-    TerraformCloudResponse<List<OrganizationData>> response = terraformCloudClient.listOrganizations(URL, TOKEN);
+    TerraformCloudResponse<List<OrganizationData>> response = terraformCloudClient.listOrganizations(URL, TOKEN, 1);
 
-    verify(terraformCloudRestClient).listOrganizations(eq("Bearer " + TOKEN));
+    verify(terraformCloudRestClient).listOrganizations(eq("Bearer " + TOKEN), anyInt());
     verify(call).execute();
     assertThat(response).isEqualTo(expectedResponse);
   }
@@ -84,15 +102,14 @@ public class TerraformCloudImplTest extends CategoryTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testListOrganizationsUnsuccessful() throws IOException {
-    Call call = mock(Call.class);
-    doReturn(call).when(terraformCloudRestClient).listOrganizations(any());
+    doReturn(call).when(terraformCloudRestClient).listOrganizations(any(), anyInt());
     doReturn(getErrorResponse(401, "errorContent")).when(call).execute();
 
-    assertThatThrownBy(() -> terraformCloudClient.listOrganizations(URL, TOKEN))
+    assertThatThrownBy(() -> terraformCloudClient.listOrganizations(URL, TOKEN, 1))
         .isInstanceOf(TerraformCloudApiException.class)
         .hasMessage("errorContent");
 
-    verify(terraformCloudRestClient).listOrganizations(eq("Bearer " + TOKEN));
+    verify(terraformCloudRestClient).listOrganizations(eq("Bearer " + TOKEN), anyInt());
     verify(call).execute();
   }
 
@@ -101,13 +118,12 @@ public class TerraformCloudImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testListOrganizationsExceptionThrownDuringRequest() throws IOException {
     Exception exception = new RuntimeException("test");
-    Call call = mock(Call.class);
-    doReturn(call).when(terraformCloudRestClient).listOrganizations(any());
+    doReturn(call).when(terraformCloudRestClient).listOrganizations(any(), anyInt());
     doThrow(exception).when(call).execute();
 
-    assertThatThrownBy(() -> terraformCloudClient.listOrganizations(URL, TOKEN)).isEqualTo(exception);
+    assertThatThrownBy(() -> terraformCloudClient.listOrganizations(URL, TOKEN, 1)).isEqualTo(exception);
 
-    verify(terraformCloudRestClient).listOrganizations(eq("Bearer " + TOKEN));
+    verify(terraformCloudRestClient).listOrganizations(eq("Bearer " + TOKEN), anyInt());
     verify(call).execute();
   }
 
@@ -115,16 +131,15 @@ public class TerraformCloudImplTest extends CategoryTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testListWorkspaces() throws IOException {
-    Call call = mock(Call.class);
     TerraformCloudResponse expectedResponse =
         TerraformCloudResponse.builder().data(Collections.singletonList(new WorkspaceData())).build();
-    doReturn(call).when(terraformCloudRestClient).listWorkspaces(any(), any());
+    doReturn(call).when(terraformCloudRestClient).listWorkspaces(any(), any(), anyInt());
     doReturn(Response.success(expectedResponse)).when(call).execute();
 
     TerraformCloudResponse<List<WorkspaceData>> response =
-        terraformCloudClient.listWorkspaces(URL, TOKEN, "organization");
+        terraformCloudClient.listWorkspaces(URL, TOKEN, "organization", 1);
 
-    verify(terraformCloudRestClient).listWorkspaces(eq("Bearer " + TOKEN), eq("organization"));
+    verify(terraformCloudRestClient).listWorkspaces(eq("Bearer " + TOKEN), eq("organization"), anyInt());
     verify(call).execute();
     assertThat(response).isEqualTo(expectedResponse);
   }
@@ -134,7 +149,6 @@ public class TerraformCloudImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateRun() throws IOException {
     RunRequest runRequest = RunRequest.builder().build();
-    Call call = mock(Call.class);
     TerraformCloudResponse expectedResponse = TerraformCloudResponse.builder().data(new RunData()).build();
     doReturn(call).when(terraformCloudRestClient).createRun(any(), any());
     doReturn(Response.success(expectedResponse)).when(call).execute();
@@ -150,7 +164,6 @@ public class TerraformCloudImplTest extends CategoryTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testGetRun() throws IOException {
-    Call call = mock(Call.class);
     TerraformCloudResponse expectedResponse = TerraformCloudResponse.builder().data(new RunData()).build();
     doReturn(call).when(terraformCloudRestClient).getRun(any(), any());
     doReturn(Response.success(expectedResponse)).when(call).execute();
@@ -166,7 +179,6 @@ public class TerraformCloudImplTest extends CategoryTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testGetPlan() throws IOException {
-    Call call = mock(Call.class);
     TerraformCloudResponse expectedResponse = TerraformCloudResponse.builder().data(new PlanData()).build();
     doReturn(call).when(terraformCloudRestClient).getPlan(any(), any());
     doReturn(Response.success(expectedResponse)).when(call).execute();
@@ -182,23 +194,44 @@ public class TerraformCloudImplTest extends CategoryTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testGetPlanJsonOutput() throws IOException {
-    Call call = mock(Call.class);
     String expectedResponse = "jsonOutput";
-    doReturn(call).when(terraformCloudRestClient).getPlanJsonOutput(any(), any());
-    doReturn(Response.success(expectedResponse)).when(call).execute();
+    CloseableHttpResponse httpResponse = mock(CloseableHttpResponse.class);
+    BasicHttpEntity httpEntity = new BasicHttpEntity();
+    httpEntity.setContent(new ByteArrayInputStream(expectedResponse.getBytes()));
+    StatusLine statusLine = mock(StatusLine.class);
+    doReturn(httpResponse).when(httpClient).execute(any());
+    doReturn(httpEntity).when(httpResponse).getEntity();
+    doReturn(statusLine).when(httpResponse).getStatusLine();
+    doReturn(200).when(statusLine).getStatusCode();
 
     String response = terraformCloudClient.getPlanJsonOutput(URL, TOKEN, "planId");
 
-    verify(terraformCloudRestClient).getPlanJsonOutput(eq("Bearer " + TOKEN), eq("planId"));
-    verify(call).execute();
     assertThat(response).isEqualTo(expectedResponse);
   }
 
   @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
+  public void testGetPlanJsonOutputFailure() throws IOException {
+    String expectedResponse = "Failure";
+    CloseableHttpResponse httpResponse = mock(CloseableHttpResponse.class);
+    BasicHttpEntity httpEntity = new BasicHttpEntity();
+    httpEntity.setContent(new ByteArrayInputStream(expectedResponse.getBytes()));
+    StatusLine statusLine = mock(StatusLine.class);
+    doReturn(httpResponse).when(httpClient).execute(any());
+    doReturn(httpEntity).when(httpResponse).getEntity();
+    doReturn(statusLine).when(httpResponse).getStatusLine();
+    doReturn(400).when(statusLine).getStatusCode();
+
+    assertThatThrownBy(() -> terraformCloudClient.getPlanJsonOutput(URL, TOKEN, "planId"))
+        .isInstanceOf(TerraformCloudApiException.class)
+        .hasMessage("Failure");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
   public void testGetApply() throws IOException {
-    Call call = mock(Call.class);
     TerraformCloudResponse expectedResponse = TerraformCloudResponse.builder().data(new ApplyData()).build();
     doReturn(call).when(terraformCloudRestClient).getApply(any(), any());
     doReturn(Response.success(expectedResponse)).when(call).execute();
@@ -214,15 +247,15 @@ public class TerraformCloudImplTest extends CategoryTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testListPolicyChecks() throws IOException {
-    Call call = mock(Call.class);
     TerraformCloudResponse expectedResponse =
         TerraformCloudResponse.builder().data(Collections.singletonList(new PolicyCheckData())).build();
-    doReturn(call).when(terraformCloudRestClient).listPolicyChecks(any(), any());
+    doReturn(call).when(terraformCloudRestClient).listPolicyChecks(any(), any(), anyInt());
     doReturn(Response.success(expectedResponse)).when(call).execute();
 
-    TerraformCloudResponse<List<PolicyCheckData>> response = terraformCloudClient.listPolicyChecks(URL, TOKEN, "runId");
+    TerraformCloudResponse<List<PolicyCheckData>> response =
+        terraformCloudClient.listPolicyChecks(URL, TOKEN, "runId", 1);
 
-    verify(terraformCloudRestClient).listPolicyChecks(eq("Bearer " + TOKEN), eq("runId"));
+    verify(terraformCloudRestClient).listPolicyChecks(eq("Bearer " + TOKEN), eq("runId"), anyInt());
     verify(call).execute();
     assertThat(response).isEqualTo(expectedResponse);
   }
@@ -231,15 +264,18 @@ public class TerraformCloudImplTest extends CategoryTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testGetPolicyCheckOutput() throws IOException {
-    Call call = mock(Call.class);
     String expectedResponse = "policyCheckOutput";
-    doReturn(call).when(terraformCloudRestClient).getPolicyCheckOutput(any(), any());
-    doReturn(Response.success(expectedResponse)).when(call).execute();
+    CloseableHttpResponse httpResponse = mock(CloseableHttpResponse.class);
+    BasicHttpEntity httpEntity = new BasicHttpEntity();
+    httpEntity.setContent(new ByteArrayInputStream(expectedResponse.getBytes()));
+    StatusLine statusLine = mock(StatusLine.class);
+    doReturn(httpResponse).when(httpClient).execute(any());
+    doReturn(httpEntity).when(httpResponse).getEntity();
+    doReturn(statusLine).when(httpResponse).getStatusLine();
+    doReturn(200).when(statusLine).getStatusCode();
 
     String response = terraformCloudClient.getPolicyCheckOutput(URL, TOKEN, "policyCheckId");
 
-    verify(terraformCloudRestClient).getPolicyCheckOutput(eq("Bearer " + TOKEN), eq("policyCheckId"));
-    verify(call).execute();
     assertThat(response).isEqualTo(expectedResponse);
   }
 
@@ -247,7 +283,6 @@ public class TerraformCloudImplTest extends CategoryTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testGetStateVersionOutputs() throws IOException {
-    Call call = mock(Call.class);
     TerraformCloudResponse expectedResponse =
         TerraformCloudResponse.builder().data(Collections.singletonList(new StateVersionOutputData())).build();
     doReturn(call).when(terraformCloudRestClient).getStateVersionOutputs(any(), any());
@@ -258,6 +293,25 @@ public class TerraformCloudImplTest extends CategoryTest {
 
     verify(terraformCloudRestClient).getStateVersionOutputs(eq("Bearer " + TOKEN), eq("stateVersionId"));
     verify(call).execute();
+    assertThat(response).isEqualTo(expectedResponse);
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testGetLogs() throws IOException {
+    String expectedResponse = "logs";
+    CloseableHttpResponse httpResponse = mock(CloseableHttpResponse.class);
+    BasicHttpEntity httpEntity = new BasicHttpEntity();
+    httpEntity.setContent(new ByteArrayInputStream(expectedResponse.getBytes()));
+    StatusLine statusLine = mock(StatusLine.class);
+    doReturn(httpResponse).when(httpClient).execute(any());
+    doReturn(httpEntity).when(httpResponse).getEntity();
+    doReturn(statusLine).when(httpResponse).getStatusLine();
+    doReturn(200).when(statusLine).getStatusCode();
+
+    String response = terraformCloudClient.getLogs(URL, 0, 10);
+
     assertThat(response).isEqualTo(expectedResponse);
   }
 

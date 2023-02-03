@@ -20,7 +20,7 @@ import io.harness.cdng.service.beans.SshServiceSpec;
 import io.harness.cdng.service.beans.SshServiceSpec.SshServiceSpecBuilder;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 
 import software.wings.beans.Service;
 import software.wings.ngmigration.CgEntityId;

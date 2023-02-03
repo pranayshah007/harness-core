@@ -32,9 +32,9 @@ import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.service.MigrationTemplateUtils;
 import io.harness.ngmigration.service.MigratorMappingService;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.step.ApprovalStepMapperImpl;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -303,7 +303,7 @@ public class PipelineMigrationService extends NgMigrationService {
       }
       return YamlUtils.read(response.getYamlPipeline(), PipelineConfig.class);
     } catch (Exception ex) {
-      log.error("Error when getting pipeline - ", ex);
+      log.warn("Error when getting pipeline - ", ex);
       return null;
     }
   }

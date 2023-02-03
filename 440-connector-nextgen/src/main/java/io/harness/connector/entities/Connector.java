@@ -189,6 +189,14 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
                      ConnectorKeys.projectIdentifier, ConnectorKeys.type))
                  .descSortField(ConnectorKeys.createdAt)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("nextTokenLookupIteration")
+                 .field(VaultConnectorKeys.nextTokenLookupIteration)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("type_nextTokenLookupIteration")
+                 .fields(Arrays.asList(ConnectorKeys.type, VaultConnectorKeys.nextTokenLookupIteration))
+                 .build())
         .build();
   }
 }

@@ -9,7 +9,7 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.resourceconstraint.QueueStepInfo;
 import io.harness.plancreator.steps.resourceconstraint.QueueStepNode;

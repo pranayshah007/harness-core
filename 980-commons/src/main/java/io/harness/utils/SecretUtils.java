@@ -11,6 +11,8 @@ import static io.harness.exception.ExplanationException.SECRET_DECRYPTED_VALUE_I
 import static io.harness.exception.HintException.HINT_DECRYPTED_SECRET_VALUE;
 import static io.harness.exception.NestedExceptionUtils.hintWithExplanationException;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -20,10 +22,21 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.CDP)
 @UtilityClass
 public class SecretUtils {
+  public static final String BASE_64_SECRET_IDENTIFIER_PATTERN = "//base64:/%s";
+  public static final String BASE_64_SECRET_IDENTIFIER_PREFIX = "//base64:/";
+
   public static void validateDecryptedValue(char[] decryptedValue, String identifier) {
     if (decryptedValue == null) {
       throw hintWithExplanationException(String.format(HINT_DECRYPTED_SECRET_VALUE, identifier),
           SECRET_DECRYPTED_VALUE_INVALID, new InvalidRequestException("Decrypted value of the secret is null."));
     }
+  }
+
+  public static String getBase64SecretIdentifier(final String secretIdentifier) {
+    return format(BASE_64_SECRET_IDENTIFIER_PATTERN, secretIdentifier);
+  }
+
+  public static boolean isBase64SecretIdentifier(final String secretIdentifier) {
+    return secretIdentifier.startsWith(BASE_64_SECRET_IDENTIFIER_PREFIX);
   }
 }

@@ -58,6 +58,7 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineGetResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.yaml.PipelineVersion;
@@ -100,6 +101,7 @@ public class PipelineResourceTest extends CategoryTest {
   @Mock PipelineCloneHelper pipelineCloneHelper;
   @Mock PmsFeatureFlagHelper featureFlagHelper;
   @Mock PipelineMetadataService pipelineMetadataService;
+  @Mock PipelineAsyncValidationService pipelineAsyncValidationService;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -122,7 +124,7 @@ public class PipelineResourceTest extends CategoryTest {
     MockitoAnnotations.openMocks(this);
     pipelineResource = new PipelineResourceImpl(pmsPipelineService, pmsPipelineServiceHelper, nodeExecutionService,
         nodeExecutionToExecutioNodeMapper, pipelineTemplateHelper, featureFlagHelper, variableCreatorMergeService,
-        pipelineCloneHelper, pipelineMetadataService);
+        pipelineCloneHelper, pipelineMetadataService, pipelineAsyncValidationService);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "failure-strategy.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);

@@ -42,6 +42,7 @@ import software.wings.beans.sso.SSOSettings;
 import software.wings.scheduler.events.segment.SegmentGroupEventJobContext;
 import software.wings.scheduler.events.segment.SegmentGroupEventJobContext.SegmentGroupEventJobContextKeys;
 import software.wings.service.impl.ChurnedAuditFilesAndChunksCleanup;
+import software.wings.service.impl.ChurnedConfigFilesAndChunksCleanup;
 import software.wings.service.impl.SSOSettingServiceImpl;
 import software.wings.service.impl.ServiceClassLocator;
 import software.wings.service.intfc.DelegateService;
@@ -87,6 +88,8 @@ public class DeleteAccountHelper {
   @Inject private DelegateService delegateService;
   @Inject private DelegateNgTokenService delegateNgTokenService;
   @Inject private ChurnedAuditFilesAndChunksCleanup churnedAuditFilesAndChunksCleanup;
+
+  @Inject private ChurnedConfigFilesAndChunksCleanup churnedConfigFilesAndChunksCleanup;
   @Inject private TimescaleDataCleanup timescaleDataCleanup;
 
   public List<String> deleteAllEntities(String accountId) {
@@ -244,6 +247,7 @@ public class DeleteAccountHelper {
     List<String> entitiesRemainingForDeletion = deleteAllEntities(accountId);
     delegateNgTokenService.deleteByAccountId(accountId);
     churnedAuditFilesAndChunksCleanup.deleteAuditFilesAndChunks(accountId);
+    churnedConfigFilesAndChunksCleanup.deleteConfigFilesAndChunks(accountId);
     timescaleDataCleanup.cleanupChurnedAccountData(accountId);
     if (isEmpty(entitiesRemainingForDeletion)) {
       log.info("Deleting account entry {}", accountId);

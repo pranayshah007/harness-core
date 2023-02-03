@@ -49,7 +49,7 @@ public class TasElasticContainerRegistrySettingsProviderTest extends CategoryTes
   @Mock private AwsEcrApiHelperServiceDelegate awsEcrApiHelperServiceDelegate;
   @Mock private SecretDecryptionService secretDecryptionService;
   @Mock DecryptionHelper decryptionHelper;
-  @InjectMocks TasElasticContainerRegistrySettingsProvider azureElasticContainerRegistrySettingsProvider;
+  @InjectMocks TasElasticContainerRegistrySettingsProvider tasElasticContainerRegistrySettingsProvider;
   public static final String BAZE_64_AWS_ENCODED_TOKEN = "YXdzOnRlc3QtdG9rZW46ZWNy";
 
   @Before
@@ -84,7 +84,7 @@ public class TasElasticContainerRegistrySettingsProviderTest extends CategoryTes
         .when(awsEcrApiHelperServiceDelegate)
         .getAmazonEcrAuthToken(any(), any(), anyString());
 
-    TasArtifactCreds dockerSettings = azureElasticContainerRegistrySettingsProvider.getContainerSettings(
+    TasArtifactCreds dockerSettings = tasElasticContainerRegistrySettingsProvider.getContainerSettings(
         TasTestUtils.createTestContainerArtifactConfig(awsConnectorDTO, TasArtifactRegistryType.ECR), decryptionHelper);
 
     assertThat(dockerSettings.getPassword()).isEqualTo("test-token");
@@ -103,7 +103,7 @@ public class TasElasticContainerRegistrySettingsProviderTest extends CategoryTes
 
     assertThatThrownBy(
         ()
-            -> azureElasticContainerRegistrySettingsProvider.getContainerSettings(
+            -> tasElasticContainerRegistrySettingsProvider.getContainerSettings(
                 TasTestUtils.createTestContainerArtifactConfig(awsConnectorDTO, TasArtifactRegistryType.ECR),
                 decryptionHelper))
         .isInstanceOf(InvalidRequestException.class);

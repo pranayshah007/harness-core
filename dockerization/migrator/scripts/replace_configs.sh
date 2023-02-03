@@ -597,6 +597,10 @@ if [[ "" != "$AWS_MARKETPLACE_CE_PRODUCTCODE" ]]; then
   export AWS_MARKETPLACE_CE_PRODUCTCODE; yq -i '.cg.mktPlaceConfig.awsMarketPlaceCeProductCode=env(AWS_MARKETPLACE_CE_PRODUCTCODE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$AWS_MARKETPLACE_FF_PRODUCTCODE" ]]; then
+  export AWS_MARKETPLACE_FF_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceFfProductCode=env(AWS_MARKETPLACE_FF_PRODUCTCODE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$ALLOW_BLACKLISTED_EMAIL_DOMAINS" ]]; then
   export ALLOW_BLACKLISTED_EMAIL_DOMAINS; yq -i '.cg.blacklistedEmailDomainsAllowed=env(ALLOW_BLACKLISTED_EMAIL_DOMAINS)' $CONFIG_FILE
 fi

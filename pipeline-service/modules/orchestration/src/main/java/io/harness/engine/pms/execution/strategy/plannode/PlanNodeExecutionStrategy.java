@@ -18,6 +18,7 @@ import io.harness.engine.ExecutionCheck;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.execution.WaitForExecutionInputHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.facilitation.FacilitationHelper;
 import io.harness.engine.facilitation.RunPreFacilitationChecker;
@@ -100,6 +101,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject @Named("EngineExecutorService") ExecutorService executorService;
   @Inject WaitForExecutionInputHelper waitForExecutionInputHelper;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject PlanExecutionService planExecutionService;
 
   @Override
   public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull PlanNode node,
@@ -214,6 +216,14 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         log.info("Marking the nodeExecution with id {} as RUNNING", nodeExecutionId);
         nodeExecution = Preconditions.checkNotNull(
             nodeExecutionService.updateStatusWithOps(nodeExecutionId, RUNNING, null, EnumSet.noneOf(Status.class)));
+        // After resuming, pipeline status need to be set. Ex: Pipeline waiting on approval step, pipeline status is
+        // waiting, after approval, node execution is marked as running and,  similarly we are marking for pipeline.
+        // Earlier pipeline status was marked from step itself.
+        Status planStatus =
+            planExecutionService.calculateStatusExcluding(ambiance.getPlanExecutionId(), nodeExecutionId);
+        if (!StatusUtils.isFinalStatus(planStatus)) {
+          planExecutionService.updateStatus(ambiance.getPlanExecutionId(), planStatus);
+        }
       } else {
         // This will happen if the node is not in any paused or waiting statuses.
         log.debug("NodeExecution with id {} is already in Running status", nodeExecutionId);

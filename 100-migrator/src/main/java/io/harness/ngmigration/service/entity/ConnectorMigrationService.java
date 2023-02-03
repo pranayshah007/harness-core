@@ -41,8 +41,8 @@ import io.harness.ngmigration.connector.ConnectorFactory;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.service.MigratorMappingService;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
 
@@ -248,7 +248,7 @@ public class ConnectorMigrationService extends NgMigrationService {
               ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier()));
       return response.orElse(null);
     } catch (Exception ex) {
-      log.error("Error when getting connector - ", ex);
+      log.warn("Error when getting connector - ", ex);
       return null;
     }
   }

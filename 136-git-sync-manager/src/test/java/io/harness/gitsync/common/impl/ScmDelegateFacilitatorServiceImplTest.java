@@ -434,6 +434,45 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
     assertThat(responseParams.getGetFileTaskParamsPerConnectorList().size()).isEqualTo(3);
   }
 
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetEligibleScopeOfDelegates() {
+    GitFileRequestV2 gitFileRequest1 =
+        GitFileRequestV2.builder().scope(getScope(accountIdentifier, orgIdentifier, projectIdentifier)).build();
+    GitFileRequestV2 gitFileRequest2 =
+        GitFileRequestV2.builder().scope(getScope(accountIdentifier, orgIdentifier, projectIdentifier)).build();
+    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> getBatchFileRequestIdentifierGitFileRequestV2Map =
+        new HashMap<>();
+    GitFileBatchRequest gitFileBatchRequest =
+        GitFileBatchRequest.builder()
+            .accountIdentifier(accountIdentifier)
+            .getBatchFileRequestIdentifierGitFileRequestV2Map(getBatchFileRequestIdentifierGitFileRequestV2Map)
+            .build();
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest1);
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest2);
+    Scope scope = scmDelegateFacilitatorService.getEligibleScopeOfDelegates(gitFileBatchRequest);
+    assertThat(scope.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(scope.getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(scope.getProjectIdentifier()).isEqualTo(projectIdentifier);
+
+    GitFileRequestV2 gitFileRequest3 =
+        GitFileRequestV2.builder().scope(getScope(accountIdentifier, orgIdentifier, null)).build();
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest3);
+    scope = scmDelegateFacilitatorService.getEligibleScopeOfDelegates(gitFileBatchRequest);
+    assertThat(scope.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(scope.getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(scope.getProjectIdentifier()).isEqualTo(null);
+
+    GitFileRequestV2 gitFileRequest4 =
+        GitFileRequestV2.builder().scope(getScope(accountIdentifier, null, null)).build();
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest4);
+    scope = scmDelegateFacilitatorService.getEligibleScopeOfDelegates(gitFileBatchRequest);
+    assertThat(scope.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(scope.getOrgIdentifier()).isEqualTo(null);
+    assertThat(scope.getProjectIdentifier()).isEqualTo(null);
+  }
+
   private Scope getDefaultScope() {
     return Scope.builder()
         .accountIdentifier(accountIdentifier)

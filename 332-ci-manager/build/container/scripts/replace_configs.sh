@@ -144,7 +144,7 @@ if [[ "" != "$HOSTED_VM_SPLIT_LINUX_ARM64_POOL" ]]; then
 fi
 
 if [[ "" != "$HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL" ]]; then
-  export HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxAmd64Pool=env(HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL)' $CONFIG_FILE
+  export HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitWindowsAmd64Pool=env(HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$VM_ARTIFACTORY_UPLOAD_IMAGE" ]]; then
@@ -464,6 +464,8 @@ replace_key_value eventsFramework.redis.password $EVENTS_FRAMEWORK_REDIS_PASSWOR
 replace_key_value eventsFramework.redis.sslConfig.enabled $EVENTS_FRAMEWORK_REDIS_SSL_ENABLED
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
+replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
+replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL
 
 if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"

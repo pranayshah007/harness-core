@@ -14,6 +14,7 @@ import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CONN
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT_GROUP;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.FILES;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.INFRASTRUCTURE;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.PIPELINES;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SECRETS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SERVICE;
@@ -72,8 +73,8 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
   private static final int PAGE = 0;
   private static final int SIZE = 100;
 
-  final Set<EntityTypeProtoEnum> entityTypesSupportedByNGCore =
-      Sets.newHashSet(SECRETS, CONNECTORS, SERVICE, ENVIRONMENT, ENVIRONMENT_GROUP, TEMPLATE, FILES, PIPELINES);
+  final Set<EntityTypeProtoEnum> entityTypesSupportedByNGCore = Sets.newHashSet(
+      SECRETS, CONNECTORS, SERVICE, ENVIRONMENT, ENVIRONMENT_GROUP, TEMPLATE, FILES, PIPELINES, INFRASTRUCTURE);
 
   /**
    * Performs the following:

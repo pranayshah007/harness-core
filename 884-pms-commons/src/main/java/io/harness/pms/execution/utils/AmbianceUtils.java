@@ -66,6 +66,14 @@ public class AmbianceUtils {
     return stageLevel.get().getRuntimeId();
   }
 
+  public String getStageSetupIdAmbiance(Ambiance ambiance) {
+    Optional<Level> stageLevel = getStageLevelFromAmbiance(ambiance);
+    if (stageLevel.isPresent()) {
+      return stageLevel.get().getSetupId();
+    }
+    throw new InvalidRequestException("Stage not present");
+  }
+
   public static Ambiance cloneForChild(@NonNull Ambiance ambiance, @NonNull Level level) {
     Ambiance.Builder builder = cloneBuilder(ambiance, ambiance.getLevelsList().size());
     if (level.getStepType().getStepCategory() == StepCategory.STAGE) {
