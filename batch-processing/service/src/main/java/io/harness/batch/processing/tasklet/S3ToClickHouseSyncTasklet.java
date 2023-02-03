@@ -384,10 +384,11 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
       if (objectSummary.getKey().endsWith(".csv.gz")) {
         log.info("Ingesting CSV: {}", objectSummary.getKey());
         try {
-          String insertQuery = "SET input_format_csv_skip_first_lines=1; INSERT INTO " + awsBillingTableId
-              + " SELECT * FROM s3('https://" + configuration.getAwsS3SyncConfig().getAwsS3BucketName()
-              + ".s3.amazonaws.com/" + objectSummary.getKey() + "','"
-              + configuration.getAwsS3SyncConfig().getAwsAccessKey() + "','"
+          String insertQuery =
+              "SET input_format_csv_skip_first_lines=1; SET max_memory_usage=1000000000000; INSERT INTO "
+              + awsBillingTableId + " SELECT * FROM s3('https://"
+              + configuration.getAwsS3SyncConfig().getAwsS3BucketName() + ".s3.amazonaws.com/" + objectSummary.getKey()
+              + "','" + configuration.getAwsS3SyncConfig().getAwsAccessKey() + "','"
               + configuration.getAwsS3SyncConfig().getAwsSecretKey()
               + "', 'CSV') SETTINGS date_time_input_format='best_effort'";
           clickHouseService.executeClickHouseQuery(configuration.getClickHouseConfig(), insertQuery, Boolean.FALSE);
