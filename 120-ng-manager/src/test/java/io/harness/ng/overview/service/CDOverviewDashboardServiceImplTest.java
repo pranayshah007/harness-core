@@ -962,7 +962,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         .thenReturn(environmentInstanceCountModels);
     when(instanceDashboardService.getLastDeployedInstance(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, true, false))
         .thenReturn(artifactDeploymentDetailModels);
-    when(environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(ACCOUNT_ID, ORG_ID, PROJECT_ID, envIds))
+    when(environmentService.fetchesEnvironmentFromListOfIdentifiers(ACCOUNT_ID, ORG_ID, PROJECT_ID, envIds))
         .thenReturn(environments);
     mockServiceEntityForNonGitOps();
 
@@ -974,8 +974,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     verify(instanceDashboardService)
         .getInstanceCountForEnvironmentFilteredByService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false);
     verify(instanceDashboardService).getLastDeployedInstance(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, true, false);
-    verify(environmentService)
-        .fetchesNonDeletedEnvironmentFromListOfIdentifiers(ACCOUNT_ID, ORG_ID, PROJECT_ID, envIds);
+    verify(environmentService).fetchesEnvironmentFromListOfIdentifiers(ACCOUNT_ID, ORG_ID, PROJECT_ID, envIds);
     verifyServiceEntityCall();
   }
 
