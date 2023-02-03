@@ -119,7 +119,7 @@ public class EventJobScheduler {
     runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER_RECOMMENDATION, true);
   }
 
-  @Scheduled(cron = "0 0 */1 * * ?") // run every hour
+  @Scheduled(cron = "0 */5 * * * ?") // run every hour
   public void runCloudEfficiencyInClusterNodeRecommendationJobs() {
     runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER_NODE_RECOMMENDATION, true);
   }
@@ -394,6 +394,11 @@ public class EventJobScheduler {
 
   @SuppressWarnings("squid:S1166") // not required to rethrow exceptions.
   private void runJob(String accountId, Job job, boolean runningMode) {
+    if (BatchJobType.K8S_NODE_RECOMMENDATION == BatchJobType.fromJob(job)) {
+      log.info("========> Job: {}, flag: {}", BatchJobType.fromJob(job),
+          featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_AGGREGATE, accountId));
+    }
+
     if (BatchJobType.K8S_NODE_RECOMMENDATION == BatchJobType.fromJob(job)
         && !featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_AGGREGATE, accountId)) {
       return;
