@@ -20,7 +20,7 @@ server:
   requestLog:
     appenders: []
   maxThreads: 1024
-  rootPath: "/idp-service/"
+  rootPath: "/api/idp-service/"
 
 eventsFramework:
   redis:
