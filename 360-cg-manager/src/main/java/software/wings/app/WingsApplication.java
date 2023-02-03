@@ -16,6 +16,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.lock.mongo.MongoPersistentLocker.LOCKS_STORE;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.microservice.NotifyEngineTarget.GENERAL;
+import static io.harness.ng.DbAliases.DMS;
 import static io.harness.persistence.HPersistence.ANALYTICS_STORE_NAME;
 import static io.harness.time.DurationUtils.durationTillDayTime;
 import static io.harness.waiter.OrchestrationNotifyEventListener.ORCHESTRATION;
@@ -1125,6 +1126,11 @@ public class WingsApplication extends Application<MainConfiguration> {
     if (isNotEmpty(configuration.getEventsMongo().getUri())
         && !configuration.getEventsMongo().getUri().equals(configuration.getMongoConnectionFactory().getUri())) {
       persistence.register(Store.builder().name("events").build(), configuration.getEventsMongo().getUri());
+    }
+
+    if (isNotEmpty(configuration.getDmsMongo().getUri())
+        && !configuration.getDmsMongo().getUri().equals(configuration.getMongoConnectionFactory().getUri())) {
+      persistence.register(Store.builder().name(DMS).build(), configuration.getDmsMongo().getUri());
     }
   }
 

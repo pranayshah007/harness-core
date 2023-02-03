@@ -661,7 +661,8 @@ public enum ErrorCode {
   APPROVAL_REJECTION,
   TERRAGRUNT_EXECUTION_ERROR,
   ADFS_ERROR,
-  TERRAFORM_CLOUD_ERROR;
+  TERRAFORM_CLOUD_ERROR,
+  CLUSTER_CREDENTIALS_NOT_FOUND;
 
   private Status status = BAD_REQUEST;
   private String description;
