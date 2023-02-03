@@ -7,9 +7,6 @@
 
 package io.harness.template.yaml;
 
-import io.harness.exception.InvalidRequestException;
-import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,17 +18,21 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.harness.exception.InvalidRequestException;
+import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.serializer.jackson.NGHarnessJacksonModule;
+import lombok.experimental.UtilityClass;
+
 import java.io.IOException;
 import java.net.URL;
-import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class TemplateYamlUtils {
   private final ObjectMapper mapper;
 
   static {
-    mapper = new ObjectMapper(new YAMLFactory().enable(YAMLGenerator.Feature.MINIMIZE_QUOTES));
+    mapper = new ObjectMapper(
+        new YAMLFactory().enable(YAMLGenerator.Feature.MINIMIZE_QUOTES).enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR));
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
     mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
