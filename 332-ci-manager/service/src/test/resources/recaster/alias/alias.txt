@@ -320,3 +320,4 @@ io.harness.beans.steps.stepinfo.V1.BackgroundStepInfoV1
 io.harness.steps.policy.step.outcome.PolicyStepOutcome
 io.harness.steps.policy.step.outcome.PolicySetOutcome
 io.harness.steps.policy.step.outcome.PolicyOutcome
+io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailure_FailureActionConfig

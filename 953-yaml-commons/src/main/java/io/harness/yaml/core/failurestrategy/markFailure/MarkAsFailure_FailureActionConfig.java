@@ -22,7 +22,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)
-@RecasterAlias("io.harness.yaml.core.failurestrategy.markFailure.MarkAsSuccessFailureActionConfig")
+@RecasterAlias("io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailure_FailureActionConfig")
 public class MarkAsFailure_FailureActionConfig implements FailureStrategyActionConfig {
   @ApiModelProperty(allowableValues = MARK_AS_FAILURE) NGFailureActionType type = NGFailureActionType.MARK_AS_FAILURE;
 }

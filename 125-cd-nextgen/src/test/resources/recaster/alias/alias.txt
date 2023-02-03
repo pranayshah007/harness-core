@@ -761,3 +761,4 @@ io.harness.cdng.googlefunctions.GoogleFunctionStepOutcome
 io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepInfo
 io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepParameters
 io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepParameters
+io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailure_FailureActionConfig
