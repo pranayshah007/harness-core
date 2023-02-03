@@ -19,7 +19,7 @@ spec:
                 spec: {}
             - step:
                 name: "Cloud Function Traffic Shift"
-                identifier: cloudFunctionTrafficShift
+                identifier: cloudFunctionTrafficShiftFirst
                 type: CloudFunctionTrafficShift
                 timeout: 10m
                 spec:
@@ -32,7 +32,7 @@ spec:
                 spec: { }
             - step:
                 name: "Cloud Function Traffic Shift"
-                identifier: cloudFunctionTrafficShift
+                identifier: cloudFunctionTrafficShiftSecond
                 type: CloudFunctionTrafficShift
                 timeout: 10m
                 spec:

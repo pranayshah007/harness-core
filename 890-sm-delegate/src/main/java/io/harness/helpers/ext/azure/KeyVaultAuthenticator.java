@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.utility.AzureUtils;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
+import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConstants;
 
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.http.HttpClient;
@@ -33,17 +34,29 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class KeyVaultAuthenticator {
-  protected static String getKeyVaultUri(String keyVaultName) {
-    return String.format("https://%s.vault.azure.net", keyVaultName);
+  protected static String getKeyVaultUri(String keyVaultName, AzureEnvironmentType azureEnvironmentType) {
+    if (azureEnvironmentType == null) {
+      return String.format(AzureKeyVaultConstants.AZURE_DEFAULT_ENCRYPTION_URL, keyVaultName);
+    }
+
+    switch (azureEnvironmentType) {
+      case AZURE_US_GOVERNMENT:
+        return String.format(AzureKeyVaultConstants.AZURE_US_GOVERNMENT_ENCRYPTION_URL, keyVaultName);
+
+      case AZURE:
+      default:
+        return String.format(AzureKeyVaultConstants.AZURE_DEFAULT_ENCRYPTION_URL, keyVaultName);
+    }
   }
 
-  public static TokenCredential getAuthenticationTokenCredentials(
-      String clientId, String clientKey, String tenantId, HttpClient httpClient) {
+  public static TokenCredential getAuthenticationTokenCredentials(String clientId, String clientKey, String tenantId,
+      HttpClient httpClient, AzureEnvironmentType azureEnvironmentType) {
     return new ClientSecretCredentialBuilder()
         .clientId(clientId)
         .clientSecret(clientKey)
         .tenantId(tenantId)
         .httpClient(httpClient)
+        .authorityHost(AzureUtils.getAuthorityHost(azureEnvironmentType, tenantId))
         .build();
   }
 
@@ -52,14 +65,19 @@ public class KeyVaultAuthenticator {
     return AzureUtils.getAzureProfile(tenantId, subscriptionId, AzureUtils.getAzureEnvironment(azureEnvironmentType));
   }
 
-  public static SecretClient getSecretsClient(String keyVaultName, HttpPipeline httpPipeline) {
-    return new SecretClientBuilder().pipeline(httpPipeline).vaultUrl(getKeyVaultUri(keyVaultName)).buildClient();
+  public static SecretClient getSecretsClient(
+      String keyVaultName, HttpPipeline httpPipeline, AzureEnvironmentType azureEnvironmentType) {
+    return new SecretClientBuilder()
+        .pipeline(httpPipeline)
+        .vaultUrl(getKeyVaultUri(keyVaultName, azureEnvironmentType))
+        .buildClient();
   }
 
   public static HttpPipeline getAzureHttpPipeline(String clientId, String clientKey, String tenantId,
       String subscriptionId, AzureEnvironmentType azureEnvironmentType) {
     HttpClient httpClient = AzureUtils.getAzureHttpClient();
-    TokenCredential tokenCredential = getAuthenticationTokenCredentials(clientId, clientKey, tenantId, httpClient);
+    TokenCredential tokenCredential =
+        getAuthenticationTokenCredentials(clientId, clientKey, tenantId, httpClient, azureEnvironmentType);
     AzureProfile azureProfile = getAzureProfile(tenantId, subscriptionId, azureEnvironmentType);
     RetryPolicy retryPolicy =
         AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions()));

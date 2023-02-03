@@ -13,6 +13,7 @@ import static software.wings.api.CloudProviderType.AWS;
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 import static software.wings.ngmigration.NGMigrationEntityType.ELASTIGROUP_CONFIGURATION;
 import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
+import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -151,6 +152,11 @@ public class InfraMigrationService extends NgMigrationService {
         children.add(CgEntityId.builder().id(infra.getUuid()).type(ELASTIGROUP_CONFIGURATION).build());
       }
     }
+
+    if (infra.getDeploymentType() == DeploymentType.CUSTOM) {
+      children.add(CgEntityId.builder().id(infra.getDeploymentTypeTemplateId()).type(TEMPLATE).build());
+    }
+
     return DiscoveryNode.builder().children(children).entityNode(infraNode).build();
   }
 
@@ -210,7 +216,8 @@ public class InfraMigrationService extends NgMigrationService {
     List<ElastigroupConfiguration> elastigroupConfigurations =
         elastigroupConfigurationMigrationService.getElastigroupConfigurations(infraSpecIds, inputDTO, entities);
 
-    Infrastructure infraSpec = infraDefMapper.getSpec(inputDTO, infra, migratedEntities, elastigroupConfigurations);
+    Infrastructure infraSpec =
+        infraDefMapper.getSpec(inputDTO, infra, migratedEntities, entities, elastigroupConfigurations);
     if (infraSpec == null) {
       log.error(String.format("We could not migrate the infra %s", infra.getUuid()));
       return Collections.emptyList();

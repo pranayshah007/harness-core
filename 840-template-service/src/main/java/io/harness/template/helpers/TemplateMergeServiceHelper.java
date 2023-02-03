@@ -504,7 +504,7 @@ public class TemplateMergeServiceHelper {
         resMapWithTemplateRef.put(fieldName, value);
       } else if (value.isArray()) {
         ArrayListForMergedTemplateRef arrayLists = mergeTemplateInputsInArrayWithOpaPolicy(
-            accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth);
+            accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth, loadFromCache);
         resMap.put(fieldName, arrayLists.getArrayList());
         resMapWithTemplateRef.put(fieldName, arrayLists.getArrayListWithTemplateRef());
       } else {
@@ -533,7 +533,8 @@ public class TemplateMergeServiceHelper {
   }
 
   private ArrayListForMergedTemplateRef mergeTemplateInputsInArrayWithOpaPolicy(String accountId, String orgId,
-      String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth) {
+      String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth,
+      boolean loadFromCache) {
     List<Object> arrayList = new ArrayList<>();
     List<Object> arrayListWithTemplateRef = new ArrayList<>();
     for (YamlNode arrayElement : yamlNode.asArray()) {
@@ -541,13 +542,13 @@ public class TemplateMergeServiceHelper {
         arrayList.add(arrayElement);
         arrayListWithTemplateRef.add(arrayElement);
       } else if (arrayElement.isArray()) {
-        ArrayListForMergedTemplateRef arrayListForMergedTemplateRef =
-            mergeTemplateInputsInArrayWithOpaPolicy(accountId, orgId, projectId, arrayElement, templateCacheMap, depth);
+        ArrayListForMergedTemplateRef arrayListForMergedTemplateRef = mergeTemplateInputsInArrayWithOpaPolicy(
+            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, loadFromCache);
         arrayList.add(arrayListForMergedTemplateRef.getArrayList());
         arrayListWithTemplateRef.add(arrayListForMergedTemplateRef.getArrayListWithTemplateRef());
       } else {
         MergeTemplateInputsInObject temp = mergeTemplateInputsInObjectAlongWithOpaPolicy(
-            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, false);
+            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, loadFromCache);
         arrayList.add(temp.getResMap());
         arrayListWithTemplateRef.add(temp.getResMapWithOpaResponse());
       }

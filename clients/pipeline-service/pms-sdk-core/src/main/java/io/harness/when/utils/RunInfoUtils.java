@@ -63,7 +63,7 @@ public class RunInfoUtils {
 
   public String getRunConditionForRollback(StepWhenCondition stepWhenCondition) {
     if (stepWhenCondition == null) {
-      return IS_PIPELINE_ROLLBACK + " || " + getStatusExpression(STAGE_FAILURE);
+      return getStatusExpression(STAGE_FAILURE);
     }
     if (stepWhenCondition.getStageStatus() == null) {
       throw new InvalidRequestException("Stage Status in step when condition cannot be empty.");

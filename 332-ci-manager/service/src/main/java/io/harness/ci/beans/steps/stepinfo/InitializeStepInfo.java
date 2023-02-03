@@ -58,6 +58,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class InitializeStepInfo implements CIStepInfo, WithConnectorRef {
   public static final int DEFAULT_RETRY = 0;
   public static final int DEFAULT_TIMEOUT = 600 * 1000;
+  public static final int DEFAULT_TIMEOUT_WITH_QUEUE = 10 * 3600 * 1000;
   public static final String CALLBACK_IDS = "callbackIds";
   public static final String LOG_KEYS = "logKeys";
 

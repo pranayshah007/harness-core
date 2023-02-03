@@ -17,7 +17,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -44,6 +43,7 @@ import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 import io.harness.template.remote.TemplateResourceClient;
 
 import software.wings.beans.template.Template;
+import software.wings.beans.template.TemplateType;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -163,23 +163,18 @@ public class TemplateMigrationService extends NgMigrationService {
           NGYamlFile.builder()
               .type(TEMPLATE)
               .filename("template/" + template.getName() + ".yaml")
-              .yaml(
-                  NGTemplateConfig.builder()
-                      .templateInfoConfig(
-                          NGTemplateInfoConfig.builder()
-                              .type(TemplateEntityType.STEP_TEMPLATE)
-                              .identifier(MigratorUtility.generateIdentifier(template.getName()))
-                              //                              .variables(ngTemplateService.getTemplateVariables(template))
-                              .name(template.getName())
-                              .description(ParameterField.createValueField(description))
-                              .projectIdentifier(projectIdentifier)
-                              .orgIdentifier(orgIdentifier)
-                              .versionLabel("v" + template.getVersion().toString())
-                              .spec(JsonUtils.asTree(ImmutableMap.of("spec", spec, "type",
-                                  ngTemplateService.getNgTemplateStepName(template), "timeout",
-                                  ngTemplateService.getTimeoutString(template))))
-                              .build())
-                      .build())
+              .yaml(NGTemplateConfig.builder()
+                        .templateInfoConfig(NGTemplateInfoConfig.builder()
+                                                .type(ngTemplateService.getTemplateEntityType())
+                                                .identifier(MigratorUtility.generateIdentifier(template.getName()))
+                                                .name(template.getName())
+                                                .description(ParameterField.createValueField(description))
+                                                .projectIdentifier(projectIdentifier)
+                                                .orgIdentifier(orgIdentifier)
+                                                .versionLabel("v" + template.getVersion().toString())
+                                                .spec(getSpec(spec, template))
+                                                .build())
+                        .build())
               .ngEntityDetail(NgEntityDetail.builder()
                                   .identifier(identifier)
                                   .orgIdentifier(orgIdentifier)
@@ -192,6 +187,16 @@ public class TemplateMigrationService extends NgMigrationService {
       return files;
     }
     return new ArrayList<>();
+  }
+
+  private JsonNode getSpec(JsonNode configSpec, Template template) {
+    NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(template);
+    if (TemplateType.CUSTOM_DEPLOYMENT_TYPE.name().equals(template.getType())) {
+      return configSpec;
+    } else {
+      return JsonUtils.asTree(ImmutableMap.of("spec", configSpec, "type",
+          ngTemplateService.getNgTemplateStepName(template), "timeout", ngTemplateService.getTimeoutString(template)));
+    }
   }
 
   @Override

@@ -32,8 +32,9 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
-import io.harness.pms.inputset.*;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
+import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
+import io.harness.pms.inputset.MergeInputSetForRerunRequestDTO;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
@@ -264,6 +265,36 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     }
     String fullYaml = "";
     if (mergeInputSetRequestDTO.isWithMergedPipelineYaml()) {
+      fullYaml = validateAndMergeHelper.mergeInputSetIntoPipeline(accountId, orgIdentifier, projectIdentifier,
+          pipelineIdentifier, mergedYaml, pipelineBranch, pipelineRepoID,
+          mergeInputSetRequestDTO.getStageIdentifiers());
+    }
+    return ResponseDTO.newResponse(MergeInputSetResponseDTOPMS.builder()
+                                       .isErrorResponse(false)
+                                       .pipelineYaml(mergedYaml)
+                                       .completePipelineYaml(fullYaml)
+                                       .build());
+  }
+
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  public ResponseDTO<MergeInputSetResponseDTOPMS> getMergeInputSetForRerun(@NotNull @AccountIdentifier String accountId,
+      @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
+      @NotNull @ResourceIdentifier String pipelineIdentifier, String pipelineBranch, String pipelineRepoID,
+      GitEntityFindInfoDTO gitEntityBasicInfo,
+      @NotNull @Valid MergeInputSetForRerunRequestDTO mergeInputSetRequestDTO) {
+    String planExecutionId = mergeInputSetRequestDTO.getPlanExecutionId();
+    String mergedYaml;
+    try {
+      mergedYaml = validateAndMergeHelper.mergeInputSetIntoPipelineForRerun(accountId, orgIdentifier, projectIdentifier,
+          pipelineIdentifier, planExecutionId, pipelineBranch, pipelineRepoID,
+          mergeInputSetRequestDTO.getStageIdentifiers());
+    } catch (InvalidInputSetException e) {
+      InputSetErrorWrapperDTOPMS errorWrapperDTO = (InputSetErrorWrapperDTOPMS) e.getMetadata();
+      return ResponseDTO.newResponse(
+          MergeInputSetResponseDTOPMS.builder().isErrorResponse(true).inputSetErrorWrapper(errorWrapperDTO).build());
+    }
+    String fullYaml = "";
+    if (mergeInputSetRequestDTO.isGetResponseWithMergedPipelineYaml()) {
       fullYaml = validateAndMergeHelper.mergeInputSetIntoPipeline(accountId, orgIdentifier, projectIdentifier,
           pipelineIdentifier, mergedYaml, pipelineBranch, pipelineRepoID,
           mergeInputSetRequestDTO.getStageIdentifiers());

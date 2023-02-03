@@ -67,9 +67,6 @@ public interface TerraformCloudRestClient {
   Call<TerraformCloudResponse<PlanData>> getPlan(
       @Header("Authorization") String authorization, @Path("planId") String planId);
 
-  @GET("api/v2/plans/{planId}/json-output")
-  Call<String> getPlanJsonOutput(@Header("Authorization") String authorization, @Path("planId") String planId);
-
   @GET("api/v2/applies/{applyId}")
   Call<TerraformCloudResponse<ApplyData>> getApply(
       @Header("Authorization") String authorization, @Path("applyId") String applyId);
@@ -77,10 +74,6 @@ public interface TerraformCloudRestClient {
   @GET("api/v2/runs/{runId}/policy-checks")
   Call<TerraformCloudResponse<List<PolicyCheckData>>> listPolicyChecks(
       @Header("Authorization") String authorization, @Path("runId") String runId, @Query("page[number]") int page);
-
-  @GET("/api/v2/policy-checks/{policyCheckId}/output")
-  Call<String> getPolicyCheckOutput(
-      @Header("Authorization") String authorization, @Path("policyCheckId") String policyCheckId);
 
   @GET("/api/v2/state-versions/{stateVersionId}/outputs")
   Call<TerraformCloudResponse<List<StateVersionOutputData>>> getStateVersionOutputs(

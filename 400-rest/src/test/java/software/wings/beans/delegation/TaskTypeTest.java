@@ -452,6 +452,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(412, "GOOGLE_CLOUD_SOURCE_ARTIFACT_TASK_NG");
     taskTypeOrdinalMapping.put(413, "GCP_PROJECTS_TASK_NG");
     taskTypeOrdinalMapping.put(414, "GCS_BUCKETS_TASK_NG");
+    taskTypeOrdinalMapping.put(415, "AWS_LAMBDA_COMMAND_TASK_NG");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

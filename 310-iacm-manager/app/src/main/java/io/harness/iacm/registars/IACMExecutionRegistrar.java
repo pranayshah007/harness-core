@@ -13,6 +13,7 @@ import io.harness.ci.states.IACMStep;
 import io.harness.ci.states.InitializeTaskStep;
 import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.ci.states.PluginStep;
+import io.harness.ci.states.V1.InitializeTaskStepV2;
 import io.harness.ci.states.codebase.CodeBaseStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.iacm.IACMStepType;
@@ -35,7 +36,7 @@ public class IACMExecutionRegistrar {
   public static Map<StepType, Class<? extends Step>> getEngineSteps() {
     Map<StepType, Class<? extends Step>> engineSteps = new HashMap<>();
 
-    engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStep.class);
+    engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStepV2.class);
     engineSteps.put(IntegrationStageStepPMS.STEP_TYPE,
         IntegrationStageStepPMS.class); // This seems to be the STAGE STEP per ser. So the stage is treated as a STEP
     engineSteps.put(CISpecStep.STEP_TYPE,

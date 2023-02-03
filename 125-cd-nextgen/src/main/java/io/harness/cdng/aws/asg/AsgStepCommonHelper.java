@@ -44,6 +44,7 @@ import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResponse;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResponse;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResult;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResult;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
@@ -54,6 +55,7 @@ import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResult;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployResponse;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployResult;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackResponse;
+import io.harness.delegate.task.aws.asg.AsgRollingRollbackResult;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
@@ -268,9 +270,10 @@ public class AsgStepCommonHelper extends CDStepHelper {
       taskChainResponse = asgStepExecutor.executeAsgPrepareRollbackDataTask(
           ambiance, stepElementParameters, asgPrepareRollbackDataPassThroughData, unitProgressData);
     } else {
-      // TODO
-      throw new RuntimeException("Not implemented yet");
+      throw new IllegalArgumentException(
+          format("Invalid instance of AsgStepExecutor %s", asgStepExecutor.getClass()), USER);
     }
+
     return taskChainResponse;
   }
 
@@ -524,7 +527,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
       identifier = gitFetchFilesConfig.getIdentifier();
       manifestType = gitFetchFilesConfig.getManifestType();
       logger.infoBold(
-          logCallback, "%nFetching %s manifest files with identifier `%s` from Git", manifestType, identifier);
+          logCallback, "Fetching %s manifest files with identifier `%s` from Git", manifestType, identifier);
       logger.info(logCallback, "Fetching following Files:");
       gitFetchFilesConfig.getGitStoreDelegateConfig().getPaths().stream().forEach(
           fp -> logger.info(logCallback, "- %s", fp));
@@ -594,13 +597,19 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
   public List<ServerInstanceInfo> getServerInstanceInfos(
       AsgCommandResponse asgCommandResponse, String infrastructureKey, String region) {
-    if ((asgCommandResponse instanceof AsgRollingDeployResponse)
-        || (asgCommandResponse instanceof AsgRollingRollbackResponse)) {
+    if (asgCommandResponse instanceof AsgRollingDeployResponse) {
       AsgRollingDeployResult asgRollingDeployResult =
           ((AsgRollingDeployResponse) asgCommandResponse).getAsgRollingDeployResult();
       String asgName = asgRollingDeployResult.getAutoScalingGroupContainer().getAutoScalingGroupName();
       return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
           asgRollingDeployResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_ROLLING,
+          asgName, null);
+    } else if (asgCommandResponse instanceof AsgRollingRollbackResponse) {
+      AsgRollingRollbackResult asgRollingRollbackResult =
+          ((AsgRollingRollbackResponse) asgCommandResponse).getAsgRollingRollbackResult();
+      String asgName = asgRollingRollbackResult.getAutoScalingGroupContainer().getAutoScalingGroupName();
+      return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgRollingRollbackResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_ROLLING,
           asgName, null);
     } else if (asgCommandResponse instanceof AsgCanaryDeployResponse) {
       AsgCanaryDeployResult asgCanaryDeployResult =
@@ -610,8 +619,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
       return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
           asgCanaryDeployResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_CANARY,
           asgNameWithoutSuffix, null);
-    } else if ((asgCommandResponse instanceof AsgBlueGreenDeployResponse)
-        || (asgCommandResponse instanceof AsgBlueGreenRollbackResponse)) {
+    } else if (asgCommandResponse instanceof AsgBlueGreenDeployResponse) {
       AsgBlueGreenDeployResult asgBlueGreenDeployResult =
           ((AsgBlueGreenDeployResponse) asgCommandResponse).getAsgBlueGreenDeployResult();
       String prodAsgName = asgBlueGreenDeployResult.getProdAutoScalingGroupContainer().getAutoScalingGroupName();
@@ -625,6 +633,23 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
       serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
           asgBlueGreenDeployResult.getStageAutoScalingGroupContainer(), infrastructureKey, region,
+          EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, false));
+
+      return serverInstanceInfoList;
+    } else if (asgCommandResponse instanceof AsgBlueGreenRollbackResponse) {
+      AsgBlueGreenRollbackResult asgBlueGreenRollbackResult =
+          ((AsgBlueGreenRollbackResponse) asgCommandResponse).getAsgBlueGreenRollbackResult();
+      String prodAsgName = asgBlueGreenRollbackResult.getProdAutoScalingGroupContainer().getAutoScalingGroupName();
+      String asgNameWithoutSuffix = prodAsgName.substring(0, prodAsgName.length() - 3);
+
+      List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
+
+      serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgBlueGreenRollbackResult.getProdAutoScalingGroupContainer(), infrastructureKey, region,
+          EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, true));
+
+      serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgBlueGreenRollbackResult.getStageAutoScalingGroupContainer(), infrastructureKey, region,
           EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, false));
 
       return serverInstanceInfoList;

@@ -108,23 +108,25 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
     CreateAutoScalingGroupRequest createAutoScalingGroupRequest = manifests.get(0);
     createAutoScalingGroupRequest.setAutoScalingGroupName(asgName);
 
-    String operationName;
+    String operationName = format("Asg %s to reach steady state", asgName);
+
     if (autoScalingGroup == null) {
-      operationName = format("Create Asg %s", asgName);
-      asgSdkManager.info("Operation `%s` has started", operationName);
+      asgSdkManager.info("Creating Asg %s", asgName);
       asgSdkManager.createASG(asgName, chainState.getLaunchTemplateVersion(), createAutoScalingGroupRequest);
+      asgSdkManager.info("Waiting for Asg %s to reach steady state", asgName);
       asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAllInstancesInReadyState, operationName);
+      asgSdkManager.infoBold("Created Asg %s successfully", asgName);
     } else {
-      operationName = format("Update Asg %s", asgName);
-      asgSdkManager.info("Operation `%s` has started", operationName);
+      asgSdkManager.info("Updating Asg %s", asgName);
       asgSdkManager.updateASG(asgName, chainState.getLaunchTemplateVersion(), createAutoScalingGroupRequest);
+      asgSdkManager.info("Waiting for Asg %s to reach steady state", asgName);
       if (Integer.valueOf(0).equals(createAutoScalingGroupRequest.getDesiredCapacity())) {
         asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAsgDownsizedToZero, operationName);
       } else {
         asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAllInstancesInReadyState, operationName);
       }
+      asgSdkManager.infoBold("Updated Asg %s successfully", asgName);
     }
-    asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
 
     AutoScalingGroup finalAutoScalingGroup = asgSdkManager.getASG(asgName);
     chainState.setAutoScalingGroup(finalAutoScalingGroup);
@@ -136,8 +138,9 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
       Predicate<List<String>> predicate = arg
           -> asgSdkManager.checkAllTargetsRegistered(arg, chainState.getTargetGroupArnList(),
               asgConfigurationManifestRequest.getAwsInternalConfig(), asgConfigurationManifestRequest.getRegion());
-      String operation =
-          format("check all instances to be healthy in target groups [%s]", chainState.getTargetGroupArnList());
+      asgSdkManager.info(
+          "Waiting all instances to be healthy in target groups [%s]", chainState.getTargetGroupArnList());
+      String operation = format("Asg %s to reach steady state", finalAutoScalingGroup.getAutoScalingGroupName());
       asgSdkManager.waitReadyState(instanceIds, predicate, operation);
     }
 

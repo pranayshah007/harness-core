@@ -91,7 +91,7 @@ public class OrganizationApiImpl implements OrganizationApi {
     ResponseBuilder responseBuilder = Response.ok();
 
     ResponseBuilder responseBuilderWithLinks =
-        ApiUtils.addLinksHeader(responseBuilder, "/v1/orgs", organizations.size(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, organizationResponsePage.getTotalElements(), page, limit);
 
     return responseBuilderWithLinks.entity(organizations).build();
   }

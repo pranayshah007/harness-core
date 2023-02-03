@@ -42,6 +42,7 @@ import io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
+import io.harness.delegate.task.pcf.response.CfDeployCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.logging.CommandExecutionStatus;
@@ -78,6 +79,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.powermock.api.mockito.PowerMockito;
@@ -237,7 +239,7 @@ public class TasSwapRollbackStepTest extends CDNGTestBase {
             RefObjectUtils.getSweepingOutputRefObject(tasSwapRollbackStepParameters.getTasSwapRoutesFqn() + "."
                 + OutcomeExpressionConstants.TAS_SWAP_ROUTES_OUTCOME));
 
-    Mockito.mockStatic(TaskRequestsUtils.class);
+    MockedStatic<TaskRequestsUtils> mockedStatic = Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
@@ -247,6 +249,183 @@ public class TasSwapRollbackStepTest extends CDNGTestBase {
 
     PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
     TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
+    mockedStatic.close();
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void obtainTaskAfterRbacTestWhenSetupOutcomeNotPresent() {
+    String basicSetupFqn = "basicSetupFqn";
+    String tasBGSetupFqn = "tasBGSetupFqn";
+    String tasCanarySetupFqn = "tasCanarySetupFqn";
+    String tasResizeFqn = "tasResizeFqn";
+    String tasSwapRoutesFqn = "tasSwapRoutesFqn";
+    TasSwapRollbackStepParameters tasSwapRollbackStepParameters =
+        TasSwapRollbackStepParameters.infoBuilder()
+            .tasBasicSetupFqn(basicSetupFqn)
+            .tasBGSetupFqn(tasBGSetupFqn)
+            .tasCanarySetupFqn(tasCanarySetupFqn)
+            .tasResizeFqn(tasResizeFqn)
+            .tasSwapRoutesFqn(tasSwapRoutesFqn)
+            .upsizeInActiveApp(ParameterField.createValueField(Boolean.TRUE))
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .spec(tasSwapRollbackStepParameters)
+                                                      .timeout(ParameterField.createValueField("10m"))
+                                                      .build();
+
+    TasSetupDataOutcome tasSetupDataOutcome = TasSetupDataOutcome.builder().build();
+    OptionalSweepingOutput optionalSweepingOutput =
+        OptionalSweepingOutput.builder().found(false).output(tasSetupDataOutcome).build();
+    doReturn(optionalSweepingOutput)
+        .when(tasEntityHelper)
+        .getSetupOutcome(ambiance, tasSwapRollbackStepParameters.getTasBGSetupFqn(),
+            tasSwapRollbackStepParameters.getTasBasicSetupFqn(), tasSwapRollbackStepParameters.getTasCanarySetupFqn(),
+            OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME, executionSweepingOutputService);
+
+    InfrastructureOutcome infrastructureOutcome = TanzuApplicationServiceInfrastructureOutcome.builder().build();
+    doReturn(infrastructureOutcome)
+        .when(outcomeService)
+        .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+    BaseNGAccess baseNGAccess = BaseNGAccess.builder().build();
+    doReturn(baseNGAccess).when(tasEntityHelper).getBaseNGAccess("account", "org", "project");
+    TasConnectorDTO tasConnectorDTO = TasConnectorDTO.builder().build();
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().connectorConfig(tasConnectorDTO).build();
+    doReturn(connectorInfoDTO)
+        .when(tasEntityHelper)
+        .getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), "account", "org", "project");
+
+    List<EncryptedDataDetail> encryptedDataDetails = Collections.emptyList();
+    doReturn(encryptedDataDetails).when(tasEntityHelper).getEncryptionDataDetails(connectorInfoDTO, baseNGAccess);
+
+    String org = "org";
+    String space = "space";
+    TasInfraConfig tasInfraConfig = TasInfraConfig.builder()
+                                        .organization(org)
+                                        .space(space)
+                                        .tasConnectorDTO(tasConnectorDTO)
+                                        .encryptionDataDetails(encryptedDataDetails)
+                                        .build();
+
+    TasAppResizeDataOutcome tasAppResizeDataOutcome = TasAppResizeDataOutcome.builder().build();
+    OptionalSweepingOutput tasAppResizeDataOptional =
+        OptionalSweepingOutput.builder().found(true).output(tasAppResizeDataOutcome).build();
+    doReturn(tasAppResizeDataOptional)
+        .when(executionSweepingOutputService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(tasSwapRollbackStepParameters.getTasResizeFqn() + "."
+                + OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME));
+
+    TasSwapRouteDataOutcome tasSwapRouteDataOutcome = TasSwapRouteDataOutcome.builder().build();
+    OptionalSweepingOutput tasSwapRouteDataOptional =
+        OptionalSweepingOutput.builder().found(true).output(tasSwapRouteDataOutcome).build();
+    doReturn(tasSwapRouteDataOptional)
+        .when(executionSweepingOutputService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(tasSwapRollbackStepParameters.getTasSwapRoutesFqn() + "."
+                + OutcomeExpressionConstants.TAS_SWAP_ROUTES_OUTCOME));
+
+    MockedStatic<TaskRequestsUtils> mockedStatic = Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
+
+    TasManifestOutcome tasManifestOutcome = TasManifestOutcome.builder().build();
+    tasSwapRollbackStep.obtainTaskAfterRbac(ambiance, stepElementParameters, StepInputPackage.builder().build());
+
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(0));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
+    mockedStatic.close();
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void obtainTaskAfterRbacTestWhenSwapRouteOutcomeNotPresent() {
+    String basicSetupFqn = "basicSetupFqn";
+    String tasBGSetupFqn = "tasBGSetupFqn";
+    String tasCanarySetupFqn = "tasCanarySetupFqn";
+    String tasResizeFqn = "tasResizeFqn";
+    String tasSwapRoutesFqn = "tasSwapRoutesFqn";
+    TasSwapRollbackStepParameters tasSwapRollbackStepParameters =
+        TasSwapRollbackStepParameters.infoBuilder()
+            .tasBasicSetupFqn(basicSetupFqn)
+            .tasBGSetupFqn(tasBGSetupFqn)
+            .tasCanarySetupFqn(tasCanarySetupFqn)
+            .tasResizeFqn(tasResizeFqn)
+            .tasSwapRoutesFqn(tasSwapRoutesFqn)
+            .upsizeInActiveApp(ParameterField.createValueField(Boolean.TRUE))
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .spec(tasSwapRollbackStepParameters)
+                                                      .timeout(ParameterField.createValueField("10m"))
+                                                      .build();
+
+    TasSetupDataOutcome tasSetupDataOutcome = TasSetupDataOutcome.builder().build();
+    OptionalSweepingOutput optionalSweepingOutput =
+        OptionalSweepingOutput.builder().found(false).output(tasSetupDataOutcome).build();
+    doReturn(optionalSweepingOutput)
+        .when(tasEntityHelper)
+        .getSetupOutcome(ambiance, tasSwapRollbackStepParameters.getTasBGSetupFqn(),
+            tasSwapRollbackStepParameters.getTasBasicSetupFqn(), tasSwapRollbackStepParameters.getTasCanarySetupFqn(),
+            OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME, executionSweepingOutputService);
+
+    InfrastructureOutcome infrastructureOutcome = TanzuApplicationServiceInfrastructureOutcome.builder().build();
+    doReturn(infrastructureOutcome)
+        .when(outcomeService)
+        .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+    BaseNGAccess baseNGAccess = BaseNGAccess.builder().build();
+    doReturn(baseNGAccess).when(tasEntityHelper).getBaseNGAccess("account", "org", "project");
+    TasConnectorDTO tasConnectorDTO = TasConnectorDTO.builder().build();
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().connectorConfig(tasConnectorDTO).build();
+    doReturn(connectorInfoDTO)
+        .when(tasEntityHelper)
+        .getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), "account", "org", "project");
+
+    List<EncryptedDataDetail> encryptedDataDetails = Collections.emptyList();
+    doReturn(encryptedDataDetails).when(tasEntityHelper).getEncryptionDataDetails(connectorInfoDTO, baseNGAccess);
+
+    String org = "org";
+    String space = "space";
+    TasInfraConfig tasInfraConfig = TasInfraConfig.builder()
+                                        .organization(org)
+                                        .space(space)
+                                        .tasConnectorDTO(tasConnectorDTO)
+                                        .encryptionDataDetails(encryptedDataDetails)
+                                        .build();
+
+    TasAppResizeDataOutcome tasAppResizeDataOutcome = TasAppResizeDataOutcome.builder().build();
+    OptionalSweepingOutput tasAppResizeDataOptional =
+        OptionalSweepingOutput.builder().found(false).output(tasAppResizeDataOutcome).build();
+    doReturn(tasAppResizeDataOptional)
+        .when(executionSweepingOutputService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(tasSwapRollbackStepParameters.getTasResizeFqn() + "."
+                + OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME));
+
+    TasSwapRouteDataOutcome tasSwapRouteDataOutcome = TasSwapRouteDataOutcome.builder().build();
+    OptionalSweepingOutput tasSwapRouteDataOptional =
+        OptionalSweepingOutput.builder().found(true).output(tasSwapRouteDataOutcome).build();
+    doReturn(tasSwapRouteDataOptional)
+        .when(executionSweepingOutputService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(tasSwapRollbackStepParameters.getTasSwapRoutesFqn() + "."
+                + OutcomeExpressionConstants.TAS_SWAP_ROUTES_OUTCOME));
+
+    MockedStatic<TaskRequestsUtils> mockedStatic = Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
+
+    TasManifestOutcome tasManifestOutcome = TasManifestOutcome.builder().build();
+    tasSwapRollbackStep.obtainTaskAfterRbac(ambiance, stepElementParameters, StepInputPackage.builder().build());
+
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(0));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
+    mockedStatic.close();
   }
 
   @Test
@@ -317,5 +496,106 @@ public class TasSwapRollbackStepTest extends CDNGTestBase {
     StepResponse stepResponse1 =
         tasSwapRollbackStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> responseData);
     assertThat(stepResponse1.getStatus()).isEqualTo(Status.SUCCEEDED);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void handleTaskResultWithSecurityContextTestWhenFailure() throws Exception {
+    String basicSetupFqn = "basicSetupFqn";
+    String tasBGSetupFqn = "tasBGSetupFqn";
+    String tasCanarySetupFqn = "tasCanarySetupFqn";
+    String tasResizeFqn = "tasResizeFqn";
+    String tasSwapRoutesFqn = "tasSwapRoutesFqn";
+    TasSwapRollbackStepParameters tasSwapRollbackStepParameters =
+        TasSwapRollbackStepParameters.infoBuilder()
+            .tasBasicSetupFqn(basicSetupFqn)
+            .tasBGSetupFqn(tasBGSetupFqn)
+            .tasCanarySetupFqn(tasCanarySetupFqn)
+            .tasResizeFqn(tasResizeFqn)
+            .tasSwapRoutesFqn(tasSwapRoutesFqn)
+            .upsizeInActiveApp(ParameterField.createValueField(Boolean.TRUE))
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .spec(tasSwapRollbackStepParameters)
+                                                      .timeout(ParameterField.createValueField("10m"))
+                                                      .build();
+
+    String instanceIndex = "1";
+    String appId = "id";
+    String displayName = "displayName";
+    UnitProgressData unitProgressData = UnitProgressData.builder().build();
+    CfInternalInstanceElement cfInternalInstanceElement = CfInternalInstanceElement.builder()
+                                                              .instanceIndex(instanceIndex)
+                                                              .applicationId(appId)
+                                                              .displayName(displayName)
+                                                              .build();
+    CfRollbackCommandResult cfRollbackCommandResult =
+        CfRollbackCommandResult.builder().newAppInstances(Arrays.asList(cfInternalInstanceElement)).build();
+    CfRollbackCommandResponseNG responseData = CfRollbackCommandResponseNG.builder()
+                                                   .unitProgressData(unitProgressData)
+                                                   .cfRollbackCommandResult(cfRollbackCommandResult)
+                                                   .errorMessage("error")
+                                                   .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+                                                   .build();
+
+    ThrowingSupplier<CfRollbackCommandResponseNG> responseDataSupplier = () -> responseData;
+    CfRollbackCommandResponseNG cfRollbackCommandResponseNG = (CfRollbackCommandResponseNG) responseDataSupplier.get();
+
+    String org = "org";
+    String space = "space";
+    TanzuApplicationServiceInfrastructureOutcome tanzuApplicationServiceInfrastructureOutcome =
+        TanzuApplicationServiceInfrastructureOutcome.builder().organization(org).space(space).build();
+    doReturn(tanzuApplicationServiceInfrastructureOutcome)
+        .when(outcomeService)
+        .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+    doReturn(unitProgressData).when(tasStepHelper).completeUnitProgressData(any(), any(), any());
+    TasServerInstanceInfo tasServerInstanceInfo = TasServerInstanceInfo.builder()
+                                                      .id(appId + ":" + instanceIndex)
+                                                      .instanceIndex(instanceIndex)
+                                                      .tasApplicationName(displayName)
+                                                      .tasApplicationGuid(appId)
+                                                      .organization(org)
+                                                      .space(space)
+                                                      .build();
+
+    StepResponse.StepOutcome stepOutcome = StepResponse.StepOutcome.builder().name("name").build();
+    doReturn(stepOutcome)
+        .when(instanceInfoService)
+        .saveServerInstancesIntoSweepingOutput(ambiance, Arrays.asList(tasServerInstanceInfo));
+
+    StepResponse stepResponse1 =
+        tasSwapRollbackStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> responseData);
+    assertThat(stepResponse1.getStatus()).isEqualTo(Status.FAILED);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void handleTaskResultWithSecurityContextCommandExecutionStatusWithNullResponseFromDelegate() {
+    CfDeployCommandResponseNG cfDeployCommandResponseNG = CfDeployCommandResponseNG.builder().build();
+    String basicSetupFqn = "basicSetupFqn";
+    String tasBGSetupFqn = "tasBGSetupFqn";
+    String tasCanarySetupFqn = "tasCanarySetupFqn";
+    String tasResizeFqn = "tasResizeFqn";
+    String tasSwapRoutesFqn = "tasSwapRoutesFqn";
+    TasSwapRollbackStepParameters tasSwapRollbackStepParameters =
+        TasSwapRollbackStepParameters.infoBuilder()
+            .tasBasicSetupFqn(basicSetupFqn)
+            .tasBGSetupFqn(tasBGSetupFqn)
+            .tasCanarySetupFqn(tasCanarySetupFqn)
+            .tasResizeFqn(tasResizeFqn)
+            .tasSwapRoutesFqn(tasSwapRoutesFqn)
+            .upsizeInActiveApp(ParameterField.createValueField(Boolean.TRUE))
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .spec(tasSwapRollbackStepParameters)
+                                                      .timeout(ParameterField.createValueField("10m"))
+                                                      .build();
+    assertThatThrownBy(()
+                           -> tasSwapRollbackStep.handleTaskResultWithSecurityContext(
+                               ambiance, stepElementParameters, () -> cfDeployCommandResponseNG))
+        .hasMessageContaining("CfDeployCommandResponseNG cannot be cast to class");
   }
 }

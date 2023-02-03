@@ -99,8 +99,8 @@ public class StreamingDestinationsApiImpl implements StreamingDestinationsApi {
         streamingDestinationPage.map(streamingDestinationsApiUtils::getStreamingDestinationResponse);
     List<StreamingDestinationResponse> streamingDestinations = streamingDestinationResponsePage.getContent();
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
-        responseBuilder, "v1/streaming-destinations", streamingDestinations.size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, streamingDestinationPage.getTotalElements(), page, limit);
 
     return responseBuilderWithLinks.entity(streamingDestinations).build();
   }
@@ -111,14 +111,14 @@ public class StreamingDestinationsApiImpl implements StreamingDestinationsApi {
     StreamingDestinationFilterProperties streamingDestinationFilterProperties =
         streamingDestinationsApiUtils.getFilterProperties(searchTerm, status);
     Pageable pageable = streamingDestinationsApiUtils.getPageRequest(page, limit, sort, order);
-    List<StreamingDestinationAggregateDTO> streamingDestinations =
+    Page<StreamingDestinationAggregateDTO> streamingDestinations =
         aggregateStreamingService.getAggregatedList(harnessAccount, pageable, streamingDestinationFilterProperties);
 
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
-        responseBuilder, "v1/streaming-destinations", streamingDestinations.size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, streamingDestinations.getTotalElements(), page, limit);
 
-    return responseBuilderWithLinks.entity(streamingDestinations).build();
+    return responseBuilderWithLinks.entity(streamingDestinations.getContent()).build();
   }
 
   public Response getStreamingDestinationsCards(String harnessAccount) {

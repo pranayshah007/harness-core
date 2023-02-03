@@ -712,6 +712,12 @@ executorsConfig:
     idleTime: ${DATA_RECONCILIATION_IDLE_TIME:-10}
     timeUnit: ${DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT:-SECONDS}
 
+debeziumConsumersConfigs:
+  applicationTimescaleStreaming:
+    topic: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_harnessMongo.harness.applications}
+    threads: ${DEBEZIUM_CONSUMER_THREADS:-2}
+    batchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
+
 dataReconciliation:
   enabled: true
   duration: 900

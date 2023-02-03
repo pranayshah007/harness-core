@@ -439,6 +439,24 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
         "Invalid request : Input Set did not exist or pipeline execution has been deleted");
   }
 
+  @Override
+  public String getInputSetYamlForRerun(
+      String accountId, String orgId, String projectId, String planExecutionId, boolean pipelineDeleted) {
+    // ToDo: Use Mongo Projections
+    Optional<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntityOptional =
+        pmsExecutionSummaryRespository
+            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
+                accountId, orgId, projectId, planExecutionId, !pipelineDeleted);
+    if (pipelineExecutionSummaryEntityOptional.isPresent()) {
+      PipelineExecutionSummaryEntity executionSummaryEntity = pipelineExecutionSummaryEntityOptional.get();
+
+      // InputSet yaml used during execution
+      return executionSummaryEntity.getInputSetYaml();
+    }
+    throw new InvalidRequestException(
+        "Invalid request : pipeline execution with planExecutionId " + planExecutionId + " has been deleted");
+  }
+
   private String getLatestTemplate(
       String accountId, String orgId, String projectId, PipelineExecutionSummaryEntity executionSummaryEntity) {
     EntityGitDetails entityGitDetails = executionSummaryEntity.getEntityGitDetails();

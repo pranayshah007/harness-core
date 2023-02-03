@@ -65,6 +65,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -182,7 +183,7 @@ public class AggregateStreamingServiceImplTest extends CategoryTest {
                                                                    .build())));
     when(streamingBatchRepository.findOne(any(), any()))
         .thenReturn(StreamingBatchDTO.builder().accountIdentifier(ACCOUNT_IDENTIFIER).lastStreamedAt(now).build());
-    List<StreamingDestinationAggregateDTO> streamingDestinationsPage =
+    Page<StreamingDestinationAggregateDTO> streamingDestinationsPage =
         aggregateStreamingService.getAggregatedList(accountIdentifier, pageable, filterProperties);
 
     verify(streamingBatchRepository, times(1)).findOne(criteriaArgumentCaptor.capture(), sortArgumentCaptor.capture());
