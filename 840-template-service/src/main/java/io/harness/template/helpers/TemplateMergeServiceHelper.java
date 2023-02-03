@@ -39,6 +39,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
 import io.harness.pms.yaml.YamlField;
@@ -598,7 +599,8 @@ public class TemplateMergeServiceHelper {
       dummyTemplateInputsMap.put(DUMMY_NODE, templateInputs);
       dummyTemplateInputsYaml = TemplateYamlUtils.writeYamlString(dummyTemplateInputsMap);
 
-      mergedYaml = mergeRuntimeInputValuesIntoOriginalYaml(dummyTemplateSpecYaml, dummyTemplateInputsYaml, true);
+      mergedYaml = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+              dummyTemplateSpecYaml, dummyTemplateInputsYaml, true, true);
     }
 
     try {

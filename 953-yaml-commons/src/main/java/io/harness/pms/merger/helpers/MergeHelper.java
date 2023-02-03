@@ -69,6 +69,15 @@ public class MergeHelper {
         originalYamlConfig, inputSetConfig, appendInputSetValidator, false);
   }
 
+  public String mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(String baseYaml, String runtimeInputYaml,
+      boolean appendInputSetValidator, boolean checkIfPipelineValueIsRuntime) {
+    YamlConfig baseConfig = new YamlConfig(baseYaml);
+    YamlConfig runtimeConfig = new YamlConfig(runtimeInputYaml);
+    return mergeRuntimeInputValuesIntoOriginalYamlInternal(
+        baseConfig, runtimeConfig, appendInputSetValidator, false, checkIfPipelineValueIsRuntime)
+        .getYaml();
+  }
+
   public YamlConfig mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(YamlConfig originalYamlConfig,
       YamlConfig inputSetConfig, boolean appendInputSetValidator, boolean checkIfPipelineValueIsRuntime) {
     return mergeRuntimeInputValuesIntoOriginalYamlInternal(
