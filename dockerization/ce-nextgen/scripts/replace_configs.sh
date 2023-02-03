@@ -183,4 +183,6 @@ replace_key_value clickHouseConfig.url "$CLICKHOUSE_URL"
 replace_key_value clickHouseConfig.username "$CLICKHOUSE_USERNAME"
 replace_key_value clickHouseConfig.password "$CLICKHOUSE_PASSWORD"
 
+replace_key_value isClickHouseEnabled "$CLICKHOUSE_ENABLED"
+
 replace_key_value deployMode "$DEPLOY_MODE"

@@ -470,8 +470,7 @@ public class ViewParametersHelper {
   public List<QLCEViewFieldInput> getInFieldsList(final List<String> fields) {
     final List<QLCEViewFieldInput> qlCEViewFieldInputs = new ArrayList<>();
     for (final String field : fields) {
-      qlCEViewFieldInputs.add(
-          QLCEViewFieldInput.builder().fieldId(field.toLowerCase()).fieldName(field.toLowerCase()).build());
+      qlCEViewFieldInputs.add(QLCEViewFieldInput.builder().fieldId(field).fieldName(field.toLowerCase()).build());
     }
     return qlCEViewFieldInputs;
   }
