@@ -15,6 +15,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.AdviserType;
+import io.harness.pms.contracts.advisers.MarkFailedAdvise;
 import io.harness.pms.contracts.advisers.MarkSuccessAdvise;
 import io.harness.pms.contracts.advisers.MarkSuccessAdvise.Builder;
 import io.harness.pms.contracts.execution.failure.FailureType;
@@ -41,11 +42,11 @@ public class OnMarkFailureAdviser implements Adviser {
   @Override
   public AdviserResponse onAdviseEvent(AdvisingEvent advisingEvent) {
     OnMarkFailureAdviserParameters parameters = extractParameters(advisingEvent);
-    Builder builder = MarkSuccessAdvise.newBuilder();
+    MarkFailedAdvise.Builder builder = MarkFailedAdvise.newBuilder();
     if (EmptyPredicate.isNotEmpty(parameters.getNextNodeId())) {
       builder.setNextNodeId(parameters.getNextNodeId());
     }
-    return AdviserResponse.newBuilder().setMarkSuccessAdvise(builder.build()).setType(AdviseType.MARK_FAILED).build();
+    return AdviserResponse.newBuilder().setMarkFailedAdvise(builder.build()).setType(AdviseType.MARK_FAILED).build();
   }
 
   @Override
