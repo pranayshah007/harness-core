@@ -7,13 +7,21 @@
 
 package io.harness;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.cache.CacheBackend.CAFFEINE;
-import static io.harness.cache.CacheBackend.NOOP;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
-
-import static org.mockito.Mockito.mock;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
+import com.google.inject.Module;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
+import com.google.inject.name.Named;
+import dev.morphia.converters.TypeConverter;
+import io.dropwizard.jackson.Jackson;
+import io.grpc.inprocess.InProcessChannelBuilder;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.cache.CacheConfig;
@@ -52,35 +60,13 @@ import io.harness.service.intfc.DelegateSyncService;
 import io.harness.springdata.HTransactionTemplate;
 import io.harness.template.services.NoOpTemplateGitXServiceImpl;
 import io.harness.template.services.TemplateGitXService;
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
 import io.harness.threading.ExecutorModule;
 import io.harness.time.TimeModule;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Suppliers;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.inject.AbstractModule;
-import com.google.inject.Injector;
-import com.google.inject.Module;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
-import com.google.inject.TypeLiteral;
-import com.google.inject.name.Named;
-import dev.morphia.converters.TypeConverter;
-import io.dropwizard.jackson.Jackson;
-import io.grpc.inprocess.InProcessChannelBuilder;
 import io.serializer.HObjectMapper;
-import java.io.Closeable;
-import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
@@ -89,6 +75,21 @@ import org.mockito.Mockito;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import java.io.Closeable;
+import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Supplier;
+
+import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.cache.CacheBackend.CAFFEINE;
+import static io.harness.cache.CacheBackend.NOOP;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static org.mockito.Mockito.mock;
 
 @Slf4j
 @OwnedBy(CDC)
@@ -196,6 +197,8 @@ public class TemplateServiceTestRule implements InjectorRuleMixin, MethodRule, M
         bind(TemplateGitXService.class).to(NoOpTemplateGitXServiceImpl.class);
         bind(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class)
             .toInstance(Mockito.mock(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class));
+        bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(NGTemplateFeatureFlagHelperService.class).toInstance(mock(NGTemplateFeatureFlagHelperService.class));
       }
     });
 
