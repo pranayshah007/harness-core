@@ -28,7 +28,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import java.util.Collections;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
@@ -59,7 +58,7 @@ public class BambooArtifactResource {
   private final ArtifactResourceUtils artifactResourceUtils;
   @GET
   @Path("plans")
-  @ApiOperation(value = "Gets Job details for Jenkins", nickname = "getJobDetailsForJenkins")
+  @ApiOperation(value = "Gets Plan Keys for Bamboo", nickname = "getPlansKey")
   public ResponseDTO<BambooPlanKeysDTO> getPlansKey(@QueryParam("connectorRef") String bambooConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -73,8 +72,8 @@ public class BambooArtifactResource {
 
   @GET
   @Path("plan/{planName}/paths")
-  @ApiOperation(value = "Gets Job details for Jenkins", nickname = "getJobDetailsForJenkins")
-  public ResponseDTO<List<String>> getPlansKey(@QueryParam("connectorRef") String bambooConnectorIdentifier,
+  @ApiOperation(value = "Get Artifact Paths for Bamboo", nickname = "getArtifactPathsForBamboo")
+  public ResponseDTO<List<String>> getArtifactPaths(@QueryParam("connectorRef") String bambooConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @PathParam("planName") String planName,
@@ -88,7 +87,7 @@ public class BambooArtifactResource {
 
   @GET
   @Path("plan/{planName}/builds")
-  @ApiOperation(value = "Gets Job details for Jenkins", nickname = "getJobDetailsForJenkins")
+  @ApiOperation(value = "Gets Builds details for Bamboo", nickname = "getBuildsForBamboo")
   public ResponseDTO<List<BuildDetails>> getBuilds(@QueryParam("connectorRef") String bambooConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
