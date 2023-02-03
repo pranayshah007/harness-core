@@ -244,10 +244,12 @@ public class ExecutionHelper {
     in pipelineYamlConfig will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
     give an error in schema validation. That's why we need a value that doesn't have this validator appended.
      */
-      String yamlToRunWithoutRuntimeInputs =
-          YamlUtils.getYamlWithoutInputs(new YamlConfig(stagesExecutionInfo.getPipelineYamlToRun()));
-      pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-          pipelineEntity.getProjectIdentifier(), yamlToRunWithoutRuntimeInputs);
+      if (PipelineVersion.V0.equals(version)) {
+        String yamlToRunWithoutRuntimeInputs =
+            YamlUtils.getYamlWithoutInputs(new YamlConfig(stagesExecutionInfo.getPipelineYamlToRun()));
+        pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+            pipelineEntity.getProjectIdentifier(), yamlToRunWithoutRuntimeInputs);
+      }
 
       Builder planExecutionMetadataBuilder = obtainPlanExecutionMetadata(mergedRuntimeInputYaml, executionId,
           stagesExecutionInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, version);

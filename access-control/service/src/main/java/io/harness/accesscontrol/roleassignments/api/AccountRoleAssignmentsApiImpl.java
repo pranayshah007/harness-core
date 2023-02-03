@@ -213,7 +213,7 @@ public class AccountRoleAssignmentsApiImpl implements AccountRoleAssignmentsApi 
     ResponseBuilder responseBuilder = Response.ok();
 
     ResponseBuilder responseBuilderWithLinks =
-        ApiUtils.addLinksHeader(responseBuilder, "/v1/role-assignments", roleAssignmentResponses.size(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotalItems(), page, limit);
 
     return responseBuilderWithLinks.entity(roleAssignmentResponses).build();
   }

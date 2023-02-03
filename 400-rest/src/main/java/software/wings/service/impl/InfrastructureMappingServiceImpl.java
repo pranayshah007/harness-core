@@ -1436,6 +1436,22 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
   }
 
   @Override
+  public void pruneByService(String appId, String serviceId) {
+    List<InfrastructureMapping> infrastructureMappings = wingsPersistence.createQuery(InfrastructureMapping.class)
+                                                             .filter(InfrastructureMappingKeys.appId, appId)
+                                                             .filter(InfrastructureMappingKeys.serviceId, serviceId)
+                                                             .project(InfrastructureMappingKeys.appId, true)
+                                                             .project(InfrastructureMappingKeys.serviceId, true)
+                                                             .project(InfrastructureMappingKeys.name, true)
+                                                             .project(InfrastructureMapping.ID, true)
+                                                             .asList();
+    for (InfrastructureMapping infrastructureMapping : infrastructureMappings) {
+      prune(appId, infrastructureMapping.getUuid());
+      auditServiceHelper.reportDeleteForAuditing(appId, infrastructureMapping);
+    }
+  }
+
+  @Override
   public void pruneByEnvironment(String appId, String envId) {
     List<InfrastructureMapping> infrastructureMappings = wingsPersistence.createQuery(InfrastructureMapping.class)
                                                              .filter(InfrastructureMappingKeys.appId, appId)

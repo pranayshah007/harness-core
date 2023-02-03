@@ -10,7 +10,6 @@ package io.harness.template.helpers;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
-import static io.harness.pms.merger.helpers.MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml;
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
 import static io.harness.template.beans.NGTemplateConstants.DUMMY_NODE;
 import static io.harness.template.beans.NGTemplateConstants.SPEC;
@@ -39,6 +38,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
 import io.harness.pms.yaml.YamlField;
@@ -504,7 +504,7 @@ public class TemplateMergeServiceHelper {
         resMapWithTemplateRef.put(fieldName, value);
       } else if (value.isArray()) {
         ArrayListForMergedTemplateRef arrayLists = mergeTemplateInputsInArrayWithOpaPolicy(
-            accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth);
+            accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth, loadFromCache);
         resMap.put(fieldName, arrayLists.getArrayList());
         resMapWithTemplateRef.put(fieldName, arrayLists.getArrayListWithTemplateRef());
       } else {
@@ -533,7 +533,8 @@ public class TemplateMergeServiceHelper {
   }
 
   private ArrayListForMergedTemplateRef mergeTemplateInputsInArrayWithOpaPolicy(String accountId, String orgId,
-      String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth) {
+      String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth,
+      boolean loadFromCache) {
     List<Object> arrayList = new ArrayList<>();
     List<Object> arrayListWithTemplateRef = new ArrayList<>();
     for (YamlNode arrayElement : yamlNode.asArray()) {
@@ -541,13 +542,13 @@ public class TemplateMergeServiceHelper {
         arrayList.add(arrayElement);
         arrayListWithTemplateRef.add(arrayElement);
       } else if (arrayElement.isArray()) {
-        ArrayListForMergedTemplateRef arrayListForMergedTemplateRef =
-            mergeTemplateInputsInArrayWithOpaPolicy(accountId, orgId, projectId, arrayElement, templateCacheMap, depth);
+        ArrayListForMergedTemplateRef arrayListForMergedTemplateRef = mergeTemplateInputsInArrayWithOpaPolicy(
+            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, loadFromCache);
         arrayList.add(arrayListForMergedTemplateRef.getArrayList());
         arrayListWithTemplateRef.add(arrayListForMergedTemplateRef.getArrayListWithTemplateRef());
       } else {
         MergeTemplateInputsInObject temp = mergeTemplateInputsInObjectAlongWithOpaPolicy(
-            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, false);
+            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, loadFromCache);
         arrayList.add(temp.getResMap());
         arrayListWithTemplateRef.add(temp.getResMapWithOpaResponse());
       }
@@ -606,7 +607,8 @@ public class TemplateMergeServiceHelper {
       dummyTemplateInputsMap.put(DUMMY_NODE, templateInputs);
       dummyTemplateInputsYaml = TemplateYamlUtils.writeYamlString(dummyTemplateInputsMap);
 
-      mergedYaml = mergeRuntimeInputValuesIntoOriginalYaml(dummyTemplateSpecYaml, dummyTemplateInputsYaml, true);
+      mergedYaml = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+          dummyTemplateSpecYaml, dummyTemplateInputsYaml, true, true);
     }
 
     try {

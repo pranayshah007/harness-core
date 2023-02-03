@@ -20,8 +20,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.provision.TerraformConstants.TF_DESTROY_NAME_PREFIX;
-import static io.harness.provision.TerraformConstants.TF_NAME_PREFIX;
 import static io.harness.validation.Validator.notEmptyCheck;
 
 import static java.lang.String.format;
@@ -127,6 +125,8 @@ public class TerragruntStepHelper {
   private static final String TG_INHERIT_OUTPUT_FORMAT = "tgInheritOutput_%s_%s";
   public static final String DEFAULT_TIMEOUT = "10m";
   public static final String TERRAGRUNT_FILE_NAME_FORMAT = "terragrunt-${UUID}.tfvars";
+  public static final String TG_DESTROY_NAME_PREFIX_NG = "tgDestroyPlan_%s_%s";
+  public static final String TG_NAME_PREFIX_NG = "tgPlan_%s_%s";
 
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private FileServiceClientFactory fileService;
@@ -597,9 +597,10 @@ public class TerragruntStepHelper {
     }
   }
 
-  private String getTerragruntPlanName(
+  public String getTerragruntPlanName(
       TerragruntPlanCommand terragruntPlanCommand, Ambiance ambiance, String provisionId) {
-    String prefix = TerragruntPlanCommand.DESTROY == terragruntPlanCommand ? TF_DESTROY_NAME_PREFIX : TF_NAME_PREFIX;
+    String prefix =
+        TerragruntPlanCommand.DESTROY == terragruntPlanCommand ? TG_DESTROY_NAME_PREFIX_NG : TG_NAME_PREFIX_NG;
     return format(prefix, ambiance.getPlanExecutionId(), provisionId).replaceAll("_", "-");
   }
 

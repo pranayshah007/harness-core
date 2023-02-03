@@ -8,6 +8,7 @@
 package io.harness.cdng.provision.terraform;
 
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
+import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.AKHIL_PANDEY;
@@ -903,6 +904,9 @@ public class TerraformStepHelperTest extends CategoryTest {
     Ambiance ambiance = getAmbiance();
     String planName = helper.getTerraformPlanName(APPLY, ambiance, "provisionId");
     assertThat(planName).isEqualTo("tfPlan-exec-id-provisionId");
+
+    String destroyPlanName = helper.getTerraformPlanName(DESTROY, ambiance, "provisionId");
+    assertThat(destroyPlanName).isEqualTo("tfDestroyPlan-exec-id-provisionId");
   }
 
   @Test

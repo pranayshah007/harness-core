@@ -137,12 +137,8 @@ public class ServiceFilterHelper {
       if (includeAllServicesAccessibleAtScope) {
         includeAllServicesCriteria = getCriteriaToReturnAllAccessibleServicesAtScope(orgIdentifier, projectIdentifier);
       } else {
-        if (isNotEmpty(orgIdentifier)) {
-          criteria.and(ORG_ID).is(orgIdentifier);
-        }
-        if (isNotEmpty(projectIdentifier)) {
-          criteria.and(PROJECT_ID).is(projectIdentifier);
-        }
+        criteria.and(ORG_ID).is(orgIdentifier);
+        criteria.and(PROJECT_ID).is(projectIdentifier);
       }
       List<Criteria> criteriaList = new ArrayList<>();
       if (includeAllServicesCriteria != null) {

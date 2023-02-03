@@ -88,7 +88,7 @@ public class NGAzureKeyVaultFetchEngineTask extends AbstractDelegateRunnableTask
     TokenCredential credentials =
         KeyVaultAuthenticator.getAuthenticationTokenCredentials(azureKeyVaultConnectorDTO.getClientId(),
             String.valueOf(azureKeyVaultConnectorDTO.getSecretKey().getDecryptedValue()),
-            azureKeyVaultConnectorDTO.getTenantId(), httpClient);
+            azureKeyVaultConnectorDTO.getTenantId(), httpClient, azureKeyVaultConnectorDTO.getAzureEnvironmentType());
 
     AzureResourceManager azureResourceManager =
         KeyVaultAuthenticator.getAzureResourceManager(credentials, azureKeyVaultConnectorDTO, httpClient);

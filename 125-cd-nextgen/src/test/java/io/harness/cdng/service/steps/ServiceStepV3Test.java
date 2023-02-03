@@ -37,6 +37,8 @@ import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
@@ -181,6 +183,28 @@ public class ServiceStepV3Test extends CategoryTest {
                                 .deploymentType(ServiceDefinitionType.ECS)
                                 .build(),
                             null));
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void executeSyncServiceWithNoServiceDef() {
+    final ServiceEntity serviceEntity = testServiceEntityWithNoServiceDef();
+    final Environment environment = testEnvEntity();
+    mockService(serviceEntity);
+    mockEnv(environment);
+
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(()
+                        -> step.obtainChildren(buildAmbiance(),
+                            ServiceStepV3Parameters.builder()
+                                .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
+                                .envRef(ParameterField.createValueField(environment.getIdentifier()))
+                                .childrenNodeIds(new ArrayList<>())
+                                .build(),
+                            null))
+        .withMessageContaining(String.format("Unable to read yaml for service [Name: %s, Identifier: %s]",
+            serviceEntity.getName(), serviceEntity.getIdentifier()));
   }
 
   @Test
@@ -539,7 +563,8 @@ public class ServiceStepV3Test extends CategoryTest {
     Environment environment = testEnvEntity();
     doReturn(ServiceSweepingOutput.builder().finalServiceYaml(service.getYaml()).build())
         .when(sweepingOutputService)
-        .resolve(any(Ambiance.class), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT)));
+        .resolve(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT)));
 
     StepResponse stepResponse = step.handleChildrenResponse(buildAmbiance(),
         ServiceStepV3Parameters.builder()
@@ -564,7 +589,8 @@ public class ServiceStepV3Test extends CategoryTest {
     Environment environment = testEnvEntity();
     doReturn(ServiceSweepingOutput.builder().finalServiceYaml(service.getYaml()).build())
         .when(sweepingOutputService)
-        .resolve(any(Ambiance.class), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT)));
+        .resolve(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT)));
 
     // outputs from children steps
     doReturn(OptionalSweepingOutput.builder().found(true).output(new ManifestsOutcome()).build())
@@ -609,7 +635,8 @@ public class ServiceStepV3Test extends CategoryTest {
     Environment environment = testEnvEntity();
     doReturn(ServiceSweepingOutput.builder().finalServiceYaml(service.getYaml()).build())
         .when(sweepingOutputService)
-        .resolve(any(Ambiance.class), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT)));
+        .resolve(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT)));
 
     StepResponse stepResponse = step.handleChildrenResponse(buildAmbiance(),
         ServiceStepV3Parameters.builder()
@@ -733,6 +760,24 @@ public class ServiceStepV3Test extends CategoryTest {
         + "          type: Secret\n"
         + "          value: org.secret\n"
         + "    type: Ssh\n";
+    return ServiceEntity.builder()
+        .accountId("accountId")
+        .orgIdentifier("orgId")
+        .projectIdentifier("projectId")
+        .identifier("service-id")
+        .name("service-name")
+        .type(ServiceDefinitionType.KUBERNETES)
+        .yaml(serviceYaml)
+        .build();
+  }
+
+  private ServiceEntity testServiceEntityWithNoServiceDef() {
+    final String serviceYaml = "service:\n"
+        + "  name: service-name\n"
+        + "  identifier: service-id\n"
+        + "  tags: {}\n"
+        + "  serviceDefinition:\n"
+        + "    spec: {}\n";
     return ServiceEntity.builder()
         .accountId("accountId")
         .orgIdentifier("orgId")
@@ -871,7 +916,7 @@ public class ServiceStepV3Test extends CategoryTest {
     levels.add(Level.newBuilder()
                    .setRuntimeId(UUIDGenerator.generateUuid())
                    .setSetupId(UUIDGenerator.generateUuid())
-                   .setStepType(ServiceStepV3.STEP_TYPE)
+                   .setStepType(ServiceStepV3Constants.STEP_TYPE)
                    .build());
     return Ambiance.newBuilder()
         .setPlanExecutionId(UUIDGenerator.generateUuid())

@@ -38,7 +38,9 @@ import lombok.experimental.FieldDefaults;
 @JsonTypeName(TERRAFORM_ROLLBACK)
 @RecasterAlias("io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepInfo")
 public class TerraformRollbackStepInfo implements CDAbstractStepInfo {
-  @NotNull String provisionerIdentifier;
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  private ParameterField<String> provisionerIdentifier;
 
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)

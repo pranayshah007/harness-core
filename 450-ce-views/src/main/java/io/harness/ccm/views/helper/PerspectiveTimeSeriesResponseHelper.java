@@ -44,6 +44,7 @@ public class PerspectiveTimeSeriesResponseHelper {
     Map<String, String> entityIdToName =
         entityMetadataService.getEntityIdToNameMapping(entityIds, harnessAccountId, fieldName);
     Map<Timestamp, List<DataPoint>> updatedDataPointsMap = new TreeMap<>();
+    log.info("getUpdatedDataPointsMap costDataPointsMap: {}", costDataPointsMap);
     if (entityIdToName != null) {
       costDataPointsMap.keySet().forEach(timestamp
           -> updatedDataPointsMap.put(

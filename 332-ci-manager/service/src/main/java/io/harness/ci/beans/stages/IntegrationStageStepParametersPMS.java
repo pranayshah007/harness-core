@@ -22,6 +22,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type;
 import io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml;
 import io.harness.beans.yaml.extended.runtime.Runtime;
+import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -62,6 +63,7 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
   Registry registry;
   CodeBase codeBase;
   TriggerPayload triggerPayload;
+  Boolean cloneManually;
 
   public static IntegrationStageStepParametersPMS getStepParameters(IntegrationStageNode stageNode, String childNodeID,
       BuildStatusUpdateParameter buildStatusUpdateParameter, PlanCreationContext ctx) {
@@ -92,6 +94,7 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
         getStepParameters(stageNode, childNodeID, null, ctx);
     integrationStageStepParametersPMS.setCodeBase(codeBase);
     integrationStageStepParametersPMS.setTriggerPayload(ctx.getTriggerPayload());
+    integrationStageStepParametersPMS.setCloneManually(IntegrationStageUtils.shouldCloneManually(codeBase));
     return integrationStageStepParametersPMS;
   }
 

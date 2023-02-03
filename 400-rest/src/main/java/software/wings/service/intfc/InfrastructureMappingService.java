@@ -35,6 +35,7 @@ import software.wings.service.impl.aws.model.AwsVPC;
 import software.wings.service.intfc.ownership.OwnedByEnvironment;
 import software.wings.service.intfc.ownership.OwnedByInfrastructureDefinition;
 import software.wings.service.intfc.ownership.OwnedByInfrastructureProvisioner;
+import software.wings.service.intfc.ownership.OwnedByService;
 import software.wings.settings.SettingVariableTypes;
 
 import java.util.List;
@@ -49,7 +50,7 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public interface InfrastructureMappingService
-    extends OwnedByEnvironment, OwnedByInfrastructureProvisioner, OwnedByInfrastructureDefinition {
+    extends OwnedByEnvironment, OwnedByInfrastructureProvisioner, OwnedByInfrastructureDefinition, OwnedByService {
   PageResponse<InfrastructureMapping> list(PageRequest<InfrastructureMapping> pageRequest);
 
   PageResponse<InfrastructureMapping> list(

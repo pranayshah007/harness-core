@@ -81,8 +81,7 @@ public class RunInfoUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldTestGetStepRollbackRunCondition() {
     String defaultRunConditionForRollback = RunInfoUtils.getRunConditionForRollback(null);
-    assertThat(defaultRunConditionForRollback)
-        .isEqualTo("(<+pipeline.rollback.isPipelineRollback> == true) || <+OnStageFailure>");
+    assertThat(defaultRunConditionForRollback).isEqualTo("<+OnStageFailure>");
 
     assertThatThrownBy(() -> RunInfoUtils.getRunConditionForRollback(StepWhenCondition.builder().build()))
         .isInstanceOf(InvalidRequestException.class)

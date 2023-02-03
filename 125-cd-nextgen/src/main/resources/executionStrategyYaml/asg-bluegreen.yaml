@@ -16,12 +16,7 @@ spec:
                 identifier: AsgBlueGreenDeploy
                 type: AsgBlueGreenDeploy
                 timeout: 10m
-                spec:
-                  loadBalancer: ""
-                  prodListener: ""
-                  prodListenerRuleArn: ""
-                  stageListener: ""
-                  stageListenerRuleArn: ""
+                spec: {}
             - step:
                 name: "Asg Blue Green Swap Services"
                 identifier: AsgBlueGreenSwapService

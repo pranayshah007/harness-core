@@ -19,7 +19,8 @@ import com.google.inject.Inject;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
 public class CIAccountValidationServiceImpl implements CIAccountValidationService {
   @Inject private CIMiningPatternJob ciMiningPatternJob;
   @Inject private UserClient userClient;
@@ -31,18 +32,24 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
 
   @Override
   public boolean isAccountValidForExecution(String accountId) {
-    Integer trustLevel = CGRestUtils.getResponse(accountClient.getAccountTrustLevel(accountId));
+    Integer trustLevel = AccountTrustLevel.UNINITIALIZED;
+    try {
+      trustLevel = CGRestUtils.getResponse(accountClient.getAccountTrustLevel(accountId));
 
-    if (AccountTrustLevel.UNINITIALIZED.equals(trustLevel)) {
-      trustLevel = initializeAccountTrustLevel(accountId);
-      Boolean result = CGRestUtils.getResponse(accountClient.updateAccountTrustLevel(accountId, trustLevel));
-      if (result == false) {
-        throw new CIStageExecutionException("Account is not trusted for CI build. Please reach support@harness.io");
+      if (AccountTrustLevel.UNINITIALIZED.equals(trustLevel)) {
+        trustLevel = initializeAccountTrustLevel(accountId);
+        Boolean result = CGRestUtils.getResponse(accountClient.updateAccountTrustLevel(accountId, trustLevel));
+        if (result == false) {
+          log.info("Error updating account trust level");
+        }
       }
+    } catch (Exception e) {
+      log.info("Error retrieving account trust level. Proceeding as regular. {}", e);
+      trustLevel = AccountTrustLevel.BASIC_USER;
     }
 
-    if (trustLevel.equals(AccountTrustLevel.NEW_USER)) {
-      throw new CIStageExecutionException("Account is not trusted for CI build. Please reach support@harness.io");
+    if (trustLevel < AccountTrustLevel.BASIC_USER) {
+      throw new CIStageExecutionException("Account is not trusted for CI builds. Please reach support@harness.io");
     }
 
     return true;
@@ -50,7 +57,7 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
 
   private Integer initializeAccountTrustLevel(String accountId) {
     if (ciExecutionServiceConfig.isLocal()) {
-      return AccountTrustLevel.NEW_USER;
+      return AccountTrustLevel.BASIC_USER;
     }
     Set<String> domains = ciMiningPatternJob.getValidDomains();
 

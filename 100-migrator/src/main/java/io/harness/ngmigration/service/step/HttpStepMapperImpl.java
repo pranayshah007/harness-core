@@ -164,4 +164,9 @@ public class HttpStepMapperImpl extends StepMapper {
 
     return true;
   }
+
+  @Override
+  public boolean loopingSupported() {
+    return true;
+  }
 }

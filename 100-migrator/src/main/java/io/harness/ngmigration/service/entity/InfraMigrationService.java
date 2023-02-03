@@ -13,6 +13,7 @@ import static software.wings.api.CloudProviderType.AWS;
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 import static software.wings.ngmigration.NGMigrationEntityType.ELASTIGROUP_CONFIGURATION;
 import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
+import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -146,11 +147,20 @@ public class InfraMigrationService extends NgMigrationService {
     }
 
     if (infra.getCloudProviderType() == AWS) {
-      AwsAmiInfrastructure awsInfra = (AwsAmiInfrastructure) infra.getInfrastructure();
-      if (isNotEmpty(awsInfra.getSpotinstCloudProvider())) {
-        children.add(CgEntityId.builder().id(infra.getUuid()).type(ELASTIGROUP_CONFIGURATION).build());
+      // AMI
+      if (infra.getInfrastructure() instanceof AwsAmiInfrastructure) {
+        AwsAmiInfrastructure awsInfra = (AwsAmiInfrastructure) infra.getInfrastructure();
+        if (isNotEmpty(awsInfra.getSpotinstCloudProvider())) {
+          children.add(CgEntityId.builder().id(infra.getUuid()).type(ELASTIGROUP_CONFIGURATION).build());
+        }
       }
+      // To Add for Traditional Deployments
     }
+
+    if (infra.getDeploymentType() == DeploymentType.CUSTOM) {
+      children.add(CgEntityId.builder().id(infra.getDeploymentTypeTemplateId()).type(TEMPLATE).build());
+    }
+
     return DiscoveryNode.builder().children(children).entityNode(infraNode).build();
   }
 
@@ -210,7 +220,8 @@ public class InfraMigrationService extends NgMigrationService {
     List<ElastigroupConfiguration> elastigroupConfigurations =
         elastigroupConfigurationMigrationService.getElastigroupConfigurations(infraSpecIds, inputDTO, entities);
 
-    Infrastructure infraSpec = infraDefMapper.getSpec(inputDTO, infra, migratedEntities, elastigroupConfigurations);
+    Infrastructure infraSpec =
+        infraDefMapper.getSpec(inputDTO, infra, migratedEntities, entities, elastigroupConfigurations);
     if (infraSpec == null) {
       log.error(String.format("We could not migrate the infra %s", infra.getUuid()));
       return Collections.emptyList();

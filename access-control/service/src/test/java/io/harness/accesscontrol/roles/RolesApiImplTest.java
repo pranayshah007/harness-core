@@ -184,7 +184,7 @@ public class RolesApiImplTest extends CategoryTest {
     List<RolesResponse> entity = (List<RolesResponse>) response.getEntity();
 
     assertEquals(searchTerm, roleFilter.getSearchTerm());
-    assertEquals(2, response.getLinks().size());
+    assertEquals(3, response.getHeaders().size());
     assertEquals(1, entity.size());
     assertEquals(identifier, entity.get(0).getIdentifier());
     assertEquals(name, entity.get(0).getName());
@@ -313,7 +313,7 @@ public class RolesApiImplTest extends CategoryTest {
     List<RolesResponse> entity = (List<RolesResponse>) response.getEntity();
 
     assertEquals(searchTerm, roleFilter.getSearchTerm());
-    assertEquals(2, response.getLinks().size());
+    assertEquals(3, response.getHeaders().size());
     assertEquals(1, entity.size());
     assertEquals(identifier, entity.get(0).getIdentifier());
     assertEquals(name, entity.get(0).getName());
@@ -453,7 +453,7 @@ public class RolesApiImplTest extends CategoryTest {
     List<RolesResponse> entity = (List<RolesResponse>) response.getEntity();
 
     assertEquals(searchTerm, roleFilter.getSearchTerm());
-    assertEquals(2, response.getLinks().size());
+    assertEquals(3, response.getHeaders().size());
     assertEquals(1, entity.size());
     assertEquals(identifier, entity.get(0).getIdentifier());
     assertEquals(name, entity.get(0).getName());

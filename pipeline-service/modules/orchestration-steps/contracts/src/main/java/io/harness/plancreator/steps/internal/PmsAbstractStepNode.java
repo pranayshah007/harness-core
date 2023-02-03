@@ -29,6 +29,7 @@ import lombok.Data;
 @Data
 @OwnedBy(PIPELINE)
 public abstract class PmsAbstractStepNode extends AbstractStepNode {
+  @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
   @YamlSchemaTypes(value = {runtime, list})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;

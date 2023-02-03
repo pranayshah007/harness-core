@@ -51,33 +51,39 @@ public class MigratorExpressionUtils {
     context.put("service.uuid", "<+service.identifier>");
     context.put("service.description", "<+service.description>");
 
-    // Artifact Expressions
-    context.put("artifact.metadata.image", "<+artifact.image>");
-    context.put("artifact.metadata.tag", "<+artifact.tag>");
-    context.put("artifact.source.dockerconfig", "<+artifact.imagePullSecret>");
-    context.put("artifact.metadata.fileName", "<+artifact.fileName>");
-    context.put("artifact.metadata.format", "<+artifact.repositoryFormat>");
-    context.put("artifact.metadata.getSHA()", "<+artifact.metadata.SHA>");
-    context.put("artifact.metadata.groupId", "<+artifact.groupId>");
-    context.put("artifact.metadata.package", "<+artifact.metadata.package>");
-    context.put("artifact.metadata.region", "<+artifact.metadata.region>");
-    context.put("artifact.metadata.repository", "<+artifact.repository>");
-    context.put("artifact.metadata.repositoryName", "<+artifact.repositoryName>");
-    context.put("artifact.metadata.url", "<+artifact.url>");
+    Map<String, String> artifactExpressions = new HashMap<>();
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.image", "<+ARTIFACT_PLACEHOLDER.image>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.tag", "<+ARTIFACT_PLACEHOLDER.tag>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.source.dockerconfig", "<+ARTIFACT_PLACEHOLDER.imagePullSecret>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.fileName", "<+ARTIFACT_PLACEHOLDER.fileName>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.format", "<+ARTIFACT_PLACEHOLDER.repositoryFormat>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.getSHA()", "<+ARTIFACT_PLACEHOLDER.metadata.SHA>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.groupId", "<+ARTIFACT_PLACEHOLDER.groupId>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.package", "<+ARTIFACT_PLACEHOLDER.metadata.package>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.region", "<+ARTIFACT_PLACEHOLDER.metadata.region>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.repository", "<+ARTIFACT_PLACEHOLDER.repository>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.repositoryName", "<+ARTIFACT_PLACEHOLDER.repositoryName>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.url", "<+ARTIFACT_PLACEHOLDER.url>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.URL", "<+ARTIFACT_PLACEHOLDER.URL>");
+    artifactExpressions.put(
+        "ARTIFACT_PLACEHOLDER.metadata.artifactFileName", "<+ARTIFACT_PLACEHOLDER.metadata.fileName>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.buildFullDisplayName", "<+ARTIFACT_PLACEHOLDER.uiDisplayName>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.displayName", "<+ARTIFACT_PLACEHOLDER.displayName>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.artifactId", "<+ARTIFACT_PLACEHOLDER.metadata.artifactId>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.version", "<+ARTIFACT_PLACEHOLDER.metadata.version>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.revision", "<+ARTIFACT_PLACEHOLDER.buildNo>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.buildNo", "<+ARTIFACT_PLACEHOLDER.tag>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.source.registryUrl", "<+ARTIFACT_PLACEHOLDER.registryUrl>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.URL", "<+ARTIFACT_PLACEHOLDER.URL>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.url", "<+ARTIFACT_PLACEHOLDER.URL>");
 
-    // Rollback Artifact Expressions
-    context.put("rollbackArtifact.metadata.image", "<+rollbackArtifact.image>");
-    context.put("rollbackArtifact.metadata.tag", "<+rollbackArtifact.tag>");
-    context.put("rollbackArtifact.source.dockerconfig", "<+rollbackArtifact.imagePullSecret>");
-    context.put("rollbackArtifact.metadata.fileName", "<+rollbackArtifact.fileName>");
-    context.put("rollbackArtifact.metadata.format", "<+rollbackArtifact.repositoryFormat>");
-    context.put("rollbackArtifact.metadata.getSHA()", "<+rollbackArtifact.metadata.SHA>");
-    context.put("rollbackArtifact.metadata.groupId", "<+rollbackArtifact.groupId>");
-    context.put("rollbackArtifact.metadata.package", "<+rollbackArtifact.metadata.package>");
-    context.put("rollbackArtifact.metadata.region", "<+rollbackArtifact.metadata.region>");
-    context.put("rollbackArtifact.metadata.repository", "<+rollbackArtifact.repository>");
-    context.put("rollbackArtifact.metadata.repositoryName", "<+rollbackArtifact.repositoryName>");
-    context.put("rollbackArtifact.metadata.url", "<+rollbackArtifact.url>");
+    artifactExpressions.forEach((k, v) -> {
+      // Artifact Expressions
+      context.put(k.replace("ARTIFACT_PLACEHOLDER", "artifact"), v.replace("ARTIFACT_PLACEHOLDER", "artifact"));
+      // Rollback Artifact Expressions
+      context.put(
+          k.replace("ARTIFACT_PLACEHOLDER", "rollbackArtifact"), v.replace("ARTIFACT_PLACEHOLDER", "rollbackArtifact"));
+    });
 
     // Application Expressions
     context.put("app.name", "<+project.name>");

@@ -145,7 +145,6 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
 
     assertThat(response).isNotNull();
     assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-    assertThat(response.getHeaders()).containsKey("Link");
   }
 
   @Test

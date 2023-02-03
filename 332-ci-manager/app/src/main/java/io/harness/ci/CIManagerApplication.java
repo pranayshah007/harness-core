@@ -294,7 +294,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     registerMigrations(injector);
     registerResources(environment, injector);
     registerWaitEnginePublishers(injector);
-    registerManagedBeans(environment, injector);
+    registerManagedBeans(environment, injector, configuration);
     registerHealthCheck(environment, injector);
     registerAuthFilters(configuration, environment, injector);
     registerCorrelationFilter(environment, injector);
@@ -439,11 +439,14 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
         .scheduleWithFixedDelay(injector.getInstance(ProgressUpdateService.class), 0L, 5L, TimeUnit.SECONDS);
   }
 
-  private void registerManagedBeans(Environment environment, Injector injector) {
+  private void registerManagedBeans(Environment environment, Injector injector, CIManagerConfiguration config) {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
-    environment.lifecycle().manage(injector.getInstance(CIExecutionPoller.class));
+    boolean local = config.getCiExecutionServiceConfig().isLocal();
+    if (!local) {
+      environment.lifecycle().manage(injector.getInstance(CIExecutionPoller.class));
+    }
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
   }

@@ -299,6 +299,8 @@ public class BuildTriggerHelper {
       validatePollingItemForAzureArtifacts(pollingItem);
     } else if (pollingPayloadData.hasAmiPayload()) {
       validatePollingItemForAMI(pollingItem);
+    } else if (pollingPayloadData.hasGoogleCloudStoragePayload()) {
+      validatePollingItemForGoogleCloudStorage(pollingItem);
     } else {
       throw new InvalidRequestException("Invalid Polling Type");
     }
@@ -339,6 +341,14 @@ public class BuildTriggerHelper {
   private void validatePollingItemForS3(PollingItem pollingItem) {
     AmazonS3Payload amazonS3Payload = pollingItem.getPollingPayloadData().getAmazonS3Payload();
     String error = checkFiledValueError("bucketName", amazonS3Payload.getBucketName());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
+  public void validatePollingItemForGoogleCloudStorage(PollingItem pollingItem) {
+    String error =
+        checkFiledValueError("bucket", pollingItem.getPollingPayloadData().getGoogleCloudStoragePayload().getBucket());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }

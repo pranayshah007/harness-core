@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -101,7 +102,7 @@ public class CgInstanceSyncServiceV2 {
       Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_RELEASE_COUNT", "5"));
 
   public void handleInstanceSync(DeploymentEvent event) {
-    if (Objects.isNull(event)) {
+    if (isNull(event)) {
       log.error("Null event sent for Instance Sync Processing. Doing nothing");
       return;
     }
@@ -256,6 +257,10 @@ public class CgInstanceSyncServiceV2 {
   private void handlingInstanceSync(Map<String, List<InstanceSyncData>> instancesPerTask) {
     for (String taskDetailsId : instancesPerTask.keySet()) {
       InstanceSyncTaskDetails taskDetails = taskDetailsService.getForId(taskDetailsId);
+      if (isNull(taskDetails)) {
+        log.warn("No InstanceSyncTaskDetails Present for taskId: [{}]", taskDetailsId);
+        continue;
+      }
       InfrastructureMapping infraMapping =
           infrastructureMappingService.get(taskDetails.getAppId(), taskDetails.getInfraMappingId());
       Optional<InstanceHandler> instanceHandler = Optional.of(instanceHandlerFactory.getInstanceHandler(infraMapping));
@@ -421,7 +426,7 @@ public class CgInstanceSyncServiceV2 {
         deploymentSummary.getInfraMappingId());
     instanceSyncTaskDetails =
         taskDetailsService.fetchForCloudProvider(deploymentSummary.getAccountId(), cloudProviderId);
-    if (Objects.isNull(instanceSyncTaskDetails)) {
+    if (isNull(instanceSyncTaskDetails)) {
       log.info("No Perpetual task found for cloud providerId: [{}].", cloudProviderId);
       return StringUtils.EMPTY;
     }

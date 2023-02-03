@@ -26,24 +26,13 @@ import org.bson.types.ObjectId;
 @Slf4j
 public class ChurnedAuditFilesAndChunksCleanup {
   @Inject private WingsPersistence wingsPersistence;
+  @Inject private ChurnedAccountDeletionHelper churnedAccountDeletionHelper;
   private static final int batchSize = 3000;
-
-  private List<ObjectId> getFileIdsMatchingAuditHeaders(List<String> headerIds) {
-    List<ObjectId> auditFilesIds = new ArrayList<>();
-    DBCollection auditFileAnalytics = wingsPersistence.getCollection(ANALYTIC_STORE, "audits.files");
-    BasicDBObject matchCondition = new BasicDBObject("metadata.headerId", new BasicDBObject("$in", headerIds));
-    BasicDBObject projection = new BasicDBObject("_id", true);
-    DBCursor auditFiles = auditFileAnalytics.find(matchCondition, projection);
-    while (auditFiles.hasNext()) {
-      DBObject record = auditFiles.next();
-      auditFilesIds.add(new ObjectId(record.get("_id").toString()));
-    }
-    return auditFilesIds;
-  }
   public void deleteAuditFilesAndChunks(String accountId) {
     log.info("Start: Deleting audit files and chunks for the churned account {}", accountId);
     DBCollection auditHeadersCollection = wingsPersistence.getCollection(ANALYTIC_STORE, "audits");
     DBCollection auditFileCollection = wingsPersistence.getCollection(DEFAULT_STORE, "audits.files");
+    DBCollection auditFileAnalytics = wingsPersistence.getCollection(ANALYTIC_STORE, "audits.files");
     DBCollection auditChunksCollection = wingsPersistence.getCollection(DEFAULT_STORE, "audits.chunks");
     BasicDBObject matchCondition = new BasicDBObject("accountId", accountId);
     BasicDBObject projection = new BasicDBObject("_id", true);
@@ -56,7 +45,8 @@ public class ChurnedAuditFilesAndChunksCleanup {
           headerIds.add(record.get("_id").toString());
         }
         if (isNotEmpty(headerIds)) {
-          List<ObjectId> auditFilesIds = getFileIdsMatchingAuditHeaders(headerIds);
+          List<ObjectId> auditFilesIds = churnedAccountDeletionHelper.getFileIdsMatchingParentEntity(
+              headerIds, auditFileAnalytics, "metadata.headerId");
 
           // Deleting the audit files if they exist
           auditFileCollection.remove(new BasicDBObject("_id", new BasicDBObject("$in", auditFilesIds.toArray())));

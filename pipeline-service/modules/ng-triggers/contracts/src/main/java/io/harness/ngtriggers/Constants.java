@@ -40,6 +40,7 @@ public interface Constants {
   String GITHUB_PACKAGES = "GithubPackageRegistry";
   String AZURE_ARTIFACTS = "AzureArtifacts";
   String AMI = "AmazonMachineImage";
+  String GOOGLE_CLOUD_STORAGE = "GoogleCloudStorage";
 
   // Manifest Triggers
   String HELM_CHART = "HelmChart";

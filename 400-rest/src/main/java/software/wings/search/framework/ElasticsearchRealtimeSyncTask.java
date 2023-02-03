@@ -55,10 +55,7 @@ public class ElasticsearchRealtimeSyncTask {
     processChanges(pendingChangeEvents);
     elasticsearchSyncHelper.startChangeListeners(getChangeSubscriber());
     Set<String> accountIdsToSyncToTimescale = featureFlagService.getAccountIds(FeatureName.TIME_SCALE_CG_SYNC);
-    boolean closeTimeScaleSyncProcessingOnFailure =
-        featureFlagService.isGlobalEnabled(FeatureName.CLOSE_TIME_SCALE_SYNC_PROCESSING_ON_FAILURE);
-    changeEventProcessor.startProcessingChangeEvents(
-        accountIdsToSyncToTimescale, closeTimeScaleSyncProcessingOnFailure);
+    changeEventProcessor.startProcessingChangeEvents(accountIdsToSyncToTimescale);
     boolean isAlive = true;
     while (!Thread.currentThread().isInterrupted() && isAlive) {
       Thread.sleep(2000);

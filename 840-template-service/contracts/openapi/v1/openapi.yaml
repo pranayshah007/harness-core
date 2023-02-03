@@ -1803,6 +1803,19 @@ components:
                   store_type: INLINE
                   connector_ref: example_connector_ref
                   stable_template: true
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
     TemplateUpdateStableResponse:
       description: Template stable version update Response
       content:
