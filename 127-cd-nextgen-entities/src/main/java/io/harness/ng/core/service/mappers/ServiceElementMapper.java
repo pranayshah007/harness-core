@@ -13,15 +13,22 @@ import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.common.NGExpressionUtils;
+import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.entity.ServiceBasicInfo;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.yaml.BasicService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
-
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.utils.YamlPipelineUtils;
 import lombok.experimental.UtilityClass;
+
+import java.io.IOException;
 
 @OwnedBy(PIPELINE)
 @UtilityClass
@@ -48,6 +55,27 @@ public class ServiceElementMapper {
       serviceEntity.setType(ngServiceV2InfoConfig.getServiceDefinition().getType());
     }
     return serviceEntity;
+  }
+
+  public ServiceEntity toServiceEntity(String accountId, String orgId, String projectId, String serviceYaml) {
+    try {
+      BasicService basicService = YamlUtils.read(serviceYaml, BasicService.class);
+      if (NGExpressionUtils.matchesInputSetPattern(basicService.getIdentifier())) {
+        throw new InvalidRequestException("Service identifier cannot be runtime input");
+      }
+      return ServiceEntity.builder()
+              .yaml(serviceYaml)
+              .accountId(accountId)
+              .orgIdentifier(orgId)
+              .projectIdentifier(projectId)
+              .name(basicService.getName())
+              .identifier(basicService.getIdentifier())
+              .description(basicService.getDescription())
+              .tags(TagMapper.convertToList(basicService.getTags()))
+              .build();
+    } catch (IOException e) {
+      throw new InvalidRequestException("Cannot create service entity due to " + e.getMessage());
+    }
   }
 
   public ServiceResponseDTO writeDTO(ServiceEntity serviceEntity) {

@@ -9,6 +9,7 @@ package io.harness.ng.core.service.services;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.service.dto.ServiceImportRequestDTO;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -99,4 +101,8 @@ public interface ServiceEntityService {
 
   Optional<ServiceEntity> getService(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
+
+  ServiceEntity importServiceFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
+                                        String serviceIdentifier, ServiceImportRequestDTO serviceImportRequestDTO,
+                                        boolean isForceImport);
 }

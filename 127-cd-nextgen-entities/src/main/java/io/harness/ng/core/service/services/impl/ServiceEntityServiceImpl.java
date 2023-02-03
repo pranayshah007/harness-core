@@ -41,6 +41,13 @@ import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.helpers.GitContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -50,12 +57,15 @@ import io.harness.ng.core.events.ServiceDeleteEvent;
 import io.harness.ng.core.events.ServiceForceDeleteEvent;
 import io.harness.ng.core.events.ServiceUpdateEvent;
 import io.harness.ng.core.events.ServiceUpsertEvent;
+import io.harness.ng.core.service.dto.ServiceImportRequestDTO;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
+import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.services.ServiceGitXService;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidator;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidatorFactory;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
@@ -68,6 +78,7 @@ import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
+import io.harness.springdata.TransactionHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PageUtils;
 import io.harness.utils.YamlPipelineUtils;
@@ -126,7 +137,11 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final ServiceOverrideService serviceOverrideService;
   private final ServiceEntitySetupUsageHelper entitySetupUsageHelper;
+  @Inject private GitSyncSdkService gitSyncSdkService;
   @Inject private ServiceEntityValidatorFactory serviceEntityValidatorFactory;
+  @Inject private GitAwareEntityHelper gitAwareEntityHelper;
+  @Inject private TransactionHelper transactionHelper;
+  @Inject private ServiceGitXService serviceGitXService;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
@@ -161,21 +176,48 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       ServiceEntityValidator serviceEntityValidator =
           serviceEntityValidatorFactory.getServiceEntityValidator(serviceEntity);
       serviceEntityValidator.validate(serviceEntity);
-      ServiceEntity createdService =
-          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-            ServiceEntity service = serviceRepository.save(serviceEntity);
-            outboxService.save(ServiceCreateEvent.builder()
-                                   .accountIdentifier(serviceEntity.getAccountId())
-                                   .orgIdentifier(serviceEntity.getOrgIdentifier())
-                                   .projectIdentifier(serviceEntity.getProjectIdentifier())
-                                   .service(serviceEntity)
-                                   .build());
-            return service;
-          }));
-      entitySetupUsageHelper.createSetupUsages(createdService, referredEntities);
-      publishEvent(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(),
-          serviceEntity.getIdentifier(), EventsFrameworkMetadataConstants.CREATE_ACTION);
-      return createdService;
+
+      // check for inline
+      GitAwareContextHelper.initDefaultScmGitMetaData();
+      GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+
+      if (gitEntityInfo == null ||
+              StoreType.INLINE.equals(gitEntityInfo.getStoreType()) || gitEntityInfo.getStoreType() == null) {
+        ServiceEntity createdService =
+                Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+                  ServiceEntity service = serviceRepository.save(serviceEntity);
+                  outboxService.save(ServiceCreateEvent.builder()
+                          .accountIdentifier(serviceEntity.getAccountId())
+                          .orgIdentifier(serviceEntity.getOrgIdentifier())
+                          .projectIdentifier(serviceEntity.getProjectIdentifier())
+                          .service(serviceEntity)
+                          .build());
+                  return service;
+                }));
+        entitySetupUsageHelper.createSetupUsages(createdService, referredEntities);
+        publishEvent(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(),
+                serviceEntity.getIdentifier(), EventsFrameworkMetadataConstants.CREATE_ACTION);
+        return createdService;
+      }
+      // save on git
+      if (gitSyncSdkService.isGitSimplificationEnabled(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
+              serviceEntity.getProjectIdentifier())) {
+        createRemoteEntity(serviceEntity);
+      } else {
+        if (serviceEntity.getProjectIdentifier() != null) {
+          throw new InvalidRequestException(
+                  format("Remote git simplification was not enabled for Project [%s] in Organisation [%s] in Account [%s]",
+                          serviceEntity.getProjectIdentifier(), serviceEntity.getOrgIdentifier(),
+                          serviceEntity.getAccountId()));
+        } else {
+          throw new InvalidRequestException(
+                  format("Remote git simplification or feature flag was not enabled for Organisation [%s] or Account [%s]",
+                          serviceEntity.getOrgIdentifier(), serviceEntity.getAccountId()));
+        }
+      }
+      ServiceEntity savedServiceEntity= serviceRepository.save(serviceEntity);
+      return savedServiceEntity;
+
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
           getDuplicateServiceExistsErrorMessage(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
@@ -1009,5 +1051,100 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
     return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
         accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
+  }
+
+  public ServiceEntity importServiceFromRemote(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+                                               String serviceIdentifier, ServiceImportRequestDTO serviceImportRequestDTO,
+                                               boolean isForceImport) {
+
+    checkGitXEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
+    String repoUrl = serviceGitXService.checkForFileUniquenessAndGetRepoURL(
+            accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isForceImport);
+    String importedServiceYAML =
+            serviceGitXService.importServiceFromRemote(accountIdentifier, orgIdentifier, projectIdentifier);
+    serviceGitXService.performImportFlowYamlValidations(
+            orgIdentifier, projectIdentifier, serviceIdentifier, serviceImportRequestDTO, importedServiceYAML);
+    ServiceEntity serviceEntity =
+            ServiceElementMapper.toServiceEntity(accountIdentifier,orgIdentifier, projectIdentifier,
+                    importedServiceYAML);
+
+    ServiceEntity serviceEntityToSave = prepareServiceEntity(serviceEntity, repoUrl);
+    try {
+
+      ServiceEntity savedServiceEntity =
+              saveServiceEntityForImportedYAML(serviceEntityToSave);
+      return savedServiceEntity;
+    } catch (DuplicateKeyException ex) {
+      throw new DuplicateFieldException(
+              getDuplicateServiceExistsErrorMessage(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
+                      serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier()),
+              USER_SRE, ex);
+    }
+  }
+
+  private ServiceEntity saveServiceEntityForImportedYAML(ServiceEntity serviceToSave) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    addGitParamsToServiceEntity(serviceToSave, gitEntityInfo);
+    return transactionHelper.performTransaction(() -> {
+      ServiceEntity savedServiceEntity = serviceRepository.save(serviceToSave);
+      outboxService.save(ServiceCreateEvent.builder()
+              .accountIdentifier(serviceToSave.getAccountId())
+              .orgIdentifier(serviceToSave.getOrgIdentifier())
+              .projectIdentifier(serviceToSave.getProjectIdentifier())
+              .service(serviceToSave)
+              .build());
+      return savedServiceEntity;
+    });
+  }
+
+  io.harness.beans.Scope buildScope(ServiceEntity serviceEntity) {
+    return io.harness.beans.Scope.of(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
+            serviceEntity.getProjectIdentifier());
+  }
+
+  private void addGitParamsToServiceEntity(ServiceEntity serviceEntity, GitEntityInfo gitEntityInfo) {
+    serviceEntity.setStoreType(StoreType.REMOTE);
+    if (EmptyPredicate.isEmpty(serviceEntity.getRepoURL())) {
+      serviceEntity.setRepoURL(gitAwareEntityHelper.getRepoUrl(
+              serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier()));
+    }
+    serviceEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
+    serviceEntity.setRepo(gitEntityInfo.getRepoName());
+    serviceEntity.setFilePath(gitEntityInfo.getFilePath());
+  }
+
+  private ScmCreateFileGitResponse createRemoteEntity(ServiceEntity serviceEntity) {
+    GitAwareContextHelper.initDefaultScmGitMetaData();
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+
+    io.harness.beans.Scope scope = buildScope(serviceEntity);
+    String yamlToPush = serviceEntity.getYaml();
+    addGitParamsToServiceEntity(serviceEntity, gitEntityInfo);
+
+    return gitAwareEntityHelper.createEntityOnGit(serviceEntity, yamlToPush, scope);
+  }
+
+  private void checkGitXEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    if (!serviceGitXService.isNewGitXEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
+      if (projectIdentifier != null) {
+        throw new InvalidRequestException(
+                format("Remote git simplification was not enabled for Project [%s] in Organisation [%s] in Account [%s]",
+                        projectIdentifier, orgIdentifier, accountIdentifier));
+      } else {
+        throw new InvalidRequestException(
+                format("Remote git simplification or feature flag was not enabled for Organisation [%s] or Account [%s]",
+                        orgIdentifier, accountIdentifier));
+      }
+    }
+  }
+
+  private ServiceEntity prepareServiceEntity(ServiceEntity serviceEntity, String repoUrl) {
+    serviceEntity.setRepoURL(repoUrl);
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    serviceEntity.setStoreType(StoreType.REMOTE);
+    serviceEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
+    serviceEntity.setRepo(gitEntityInfo.getRepoName());
+    serviceEntity.setFilePath(gitEntityInfo.getFilePath());
+    return serviceEntity;
   }
 }
