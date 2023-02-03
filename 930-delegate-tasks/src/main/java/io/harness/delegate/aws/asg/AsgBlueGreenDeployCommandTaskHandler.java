@@ -109,25 +109,26 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
 
       asgSdkManager.info("Starting Blue Green Deployment");
 
-      AutoScalingGroupContainer autoScalingGroupContainer = executeBGDeploy(asgSdkManager, asgStoreManifestsContent,
-          asgName, amiImageId, targetGroupArnsList, isFirstDeployment, awsInternalConfig, region);
+      AutoScalingGroupContainer stageAutoScalingGroupContainer =
+          executeBGDeploy(asgSdkManager, asgStoreManifestsContent, asgName, amiImageId, targetGroupArnsList,
+              isFirstDeployment, awsInternalConfig, region);
 
       String asgNameWithoutSuffix = asgName.substring(0, asgName.length() - 3);
       String asgNameSuffix = asgName.substring(asgName.length() - 1);
-      String stageAsgName = asgNameWithoutSuffix + VERSION_DELIMITER + 1;
+      String prodAsgName = asgNameWithoutSuffix + VERSION_DELIMITER + 1;
       if (asgNameSuffix.equalsIgnoreCase(String.valueOf(1))) {
-        stageAsgName = asgNameWithoutSuffix + VERSION_DELIMITER + 2;
+        prodAsgName = asgNameWithoutSuffix + VERSION_DELIMITER + 2;
       }
 
-      AutoScalingGroupContainer stageAutoScalingGroupContainer = null;
+      AutoScalingGroupContainer prodAutoScalingGroupContainer = null;
       if (!isFirstDeployment) {
-        stageAutoScalingGroupContainer =
-            asgTaskHelper.mapToAutoScalingGroupContainer(asgSdkManager.getASG(stageAsgName));
+        prodAutoScalingGroupContainer = asgTaskHelper.mapToAutoScalingGroupContainer(asgSdkManager.getASG(prodAsgName));
       }
+
       AsgBlueGreenDeployResult asgBlueGreenDeployResult =
           AsgBlueGreenDeployResult.builder()
+              .prodAutoScalingGroupContainer(prodAutoScalingGroupContainer)
               .stageAutoScalingGroupContainer(stageAutoScalingGroupContainer)
-              .prodAutoScalingGroupContainer(autoScalingGroupContainer)
               .build();
 
       logCallback.saveExecutionLog(

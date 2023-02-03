@@ -45,6 +45,8 @@ import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResponse;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResponse;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResult;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResponse;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResult;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResult;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
@@ -604,14 +606,21 @@ public class AsgStepCommonHelper extends CDStepHelper {
       return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
           asgRollingDeployResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_ROLLING,
           asgName, null);
-    } else if (asgCommandResponse instanceof AsgRollingRollbackResponse) {
+    }
+
+    else if (asgCommandResponse instanceof AsgRollingRollbackResponse) {
       AsgRollingRollbackResult asgRollingRollbackResult =
           ((AsgRollingRollbackResponse) asgCommandResponse).getAsgRollingRollbackResult();
-      String asgName = asgRollingRollbackResult.getAutoScalingGroupContainer().getAutoScalingGroupName();
+      String asgName = null;
+      if (asgRollingRollbackResult.getAutoScalingGroupContainer() != null) {
+        asgName = asgRollingRollbackResult.getAutoScalingGroupContainer().getAutoScalingGroupName();
+      }
       return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
           asgRollingRollbackResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_ROLLING,
           asgName, null);
-    } else if (asgCommandResponse instanceof AsgCanaryDeployResponse) {
+    }
+
+    else if (asgCommandResponse instanceof AsgCanaryDeployResponse) {
       AsgCanaryDeployResult asgCanaryDeployResult =
           ((AsgCanaryDeployResponse) asgCommandResponse).getAsgCanaryDeployResult();
       String asgName = asgCanaryDeployResult.getAutoScalingGroupContainer().getAutoScalingGroupName();
@@ -619,41 +628,56 @@ public class AsgStepCommonHelper extends CDStepHelper {
       return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
           asgCanaryDeployResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_CANARY,
           asgNameWithoutSuffix, null);
-    } else if (asgCommandResponse instanceof AsgBlueGreenDeployResponse) {
+    }
+
+    else if (asgCommandResponse instanceof AsgBlueGreenDeployResponse) {
       AsgBlueGreenDeployResult asgBlueGreenDeployResult =
           ((AsgBlueGreenDeployResponse) asgCommandResponse).getAsgBlueGreenDeployResult();
-      String prodAsgName = asgBlueGreenDeployResult.getProdAutoScalingGroupContainer().getAutoScalingGroupName();
-      String asgNameWithoutSuffix = prodAsgName.substring(0, prodAsgName.length() - 3);
-
+      String stageAsgName = asgBlueGreenDeployResult.getStageAutoScalingGroupContainer().getAutoScalingGroupName();
+      String asgNameWithoutSuffix = stageAsgName.substring(0, stageAsgName.length() - 3);
       List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
-
       serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
           asgBlueGreenDeployResult.getProdAutoScalingGroupContainer(), infrastructureKey, region,
           EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, true));
-
       serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
           asgBlueGreenDeployResult.getStageAutoScalingGroupContainer(), infrastructureKey, region,
           EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, false));
-
       return serverInstanceInfoList;
-    } else if (asgCommandResponse instanceof AsgBlueGreenRollbackResponse) {
+    }
+
+    else if (asgCommandResponse instanceof AsgBlueGreenSwapServiceResponse) {
+      AsgBlueGreenSwapServiceResult asgBlueGreenSwapServiceResult =
+          ((AsgBlueGreenSwapServiceResponse) asgCommandResponse).getAsgBlueGreenSwapServiceResult();
+      String prodAsgName = asgBlueGreenSwapServiceResult.getProdAutoScalingGroupContainer().getAutoScalingGroupName();
+      String asgNameWithoutSuffix = prodAsgName.substring(0, prodAsgName.length() - 3);
+      List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
+      serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgBlueGreenSwapServiceResult.getProdAutoScalingGroupContainer(), infrastructureKey, region,
+          EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, true));
+      serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgBlueGreenSwapServiceResult.getStageAutoScalingGroupContainer(), infrastructureKey, region,
+          EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, false));
+      return serverInstanceInfoList;
+    }
+
+    else if (asgCommandResponse instanceof AsgBlueGreenRollbackResponse) {
       AsgBlueGreenRollbackResult asgBlueGreenRollbackResult =
           ((AsgBlueGreenRollbackResponse) asgCommandResponse).getAsgBlueGreenRollbackResult();
-      String prodAsgName = asgBlueGreenRollbackResult.getProdAutoScalingGroupContainer().getAutoScalingGroupName();
-      String asgNameWithoutSuffix = prodAsgName.substring(0, prodAsgName.length() - 3);
-
+      String asgNameWithoutSuffix = null;
+      if (asgBlueGreenRollbackResult.getProdAutoScalingGroupContainer() != null) {
+        String prodAsgName = asgBlueGreenRollbackResult.getProdAutoScalingGroupContainer().getAutoScalingGroupName();
+        asgNameWithoutSuffix = prodAsgName.substring(0, prodAsgName.length() - 3);
+      }
       List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
-
       serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
           asgBlueGreenRollbackResult.getProdAutoScalingGroupContainer(), infrastructureKey, region,
           EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, true));
-
       serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
           asgBlueGreenRollbackResult.getStageAutoScalingGroupContainer(), infrastructureKey, region,
           EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, false));
-
       return serverInstanceInfoList;
     }
+
     throw new GeneralException("Invalid asg command response instance");
   }
 }
