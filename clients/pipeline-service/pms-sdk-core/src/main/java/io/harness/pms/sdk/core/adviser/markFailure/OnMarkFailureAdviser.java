@@ -45,7 +45,7 @@ public class OnMarkFailureAdviser implements Adviser {
     if (EmptyPredicate.isNotEmpty(parameters.getNextNodeId())) {
       builder.setNextNodeId(parameters.getNextNodeId());
     }
-    return AdviserResponse.newBuilder().setMarkSuccessAdvise(builder.build()).setType(AdviseType.MARK_FAILURE).build();
+    return AdviserResponse.newBuilder().setMarkSuccessAdvise(builder.build()).setType(AdviseType.MARK_FAILED).build();
   }
 
   @Override
