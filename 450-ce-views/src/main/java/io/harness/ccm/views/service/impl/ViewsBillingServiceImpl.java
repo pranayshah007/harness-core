@@ -583,6 +583,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       return null;
     }
   }
+
   public List<QLCEViewTimeSeriesData> convertToQLViewTimeSeriesData(
       TableResult result, String accountId, List<QLCEViewGroupBy> groupBy) {
     Schema schema = result.getSchema();
@@ -862,8 +863,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   @Override
   public QLCEViewTrendInfo getForecastCostData(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       List<QLCEViewAggregation> aggregateFunction, ViewQueryParams queryParams) {
-    BigQuery bigQuery = bigQueryService.get();
-    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     Instant endInstantForForecastCost = viewsQueryHelper.getEndInstantForForecastCost(filters);
     ViewCostData currentCostData =
         getCostData(viewsQueryHelper.getFiltersForForecastCost(filters), groupBy, aggregateFunction, queryParams);
