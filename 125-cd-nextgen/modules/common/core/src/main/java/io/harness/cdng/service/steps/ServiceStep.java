@@ -15,9 +15,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.helpers.NgExpressionHelper;
+import io.harness.cdng.service.steps.constants.ServiceStepConstants;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.eraro.Level;
-import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.helpers.FreezeRBACHelper;
@@ -32,7 +32,6 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.rbac.PipelineRbacHelper;
@@ -58,8 +57,6 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
-  public static final StepType STEP_TYPE =
-      StepType.newBuilder().setType(ExecutionNodeType.SERVICE.getName()).setStepCategory(StepCategory.STEP).build();
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
@@ -70,8 +67,6 @@ public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
   @Inject private NotificationHelper notificationHelper;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject NgExpressionHelper ngExpressionHelper;
-  public static final String FREEZE_SWEEPING_OUTPUT = "freezeSweepingOutput";
-  public static final String PIPELINE_EXECUTION_EXPRESSION = "<+pipeline.execution.url>";
 
   @Override
   public Class<ServiceStepParameters> getStepParametersClass() {
@@ -124,7 +119,7 @@ public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
                                           .manualFreezeConfigs(manualFreezeConfigs)
                                           .globalFreezeConfigs(globalFreezeConfigs)
                                           .build();
-        sweepingOutputService.consume(ambiance, FREEZE_SWEEPING_OUTPUT, freezeOutcome, "");
+        sweepingOutputService.consume(ambiance, ServiceStepConstants.FREEZE_SWEEPING_OUTPUT, freezeOutcome, "");
         stepOutcomes.add(StepResponse.StepOutcome.builder()
                              .name(OutcomeExpressionConstants.FREEZE_OUTCOME)
                              .outcome(freezeOutcome)
@@ -135,8 +130,9 @@ public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
                              .outcome(ServiceStepOutcome.fromServiceEntity(stepParameters.getType(), serviceEntity))
                              .group(StepOutcomeGroup.STAGE.name())
                              .build());
-        String executionUrl = engineExpressionService.renderExpression(
-            ambiance, PIPELINE_EXECUTION_EXPRESSION, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+        String executionUrl =
+            engineExpressionService.renderExpression(ambiance, ServiceStepConstants.PIPELINE_EXECUTION_EXPRESSION,
+                ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
         String baseUrl = ngExpressionHelper.getBaseUrl(AmbianceUtils.getAccountId(ambiance));
         notificationHelper.sendNotificationForFreezeConfigs(freezeOutcome.getManualFreezeConfigs(),
             freezeOutcome.getGlobalFreezeConfigs(), ambiance, executionUrl, baseUrl);

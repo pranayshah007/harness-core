@@ -13,6 +13,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.streaming.dtos.AuditBatchDTO;
 import io.harness.audit.streaming.dtos.AuditRecordDTO;
 import io.harness.audit.streaming.dtos.PutObjectResultResponse;
+import io.harness.audit.streaming.outgoing.Author;
+import io.harness.audit.streaming.outgoing.HttpRequestInfo;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
+import io.harness.audit.streaming.outgoing.Principal;
+import io.harness.audit.streaming.outgoing.Resource;
+import io.harness.audit.streaming.outgoing.ResourceScope;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.capability.AwsRegionParameters;
 import io.harness.capability.CapabilityParameters;
@@ -253,6 +259,7 @@ import io.harness.delegate.beans.connector.spotconnector.SpotValidationParams;
 import io.harness.delegate.beans.connector.tasconnector.TasTaskParams;
 import io.harness.delegate.beans.connector.tasconnector.TasTaskType;
 import io.harness.delegate.beans.connector.tasconnector.TasValidationParams;
+import io.harness.delegate.beans.connector.terraformcloud.TerraformCloudValidationParams;
 import io.harness.delegate.beans.connector.vaultconnector.VaultValidationParams;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult;
@@ -272,6 +279,7 @@ import io.harness.delegate.beans.elastigroup.ElastigroupSwapRouteResult;
 import io.harness.delegate.beans.executioncapability.AlwaysFalseValidationCapability;
 import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
 import io.harness.delegate.beans.executioncapability.AwsRegionCapability;
+import io.harness.delegate.beans.executioncapability.AwsSamInstallationCapability;
 import io.harness.delegate.beans.executioncapability.CIVmConnectionCapability;
 import io.harness.delegate.beans.executioncapability.CapabilityType;
 import io.harness.delegate.beans.executioncapability.ChartMuseumCapability;
@@ -311,6 +319,7 @@ import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.gitapi.GitRepoType;
 import io.harness.delegate.beans.helm.HelmChartVersionDetails;
+import io.harness.delegate.beans.instancesync.info.AsgServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
@@ -367,6 +376,9 @@ import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
+import io.harness.delegate.beans.terraformcloud.PlanType;
+import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
+import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
 import io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntApplyTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntCommandType;
@@ -386,6 +398,7 @@ import io.harness.delegate.exception.AsgNGException;
 import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.delegate.exception.EcsNGException;
 import io.harness.delegate.exception.ElastigroupNGException;
+import io.harness.delegate.exception.GoogleFunctionException;
 import io.harness.delegate.exception.HelmNGException;
 import io.harness.delegate.exception.ServerlessNGException;
 import io.harness.delegate.exception.TaskNGDataException;
@@ -418,6 +431,10 @@ import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
@@ -642,12 +659,16 @@ import io.harness.delegate.task.elastigroup.response.ElastigroupSwapRouteRespons
 import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.request.GcpListBucketsRequest;
 import io.harness.delegate.task.gcp.request.GcpListClustersRequest;
+import io.harness.delegate.task.gcp.request.GcpListProjectsRequest;
 import io.harness.delegate.task.gcp.request.GcpTaskParameters;
 import io.harness.delegate.task.gcp.request.GcpValidationRequest;
+import io.harness.delegate.task.gcp.request.GcsListBucketsRequest;
 import io.harness.delegate.task.gcp.response.GcpBucketDetails;
 import io.harness.delegate.task.gcp.response.GcpClusterListTaskResponse;
 import io.harness.delegate.task.gcp.response.GcpListBucketsResponse;
+import io.harness.delegate.task.gcp.response.GcpProjectListTaskResponse;
 import io.harness.delegate.task.gcp.response.GcpValidationTaskResponse;
+import io.harness.delegate.task.gcp.response.GcsBucketListResponse;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
@@ -655,12 +676,30 @@ import io.harness.delegate.task.git.GitOpsTaskType;
 import io.harness.delegate.task.git.NGGitOpsResponse;
 import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
+import io.harness.delegate.task.gitcommon.GitRequestFileConfig;
+import io.harness.delegate.task.gitcommon.GitTaskNGRequest;
+import io.harness.delegate.task.gitcommon.GitTaskNGResponse;
 import io.harness.delegate.task.gitops.GitOpsFetchAppTaskParams;
 import io.harness.delegate.task.gitops.GitOpsFetchAppTaskResponse;
 import io.harness.delegate.task.gitpolling.GitPollingSourceType;
 import io.harness.delegate.task.gitpolling.GitPollingTaskType;
 import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
 import io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters;
+import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
+import io.harness.delegate.task.googlefunctionbeans.GoogleCloudSourceArtifactConfig;
+import io.harness.delegate.task.googlefunctionbeans.GoogleCloudStorageArtifactConfig;
+import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
+import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionDeployRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionDeployWithoutTrafficRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionPrepareRollbackRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionRollbackRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionTrafficShiftRequest;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionDeployResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionDeployWithoutTrafficResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionPrepareRollbackResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionRollbackResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionTrafficShiftResponse;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
 import io.harness.delegate.task.helm.HelmCommandFlag;
@@ -911,6 +950,12 @@ import io.harness.delegate.task.terraform.TerraformCommandUnit;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
+import io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
+import io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException;
 import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
 import io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO;
 import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
@@ -1073,6 +1118,7 @@ import software.wings.yaml.gitSync.YamlGitConfig;
 
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.esotericsoftware.kryo.Kryo;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.protobuf.UnknownFieldSet;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.SneakyThrows;
@@ -1458,6 +1504,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(S3HelmStoreDelegateConfig.class, 19702);
     kryo.register(GcsHelmStoreDelegateConfig.class, 19703);
     kryo.register(S3StoreDelegateConfig.class, 19706);
+    kryo.register(GoogleCloudStorageArtifactDelegateRequest.class, 19709);
+    kryo.register(GoogleCloudStorageArtifactDelegateResponse.class, 19710);
+    kryo.register(GoogleCloudSourceArtifactDelegateRequest.class, 19707);
+    kryo.register(GoogleCloudSourceArtifactDelegateResponse.class, 19708);
 
     kryo.register(SpotValidateTaskResponse.class, 21006);
     kryo.register(SpotTaskParams.class, 21007);
@@ -1601,6 +1651,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerraformTaskNGParameters.class, 543283);
     kryo.register(TFTaskType.class, 543284);
     kryo.register(TerraformTaskNGResponse.class, 543285);
+    kryo.register(GcpListProjectsRequest.class, 673599);
+    kryo.register(GcpProjectListTaskResponse.class, 673600);
+    kryo.register(GcsListBucketsRequest.class, 673601);
+    kryo.register(GcsBucketListResponse.class, 673602);
+    kryo.register(HashiCorpVaultRuntimeException.class, 673603);
+    kryo.register(UncheckedTimeoutException.class, 673604);
 
     kryo.register(ScmPushTaskParams.class, 553286);
     kryo.register(ScmPushTaskResponseData.class, 553287);
@@ -1670,6 +1726,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AuditBatchDTO.BatchStatus.class, 543367);
     kryo.register(AuditBatchDTO.BatchState.class, 543368);
     kryo.register(PutObjectResultResponse.class, 543369);
+    kryo.register(Author.class, 543370);
+    kryo.register(HttpRequestInfo.class, 543371);
+    kryo.register(OutgoingAuditMessage.class, 543372);
+    kryo.register(Principal.class, 543373);
+    kryo.register(Resource.class, 543374);
+    kryo.register(ResourceScope.class, 543375);
 
     kryo.register(CfDeployCommandResponse.class, 543401);
     kryo.register(CfInfraMappingDataResponse.class, 543402);
@@ -2017,6 +2079,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EncryptedAppSettingsFile.class, 55408);
     kryo.register(AzureWebAppSlotDeploymentExceptionData.class, 55409);
 
+    // GIT
+    kryo.register(GitTaskNGRequest.class, 573401);
+    kryo.register(GitTaskNGResponse.class, 573402);
+    kryo.register(io.harness.delegate.task.gitcommon.GitFetchFilesResult.class, 573403);
+    kryo.register(GitRequestFileConfig.class, 573404);
+
     // ECS
     kryo.register(EcsGitFetchRequest.class, 573501);
     kryo.register(EcsGitFetchResponse.class, 573502);
@@ -2088,6 +2156,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AsgBlueGreenSwapServiceRequest.class, 573596);
     kryo.register(AsgBlueGreenSwapServiceResponse.class, 573597);
     kryo.register(AsgBlueGreenSwapServiceResult.class, 573598);
+    kryo.register(AsgServerInstanceInfo.class, 573599);
 
     kryo.register(AsgLoadBalancerConfig.class, 5731600);
     kryo.register(AsgBlueGreenRollbackRequest.class, 5731601);
@@ -2228,6 +2297,25 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TfVarS3Source.class, 573593);
     kryo.register(ConcurrentHashMap.class, 673567);
 
+    kryo.register(GoogleFunctionDeployRequest.class, 673581);
+    kryo.register(GoogleFunctionDeployResponse.class, 673582);
+    kryo.register(GcpGoogleFunctionInfraConfig.class, 673583);
+    kryo.register(GoogleCloudStorageArtifactConfig.class, 673584);
+    kryo.register(GoogleFunctionCommandTypeNG.class, 673585);
+    kryo.register(GoogleFunctionPrepareRollbackRequest.class, 673586);
+    kryo.register(GoogleFunctionPrepareRollbackResponse.class, 673587);
+    kryo.register(GoogleFunction.class, 673588);
+    kryo.register(GoogleFunction.GoogleCloudRunRevision.class, 673589);
+    kryo.register(GoogleFunction.GoogleCloudRunService.class, 673590);
+    kryo.register(GoogleFunctionDeployWithoutTrafficRequest.class, 673591);
+    kryo.register(GoogleFunctionDeployWithoutTrafficResponse.class, 673592);
+    kryo.register(GoogleFunctionRollbackRequest.class, 673593);
+    kryo.register(GoogleFunctionRollbackResponse.class, 673594);
+    kryo.register(GoogleFunctionTrafficShiftRequest.class, 673595);
+    kryo.register(GoogleFunctionTrafficShiftResponse.class, 673596);
+    kryo.register(GoogleFunctionException.class, 673597);
+    kryo.register(GoogleCloudSourceArtifactConfig.class, 673598);
+
     kryo.register(K8sDryRunManifestRequest.class, 573594);
     kryo.register(K8sDryRunManifestResponse.class, 573595);
     kryo.register(ScmBatchGetFileTaskParams.class, 673568);
@@ -2235,5 +2323,17 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ConnectorDecryptionParams.class, 673570);
     kryo.register(GitFileLocationDetails.class, 673571);
     kryo.register(ScmBatchGetFileTaskResponseData.class, 673572);
+
+    kryo.register(TerraformCloudTaskParams.class, 680000);
+    kryo.register(TerraformCloudTaskType.class, 680001);
+    kryo.register(TerraformCloudDelegateTaskResponse.class, 680002);
+    kryo.register(TerraformCloudValidateTaskResponse.class, 680003);
+    kryo.register(TerraformCloudValidationParams.class, 680004);
+    kryo.register(TerraformCloudOrganizationsTaskResponse.class, 680005);
+    kryo.register(TerraformCloudWorkspacesTaskResponse.class, 680006);
+    kryo.register(TerraformCloudCommandUnit.class, 680007);
+    kryo.register(PlanType.class, 680008);
+
+    kryo.register(AwsSamInstallationCapability.class, 10000401);
   }
 }

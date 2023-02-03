@@ -35,4 +35,5 @@ public class AsgBlueGreenDeployRequest implements AsgCommandRequest, NestedAnnot
   @NonFinal AsgLoadBalancerConfig asgLoadBalancerConfig;
   String asgName;
   String amiImageId;
+  boolean firstDeployment;
 }

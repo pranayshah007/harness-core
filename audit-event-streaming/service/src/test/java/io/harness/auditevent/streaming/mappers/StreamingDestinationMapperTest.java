@@ -8,8 +8,8 @@
 package io.harness.auditevent.streaming.mappers;
 
 import static io.harness.rule.OwnerRule.NISHANT;
-import static io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum.ACTIVE;
 import static io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO.TypeEnum.AWS_S3;
+import static io.harness.spec.server.audit.v1.model.StreamingDestinationStatus.ACTIVE;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,7 +21,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 import io.harness.spec.server.audit.v1.model.AwsS3StreamingDestinationSpecDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
-import io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO;
 
 import org.junit.Before;
 import org.junit.Test;

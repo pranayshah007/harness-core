@@ -7,25 +7,33 @@
 
 package io.harness.iacmserviceclient;
 
+import io.harness.beans.entities.Execution;
 import io.harness.common.IACMCommonEndpointConstants;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import retrofit2.Call;
+import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
+import retrofit2.http.POST;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface IACMServiceClient {
   @GET(IACMCommonEndpointConstants.IACM_SERVICE_TOKEN_ENDPOINT)
-  Call<JsonObject> generateToken(@Query("accountId") String accountId, @Header("X-Harness-Token") String globalToken);
+  Call<JsonObject> generateToken(@Query("accountId") String accountId, @Header("Harness-Token") String globalToken);
   @GET(IACMCommonEndpointConstants.IACM_SERVICE_GET_STACK_ENDPOINT)
   Call<JsonObject> getStackInfo(@Path("org") String org, @Path("project") String project,
-      @Path("stackId") String stackId, @Header("X-Harness-Token") String globalToken,
-      @Header("X-Harness-Account") String accountId);
+      @Path("stackId") String stackId, @Header("Harness-Token") String globalToken,
+      @Header("Harness-Account") String accountId);
   @GET(IACMCommonEndpointConstants.IACM_SERVICE_GET_STACK_VARIABLES_ENDPOINT)
   Call<JsonArray> getStackVariables(@Path("org") String org, @Path("project") String project,
-      @Path("stackId") String stackId, @Header("X-Harness-Token") String globalToken,
-      @Header("X-Harness-Account") String accountId);
+      @Path("stackId") String stackId, @Header("Harness-Token") String globalToken,
+      @Header("Harness-Account") String accountId);
+
+  @POST(IACMCommonEndpointConstants.IACM_SERVICE_POST_EXECUTION)
+  Call<JsonObject> postIACMExecution(@Path("org") String org, @Path("project") String project,
+      @Body Execution execution, @Header("Harness-Token") String globalToken,
+      @Header("Harness-Account") String accountId);
 }

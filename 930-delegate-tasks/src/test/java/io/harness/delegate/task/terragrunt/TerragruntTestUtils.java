@@ -85,6 +85,7 @@ public class TerragruntTestUtils {
         .backendFilesStore(backendFileStore)
         .configFilesStore(GitStoreDelegateConfig.builder().build())
         .stateFileId("test-state-file-id")
+        .planName("test-plan-name")
         .build();
   }
 

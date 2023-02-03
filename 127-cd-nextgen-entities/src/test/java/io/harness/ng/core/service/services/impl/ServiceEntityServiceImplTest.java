@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.YOGESH;
@@ -817,6 +818,18 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(list.getContent()).isNotNull();
     // services from acc scope
     assertThat(list.getContent().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testCreateCriteriaForGetListWithOptionalOrgAndProject() {
+    Criteria criteriaFromServiceFilter =
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, false, false);
+
+    assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("accountId")).isTrue();
+    assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("orgIdentifier")).isFalse();
+    assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("projectIdentifier")).isFalse();
   }
 
   @Test

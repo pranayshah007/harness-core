@@ -16,7 +16,7 @@ import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVI
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.validateNoMoreThanOneHelmOverridePresent;
+import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.validateHelmRepoOverrideContainsSameManifestType;
 
 import static java.lang.String.format;
 
@@ -32,9 +32,11 @@ import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
+import io.harness.cdng.manifest.yaml.kinds.HelmRepoOverrideManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
-import io.harness.cdng.service.steps.ServiceStepV3;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorModule;
@@ -186,23 +188,26 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
   }
 
   private List<ManifestConfigWrapper> extractHelmRepoOverrides(List<ManifestConfigWrapper> overrides) {
-    // Can not contain more than one helm override
-    validateNoMoreThanOneHelmOverridePresent(overrides);
-
     return overrides.stream()
         .filter(manifest -> ManifestConfigType.HELM_REPO_OVERRIDE == manifest.getManifest().getType())
         .collect(Collectors.toList());
   }
 
   private void useHelmRepoOverride(ManifestConfigWrapper helmChart, ManifestConfigWrapper repoOverride) {
-    ManifestAttributes overriddenRepoConfig =
-        helmChart.getManifest().getSpec().applyOverrides(repoOverride.getManifest().getSpec());
-    helmChart.getManifest().setSpec(overriddenRepoConfig);
+    HelmChartManifest helmChartManifest = (HelmChartManifest) helmChart.getManifest().getSpec();
+    HelmRepoOverrideManifest helmRepoOverride = (HelmRepoOverrideManifest) repoOverride.getManifest().getSpec();
+    if (helmChartManifest != null && helmRepoOverride != null) {
+      validateHelmRepoOverrideContainsSameManifestType(helmChartManifest, helmRepoOverride);
+      StoreConfig helmChartManifestStoreConfig = helmChartManifest.getStoreConfig();
+      if (helmChartManifestStoreConfig != null) {
+        helmChartManifestStoreConfig.overrideConnectorRef(helmRepoOverride.getConnectorRef());
+      }
+    }
   }
 
   private NgManifestsMetadataSweepingOutput fetchManifestsMetadataFromSweepingOutput(Ambiance ambiance) {
     final OptionalSweepingOutput resolveOptional = sweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_MANIFESTS_SWEEPING_OUTPUT));
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT));
     if (!resolveOptional.isFound()) {
       log.info("Could not find manifestFilesSweepingOutput for the stage.");
     }

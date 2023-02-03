@@ -15,6 +15,7 @@ import io.harness.delegate.beans.executioncapability.CapabilityType;
 import io.harness.delegate.task.executioncapability.AlwaysFalseValidationCapabilityCheck;
 import io.harness.delegate.task.executioncapability.AwsCliInstallationCapabilityCheck;
 import io.harness.delegate.task.executioncapability.AwsRegionCapabilityCheck;
+import io.harness.delegate.task.executioncapability.AwsSamInstallationCapabilityCheck;
 import io.harness.delegate.task.executioncapability.CIVmConnectionCapabilityCheck;
 import io.harness.delegate.task.executioncapability.CapabilityCheck;
 import io.harness.delegate.task.executioncapability.ChartMuseumCapabilityCheck;
@@ -84,6 +85,7 @@ public class CapabilityCheckFactory {
   @Inject AwsCliInstallationCapabilityCheck awsCliInstallationCapabilityCheck;
   @Inject WinrmHostConnectionCapabilityCheck winrmHostConnectionCapabilityCheck;
   @Inject SshHostConnectionCapabilityCheck sshHostConnectionCapabilityCheck;
+  @Inject AwsSamInstallationCapabilityCheck awsSamInstallationCapabilityCheck;
 
   public CapabilityCheck obtainCapabilityCheck(CapabilityType capabilityCheckType) {
     switch (capabilityCheckType) {
@@ -147,6 +149,8 @@ public class CapabilityCheckFactory {
         return winrmHostConnectionCapabilityCheck;
       case NG_SSH_HOST_CONNECTION:
         return sshHostConnectionCapabilityCheck;
+      case AWS_SAM_INSTALL:
+        return awsSamInstallationCapabilityCheck;
       default:
         return null;
     }

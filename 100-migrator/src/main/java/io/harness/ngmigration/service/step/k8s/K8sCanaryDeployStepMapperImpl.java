@@ -17,8 +17,8 @@ import io.harness.cdng.k8s.PercentageInstanceSelection;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
@@ -29,7 +29,7 @@ import software.wings.sm.states.k8s.K8sCanaryDeploy;
 
 import java.util.Map;
 
-public class K8sCanaryDeployStepMapperImpl implements StepMapper {
+public class K8sCanaryDeployStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
     return WorkflowStepSupportStatus.SUPPORTED;
@@ -42,7 +42,7 @@ public class K8sCanaryDeployStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     K8sCanaryDeploy state = new K8sCanaryDeploy(stepYaml.getName());
     state.parseProperties(properties);
     return state;

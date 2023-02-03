@@ -164,6 +164,8 @@ import org.eclipse.jgit.util.SystemReader;
 @TargetModule(HarnessModule._960_API_SERVICES)
 @BreakDependencyOn("software.wings.beans.GitConfig")
 public class GitClientImpl implements GitClient {
+  private static final int SOCKET_CONNECTION_READ_TIMEOUT_SECONDS = 60;
+
   @Inject GitClientHelper gitClientHelper;
   /**
    * factory for creating HTTP connections. By default, JGit uses JDKHttpConnectionFactory which doesn't work well with
@@ -1263,6 +1265,14 @@ public class GitClientImpl implements GitClient {
       gitCommand.setTransportConfigCallback(transport -> {
         if (transport instanceof TransportHttp) {
           TransportHttp http = (TransportHttp) transport;
+          // Without proper timeout socket can get hang (ref: java.net.SocketInputStream.socketRead0) indefinitely
+          // during packet loss. In some scenarios even if connection is established back this may still remain stuck.
+          // Since socketRead0 ignores the thread interruptions, the original task thread will remain in running state
+          // forever. As all of our operations are synchronized stuck thread will block other git tasks to execute
+          // This timeout is used for setting connection and read timeout based on current implementation. A better
+          // option for further improvements is to have a custom connection factory where will use a more granular
+          // configuration of these timeouts parameters
+          http.setTimeout(SOCKET_CONNECTION_READ_TIMEOUT_SECONDS);
           http.setHttpConnectionFactory(connectionFactory);
         }
       });

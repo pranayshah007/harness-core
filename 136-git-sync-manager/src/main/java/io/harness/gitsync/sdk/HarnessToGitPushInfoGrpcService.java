@@ -21,6 +21,8 @@ import io.harness.gitsync.CreatePRRequest;
 import io.harness.gitsync.CreatePRResponse;
 import io.harness.gitsync.ErrorDetails;
 import io.harness.gitsync.FileInfo;
+import io.harness.gitsync.GetBatchFilesRequest;
+import io.harness.gitsync.GetBatchFilesResponse;
 import io.harness.gitsync.GetBranchHeadCommitRequest;
 import io.harness.gitsync.GetBranchHeadCommitResponse;
 import io.harness.gitsync.GetFileRequest;
@@ -59,6 +61,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -317,6 +320,29 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
   }
 
   @Override
+  public void getBatchFiles(GetBatchFilesRequest request, StreamObserver<GetBatchFilesResponse> responseObserver) {
+    GetBatchFilesResponse getBatchFilesResponse;
+    Map<String, String> contextMap = getContextMapForBatchFileRequest(request);
+    try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
+         MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
+      log.info(String.format("%s Grpc request received for getBatchFiles ops %s", GIT_SERVICE, request));
+      try {
+        getBatchFilesResponse = harnessToGitHelperService.getBatchFiles(request);
+        log.info(String.format("%s getBatchFiles ops response : %s", GIT_SERVICE, getBatchFilesResponse));
+      } catch (Exception ex) {
+        final String errorMessage = getErrorMessageForRuntimeExceptions(GitOperation.GET_BATCH_FILES);
+        log.error(errorMessage, ex);
+        getBatchFilesResponse = GetBatchFilesResponse.newBuilder()
+                                    .setStatusCode(HTTP_500)
+                                    .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
+                                    .build();
+      }
+    }
+    responseObserver.onNext(getBatchFilesResponse);
+    responseObserver.onCompleted();
+  }
+
+  @Override
   public void getDefaultBranch(RepoDetails request, StreamObserver<BranchDetails> responseObserver) {
     try (MdcContextSetter ignore1 = new MdcContextSetter(request.getContextMapMap())) {
       log.info("Grpc request received for getDefaultBranch");
@@ -340,5 +366,16 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
   protected String getErrorMessageForRuntimeExceptions(GitOperation gitOperation) {
     return String.format("Unexpected error occurred while performing %s git operation. Please contact Harness Support.",
         gitOperation.getValue());
+  }
+
+  private Map<String, String> getContextMapForBatchFileRequest(GetBatchFilesRequest getBatchFilesRequest) {
+    Map<String, String> globalContextMap = new HashMap<>(getBatchFilesRequest.getContextMapMap());
+    getBatchFilesRequest.getGetFileRequestMapMap().forEach((requestIdentifier, request) -> {
+      Map<String, String> contextMap = GitSyncLogContextHelper.setContextMap(
+          ScopeIdentifierMapper.getScopeFromScopeIdentifiers(request.getScopeIdentifiers()), request.getRepoName(),
+          request.getBranchName(), request.getFilePath(), GitOperation.GET_BATCH_FILES, request.getContextMapMap());
+      globalContextMap.put(requestIdentifier, contextMap.toString());
+    });
+    return globalContextMap;
   }
 }

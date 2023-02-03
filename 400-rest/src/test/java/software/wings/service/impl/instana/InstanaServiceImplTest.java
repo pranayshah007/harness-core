@@ -72,7 +72,7 @@ public class InstanaServiceImplTest extends WingsBaseTest {
                            .build();
 
     when(settingsService.get(any())).thenReturn(settingAttribute);
-    when(delegateProxyFactory.get(any(), any())).thenReturn(instanaDelegateService);
+    when(delegateProxyFactory.getV2(any(), any())).thenReturn(instanaDelegateService);
   }
   @Test
   @Owner(developers = KAMAL)

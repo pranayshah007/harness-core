@@ -259,6 +259,7 @@ message ListFilesResponse {
 message GetBatchFilesRequest {
   string accountIdentifier = 1;
   map<string, GetFileRequest> getFileRequestMap = 2;
+  map<string, string> contextMap = 3;
 }
 
 message GetBatchFilesResponse {

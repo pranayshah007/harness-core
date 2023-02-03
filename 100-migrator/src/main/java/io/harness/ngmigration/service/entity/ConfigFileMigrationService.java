@@ -29,8 +29,8 @@ import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.ConfigFile;
@@ -232,7 +232,7 @@ public class ConfigFileMigrationService extends NgMigrationService {
 
   private ConfigFileWrapper getConfigFileWrapper(
       ConfigFile configFile, Map<CgEntityId, NGYamlFile> migratedEntities, NGYamlFile file) {
-    ParameterField<List<String>> files = ParameterField.ofNull();
+    ParameterField<List<String>> files = ParameterField.createValueField(Collections.emptyList());
     List<String> secretFiles = new ArrayList<>();
     if (configFile.isEncrypted()) {
       SecretRefData secretRefData = MigratorUtility.getSecretRef(migratedEntities, configFile.getEncryptedFileId());

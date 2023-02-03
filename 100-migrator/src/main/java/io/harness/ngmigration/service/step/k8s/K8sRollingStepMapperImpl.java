@@ -19,7 +19,7 @@ import io.harness.pms.yaml.ParameterField;
 import software.wings.beans.GraphNode;
 import software.wings.sm.State;
 
-public class K8sRollingStepMapperImpl implements StepMapper {
+public class K8sRollingStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
     return WorkflowStepSupportStatus.SUPPORTED;

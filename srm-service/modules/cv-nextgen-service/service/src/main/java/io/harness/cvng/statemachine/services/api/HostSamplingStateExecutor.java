@@ -155,7 +155,8 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
             analysisState.setInputs(analysisInputBuilder.build());
           }
         }
-        updateAppliedDeploymentAnalysisTypeForAutoVerification(analysisState);
+        updateAppliedDeploymentAnalysisTypeForAutoVerification(
+            verificationJobInstance.getUuid(), analysisState.getInputs().getVerificationTaskId(), analysisState);
         break;
       default:
         log.warn("Unrecognized verification job type.");
@@ -163,9 +164,10 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
     return analysisState;
   }
 
-  private void updateAppliedDeploymentAnalysisTypeForAutoVerification(HostSamplingState analysisState) {
-    verificationJobInstanceService.updateAppliedDeploymentAnalysisTypeForVerificationTaskId(
-        analysisState.getVerificationJobInstanceId(), analysisState.getInputs().getVerificationTaskId(),
+  private void updateAppliedDeploymentAnalysisTypeForAutoVerification(
+      String verificationJobInstanceId, String verificationTaskId, HostSamplingState analysisState) {
+    verificationJobInstanceService.updateAppliedDeploymentAnalysisTypeForVerificationTaskId(verificationJobInstanceId,
+        verificationTaskId,
         getAppliedDeploymentAnalysisTypeFromLearningEngineTaskType(analysisState.getLearningEngineTaskType()));
   }
 

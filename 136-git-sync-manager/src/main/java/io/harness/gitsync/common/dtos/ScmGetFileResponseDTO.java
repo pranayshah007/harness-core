@@ -12,18 +12,28 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.common.beans.ScmCacheDetails;
 
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
 
 @OwnedBy(HarnessTeam.PL)
 @Getter
-@FieldDefaults(level = AccessLevel.PRIVATE)
-@Builder
+@FieldDefaults(level = AccessLevel.PROTECTED)
+@SuperBuilder
 public class ScmGetFileResponseDTO {
   String fileContent;
   String commitId;
   String blobId;
   String branchName;
   ScmCacheDetails cacheDetails;
+
+  public ScmGetFileResponseV2DTO toScmGetFileResponseV2DTO() {
+    return ScmGetFileResponseV2DTO.builder()
+        .fileContent(fileContent)
+        .commitId(commitId)
+        .cacheDetails(cacheDetails)
+        .branchName(branchName)
+        .blobId(blobId)
+        .build();
+  }
 }

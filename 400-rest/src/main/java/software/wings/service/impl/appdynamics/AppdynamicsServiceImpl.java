@@ -75,7 +75,7 @@ public class AppdynamicsServiceImpl implements AppdynamicsService {
     AppDynamicsConfig appDynamicsConfig = (AppDynamicsConfig) settingAttribute.getValue();
     List<EncryptedDataDetail> encryptionDetails =
         secretManager.getEncryptionDetails(appDynamicsConfig, appId, workflowExecutionId);
-    return delegateProxyFactory.get(AppdynamicsDelegateService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(AppdynamicsDelegateService.class, syncTaskContext)
         .getAllApplications(appDynamicsConfig, encryptionDetails);
   }
 
@@ -102,7 +102,7 @@ public class AppdynamicsServiceImpl implements AppdynamicsService {
     AppDynamicsConfig appDynamicsConfig = (AppDynamicsConfig) settingAttribute.getValue();
     List<EncryptedDataDetail> encryptionDetails =
         secretManager.getEncryptionDetails(appDynamicsConfig, appId, workflowExecutionId);
-    return delegateProxyFactory.get(AppdynamicsDelegateService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(AppdynamicsDelegateService.class, syncTaskContext)
         .getTiers(appDynamicsConfig, appdynamicsAppId, encryptionDetails, apiCallLog);
   }
 
@@ -123,7 +123,7 @@ public class AppdynamicsServiceImpl implements AppdynamicsService {
                                             .appId(GLOBAL_APP_ID)
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT * 3)
                                             .build();
-      return delegateProxyFactory.get(AppdynamicsDelegateService.class, syncTaskContext)
+      return delegateProxyFactory.getV2(AppdynamicsDelegateService.class, syncTaskContext)
           .getMetricsWithDataForNode((AppDynamicsConfig) settingAttribute.getValue(), encryptionDetails,
               setupTestNodeData, hostName,
               createApiCallLog(settingAttribute.getAccountId(), setupTestNodeData.getGuid()));

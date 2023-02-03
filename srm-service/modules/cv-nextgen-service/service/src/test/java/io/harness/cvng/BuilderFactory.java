@@ -1770,9 +1770,7 @@ public class BuilderFactory {
         .metricName("metricName")
         .metricType(MetricType.ERROR)
         .metricIdentifier("metricIdentifier")
-        .healthSource(io.harness.cvng.cdng.beans.v2.HealthSource.builder()
-                          .healthSourceIdentifier("healthSourceIdentifier")
-                          .build())
+        .healthSource(io.harness.cvng.cdng.beans.v2.HealthSource.builder().identifier("healthSourceIdentifier").build())
         .transactionGroup("transactionGroup")
         .thresholds(Collections.singletonList(getMetricThreshold()))
         .analysisResult(AnalysisResult.NO_ANALYSIS)
@@ -1879,6 +1877,20 @@ public class BuilderFactory {
         .entityType(EntityType.MAINTENANCE_WINDOW)
         .entityId("downtimeRecurring")
         .status(EntityUnavailabilityStatus.MAINTENANCE_WINDOW)
+        .startTime(startTime)
+        .endTime(endTime)
+        .projectIdentifier(context.getProjectIdentifier())
+        .orgIdentifier(context.getOrgIdentifier())
+        .build();
+  }
+
+  public EntityUnavailabilityStatusesDTO getSLOEntityUnavailabilityStatusesDTO() {
+    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    long endTime = startTime + Duration.ofMinutes(30).toSeconds();
+    return EntityUnavailabilityStatusesDTO.builder()
+        .entityType(EntityType.SLO)
+        .entityId("sliId")
+        .status(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)
         .startTime(startTime)
         .endTime(endTime)
         .projectIdentifier(context.getProjectIdentifier())

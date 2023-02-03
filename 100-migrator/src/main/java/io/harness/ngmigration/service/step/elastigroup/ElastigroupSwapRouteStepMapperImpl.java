@@ -22,7 +22,7 @@ import software.wings.sm.states.spotinst.SpotInstListenerUpdateState;
 
 import java.util.Map;
 
-public class ElastigroupSwapRouteStepMapperImpl implements StepMapper {
+public class ElastigroupSwapRouteStepMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE;
@@ -30,7 +30,7 @@ public class ElastigroupSwapRouteStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     SpotInstListenerUpdateState state = new SpotInstListenerUpdateState(stepYaml.getName());
     state.parseProperties(properties);
     return state;

@@ -184,9 +184,9 @@ public final class STOSettingsUtils {
           resolveStringParameter("image.access_id", stepType, identifier, imageData.getAccessId(), false));
       map.put(getSTOKey("container_access_token"),
           resolveStringParameter("image.access_token", stepType, identifier, imageData.getAccessToken(), false));
-      map.put(getSTOKey("container_image_name"),
+      map.put(getSTOKey("container_project"),
           resolveStringParameter("image.name", stepType, identifier, imageData.getName(), false));
-      map.put(getSTOKey("container_image_tag"),
+      map.put(getSTOKey("container_tag"),
           resolveStringParameter("image.tag", stepType, identifier, imageData.getTag(), false));
     }
 
@@ -242,10 +242,6 @@ public final class STOSettingsUtils {
         case REPOSITORY:
           map.put(getSTOKey("repository_project"), targetName);
           map.put(getSTOKey("repository_branch"), targetVariant);
-          break;
-        case CONTAINER:
-          map.put(getSTOKey("container_project"), targetName);
-          map.put(getSTOKey("container_tag"), targetVariant);
           break;
         case CONFIGURATION:
           map.put(getSTOKey("configuration_type"), targetName);

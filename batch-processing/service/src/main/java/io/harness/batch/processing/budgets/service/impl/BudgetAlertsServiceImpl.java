@@ -302,6 +302,10 @@ public class BudgetAlertsServiceImpl {
       log.error("Failed to send slack notification for accountId: {}, budgetId: {} error: {}",
           budgetCommon.getAccountId(), budgetCommon.getUuid(),
           (response.errorBody() != null) ? response.errorBody().string() : response.code());
+    } else {
+      String notificationId = response.body() != null ? response.body().getResource().getNotificationId() : null;
+      log.info("Slack notification request sent. accountId: {}, budgetId: {}, notificationId: {}",
+          budgetCommon.getAccountId(), budgetCommon.getUuid(), notificationId);
     }
   }
 

@@ -17,7 +17,7 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.ElastigroupServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
-import io.harness.cdng.service.steps.ServiceStepsHelper;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.executions.steps.ExecutionNodeType;

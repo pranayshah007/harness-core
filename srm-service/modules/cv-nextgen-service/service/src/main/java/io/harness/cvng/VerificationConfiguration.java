@@ -104,6 +104,7 @@ public class VerificationConfiguration extends Configuration {
   private String templateServiceSecret;
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
   @JsonProperty(value = "enableAudit") private boolean enableAudit;
+  @JsonProperty(value = "enableDebugAPI") private boolean enableDebugAPI;
   @JsonProperty @ConfigSecret private PortalConfig portal = new PortalConfig();
   @JsonProperty("hostname") String hostname = "localhost";
   @JsonProperty("basePathPrefix") String basePathPrefix = "";

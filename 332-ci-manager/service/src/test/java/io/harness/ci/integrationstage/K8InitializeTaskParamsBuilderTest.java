@@ -22,7 +22,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
+import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.K8PodDetails;
+import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.CodebaseUtils;
@@ -35,6 +37,7 @@ import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;
 import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
 
@@ -83,7 +86,15 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
 
     when(executionSweepingOutputResolver.resolveOptional(any(), any()))
         .thenReturn(OptionalSweepingOutput.builder().found(false).build());
-    when(executionSweepingOutputResolver.resolve(any(), any())).thenReturn(k8PodDetails);
+    when(executionSweepingOutputResolver.resolve(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.podDetails)))
+        .thenReturn(k8PodDetails);
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails)))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(StageDetails.builder().stageRuntimeID("test").build())
+                        .build());
     when(k8InitializeTaskUtils.generatePodName(STAGE_ID)).thenReturn(podName);
     when(k8InitializeTaskUtils.getBuildLabels(ambiance, k8PodDetails)).thenReturn(new HashMap<>());
     when(k8InitializeTaskUtils.getSharedPaths(any())).thenReturn(new ArrayList<>());

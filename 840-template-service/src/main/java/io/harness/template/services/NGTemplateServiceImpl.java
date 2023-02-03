@@ -53,6 +53,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.grpc.utils.StringValueUtils;
+import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceSummary;
@@ -87,6 +88,7 @@ import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.resources.NGTemplateResource;
 import io.harness.template.utils.TemplateUtils;
 import io.harness.template.yaml.TemplateRefHelper;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.PageUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -1123,6 +1125,37 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           "Requested template entity with identifier [%s] not found in account [%s] in organisation [%s] and project [%s], hence the update call is ignored",
           templateIdentifier, accountIdentifier, orgIdentifier, projectIdentifier));
     }
+  }
+
+  public List<EntitySetupUsageDTO> listTemplateReferences(int page, int size, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel, String searchTerm,
+      boolean isStableTemplate) {
+    List<EntitySetupUsageDTO> referredEntities;
+    String referredEntityFQN =
+        createFqnForTemplate(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel);
+    if (isStableTemplate) {
+      String referredEntityFQNForStableTemplate =
+          createFqnForTemplate(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, "");
+      referredEntities =
+          NGRestUtils
+              .getResponse(entitySetupUsageClient.listAllEntityUsageWith2Fqns(page, size, accountIdentifier,
+                  referredEntityFQN, referredEntityFQNForStableTemplate, EntityType.TEMPLATE, searchTerm))
+              .getContent();
+    } else {
+      referredEntities = NGRestUtils
+                             .getResponse(entitySetupUsageClient.listAllEntityUsage(
+                                 page, size, accountIdentifier, referredEntityFQN, EntityType.TEMPLATE, searchTerm))
+                             .getContent();
+    }
+    return referredEntities;
+  }
+
+  private String createFqnForTemplate(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel) {
+    return String.format("%s/%s",
+        FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+            accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier),
+        EmptyPredicate.isNotEmpty(versionLabel) ? versionLabel + "/" : STABLE_VERSION + "/");
   }
 
   private void makePreviousLastUpdatedTemplateFalse(String accountIdentifier, String orgIdentifier,

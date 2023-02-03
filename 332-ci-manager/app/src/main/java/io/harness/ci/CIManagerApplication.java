@@ -42,6 +42,7 @@ import io.harness.ci.registrars.ExecutionRegistrar;
 import io.harness.ci.serializer.CiExecutionRegistrars;
 import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.core.ci.services.CIActiveCommitterUsageImpl;
+import io.harness.core.ci.services.CICacheAllowanceImpl;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
@@ -293,7 +294,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     registerMigrations(injector);
     registerResources(environment, injector);
     registerWaitEnginePublishers(injector);
-    registerManagedBeans(environment, injector);
+    registerManagedBeans(environment, injector, configuration);
     registerHealthCheck(environment, injector);
     registerAuthFilters(configuration, environment, injector);
     registerCorrelationFilter(environment, injector);
@@ -438,11 +439,14 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
         .scheduleWithFixedDelay(injector.getInstance(ProgressUpdateService.class), 0L, 5L, TimeUnit.SECONDS);
   }
 
-  private void registerManagedBeans(Environment environment, Injector injector) {
+  private void registerManagedBeans(Environment environment, Injector injector, CIManagerConfiguration config) {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
-    environment.lifecycle().manage(injector.getInstance(CIExecutionPoller.class));
+    boolean local = config.getCiExecutionServiceConfig().isLocal();
+    if (!local) {
+      environment.lifecycle().manage(injector.getInstance(CIExecutionPoller.class));
+    }
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
   }
@@ -557,6 +561,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
                     .put(FeatureRestrictionName.MAX_TOTAL_BUILDS, TotalBuildsRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MAX_BUILDS_PER_MONTH, BuildsPerMonthRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MAX_BUILDS_PER_DAY, BuildsPerDayRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.CACHE_SIZE_ALLOWANCE, CICacheAllowanceImpl.class)
                     .build())
             .build();
     injector.getInstance(EnforcementSdkRegisterService.class)

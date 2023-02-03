@@ -302,7 +302,7 @@ public class EnvironmentMapperTest extends CategoryTest {
                                                  .build();
     assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Manifests cannot contain more than one helm repo override");
+        .hasMessageContaining("You cannot configure multiple Helm Repo Overrides");
   }
 
   @Test

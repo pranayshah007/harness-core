@@ -59,7 +59,8 @@ public class K8sConnectorValidationTaskClientTest extends CategoryTest {
              eq(inClusterDelegateK8sConfig()), eq(ACCOUNT_IDENTIFIER), eq(ORG_IDENTIFIER), eq(PROJECT_IDENTIFIER)))
         .thenReturn(null);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenThrow(new DelegateServiceDriverException(errorMessage));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenThrow(new DelegateServiceDriverException(errorMessage));
 
     assertThatThrownBy(()
                            -> k8sConnectorValidationTaskClient.validateConnectorForCePermissions(
@@ -79,7 +80,7 @@ public class K8sConnectorValidationTaskClientTest extends CategoryTest {
              eq(inClusterDelegateK8sConfig()), eq(ACCOUNT_IDENTIFIER), eq(ORG_IDENTIFIER), eq(PROJECT_IDENTIFIER)))
         .thenReturn(null);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(KubernetesConnectionTaskResponse.builder()
                         .connectorValidationResult(
                             ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
@@ -107,7 +108,7 @@ public class K8sConnectorValidationTaskClientTest extends CategoryTest {
              eq(inClusterDelegateK8sConfig()), eq(ACCOUNT_IDENTIFIER), eq(ORG_IDENTIFIER), eq(PROJECT_IDENTIFIER)))
         .thenReturn(null);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(KubernetesConnectionTaskResponse.builder()
                         .connectorValidationResult(ConnectorValidationResult.builder()
                                                        .status(ConnectivityStatus.FAILURE)

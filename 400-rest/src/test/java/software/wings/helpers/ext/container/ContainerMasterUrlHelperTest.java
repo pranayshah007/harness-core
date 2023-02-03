@@ -66,7 +66,7 @@ public class ContainerMasterUrlHelperTest extends WingsBaseTest {
   private static final String MASTER_URL = "http://master-url";
   @Before
   public void setUp() throws Exception {
-    doReturn(containerService).when(delegateProxyFactory).get(eq(ContainerService.class), any(SyncTaskContext.class));
+    doReturn(containerService).when(delegateProxyFactory).getV2(eq(ContainerService.class), any(SyncTaskContext.class));
     doReturn(MASTER_URL).when(containerService).fetchMasterUrl(any(MasterUrlFetchTaskParameter.class));
     Environment environment = new Environment();
     environment.setEnvironmentType(EnvironmentType.PROD);
@@ -87,7 +87,7 @@ public class ContainerMasterUrlHelperTest extends WingsBaseTest {
     assertThat(masterUrlHelper.fetchMasterUrl(containerParams, infraMapping)).isEqualTo(MASTER_URL);
 
     verify(delegateProxyFactory, times(1))
-        .get(ContainerService.class,
+        .getV2(ContainerService.class,
             SyncTaskContext.builder()
                 .accountId(ACCOUNT_ID)
                 .envId(ENV_ID)
@@ -125,7 +125,7 @@ public class ContainerMasterUrlHelperTest extends WingsBaseTest {
 
     assertThat(masterUrlHelper.fetchMasterUrl(containerParams, infraMapping)).isEqualTo(null);
 
-    verify(delegateProxyFactory, never()).get(any(Class.class), any());
+    verify(delegateProxyFactory, never()).getV2(any(Class.class), any());
     verify(containerService, never()).fetchMasterUrl(any());
   }
 
@@ -142,7 +142,7 @@ public class ContainerMasterUrlHelperTest extends WingsBaseTest {
 
     assertThat(masterUrlHelper.fetchMasterUrl(containerParams, infraMapping)).isEqualTo(MASTER_URL);
 
-    verify(delegateProxyFactory, never()).get(any(Class.class), any());
+    verify(delegateProxyFactory, never()).getV2(any(Class.class), any());
     verify(containerService, never()).fetchMasterUrl(any());
   }
 
@@ -161,7 +161,7 @@ public class ContainerMasterUrlHelperTest extends WingsBaseTest {
     assertThat(masterUrlHelper.fetchMasterUrl(containerParams, infraMapping)).isEqualTo(MASTER_URL);
 
     verify(delegateProxyFactory, times(1))
-        .get(ContainerService.class,
+        .getV2(ContainerService.class,
             SyncTaskContext.builder()
                 .accountId(ACCOUNT_ID)
                 .envId(ENV_ID)

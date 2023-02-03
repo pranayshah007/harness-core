@@ -12,7 +12,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.http.HttpHeaderConfig;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.http.HttpStepInfo;
 import io.harness.plancreator.steps.http.HttpStepInfo.HttpStepInfoBuilder;
@@ -33,9 +33,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-public class HttpStepMapperImpl implements StepMapper {
+@Slf4j
+public class HttpStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
     return WorkflowStepSupportStatus.SUPPORTED;
@@ -53,7 +55,7 @@ public class HttpStepMapperImpl implements StepMapper {
 
   @Override
   public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
-    return defaultTemplateSpecMapper(context.getMigratedEntities(), graphNode);
+    return defaultTemplateSpecMapper(context, graphNode);
   }
 
   @Override
@@ -63,7 +65,7 @@ public class HttpStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     HttpState state = new HttpState(stepYaml.getName());
     state.parseProperties(properties);
     return state;
@@ -74,6 +76,12 @@ public class HttpStepMapperImpl implements StepMapper {
     HttpState state = (HttpState) getState(graphNode);
     HttpStepNode httpStepNode = new HttpStepNode();
     baseSetup(graphNode, httpStepNode);
+
+    if (StringUtils.isNotBlank(graphNode.getTemplateUuid())) {
+      log.error(String.format("Trying to link a step which is not a step template - %s", graphNode.getTemplateUuid()));
+      return null;
+    }
+
     HttpStepInfoBuilder httpStepInfoBuilder =
         HttpStepInfo.infoBuilder()
             .url(ParameterField.createValueField(state.getUrl()))
@@ -154,6 +162,11 @@ public class HttpStepMapperImpl implements StepMapper {
           entry -> StringUtils.equals(headerMap2.get(entry.getKey()), entry.getValue()));
     }
 
+    return true;
+  }
+
+  @Override
+  public boolean loopingSupported() {
     return true;
   }
 }

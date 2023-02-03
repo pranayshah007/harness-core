@@ -21,6 +21,7 @@ import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
@@ -119,5 +120,18 @@ public class EnvironmentYamlV2 implements Visitable {
         .provisioner(this.provisioner)
         .serviceOverrideInputs(this.serviceOverrideInputs)
         .build();
+  }
+
+  @Override
+  public VisitableChildren getChildrenToWalk() {
+    VisitableChildren children = VisitableChildren.builder().build();
+    if (ParameterField.isNotNull(infrastructureDefinitions) && infrastructureDefinitions.getValue() != null) {
+      infrastructureDefinitions.getValue().forEach(id -> children.add("infrastructureDefinitions", id));
+    }
+
+    if (ParameterField.isNotNull(infrastructureDefinition) && infrastructureDefinition.getValue() != null) {
+      children.add("infrastructureDefinition", infrastructureDefinition);
+    }
+    return children;
   }
 }

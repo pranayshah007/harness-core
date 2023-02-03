@@ -312,7 +312,7 @@ public class KubernetesSwapServiceSelectors extends State {
             .selectionLogsTrackingEnabled(isSelectionLogsTrackingForTasksEnabled())
             .description("Kubernetes swap service selectors task execution")
             .build();
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
 
     appendDelegateTaskDetails(context, delegateTask);
     return ExecutionResponse.builder()

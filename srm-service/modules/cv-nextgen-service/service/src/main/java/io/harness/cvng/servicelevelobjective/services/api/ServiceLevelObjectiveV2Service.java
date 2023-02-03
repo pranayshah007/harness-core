@@ -21,10 +21,12 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
+import java.util.Set;
 
 public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<AbstractServiceLevelObjective> {
   TimeGraphResponse getOnboardingGraph(CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec);
@@ -54,6 +56,8 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   List<AbstractServiceLevelObjective> getAllSLOs(ProjectParams projectParams);
 
+  List<AbstractServiceLevelObjective> get(ProjectParams projectParams, List<String> identifiers);
+
   List<AbstractServiceLevelObjective> getByMonitoredServiceIdentifier(
       ProjectParams projectParams, String monitoredServiceIdentifier);
 
@@ -62,6 +66,11 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   PageResponse<AbstractServiceLevelObjective> getSLOForListView(
       ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams);
+
+  List<String> getReferencedSimpleSLOs(
+      ProjectParams projectParams, CompositeServiceLevelObjective compositeServiceLevelObjective);
+
+  Set<String> getReferencedMonitoredServices(List<AbstractServiceLevelObjective> serviceLevelObjectiveList);
 
   SimpleServiceLevelObjective getFromSLIIdentifier(ProjectParams projectParams, String serviceLevelIndicatorIdentifier);
 

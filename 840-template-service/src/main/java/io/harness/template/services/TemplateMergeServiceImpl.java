@@ -7,7 +7,6 @@
 
 package io.harness.template.services;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_REF;
@@ -15,6 +14,7 @@ import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VERSION_LAB
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.NGTemplateException;
@@ -32,6 +32,7 @@ import io.harness.template.helpers.MergeTemplateInputsInObject;
 import io.harness.template.helpers.TemplateInputsValidator;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
 import io.harness.template.mappers.NGTemplateDtoMapper;
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.template.utils.TemplateUtils;
 import io.harness.template.yaml.TemplateYamlUtils;
 
@@ -55,6 +56,8 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   @Inject private TemplateInputsValidator templateInputsValidator;
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
 
+  @Inject private NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
+
   @Override
   public String getTemplateInputs(String accountId, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, String versionLabel, boolean loadFromCache) {
@@ -73,7 +76,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
    */
   public TemplateMergeResponseDTO applyTemplatesToYaml(String accountId, String orgId, String projectId, String yaml,
       boolean getMergedYamlWithTemplateField, boolean loadFromCache) {
-    YamlNode yamlNode = validateAndGetYamlNode(yaml);
+    YamlNode yamlNode = TemplateUtils.validateAndGetYamlNode(yaml);
     TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId, null, null);
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
     return getTemplateMergeResponseDTO(
@@ -94,7 +97,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
    */
   public TemplateMergeResponseDTO applyTemplatesToYamlV2(String accountId, String orgId, String projectId, String yaml,
       boolean getMergedYamlWithTemplateField, boolean loadFromCache) {
-    YamlNode yamlNode = validateAndGetYamlNode(yaml);
+    YamlNode yamlNode = TemplateUtils.validateAndGetYamlNode(yaml);
     TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId, null, null);
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
     return getTemplateMergeResponseDTO(
@@ -128,6 +131,10 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
       String yaml, boolean getMergedYamlWithTemplateField, YamlNode yamlNode,
       Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache) {
     Map<String, Object> resMap;
+    if (ngTemplateFeatureFlagHelperService.isFeatureFlagEnabled(accountId, FeatureName.PIE_NG_BATCH_GET_TEMPLATES)) {
+      templateCacheMap.putAll(
+          templateMergeServiceHelper.getAllTemplatesFromYaml(accountId, orgId, projectId, yamlNode, loadFromCache));
+    }
     MergeTemplateInputsInObject mergeTemplateInputsInObject = null;
     if (!getMergedYamlWithTemplateField) {
       resMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
@@ -148,20 +155,6 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
                 : TemplateYamlUtils.writeYamlString(mergeTemplateInputsInObject.getResMapWithOpaResponse()))
         .cacheResponseMetadata(NGTemplateDtoMapper.getCacheResponse())
         .build();
-  }
-
-  private YamlNode validateAndGetYamlNode(String yaml) {
-    if (isEmpty(yaml)) {
-      throw new NGTemplateException("Yaml to applyTemplates cannot be empty.");
-    }
-    YamlNode yamlNode;
-    try {
-      yamlNode = YamlUtils.readTree(yaml).getNode();
-    } catch (IOException e) {
-      log.error("Could not convert yaml to JsonNode. Yaml:\n" + yaml, e);
-      throw new NGTemplateException("Could not convert yaml to JsonNode: " + e.getMessage());
-    }
-    return yamlNode;
   }
 
   private List<TemplateReferenceSummary> getTemplateReferenceSummaries(String accountId, String orgId, String projectId,

@@ -49,6 +49,7 @@ public class NGCommonEntityConstants {
   public static final String LAST_DEPLOYED_AT = "lastDeployedAt";
   public static final String INPUT_SET_IDENTIFIER_KEY = "inputSetIdentifier";
   public static final String ENVIRONMENT_IDENTIFIER_KEY = "environmentIdentifier";
+  public static final String ENVIRONMENT_TYPE_KEY = "environmentType";
   public static final String STATUS = "status";
   public static final String MONGODB_ID = "_id";
   public static final String CONNECTOR_IDENTIFIER_KEY = "connectorIdentifier";
@@ -171,4 +172,8 @@ public class NGCommonEntityConstants {
   public static final String HARNESS_IMAGE = "harnessImage";
   public static final String METHOD_NAME = "methodName";
   public static final String AGENT_KEY = "agentIdentifier";
+  public static final String IS_STABLE_TEMPLATE = "isStableTemplate";
+  public static final String CONFIG_FILE_FUNCTOR = "configFile";
+  public static final String FUNCTOR_STRING_METHOD_NAME = "getAsString";
+  public static final String FUNCTOR_BASE64_METHOD_NAME = "getAsBase64";
 }

@@ -74,6 +74,7 @@ java_library(
         "//970-api-services-beans/src/main/java/io/harness/ssh:module",
         "//970-api-services-beans/src/main/java/io/harness/terraform/beans:module",
         "//970-api-services-beans/src/main/java/io/harness/terraform/request:module",
+        "//970-api-services-beans/src/main/java/io/harness/terraformcloud:module",
         "//970-api-services-beans/src/main/java/io/harness/yaml:module",
         "//970-api-services-beans/src/main/java/software/wings/annotation:module",
         "//970-api-services-beans/src/main/java/software/wings/api:module",

@@ -14,6 +14,7 @@ import static io.harness.cdng.usage.utils.LicenseUsageUtils.computeLicenseConsum
 import static io.harness.cdng.usage.utils.LicenseUsageUtils.getEpochMilliNDaysAgo;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.DISPLAY_NAME;
+import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.SERVICE_INSTANCES_QUERY_PROPERTY;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.TIME_PERIOD_IN_DAYS;
 
 import static java.lang.String.format;
@@ -33,8 +34,11 @@ import io.harness.cdng.usage.pojos.ActiveService;
 import io.harness.cdng.usage.pojos.ActiveServiceBase;
 import io.harness.cdng.usage.pojos.ActiveServiceFetchData;
 import io.harness.cdng.usage.pojos.ActiveServiceResponse;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.filesystem.FileIo;
 import io.harness.licensing.usage.beans.ReferenceDTO;
 import io.harness.licensing.usage.beans.UsageDataDTO;
 import io.harness.licensing.usage.beans.cd.ActiveServiceDTO;
@@ -46,6 +50,7 @@ import io.harness.licensing.usage.params.CDUsageRequestParams;
 import io.harness.licensing.usage.params.DefaultPageableUsageRequestParams;
 import io.harness.licensing.usage.params.PageableUsageRequestParams;
 import io.harness.licensing.usage.params.filter.ActiveServicesFilterParams;
+import io.harness.licensing.usage.utils.PageableUtils;
 import io.harness.timescaledb.tables.pojos.ServiceInfraInfo;
 import io.harness.timescaledb.tables.pojos.Services;
 
@@ -54,6 +59,12 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -64,16 +75,24 @@ import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 @Slf4j
 public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageDTO, CDUsageRequestParams> {
+  private static final String ACTIVE_SERVICE_CSV_REPORTS_TMP_DIR = "active-service-csv-reports";
+  private static final int PAGE_SIZE_ACTIVE_SERVICE_DOWNLOAD_CSV = 500;
+  private static final String[] ACTIVE_SERVICES_CSV_REPORT_HEADER = new String[] {
+      "SERVICE", "ORGANIZATIONS", "PROJECTS", "SERVICE ID", "SERVICE INSTANCES", "LAST DEPLOYED", "LICENSES CONSUMED"};
+
   @Inject TimeScaleDAL timeScaleDAL;
   @Inject CDLicenseUsageDAL licenseUsageDAL;
 
@@ -124,15 +143,61 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
 
     ActiveServiceFetchData activeServiceFetchData =
         buildActiveServiceFetchData(scope, serviceIdentifier, pageRequest, currentTsInMs);
+    return listActiveServiceDTOS(activeServiceFetchData, pageRequest, currentTsInMs);
+  }
+
+  @Override
+  public File getLicenseUsageCSVReport(String accountIdentifier, ModuleType moduleType, long reportEndTSInMS) {
+    if (reportEndTSInMS <= 0) {
+      throw new InvalidArgumentsException(
+          format("Invalid timestamp %d while downloading CD active services report", reportEndTSInMS));
+    }
+    if (ModuleType.CD != moduleType) {
+      throw new InvalidArgumentsException(
+          format("Invalid Module type %s provided, expected CD", moduleType.toString()));
+    }
+    if (isEmpty(accountIdentifier)) {
+      throw new InvalidArgumentsException("Account Identifier cannot be null or empty");
+    }
+
+    Path accountCSVReportDir = createAccountCSVReportDirIfNotExist(accountIdentifier);
+    Path csvReportFilePath = getAccountCSVReportFilePath(accountCSVReportDir, accountIdentifier, reportEndTSInMS);
+
+    int page = 0;
+    PageImpl<ActiveServiceDTO> activeServiceDTOS;
+    do {
+      Pageable pageRequest = PageableUtils.getPageRequest(page, PAGE_SIZE_ACTIVE_SERVICE_DOWNLOAD_CSV, emptyList(),
+          Sort.by(Sort.Direction.DESC, SERVICE_INSTANCES_QUERY_PROPERTY));
+      ActiveServiceFetchData activeServiceFetchData =
+          buildActiveServiceFetchData(accountIdentifier, pageRequest, reportEndTSInMS);
+      activeServiceDTOS = listActiveServiceDTOS(activeServiceFetchData, pageRequest, reportEndTSInMS);
+
+      CSVFormat format = page == 0 ? CSVFormat.DEFAULT.withHeader(ACTIVE_SERVICES_CSV_REPORT_HEADER)
+                                   : CSVFormat.DEFAULT.withSkipHeaderRecord();
+      long printActiveServicesToCSVStartTime = System.currentTimeMillis();
+      printActiveServicesToCSV(csvReportFilePath, activeServiceDTOS.getContent(), format);
+      long printActiveServicesToCSVEndTime = System.currentTimeMillis() - printActiveServicesToCSVStartTime;
+      log.info("Active services printed successfully to file: {}, page: {}, time taken in ms: {}", csvReportFilePath,
+          page, printActiveServicesToCSVEndTime);
+    } while (++page < activeServiceDTOS.getTotalPages());
+
+    return csvReportFilePath.toFile();
+  }
+
+  private PageImpl<ActiveServiceDTO> listActiveServiceDTOS(
+      ActiveServiceFetchData activeServiceFetchData, Pageable pageRequest, long currentTsInMs) {
+    String accountIdentifier = activeServiceFetchData.getAccountIdentifier();
     log.info("Start fetching active services for accountIdentifier: {}, startTSInMs: {}, endTSInMs: {}",
         accountIdentifier, activeServiceFetchData.getStartTSInMs(), activeServiceFetchData.getEndTSInMs());
     long fetchActiveServiceQueryStartTime = System.currentTimeMillis();
     ActiveServiceResponse<List<ActiveServiceBase>> activeServiceBaseResponse =
         licenseUsageDAL.fetchActiveServices(activeServiceFetchData);
+    long totalCountOfItems = activeServiceBaseResponse.getTotalCountOfItems();
     long fetchActiveServiceQueryEndTime = System.currentTimeMillis() - fetchActiveServiceQueryStartTime;
     log.info(
-        "Active services fetched successfully for accountIdentifier: {}, number of fetched items: {}, time taken in ms: {}",
-        accountIdentifier, activeServiceBaseResponse.getActiveServiceItems().size(), fetchActiveServiceQueryEndTime);
+        "Active services fetched successfully for accountIdentifier: {}, number of fetched items: {}, time taken in ms: {}, total number of active services: {}",
+        accountIdentifier, activeServiceBaseResponse.getActiveServiceItems().size(), fetchActiveServiceQueryEndTime,
+        totalCountOfItems);
 
     log.info(
         "Start fetching active services names, org and project names for accountIdentifier: {}", accountIdentifier);
@@ -146,7 +211,45 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
 
     List<ActiveServiceDTO> activeServiceDTOs =
         ActiveServiceMapper.toActiveServiceDTO(accountIdentifier, activeServices, currentTsInMs);
-    return new PageImpl<>(activeServiceDTOs, pageRequest, activeServiceBaseResponse.getTotalCountOfItems());
+    return new PageImpl<>(activeServiceDTOs, pageRequest, totalCountOfItems);
+  }
+
+  private Path createAccountCSVReportDirIfNotExist(final String accountIdentifier) {
+    Path activeServicesAccountCSVDir =
+        Path.of(System.getProperty("java.io.tmpdir"), ACTIVE_SERVICE_CSV_REPORTS_TMP_DIR, accountIdentifier);
+    try {
+      FileIo.createDirectoryIfDoesNotExist(activeServicesAccountCSVDir);
+      return activeServicesAccountCSVDir;
+    } catch (IOException e) {
+      throw new InvalidRequestException(
+          format(
+              "Unable to create active services account CSV report directory, path: %s", activeServicesAccountCSVDir),
+          e);
+    }
+  }
+
+  private Path getAccountCSVReportFilePath(Path accountDir, final String accountIdentifier, long reportTSInMs) {
+    String fileName = format("%s-%s-%s.csv", accountIdentifier, reportTSInMs, UUIDGenerator.generateUuid());
+    return Paths.get(accountDir.toString(), fileName);
+  }
+
+  private void printActiveServicesToCSV(
+      Path csvReportFilePath, List<ActiveServiceDTO> activeServiceDTOs, CSVFormat format) {
+    try (
+        CSVPrinter printer = new CSVPrinter(
+            Files.newBufferedWriter(csvReportFilePath, StandardOpenOption.APPEND, StandardOpenOption.CREATE), format)) {
+      activeServiceDTOs.forEach(activeService -> {
+        try {
+          printer.printRecord(activeService.getName(), activeService.getOrgName(), activeService.getProjectName(),
+              activeService.getIdentifier(), activeService.getInstanceCount(), activeService.getLastDeployed(),
+              activeService.getLicensesConsumed());
+        } catch (IOException e) {
+          throw new InvalidRequestException(format("Unable to print CSV records to file: %s", csvReportFilePath), e);
+        }
+      });
+    } catch (IOException e) {
+      throw new InvalidRequestException(format("Unable to create CSV printer for file: %s", csvReportFilePath), e);
+    }
   }
 
   private Scope getScope(@NotNull String accountIdentifier, @Nullable ActiveServicesFilterParams filterParams) {

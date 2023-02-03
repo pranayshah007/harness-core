@@ -12,7 +12,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.encryption.Scope;
-import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
@@ -29,8 +28,8 @@ import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.ngmigration.service.MigratorMappingService;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secrets.SecretService;
@@ -107,7 +106,11 @@ public class SecretMigrationService extends NgMigrationService {
 
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
-    return discover(secretService.getSecretById(accountId, entityId).orElse(null));
+    try {
+      return discover(secretService.getSecretById(accountId, entityId).orElse(null));
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   @Override
@@ -218,11 +221,9 @@ public class SecretMigrationService extends NgMigrationService {
           NGRestUtils.getResponse(secretNGManagerClient.getSecret(ngEntityDetail.getIdentifier(), accountIdentifier,
               ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier()));
       return response == null ? null : CustomSecretRequestWrapper.builder().secret(response.getSecret()).build();
-    } catch (InvalidRequestException ex) {
-      log.error("Error when getting connector - ", ex);
-      return null;
     } catch (Exception ex) {
-      throw ex;
+      log.warn("Error when getting connector - ", ex);
+      return null;
     }
   }
 

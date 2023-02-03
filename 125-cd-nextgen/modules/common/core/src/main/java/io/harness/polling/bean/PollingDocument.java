@@ -17,6 +17,7 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
@@ -50,6 +51,11 @@ public class PollingDocument implements PersistentEntity, AccountAccess, UuidAwa
                  .field(PollingDocumentKeys.pollingType)
                  .field(PollingDocumentKeys.pollingInfo)
                  .field(PollingDocumentKeys.signatures)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_pollingInfo.connectorRef")
+                 .field(PollingDocumentKeys.accountId)
+                 .field(PollingDocumentKeys.pollingInfo + "." + YAMLFieldNameConstants.CONNECTOR_REF)
                  .build())
         .build();
   }

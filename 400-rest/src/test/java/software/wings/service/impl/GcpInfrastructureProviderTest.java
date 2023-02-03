@@ -44,7 +44,7 @@ public class GcpInfrastructureProviderTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doReturn(containerService)
         .when(delegateProxyFactory)
-        .get(eq(ContainerService.class), Matchers.any(SyncTaskContext.class));
+        .getV2(eq(ContainerService.class), Matchers.any(SyncTaskContext.class));
   }
 
   @Test

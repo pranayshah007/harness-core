@@ -30,6 +30,7 @@ import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.EnvironmentInstanceCountModel;
+import io.harness.models.InstanceDetailGroupedByPipelineExecutionList;
 import io.harness.models.InstanceDetailsByBuildId;
 import io.harness.models.constants.TimescaleConstants;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeAndServiceId;
@@ -53,6 +54,7 @@ import io.harness.ng.overview.dto.ActiveServiceDeploymentsInfo;
 import io.harness.ng.overview.dto.ActiveServiceInstanceSummary;
 import io.harness.ng.overview.dto.ActiveServiceInstanceSummaryV2;
 import io.harness.ng.overview.dto.ArtifactDeploymentDetail;
+import io.harness.ng.overview.dto.ArtifactInstanceDetails;
 import io.harness.ng.overview.dto.BuildIdAndInstanceCount;
 import io.harness.ng.overview.dto.ChangeRate;
 import io.harness.ng.overview.dto.DashboardWorkloadDeployment;
@@ -82,6 +84,7 @@ import io.harness.ng.overview.dto.HealthDeploymentInfoV2;
 import io.harness.ng.overview.dto.InstanceGroupedByArtifactList;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
+import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
 import io.harness.ng.overview.dto.LastWorkloadInfo;
 import io.harness.ng.overview.dto.ServiceDeployment;
@@ -2333,16 +2336,19 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList =
         instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
             accountIdentifier, orgIdentifier, projectIdentifier, environmentId, serviceId, null, isGitOps);
-
-    // sort based on last deployed time
-
-    Collections.sort(activeServiceInstanceInfoList, new Comparator<ActiveServiceInstanceInfoWithEnvType>() {
-      public int compare(ActiveServiceInstanceInfoWithEnvType o1, ActiveServiceInstanceInfoWithEnvType o2) {
-        return (int) (o2.getLastDeployedAt() - o1.getLastDeployedAt());
-      }
-    });
-
+    DashboardServiceHelper.sortActiveServiceInstanceInfoWithEnvTypeList(activeServiceInstanceInfoList);
     return DashboardServiceHelper.getInstanceGroupedByEnvironmentListHelper(activeServiceInstanceInfoList, isGitOps);
+  }
+
+  @Override
+  public InstanceGroupedOnArtifactList getInstanceGroupedOnArtifactList(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceId, String environmentId, String displayName) {
+    boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList =
+        instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
+            accountIdentifier, orgIdentifier, projectIdentifier, environmentId, serviceId, displayName, isGitOps);
+    DashboardServiceHelper.sortActiveServiceInstanceInfoWithEnvTypeList(activeServiceInstanceInfoList);
+    return DashboardServiceHelper.getInstanceGroupedByArtifactListHelper(activeServiceInstanceInfoList, isGitOps);
   }
 
   @Override
@@ -2737,88 +2743,46 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<String> envIds = new ArrayList<>();
     Map<String, Integer> envToCountMap = new HashMap<>();
 
-    constructEnvironmentCountMap(environmentInstanceCounts, envToCountMap, envIds);
+    DashboardServiceHelper.constructEnvironmentCountMap(environmentInstanceCounts, envToCountMap, envIds);
 
     List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(
         accountIdentifier, orgIdentifier, projectIdentifier, envIds);
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Map<String, EnvironmentType> envIdToEnvTypeMap = new HashMap<>();
 
-    constructEnvironmentNameAndTypeMap(environments, envIdToEnvNameMap, envIdToEnvTypeMap);
+    DashboardServiceHelper.constructEnvironmentNameAndTypeMap(environments, envIdToEnvNameMap, envIdToEnvTypeMap);
 
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetails = instanceDashboardService.getLastDeployedInstance(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, true, isGitOps);
     Map<String, ArtifactDeploymentDetail> artifactDeploymentDetailsMap =
-        constructEnvironmentToArtifactDeploymentMap(artifactDeploymentDetails);
+        DashboardServiceHelper.constructEnvironmentToArtifactDeploymentMap(artifactDeploymentDetails);
 
-    return getEnvironmentInstanceDetailsFromMap(
+    return DashboardServiceHelper.getEnvironmentInstanceDetailsFromMap(
         artifactDeploymentDetailsMap, envToCountMap, envIdToEnvNameMap, envIdToEnvTypeMap);
   }
 
-  public EnvironmentInstanceDetails getEnvironmentInstanceDetailsFromMap(
-      Map<String, ArtifactDeploymentDetail> artifactDeploymentDetailsMap, Map<String, Integer> envToCountMap,
-      Map<String, String> envIdToEnvNameMap, Map<String, EnvironmentType> envIdToEnvTypeMap) {
-    List<EnvironmentInstanceDetails.EnvironmentInstanceDetail> environmentInstanceDetails = new ArrayList<>();
+  @Override
+  public ArtifactInstanceDetails getArtifactInstanceDetails(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+    Boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
 
-    for (Map.Entry<String, Integer> entry : envToCountMap.entrySet()) {
-      final String envId = entry.getKey();
-      final EnvironmentType envType = envIdToEnvTypeMap.get(envId);
-      final String envName = envIdToEnvNameMap.get(envId);
-      final Integer count = entry.getValue();
-      final ArtifactDeploymentDetail artifactDeploymentDetail = artifactDeploymentDetailsMap.get(envId);
-      environmentInstanceDetails.add(EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
-                                         .environmentType(envType)
-                                         .envId(envId)
-                                         .envName(envName)
-                                         .artifactDeploymentDetail(artifactDeploymentDetail)
-                                         .count(count)
-                                         .build());
-    }
+    List<ArtifactDeploymentDetailModel> artifactDeploymentDetails = instanceDashboardService.getLastDeployedInstance(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, false, isGitOps);
 
-    return EnvironmentInstanceDetails.builder().environmentInstanceDetails(environmentInstanceDetails).build();
-  }
+    List<String> envIds = new ArrayList<>();
 
-  public Map<String, ArtifactDeploymentDetail> constructEnvironmentToArtifactDeploymentMap(
-      List<ArtifactDeploymentDetailModel> artifactDeploymentDetails) {
-    Map<String, ArtifactDeploymentDetail> map = new HashMap<>();
-    for (ArtifactDeploymentDetailModel artifactDeploymentDetail : artifactDeploymentDetails) {
-      final String envId = artifactDeploymentDetail.getEnvIdentifier();
-      if (envId == null) {
-        continue;
-      }
-      map.putIfAbsent(envId,
-          ArtifactDeploymentDetail.builder()
-              .artifact(artifactDeploymentDetail.getDisplayName())
-              .lastDeployedAt(artifactDeploymentDetail.getLastDeployedAt())
-              .build());
-    }
-    return map;
-  }
+    Map<String, Map<String, ArtifactDeploymentDetail>> artifactDeploymentDetailsMap =
+        DashboardServiceHelper.constructArtifactToLastDeploymentMap(artifactDeploymentDetails, envIds);
 
-  public void constructEnvironmentNameAndTypeMap(List<Environment> environments, Map<String, String> envIdToNameMap,
-      Map<String, EnvironmentType> envIdToEnvTypeMap) {
-    for (Environment environment : environments) {
-      final String envId = environment.getIdentifier();
-      if (envId == null) {
-        continue;
-      }
-      final String envName = environment.getName();
-      final EnvironmentType environmentType = environment.getType();
-      envIdToNameMap.put(envId, envName);
-      envIdToEnvTypeMap.put(envId, environmentType);
-    }
-  }
+    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIds);
+    Map<String, String> envIdToEnvNameMap = new HashMap<>();
+    Map<String, EnvironmentType> envIdToEnvTypeMap = new HashMap<>();
 
-  public void constructEnvironmentCountMap(List<EnvironmentInstanceCountModel> environmentInstanceCounts,
-      Map<String, Integer> envToCountMap, List<String> envIds) {
-    for (EnvironmentInstanceCountModel environmentInstanceCountModel : environmentInstanceCounts) {
-      final String envId = environmentInstanceCountModel.getEnvIdentifier();
-      if (envId == null) {
-        continue;
-      }
-      envToCountMap.put(envId, environmentInstanceCountModel.getCount());
-      envIds.add(envId);
-    }
+    DashboardServiceHelper.constructEnvironmentNameAndTypeMap(environments, envIdToEnvNameMap, envIdToEnvTypeMap);
+
+    return DashboardServiceHelper.getArtifactInstanceDetailsFromMap(
+        artifactDeploymentDetailsMap, envIdToEnvNameMap, envIdToEnvTypeMap);
   }
 
   private List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> groupedByArtifacts(
@@ -2889,6 +2853,33 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     return instanceDashboardService.getActiveInstanceDetails(accountIdentifier, orgIdentifier, projectIdentifier,
         serviceIdentifier, envIdentifier, infraIdentifier, clusterIdentifier, pipelineExecutionId, buildId,
         isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier));
+  }
+
+  @Override
+  public InstanceDetailGroupedByPipelineExecutionList getInstanceDetailGroupedByPipelineExecution(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
+      String envIdentifier, EnvironmentType environmentType, String infraIdentifier, String clusterIdentifier,
+      String displayName) {
+    boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
+    List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
+        instanceDetailGroupedByPipelineExecutionList =
+            instanceDashboardService.getActiveInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
+                projectIdentifier, serviceIdentifier, envIdentifier, environmentType, infraIdentifier,
+                clusterIdentifier, displayName, isGitOps);
+
+    // sort based on last deployed time
+
+    Collections.sort(instanceDetailGroupedByPipelineExecutionList,
+        new Comparator<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>() {
+          public int compare(InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution o1,
+              InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution o2) {
+            return (int) (o2.getLastDeployedAt() - o1.getLastDeployedAt());
+          }
+        });
+
+    return InstanceDetailGroupedByPipelineExecutionList.builder()
+        .instanceDetailGroupedByPipelineExecutionList(instanceDetailGroupedByPipelineExecutionList)
+        .build();
   }
 
   /*

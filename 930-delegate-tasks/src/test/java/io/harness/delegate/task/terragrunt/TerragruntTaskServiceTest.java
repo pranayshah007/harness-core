@@ -35,6 +35,7 @@ import io.harness.connector.helper.DecryptionHelper;
 import io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration;
 import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
+import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.task.terragrunt.files.DownloadResult;
 import io.harness.delegate.task.terragrunt.files.FetchFilesResult;
 import io.harness.delegate.task.terragrunt.files.TerragruntDownloadService;
@@ -78,6 +79,7 @@ public class TerragruntTaskServiceTest extends CategoryTest {
   @Mock private LogCallback logCallback;
   @Mock private LogCallback executionCommandLogCallback;
   @Mock private CliHelper cliHelper;
+  @Mock private TerraformBaseHelper terraformBaseHelper;
 
   @InjectMocks private TerragruntTaskService taskService = new TerragruntTaskService();
 
@@ -88,6 +90,7 @@ public class TerragruntTaskServiceTest extends CategoryTest {
     TerragruntRunConfiguration runConfiguration =
         TerragruntRunConfiguration.builder().runType(TerragruntTaskRunType.RUN_MODULE).path(TG_RUN_PATH).build();
     AbstractTerragruntTaskParameters parameters = TerragruntTestUtils.createPlanTaskParameters(runConfiguration);
+    parameters.setTgModuleSourceInheritSSH(true);
 
     when(terragruntDownloadService.download(eq(parameters.getConfigFilesStore()), any(), any(), any()))
         .thenReturn(DownloadResult.builder()
@@ -136,6 +139,7 @@ public class TerragruntTaskServiceTest extends CategoryTest {
         .isEqualTo("test-123-varFile-source-ref");
     assertThat(terragruntContext.getClient()).isNotNull();
     verify(delegateFileManager, times(1)).downloadByFileId(any(), any(), any());
+    verify(terraformBaseHelper, times(1)).configureCredentialsForModuleSource(any(), any(), any(), any());
     FileIo.deleteDirectoryAndItsContentIfExists(TG_WORKING_DIR);
   }
 

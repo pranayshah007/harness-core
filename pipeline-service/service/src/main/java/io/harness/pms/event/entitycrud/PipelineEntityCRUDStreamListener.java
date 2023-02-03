@@ -24,6 +24,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -55,6 +56,7 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
   private final InterruptService interruptService;
   private final GraphGenerationService graphGenerationService;
   private final NodeExecutionService nodeExecutionService;
+  private final NGTriggerEventsService ngTriggerEventsService;
 
   @Inject
   public PipelineEntityCRUDStreamListener(NGTriggerService ngTriggerService,
@@ -62,7 +64,7 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
       BarrierService barrierService, PreflightService preflightService,
       PmsSweepingOutputService pmsSweepingOutputService, PmsOutcomeService pmsOutcomeService,
       InterruptService interruptService, GraphGenerationService graphGenerationService,
-      NodeExecutionService nodeExecutionService) {
+      NodeExecutionService nodeExecutionService, NGTriggerEventsService ngTriggerEventsService) {
     this.ngTriggerService = ngTriggerService;
     this.pipelineMetadataService = pipelineMetadataService;
     this.pmsExecutionSummaryService = pmsExecutionSummaryService;
@@ -73,6 +75,7 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
     this.interruptService = interruptService;
     this.graphGenerationService = graphGenerationService;
     this.nodeExecutionService = nodeExecutionService;
+    this.ngTriggerEventsService = ngTriggerEventsService;
   }
 
   @Override
@@ -138,7 +141,8 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
     // Delete all triggers, ignore any error
     ngTriggerService.deleteAllForPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-
+    // Delete trigger event history
+    ngTriggerEventsService.deleteAllForPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     // Delete the pipeline metadata to delete run-sequence, etc.
     pipelineMetadataService.deletePipelineMetadata(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
 

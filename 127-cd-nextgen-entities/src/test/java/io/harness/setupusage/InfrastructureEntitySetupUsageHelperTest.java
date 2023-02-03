@@ -7,14 +7,17 @@
 
 package io.harness.setupusage;
 
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -24,8 +27,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.InfraDefinitionReferenceProtoDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.setupusage.SetupUsageHelper;
 import io.harness.rule.Owner;
@@ -114,6 +119,45 @@ public class InfrastructureEntitySetupUsageHelperTest extends CategoryTest {
     verify(setupUsageHelper, times(1)).deleteInfraSetupUsages(captor.capture(), eq(ACCOUNT));
     final EntityDetailProtoDTO entityDetailProtoDTO = captor.getValue();
     verifyInfrastructureReferredByEntity(infrastructure, entityDetailProtoDTO);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testGetReferredEntities_WithInvalidReference() {
+    doReturn(mockedVisitor).when(mockedFactory).obtainEntityReferenceExtractorVisitor(any(), any(), any(), any());
+    doReturn(Collections.EMPTY_SET).when(mockedVisitor).getEntityReferenceSet();
+
+    doThrow(
+        new InvalidRequestException("The org level connectors cannot be used at account level. Ref: [org.connectorId]"))
+        .when(mockedVisitor)
+        .walkElementTree(any());
+
+    // account level infra
+    final InfrastructureEntity infrastructure = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT)
+                                                    .envIdentifier("env1")
+                                                    .identifier("infra1")
+                                                    .name("infra1")
+                                                    .yaml("infrastructureDefinition:\n"
+                                                        + "  name: infra1\n"
+                                                        + "  identifier: infra1\n"
+                                                        + "  description: \"\"\n"
+                                                        + "  tags: {}\n"
+                                                        + "  environmentRef: env1\n"
+                                                        + "  deploymentType: Kubernetes\n"
+                                                        + "  type: KubernetesDirect\n"
+                                                        + "  spec:\n"
+                                                        + "    connectorRef: org.connectorId\n"
+                                                        + "    namespace: <+input>\n"
+                                                        + "    releaseName: <+input>\n"
+                                                        + "  allowSimultaneousDeployments: false")
+                                                    .type(InfrastructureType.KUBERNETES_DIRECT)
+                                                    .build();
+
+    assertThatThrownBy(() -> infraSetupUsageHelper.getAllReferredEntities(infrastructure))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("The org level connectors cannot be used at account level. Ref: [org.connectorId]");
   }
 
   @Test

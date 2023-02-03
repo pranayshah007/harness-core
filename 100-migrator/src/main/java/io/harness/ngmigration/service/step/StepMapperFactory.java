@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.ngmigration.service.step.arm.AzureCreateARMResourceStepMapperImpl;
+import io.harness.ngmigration.service.step.arm.AzureRollbackARMResourceStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupDeployStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupListenerRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupRollbackStepMapperImpl;
@@ -50,6 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class StepMapperFactory {
+  @Inject CustomFetchInstancesStepMapperImpl customFetchInstancesStepMapper;
   @Inject ShellScriptStepMapperImpl shellScriptStepMapper;
   @Inject K8sRollingStepMapperImpl k8sRollingStepMapper;
   @Inject HttpStepMapperImpl httpStepMapper;
@@ -75,7 +78,7 @@ public class StepMapperFactory {
   @Inject ElastigroupDeployStepMapperImpl elastigroupDeployStepMapper;
   @Inject ElastigroupListenerRollbackStepMapperImpl elastigroupListenerRollbackStepMapper;
   @Inject ElastigroupRollbackStepMapperImpl elastigroupRollbackStepMapper;
-
+  @Inject ServiceNowStepMapperImpl serviceNowStepMapper;
   @Inject ApmVerificationStepMapperImpl apmVerificationStepMapper;
   @Inject AppDynamicsStepMapperImpl appDynamicsStepMapper;
   @Inject DataDogStepMapperImpl dataDogStepMapper;
@@ -96,6 +99,8 @@ public class StepMapperFactory {
   @Inject InstanaStepMapperImpl instanaStepMapper;
   @Inject ResourceConstraintStepMapperImpl resourceConstraintStepMapper;
   @Inject ElastigroupSwapRouteStepMapperImpl elastigroupSwapRouteStepMapper;
+  @Inject AzureCreateARMResourceStepMapperImpl azureCreateARMResourceStepMapper;
+  @Inject AzureRollbackARMResourceStepMapperImpl azureRollbackARMResourceStepMapper;
   @Inject UnsupportedStepMapperImpl unsupportedStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
@@ -130,6 +135,8 @@ public class StepMapperFactory {
         return k8sBlueGreenDeployStepMapper;
       case "JIRA_CREATE_UPDATE":
         return jiraCreateUpdateStepMapper;
+      case "SERVICENOW_CREATE_UPDATE":
+        return serviceNowStepMapper;
       case "COMMAND":
         return commandStepMapper;
       case "TERRAFORM_PROVISION":
@@ -193,6 +200,12 @@ public class StepMapperFactory {
         return elastigroupListenerRollbackStepMapper;
       case "SPOTINST_ROLLBACK":
         return elastigroupRollbackStepMapper;
+      case "ARM_CREATE_RESOURCE":
+        return azureCreateARMResourceStepMapper;
+      case "ARM_ROLLBACK":
+        return azureRollbackARMResourceStepMapper;
+      case "CUSTOM_DEPLOYMENT_FETCH_INSTANCES":
+        return customFetchInstancesStepMapper;
       default:
         return unsupportedStepMapper;
     }

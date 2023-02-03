@@ -82,7 +82,7 @@ public class CustomBuildSourceServiceImpl implements CustomBuildSourceService {
 
     Class<? extends BuildService> buildServiceClass =
         serviceLocator.getBuildServiceClass(customArtifactStream.getArtifactStreamType());
-    return delegateProxyFactory.get(buildServiceClass, syncTaskContext).getBuilds(artifactStreamAttributes);
+    return delegateProxyFactory.getV2(buildServiceClass, syncTaskContext).getBuilds(artifactStreamAttributes);
   }
 
   @Override
@@ -116,6 +116,6 @@ public class CustomBuildSourceServiceImpl implements CustomBuildSourceService {
 
     Class<? extends BuildService> buildServiceClass =
         serviceLocator.getBuildServiceClass(customArtifactStream.getArtifactStreamType());
-    return delegateProxyFactory.get(buildServiceClass, syncTaskContext).validateArtifactSource(streamAttributes);
+    return delegateProxyFactory.getV2(buildServiceClass, syncTaskContext).validateArtifactSource(streamAttributes);
   }
 }

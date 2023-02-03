@@ -71,6 +71,15 @@ public class GcpHelperService {
     return getTaskExecutionResponse(description, responseData);
   }
 
+  public <T extends GcpTaskResponse> T executeSyncTaskV2(DelegateTaskRequest delegateTaskRequest, String description) {
+    try {
+      DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+      return getTaskExecutionResponse(description, responseData);
+    } catch (DelegateServiceDriverException ex) {
+      throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
+    }
+  }
+
   public GcpConnectorDTO getConnector(IdentifierRef connectorRef) {
     Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(connectorRef.getAccountIdentifier(),
         connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());

@@ -30,5 +30,6 @@ public class PrincipalDTOV2 {
   String scopeLevel;
   @ApiModelProperty(required = true) String identifier;
   String name;
+  String email;
   @ApiModelProperty(required = true) PrincipalType type;
 }

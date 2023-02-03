@@ -16,7 +16,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.cdng.moduleversioninfo.entity.MicroservicesVersionInfo;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo;
-import io.harness.cdng.moduleversioninfo.service.ModuleVersionInfoService;
+import io.harness.ng.moduleversioninfo.service.ModuleVersionInfoService;
 import io.harness.spec.server.ng.v1.ModuleVersionsApi;
 import io.harness.spec.server.ng.v1.model.MicroserviceVersionInfo;
 import io.harness.spec.server.ng.v1.model.ModuleVersionsResponse;
@@ -62,7 +62,7 @@ public class ModuleVersionResource implements ModuleVersionsApi {
         moduleVersionInfoService.getCurrentVersionOfAllModules(modulesversionPageRequest);
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks =
-        ApiUtils.addLinksHeader(responseBuilder, "/v1/module-versions", pageResponse.getResponse().size(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotal(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getResponse().stream().map(this::getModuleVersionsResponse).collect(Collectors.toList()))
         .build();

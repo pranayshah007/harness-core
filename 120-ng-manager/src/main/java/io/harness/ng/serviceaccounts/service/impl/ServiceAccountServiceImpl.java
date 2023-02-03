@@ -186,6 +186,25 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
     }));
   }
 
+  @Override
+  public void deleteBatch(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    List<ServiceAccount> serviceAccounts =
+        serviceAccountRepository.findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifier(
+            accountIdentifier, orgIdentifier, projectIdentifier);
+    for (ServiceAccount serviceAccount : serviceAccounts) {
+      if (serviceAccount == null) {
+        continue;
+      }
+      try {
+        deleteServiceAccount(accountIdentifier, orgIdentifier, projectIdentifier, serviceAccount.getIdentifier());
+      } catch (NotFoundException ex) {
+        log.error(String.format(
+            "Unable to delete Service account. No Service account found with orgIdentifier- [%s], projectIdentifier- [%s] and Identifier- [%s]",
+            orgIdentifier, projectIdentifier, serviceAccount.getIdentifier()));
+      }
+    }
+  }
+
   private void deleteApiKeysAndTokensForServiceAccount(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     long deletedApis = apiKeyService.deleteAllByParentIdentifier(

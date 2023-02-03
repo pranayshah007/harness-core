@@ -191,7 +191,7 @@ deployMode: KUBERNETES
 envPath: ""
 
 kubectlVersion: v1.13.2
-scmVersion: 1658d03e
+scmVersion: bf795ebf
 
 portal:
   url: https://localhost:8000
@@ -234,7 +234,7 @@ featureFlagConfig:
 
 cfMigrationConfig:
   enabled: false
-  adminUrl : "http://localhost:3000/api/1.0"
+  adminUrl: "http://localhost:3000/api/1.0"
   apiKey: ""
   account: "default"
   org: "default_org"

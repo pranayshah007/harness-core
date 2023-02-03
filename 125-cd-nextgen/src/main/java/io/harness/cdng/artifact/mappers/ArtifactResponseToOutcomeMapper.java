@@ -24,6 +24,8 @@ import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleCloudSourceArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
@@ -41,6 +43,8 @@ import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GithubPackagesArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GoogleCloudSourceArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GoogleCloudStorageArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
@@ -59,6 +63,8 @@ import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
@@ -183,6 +189,21 @@ public class ArtifactResponseToOutcomeMapper {
         AMIArtifactDelegateResponse amiArtifactDelegateResponse =
             (AMIArtifactDelegateResponse) artifactDelegateResponse;
         return getAMIArtifactOutcome(amiArtifactConfig, amiArtifactDelegateResponse, useDelegateResponse);
+      case GOOGLE_CLOUD_STORAGE_ARTIFACT:
+        GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
+            (GoogleCloudStorageArtifactConfig) artifactConfig;
+        GoogleCloudStorageArtifactDelegateResponse googleCloudStorageArtifactDelegateResponse =
+            (GoogleCloudStorageArtifactDelegateResponse) artifactDelegateResponse;
+        return getGoogleCloudStorageArtifactOutcome(
+            googleCloudStorageArtifactConfig, googleCloudStorageArtifactDelegateResponse, useDelegateResponse);
+
+      case GOOGLE_CLOUD_SOURCE_ARTIFACT:
+        GoogleCloudSourceArtifactConfig googleCloudSourceArtifactConfig =
+            (GoogleCloudSourceArtifactConfig) artifactConfig;
+        GoogleCloudSourceArtifactDelegateResponse googleCloudSourceArtifactDelegateResponse =
+            (GoogleCloudSourceArtifactDelegateResponse) artifactDelegateResponse;
+        return getGoogleCloudSourceArtifactOutcome(
+            googleCloudSourceArtifactConfig, googleCloudSourceArtifactDelegateResponse, true);
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -236,6 +257,21 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(githubPackagesArtifactConfig.isPrimaryArtifact())
         .versionRegex(githubPackagesArtifactConfig.getVersionRegex().getValue())
         .packageType(githubPackagesArtifactConfig.getPackageType().getValue())
+        .build();
+  }
+
+  public GoogleCloudSourceArtifactOutcome getGoogleCloudSourceArtifactOutcome(
+      GoogleCloudSourceArtifactConfig googleCloudSourceArtifactConfig,
+      GoogleCloudSourceArtifactDelegateResponse googleCloudSourceArtifactDelegateResponse,
+      boolean useDelegateResponse) {
+    return GoogleCloudSourceArtifactOutcome.builder()
+        .connectorRef(googleCloudSourceArtifactConfig.getConnectorRef().getValue())
+        .identifier(googleCloudSourceArtifactConfig.getIdentifier())
+        .type(ArtifactSourceType.GOOGLE_CLOUD_SOURCE_ARTIFACT.getDisplayName())
+        .project(googleCloudSourceArtifactConfig.getProject().getValue())
+        .repository(googleCloudSourceArtifactConfig.getRepository().getValue())
+        .sourceDirectory(googleCloudSourceArtifactConfig.getSourceDirectory().getValue())
+        .primaryArtifact(googleCloudSourceArtifactConfig.isPrimaryArtifact())
         .build();
   }
 
@@ -547,6 +583,21 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(jenkinsArtifactConfig.getIdentifier())
         .primaryArtifact(jenkinsArtifactConfig.isPrimaryArtifact())
         .metadata(useDelegateResponse ? jenkinsArtifactDelegateResponse.getBuildDetails().getMetadata() : Map.of())
+        .build();
+  }
+
+  public GoogleCloudStorageArtifactOutcome getGoogleCloudStorageArtifactOutcome(
+      GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig,
+      GoogleCloudStorageArtifactDelegateResponse googleCloudStorageArtifactDelegateResponse,
+      boolean useDelegateResponse) {
+    return GoogleCloudStorageArtifactOutcome.builder()
+        .connectorRef(googleCloudStorageArtifactConfig.getConnectorRef().getValue())
+        .identifier(googleCloudStorageArtifactConfig.getIdentifier())
+        .type(ArtifactSourceType.GOOGLE_CLOUD_STORAGE_ARTIFACT.getDisplayName())
+        .project(googleCloudStorageArtifactConfig.getProject().getValue())
+        .bucket(googleCloudStorageArtifactConfig.getBucket().getValue())
+        .artifactPath(useDelegateResponse ? googleCloudStorageArtifactDelegateResponse.getArtifactPath() : "")
+        .primaryArtifact(googleCloudStorageArtifactConfig.isPrimaryArtifact())
         .build();
   }
 

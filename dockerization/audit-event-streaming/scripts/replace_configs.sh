@@ -42,12 +42,16 @@ if [[ "" != "$MONGO_URI" ]]; then
   export MONGO_URI; yq -i '.auditDbConfig.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
+if [[ "" != "$EVENT_COLLECTION_BATCH_JOB_CRON" ]]; then
+  export EVENT_COLLECTION_BATCH_JOB_CRON; yq -i '.jobCommonConfig.eventCollectionBatchJob.cron=env(EVENT_COLLECTION_BATCH_JOB_CRON)' $CONFIG_FILE
+fi
+
 if [[ "" != "$BATCH_CURSOR_SIZE" ]]; then
   export BATCH_CURSOR_SIZE; yq -i '.jobCommonConfig.batchConfig.cursorBatchSize=env(BATCH_CURSOR_SIZE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$BATCH_LIMIT" ]]; then
-  export BATCH_LIMIT; yq -i '.jobCommonConfig.batchConfig.cursorBatchSize=env(BATCH_LIMIT)' $CONFIG_FILE
+  export BATCH_LIMIT; yq -i '.jobCommonConfig.batchConfig.limit=env(BATCH_LIMIT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$BATCH_MAX_RETRIES" ]]; then
@@ -58,6 +62,22 @@ if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
   export AUDIT_CLIENT_BASEURL; yq -i '.auditClientConfig.baseUrl=env(AUDIT_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$NG_MANAGER_CLIENT_BASEURL" ]]; then
+  export NG_MANAGER_CLIENT_BASEURL; yq -i '.ngManagerClientConfig.baseUrl=env(NG_MANAGER_CLIENT_BASEURL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$GRPC_MANAGER_TARGET" ]]; then
+  export GRPC_MANAGER_TARGET; yq -i '.delegateServiceGrpcConfig.target=env(GRPC_MANAGER_TARGET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$GRPC_MANAGER_AUTHORITY" ]]; then
+  export GRPC_MANAGER_AUTHORITY; yq -i '.delegateServiceGrpcConfig.authority=env(GRPC_MANAGER_AUTHORITY)' $CONFIG_FILE
+fi
+
 if [[ "" != "$PLATFORM_SECRET" ]]; then
   export PLATFORM_SECRET; yq -i '.serviceSecrets.platformServiceSecret=env(PLATFORM_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
+  export NEXT_GEN_MANAGER_SECRET; yq -i '.serviceSecrets.ngManagerServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
 fi

@@ -9,6 +9,8 @@ package io.harness.waiter;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.sdk.core.execution.async.AsyncProgressData;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 
 import java.time.Duration;
@@ -29,5 +31,11 @@ public class AsyncWaitEngineImpl implements AsyncWaitEngine {
       NotifyCallback notifyCallback, ProgressCallback progressCallback, List<String> correlationIds, int timeout) {
     waitNotifyEngine.waitForAllOn(
         publisherName, notifyCallback, progressCallback, correlationIds, Duration.ofMillis(timeout));
+  }
+
+  @Override
+  public void taskAcquired(String correlationId) {
+    // Sends progress update to update node status to Running
+    waitNotifyEngine.progressOn(correlationId, AsyncProgressData.builder().status(Status.RUNNING).build());
   }
 }
