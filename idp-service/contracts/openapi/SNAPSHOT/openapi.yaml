@@ -1,9 +1,10 @@
-openapi: 3.1.0
+openapi: 3.0.0
 x-stoplight:
-  id: fy5kirl12i0n4
+  id: cw2rng7ei2wad
 info:
-  title: idp
+  title: idp-3-0-3
   version: '1.0'
+  description: Harness Internal Developer Portal API Reference
 servers:
   - url: 'https://api.harness.io'
 paths:
@@ -13,19 +14,18 @@ paths:
       tags: []
       responses:
         '200':
-          $ref: '#/components/responses/SecretListResponse'
-      operationId: get-v1-secrets
-      security:
-        - x-api-key: []
+          $ref: '#/components/responses/TokenResponseList'
+      operationId: get-v1-token
       description: Get all tokens for a given account
       parameters:
+        - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Sort'
       requestBody:
         $ref: '#/components/requestBodies/TokenRequest'
-    parameters: []
+      security:
+        - x-api-key: []
     post:
       summary: ''
       operationId: post-v1-token
@@ -33,10 +33,10 @@ paths:
         '201':
           $ref: '#/components/responses/TokenResponse'
       description: Creates a token
-      security:
-        - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
       requestBody:
         $ref: '#/components/requestBodies/TokenRequest'
   '/v1/token/{token}':
@@ -64,13 +64,13 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/TokenResponse'
-      description: Updates the specified token
       security:
         - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
         $ref: '#/components/requestBodies/TokenRequest'
+      description: Updates the specified token
     delete:
       summary: ''
       operationId: delete-v1-token-token
@@ -87,17 +87,27 @@ components:
     Token:
       title: Token
       x-stoplight:
-        id: sxhetg14oguut
+        id: nfzxik84auzqi
       type: object
       properties:
         name:
           type: string
         secretIdentifier:
           type: string
+    TokenRequest:
+      title: TokenRequest
+      x-stoplight:
+        id: jmiar0p7kinb2
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
     TokenResponse:
       title: TokenResponse
       x-stoplight:
-        id: r547jvasvif34
+        id: uf6lxsrsk2duk
       type: object
       properties:
         token:
@@ -108,55 +118,6 @@ components:
         updated:
           type: integer
           format: int64
-    TokenRequest:
-      title: TokenRequest
-      x-stoplight:
-        id: uc4kxy41vjhf8
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-  securitySchemes:
-    x-api-key:
-      name: x-api-key
-      type: apiKey
-      in: header
-  responses:
-    TokenListResponse:
-      description: Example response
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/TokenResponse'
-      headers:
-        X-Total-Elements:
-          schema:
-            type: integer
-          description: Total number of elements returned in Paginated response.
-        X-Page-Number:
-          schema:
-            type: integer
-          description: Page number in Paginated response.
-        X-Page-Size:
-          schema:
-            type: integer
-          description: Maximum page size in Paginated response.
-    TokenResponse:
-      description: Example response
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/TokenResponse'
-  requestBodies:
-    TokenRequest:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/TokenRequest'
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -179,13 +140,6 @@ components:
       schema:
         type: integer
       description: "Pagination page number strategy: Specify the page number within the paginated collection related to the number of items in each page\t"
-    TokenPathParam:
-      name: token
-      in: path
-      required: true
-      schema:
-        type: string
-      description: Identifier field of the token the resource is scoped to
     Sort:
       name: sort
       in: query
@@ -193,3 +147,49 @@ components:
       schema:
         type: string
       description: Parameter on the basis of which sorting is done.
+    TokenPathParam:
+      name: token
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Identifier field of the token the resource is scoped to
+  requestBodies:
+    TokenRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TokenRequest'
+  responses:
+    TokenResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TokenResponse'
+    TokenResponseList:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/TokenResponse'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
+  securitySchemes:
+    x-api-key:
+      name: x-api-key
+      type: apiKey
+      in: header
