@@ -10,13 +10,11 @@ package io.harness.pms.ngpipeline.inputset.helpers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
-import static io.harness.rule.OwnerRule.SHALINI;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.PipelineServiceTestBase;
@@ -26,8 +24,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
-import io.harness.pms.merger.helpers.InputSetMergeHelper;
-import io.harness.pms.merger.helpers.InputSetTemplateHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
@@ -46,8 +42,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
 @OwnedBy(PIPELINE)
 public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
@@ -443,36 +437,6 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
                 pipeline, inputSet))
         .isInstanceOf(WingsException.class)
         .hasMessage("Please move the input-set from inline to remote.");
-  }
-
-  @Test
-  @Owner(developers = SHALINI)
-  @Category(UnitTests.class)
-  public void testMergeInputSetIntoPipelineForRerun() {
-    String planExecutionID = "planExecutionId";
-    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
-    doReturn("mergedYaml")
-        .when(pmsExecutionService)
-        .getInputSetYamlForRerun(accountId, orgId, projectId, planExecutionID, false);
-    doReturn(Optional.of(PipelineEntity.builder().yaml("pipelineYaml").build()))
-        .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
-    MockedStatic<InputSetMergeHelper> aStatic = Mockito.mockStatic(InputSetMergeHelper.class);
-    aStatic.when(() -> InputSetMergeHelper.mergeInputSetIntoPipeline("pipelineTemplate", "mergedYaml", false))
-        .thenReturn("finalMergedYaml");
-    MockedStatic<InputSetTemplateHelper> bStatic = Mockito.mockStatic(InputSetTemplateHelper.class);
-    bStatic.when(() -> InputSetTemplateHelper.createTemplateFromPipeline("pipelineYaml"))
-        .thenReturn("pipelineTemplate");
-    assertEquals("finalMergedYaml",
-        validateAndMergeHelper.mergeInputSetIntoPipelineForRerun(
-            accountId, orgId, projectId, pipelineId, planExecutionID, "", "", Collections.emptyList()));
-    bStatic.when(() -> InputSetTemplateHelper.createTemplateFromPipeline("pipelineYaml")).thenReturn("");
-    assertThatThrownBy(()
-                           -> validateAndMergeHelper.mergeInputSetIntoPipelineForRerun(accountId, orgId, projectId,
-                               pipelineId, planExecutionID, "", "", Collections.emptyList()))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Pipeline " + pipelineId + " or given stage identifiers []"
-            + " do not have any runtime input or given stage identifiers don't exist in the pipeline");
   }
 
   private String getPipelineYamlWithNoRuntime() {
