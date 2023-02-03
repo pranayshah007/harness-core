@@ -5,14 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.moduleversioninfo;
+package io.harness.ng.moduleversioninfo;
 
 import static io.harness.persistence.HQuery.excludeValidate;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo;
-import io.harness.cdng.moduleversioninfo.service.ModuleVersionInfoService;
+import io.harness.ng.moduleversioninfo.service.ModuleVersionInfoService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;

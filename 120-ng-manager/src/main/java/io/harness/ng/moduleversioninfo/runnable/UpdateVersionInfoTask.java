@@ -5,14 +5,17 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.moduleversioninfo.runnable;
+package io.harness.ng.moduleversioninfo.runnable;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+
+import static org.springframework.data.mongodb.core.query.Update.update;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo.ModuleVersionInfoKeys;
 import io.harness.exception.UnexpectedException;
+import io.harness.ng.NextGenConfiguration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
@@ -24,9 +27,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import javax.validation.executable.ValidateOnExecution;
@@ -35,6 +39,7 @@ import org.json.JSONObject;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(CDP)
 @ValidateOnExecution
@@ -42,11 +47,10 @@ import org.springframework.data.mongodb.core.query.Query;
 @Slf4j
 public class UpdateVersionInfoTask {
   @Inject private MongoTemplate mongoTemplate;
+  @Inject NextGenConfiguration nextGenConfiguration;
 
   List<ModuleVersionInfo> allModulesFromDB;
   private static final String pathToFile = "mvi/baseinfo.json";
-  // Edit here for adding new module
-  private static final String totalModules = "CCM_CD_CI_FF_Platform_SRM_SRT_Delegate";
 
   public UpdateVersionInfoTask() {
     allModulesFromDB = new ArrayList<>();
@@ -57,16 +61,6 @@ public class UpdateVersionInfoTask {
   }
 
   private void checkVersionChange() {
-    // read from DB
-    List<String> moduleNames = new ArrayList<>(List.of(totalModules.split("_")));
-    moduleNames.forEach(moduleName -> {
-      Criteria criteria = Criteria.where(ModuleVersionInfoKeys.moduleName).is(moduleName);
-      ModuleVersionInfo newModule = mongoTemplate.findOne(new Query(criteria), ModuleVersionInfo.class);
-      if (newModule != null) {
-        allModulesFromDB.add(newModule);
-      }
-    });
-
     if (allModulesFromDB.isEmpty()) {
       // read from base file
       readFromFile();
@@ -74,16 +68,24 @@ public class UpdateVersionInfoTask {
 
     // get current versions
     allModulesFromDB.forEach(module -> {
-      String currentVersion = "";
-      try {
-        currentVersion = getCurrentMicroserviceVersions(module.getModuleName(), module.getVersionUrl());
-      } catch (IOException e) {
-        throw new UnexpectedException("Update VersionInfo Task Sync job interrupted:" + e);
+      if (!module.getVersion().equals("Coming Soon")) {
+        String currentVersion = "";
+        try {
+          String baseUrl = nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
+          StringBuilder baseUrlBuilder = new StringBuilder();
+          baseUrlBuilder.append(baseUrl);
+          if (!baseUrl.endsWith("/")) {
+            baseUrlBuilder.append('/');
+          }
+          baseUrlBuilder.append("version");
+          currentVersion = getCurrentMicroserviceVersions(module.getModuleName(), baseUrlBuilder.toString());
+        } catch (IOException e) {
+          throw new UnexpectedException("Update VersionInfo Task Sync job interrupted:" + e);
+        }
+        module.setVersion(currentVersion);
       }
-      module.setVersion(currentVersion);
+      updateModuleVersionInfoCollection(module);
     });
-
-    mongoTemplate.insertAll(allModulesFromDB);
   }
 
   private void readFromFile() {
@@ -105,11 +107,12 @@ public class UpdateVersionInfoTask {
     if (module.getVersion().equals("Coming Soon")) {
       return;
     }
-    Date dateTime = new Date(System.currentTimeMillis());
-    String[] dateTimeFormat = dateTime.toString().split(",");
-    if (dateTimeFormat.length >= 2) {
-      module.setLastModifiedAt(dateTimeFormat[0] + " " + dateTimeFormat[1]);
-    }
+
+    // TODO: move this logic to UI in future.
+    LocalDateTime dateTime = LocalDateTime.now();
+    DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("MMM-dd-yyyy");
+    String formattedDate = dateTime.format(myFormatObj);
+    module.setLastModifiedAt(formattedDate);
   }
 
   private String getCurrentMicroserviceVersions(String serviceName, String serviceVersionUrl) throws IOException {
@@ -142,5 +145,21 @@ public class UpdateVersionInfoTask {
     JSONObject versionInfojsonObject = (JSONObject) resourcejsonObject.get("versionInfo");
 
     return versionInfojsonObject.getString("version");
+  }
+
+  private void updateModuleVersionInfoCollection(ModuleVersionInfo module) {
+    Criteria criteria = Criteria.where(ModuleVersionInfoKeys.moduleName).is(module.getModuleName());
+
+    Update update = update(ModuleVersionInfoKeys.version, module.getVersion());
+
+    update.set(ModuleVersionInfoKeys.uuid, module.getUuid())
+        .set(ModuleVersionInfoKeys.versionUrl, module.getVersionUrl())
+        .set(ModuleVersionInfoKeys.microservicesVersionInfo, module.getMicroservicesVersionInfo())
+        .set(ModuleVersionInfoKeys.moduleName, module.getModuleName())
+        .set(ModuleVersionInfoKeys.releaseNotesLink, module.getReleaseNotesLink())
+        .set(ModuleVersionInfoKeys.lastModifiedAt, module.getLastModifiedAt())
+        .set(ModuleVersionInfoKeys.displayName, module.getDisplayName());
+
+    mongoTemplate.upsert(new Query(criteria), update, ModuleVersionInfo.class);
   }
 }

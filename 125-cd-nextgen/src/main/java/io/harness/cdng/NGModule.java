@@ -64,8 +64,6 @@ import io.harness.cdng.k8s.resources.gcp.service.GcpResourceService;
 import io.harness.cdng.k8s.resources.gcp.service.impl.GcpResourceServiceImpl;
 import io.harness.cdng.manifest.resources.HelmChartService;
 import io.harness.cdng.manifest.resources.HelmChartServiceImpl;
-import io.harness.cdng.moduleversioninfo.ModuleVersionInfoServiceImpl;
-import io.harness.cdng.moduleversioninfo.service.ModuleVersionInfoService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsServiceImpl;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
@@ -172,6 +170,5 @@ public class NGModule extends AbstractModule {
     filterPropertiesMapper.addBinding(FilterType.ENVIRONMENTGROUP.toString())
         .to(EnvironmentGroupFilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ENVIRONMENT.toString()).to(EnvironmentFilterPropertiesMapper.class);
-    bind(ModuleVersionInfoService.class).to(ModuleVersionInfoServiceImpl.class);
   }
 }
