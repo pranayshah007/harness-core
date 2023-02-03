@@ -11,7 +11,9 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
+import com.google.inject.name.Names;
 import io.harness.delegate.beans.DelegateTaskPackage;
+import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.executor.config.Configuration;
 import io.harness.delegate.executor.config.ConfigurationProvider;
@@ -20,6 +22,7 @@ import io.harness.delegate.executor.bundle.BootstrapBundle;
 import io.harness.delegate.executor.taskloader.TaskPackageReader;
 import io.harness.delegate.task.common.DelegateRunnableTask;
 import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.kryo.DelegateKryoConverterFactory;
 import lombok.extern.slf4j.Slf4j;
 import software.wings.beans.TaskType;
 
@@ -38,13 +41,21 @@ public abstract class DelegateTaskExecutor {
         final Injector injector = Guice.createInjector(bundle);
         Configuration configuration = ConfigurationProvider.getExecutorConfiguration(args.length > 1 ? args[1] : null);
 
+        final KryoSerializer serializer = injector.getInstance(
+            Key.get(KryoSerializer.class, Names.named("referenceFalseKryoSerializer")));
         DelegateTaskPackage delegateTaskPackage =
-            TaskPackageReader.readTask(configuration.getTaskInputPath(), injector.getInstance(KryoSerializer.class));
-        DelegateRunnableTask runnableTask = injector.getInstance(TaskFactory.class).getDelegateRunnableTask(
-            injector.getInstance(Key.get(new TypeLiteral<Map<TaskType, Class<? extends DelegateRunnableTask>>>() {})),
-            delegateTaskPackage,
-            configuration);
+            TaskPackageReader.readTask(configuration.getTaskInputPath(), serializer);
+        DelegateRunnableTask runnableTask =
+            (new TaskFactory(
+                delegateTaskPackage.getAccountId(),
+                configuration,
+                serializer))
+                .getDelegateRunnableTask(
+                    injector.getInstance(Key.get(new TypeLiteral<Map<TaskType, Class<? extends DelegateRunnableTask>>>() {})),
+                    delegateTaskPackage,
+                    injector);
         runnableTask.run();
+        System.exit(0);
     }
 
     public void addShutdownHook(ShutdownHook shutdownHook) {

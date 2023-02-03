@@ -24,7 +24,8 @@ public class TaskPackageReader {
   public static DelegateTaskPackage readTask(String taskDataPath, KryoSerializer kryoSerializer) {
     final File taskDataFile = new File(taskDataPath);
     try {
-      return (DelegateTaskPackage) kryoSerializer.asObject(FileUtils.readFileToByteArray(taskDataFile));
+      var data = FileUtils.readFileToByteArray(taskDataFile);
+      return (DelegateTaskPackage) kryoSerializer.asObject(data);
     } catch (IOException e) {
       log.error("Deserialize task package error", e);
       // TODO: define exceptions

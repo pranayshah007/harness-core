@@ -11,6 +11,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.ToString;
 import lombok.Value;
+import org.apache.commons.codec.binary.Base64;
 
 @Value
 @Builder

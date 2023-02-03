@@ -15,20 +15,19 @@ import io.harness.delegate.executor.common.CommonModule;
 import io.harness.delegate.executor.serviceproviders.ServiceProvidersModule;
 import io.harness.delegate.task.common.DelegateRunnableTask;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.KryoSerializer;
 import software.wings.beans.TaskType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 public class BootstrapBundle extends AbstractModule {
     private List<Module> modules = new ArrayList<>();
     private Map<TaskType, Class<? extends DelegateRunnableTask>> taskTypeMap = new HashMap<>();
-    private KryoSerializer kryoSerializer;
+    private Set<Class<? extends KryoRegistrar>> registars;
+
 
     public void addModule(Module module) {
         modules.add(module);
@@ -43,12 +42,12 @@ public class BootstrapBundle extends AbstractModule {
     }
 
     public void registerKryos(Set<Class<? extends KryoRegistrar>> registars) {
-        kryoSerializer =  new KryoSerializer(
-            registars, false, false);
+        this.registars = registars;
     }
 
     public void configure() {
         installExecutorlibUtilities();
+        install(new ExecutorKryoModule(registars));
 
         modules.forEach(module -> install(module));
 
@@ -58,9 +57,6 @@ public class BootstrapBundle extends AbstractModule {
                 }, new TypeLiteral<Class<? extends DelegateRunnableTask>>() {
                 });
             taskTypeMap.forEach((taskType, aClass) -> mapBinder.addBinding(taskType).toInstance(aClass));
-        }
-        if (Objects.nonNull(kryoSerializer)) {
-            bind(KryoSerializer.class).toInstance(kryoSerializer);
         }
     }
 
