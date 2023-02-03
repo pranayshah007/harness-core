@@ -207,7 +207,8 @@ public class UserGroupServiceImplTest extends CategoryTest {
                               .projectIdentifier(PROJECT_IDENTIFIER)
                               .searchTerm(searchTerm)
                               .identifierFilter(new HashSet<>(Arrays.asList("UG1", "UG2")))
-                              .build(), true);
+                              .build(),
+        true);
     verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), any());
   }
 
@@ -498,7 +499,8 @@ public class UserGroupServiceImplTest extends CategoryTest {
                                                                  .orgIdentifier(ORG_IDENTIFIER)
                                                                  .projectIdentifier(PROJECT_IDENTIFIER)
                                                                  .searchTerm(searchTerm)
-                                                                 .build(), false);
+                                                                 .build(),
+        false);
 
     verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), eq(Pageable.unpaged()));
     assertThat(resultUserGroups.stream().map(UserGroup::getIdentifier).collect(Collectors.toList()))
@@ -540,7 +542,8 @@ public class UserGroupServiceImplTest extends CategoryTest {
                                                                  .orgIdentifier(ORG_IDENTIFIER)
                                                                  .projectIdentifier(PROJECT_IDENTIFIER)
                                                                  .searchTerm(searchTerm)
-                                                                 .build(), false);
+                                                                 .build(),
+        false);
 
     verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), eq(Pageable.unpaged()));
     assertThat(resultUserGroups).isEqualTo(permittedUserGroups);

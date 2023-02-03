@@ -352,8 +352,10 @@ public class UserGroupResource {
            NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @RequestBody(
           description = "User Group Filter", required = true) @Body @NotNull UserGroupFilterDTO userGroupFilterDTO) {
-    List<UserGroupDTO> userGroups =
-        userGroupService.list(userGroupFilterDTO, false).stream().map(UserGroupMapper::toDTO).collect(Collectors.toList());
+    List<UserGroupDTO> userGroups = userGroupService.list(userGroupFilterDTO, false)
+                                        .stream()
+                                        .map(UserGroupMapper::toDTO)
+                                        .collect(Collectors.toList());
     return ResponseDTO.newResponse(userGroups);
   }
 
