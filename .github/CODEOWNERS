@@ -18,6 +18,8 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /125-cd-nextgen/src/main/java/io/harness/cdng/manifest/steps/ tathagat.chaurasiya@harness.io  yogesh.chauhan@harness.io
 /125-cd-nextgen/src/main/java/io/harness/cdng/configfile/steps/ tathagat.chaurasiya@harness.io yogesh.chauhan@harness.io
 /127-cd-nextgen-entities/src/main/java/io/harness/ng/core tathagat.chaurasiya@harness.io yogesh.chauhan@harness.io
+/136-git-sync-manager/src/java mohit.garg@harness.io adithya.viswanathan@harness.io archit.singla@harness.io
+
 /840-template-service utkarsh.choubey@harness.io tathagat.chaurasiya@harness.io  inderpreet.chera@harness.io yogesh.chauhan@harness.io
 
 /260-delegate/src/main/java/io/harness/ @harness/del-team
@@ -90,6 +92,10 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /100-migrator/ deepak.puthraya@harness.io manjunatha.etagi@harness.io brett@harness.io arvind.choudhary@harness.io
 /120-ng-manager/modules/ng-settings/ nishant.saini@harness.io piyush.patel@harness.io manish.manchanda@harness.io
 /970-ng-commons/src/main/java/io/harness/ModuleType.java piyush.patel@harness.io manish.manchanda@harness.io shashank.singh@harness.io meenakshi.raikwar@harness.io
+/900-git-sync-sdk/src/java mohit.garg@harness.io adithya.viswanathan@harness.io archit.singla@harness.io
+/952-scm-java-client/src/java mohit.garg@harness.io adithya.viswanathan@harness.io archit.singla@harness.io
+/953-git-sync-commons/src/main mohit.garg@harness.io adithya.viswanathan@harness.io archit.singla@harness.io
+
 
 **/contracts/openapi/v1/ mankrit.singh@harness.io vaibhav.si@harness.io ashish.sanodia@harness.io deepak.bolangady@harness.io rashmi.nandasahoo@harness.io
 /scripts/api mankrit.singh@harness.io vaibhav.si@harness.io ashish.sanodia@harness.io
