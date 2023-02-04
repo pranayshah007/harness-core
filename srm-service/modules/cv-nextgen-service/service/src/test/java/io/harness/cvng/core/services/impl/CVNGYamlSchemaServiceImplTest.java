@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.KAMAL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.core.services.api.CVNGYamlSchemaService;
 import io.harness.encryption.Scope;
@@ -49,6 +50,7 @@ public class CVNGYamlSchemaServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testGetDeploymentStageYamlSchema() throws IOException {
     List<PartialSchemaDTO> partialSchemaDTO =
         cvngYamlSchemaService.getDeploymentStageYamlSchema(generateUuid(), generateUuid(), Scope.PROJECT);

@@ -36,6 +36,9 @@ import lombok.AllArgsConstructor;
 @OwnedBy(DX)
 public class GitSyncPollingIterator
     extends IteratorPumpModeHandler implements MongoPersistenceIterator.Handler<YamlGitConfig> {
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(1);
+  private static final Duration ACCEPTABLE_EXECUTION_TIME = ofMinutes(1);
+
   @Inject PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject AccountService accountService;
   @Inject private MorphiaPersistenceProvider<YamlGitConfig> persistenceProvider;
@@ -52,12 +55,28 @@ public class GitSyncPollingIterator
                     .clazz(YamlGitConfig.class)
                     .fieldName(YamlGitConfigKeys.gitPollingIterator)
                     .targetInterval(targetInterval)
-                    .acceptableNoAlertDelay(ofMinutes(1))
-                    .acceptableExecutionTime(ofMinutes(1))
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                    .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
                     .handler(this)
                     .schedulingType(REGULAR)
                     .persistenceProvider(persistenceProvider)
                     .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<YamlGitConfig, MorphiaFilterExpander<YamlGitConfig>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       YamlGitConfig.class,
+                       MongoPersistenceIterator.<YamlGitConfig, MorphiaFilterExpander<YamlGitConfig>>builder()
+                           .clazz(YamlGitConfig.class)
+                           .fieldName(YamlGitConfigKeys.gitPollingIterator)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
+                           .handler(this)
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override
