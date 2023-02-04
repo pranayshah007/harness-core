@@ -16,9 +16,12 @@ import io.harness.cdng.googlefunctions.GoogleFunctionsStepPassThroughData;
 import io.harness.cdng.googlefunctions.beans.GoogleFunctionPrepareRollbackOutcome;
 import io.harness.cdng.googlefunctions.beans.GoogleFunctionStepOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
 import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionTrafficShiftRequest;
 import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionCommandResponse;
@@ -41,6 +44,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -59,6 +63,7 @@ public class GoogleFunctionsTrafficShiftStep extends CdTaskExecutable<GoogleFunc
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private OutcomeService outcomeService;
   @Inject private GoogleFunctionsHelper googleFunctionsHelper;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -76,6 +81,17 @@ public class GoogleFunctionsTrafficShiftStep extends CdTaskExecutable<GoogleFunc
       StepResponseBuilder stepResponseBuilder = StepResponse.builder().unitProgressList(
           googleFunctionTrafficShiftResponse.getUnitProgressData().getUnitProgresses());
 
+      InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+          ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+      GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig =
+          (GcpGoogleFunctionInfraConfig) googleFunctionsHelper.getInfraConfig(infrastructureOutcome, ambiance);
+      List<ServerInstanceInfo> serverInstanceInfoList =
+          googleFunctionsHelper.getServerInstanceInfo(googleFunctionTrafficShiftResponse, gcpGoogleFunctionInfraConfig,
+              infrastructureOutcome.getInfrastructureKey());
+
+      StepResponse.StepOutcome stepOutcome =
+          instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+      stepResponseBuilder.stepOutcome(stepOutcome);
       stepResponse =
           googleFunctionsHelper.generateStepResponse(googleFunctionTrafficShiftResponse, stepResponseBuilder);
     } catch (Exception e) {
