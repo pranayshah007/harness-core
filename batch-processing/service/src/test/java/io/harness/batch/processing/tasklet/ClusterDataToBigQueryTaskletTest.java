@@ -96,6 +96,7 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
     InstanceBillingData instanceBillingData = createBillingData(NAME_0);
     when(config.getBatchQueryConfig()).thenReturn(BatchQueryConfig.builder().queryBatchSize(BATCH_SIZE).build());
     when(config.getDeployMode()).thenReturn(DeployMode.KUBERNETES);
+    when(config.isClickHouseEnabled()).thenReturn(false);
     when(billingDataService.read(ACCOUNT_ID, Instant.ofEpochMilli(START_TIME_MILLIS),
              Instant.ofEpochMilli(END_TIME_MILLIS), BATCH_SIZE, 0, BatchJobType.CLUSTER_DATA_TO_BIG_QUERY))
         .thenReturn(Collections.singletonList(instanceBillingData));
