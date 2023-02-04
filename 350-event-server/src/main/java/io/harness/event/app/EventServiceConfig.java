@@ -64,6 +64,12 @@ public class EventServiceConfig extends Configuration {
   @JsonProperty("events-mongo")
   @ConfigSecret
   private MongoConfig eventsMongo = MongoConfig.builder().build();
+
+  @Builder.Default
+  @JsonProperty("dms-mongo")
+  @ConfigSecret
+  private MongoConfig dmsMongo = MongoConfig.builder().build();
+
   @JsonProperty("secretsConfiguration") private SecretsConfiguration secretsConfiguration;
   @JsonProperty("eventDataBatchQueryConfig") private EventDataBatchQueryConfig eventDataBatchQueryConfig;
 
@@ -120,6 +126,9 @@ public class EventServiceConfig extends Configuration {
     }
     if (eventsMongo != null) {
       dbAliases.add(eventsMongo.getAliasDBName());
+    }
+    if (dmsMongo != null) {
+      dbAliases.add(dmsMongo.getAliasDBName());
     }
     return dbAliases;
   }

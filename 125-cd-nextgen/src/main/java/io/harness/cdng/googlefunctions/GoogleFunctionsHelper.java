@@ -34,6 +34,8 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.mapper.GoogleFunctionToServerInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
@@ -41,6 +43,7 @@ import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.gitcommon.GitRequestFileConfig;
 import io.harness.delegate.task.gitcommon.GitTaskNGRequest;
 import io.harness.delegate.task.gitcommon.GitTaskNGResponse;
+import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionInfraConfig;
@@ -86,6 +89,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -523,5 +527,17 @@ public class GoogleFunctionsHelper extends CDStepHelper {
 
   public boolean isHarnessStoreManifest(ManifestOutcome manifestOutcome) {
     return manifestOutcome.getStore() != null && ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind());
+  }
+
+  public List<ServerInstanceInfo> getServerInstanceInfo(GoogleFunctionCommandResponse googleFunctionCommandResponse,
+      GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig, String infrastructureKey) {
+    List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
+    GoogleFunction googleFunction = googleFunctionCommandResponse.getFunction();
+    if (googleFunction != null && googleFunction.getCloudRunService() != null) {
+      serverInstanceInfoList.add(GoogleFunctionToServerInstanceInfoMapper.toServerInstanceInfo(googleFunction,
+          googleFunction.getCloudRunService().getRevision(), gcpGoogleFunctionInfraConfig.getProject(),
+          gcpGoogleFunctionInfraConfig.getRegion(), infrastructureKey));
+    }
+    return serverInstanceInfoList;
   }
 }

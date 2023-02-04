@@ -124,6 +124,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("mongo") @ConfigSecret private MongoConfig mongoConnectionFactory = MongoConfig.builder().build();
   @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
   @JsonProperty("events-mongo") @ConfigSecret private MongoConfig eventsMongo = MongoConfig.builder().uri("").build();
+  @JsonProperty("dms-mongo") @ConfigSecret private MongoConfig dmsMongo = MongoConfig.builder().build();
   @JsonProperty("elasticsearch")
   private ElasticsearchConfig elasticsearchConfig = ElasticsearchConfig.builder().build();
   @JsonProperty(value = "searchEnabled") private boolean isSearchEnabled;
@@ -367,6 +368,9 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
     }
     if (eventsMongo != null) {
       dbAliases.add(eventsMongo.getAliasDBName());
+    }
+    if (dmsMongo != null) {
+      dbAliases.add(dmsMongo.getAliasDBName());
     }
     return dbAliases;
   }

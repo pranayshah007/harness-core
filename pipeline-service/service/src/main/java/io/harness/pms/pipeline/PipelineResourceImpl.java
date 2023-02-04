@@ -45,6 +45,7 @@ import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
+import io.harness.pms.pipeline.api.PipelinesApiUtils;
 import io.harness.pms.pipeline.mappers.NodeExecutionToExecutioNodeMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
@@ -53,9 +54,14 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineGetResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.pms.pipeline.validation.async.beans.Action;
+import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
 import io.harness.utils.PageUtils;
@@ -96,6 +102,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   private final VariableCreatorMergeService variableCreatorMergeService;
   private final PipelineCloneHelper pipelineCloneHelper;
   private final PipelineMetadataService pipelineMetadataService;
+  private final PipelineAsyncValidationService pipelineAsyncValidationService;
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   @Deprecated
@@ -520,5 +527,34 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     PipelineEntity pipelineEntity = pipelineCRUDResult.getPipelineEntity();
     return ResponseDTO.newResponse(
         MoveConfigResponse.builder().pipelineIdentifier(pipelineEntity.getIdentifier()).build());
+  }
+
+  @Override
+  public ResponseDTO<PipelineValidationUUIDResponseBody> startPipelineValidationEvent(
+      String accountId, String orgId, String projectId, String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo) {
+    Optional<PipelineEntity> pipelineEntity =
+        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+    if (pipelineEntity.isEmpty()) {
+      throw new EntityNotFoundException(
+          String.format("Pipeline with the given ID: %s does not exist or has been deleted.", pipelineId));
+    }
+    PipelineValidationEvent pipelineValidationEvent =
+        pipelineAsyncValidationService.startEvent(pipelineEntity.get(), gitEntityBasicInfo.getBranch(), Action.CRUD);
+    PipelineValidationUUIDResponseBody pipelineValidationUUIDResponseBody =
+        PipelinesApiUtils.buildPipelineValidationUUIDResponseBody(pipelineValidationEvent);
+    return ResponseDTO.newResponse(pipelineValidationUUIDResponseBody);
+  }
+
+  @Override
+  public ResponseDTO<PipelineValidationResponseBody> getPipelineValidateResult(
+      String accountId, String orgId, String projectId, String uuid) {
+    Optional<PipelineValidationEvent> eventByUuid = pipelineAsyncValidationService.getEventByUuid(uuid);
+    if (eventByUuid.isEmpty()) {
+      throw new EntityNotFoundException("No Pipeline Validation Event found for uuid " + uuid);
+    }
+    PipelineValidationEvent pipelineValidationEvent = eventByUuid.get();
+    PipelineValidationResponseBody pipelineValidationResponseBody =
+        PipelinesApiUtils.buildPipelineValidationResponseBody(pipelineValidationEvent);
+    return ResponseDTO.newResponse(pipelineValidationResponseBody);
   }
 }

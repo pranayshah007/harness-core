@@ -237,6 +237,147 @@ public class TasRollingRollbackStepTest extends CDNGTestBase {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
+  public void obtainTaskAfterRbacTestAfterStageExecutionDetailsNotFound() {
+    String tasRollingDeployFqn = "tasRollingDeployFqn";
+    TasRollingRollbackStepParameters tasRollingRollbackStepParameters =
+        TasRollingRollbackStepParameters.infoBuilder().tasRollingDeployFqn(tasRollingDeployFqn).build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .spec(tasRollingRollbackStepParameters)
+                                                      .timeout(ParameterField.createValueField("10m"))
+                                                      .build();
+
+    TasRollingDeployOutcome tasRollingDeployOutcome = TasRollingDeployOutcome.builder().build();
+    OptionalSweepingOutput tasRollingDeployOptional =
+        OptionalSweepingOutput.builder().found(true).output(tasRollingDeployOutcome).build();
+    doReturn(tasRollingDeployOptional)
+        .when(executionSweepingOutputService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(tasRollingRollbackStepParameters.getTasRollingDeployFqn() + "."
+                + OutcomeExpressionConstants.TAS_ROLLING_DEPLOY_OUTCOME));
+
+    InfrastructureOutcome infrastructureOutcome = TanzuApplicationServiceInfrastructureOutcome.builder().build();
+    doReturn(infrastructureOutcome)
+        .when(outcomeService)
+        .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+    BaseNGAccess baseNGAccess = BaseNGAccess.builder().build();
+    doReturn(baseNGAccess).when(tasEntityHelper).getBaseNGAccess("account", "org", "project");
+    TasConnectorDTO tasConnectorDTO = TasConnectorDTO.builder().build();
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().connectorConfig(tasConnectorDTO).build();
+    doReturn(connectorInfoDTO)
+        .when(tasEntityHelper)
+        .getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), "account", "org", "project");
+
+    List<EncryptedDataDetail> encryptedDataDetails = Collections.emptyList();
+    doReturn(encryptedDataDetails).when(tasEntityHelper).getEncryptionDataDetails(connectorInfoDTO, baseNGAccess);
+
+    String org = "org";
+    String space = "space";
+    String yaml = "yaml";
+    TasInfraConfig tasInfraConfig = TasInfraConfig.builder()
+                                        .organization(org)
+                                        .space(space)
+                                        .tasConnectorDTO(tasConnectorDTO)
+                                        .encryptionDataDetails(encryptedDataDetails)
+                                        .build();
+
+    TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder()
+                                                  .manifestYml(yaml)
+                                                  .autoscalarManifestYml(yaml)
+                                                  .variableYmls(Arrays.asList(yaml))
+                                                  .build();
+    TasStageExecutionDetails tasStageExecutionDetails =
+        TasStageExecutionDetails.builder().tasManifestsPackage(tasManifestsPackage).build();
+    doReturn(null)
+        .when(tasStepHelper)
+        .findLastSuccessfulStageExecutionDetails(ambiance, tasInfraConfig, tasRollingDeployOutcome.getAppName());
+
+    MockedStatic<TaskRequestsUtils> mockedStatic = Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
+
+    TasManifestOutcome tasManifestOutcome = TasManifestOutcome.builder().build();
+    tasRollingRollbackStep.obtainTaskAfterRbac(ambiance, stepElementParameters, StepInputPackage.builder().build());
+
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
+    mockedStatic.close();
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void obtainTaskAfterRbacTestWhenUnresolvedTasManifestPackageNotFound() {
+    String tasRollingDeployFqn = "tasRollingDeployFqn";
+    TasRollingRollbackStepParameters tasRollingRollbackStepParameters =
+        TasRollingRollbackStepParameters.infoBuilder().tasRollingDeployFqn(tasRollingDeployFqn).build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .spec(tasRollingRollbackStepParameters)
+                                                      .timeout(ParameterField.createValueField("10m"))
+                                                      .build();
+
+    TasRollingDeployOutcome tasRollingDeployOutcome = TasRollingDeployOutcome.builder().build();
+    OptionalSweepingOutput tasRollingDeployOptional =
+        OptionalSweepingOutput.builder().found(true).output(tasRollingDeployOutcome).build();
+    doReturn(tasRollingDeployOptional)
+        .when(executionSweepingOutputService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(tasRollingRollbackStepParameters.getTasRollingDeployFqn() + "."
+                + OutcomeExpressionConstants.TAS_ROLLING_DEPLOY_OUTCOME));
+
+    InfrastructureOutcome infrastructureOutcome = TanzuApplicationServiceInfrastructureOutcome.builder().build();
+    doReturn(infrastructureOutcome)
+        .when(outcomeService)
+        .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+    BaseNGAccess baseNGAccess = BaseNGAccess.builder().build();
+    doReturn(baseNGAccess).when(tasEntityHelper).getBaseNGAccess("account", "org", "project");
+    TasConnectorDTO tasConnectorDTO = TasConnectorDTO.builder().build();
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().connectorConfig(tasConnectorDTO).build();
+    doReturn(connectorInfoDTO)
+        .when(tasEntityHelper)
+        .getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), "account", "org", "project");
+
+    List<EncryptedDataDetail> encryptedDataDetails = Collections.emptyList();
+    doReturn(encryptedDataDetails).when(tasEntityHelper).getEncryptionDataDetails(connectorInfoDTO, baseNGAccess);
+
+    String org = "org";
+    String space = "space";
+    String yaml = "yaml";
+    TasInfraConfig tasInfraConfig = TasInfraConfig.builder()
+                                        .organization(org)
+                                        .space(space)
+                                        .tasConnectorDTO(tasConnectorDTO)
+                                        .encryptionDataDetails(encryptedDataDetails)
+                                        .build();
+
+    TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder()
+                                                  .manifestYml(yaml)
+                                                  .autoscalarManifestYml(yaml)
+                                                  .variableYmls(Arrays.asList(yaml))
+                                                  .build();
+    TasStageExecutionDetails tasStageExecutionDetails = TasStageExecutionDetails.builder().build();
+    doReturn(tasStageExecutionDetails)
+        .when(tasStepHelper)
+        .findLastSuccessfulStageExecutionDetails(ambiance, tasInfraConfig, tasRollingDeployOutcome.getAppName());
+
+    MockedStatic<TaskRequestsUtils> mockedStatic = Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
+
+    TasManifestOutcome tasManifestOutcome = TasManifestOutcome.builder().build();
+    tasRollingRollbackStep.obtainTaskAfterRbac(ambiance, stepElementParameters, StepInputPackage.builder().build());
+
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
+    mockedStatic.close();
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
   public void obtainTaskAfterRbacTestWhenRollingDeployOutcomeNotFound() {
     String tasRollingDeployFqn = "tasRollingDeployFqn";
     TasRollingRollbackStepParameters tasRollingRollbackStepParameters =
@@ -406,6 +547,63 @@ public class TasRollingRollbackStepTest extends CDNGTestBase {
     StepResponse stepResponse1 =
         tasRollingRollbackStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> responseData);
     assertThat(stepResponse1.getStatus()).isEqualTo(Status.FAILED);
+  }
+
+  @Test(expected = Exception.class)
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void handleTaskResultWithSecurityContextTestWhenExceptionThrown() throws Exception {
+    TasRollingRollbackStepParameters tasRollingRollbackStepParameters =
+        TasRollingRollbackStepParameters.infoBuilder().build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .spec(tasRollingRollbackStepParameters)
+                                                      .timeout(ParameterField.createValueField("10m"))
+                                                      .build();
+
+    String instanceIndex = "1";
+    String appId = "id";
+    String displayName = "displayName";
+    String org = "org";
+    String space = "space";
+    UnitProgressData unitProgressData = UnitProgressData.builder().build();
+    CfInternalInstanceElement cfInternalInstanceElement = CfInternalInstanceElement.builder()
+                                                              .instanceIndex(instanceIndex)
+                                                              .applicationId(appId)
+                                                              .displayName(displayName)
+                                                              .build();
+    TasServerInstanceInfo tasServerInstanceInfo = TasServerInstanceInfo.builder()
+                                                      .id(appId + ":" + instanceIndex)
+                                                      .instanceIndex(instanceIndex)
+                                                      .tasApplicationName(displayName)
+                                                      .tasApplicationGuid(appId)
+                                                      .organization(org)
+                                                      .space(space)
+                                                      .build();
+    CfRollingRollbackResponseNG responseData = CfRollingRollbackResponseNG.builder()
+                                                   .unitProgressData(unitProgressData)
+                                                   .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+                                                   .errorMessage("error")
+                                                   .newAppInstances(Arrays.asList(cfInternalInstanceElement))
+                                                   .build();
+
+    doReturn(unitProgressData).when(tasStepHelper).completeUnitProgressData(any(), any(), any());
+    ThrowingSupplier<CfRollingRollbackResponseNG> responseDataSupplier = () -> responseData;
+    CfRollingRollbackResponseNG cfRollingRollbackResponseNG = (CfRollingRollbackResponseNG) responseDataSupplier.get();
+    TanzuApplicationServiceInfrastructureOutcome tanzuApplicationServiceInfrastructureOutcome =
+        TanzuApplicationServiceInfrastructureOutcome.builder().organization(org).space(space).build();
+    doReturn(tanzuApplicationServiceInfrastructureOutcome)
+        .when(outcomeService)
+        .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+    StepResponse.StepOutcome stepOutcome = StepResponse.StepOutcome.builder().name("name").build();
+    doReturn(stepOutcome)
+        .when(instanceInfoService)
+        .saveServerInstancesIntoSweepingOutput(ambiance, Arrays.asList(tasServerInstanceInfo));
+
+    Exception exception = new Exception("adsf");
+
+    tasRollingRollbackStep.handleTaskResultWithSecurityContext(
+        ambiance, stepElementParameters, () -> { throw exception; });
   }
 
   @Test

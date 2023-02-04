@@ -203,7 +203,7 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
 
     AsgBlueGreenDeployOutcome asgBlueGreenDeployOutcome =
         AsgBlueGreenDeployOutcome.builder()
-            .prodAutoScalingGroupContainer(asgBlueGreenDeployResult.getProdAutoScalingGroupContainer())
+            .stageAutoScalingGroupContainer(asgBlueGreenDeployResult.getStageAutoScalingGroupContainer())
             .build();
 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_BLUE_GREEN_DEPLOY_OUTCOME,

@@ -19,6 +19,7 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_E
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static java.lang.System.currentTimeMillis;
+import static java.time.Duration.ofSeconds;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
@@ -86,7 +87,8 @@ public class FailDelegateTaskIterator
 
   private static final long VALIDATION_TIMEOUT = TimeUnit.MINUTES.toMillis(2);
 
-  private static final long DELEGATE_TASK_FAIL_TIMEOUT = 30;
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(45);
+  private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(30);
 
   @Override
   public void createAndStartIterator(
@@ -98,8 +100,8 @@ public class FailDelegateTaskIterator
                            .clazz(DelegateTask.class)
                            .fieldName(DelegateTaskKeys.delegateTaskFailIteration)
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(Duration.ofSeconds(45))
-                           .acceptableExecutionTime(Duration.ofSeconds(30))
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
                            .filterExpander(query
                                -> query.criteria(DelegateTaskKeys.createdAt)
                                       .lessThan(currentTimeMillis() - TimeUnit.MINUTES.toMillis(1)))
@@ -108,6 +110,25 @@ public class FailDelegateTaskIterator
                            .persistenceProvider(persistenceProvider)
                            .unsorted(true)
                            .redistribute(true));
+  }
+
+  @Override
+  public void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<DelegateTask, MorphiaFilterExpander<DelegateTask>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       FailDelegateTaskIterator.class,
+                       MongoPersistenceIterator.<DelegateTask, MorphiaFilterExpander<DelegateTask>>builder()
+                           .clazz(DelegateTask.class)
+                           .fieldName(DelegateTaskKeys.delegateTaskFailIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
+                           .filterExpander(query
+                               -> query.criteria(DelegateTaskKeys.createdAt)
+                                      .lessThan(currentTimeMillis() - TimeUnit.MINUTES.toMillis(1)))
+                           .handler(this)
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override

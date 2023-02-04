@@ -11,16 +11,25 @@ import static java.lang.String.format;
 
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.bigQuery.BigQueryService;
+import io.harness.ccm.clickHouse.ClickHouseService;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.utils.CCMLicenseUsageHelper;
 import io.harness.ccm.remote.beans.CostOverviewDTO;
 import io.harness.ccm.service.intf.CCMActiveSpendService;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;
+import io.harness.timescaledb.DBUtils;
 
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.QueryParameterValue;
 import com.google.cloud.bigquery.TableResult;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -28,6 +37,9 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
   @Inject BigQueryService bigQueryService;
   @Inject CENextGenConfiguration configuration;
   @Inject ViewsQueryHelper viewsQueryHelper;
+  @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
+  @Inject @Nullable @Named("clickHouseConfig") ClickHouseConfig clickHouseConfig;
+  @Inject ClickHouseService clickHouseService;
 
   private static final long ONE_DAY_MILLIS = 86400000;
   private static final String SPEND_VALUE = "$%s";
@@ -37,7 +49,10 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
   public static final String TABLE_NAME = "costAggregated";
   public static final String QUERY_TEMPLATE =
       "SELECT SUM(cost) AS cost, TIMESTAMP_TRUNC(day, month) AS month, cloudProvider FROM `%s` "
-      + "WHERE day >= TIMESTAMP_MILLIS(@start_time) AND day <= TIMESTAMP_MILLIS(@end_time) AND accountId = @account_id GROUP BY month, cloudProvider";
+      + "WHERE day >= TIMESTAMP_MILLIS(%s) AND day <= TIMESTAMP_MILLIS(%s) AND accountId = '%s' GROUP BY month, cloudProvider";
+  public static final String QUERY_TEMPLATE_CLICKHOUSE =
+      "SELECT SUM(cost) AS cost, date_trunc('month',day) AS month, cloudProvider FROM %s "
+      + "WHERE day >= toDateTime(%s) AND day <= toDateTime(%s) GROUP BY month, cloudProvider";
 
   @Override
   public CostOverviewDTO getActiveSpendStats(long startTime, long endTime, String accountIdentifier) {
@@ -73,6 +88,14 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
 
   @Override
   public Long getActiveSpend(long startTime, long endTime, String accountIdentifier) {
+    if (isClickHouseEnabled) {
+      return getActiveSpendClickHouse(startTime, endTime, accountIdentifier);
+    } else {
+      return getActiveSpendBigQuery(startTime, endTime, accountIdentifier);
+    }
+  }
+
+  private Long getActiveSpendBigQuery(long startTime, long endTime, String accountIdentifier) {
     String gcpProjectId = configuration.getGcpConfig().getGcpProjectId();
     String cloudProviderTableName = format("%s.%s.%s", gcpProjectId, DATA_SET_NAME, TABLE_NAME);
     String query = format(QUERY_TEMPLATE, cloudProviderTableName);
@@ -93,6 +116,23 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
       return null;
     }
     return CCMLicenseUsageHelper.computeDeduplicatedActiveSpend(result);
+  }
+
+  private Long getActiveSpendClickHouse(long startTime, long endTime, String accountIdentifier) {
+    String cloudProviderTableName = format("%s.%s", "ccm", TABLE_NAME);
+    String query = format(QUERY_TEMPLATE_CLICKHOUSE, cloudProviderTableName, startTime / 1000, endTime / 1000);
+    log.info("Query: {}", query);
+    ResultSet resultSet = null;
+    try (Connection connection = clickHouseService.getConnection(clickHouseConfig);
+         Statement statement = connection.createStatement()) {
+      resultSet = statement.executeQuery(query);
+      return CCMLicenseUsageHelper.computeDeduplicatedActiveSpend(resultSet);
+    } catch (SQLException e) {
+      log.error("Failed to getActiveSpend for Account:{}, {}", accountIdentifier, e);
+    } finally {
+      DBUtils.close(resultSet);
+    }
+    return 0L;
   }
 
   @Override
