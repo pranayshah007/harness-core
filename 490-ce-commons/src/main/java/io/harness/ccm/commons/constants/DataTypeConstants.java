@@ -11,4 +11,5 @@ public interface DataTypeConstants {
   String STRING = "STRING";
   String FLOAT64 = "FLOAT64";
   String DATETIME = "DATETIME";
+  String DATE = "DATE";
 }

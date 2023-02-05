@@ -936,6 +936,13 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
   @Provides
   @Singleton
+  @Named("isClickHouseEnabled")
+  public boolean isClickHouseEnabled() {
+    return false;
+  }
+
+  @Provides
+  @Singleton
   public CdnStorageUrlGenerator cdnStorageUrlGenerator() {
     String clusterType = System.getenv("CLUSTER_TYPE");
     boolean isFreeCluster = StringUtils.equals(clusterType, "freemium");

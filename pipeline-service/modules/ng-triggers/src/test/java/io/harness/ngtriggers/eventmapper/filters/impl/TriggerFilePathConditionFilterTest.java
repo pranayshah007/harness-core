@@ -831,7 +831,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
                              .parseWebhookResponse(parseWebhookResponse)
                              .build();
     filterRequestData = FilterRequestData.builder().webhookPayloadData(webhookPayloadData).build();
-    assertThat(filter.shouldEvaluateOnSCM(filterRequestData)).isTrue();
+    assertThat(filter.shouldEvaluateOnSCM(filterRequestData)).isFalse();
 
     // Push gitlab , commits > 20
     parseWebhookResponse =

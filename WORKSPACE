@@ -4841,7 +4841,7 @@ plain_artifacts = [
     "com.sumologic.api.client:sumo-java-client:2.5",
     "com.sun.activation:jakarta.activation:1.2.2",
     "com.sun.istack:istack-commons-runtime:3.0.8",
-    "com.sun.mail:javax.mail:1.5.6",
+    "com.sun.mail:javax.mail:1.6.0",
     "com.sun.xml.fastinfoset:FastInfoset:1.2.16",
     "com.sun.xml.messaging.saaj:saaj-impl:1.4.0-b03",
     "com.tdunning:t-digest:3.2",

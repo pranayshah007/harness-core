@@ -62,6 +62,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.NonNull;
@@ -81,7 +82,7 @@ public class ServiceAllInOnePlanCreatorUtils {
       ServiceYamlV2 serviceYamlV2, EnvironmentYamlV2 environmentYamlV2, String serviceNodeId, String nextNodeId,
       ServiceDefinitionType serviceType, ParameterField<String> envGroupRef) {
     if (isConcreteServiceRefUnavailable(serviceYamlV2) && isConcreteUseFromStageUnavailable(serviceYamlV2)) {
-      throw new InvalidRequestException("At least on of serviceRef and useFromStage fields is required.");
+      throw new InvalidRequestException("At least one of serviceRef and useFromStage fields is required.");
     }
 
     if (serviceYamlV2.getServiceRef() != null && isNotBlank(serviceYamlV2.getServiceRef().getValue())
@@ -406,12 +407,24 @@ public class ServiceAllInOnePlanCreatorUtils {
   }
 
   private boolean isConcreteServiceRefUnavailable(@NonNull ServiceYamlV2 serviceYamlV2) {
-    return serviceYamlV2.getServiceRef() == null || isBlank(serviceYamlV2.getServiceRef().getValue())
-        || NGExpressionUtils.matchesRawInputSetPatternV2(serviceYamlV2.getServiceRef().getExpressionValue());
+    if (serviceYamlV2.getServiceRef() != null) {
+      if (serviceYamlV2.getServiceRef().isExpression()) {
+        return NGExpressionUtils.matchesRawInputSetPatternV2(serviceYamlV2.getServiceRef().getExpressionValue());
+      } else {
+        return isBlank(serviceYamlV2.getServiceRef().getValue());
+      }
+    }
+    return true;
   }
 
   private boolean isConcreteUseFromStageUnavailable(@NonNull ServiceYamlV2 serviceYamlV2) {
-    return serviceYamlV2.getUseFromStage() == null || serviceYamlV2.getUseFromStage().getValue() == null
-        || NGExpressionUtils.matchesRawInputSetPatternV2(serviceYamlV2.getUseFromStage().getExpressionValue());
+    if (serviceYamlV2.getUseFromStage() != null) {
+      if (serviceYamlV2.getUseFromStage().isExpression()) {
+        return NGExpressionUtils.matchesRawInputSetPatternV2(serviceYamlV2.getUseFromStage().getExpressionValue());
+      } else {
+        return Objects.isNull(serviceYamlV2.getUseFromStage().getValue());
+      }
+    }
+    return true;
   }
 }

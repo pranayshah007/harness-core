@@ -29,7 +29,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = EcsInstanceInfoDTO.class, name = "ECS"),
       @JsonSubTypes.Type(value = TasInstanceInfoDTO.class, name = "TAS"),
       @JsonSubTypes.Type(value = SpotInstanceInfoDTO.class, name = "Elastigroup"),
-      @JsonSubTypes.Type(value = AsgInstanceInfoDTO.class, name = "Asg")
+      @JsonSubTypes.Type(value = AsgInstanceInfoDTO.class, name = "Asg"),
+      @JsonSubTypes.Type(value = GoogleFunctionInstanceInfoDTO.class, name = "GoogleCloudFunction")
 })
 public abstract class InstanceInfoDTO {
   // Create combination of fields that identifies any related instance uniquely
