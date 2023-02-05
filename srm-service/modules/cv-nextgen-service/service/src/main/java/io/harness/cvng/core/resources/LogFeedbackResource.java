@@ -1,7 +1,7 @@
 package io.harness.cvng.core.resources;
 
-import static io.harness.cvng.core.services.CVNextGenConstants.LOG_FEEDBACK_HISTORY;
-import static io.harness.cvng.core.services.CVNextGenConstants.LOG_FEEDBACK_ID;
+import static io.harness.cvng.core.services.CVNextGenConstants.LOG_FEEDBACK_HISTORY_RESOURCE_PATH;
+import static io.harness.cvng.core.services.CVNextGenConstants.LOG_FEEDBACK_ID_RESOURCE_PATH;
 import static io.harness.cvng.core.services.CVNextGenConstants.LOG_FEEDBACK_RESOURCE_PATH;
 
 import io.harness.cvng.core.beans.LogFeedback;
@@ -61,7 +61,7 @@ public class LogFeedbackResource {
   @Timed
   @ExceptionMetered
   @DelegateAuth
-  @Path(LOG_FEEDBACK_ID)
+  @Path(LOG_FEEDBACK_ID_RESOURCE_PATH)
   @ApiOperation(value = "saves log data collected for verification", nickname = "updateLogFeedback")
   public RestResponse<LogFeedback> updateLogFeedback(
       @PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,
@@ -73,14 +73,14 @@ public class LogFeedbackResource {
                                                     .accountIdentifier(accountIdentifier)
                                                     .orgIdentifier(orgIdentifier)
                                                     .projectIdentifier(projectIdentifier);
-    return new RestResponse<>(logFeedbackService.update(projectParamsBuilder.build(), "", logFeedbackId, logFeedback));
+    return new RestResponse<>(logFeedbackService.update(projectParamsBuilder.build(), logFeedbackId, logFeedback));
   }
 
   @GET
   @Timed
   @ExceptionMetered
   @DelegateAuth
-  @Path(LOG_FEEDBACK_ID)
+  @Path(LOG_FEEDBACK_ID_RESOURCE_PATH)
   @ApiOperation(value = "saves log data collected for verification", nickname = "getLogFeedback")
   public RestResponse<LogFeedback> getLogFeedback(
       @PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,
@@ -98,7 +98,7 @@ public class LogFeedbackResource {
   @Timed
   @ExceptionMetered
   @DelegateAuth
-  @Path(LOG_FEEDBACK_ID)
+  @Path(LOG_FEEDBACK_ID_RESOURCE_PATH)
   @ApiOperation(value = "saves log data collected for verification", nickname = "deleteLogFeedback")
   public RestResponse<Boolean> deleteLogFeedback(
       @PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,
@@ -116,7 +116,7 @@ public class LogFeedbackResource {
   @Timed
   @ExceptionMetered
   @DelegateAuth
-  @Path(LOG_FEEDBACK_HISTORY)
+  @Path(LOG_FEEDBACK_HISTORY_RESOURCE_PATH)
   @ApiOperation(value = "saves log data collected for verification", nickname = "getFeedbackHistory")
   public RestResponse<List<LogFeedbackHistory>> getFeedbackHistory(
       @PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,

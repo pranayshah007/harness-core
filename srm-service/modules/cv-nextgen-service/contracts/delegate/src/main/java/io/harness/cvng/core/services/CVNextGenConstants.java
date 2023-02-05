@@ -77,5 +77,7 @@ public interface CVNextGenConstants {
   String VERIFICATION_IDENTIFIER_KEY = "verifyStepExecutionId";
   String VERIFICATIONS_RESOURCE_PATH = PROJECTS_RESOURCE_PATH + "/verifications/{" + VERIFICATION_IDENTIFIER_KEY + "}";
   String LOG_FEEDBACK_RESOURCE_PATH = PROJECT_PATH + "/log-feedback";
-  String LOG_FEEDBACK_ID = "{logFeedbackId}";
+  String LOG_FEEDBACK_ID_RESOURCE_PATH = "{logFeedbackId}";
+  String LOG_FEEDBACK_ID = "logFeedbackId";
+  String LOG_FEEDBACK_HISTORY_RESOURCE_PATH = LOG_FEEDBACK_ID_RESOURCE_PATH + "/history";
 }

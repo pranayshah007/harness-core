@@ -9,11 +9,13 @@ import java.util.List;
 public interface LogFeedbackService {
   LogFeedback create(ProjectParams projectParams, String userId, LogFeedback logFeedback);
 
-  LogFeedback update(ProjectParams projectParams, String userId, String feedbackId, LogFeedback logFeedback);
+  LogFeedback update(ProjectParams projectParams, String feedbackId, LogFeedback logFeedback);
 
   boolean delete(ProjectParams projectParams, String userId, String feedbackId);
 
   LogFeedback get(ProjectParams projectParams, String feedbackId);
 
   List<LogFeedbackHistory> history(ProjectParams projectParams, String feedbackId);
+
+  List<LogFeedback> list(String envIdentifier, String serviceIdentifier);
 }
