@@ -12,9 +12,6 @@ import static io.harness.logging.LoggingInitializer.initializeLogging;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.authenticator.DelegateTokenAuthenticatorImpl;
-import io.harness.delegate.beans.DelegateAsyncTaskResponse;
-import io.harness.delegate.beans.DelegateSyncTaskResponse;
-import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.delegate.resources.DummyResource;
 import io.harness.delegate.utils.DelegateServiceSwaggerGenerator;
 import io.harness.dms.configuration.DelegateServiceConfiguration;
@@ -30,7 +27,6 @@ import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -48,9 +44,7 @@ import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.serializer.HObjectMapper;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
@@ -74,8 +68,8 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
             delegateServiceConfig.getCommonPoolConfig().getMaxPoolSize(),
             delegateServiceConfig.getCommonPoolConfig().getIdleTime(), TimeUnit.MILLISECONDS,
             new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
-    // Modules to be added as needed.
     List<Module> modules = new ArrayList<>();
+
     modules.add(new AbstractModule() {
       @Override
       protected void configure() {
@@ -91,29 +85,22 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
       @Singleton
       @Named("dbAliases")
       public List<String> getDbAliases() {
-        return Collections.EMPTY_LIST;
+        return delegateServiceConfig.getDbAliases();
       }
     };
     modules.add(providerModule);
-    modules.add(new ProviderModule() {
-      @Provides
-      @Singleton
-      @Named("morphiaClasses")
-      Map<Class, String> morphiaCustomCollectionNames() {
-        // this is needed because DelegateSyncTaskResponse and others need custom names.
-        // they are annotated with !!!custom_, if not added here exceptions will be thrown
-        // in service startup that no name has been provided
-        return ImmutableMap.<Class, String>builder()
-            .put(DelegateSyncTaskResponse.class, "delegateSyncTaskResponses")
-            .put(DelegateAsyncTaskResponse.class, "delegateAsyncTaskResponses")
-            .put(DelegateTaskProgressResponse.class, "delegateTaskProgressResponses")
-            .build();
-      }
-    });
     Injector injector = Guice.createInjector(modules);
-    environment.jersey().register(injector.getInstance(DelegateAuthService.class));
-    environment.jersey().register(injector.getInstance(DummyResource.class));
+
+    registerResources(environment, injector);
+    registerAuthenticationFilter(environment, injector);
+  }
+
+  private void registerAuthenticationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(DelegateServiceAuthFilter.class));
+  }
+
+  private void registerResources(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(DummyResource.class));
   }
 
   @Override

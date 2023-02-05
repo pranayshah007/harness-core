@@ -22,7 +22,6 @@ import io.harness.ccm.config.GcpBillingAccount;
 import io.harness.ccm.config.GcpOrganization;
 import io.harness.ccm.config.GcpServiceAccount;
 import io.harness.dashboard.DashboardSettings;
-import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpoint;
 import io.harness.event.MigratedAccountTracker;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
 import io.harness.event.reconciliation.looker.LookerEntityReconRecord;

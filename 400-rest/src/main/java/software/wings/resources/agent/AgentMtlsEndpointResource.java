@@ -12,11 +12,11 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 
+import io.harness.agent.beans.AgentMtlsEndpointDetails;
+import io.harness.agent.beans.AgentMtlsEndpointRequest;
 import io.harness.agent.utils.AgentMtlsApiConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpointDetails;
-import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpointRequest;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;

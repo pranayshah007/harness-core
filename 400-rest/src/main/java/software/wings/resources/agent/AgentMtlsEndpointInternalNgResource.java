@@ -13,11 +13,11 @@ import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.agent.beans.AgentMtlsEndpointDetails;
+import io.harness.agent.beans.AgentMtlsEndpointRequest;
 import io.harness.agent.utils.AgentMtlsApiConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpointDetails;
-import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpointRequest;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.rest.RestResponse;

@@ -30,6 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
+import io.harness.agent.utils.AgentMtlsVerifier;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -37,7 +38,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateNgToken;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateTokenStatus;
-import io.harness.delegate.utils.AgentMtlsVerifier;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidTokenException;

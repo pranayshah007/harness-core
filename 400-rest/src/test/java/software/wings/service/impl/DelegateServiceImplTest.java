@@ -51,6 +51,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.agent.beans.AgentMtlsEndpoint;
 import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -88,7 +89,6 @@ import io.harness.delegate.beans.K8sConfigDetails;
 import io.harness.delegate.beans.K8sPermissionType;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
-import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpoint;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.events.DelegateDeleteEvent;
 import io.harness.delegate.events.DelegateUnregisterEvent;

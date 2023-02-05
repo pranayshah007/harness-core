@@ -9,13 +9,13 @@ package io.harness.serializer.morphia;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
+import io.harness.agent.beans.AgentMtlsEndpoint;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateFeedback;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateRing;
 import io.harness.delegate.beans.VersionOverride;
-import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpoint;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;

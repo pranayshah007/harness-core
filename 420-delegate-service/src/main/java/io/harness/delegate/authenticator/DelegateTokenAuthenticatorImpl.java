@@ -21,6 +21,7 @@ import static io.harness.manage.GlobalContextManager.upsertGlobalContextRecord;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_CACHE_HIT;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_CACHE_MISS;
 
+import io.harness.agent.utils.AgentMtlsVerifier;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -28,7 +29,6 @@ import io.harness.context.GlobalContext;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenStatus;
-import io.harness.delegate.utils.AgentMtlsVerifier;
 import io.harness.delegate.utils.DelegateJWTCache;
 import io.harness.delegate.utils.DelegateJWTCacheValue;
 import io.harness.delegate.utils.DelegateTokenCacheHelper;
@@ -108,16 +108,12 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
 
     final String tokenHash = DigestUtils.md5Hex(tokenString);
 
-    log.info("checking delegate Auth - 2");
-
     // we should validate from cache first and change this debug log to warn, when watcher 754xx is deployed.
     if (isEmpty(delegateTokenName)) {
       log.debug("Delegate token name is empty.");
     } else if (validateDelegateJWTFromCache(accountId, tokenHash, shouldSetTokenNameInGlobalContext)) {
       return;
     }
-
-    log.info("checking delegate Auth - 3 - not found in jwt cache");
 
     EncryptedJWT encryptedJWT;
     try {
@@ -134,7 +130,6 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
     boolean decryptedWithRevokedTokenFromDB = false;
 
     if (!decryptedWithTokenFromCache) {
-      log.info("checking delegate Auth  - 4- Not able to decrypt with token from cache. Fetching it from db.");
       delegateTokenCacheHelper.removeDelegateToken(delegateId);
       decryptedWithActiveTokenFromDB = decryptJWTDelegateToken(
           accountId, DelegateTokenStatus.ACTIVE, encryptedJWT, delegateId, shouldSetTokenNameInGlobalContext);
@@ -144,8 +139,6 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
             accountId, DelegateTokenStatus.REVOKED, encryptedJWT, delegateId, shouldSetTokenNameInGlobalContext);
       }
     }
-
-    log.info("checking delegate Auth -5, decrypt using token from DB." + decryptedWithActiveTokenFromDB);
 
     if (decryptedWithRevokedTokenFromDB
         || (decryptedWithTokenFromCache && DelegateTokenStatus.REVOKED.equals(delegateTokenFromCache.getStatus()))) {

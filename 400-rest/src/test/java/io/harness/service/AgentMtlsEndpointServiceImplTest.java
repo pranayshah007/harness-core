@@ -15,13 +15,13 @@ import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 
+import io.harness.agent.beans.AgentMtlsEndpoint;
+import io.harness.agent.beans.AgentMtlsEndpoint.AgentMtlsEndpointKeys;
+import io.harness.agent.beans.AgentMtlsEndpointDetails;
+import io.harness.agent.beans.AgentMtlsEndpointRequest;
+import io.harness.agent.beans.AgentMtlsMode;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpoint;
-import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpoint.AgentMtlsEndpointKeys;
-import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpointDetails;
-import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpointRequest;
-import io.harness.delegate.utils.AgentMtlsMode;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;

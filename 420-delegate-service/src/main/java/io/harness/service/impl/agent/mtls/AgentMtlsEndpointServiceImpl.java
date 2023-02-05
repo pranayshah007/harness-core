@@ -11,12 +11,12 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.agent.beans.AgentMtlsEndpoint;
+import io.harness.agent.beans.AgentMtlsEndpoint.AgentMtlsEndpointKeys;
+import io.harness.agent.beans.AgentMtlsEndpointDetails;
+import io.harness.agent.beans.AgentMtlsEndpointRequest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpoint;
-import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpoint.AgentMtlsEndpointKeys;
-import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpointDetails;
-import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpointRequest;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;

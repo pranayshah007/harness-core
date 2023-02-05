@@ -5,11 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.beans.agent.mtls;
+package io.harness.agent.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.utils.AgentMtlsMode;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -17,7 +16,7 @@ import lombok.Builder;
 import lombok.Value;
 
 /**
- * An external facing input format for creating / updating agent mTLS endpoints.
+ * An external representation of an agent mTLS endpoint.
  * For a detailed documentation of the available fields, please see {@link AgentMtlsEndpoint}
  */
 @OwnedBy(HarnessTeam.DEL)
@@ -25,8 +24,10 @@ import lombok.Value;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Value
 @Builder
-public class AgentMtlsEndpointRequest {
-  private String domainPrefix;
+public class AgentMtlsEndpointDetails {
+  private String uuid;
+  private String accountId;
+  private String fqdn;
   private String caCertificates;
   private AgentMtlsMode mode;
 }

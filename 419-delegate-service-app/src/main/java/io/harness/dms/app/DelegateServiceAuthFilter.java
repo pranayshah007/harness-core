@@ -38,7 +38,6 @@ public class DelegateServiceAuthFilter implements ContainerRequestFilter {
 
   @Override
   public void filter(ContainerRequestContext containerRequestContext) throws IOException {
-    log.info("Coming to auth filter - 1");
     filterAndValidateDelegateRequest(containerRequestContext);
   }
 
@@ -94,8 +93,6 @@ public class DelegateServiceAuthFilter implements ContainerRequestFilter {
   protected void validateDelegateAuth2Request(ContainerRequestContext containerRequestContext) {
     MultivaluedMap<String, String> pathParameters = containerRequestContext.getUriInfo().getPathParameters();
     MultivaluedMap<String, String> queryParameters = containerRequestContext.getUriInfo().getQueryParameters();
-
-    log.info("Came to authentication filter");
 
     String accountId = getRequestParamFromContext("accountId", pathParameters, queryParameters);
     try (AccountLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
