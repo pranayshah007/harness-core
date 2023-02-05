@@ -53,6 +53,7 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.kryo.TestManagerKryoRegistrar;
 import io.harness.service.DelegateServiceModule;
+import io.harness.service.intfc.DelegateCache;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.testlib.module.MongoRuleMixin;
@@ -295,7 +296,13 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
     }
     CacheModule cacheModule = new CacheModule(cacheConfigBuilder.build());
     modules.add(0, cacheModule);
-    modules.add(new DelegateServiceCacheModule(RedisConfig.builder().redisUrl("dummyRedisUrl").build(), false));
+
+    modules.add(new DelegateServiceCacheModule(RedisConfig.builder().redisUrl("dummyRedisUrl").build(), false) {
+      @Override
+      protected void configure() {
+        bind(DelegateCache.class).toInstance(mock(DelegateCache.class));
+      }
+    });
 
     modules.add(new AbstractModule() {
       @Override
