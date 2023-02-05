@@ -8,14 +8,14 @@
 package io.harness.ngmigration.service.infra;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.yaml.infra.HostConnectionTypeKind.HOSTNAME;
+import static io.harness.yaml.infra.HostConnectionTypeKind.PRIVATE_IP;
+import static io.harness.yaml.infra.HostConnectionTypeKind.PUBLIC_IP;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
 import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
-import io.harness.cdng.infra.beans.host.AllHostsFilter;
-import io.harness.cdng.infra.beans.host.HostFilter;
-import io.harness.cdng.infra.beans.host.HostNamesFilter;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure.PdcInfrastructureBuilder;
@@ -23,7 +23,6 @@ import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure.SshWinRmAwsInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
-import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -32,9 +31,9 @@ import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.api.DeploymentType;
 import software.wings.beans.AwsInstanceFilter.Tag;
 import software.wings.beans.AzureTag;
-import software.wings.beans.infrastructure.Host;
 import software.wings.infra.AwsInstanceInfrastructure;
 import software.wings.infra.AzureInstanceInfrastructure;
 import software.wings.infra.InfraMappingInfrastructureProvider;
@@ -43,46 +42,50 @@ import software.wings.infra.PhysicalInfra;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
-public class SshInfraDefMapper implements InfraDefMapper {
-  private static final String PUBLIC_IP = "PublicIP";
-  private static final String HOSTNAME = "Hostname";
-
+public class SshWinRmInfraDefMapper implements InfraDefMapper {
   @Override
   public List<String> getConnectorIds(InfrastructureDefinition infrastructureDefinition) {
+    List<String> connectorIds = new ArrayList<>();
     switch (infrastructureDefinition.getCloudProviderType()) {
       case AWS:
         AwsInstanceInfrastructure awsInfra = (AwsInstanceInfrastructure) infrastructureDefinition.getInfrastructure();
+        connectorIds.add(awsInfra.getCloudProviderId());
         if (StringUtils.isNotBlank(awsInfra.getHostConnectionAttrs())) {
-          return Collections.singletonList(awsInfra.getHostConnectionAttrs());
+          connectorIds.add(awsInfra.getHostConnectionAttrs());
         }
-        return Collections.emptyList();
+        break;
       case AZURE:
         AzureInstanceInfrastructure azureInfra =
             (AzureInstanceInfrastructure) infrastructureDefinition.getInfrastructure();
+        connectorIds.add(azureInfra.getCloudProviderId());
         if (StringUtils.isNotBlank(azureInfra.getHostConnectionAttrs())) {
-          return Collections.singletonList(azureInfra.getHostConnectionAttrs());
+          connectorIds.add(azureInfra.getHostConnectionAttrs());
         }
-        return Collections.emptyList();
+        break;
       case PHYSICAL_DATA_CENTER:
         PhysicalInfra pdcInfra = (PhysicalInfra) infrastructureDefinition.getInfrastructure();
         if (StringUtils.isNotBlank(pdcInfra.getHostConnectionAttrs())) {
-          return Collections.singletonList(pdcInfra.getHostConnectionAttrs());
+          connectorIds.add(pdcInfra.getHostConnectionAttrs());
         }
-        return Collections.emptyList();
+        break;
       default:
         throw new InvalidRequestException("Unsupported Infra for K8s deployment");
     }
+    return connectorIds;
   }
 
   @Override
   public ServiceDefinitionType getServiceDefinition(InfrastructureDefinition infrastructureDefinition) {
-    return ServiceDefinitionType.SSH;
+    return infrastructureDefinition.getDeploymentType() == DeploymentType.SSH ? ServiceDefinitionType.SSH
+                                                                              : ServiceDefinitionType.WINRM;
   }
 
   @Override
@@ -109,7 +112,7 @@ public class SshInfraDefMapper implements InfraDefMapper {
       case AZURE:
         return getAzureSshInfra(migratedEntities, infrastructureDefinition.getInfrastructure());
       case PHYSICAL_DATA_CENTER:
-        return getPdcSshInfra(infrastructureDefinition.getInfrastructure());
+        return getPdcSshInfra(migratedEntities, infrastructureDefinition.getInfrastructure());
       default:
         throw new InvalidRequestException("Unsupported Infra for ssh deployment");
     }
@@ -129,7 +132,8 @@ public class SshInfraDefMapper implements InfraDefMapper {
         .subscriptionId(ParameterField.createValueField(azureInfra.getSubscriptionId()))
         .resourceGroup(ParameterField.createValueField(azureInfra.getResourceGroup()))
         .tags(ParameterField.createValueField(getAzureTagsMap(azureInfra.getTags())))
-        .hostConnectionType(ParameterField.createValueField(azureInfra.isUsePublicDns() ? PUBLIC_IP : HOSTNAME))
+        .hostConnectionType(ParameterField.createValueField(
+            azureInfra.isUsePublicDns() ? PUBLIC_IP : (azureInfra.isUsePrivateIp() ? PRIVATE_IP : HOSTNAME)))
         .build();
   }
 
@@ -154,28 +158,35 @@ public class SshInfraDefMapper implements InfraDefMapper {
                 .toSecretRefStringValue()))
         .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
         .region(ParameterField.createValueField(awsInfra.getRegion()))
-        .hostConnectionType(ParameterField.createValueField(awsInfra.isUsePublicDns() ? PUBLIC_IP : HOSTNAME))
+        .hostConnectionType(ParameterField.createValueField(awsInfra.isUsePublicDns() ? PUBLIC_IP : PRIVATE_IP))
         .build();
   }
 
-  private Infrastructure getPdcSshInfra(InfraMappingInfrastructureProvider infrastructure) {
+  private Infrastructure getPdcSshInfra(
+      Map<CgEntityId, NGYamlFile> migratedEntities, InfraMappingInfrastructureProvider infrastructure) {
     PhysicalInfra pdcInfra = (PhysicalInfra) infrastructure;
     PdcInfrastructureBuilder builder = PdcInfrastructure.builder();
-    if (isNotEmpty(pdcInfra.getHosts())) {
-      builder.hosts(ParameterField.createValueField(getPdcSShHosts(pdcInfra.getHosts())));
-    } else {
-      if (isNotEmpty(pdcInfra.getHostNames())) {
-        builder.hostFilter(
-            HostFilter.builder()
-                .spec(HostNamesFilter.builder().value(ParameterField.createValueField(pdcInfra.getHostNames())).build())
-                .type(HostFilterType.HOST_NAMES)
-                .build());
-      } else {
-        builder.hostFilter(
-            HostFilter.builder().spec(AllHostsFilter.builder().build()).type(HostFilterType.ALL).build());
-      }
-      // TODO: “Host Object Array Path”, “Host Attributes” are not yet supported in NG. It is in progress.
+    builder.credentialsRef(ParameterField.createValueField(
+        MigratorUtility.getSecretRef(migratedEntities, pdcInfra.getHostConnectionAttrs(), CONNECTOR)
+            .toSecretRefStringValue()));
+    if (isNotEmpty(pdcInfra.getHostNames())) {
+      builder.hosts(ParameterField.createValueField(pdcInfra.getHostNames()));
     }
+    Map<String, String> expressions = pdcInfra.getExpressions();
+    if (isNotEmpty(expressions) && expressions.containsKey(PhysicalInfra.hostname)
+        && expressions.containsKey(PhysicalInfra.hostArrayPath)) {
+      Map<String, String> hostAttrs = new HashMap<>();
+      expressions.forEach((k, v) -> {
+        if (!isNotEmpty(v)) {
+          if (PhysicalInfra.hostArrayPath.equals(k) && isNotEmpty(v)) {
+            builder.hostObjectArray(ParameterField.createValueField(v));
+          }
+          hostAttrs.put(k, v);
+        }
+      });
+      builder.hostAttributes(ParameterField.createValueField(hostAttrs));
+    }
+
     return builder.build();
   }
 
@@ -191,12 +202,5 @@ public class SshInfraDefMapper implements InfraDefMapper {
       return Collections.emptyMap();
     }
     return tags.stream().collect(Collectors.toMap(AzureTag::getKey, AzureTag::getValue));
-  }
-
-  private List<String> getPdcSShHosts(List<Host> hosts) {
-    if (hosts == null) {
-      return Collections.emptyList();
-    }
-    return hosts.stream().map(Host::getHostName).collect(Collectors.toList());
   }
 }

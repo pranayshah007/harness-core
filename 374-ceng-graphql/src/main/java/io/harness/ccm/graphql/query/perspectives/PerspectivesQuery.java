@@ -42,6 +42,7 @@ import io.harness.ccm.views.service.impl.ClickHouseViewsBillingServiceImpl;
 import com.google.cloud.Timestamp;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import io.leangen.graphql.annotations.GraphQLArgument;
 import io.leangen.graphql.annotations.GraphQLEnvironment;
 import io.leangen.graphql.annotations.GraphQLQuery;
@@ -67,7 +68,7 @@ public class PerspectivesQuery {
   @Inject PerspectiveTimeSeriesHelper perspectiveTimeSeriesHelper;
   @Inject PerspectiveFieldsHelper perspectiveFieldsHelper;
   @Inject CCMRbacHelper rbacHelper;
-  boolean isClickHouseQuery;
+  @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
   @Inject ClickHouseViewsBillingServiceImpl clickHouseViewsBillingService;
   private static final int MAX_LIMIT_VALUE = 10_000;
 
@@ -216,7 +217,7 @@ public class PerspectivesQuery {
     boolean addSharedCostFromGroupBy = !businessMappingIdsFromRulesAndFilters.contains(businessMappingId);
 
     PerspectiveTimeSeriesData data = null;
-    if (isClickHouseQuery) {
+    if (isClickHouseEnabled) {
       data = clickHouseViewsBillingService.getClickHouseTimeSeriesStatsNg(filters, groupBy, aggregateFunction,
           sortCriteria, includeOthers, maxLimit, viewQueryParams, timePeriod, conversionField, businessMappingId,
           sharedCostFromFilters, addSharedCostFromGroupBy);

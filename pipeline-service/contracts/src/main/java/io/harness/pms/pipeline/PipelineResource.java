@@ -632,8 +632,8 @@ public interface PipelineResource {
   @POST
   @Path("/{pipelineIdentifier}/validate")
   @Hidden
-  @ApiOperation(value = "Start a validation event for a Pipeline", nickname = "validatePipeline")
-  @Operation(operationId = "validatePipeline",
+  @ApiOperation(value = "Start a validation event for a Pipeline", nickname = "validatePipelineAsync")
+  @Operation(operationId = "validatePipelineAsync",
       description = "Start a validation event for a Pipeline and return the uuid of the event",
       summary = "Start a validation event for a Pipeline",
       responses =

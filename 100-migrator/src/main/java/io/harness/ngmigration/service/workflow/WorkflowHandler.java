@@ -10,6 +10,11 @@ package io.harness.ngmigration.service.workflow;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.when.beans.WhenConditionStatus.SUCCESS;
 
+import static software.wings.sm.StepType.AWS_NODE_SELECT;
+import static software.wings.sm.StepType.AZURE_NODE_SELECT;
+import static software.wings.sm.StepType.CUSTOM_DEPLOYMENT_FETCH_INSTANCES;
+import static software.wings.sm.StepType.DC_NODE_SELECT;
+
 import io.harness.beans.InputSetValidatorType;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
@@ -66,6 +71,7 @@ import software.wings.ngmigration.CgEntityNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,12 +81,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 
 public abstract class WorkflowHandler {
   public static final String INPUT_EXPRESSION = "<+input>";
+  private static final Set<String> loopingEnablers = Sets.newHashSet(DC_NODE_SELECT.name(),
+      CUSTOM_DEPLOYMENT_FETCH_INSTANCES.getName(), AWS_NODE_SELECT.name(), AZURE_NODE_SELECT.getName());
 
   @Inject private StepMapperFactory stepMapperFactory;
 
@@ -378,7 +387,7 @@ public abstract class WorkflowHandler {
   }
 
   private boolean shouldAddLoopingInNextSteps(String type) {
-    return Objects.equals(type, "CUSTOM_DEPLOYMENT_FETCH_INSTANCES");
+    return loopingEnablers.contains(type);
   }
 
   JsonNode getStepElementConfig(WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep,

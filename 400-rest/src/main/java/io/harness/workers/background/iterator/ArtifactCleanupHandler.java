@@ -46,7 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ArtifactCleanupHandler extends IteratorPumpModeHandler implements Handler<ArtifactStream> {
   public static final String GROUP = "ARTIFACT_STREAM_CRON_GROUP";
-  private static final int ACCEPTABLE_NO_ALERT_DELAY = 15;
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(15);
 
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
@@ -66,7 +66,7 @@ public class ArtifactCleanupHandler extends IteratorPumpModeHandler implements H
                            .clazz(ArtifactStream.class)
                            .fieldName(ArtifactStreamKeys.nextCleanupIteration)
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofMinutes(ACCEPTABLE_NO_ALERT_DELAY))
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                            .handler(this)
                            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
                            .filterExpander(query
@@ -88,7 +88,7 @@ public class ArtifactCleanupHandler extends IteratorPumpModeHandler implements H
             .clazz(ArtifactStream.class)
             .fieldName(ArtifactStreamKeys.nextCleanupIteration)
             .targetInterval(targetInterval)
-            .acceptableNoAlertDelay(ofMinutes(ACCEPTABLE_NO_ALERT_DELAY))
+            .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
             .handler(this)
             .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
             .persistenceProvider(persistenceProvider)

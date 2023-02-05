@@ -34,6 +34,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class AlertReconciliationHandler extends IteratorPumpModeHandler implements Handler<Alert> {
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(5);
+
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
 
   @Inject private AssignDelegateService assignDelegateService;
@@ -52,7 +54,7 @@ public class AlertReconciliationHandler extends IteratorPumpModeHandler implemen
                            .clazz(Alert.class)
                            .fieldName(AlertKeys.alertReconciliation_nextIteration)
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofMinutes(5))
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                            .handler(this)
                            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
                            .filterExpander(query
@@ -62,6 +64,26 @@ public class AlertReconciliationHandler extends IteratorPumpModeHandler implemen
                            .schedulingType(REGULAR)
                            .persistenceProvider(persistenceProvider)
                            .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<Alert, MorphiaFilterExpander<Alert>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       AlertReconciliationHandler.class,
+                       MongoPersistenceIterator.<Alert, MorphiaFilterExpander<Alert>>builder()
+                           .clazz(Alert.class)
+                           .fieldName(AlertKeys.alertReconciliation_nextIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .filterExpander(query
+                               -> query.filter(AlertKeys.alertReconciliation_needed, Boolean.TRUE)
+                                      .field(AlertKeys.status)
+                                      .notEqual(AlertStatus.Closed))
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override

@@ -14,6 +14,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.beans.InputSetValidatorType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -26,6 +27,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.validation.InputSetValidator;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
@@ -91,6 +93,22 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.TATHAGAT)
   @Category(UnitTests.class)
+  public void addServiceNodeContainServiceRefAsExpression() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    InputSetValidator validator = new InputSetValidator(InputSetValidatorType.REGEX, "");
+
+    Map<String, PlanCreationResponse> planCreationResponse =
+        ServiceAllInOnePlanCreatorUtils.addServiceNode(pipeline, kryoSerializer,
+            ServiceYamlV2.builder()
+                .serviceRef(ParameterField.createExpressionField(true, "<+pipeline.name>", validator, true))
+                .build(),
+            EnvironmentYamlV2.builder().build(), "serviceNodeId", "nextNodeId", ServiceDefinitionType.ECS, null);
+    assertThat(planCreationResponse).hasSize(4);
+  }
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
   public void addServiceNodeNoServiceNodeChild() throws IOException {
     String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
     YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
@@ -99,7 +117,7 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
             -> ServiceAllInOnePlanCreatorUtils.addServiceNode(pipeline, kryoSerializer, ServiceYamlV2.builder().build(),
                 EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId", ServiceDefinitionType.ECS, null))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("At least on of serviceRef and useFromStage fields is required.");
+        .hasMessageContaining("At least one of serviceRef and useFromStage fields is required.");
   }
 
   @Test

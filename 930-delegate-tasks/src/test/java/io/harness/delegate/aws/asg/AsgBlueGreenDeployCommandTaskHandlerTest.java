@@ -107,7 +107,7 @@ public class AsgBlueGreenDeployCommandTaskHandlerTest extends CategoryTest {
 
     AsgBlueGreenDeployResult result = response.getAsgBlueGreenDeployResult();
 
-    assertThat(result.getProdAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME);
+    assertThat(result.getStageAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME);
   }
 
   @Test
