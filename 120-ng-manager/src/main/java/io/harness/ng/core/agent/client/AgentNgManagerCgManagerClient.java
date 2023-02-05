@@ -8,9 +8,9 @@
 package io.harness.ng.core.agent.client;
 
 import io.harness.NGCommonEntityConstants;
-import io.harness.agent.beans.AgentMtlsEndpointDetails;
-import io.harness.agent.beans.AgentMtlsEndpointRequest;
 import io.harness.agent.utils.AgentMtlsApiConstants;
+import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpointDetails;
+import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpointRequest;
 import io.harness.rest.RestResponse;
 
 import javax.validation.constraints.NotNull;

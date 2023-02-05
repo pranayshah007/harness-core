@@ -400,19 +400,6 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  public void validateDelegateToken(String accountId, String tokenString, String delegateId, String delegateTokenName,
-      String agentMtlAuthority, boolean shouldSetTokenNameInGlobalContext) {
-    Decoder decoder = getUrlDecoder();
-    final String authHeader = new String(decoder.decode(tokenString.split("\\.")[0]));
-    if (authHeader.contains("HS256")) {
-      delegateTokenAuthenticator.validateDelegateAuth2Token(accountId, tokenString, agentMtlAuthority);
-    } else {
-      delegateTokenAuthenticator.validateDelegateToken(
-          accountId, tokenString, delegateId, delegateTokenName, agentMtlAuthority, shouldSetTokenNameInGlobalContext);
-    }
-  }
-
-  @Override
   public void validateExternalServiceToken(String accountId, String externalServiceToken) {
     String jwtExternalServiceSecret = configuration.getPortal().getJwtExternalServiceSecret();
     if (isBlank(jwtExternalServiceSecret)) {

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.agent.beans;
+package io.harness.delegate.utils;
 
 /**
  * Specifies the supported modes for agent mTLS endpoints.

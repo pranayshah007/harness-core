@@ -11,18 +11,29 @@ import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
+import io.harness.delegate.authenticator.DelegateTokenAuthenticatorImpl;
+import io.harness.delegate.beans.DelegateAsyncTaskResponse;
+import io.harness.delegate.beans.DelegateSyncTaskResponse;
+import io.harness.delegate.beans.DelegateTaskProgressResponse;
+import io.harness.govern.ProviderModule;
+import io.harness.metrics.impl.DelegateMetricsServiceImpl;
+import io.harness.metrics.intfc.DelegateMetricsService;
+import io.harness.security.DelegateTokenAuthenticator;
+import io.harness.service.impl.DelegateAuthServiceImpl;
+import io.harness.service.intfc.DelegateAuthService;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 
-import software.wings.jersey.JsonViews;
-
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.introspect.Annotated;
-import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
-import com.fasterxml.jackson.databind.jsontype.NamedType;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Module;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
@@ -31,7 +42,10 @@ import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.serializer.HObjectMapper;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
@@ -56,6 +70,36 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
             delegateServiceConfig.getCommonPoolConfig().getIdleTime(), TimeUnit.MILLISECONDS,
             new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
     // Modules to be added as needed.
+    List<Module> modules = new ArrayList<>();
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(DelegateAuthService.class).to(DelegateAuthServiceImpl.class);
+        bind(DelegateTokenAuthenticator.class).to(DelegateTokenAuthenticatorImpl.class).in(Singleton.class);
+        bind(DelegateMetricsService.class).to(DelegateMetricsServiceImpl.class);
+      }
+    });
+    modules.add(new AgentMtlsModule(delegateServiceConfig.getAgentMtlsSubdomain()));
+    modules.add(new DelegateServiceModule(delegateServiceConfig));
+    Module providerModule = new ProviderModule() {
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return Collections.EMPTY_LIST;
+      }
+    };
+    modules.add(providerModule);
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      @Named("morphiaClasses")
+      Map<Class, String> morphiaCustomCollectionNames() {
+        return ImmutableMap.<Class, String>builder().build();
+      }
+    });
+    Injector injector = Guice.createInjector(modules);
+    environment.jersey().register(DelegateServiceAuthFilter.class);
   }
 
   @Override

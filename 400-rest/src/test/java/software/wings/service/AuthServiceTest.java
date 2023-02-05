@@ -70,6 +70,7 @@ import io.harness.outbox.filter.OutboxEventFilter;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.security.DelegateTokenAuthenticator;
+import io.harness.service.intfc.DelegateAuthService;
 import io.harness.usermembership.remote.UserMembershipClient;
 
 import software.wings.WingsBaseTest;
@@ -152,6 +153,8 @@ public class AuthServiceTest extends WingsBaseTest {
   @Mock private DelegateTokenAuthenticator delegateTokenAuthenticator;
   @Inject @InjectMocks private UserService userService;
   @Inject @InjectMocks private AuthService authService;
+
+  @Inject @InjectMocks private DelegateAuthService delegateAuthService;
   @Mock private UserMembershipClient userMembershipClient;
   @Inject private OutboxService outboxService;
 
@@ -258,7 +261,7 @@ public class AuthServiceTest extends WingsBaseTest {
   @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void testValidateDelegateToken() {
-    authService.validateDelegateToken(ACCOUNT_ID, VALID_TOKEN, null, null, null, false);
+    delegateAuthService.validateDelegateToken(ACCOUNT_ID, VALID_TOKEN, null, null, null, false);
     verify(delegateTokenAuthenticator).validateDelegateToken(ACCOUNT_ID, VALID_TOKEN, null, null, null, false);
   }
 

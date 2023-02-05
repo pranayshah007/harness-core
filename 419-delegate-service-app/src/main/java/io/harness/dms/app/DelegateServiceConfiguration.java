@@ -12,9 +12,12 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static java.util.Collections.singletonList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cache.CacheConfig;
 import io.harness.delegate.resources.DelegateSetupResource;
 import io.harness.grpc.server.GrpcServerConfig;
+import io.harness.mongo.MongoConfig;
 import io.harness.reflection.HarnessReflections;
+import io.harness.secret.ConfigSecret;
 import io.harness.swagger.SwaggerBundleConfigurationFactory;
 import io.harness.threading.ThreadPoolConfig;
 
@@ -34,6 +37,7 @@ import io.dropwizard.request.logging.RequestLogFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.server.ServerFactory;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -55,6 +59,10 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(DEL)
 public class DelegateServiceConfiguration extends Configuration {
   @JsonProperty("commonPoolConfig") private ThreadPoolConfig commonPoolConfig;
+  @JsonProperty("agentMtlsSubdomain") private String agentMtlsSubdomain;
+  @JsonProperty("mongo") @ConfigSecret private MongoConfig mongoConfig = MongoConfig.builder().build();
+
+  @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
 
   public DelegateServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();
@@ -109,5 +117,13 @@ public class DelegateServiceConfiguration extends Configuration {
         // below package will be changed to io.harness.dms.resources later when we have resources in DMS
         .filter(klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), "io.harness.delegate.resources"))
         .collect(Collectors.toList());
+  }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (mongoConfig != null) {
+      dbAliases.add(mongoConfig.getAliasDBName());
+    }
+    return dbAliases;
   }
 }

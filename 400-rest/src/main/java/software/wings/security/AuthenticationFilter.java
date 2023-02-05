@@ -47,6 +47,7 @@ import io.harness.security.annotations.PublicApi;
 import io.harness.security.annotations.PublicApiWithWhitelist;
 import io.harness.security.annotations.ScimAPI;
 import io.harness.security.dto.Principal;
+import io.harness.service.intfc.DelegateAuthService;
 
 import software.wings.beans.AuthToken;
 import software.wings.beans.User;
@@ -107,10 +108,13 @@ public class AuthenticationFilter implements ContainerRequestFilter {
   private Map<String, String> serviceToSecretMapping;
   private Map<String, JWTTokenHandler> serviceToJWTTokenHandlerMapping;
 
+  private DelegateAuthService delegateAuthService;
+
   @Inject
   public AuthenticationFilter(UserService userService, AuthService authService, AuditService auditService,
       AuditHelper auditHelper, ApiKeyService apiKeyService, HarnessApiKeyService harnessApiKeyService,
-      ExternalApiRateLimitingService rateLimitingService, SecretManager secretManager) {
+      ExternalApiRateLimitingService rateLimitingService, SecretManager secretManager,
+      DelegateAuthService delegateAuthService) {
     this.userService = userService;
     this.authService = authService;
     this.auditService = auditService;
@@ -119,6 +123,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     this.harnessApiKeyService = harnessApiKeyService;
     this.rateLimitingService = rateLimitingService;
     this.secretManager = secretManager;
+    this.delegateAuthService = delegateAuthService;
     serviceToSecretMapping = getServiceToSecretMapping();
     serviceToJWTTokenHandlerMapping = getServiceToJWTTokenHandlerMapping();
   }
@@ -403,7 +408,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         final String delegateTokeName = containerRequestContext.getHeaderString("delegateTokenName");
         final String agentMtlsAuthority = containerRequestContext.getHeaderString(HEADER_AGENT_MTLS_AUTHORITY);
 
-        authService.validateDelegateToken(accountId,
+        delegateAuthService.validateDelegateToken(accountId,
             substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate "), delegateId,
             delegateTokeName, agentMtlsAuthority, true);
       } else {
@@ -426,7 +431,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         final String delegateTokeName = containerRequestContext.getHeaderString("delegateTokenName");
         final String agentMtlsAuthority = containerRequestContext.getHeaderString(HEADER_AGENT_MTLS_AUTHORITY);
 
-        authService.validateDelegateToken(accountId, jwtToken, delegateId, delegateTokeName, agentMtlsAuthority, true);
+        delegateAuthService.validateDelegateToken(
+            accountId, jwtToken, delegateId, delegateTokeName, agentMtlsAuthority, true);
       } else {
         throw new IllegalStateException("Invalid authentication header:" + authHeader);
       }

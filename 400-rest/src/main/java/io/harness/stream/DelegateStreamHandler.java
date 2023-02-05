@@ -30,6 +30,7 @@ import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.metrics.impl.CachedMetricsPublisher;
 import io.harness.serializer.JsonUtils;
+import io.harness.service.intfc.DelegateAuthService;
 import io.harness.service.intfc.DelegateCache;
 
 import software.wings.logcontext.WebsocketLogContext;
@@ -63,12 +64,12 @@ import org.atmosphere.interceptor.AtmosphereResourceLifecycleInterceptor;
     broadcastFilters = {DelegateEventFilter.class})
 public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
   public static final Splitter SPLITTER = Splitter.on("/").omitEmptyStrings();
-
-  private final AuthService authService;
   private final DelegateService delegateService;
   private final DelegateCache delegateCache;
   private final CachedMetricsPublisher cachedMetrics;
   private final DelegateStreamHeartbeatService delegateStreamHeartbeatService;
+
+  private final DelegateAuthService delegateAuthService;
 
   @Override
   public void onRequest(AtmosphereResource resource) throws IOException {
@@ -145,7 +146,7 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
         String delegateVersion = delegateParams.getVersion();
 
         if (isNotEmpty(delegateParams.getToken())) {
-          authService.validateDelegateToken(accountId, delegateParams.getToken(), delegateId,
+          delegateAuthService.validateDelegateToken(accountId, delegateParams.getToken(), delegateId,
               delegateParams.getTokenName(), agentMtlsAuthority, false);
         }
         if ("ECS".equals(delegateParams.getDelegateType())) {

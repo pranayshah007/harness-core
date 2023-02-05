@@ -14,10 +14,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-import io.harness.agent.beans.AgentMtlsEndpointDetails;
-import io.harness.agent.beans.AgentMtlsMode;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpointDetails;
+import io.harness.delegate.utils.AgentMtlsMode;
+import io.harness.delegate.utils.AgentMtlsVerifier;
 import io.harness.rule.Owner;
 import io.harness.service.intfc.AgentMtlsEndpointService;
 

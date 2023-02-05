@@ -5,14 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.service.impl;
+package io.harness.service.impl.agent.mtls;
 
-import io.harness.agent.beans.AgentMtlsEndpoint;
-import io.harness.agent.beans.AgentMtlsEndpoint.AgentMtlsEndpointKeys;
-import io.harness.agent.beans.AgentMtlsEndpointDetails;
-import io.harness.agent.beans.AgentMtlsEndpointRequest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpoint;
+import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpoint.AgentMtlsEndpointKeys;
+import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpointDetails;
+import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpointRequest;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.UnavailableFeatureException;
 import io.harness.persistence.HPersistence;

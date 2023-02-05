@@ -5,14 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.agent.utils;
+package io.harness.delegate.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.agent.beans.AgentMtlsEndpointDetails;
-import io.harness.agent.beans.AgentMtlsMode;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpointDetails;
 import io.harness.service.intfc.AgentMtlsEndpointService;
 
 import com.github.benmanes.caffeine.cache.Caffeine;

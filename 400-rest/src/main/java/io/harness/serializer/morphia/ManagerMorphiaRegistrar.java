@@ -9,7 +9,6 @@ package io.harness.serializer.morphia;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.agent.beans.AgentMtlsEndpoint;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.cluster.entities.AzureKubernetesCluster;
 import io.harness.ccm.cluster.entities.ClusterRecord;
@@ -23,6 +22,7 @@ import io.harness.ccm.config.GcpBillingAccount;
 import io.harness.ccm.config.GcpOrganization;
 import io.harness.ccm.config.GcpServiceAccount;
 import io.harness.dashboard.DashboardSettings;
+import io.harness.delegate.beans.agent.mtls.AgentMtlsEndpoint;
 import io.harness.event.MigratedAccountTracker;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
 import io.harness.event.reconciliation.looker.LookerEntityReconRecord;

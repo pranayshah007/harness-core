@@ -19,7 +19,10 @@ java_library(
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_glassfish_jersey_core_jersey_client",
         "@maven//:org_mockito_mockito_core",
-        "@maven//:io_dropwizard_dropwizard_testing"
+        "@maven//:io_dropwizard_dropwizard_testing",
+                "@maven//:de_bwaldvogel_mongo_java_server_core",
+                "@maven//:de_bwaldvogel_mongo_java_server_memory_backend",
+                "@maven//:org_mongodb_mongo_java_driver",
     ],
 )
 
