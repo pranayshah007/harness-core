@@ -443,6 +443,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         final String delegateTokeName = containerRequestContext.getHeaderString("delegateTokenName");
         final String agentMtlsAuthority = containerRequestContext.getHeaderString(HEADER_AGENT_MTLS_AUTHORITY);
 
+        log.info("Complete header information: " + authHeader);
+
         delegateAuthService.validateDelegateToken(
             accountId, jwtToken, delegateId, delegateTokeName, agentMtlsAuthority, true);
       } else {

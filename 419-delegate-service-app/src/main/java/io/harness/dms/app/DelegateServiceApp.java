@@ -12,6 +12,10 @@ import static io.harness.logging.LoggingInitializer.initializeLogging;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.authenticator.DelegateTokenAuthenticatorImpl;
+import io.harness.delegate.beans.DelegateAsyncTaskResponse;
+import io.harness.delegate.beans.DelegateSyncTaskResponse;
+import io.harness.delegate.beans.DelegateTaskProgressResponse;
+import io.harness.delegate.resources.DummyResource;
 import io.harness.delegate.utils.DelegateServiceSwaggerGenerator;
 import io.harness.govern.ProviderModule;
 import io.harness.metrics.impl.DelegateMetricsServiceImpl;
@@ -93,11 +97,20 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
       @Singleton
       @Named("morphiaClasses")
       Map<Class, String> morphiaCustomCollectionNames() {
-        return ImmutableMap.<Class, String>builder().build();
+        // this is needed because DelegateSyncTaskResponse and others need custom names.
+        // they are annotated with !!!custom_, if not added here exceptions will be thrown
+        // in service startup that no name has been provided
+        return ImmutableMap.<Class, String>builder()
+            .put(DelegateSyncTaskResponse.class, "delegateSyncTaskResponses")
+            .put(DelegateAsyncTaskResponse.class, "delegateAsyncTaskResponses")
+            .put(DelegateTaskProgressResponse.class, "delegateTaskProgressResponses")
+            .build();
       }
     });
     Injector injector = Guice.createInjector(modules);
     environment.jersey().register(injector.getInstance(DelegateAuthService.class));
+    environment.jersey().register(injector.getInstance(DummyResource.class));
+    environment.jersey().register(injector.getInstance(DelegateServiceAuthFilter.class));
   }
 
   @Override

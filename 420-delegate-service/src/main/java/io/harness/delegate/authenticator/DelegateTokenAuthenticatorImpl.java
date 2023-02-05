@@ -108,12 +108,16 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
 
     final String tokenHash = DigestUtils.md5Hex(tokenString);
 
+    log.info("checking delegate Auth - 2");
+
     // we should validate from cache first and change this debug log to warn, when watcher 754xx is deployed.
     if (isEmpty(delegateTokenName)) {
       log.debug("Delegate token name is empty.");
     } else if (validateDelegateJWTFromCache(accountId, tokenHash, shouldSetTokenNameInGlobalContext)) {
       return;
     }
+
+    log.info("checking delegate Auth - 3 - not found in jwt cache");
 
     EncryptedJWT encryptedJWT;
     try {
@@ -130,15 +134,18 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
     boolean decryptedWithRevokedTokenFromDB = false;
 
     if (!decryptedWithTokenFromCache) {
-      log.debug("Not able to decrypt with token from cache. Fetching it from db.");
+      log.info("checking delegate Auth  - 4- Not able to decrypt with token from cache. Fetching it from db.");
       delegateTokenCacheHelper.removeDelegateToken(delegateId);
       decryptedWithActiveTokenFromDB = decryptJWTDelegateToken(
           accountId, DelegateTokenStatus.ACTIVE, encryptedJWT, delegateId, shouldSetTokenNameInGlobalContext);
+
       if (!decryptedWithActiveTokenFromDB) {
         decryptedWithRevokedTokenFromDB = decryptJWTDelegateToken(
             accountId, DelegateTokenStatus.REVOKED, encryptedJWT, delegateId, shouldSetTokenNameInGlobalContext);
       }
     }
+
+    log.info("checking delegate Auth -5, decrypt using token from DB." + decryptedWithActiveTokenFromDB);
 
     if (decryptedWithRevokedTokenFromDB
         || (decryptedWithTokenFromCache && DelegateTokenStatus.REVOKED.equals(delegateTokenFromCache.getStatus()))) {
@@ -284,7 +291,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
     boolean result = decryptDelegateTokenByQuery(
         query, accountId, status, encryptedJWT, delegateId, shouldSetTokenNameInGlobalContext);
     long time_end = System.currentTimeMillis() - time_start;
-    log.debug("Delegate Token verification for accountId {} and status {} has taken {} milliseconds.", accountId,
+    log.info("Delegate Token verification for accountId {} and status {} has taken {} milliseconds.", accountId,
         status.name(), time_end);
     return result;
   }
@@ -294,6 +301,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
     try (HIterator<DelegateToken> iterator = new HIterator<>(query.fetch())) {
       while (iterator.hasNext()) {
         DelegateToken delegateToken = iterator.next();
+        log.info("Token name : " + delegateToken.getName());
         try {
           if (delegateToken.isNg()) {
             decryptDelegateToken(encryptedJWT, decodeBase64ToString(delegateToken.getValue()));
@@ -378,6 +386,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       throw new RevokedTokenException(
           "Invalid delegate token. Delegate is using invalid or expired JWT token", USER_ADMIN);
     } else if (delegateJWTCacheValue.getExpiryInMillis() < System.currentTimeMillis()) {
+      log.info("AuthService getting delegate token : " + delegateJWTCacheValue);
       throw new InvalidRequestException("Unauthorized", EXPIRED_TOKEN, null);
     }
     setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateJWTCacheValue.getDelegateTokenName());
