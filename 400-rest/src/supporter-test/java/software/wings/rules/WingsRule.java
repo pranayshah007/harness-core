@@ -77,6 +77,8 @@ import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.kryo.TestManagerKryoRegistrar;
 import io.harness.serializer.morphia.ManagerTestMorphiaRegistrar;
 import io.harness.service.DelegateServiceModule;
+import io.harness.service.impl.DelegateCacheImpl;
+import io.harness.service.intfc.DelegateCache;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.testlib.RealMongo;
@@ -151,6 +153,7 @@ import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProv
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
+import org.redisson.api.RedissonClient;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
@@ -274,7 +277,13 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
     }
     CacheModule cacheModule = new CacheModule(cacheConfigBuilder.build());
     modules.add(0, cacheModule);
-    modules.add(new DelegateServiceCacheModule(RedisConfig.builder().redisUrl("dummyRedisUrl").build(), false));
+
+    modules.add(new DelegateServiceCacheModule(RedisConfig.builder().redisUrl("dummyRedisUrl").build(), false) {
+      @Override
+      protected void configure() {
+        bind(DelegateCache.class).toInstance(mock(DelegateCache.class));
+      }
+    });
     long start = currentTimeMillis();
     injector = Guice.createInjector(modules);
     long diff = currentTimeMillis() - start;
