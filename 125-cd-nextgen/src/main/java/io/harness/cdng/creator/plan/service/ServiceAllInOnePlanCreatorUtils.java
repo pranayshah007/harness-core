@@ -14,7 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import io.harness.cdng.artifact.steps.ArtifactsStepV2;
+import io.harness.cdng.artifact.steps.constants.ArtifactsStepV2Constants;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
@@ -29,9 +29,9 @@ import io.harness.cdng.manifest.steps.ManifestsStepV2;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYamlV2;
-import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.service.steps.ServiceStepV3Parameters;
 import io.harness.cdng.service.steps.ServiceStepV3Parameters.ServiceStepV3ParametersBuilder;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
@@ -62,6 +62,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.NonNull;
@@ -81,7 +82,7 @@ public class ServiceAllInOnePlanCreatorUtils {
       ServiceYamlV2 serviceYamlV2, EnvironmentYamlV2 environmentYamlV2, String serviceNodeId, String nextNodeId,
       ServiceDefinitionType serviceType, ParameterField<String> envGroupRef) {
     if (isConcreteServiceRefUnavailable(serviceYamlV2) && isConcreteUseFromStageUnavailable(serviceYamlV2)) {
-      throw new InvalidRequestException("At least on of serviceRef and useFromStage fields is required.");
+      throw new InvalidRequestException("At least one of serviceRef and useFromStage fields is required.");
     }
 
     if (serviceYamlV2.getServiceRef() != null && isNotBlank(serviceYamlV2.getServiceRef().getValue())
@@ -197,7 +198,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     final PlanNode node =
         PlanNode.builder()
             .uuid(serviceNodeId)
-            .stepType(ServiceStepV3.STEP_TYPE)
+            .stepType(ServiceStepV3Constants.STEP_TYPE)
             .expressionMode(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)
             .name(PlanCreatorConstants.SERVICE_NODE_NAME)
             .identifier(YamlTypes.SERVICE_ENTITY)
@@ -232,7 +233,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     final PlanNode artifactsNode =
         PlanNode.builder()
             .uuid("artifacts-" + UUIDGenerator.generateUuid())
-            .stepType(ArtifactsStepV2.STEP_TYPE)
+            .stepType(ArtifactsStepV2Constants.STEP_TYPE)
             .name(PlanCreatorConstants.ARTIFACTS_NODE_NAME)
             .identifier(YamlTypes.ARTIFACT_LIST_CONFIG)
             .stepParameters(new EmptyStepParameters())
@@ -406,12 +407,24 @@ public class ServiceAllInOnePlanCreatorUtils {
   }
 
   private boolean isConcreteServiceRefUnavailable(@NonNull ServiceYamlV2 serviceYamlV2) {
-    return serviceYamlV2.getServiceRef() == null || isBlank(serviceYamlV2.getServiceRef().getValue())
-        || NGExpressionUtils.matchesRawInputSetPatternV2(serviceYamlV2.getServiceRef().getExpressionValue());
+    if (serviceYamlV2.getServiceRef() != null) {
+      if (serviceYamlV2.getServiceRef().isExpression()) {
+        return NGExpressionUtils.matchesRawInputSetPatternV2(serviceYamlV2.getServiceRef().getExpressionValue());
+      } else {
+        return isBlank(serviceYamlV2.getServiceRef().getValue());
+      }
+    }
+    return true;
   }
 
   private boolean isConcreteUseFromStageUnavailable(@NonNull ServiceYamlV2 serviceYamlV2) {
-    return serviceYamlV2.getUseFromStage() == null || serviceYamlV2.getUseFromStage().getValue() == null
-        || NGExpressionUtils.matchesRawInputSetPatternV2(serviceYamlV2.getUseFromStage().getExpressionValue());
+    if (serviceYamlV2.getUseFromStage() != null) {
+      if (serviceYamlV2.getUseFromStage().isExpression()) {
+        return NGExpressionUtils.matchesRawInputSetPatternV2(serviceYamlV2.getUseFromStage().getExpressionValue());
+      } else {
+        return Objects.isNull(serviceYamlV2.getUseFromStage().getValue());
+      }
+    }
+    return true;
   }
 }

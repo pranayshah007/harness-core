@@ -220,9 +220,14 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
 
         Map<String, String> flattennedVariables = new HashMap<>();
         // Convert variables map from Map<String, Object> to Map<String, String>
-        for (String val : cluster.getVariables().keySet()) {
-          ParameterField<Object> p = (ParameterField) cluster.getVariables().get(val);
-          flattennedVariables.put(val, p.getValue().toString());
+        for (String key : cluster.getVariables().keySet()) {
+          Object value = cluster.getVariables().get(key);
+          if (value.getClass() == ParameterField.class) {
+            ParameterField<Object> p = (ParameterField) value;
+            flattennedVariables.put(key, p.getValue().toString());
+          } else {
+            flattennedVariables.put(key, value.toString());
+          }
         }
         // Convert variables from spec parameters
         for (Map.Entry<String, Object> variableEntry : variables.entrySet()) {

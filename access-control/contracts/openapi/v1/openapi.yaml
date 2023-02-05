@@ -832,13 +832,18 @@ components:
                   updated: 1234567890
                   harness_managed: true
       headers:
-        Link:
+        X-Total-Elements:
           schema:
-            type: string
-          description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.'
-          examples:
-            sample:
-              value: '</v1/roles?page=2&limit=1>; rel="next", </v1/roles?page=1&limit=1>; rel="self", </v1/roles?page=0&limit=1>; rel="previous", '
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
     RoleResponse:
       description: Role Response body
       content:
@@ -975,13 +980,18 @@ components:
                   updated: 1234567890
                   harness_managaed: false
       headers:
-        Link:
+        X-Total-Elements:
           schema:
-            type: string
-          description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.'
-          examples:
-            sample:
-              value: '</v1/roles?page=2&limit=1>; rel="next", </v1/roles?page=1&limit=1>; rel="self", </v1/roles?page=0&limit=1>; rel="previous", '
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
   requestBodies:
     CreateRoleRequest:
       content:

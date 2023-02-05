@@ -20,6 +20,7 @@ import io.harness.service.instancesynchandler.AzureWebAppInstanceSyncHandler;
 import io.harness.service.instancesynchandler.CustomDeploymentInstanceSyncHandler;
 import io.harness.service.instancesynchandler.EcsInstanceSyncHandler;
 import io.harness.service.instancesynchandler.GitOpsInstanceSyncHandler;
+import io.harness.service.instancesynchandler.GoogleFunctionInstanceSyncHandler;
 import io.harness.service.instancesynchandler.K8sInstanceSyncHandler;
 import io.harness.service.instancesynchandler.NativeHelmInstanceSyncHandler;
 import io.harness.service.instancesynchandler.PdcInstanceSyncHandler;
@@ -48,6 +49,7 @@ public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandle
   private final SpotInstanceSyncHandler spotInstanceSyncHandler;
   private final TasInstanceSyncHandler tasInstanceSyncHandler;
   private final AsgInstanceSyncHandler asgInstanceSyncHandler;
+  private final GoogleFunctionInstanceSyncHandler googleFunctionInstanceSyncHandler;
 
   @Override
   public AbstractInstanceSyncHandler getInstanceSyncHandler(final String deploymentType, String infraKind) {
@@ -75,6 +77,8 @@ public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandle
         return tasInstanceSyncHandler;
       case ServiceSpecType.ASG:
         return asgInstanceSyncHandler;
+      case ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS:
+        return googleFunctionInstanceSyncHandler;
       default:
         throw new UnexpectedException("No instance sync handler registered for deploymentType: " + deploymentType);
     }

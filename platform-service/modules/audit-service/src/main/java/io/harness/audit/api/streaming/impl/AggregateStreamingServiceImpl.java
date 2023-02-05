@@ -39,7 +39,7 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -123,40 +123,35 @@ public class AggregateStreamingServiceImpl implements AggregateStreamingService 
   }
 
   @Override
-  public List<StreamingDestinationAggregateDTO> getAggregatedList(
+  public Page<StreamingDestinationAggregateDTO> getAggregatedList(
       String accountIdentifier, Pageable pageable, StreamingDestinationFilterProperties filterProperties) {
-    return streamingService.list(accountIdentifier, pageable, filterProperties)
-        .getContent()
-        .stream()
-        .map(streamingDestination -> {
-          IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
-              streamingDestination.getConnectorRef(), accountIdentifier, null, null);
-          Optional<ConnectorDTO> connectorDTO = getConnectorDTO(connectorRef.getIdentifier(), accountIdentifier);
-          StreamingDestinationAggregateDTO streamingDestinationAggregateDTO = new StreamingDestinationAggregateDTO();
-          streamingDestinationAggregateDTO.setStreamingDestination(
-              streamingDestinationMapper.toDTO(streamingDestination));
-          if (connectorDTO.isPresent()) {
-            ConnectorInfoDTO connectorInfo = connectorDTO.get().getConnectorInfo();
-            streamingDestinationAggregateDTO.setConnectorInfo(new Connector()
-                                                                  .name(connectorInfo.getName())
-                                                                  .identifier(connectorInfo.getIdentifier())
-                                                                  .description(connectorInfo.getDescription())
-                                                                  .tags(connectorInfo.getTags()));
-          }
+    return streamingService.list(accountIdentifier, pageable, filterProperties).map(streamingDestination -> {
+      IdentifierRef connectorRef =
+          IdentifierRefHelper.getIdentifierRef(streamingDestination.getConnectorRef(), accountIdentifier, null, null);
+      Optional<ConnectorDTO> connectorDTO = getConnectorDTO(connectorRef.getIdentifier(), accountIdentifier);
+      StreamingDestinationAggregateDTO streamingDestinationAggregateDTO = new StreamingDestinationAggregateDTO();
+      streamingDestinationAggregateDTO.setStreamingDestination(streamingDestinationMapper.toDTO(streamingDestination));
+      if (connectorDTO.isPresent()) {
+        ConnectorInfoDTO connectorInfo = connectorDTO.get().getConnectorInfo();
+        streamingDestinationAggregateDTO.setConnectorInfo(new Connector()
+                                                              .name(connectorInfo.getName())
+                                                              .identifier(connectorInfo.getIdentifier())
+                                                              .description(connectorInfo.getDescription())
+                                                              .tags(connectorInfo.getTags()));
+      }
 
-          Optional<StreamingBatchDTO> lastStreamedBatch =
-              getLatestBatch(accountIdentifier, streamingDestination.getIdentifier());
-          if (lastStreamedBatch.isPresent()) {
-            StreamingBatchDTO streamedBatch = lastStreamedBatch.get();
-            BatchFailureInfo batchFailureInfo = streamedBatch.getFailureInfo();
-            streamingDestinationAggregateDTO.setStreamingDetails(
-                new StreamingDetails()
-                    .lastStreamedAt(streamedBatch.getLastStreamedAt())
-                    .errorMessage(batchFailureInfo == null ? "" : batchFailureInfo.getMessage())
-                    .status(streamingDestinationsApiUtils.getStatusEnum(streamedBatch.getStatus())));
-          }
-          return streamingDestinationAggregateDTO;
-        })
-        .collect(Collectors.toList());
+      Optional<StreamingBatchDTO> lastStreamedBatch =
+          getLatestBatch(accountIdentifier, streamingDestination.getIdentifier());
+      if (lastStreamedBatch.isPresent()) {
+        StreamingBatchDTO streamedBatch = lastStreamedBatch.get();
+        BatchFailureInfo batchFailureInfo = streamedBatch.getFailureInfo();
+        streamingDestinationAggregateDTO.setStreamingDetails(
+            new StreamingDetails()
+                .lastStreamedAt(streamedBatch.getLastStreamedAt())
+                .errorMessage(batchFailureInfo == null ? "" : batchFailureInfo.getMessage())
+                .status(streamingDestinationsApiUtils.getStatusEnum(streamedBatch.getStatus())));
+      }
+      return streamingDestinationAggregateDTO;
+    });
   }
 }

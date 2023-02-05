@@ -88,7 +88,7 @@ public class AsgRollingRollbackCommandTaskHandler extends AsgCommandTaskNGHandle
     try {
       AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback);
 
-      asgSdkManager.info(format("Starting Rolling Rollback", Bold));
+      asgSdkManager.info("Starting Rolling Rollback");
 
       AutoScalingGroupContainer autoScalingGroupContainer = executeRollingRollbackWithInstanceRefresh(
           asgSdkManager, asgManifestsDataForRollback, asgName, skipMatching, useAlreadyRunningInstances);
@@ -115,8 +115,7 @@ public class AsgRollingRollbackCommandTaskHandler extends AsgCommandTaskNGHandle
       Map<String, List<String>> asgManifestsDataForRollback, String asgName, Boolean skipMatching,
       Boolean useAlreadyRunningInstances) {
     if (isNotEmpty(asgManifestsDataForRollback)) {
-      String operationName = format("Rollback to previous version of asg %s", asgName);
-      asgSdkManager.info("Operation `%s` has started", operationName);
+      asgSdkManager.info("Rolling back to previous version of asg %s", asgName);
 
       // Get the content of all required manifest files
       String asgLaunchTemplateVersion = asgTaskHelper.getAsgLaunchTemplateContent(asgManifestsDataForRollback);
@@ -155,7 +154,7 @@ public class AsgRollingRollbackCommandTaskHandler extends AsgCommandTaskNGHandle
               .executeUpsert();
 
       AutoScalingGroup autoScalingGroup = chainState.getAutoScalingGroup();
-      asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
+      asgSdkManager.infoBold("Rolled back to previous version of asg %s successfully", asgName);
 
       return asgTaskHelper.mapToAutoScalingGroupContainer(autoScalingGroup);
     } else {

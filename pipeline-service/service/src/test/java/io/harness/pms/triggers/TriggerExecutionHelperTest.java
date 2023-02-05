@@ -14,17 +14,23 @@ import static io.harness.ngtriggers.Constants.GIT_USER;
 import static io.harness.ngtriggers.Constants.TRIGGER_REF;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.HARSH;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HeaderConfig;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
+import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -46,6 +52,7 @@ import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubTriggerE
 import io.harness.ngtriggers.beans.target.TargetType;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.triggers.ParsedPayload;
 import io.harness.pms.contracts.triggers.TriggerPayload;
@@ -54,6 +61,12 @@ import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.governance.service.PipelineGovernanceServiceImpl;
+import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.pipeline.service.PipelineEnforcementService;
+import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.pms.plan.execution.ExecutionHelper;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.product.ci.scm.proto.PullRequestHook;
 import io.harness.product.ci.scm.proto.PushHook;
@@ -61,10 +74,15 @@ import io.harness.product.ci.scm.proto.Repository;
 import io.harness.product.ci.scm.proto.User;
 import io.harness.rule.Owner;
 
+import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -78,12 +96,27 @@ import retrofit2.Response;
 @OwnedBy(PIPELINE)
 public class TriggerExecutionHelperTest extends CategoryTest {
   @Inject @InjectMocks TriggerExecutionHelper triggerExecutionHelper;
+  private final String accountId = "acc";
+  private final String orgId = "org";
+  private final String projectId = "proj";
+  private final String pipelineId = "target";
 
   private NGTriggerEntity ngTriggerEntity;
   private TriggerWebhookEvent triggerWebhookEvent;
+  private PipelineEntity pipelineEntityV1;
+
+  private final ExecutionMetadata metadata = ExecutionMetadata.newBuilder().build();
+  private final PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().build();
+  private final PlanExecution planExecution = PlanExecution.builder().build();
+
   @Mock PmsGitSyncHelper pmsGitSyncHelper;
   @Mock NGTriggerElementMapper ngTriggerElementMapper;
   @Mock PipelineServiceClient pipelineServiceClient;
+  @Mock PMSPipelineService pmsPipelineService;
+  @Mock PipelineMetadataService pipelineMetadataService;
+  @Mock PipelineEnforcementService pipelineEnforcementService;
+  @Mock PipelineGovernanceServiceImpl pipelineGovernanceService;
+  @Mock ExecutionHelper executionHelper;
   @Before
   public void setUp() {
     triggerWebhookEvent =
@@ -103,6 +136,26 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                           .targetIdentifier("target")
                           .identifier("trigger")
                           .build();
+
+    String simplifiedYaml = readFile("simplified-pipeline.yaml");
+    pipelineEntityV1 = PipelineEntity.builder()
+                           .accountId(accountId)
+                           .orgIdentifier(orgId)
+                           .projectIdentifier(projectId)
+                           .identifier(pipelineId)
+                           .yaml(simplifiedYaml)
+                           .runSequence(394)
+                           .harnessVersion(PipelineVersion.V1)
+                           .build();
+  }
+
+  private String readFile(String filename) {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    try {
+      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not read resource file: " + filename);
+    }
   }
 
   @Test
@@ -276,6 +329,32 @@ public class TriggerExecutionHelperTest extends CategoryTest {
       assertThat(gitEntityInfo.getConnectorRef()).isEqualTo(connectorRef);
       assertThat(gitEntityInfo.getBranch()).isEqualTo(branch);
     }
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testResolveRuntimeInputAndSubmitExecutionRequestV1Yaml() {
+    TriggerDetails triggerDetails = TriggerDetails.builder()
+                                        .ngTriggerEntity(ngTriggerEntity)
+                                        .ngTriggerConfigV2(NGTriggerConfigV2.builder().build())
+                                        .build();
+    TriggerPayload.Builder payloadBuilder = TriggerPayload.newBuilder().setType(Type.GIT).setParsedPayload(
+        ParsedPayload.newBuilder()
+            .setPr(PullRequestHook.newBuilder()
+                       .setPr(PullRequest.newBuilder().setNumber(1).setSource("source").setTarget("target").build())
+                       .setRepo(Repository.newBuilder().setLink("https://github.com").build())
+                       .build())
+            .build());
+    doReturn(Optional.of(pipelineEntityV1))
+        .when(pmsPipelineService)
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+    doCallRealMethod()
+        .when(pipelineGovernanceService)
+        .fetchExpandedPipelineJSONFromYaml(pipelineEntityV1.getAccountId(), pipelineEntityV1.getOrgIdentifier(),
+            pipelineEntityV1.getProjectIdentifier(), pipelineEntityV1.getYaml(), true);
+    triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(
+        triggerDetails, payloadBuilder.build(), triggerWebhookEvent, null);
   }
 
   private void assertTriggerBy(TriggeredBy triggeredBy) {

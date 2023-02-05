@@ -8,6 +8,7 @@
 package io.harness.steps.common;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -15,6 +16,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.observers.NodeExecutionDeleteObserver;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.resourcerestraint.beans.HoldingScope;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceService;
 import io.harness.timeout.TimeoutEngine;
@@ -33,7 +35,7 @@ public class NodeExecutionMetadataDeleteObserver implements NodeExecutionDeleteO
   @Inject private SpringPersistenceWrapper springPersistenceWrapper;
   @Inject private TimeoutEngine timeoutEngine;
   @Inject private ResourceRestraintInstanceService resourceRestraintInstanceService;
-
+  @Inject private ApprovalInstanceService approvalInstanceService;
   @Override
   public void onNodesDelete(List<NodeExecution> nodeExecutionsToDelete) {
     if (EmptyPredicate.isEmpty(nodeExecutionsToDelete)) {
@@ -43,19 +45,23 @@ public class NodeExecutionMetadataDeleteObserver implements NodeExecutionDeleteO
     Set<String> timeoutInstanceIds = new HashSet<>();
     Set<String> correlationIds = new HashSet<>();
     Set<String> stageNodeExecutionIds = new HashSet<>();
+    Set<String> approvalNodeExecutionIds = new HashSet<>();
     for (NodeExecution nodeExecution : nodeExecutionsToDelete) {
-      if (EmptyPredicate.isNotEmpty(nodeExecution.getTimeoutInstanceIds())) {
+      if (isNotEmpty(nodeExecution.getTimeoutInstanceIds())) {
         timeoutInstanceIds.addAll(nodeExecution.getTimeoutInstanceIds());
       }
-      if (EmptyPredicate.isNotEmpty(nodeExecution.getAdviserTimeoutInstanceIds())) {
+      if (isNotEmpty(nodeExecution.getAdviserTimeoutInstanceIds())) {
         timeoutInstanceIds.addAll(nodeExecution.getAdviserTimeoutInstanceIds());
       }
-      if (EmptyPredicate.isNotEmpty(nodeExecution.getNotifyId())) {
+      if (isNotEmpty(nodeExecution.getNotifyId())) {
         correlationIds.add(nodeExecution.getNotifyId());
       }
       if (nodeExecution.getStepType() != null
           && nodeExecution.getStepType().getStepCategory().equals(StepCategory.STAGE)) {
         stageNodeExecutionIds.add(nodeExecution.getUuid());
+      }
+      if (approvalInstanceService.isNodeExecutionOfApprovalStepType(nodeExecution)) {
+        approvalNodeExecutionIds.add(nodeExecution.getUuid());
       }
     }
     // Delete the waitInstances for correlationsIds in nodeExecutionIds
@@ -66,5 +72,7 @@ public class NodeExecutionMetadataDeleteObserver implements NodeExecutionDeleteO
       return true;
     });
     resourceRestraintInstanceService.deleteInstancesForGivenReleaseType(stageNodeExecutionIds, HoldingScope.STAGE);
+    // Delete the approval instances
+    approvalInstanceService.deleteByNodeExecutionIds(approvalNodeExecutionIds);
   }
 }

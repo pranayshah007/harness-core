@@ -250,8 +250,7 @@ public class AccountConnectorApiImplTest extends CategoryTest {
     Response response = accountConnectorApi.getAccountScopedConnectors(false, null, 0, 10, account);
 
     assertThat(response.getStatus()).isEqualTo(200);
-    assertThat(response.getLinks()).isNotNull();
-    assertThat(response.getLinks().size()).isEqualTo(1);
+    assertThat(response.getHeaders().size()).isEqualTo(3);
 
     List<ConnectorResponse> connectorResponses = (List<ConnectorResponse>) response.getEntity();
     ConnectorResponse connectorResponse = connectorResponses.get(0);
@@ -272,8 +271,7 @@ public class AccountConnectorApiImplTest extends CategoryTest {
     Response response = accountConnectorApi.getAccountScopedConnectors(false, null, 0, 10, account);
 
     assertThat(response.getStatus()).isEqualTo(200);
-    assertThat(response.getLinks()).isNotNull();
-    assertThat(response.getLinks().size()).isEqualTo(1);
+    assertThat(response.getHeaders().size()).isEqualTo(3);
 
     List<ConnectorResponse> connectorResponses = (List<ConnectorResponse>) response.getEntity();
     assertThat(connectorResponses.size()).isEqualTo(0);

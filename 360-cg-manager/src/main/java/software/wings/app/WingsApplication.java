@@ -16,6 +16,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.lock.mongo.MongoPersistentLocker.LOCKS_STORE;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.microservice.NotifyEngineTarget.GENERAL;
+import static io.harness.ng.DbAliases.DMS;
 import static io.harness.persistence.HPersistence.ANALYTICS_STORE_NAME;
 import static io.harness.time.DurationUtils.durationTillDayTime;
 import static io.harness.waiter.OrchestrationNotifyEventListener.ORCHESTRATION;
@@ -234,6 +235,7 @@ import software.wings.scheduler.events.segment.SegmentGroupEventJob;
 import software.wings.scheduler.marketplace.gcp.GCPBillingHandler;
 import software.wings.scheduler.persistance.PersistentLockCleanup;
 import software.wings.search.framework.ElasticsearchSyncService;
+import software.wings.search.redisConsumer.ApplicationTimeScaleRedisChangeEventConsumer;
 import software.wings.security.AuthResponseFilter;
 import software.wings.security.AuthRuleFilter;
 import software.wings.security.AuthenticationFilter;
@@ -940,7 +942,8 @@ public class WingsApplication extends Application<MainConfiguration> {
     modules.add(new IndexMigratorModule());
     modules.add(new YamlModule());
     modules.add(new ManagerQueueModule());
-    modules.add(new ManagerEventsFrameworkModule(configuration.getEventsFrameworkConfiguration()));
+    modules.add(new ManagerEventsFrameworkModule(
+        configuration.getEventsFrameworkConfiguration(), configuration.getDebeziumConsumerConfigs()));
 
     modules.add(new ManagerExecutorModule());
     modules.add(new TemplateModule());
@@ -1127,6 +1130,11 @@ public class WingsApplication extends Application<MainConfiguration> {
         && !configuration.getEventsMongo().getUri().equals(configuration.getMongoConnectionFactory().getUri())) {
       persistence.register(Store.builder().name("events").build(), configuration.getEventsMongo().getUri());
     }
+
+    if (isNotEmpty(configuration.getDmsMongo().getUri())
+        && !configuration.getDmsMongo().getUri().equals(configuration.getMongoConnectionFactory().getUri())) {
+      persistence.register(Store.builder().name(DMS).build(), configuration.getDmsMongo().getUri());
+    }
   }
 
   private void registerDataStores(Injector injector) {
@@ -1273,6 +1281,8 @@ public class WingsApplication extends Application<MainConfiguration> {
     RedisConsumerControllerCg controller = injector.getInstance(RedisConsumerControllerCg.class);
     controller.register(injector.getInstance(NotifyEventConsumerCg.class), listenerConfig.getNotifyConsumerCount());
     controller.register(injector.getInstance(GeneralEventConsumerCg.class), listenerConfig.getGeneralConsumerCount());
+    controller.register(injector.getInstance(ApplicationTimeScaleRedisChangeEventConsumer.class),
+        configuration.getDebeziumConsumerConfigs().getApplicationTimescaleStreaming().getThreads());
   }
 
   private void scheduleJobsManager(

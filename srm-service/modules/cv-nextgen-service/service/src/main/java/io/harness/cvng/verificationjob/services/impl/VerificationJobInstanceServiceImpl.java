@@ -109,7 +109,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
 
   @Override
   public String create(VerificationJobInstance verificationJobInstance) {
-    log.info("Creating  VerificationJobInstance {}", verificationJobInstance);
+    log.info("Creating VerificationJobInstance {}", verificationJobInstance);
     hPersistence.save(verificationJobInstance);
     return verificationJobInstance.getUuid();
   }

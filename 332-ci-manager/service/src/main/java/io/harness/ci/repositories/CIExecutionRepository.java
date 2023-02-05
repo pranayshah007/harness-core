@@ -17,7 +17,8 @@ import org.springframework.data.repository.CrudRepository;
 
 @HarnessRepo
 @OwnedBy(HarnessTeam.CI)
-public interface CIExecutionRepository extends CrudRepository<CIExecutionMetadata, String> {
+public interface CIExecutionRepository
+    extends CrudRepository<CIExecutionMetadata, String>, CIExecutionRepositoryCustom {
   long countByAccountId(String AccountID);
   long countByAccountIdAndBuildType(String AccountID, OSType BuildType);
 

@@ -28,6 +28,7 @@ public interface ServiceAccountService {
       String identifier, ServiceAccountDTO requestDTO);
   boolean deleteServiceAccount(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
+  void deleteBatch(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   ServiceAccountDTO getServiceAccountDTO(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
   ServiceAccountDTO getServiceAccountDTO(String accountIdentifier, String identifier);

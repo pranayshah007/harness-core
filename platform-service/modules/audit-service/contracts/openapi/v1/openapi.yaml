@@ -493,10 +493,18 @@ components:
                   created: 1670304106000
                   update: 1670304106000
       headers:
-        Link:
+        X-Total-Elements:
           schema:
-            type: string
-          description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.'
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
     StreamingDestinationValidateResponse:
       description: Example response
       content:
@@ -518,7 +526,19 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/StreamingDestinationAggregateDTO'
-      headers: {}
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
   requestBodies:
     CreateStreamingDestinationRequest:
       content:

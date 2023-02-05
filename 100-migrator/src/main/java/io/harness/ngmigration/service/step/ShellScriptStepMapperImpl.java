@@ -196,4 +196,9 @@ public class ShellScriptStepMapperImpl extends StepMapper {
         .map(ShellScripStepFunctor::new)
         .collect(Collectors.toList());
   }
+
+  @Override
+  public boolean loopingSupported() {
+    return true;
+  }
 }

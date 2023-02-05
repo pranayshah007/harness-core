@@ -16,12 +16,14 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.PROPERTIES;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.CIIntegrationStageModifier;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.license.CILicenseService;
@@ -63,6 +65,7 @@ import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.when.utils.RunInfoUtils;
+import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -73,10 +76,12 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -88,6 +93,7 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
   @Inject private ConnectorUtils connectorUtils;
   @Inject private CILicenseService ciLicenseService;
   @Inject CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
+  @Inject private CIFeatureFlagService featureFlagService;
 
   @Override
   public String getExecutionInputTemplateAndModifyYamlField(YamlField yamlField) {
@@ -126,6 +132,9 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
         accountExecutionMetadataRepository, ciLicenseService, ctx.getAccountIdentifier(), infrastructure);
 
     CodeBase codeBase = IntegrationStageUtils.getCICodebase(ctx);
+    if (featureFlagService.isEnabled(FeatureName.CI_PIPELINE_VARIABLES_IN_STEPS, ctx.getAccountIdentifier())) {
+      addPipelineVariablesToStageNode(ctx, stageNode);
+    }
 
     ExecutionElementConfig modifiedExecutionPlan =
         modifyYAMLWithImplicitSteps(ctx, executionField, stageNode, infrastructure, codeBase);
@@ -141,6 +150,31 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
 
     log.info("Successfully created plan for integration stage {}", stageNode.getIdentifier());
     return planCreationResponseMap;
+  }
+
+  public void addPipelineVariablesToStageNode(PlanCreationContext ctx, IntegrationStageNode stageNode) {
+    List<NGVariable> pipelineVariables = fetchPipelineVariables(ctx);
+    stageNode.setPipelineVariables(pipelineVariables);
+  }
+
+  private List<NGVariable> fetchPipelineVariables(PlanCreationContext ctx) {
+    List<NGVariable> pipelineVariables = new ArrayList<>();
+
+    try {
+      YamlField fullField = YamlUtils.readTree(ctx.getYaml());
+      YamlField variablesField = fullField.fromYamlPath("pipeline/variables");
+      if (Objects.isNull(variablesField) || Objects.isNull(variablesField.getNode())) {
+        return pipelineVariables;
+      }
+      for (YamlNode variable : variablesField.getNode().asArray()) {
+        NGVariable pipelineVariable = YamlUtils.read(variable.toString(), NGVariable.class);
+        pipelineVariables.add(pipelineVariable);
+      }
+    } catch (Exception e) {
+      log.warn("Exception while reading pipeline variables : ", e);
+    }
+
+    return pipelineVariables;
   }
 
   @Override

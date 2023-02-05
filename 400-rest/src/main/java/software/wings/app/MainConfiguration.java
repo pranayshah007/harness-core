@@ -64,6 +64,7 @@ import software.wings.helpers.ext.mail.SmtpConfig;
 import software.wings.jre.JreConfig;
 import software.wings.scheduler.LdapSyncJobConfig;
 import software.wings.search.framework.ElasticsearchConfig;
+import software.wings.search.redisConsumer.DebeziumConsumersConfig;
 import software.wings.security.authentication.MarketPlaceConfig;
 import software.wings.security.authentication.oauth.AzureConfig;
 import software.wings.security.authentication.oauth.BitbucketConfig;
@@ -123,6 +124,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("mongo") @ConfigSecret private MongoConfig mongoConnectionFactory = MongoConfig.builder().build();
   @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
   @JsonProperty("events-mongo") @ConfigSecret private MongoConfig eventsMongo = MongoConfig.builder().uri("").build();
+  @JsonProperty("dms-mongo") @ConfigSecret private MongoConfig dmsMongo = MongoConfig.builder().build();
   @JsonProperty("elasticsearch")
   private ElasticsearchConfig elasticsearchConfig = ElasticsearchConfig.builder().build();
   @JsonProperty(value = "searchEnabled") private boolean isSearchEnabled;
@@ -238,6 +240,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty(value = "disableInstanceSyncIterator") private Boolean disableInstanceSyncIterator;
   @JsonProperty("delegateQueueServiceConfig") private DelegateQueueServiceConfig queueServiceConfig;
+  @JsonProperty("debeziumConsumersConfigs") DebeziumConsumersConfig debeziumConsumerConfigs;
   // If this flag is enabled event framework is utilized for wait engine notification mechanism
   @JsonProperty(value = "redisNotifyEvent") private boolean redisNotifyEvent;
 
@@ -368,6 +371,9 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
     }
     if (eventsMongo != null) {
       dbAliases.add(eventsMongo.getAliasDBName());
+    }
+    if (dmsMongo != null) {
+      dbAliases.add(dmsMongo.getAliasDBName());
     }
     return dbAliases;
   }

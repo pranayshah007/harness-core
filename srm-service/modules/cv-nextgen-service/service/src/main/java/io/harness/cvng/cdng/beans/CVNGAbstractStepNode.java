@@ -30,6 +30,7 @@ import lombok.Data;
 @Data
 public abstract class CVNGAbstractStepNode extends AbstractStepNode {
   // check if this field is needed or not
+  @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
   @YamlSchemaTypes(value = {runtime, list})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;

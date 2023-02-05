@@ -16,6 +16,7 @@ import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.CustomDeploymentInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.EcsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.GitOpsInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.GoogleFunctionInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
@@ -31,6 +32,7 @@ import io.harness.entities.instanceinfo.AzureWebAppNGInstanceInfo;
 import io.harness.entities.instanceinfo.CustomDeploymentInstanceInfo;
 import io.harness.entities.instanceinfo.EcsInstanceInfo;
 import io.harness.entities.instanceinfo.GitopsInstanceInfo;
+import io.harness.entities.instanceinfo.GoogleFunctionInstanceInfo;
 import io.harness.entities.instanceinfo.InstanceInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.entities.instanceinfo.NativeHelmInstanceInfo;
@@ -75,6 +77,8 @@ public class InstanceInfoMapper {
       return TasInstanceInfoMapper.toDTO((TasInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof AsgInstanceInfo) {
       return AsgInstanceInfoMapper.toDTO((AsgInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof GoogleFunctionInstanceInfo) {
+      return GoogleFunctionInstanceInfoMapper.toDTO((GoogleFunctionInstanceInfo) instanceInfo);
     }
     throw new InvalidRequestException("No InstanceInfoMapper toDTO found for instanceInfo : {}" + instanceInfo);
   }
@@ -108,6 +112,8 @@ public class InstanceInfoMapper {
       return TasInstanceInfoMapper.toEntity((TasInstanceInfoDTO) instanceInfoDTO);
     } else if (instanceInfoDTO instanceof AsgInstanceInfoDTO) {
       return AsgInstanceInfoMapper.toEntity((AsgInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof GoogleFunctionInstanceInfoDTO) {
+      return GoogleFunctionInstanceInfoMapper.toEntity((GoogleFunctionInstanceInfoDTO) instanceInfoDTO);
     }
     throw new InvalidRequestException(
         "No InstanceInfoMapper toEntity found for instanceInfoDTO : {}" + instanceInfoDTO);
