@@ -7,7 +7,6 @@
 
 package io.harness.delegate.utils;
 
-import io.harness.delegate.resources.DelegateSetupResource;
 import io.harness.delegate.resources.DummyResource;
 import io.harness.swagger.SwaggerBundleConfigurationFactory;
 
