@@ -30,9 +30,11 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.serializer.KryoSerializer;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.plugin.ContainerStepInfo;
 import io.harness.steps.plugin.ContainerStepOutcome;
+import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
@@ -47,12 +49,17 @@ import lombok.extern.slf4j.Slf4j;
 public class ContainerStepExecutionResponseHelper {
   @Inject private ExceptionManager exceptionManager;
   @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
+  @Inject private KryoSerializer referenceFalseKryoSerializer;
 
   public StepResponse handleAsyncResponseInternal(
       Ambiance ambiance, ContainerStepInfo stepParameters, Map<String, ResponseData> responseDataMap) {
     // If any of the responses are in serialized format, deserialize them
     for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
       entry.setValue(serializedResponseDataHelper.deserialize(entry.getValue()));
+      if (entry.getValue() instanceof BinaryResponseData) {
+        entry.setValue(((ResponseData) referenceFalseKryoSerializer.asInflatedObject(
+            ((BinaryResponseData) entry.getValue()).getData())));
+      }
     }
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
     log.info("Received response for step {}", stepIdentifier);

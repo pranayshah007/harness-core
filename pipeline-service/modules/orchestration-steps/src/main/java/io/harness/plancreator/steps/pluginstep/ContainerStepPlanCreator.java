@@ -10,8 +10,12 @@ package io.harness.plancreator.steps.pluginstep;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.steps.common.WithStepElementParameters;
+import io.harness.plancreator.steps.internal.PMSStepInfo;
+import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -26,6 +30,10 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
+import io.harness.pms.timeout.SdkTimeoutObtainment;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -35,6 +43,10 @@ import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.common.steps.stepgroup.StepGroupStep;
 import io.harness.steps.common.steps.stepgroup.StepGroupStepParameters;
 import io.harness.steps.plugin.ContainerStepNode;
+import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
+import io.harness.utils.PlanCreatorUtilsCommon;
+import io.harness.utils.TimeoutUtils;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -76,9 +88,9 @@ public class ContainerStepPlanCreator extends ChildrenPlanCreator<ContainerStepN
         OnSuccessAdviserParameters.builder().nextNodeId(getNextNodeId(containerStep.getNode())).build()));
 
     PlanNode runStepPlanNode = RunContainerStepPlanCreater.createPlanForField(
-        runStepNodeId, getStepParameters(config), advisorParametersRunStep);
+        runStepNodeId, getStepParameters(config, ctx), advisorParametersRunStep);
     PlanNode initPlanNode = InitContainerStepPlanCreater.createPlanForField(
-        initStepNodeId, getStepParameters(config), advisorParametersInitStep);
+        initStepNodeId, getStepParameters(config, ctx), advisorParametersInitStep);
 
     planCreationResponseMap.put(
         initPlanNode.getUuid(), PlanCreationResponse.builder().node(initPlanNode.getUuid(), initPlanNode).build());
@@ -125,6 +137,11 @@ public class ContainerStepPlanCreator extends ChildrenPlanCreator<ContainerStepN
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
         .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField()))
+        .timeoutObtainment(
+            SdkTimeoutObtainment.builder()
+                .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
+                .parameters(AbsoluteSdkTimeoutTrackerParameters.builder().timeout(getTimeoutString(config)).build())
+                .build())
         .skipExpressionChain(false)
         .build();
   }
@@ -175,10 +192,28 @@ public class ContainerStepPlanCreator extends ChildrenPlanCreator<ContainerStepN
     return null;
   }
 
-  protected ContainerStepNode getStepParameters(ContainerStepNode stepElement) {
+  protected StepParameters getStepParameters(ContainerStepNode stepElement, PlanCreationContext ctx) {
+    if (stepElement.getStepSpecType() instanceof WithStepElementParameters) {
+      stepElement.setTimeout(TimeoutUtils.getTimeout(stepElement.getTimeout()));
+      return ((PMSStepInfo) stepElement.getStepSpecType())
+          .getStepParameters(stepElement,
+              PlanCreatorUtilsCommon.getRollbackParameters(
+                  ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN),
+              ctx);
+    }
+    stepElement.setTimeout(TimeoutUtils.getTimeout(stepElement.getTimeout()));
     stepElement.getContainerStepInfo().setIdentifier(stepElement.getIdentifier());
     stepElement.getContainerStepInfo().setName(stepElement.getName());
-    stepElement.getContainerStepInfo().setTimeout(stepElement.getTimeout());
-    return stepElement;
+    return stepElement.getStepSpecType().getStepParameters();
+  }
+
+  protected ParameterField<String> getTimeoutString(PmsAbstractStepNode stepElement) {
+    ParameterField<Timeout> timeout = TimeoutUtils.getTimeout(stepElement.getTimeout());
+    if (timeout.isExpression()) {
+      return ParameterField.createExpressionField(
+          true, timeout.getExpressionValue(), timeout.getInputSetValidator(), true);
+    } else {
+      return ParameterField.createValueField(timeout.getValue().getTimeoutString());
+    }
   }
 }

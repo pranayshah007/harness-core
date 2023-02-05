@@ -22,6 +22,7 @@ import io.harness.delegate.beans.ci.k8s.PodStatus;
 import io.harness.encryption.Scope;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
@@ -55,7 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
-public class InitContainerStep implements TaskExecutableWithRbac<ContainerStepInfo, K8sTaskExecutionResponse> {
+public class InitContainerStep implements TaskExecutableWithRbac<StepElementParameters, K8sTaskExecutionResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.INIT_CONTAINER_STEP_TYPE;
 
   private final ContainerStepCleanupHelper containerStepCleanupHelper;
@@ -65,12 +66,13 @@ public class InitContainerStep implements TaskExecutableWithRbac<ContainerStepIn
   private final ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Override
-  public void validateResources(Ambiance ambiance, ContainerStepInfo stepParameters) {
-    containerStepRbacHelper.validateResources(stepParameters, ambiance);
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+    ContainerStepInfo stepParameter = ((ContainerStepInfo) stepParameters.getSpec());
+    containerStepRbacHelper.validateResources(stepParameter, ambiance);
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, ContainerStepInfo stepParameters,
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<K8sTaskExecutionResponse> responseDataSupplier) throws Exception {
     K8sTaskExecutionResponse k8sTaskExecutionResponse = responseDataSupplier.get();
     CommandExecutionStatus commandExecutionStatus = k8sTaskExecutionResponse.getCommandExecutionStatus();
@@ -118,22 +120,23 @@ public class InitContainerStep implements TaskExecutableWithRbac<ContainerStepIn
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, ContainerStepInfo containerStepInfo, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     String logPrefix = getLogPrefix(ambiance);
+    ContainerStepInfo containerStepInfo = ((ContainerStepInfo) stepElementParameters.getSpec());
     CIInitializeTaskParams buildSetupTaskParams =
         containerStepInitHelper.getK8InitializeTaskParams(containerStepInfo, ambiance, logPrefix);
     String stageId = ambiance.getStageExecutionId();
     List<TaskSelector> taskSelectors = new ArrayList<>();
 
-    TaskData taskData = getTaskData(containerStepInfo, buildSetupTaskParams);
+    TaskData taskData = getTaskData(stepElementParameters, buildSetupTaskParams);
     return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2, null, true,
         TaskType.valueOf(taskData.getTaskType()).getDisplayName(), taskSelectors, Scope.PROJECT, EnvironmentType.ALL,
         false, new ArrayList<>(), false, stageId);
   }
 
   @Override
-  public Class<ContainerStepInfo> getStepParametersClass() {
-    return ContainerStepInfo.class;
+  public Class<StepElementParameters> getStepParametersClass() {
+    return StepElementParameters.class;
   }
 
   private String getLogPrefix(Ambiance ambiance) {
@@ -141,8 +144,10 @@ public class InitContainerStep implements TaskExecutableWithRbac<ContainerStepIn
     return LogStreamingHelper.generateLogBaseKey(logAbstractions);
   }
 
-  public TaskData getTaskData(ContainerStepInfo stepNode, CIInitializeTaskParams buildSetupTaskParams) {
-    long timeout = ((Timeout) stepNode.getTimeout().fetchFinalValue()).getTimeoutInMillis();
+  public TaskData getTaskData(
+      StepElementParameters stepElementParameters, CIInitializeTaskParams buildSetupTaskParams) {
+    long timeout =
+        Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis();
     SerializationFormat serializationFormat = SerializationFormat.KRYO;
     String taskType = TaskType.CONTAINER_INITIALIZATION.name();
     return TaskData.builder()

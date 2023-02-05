@@ -20,9 +20,9 @@ import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.plugin.ContainerCommandUnitConstants;
-import io.harness.steps.plugin.ContainerStepNode;
 
 import com.google.protobuf.ByteString;
 import lombok.experimental.UtilityClass;
@@ -31,7 +31,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InitContainerStepPlanCreater {
   public PlanNode createPlanForField(
-      String runStepNodeId, ContainerStepNode containerStepParams, ByteString advisorParams) {
+      String runStepNodeId, StepParameters stepElementParameters, ByteString advisorParams) {
     return PlanNode.builder()
         .uuid(runStepNodeId)
         .name(ContainerCommandUnitConstants.InitContainer)
@@ -41,7 +41,7 @@ public class InitContainerStepPlanCreater {
                       .setStepCategory(StepCategory.STEP)
                       .build())
         .group(StepOutcomeGroup.STEP.name())
-        .stepParameters(containerStepParams.getContainerStepInfo())
+        .stepParameters(stepElementParameters)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.TASK).build())

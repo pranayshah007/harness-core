@@ -37,7 +37,6 @@ import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
-import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.OutputNGVariable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -116,10 +115,6 @@ public class ContainerStepInfo extends ContainerBaseStepInfo
   @VariableExpression(skipVariableExpression = true)
   private ParameterField<List<OutputNGVariable>> outputVariables;
 
-  @VariableExpression(skipInnerObjectTraversal = true)
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(hidden = true)
-  ParameterField<Timeout> timeout;
   @Builder(builderMethodName = "infoBuilder")
   public ContainerStepInfo(String uuid, String identifier, String name, int retry,
       ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
