@@ -97,7 +97,7 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
       }
     });
     Injector injector = Guice.createInjector(modules);
-    environment.jersey().register(DelegateServiceAuthFilter.class);
+    environment.jersey().register(injector.getInstance(DelegateAuthService.class));
   }
 
   @Override
