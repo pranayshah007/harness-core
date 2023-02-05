@@ -53,6 +53,8 @@ java_library(
         "@maven//:org_apache_logging_log4j_log4j_to_slf4j",
         "@maven//:javax_activation_activation",
         "@maven//:javax_xml_bind_jaxb_api",
+        "//419-delegate-service-app/src/main/java/io/harness/dms/module:module",
+        "//419-delegate-service-app/src/main/java/io/harness/dms/configuration:module"
     ],
 )
 

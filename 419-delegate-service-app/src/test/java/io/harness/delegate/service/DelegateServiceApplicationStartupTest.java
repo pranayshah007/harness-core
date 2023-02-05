@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.dms.app.DelegateServiceApp;
-import io.harness.dms.app.DelegateServiceConfiguration;
+import io.harness.dms.configuration.DelegateServiceConfiguration;
 import io.harness.network.Http;
 import io.harness.rule.Owner;
 

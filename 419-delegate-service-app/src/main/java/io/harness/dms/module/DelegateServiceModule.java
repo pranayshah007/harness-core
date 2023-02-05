@@ -1,6 +1,7 @@
-package io.harness.dms.app;
+package io.harness.dms.module;
 
 import io.harness.cache.CacheModule;
+import io.harness.dms.configuration.DelegateServiceConfiguration;
 import io.harness.govern.ProviderModule;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;

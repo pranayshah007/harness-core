@@ -867,7 +867,6 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(DeletedEntity.class);
     set.add(ARMInfrastructureProvisioner.class);
     set.add(AccessRequest.class);
-    set.add(AgentMtlsEndpoint.class);
     set.add(ArtifactView.class);
     set.add(LookerEntityReconRecord.class);
     set.add(InstanceSyncTaskDetails.class);
