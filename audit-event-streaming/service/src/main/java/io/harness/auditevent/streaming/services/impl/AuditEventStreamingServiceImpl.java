@@ -10,20 +10,24 @@ package io.harness.auditevent.streaming.services.impl;
 import static io.harness.audit.entities.AuditEvent.AuditEventKeys.ACCOUNT_IDENTIFIER_KEY;
 import static io.harness.audit.entities.AuditEvent.AuditEventKeys.createdAt;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.JOB_START_TIME_PARAMETER_KEY;
-import static io.harness.auditevent.streaming.entities.BatchStatus.SUCCESS;
+import static io.harness.auditevent.streaming.beans.BatchStatus.FAILED;
+import static io.harness.auditevent.streaming.beans.BatchStatus.IN_PROGRESS;
+import static io.harness.auditevent.streaming.beans.BatchStatus.SUCCESS;
 
 import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.streaming.StreamingDestination;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.auditevent.streaming.AuditEventRepository;
 import io.harness.auditevent.streaming.BatchConfig;
-import io.harness.auditevent.streaming.entities.BatchStatus;
+import io.harness.auditevent.streaming.beans.PublishResponse;
+import io.harness.auditevent.streaming.beans.PublishResponseStatus;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
-import io.harness.auditevent.streaming.entities.outgoing.OutgoingAuditMessage;
 import io.harness.auditevent.streaming.publishers.StreamingPublisher;
 import io.harness.auditevent.streaming.publishers.StreamingPublisherUtils;
 import io.harness.auditevent.streaming.services.AuditEventStreamingService;
 import io.harness.auditevent.streaming.services.BatchProcessorService;
 import io.harness.auditevent.streaming.services.StreamingBatchService;
+import io.harness.auditevent.streaming.services.StreamingDestinationService;
 
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Sorts;
@@ -43,6 +47,7 @@ import org.springframework.stereotype.Service;
 public class AuditEventStreamingServiceImpl implements AuditEventStreamingService {
   private final BatchProcessorService batchProcessorService;
   private final StreamingBatchService streamingBatchService;
+  private final StreamingDestinationService streamingDestinationService;
   private final AuditEventRepository auditEventRepository;
   private final BatchConfig batchConfig;
   private final MongoTemplate template;
@@ -50,10 +55,12 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
 
   @Autowired
   public AuditEventStreamingServiceImpl(BatchProcessorService batchProcessorService,
-      StreamingBatchService streamingBatchService, AuditEventRepository auditEventRepository, BatchConfig batchConfig,
-      MongoTemplate template, Map<String, StreamingPublisher> streamingPublisherMap) {
+      StreamingBatchService streamingBatchService, StreamingDestinationService streamingDestinationService,
+      AuditEventRepository auditEventRepository, BatchConfig batchConfig, MongoTemplate template,
+      Map<String, StreamingPublisher> streamingPublisherMap) {
     this.batchProcessorService = batchProcessorService;
     this.streamingBatchService = streamingBatchService;
+    this.streamingDestinationService = streamingDestinationService;
     this.auditEventRepository = auditEventRepository;
     this.batchConfig = batchConfig;
     this.template = template;
@@ -64,7 +71,7 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
   public StreamingBatch stream(StreamingDestination streamingDestination, JobParameters jobParameters) {
     StreamingBatch streamingBatch = streamingBatchService.getLastStreamingBatch(
         streamingDestination, jobParameters.getLong(JOB_START_TIME_PARAMETER_KEY));
-    if (streamingBatch.getStatus().equals(BatchStatus.IN_PROGRESS)) {
+    if (streamingBatch.getStatus().equals(IN_PROGRESS)) {
       log.warn(getFullLogMessage("The batch is still in progress. Skipping.", streamingBatch));
       return streamingBatch;
     }
@@ -72,6 +79,7 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
         getCriteriaToFetchAuditEvents(streamingBatch, streamingDestination), Sorts.ascending(createdAt));
     if (!auditEventMongoCursor.hasNext()) {
       log.info(getFullLogMessage("No more records found.", streamingBatch));
+      streamingBatch.setLastStreamedAt(System.currentTimeMillis());
       streamingBatch.setStatus(SUCCESS);
       return streamingBatchService.update(streamingBatch.getAccountIdentifier(), streamingBatch);
     } else {
@@ -81,20 +89,22 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
 
   private StreamingBatch streamInternal(StreamingBatch streamingBatch, StreamingDestination streamingDestination,
       MongoCursor<Document> auditEventMongoCursor) {
-    boolean successResult = false;
+    boolean successful = false;
     while (auditEventMongoCursor.hasNext()) {
       List<AuditEvent> auditEvents = getAuditEventsChunk(auditEventMongoCursor);
-      List<OutgoingAuditMessage> outgoingAuditMessages = batchProcessorService.processAuditEvent(auditEvents);
+      List<OutgoingAuditMessage> outgoingAuditMessages =
+          batchProcessorService.processAuditEvent(streamingBatch, auditEvents);
       StreamingPublisher streamingPublisher =
           StreamingPublisherUtils.getStreamingPublisher(streamingDestination.getType(), streamingPublisherMap);
-      successResult = streamingPublisher.publish(streamingDestination, outgoingAuditMessages);
-      streamingBatch = updateBatchByResult(streamingBatch, auditEvents, successResult);
-      if (!successResult) {
+      PublishResponse publishResponse =
+          streamingPublisher.publish(streamingDestination, streamingBatch, outgoingAuditMessages);
+      streamingBatch = updateBatchByResult(streamingBatch, auditEvents, publishResponse);
+      successful = publishResponse.getStatus() == PublishResponseStatus.SUCCESS;
+      if (!successful) {
         break;
       }
-      log.info(getFullLogMessage(String.format("Published [%s] messages.", auditEvents.size()), streamingBatch));
     }
-    if (successResult) {
+    if (successful) {
       streamingBatch.setStatus(SUCCESS);
       streamingBatch = streamingBatchService.update(streamingBatch.getAccountIdentifier(), streamingBatch);
     }
@@ -112,7 +122,7 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
   }
 
   private String getFullLogMessage(String message, StreamingBatch streamingBatch) {
-    return String.format("%s [streamingBatchId=%s] [streamingDestination=%s] [accountIdentifier=%s]", message,
+    return String.format("%s [streamingBatchId = %s] [streamingDestination = %s] [accountIdentifier = %s]", message,
         streamingBatch.getId(), streamingBatch.getStreamingDestinationIdentifier(),
         streamingBatch.getAccountIdentifier());
   }
@@ -130,13 +140,26 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
   }
 
   private StreamingBatch updateBatchByResult(
-      StreamingBatch streamingBatch, List<AuditEvent> auditEvents, boolean result) {
-    if (result) {
+      StreamingBatch streamingBatch, List<AuditEvent> auditEvents, PublishResponse publishResponse) {
+    streamingBatch.setLastStreamedAt(System.currentTimeMillis());
+    if (PublishResponseStatus.SUCCESS == publishResponse.getStatus()) {
+      log.info(getFullLogMessage(String.format("Published [%s] messages.", auditEvents.size()), streamingBatch));
       Long lastSuccessfulRecordTimestamp = auditEvents.get(auditEvents.size() - 1).getCreatedAt();
       long numberOfRecordsPublished = auditEvents.size()
           + (streamingBatch.getNumberOfRecordsPublished() == null ? 0 : streamingBatch.getNumberOfRecordsPublished());
       streamingBatch.setLastSuccessfulRecordTimestamp(lastSuccessfulRecordTimestamp);
       streamingBatch.setNumberOfRecordsPublished(numberOfRecordsPublished);
+      streamingBatch.setStatus(IN_PROGRESS);
+      streamingBatch.setRetryCount(0);
+    } else {
+      int retryCount = streamingBatch.getStatus().equals(FAILED) ? (streamingBatch.getRetryCount() + 1)
+                                                                 : streamingBatch.getRetryCount();
+      streamingBatch.setRetryCount(retryCount);
+      streamingBatch.setStatus(FAILED);
+      streamingBatch.setFailureInfo(publishResponse.getFailureInfo());
+      String logMessage = "Failed to publish batch.%s";
+      String retryMessage = (retryCount > 0) ? String.format(" [Retries attempted = %s]", retryCount) : "";
+      log.warn(getFullLogMessage(String.format(logMessage, retryMessage), streamingBatch));
     }
     return streamingBatchService.update(streamingBatch.getAccountIdentifier(), streamingBatch);
   }

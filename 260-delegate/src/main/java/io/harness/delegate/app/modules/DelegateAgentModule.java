@@ -89,29 +89,43 @@ public class DelegateAgentModule extends AbstractModule {
 
   private void configureCcmEventPublishing() {
     final String deployMode = System.getenv(DEPLOY_MODE);
-    if (!isOnPrem(deployMode)) {
-      final String managerHostAndPort = System.getenv("MANAGER_HOST_AND_PORT");
-      if (isNotBlank(managerHostAndPort)) {
-        log.info("Running delegate, starting CCM event tailer");
-        final DelegateTailerModule.Config tailerConfig =
-            DelegateTailerModule.Config.builder()
-                .queueFilePath(configuration.getQueueFilePath())
-                .publishTarget(extractTarget(managerHostAndPort))
-                .publishAuthority(extractAndPrepareAuthority(
-                    managerHostAndPort, "events", configuration.isGrpcAuthorityModificationDisabled()))
-                .clientCertificateFilePath(configuration.getClientCertificateFilePath())
-                .clientCertificateKeyFilePath(configuration.getClientCertificateKeyFilePath())
-                .trustAllCertificates(configuration.isTrustAllCertificates())
-                .build();
-        install(new DelegateTailerModule(tailerConfig));
+    final String managerHostAndPort = System.getenv("MANAGER_HOST_AND_PORT");
+    if (isNotBlank(managerHostAndPort)) {
+      log.info("Running delegate, starting CCM event tailer");
+      final DelegateTailerModule.Config tailerConfig;
+      if (isOnPrem(deployMode)) {
+        log.info("fetching OnPrem ChronicleEventsTailer Config");
+        tailerConfig = getOnPremTailerConfig();
       } else {
-        log.warn("Unable to configure event publisher configs. Event publisher will be disabled");
+        tailerConfig = getTailerConfig(managerHostAndPort);
       }
+      install(new DelegateTailerModule(tailerConfig));
     } else {
-      log.info("Skip running tailer by delegate. For mutable it runs in watcher, for on prem we never run it.");
+      log.warn("Unable to configure event publisher configs. Event publisher will be disabled");
     }
     final Config appenderConfig = Config.builder().queueFilePath(configuration.getQueueFilePath()).build();
     install(new AppenderModule(appenderConfig, () -> getDelegateId().orElse("UNREGISTERED")));
     install(new EventPublisherModule());
+  }
+
+  private DelegateTailerModule.Config getTailerConfig(String managerHostAndPort) {
+    return DelegateTailerModule.Config.builder()
+        .queueFilePath(configuration.getQueueFilePath())
+        .publishTarget(extractTarget(managerHostAndPort))
+        .publishAuthority(extractAndPrepareAuthority(
+            managerHostAndPort, "events", configuration.isGrpcAuthorityModificationDisabled()))
+        .clientCertificateFilePath(configuration.getClientCertificateFilePath())
+        .clientCertificateKeyFilePath(configuration.getClientCertificateKeyFilePath())
+        .trustAllCertificates(configuration.isTrustAllCertificates())
+        .build();
+  }
+
+  private DelegateTailerModule.Config getOnPremTailerConfig() {
+    return DelegateTailerModule.Config.builder()
+        .queueFilePath(configuration.getQueueFilePath())
+        .clientCertificateFilePath(configuration.getClientCertificateFilePath())
+        .clientCertificateKeyFilePath(configuration.getClientCertificateKeyFilePath())
+        .trustAllCertificates(configuration.isTrustAllCertificates())
+        .build();
   }
 }

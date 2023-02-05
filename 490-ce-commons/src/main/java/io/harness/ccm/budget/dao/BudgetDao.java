@@ -150,6 +150,9 @@ public class BudgetDao {
     if (null != budget.getBudgetHistory()) {
       updateOperations.set(BudgetKeys.budgetHistory, budget.getBudgetHistory());
     }
+    if (null != budget.getDisableCurrencyWarning()) {
+      updateOperations.set(BudgetKeys.disableCurrencyWarning, budget.getDisableCurrencyWarning());
+    }
     persistence.update(query, updateOperations);
   }
 

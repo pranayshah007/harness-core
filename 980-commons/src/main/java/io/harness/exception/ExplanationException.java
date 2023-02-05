@@ -57,6 +57,7 @@ public class ExplanationException extends WingsException {
   public static final String AZURE_ARTIFACT_NOT_FOUND_FOR_PACKAGE =
       "Artifact file not found for downloading the package.";
   public static final String AZURE_ARTIFACT_DOWNLOAD_FAILED = "Artifact download failed.";
+  public static String SECRET_DECRYPTED_VALUE_INVALID = "Decrypted value was empty.";
 
   // GIT
   public static String INVALID_GIT_REPO = "Provided repo url is invalid.";

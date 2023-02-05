@@ -10,6 +10,7 @@ package io.harness.ng.core.variable.services.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_VARIABLES;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
@@ -18,8 +19,10 @@ import static io.harness.utils.PageUtils.getPageRequest;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NGResourceFilterConstants;
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
+import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
@@ -82,7 +85,8 @@ public class VariableServiceImpl implements VariableService {
   }
 
   @Override
-  public Variable create(String accountIdentifier, VariableDTO variableDTO) {
+  @FeatureRestrictionCheck(MULTIPLE_VARIABLES)
+  public Variable create(@AccountIdentifier String accountIdentifier, VariableDTO variableDTO) {
     if (null == variableDTO.getVariableConfig()) {
       throw new InvalidRequestException("Variable config cannot be null");
     }
@@ -247,6 +251,11 @@ public class VariableServiceImpl implements VariableService {
         .stream()
         .map(entity -> entity.getExpression())
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public Long countVariables(String accountIdentifier) {
+    return variableRepository.countByAccountIdentifier(accountIdentifier);
   }
 
   public void validateTheUpdateRequestIsValid(

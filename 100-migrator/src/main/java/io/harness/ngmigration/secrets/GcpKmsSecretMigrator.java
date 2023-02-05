@@ -26,7 +26,7 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 
@@ -93,8 +93,8 @@ public class GcpKmsSecretMigrator implements SecretMigrator {
                     .identifier(gcpSecretFileIdentifier)
                     .name(gcpSecretFileIdentifier)
                     .description(String.format("Auto Generated Secret for Secret Manager - %s", gcpKmsConfig.getName()))
-                    .orgIdentifier(inputDTO.getOrgIdentifier())
-                    .projectIdentifier(inputDTO.getProjectIdentifier())
+                    .orgIdentifier(orgIdentifier)
+                    .projectIdentifier(projectIdentifier)
                     .type(SecretType.SecretFile)
                     .spec(SecretFileSpecDTO.builder().secretManagerIdentifier("harnessSecretManager").build())
                     .build())

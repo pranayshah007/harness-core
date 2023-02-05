@@ -1032,14 +1032,14 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
             .terraformExecutionData(TerraformExecutionData.builder().executionStatus(ExecutionStatus.SUCCESS).build())
             .variablesList(expectedVariables)
             .build();
-    doReturn(response).when(delegateService).executeTask(any(DelegateTask.class));
+    doReturn(response).when(delegateService).executeTaskV2(any(DelegateTask.class));
     List<NameValuePair> variables = infrastructureProvisionerService.getTerraformVariables(
         APP_ID, SETTING_ID, ".", ACCOUNT_ID, "branch", null, repoName, TerraformSourceType.GIT, null, null);
 
     assertThat(gitConfigArgumentCaptor.getValue()).isEqualTo(gitConfig);
     assertThat(repoNameArgumentCaptor.getValue()).isEqualTo(repoName);
     assertThat(variables).isEqualTo(expectedVariables);
-    verify(delegateService).executeTask(any(DelegateTask.class));
+    verify(delegateService).executeTaskV2(any(DelegateTask.class));
 
     response.getTerraformExecutionData().setExecutionStatus(ExecutionStatus.FAILED);
     response.getTerraformExecutionData().setErrorMessage("error");
@@ -1070,7 +1070,7 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
             .variablesList(expectedVariables)
             .build();
 
-    doReturn(response).when(delegateService).executeTask(any(DelegateTask.class));
+    doReturn(response).when(delegateService).executeTaskV2(any(DelegateTask.class));
     String s3SourceURI = "s3://iis-website-quickstart/terraform-manifest/variablesAndNullResources/";
 
     List<NameValuePair> variables = infrastructureProvisionerService.getTerraformVariables(
@@ -1109,7 +1109,7 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
     List<EncryptedDataDetail> awsConfigEncryptionDetails = new ArrayList<>();
     TerraformExecutionData response = TerraformExecutionData.builder().executionStatus(ExecutionStatus.SUCCESS).build();
 
-    doReturn(response).when(delegateService).executeTask(any(DelegateTask.class));
+    doReturn(response).when(delegateService).executeTaskV2(any(DelegateTask.class));
 
     infrastructureProvisionerService.getTerraformTargets(APP_ID, ACCOUNT_ID, SETTING_ID);
 

@@ -10,8 +10,6 @@ package io.harness.steps.wait;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -98,11 +96,7 @@ public class WaitStepServiceImplTest extends OrchestrationStepsTestBase {
   @Category(UnitTests.class)
   public void testUpdatePlanStatus() {
     when(planExecutionService.calculateStatusExcluding("plan", nodeExecutionId)).thenReturn(Status.RUNNING);
-    waitStepServiceImpl.updatePlanStatus("plan", "node");
-    verify(planExecutionService, times(1)).updateStatus(anyString(), any());
     when(planExecutionService.calculateStatusExcluding("plan", nodeExecutionId)).thenReturn(Status.FAILED);
-    when(planExecutionService.updateStatus("plan", Status.FAILED)).thenReturn(PlanExecution.builder().build());
     verify(planExecutionService, times(0)).updateStatus("plan", Status.FAILED);
-    waitStepServiceImpl.updatePlanStatus("plan", "node");
   }
 }

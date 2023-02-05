@@ -8,6 +8,7 @@
 package io.harness.setupusage;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.setupusage.InfraDefinitionRefProtoDTOHelper.createInfraDefinitionReferenceProtoDTO;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -52,9 +53,29 @@ public class InfrastructureEntitySetupUsageHelper {
     }
   }
 
+  /**
+   * Update setup usages for the current infrastructure entity with referred entities
+   */
+  public void updateSetupUsages(@NonNull InfrastructureEntity entity, Set<EntityDetailProtoDTO> referredEntities) {
+    if (isEmpty(referredEntities)) {
+      deleteSetupUsages(entity);
+    } else {
+      publishEntitySetupUsage(entity, referredEntities);
+    }
+  }
+
   public void deleteSetupUsages(@NonNull InfrastructureEntity entity) {
     EntityDetailProtoDTO entityDetailProtoDTO = buildInfraDefRefBasedEntityDetailProtoDTO(entity);
     setupUsageHelper.deleteInfraSetupUsages(entityDetailProtoDTO, entity.getAccountId());
+  }
+
+  /**
+   * Create setup usages for the current infrastructure entity if referred entities are present
+   */
+  public void createSetupUsages(@NonNull InfrastructureEntity entity, Set<EntityDetailProtoDTO> referredEntities) {
+    if (isNotEmpty(referredEntities)) {
+      publishEntitySetupUsage(entity, referredEntities);
+    }
   }
 
   private void publishEntitySetupUsage(InfrastructureEntity entity, Set<EntityDetailProtoDTO> referredEntities) {
@@ -81,5 +102,10 @@ public class InfrastructureEntitySetupUsageHelper {
     final InfrastructureConfig ngInfrastructureConfig = InfrastructureEntityConfigMapper.toInfrastructureConfig(entity);
     visitor.walkElementTree(ngInfrastructureConfig.getInfrastructureDefinitionConfig());
     return visitor.getEntityReferenceSet();
+  }
+
+  public Set<EntityDetailProtoDTO> getAllReferredEntities(InfrastructureEntity entity) {
+    final String ROOT_LEVEL_NAME = "infrastructureDefinition";
+    return getAllReferredEntities(ROOT_LEVEL_NAME, entity);
   }
 }

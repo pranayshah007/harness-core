@@ -193,6 +193,14 @@ public interface UserService extends OwnedByAccount {
   void delete(@NotEmpty String accountId, @NotEmpty String userId);
 
   /**
+   * Deletes the user from both CG and NG.
+   *
+   * @param accountId the account id
+   * @param userId    the user id
+   */
+  void forceDelete(@NotEmpty String accountId, @NotEmpty String userId);
+
+  /**
    * overrideTwoFactorforAccount
    *
    * @param accountId the account id
@@ -278,6 +286,8 @@ public interface UserService extends OwnedByAccount {
   List<User> getUsersByEmail(List<String> emailIds, String accountId);
 
   User getUserByEmail(String email, String accountId);
+
+  List<User> getUsersEmails(String accountId);
 
   User getUserWithAcceptedInviteByEmail(String email, String accountId);
 
@@ -637,7 +647,7 @@ public interface UserService extends OwnedByAccount {
   InviteOperationResponse checkInviteStatus(UserInvite userInvite, Generation gen);
 
   void loadUserGroupsForUsers(List<User> users, String accountId);
-
+  boolean isUserPartOfAnyUserGroupInCG(String userId, String accountId);
   boolean isUserPresent(String userId);
 
   List<User> getUsers(List<String> userIds, String accountId);

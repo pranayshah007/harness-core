@@ -1,12 +1,5 @@
 server:
   applicationConnectors:
-    - type: h2
-      port: 9080
-      keyStorePath: keystore.jks
-      keyStorePassword: password
-      certAlias: localhost
-      validateCerts: false
-      maxRequestHeaderSize: 100KiB
     - type: http
       port: 3458
       maxRequestHeaderSize: 100KiB
@@ -15,6 +8,12 @@ server:
       - type: console
         target: STDOUT
         threshold: TRACE
+      - type: file
+        threshold: TRACE
+        currentLogFilename: access.log
+        archive: true
+        archivedFileCount: 14
+        archivedLogFilenamePattern: access.%d.log.gz
   maxThreads: 1024
 
 logging:

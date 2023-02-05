@@ -278,7 +278,7 @@ public class AzureWebAppSlotRollbackTest extends WingsBaseTest {
     doReturn(Optional.empty()).when(azureVMSSStateHelper).getUserDataSpecification(mockContext);
     doReturn(appServiceStateData).when(azureVMSSStateHelper).populateAzureAppServiceData(eq(mockContext), any());
     doReturn("service-template-id").when(serviceTemplateHelper).fetchServiceTemplateId(any());
-    doReturn(delegateResult).when(delegateService).queueTask(any());
+    doReturn(delegateResult).when(delegateService).queueTaskV2(any());
     doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
 
     when(mockContext.renderExpression(any())).thenAnswer((Answer<String>) invocation -> {
@@ -286,7 +286,7 @@ public class AzureWebAppSlotRollbackTest extends WingsBaseTest {
       return (String) args[0];
     });
     if (!isSuccess) {
-      doThrow(Exception.class).when(delegateService).queueTask(any());
+      doThrow(Exception.class).when(delegateService).queueTaskV2(any());
     }
 
     doReturn(Optional.of(artifact)).when(azureVMSSStateHelper).getWebAppPackageArtifactForRollback(any());

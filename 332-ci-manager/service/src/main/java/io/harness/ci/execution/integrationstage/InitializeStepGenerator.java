@@ -39,12 +39,13 @@ public class InitializeStepGenerator {
         .infrastructure(infrastructure)
         .stageIdentifier(stageNode.getIdentifier())
         .variables(stageNode.getVariables())
+        .pipelineVariables(stageNode.getPipelineVariables())
         .stageElementConfig(integrationStageConfig)
         .executionSource(ciExecutionArgs.getExecutionSource())
         .ciCodebase(ciCodebase)
         .skipGitClone(!gitClone)
         .executionElementConfig(executionElement)
-        .timeout(buildJobEnvInfoBuilder.getTimeout(infrastructure))
+        .timeout(buildJobEnvInfoBuilder.getTimeout(infrastructure, accountId))
         .build();
   }
 }

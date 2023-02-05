@@ -71,6 +71,7 @@ import static io.harness.network.Localhost.getLocalHostName;
 import static io.harness.network.SafeHttpCall.execute;
 import static io.harness.threading.Morpheus.sleep;
 import static io.harness.utils.MemoryPerformanceUtils.memoryUsage;
+import static io.harness.utils.SecretUtils.isBase64SecretIdentifier;
 
 import static software.wings.beans.TaskType.SCRIPT;
 import static software.wings.beans.TaskType.SHELL_SCRIPT_TASK_NG;
@@ -98,6 +99,7 @@ import io.harness.beans.DelegateHeartbeatResponseStreaming;
 import io.harness.beans.DelegateTaskEventsResponse;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.configuration.DeployMode;
+import io.harness.data.encoding.EncodingUtils;
 import io.harness.data.structure.NullSafeImmutableMap;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.DelegateAgentCommonVariables;
@@ -1802,6 +1804,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                                           .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
                                           .delegateConnectionId(delegateConnectionId)
                                           .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
+                                          .version(getVersion())
                                           .build();
       lastHeartbeatSentAt.set(clock.millis());
       sentFirstHeartbeat.set(true);
@@ -1830,10 +1833,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       setSwitchStorage(receivedDelegateResponse.isUseCdn());
       updateJreVersion(receivedDelegateResponse.getJreVersion());
 
-      HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter, Duration.ofSeconds(15),
-          ()
-              -> executeRestCall(
-                  delegateAgentManagerClient.doConnectionHeartbeat(delegateId, accountId, connectionHeartbeat)));
       lastHeartbeatSentAt.set(clock.millis());
 
     } catch (UncheckedTimeoutException ex) {
@@ -2666,7 +2665,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         secretUuidToValues.put(key, secretValue);
 
         // Adds secret values from the 3 phase decryption to the list of task secrets to be masked
-        delegateTaskPackage.getSecrets().add(String.valueOf(secretValue));
+        String secretValueStr =
+            isBase64SecretIdentifier(key) ? EncodingUtils.encodeBase64(secretValue) : String.valueOf(secretValue);
+        delegateTaskPackage.getSecrets().add(secretValueStr);
       });
 
       DelegateExpressionEvaluator delegateExpressionEvaluator = new DelegateExpressionEvaluator(

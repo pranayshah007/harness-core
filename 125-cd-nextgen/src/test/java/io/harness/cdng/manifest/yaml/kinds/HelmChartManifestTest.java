@@ -9,7 +9,6 @@ package io.harness.cdng.manifest.yaml.kinds;
 
 import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.Fetch;
 import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.Template;
-import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 
 import static java.util.Arrays.asList;
@@ -133,40 +132,5 @@ public class HelmChartManifestTest extends CategoryTest {
         .containsExactlyInAnyOrder("--template", "--debug");
 
     assertThat(result).isEqualTo(original);
-  }
-
-  @Test
-  @Owner(developers = ABHINAV2)
-  @Category(UnitTests.class)
-  public void testApplyHelmRepoOverride() {
-    StoreConfigWrapper originalStoreConfig = Mockito.mock(StoreConfigWrapper.class);
-    StoreConfigWrapper overrideStoreConfig = Mockito.mock(StoreConfigWrapper.class);
-
-    HelmChartManifest original = HelmChartManifest.builder()
-                                     .helmVersion(HelmVersion.V3)
-                                     .skipResourceVersioning(ParameterField.createValueField(true))
-                                     .valuesPaths(ParameterField.createValueField(asList("file/path")))
-                                     .store(ParameterField.createValueField(originalStoreConfig))
-                                     .commandFlags(asList(HelmManifestCommandFlag.builder()
-                                                              .commandType(Fetch)
-                                                              .flag(ParameterField.createValueField("--debug"))
-                                                              .build()))
-                                     .build();
-
-    HelmRepoOverrideManifest override =
-        HelmRepoOverrideManifest.builder().store(ParameterField.createValueField(overrideStoreConfig)).build();
-
-    doReturn(overrideStoreConfig).when(originalStoreConfig).applyOverrides(overrideStoreConfig);
-
-    HelmChartManifest result = (HelmChartManifest) original.applyOverrides(override);
-    assertThat(result.getStore().getValue()).isEqualTo(overrideStoreConfig);
-    assertThat(result.getHelmVersion()).isEqualTo(HelmVersion.V3);
-    assertThat(result.getSkipResourceVersioning().getValue()).isTrue();
-    assertThat(result.getValuesPaths().getValue().size()).isEqualTo(1);
-    assertThat(result.getValuesPaths().getValue().get(0)).isEqualTo("file/path");
-    assertThat(result.getCommandFlags().stream().map(HelmManifestCommandFlag::getCommandType))
-        .containsExactlyInAnyOrder(Fetch);
-    assertThat(result.getCommandFlags().stream().map(HelmManifestCommandFlag::getFlag).map(ParameterField::getValue))
-        .containsExactlyInAnyOrder("--debug");
   }
 }

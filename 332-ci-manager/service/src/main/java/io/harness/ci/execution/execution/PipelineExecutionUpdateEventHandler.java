@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.beans.dto.CITaskDetails;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.outcomes.VmDetailsOutcome;
+import io.harness.ci.execution.queue.QueueClient;
 import io.harness.ci.license.CILicenseService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
@@ -64,6 +65,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
@@ -76,6 +78,8 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
   @Inject private CITaskDetailsRepository ciTaskDetailsRepository;
   @Inject private CIAccountExecutionMetadataRepository ciAccountExecutionMetadataRepository;
   @Inject private QueueExecutionUtils queueExecutionUtils;
+
+  @Inject private QueueClient queueClient;
 
   private final String SERVICE_NAME_CI = "ci";
   private final int MAX_ATTEMPTS = 3;
@@ -93,11 +97,6 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     Status status = event.getStatus();
     ciRatelimitHandlerExecutor.submit(() -> { updateDailyBuildCount(level, status, serviceName, accountId); });
     executorService.submit(() -> {
-      try {
-        queueExecutionUtils.addActiveExecutionBuild(event, accountId, level.getRuntimeId());
-      } catch (Exception ex) {
-        log.error("Failed to add Execution record for {}", level.getRuntimeId(), ex);
-      }
       sendGitStatus(level, ambiance, status, event, accountId);
       sendCleanupRequest(level, ambiance, status, accountId);
     });
@@ -110,13 +109,17 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
 
       Failsafe.with(retryPolicy).run(() -> {
         if (level.getStepType().getStepCategory() == StepCategory.STAGE && isFinalStatus(status)) {
+          // TODO: Once Robust Cleanup implementation is done shift this after response from delegate is received.
+          CIExecutionMetadata ciExecutionMetadata =
+              queueExecutionUtils.deleteActiveExecutionRecord(ambiance.getStageExecutionId());
+          if (StringUtils.isNotBlank(ciExecutionMetadata.getQueueId())) {
+            // ack the request so that its not processed again.
+            queueClient.ack(accountId, ciExecutionMetadata.getQueueId());
+          }
           CICleanupTaskParams ciCleanupTaskParams = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
 
           log.info("Received event with status {} to clean planExecutionId {}, stage {}", status,
               ambiance.getPlanExecutionId(), level.getIdentifier());
-
-          // TODO: Once Robust Cleanup implementation is done shift this after response from delegate is received.
-          queueExecutionUtils.deleteActiveExecutionRecord(level.getRuntimeId());
 
           DelegateTaskRequest delegateTaskRequest =
               getDelegateCleanupTaskRequest(ambiance, ciCleanupTaskParams, accountId);

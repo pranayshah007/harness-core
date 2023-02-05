@@ -14,7 +14,6 @@ import io.harness.cvng.core.beans.healthsource.HealthSourceParamsDTO;
 import io.harness.cvng.core.beans.healthsource.QueryDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.entities.CVConfig;
-import io.harness.cvng.core.entities.HealthSourceParams;
 import io.harness.cvng.core.entities.NextGenLogCVConfig;
 import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.services.api.MetricPackService;
@@ -179,17 +178,16 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
                   .verificationType(VerificationType.TIME_SERIES)
                   .dataSourceType(dataSourceType)
                   .orgIdentifier(orgIdentifier)
-                  .healthSourceParams(HealthSourceParams.builder().region(healthSourceParams.getRegion()).build())
+                  .healthSourceParams(healthSourceParams.getHealthSourceParamsEntity())
                   .projectIdentifier(projectIdentifier)
                   .monitoredServiceIdentifier(monitoredServiceIdentifier)
                   .identifier(identifier)
-                  .category(queryDefinitions.get(0).getRiskProfile().getCategory())
+                  .category(key.getCategory())
                   .connectorIdentifier(connectorRef)
                   .monitoredServiceIdentifier(monitoredServiceIdentifier)
                   .monitoringSourceName(name)
                   .build();
-          nextGenMetricCVConfig.populateFromQueryDefinitions(
-              queryDefinitions, queryDefinitions.get(0).getRiskProfile().getCategory());
+          nextGenMetricCVConfig.populateFromQueryDefinitions(queryDefinitions, key.getCategory());
           nextGenMetricCVConfig.addCustomMetricThresholds(queryDefinitions);
           sumologicMetricCVConfigs.put(key, nextGenMetricCVConfig);
         });
@@ -206,7 +204,7 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
                        .connectorIdentifier(getConnectorRef())
                        .monitoringSourceName(name)
                        .queryName(queryDefinition.getName())
-                       .query(queryDefinition.getQuery())
+                       .query(queryDefinition.getQuery().trim())
                        .groupName(queryDefinition.getGroupName())
                        .queryIdentifier(queryDefinition.getIdentifier())
                        .queryParams(queryDefinition.getQueryParams().getQueryParamsEntity())
@@ -221,13 +219,27 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
   @JsonIgnore
   @Deprecated
   public List<HealthSourceMetricDefinition> getMetricDefinitions() {
-    return queryDefinitions.stream()
-        .map(queryDefinition
-            -> HealthSourceMetricDefinition.builder()
-                   .metricName(queryDefinition.getName())
-                   .identifier(queryDefinition.getIdentifier())
-                   .riskProfile(queryDefinition.getRiskProfile())
-                   .build())
-        .collect(Collectors.toList());
+    if (DataSourceType.getTimeSeriesTypes().contains(dataSourceType)) {
+      return queryDefinitions.stream()
+          .map(queryDefinition
+              -> HealthSourceMetricDefinition.builder()
+                     .metricName(queryDefinition.getName())
+                     .identifier(queryDefinition.getIdentifier())
+                     .riskProfile(queryDefinition.getRiskProfile())
+                     .sli(
+                         HealthSourceMetricDefinition.SLIDTO.builder().enabled(queryDefinition.getSliEnabled()).build())
+                     .analysis(HealthSourceMetricDefinition.AnalysisDTO.builder()
+                                   .liveMonitoring(HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO.builder()
+                                                       .enabled(queryDefinition.getLiveMonitoringEnabled())
+                                                       .build())
+                                   .deploymentVerification(
+                                       HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO.builder()
+                                           .enabled(queryDefinition.getContinuousVerificationEnabled())
+                                           .build())
+                                   .build())
+                     .build())
+          .collect(Collectors.toList());
+    }
+    return Collections.emptyList();
   }
 }

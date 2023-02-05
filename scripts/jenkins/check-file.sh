@@ -11,73 +11,80 @@
 
 #Run the TI,FT and other bazel builds based on the commit
 
-export TargetBranch=`echo ${ghprbTargetBranch}`
-export SourceBranch=`echo ${ghprbSourceBranch}`
+set -e
+export TargetBranch=$(echo "${ghprbTargetBranch}")
+export SourceBranch=$(echo "${ghprbSourceBranch}")
 
-REGEX1='^.*.sh$'
-REGEX2='^.*.md$'
-REGEX3='^.*.txt$'
+PR_Name=("SmartPRChecks-ti2" "SmartPRChecks-tin4" "SmartPRChecks-tin0" "SmartPRChecks-tin1" "SmartPRChecks-tin3" "SmartPRChecks-Functional_tests"
+  "SmartPRChecks-Functional_tests1" "SmartPRChecks-PMD" "SmartPRChecks-codebasehashcheck")
 
-merge_summary=( $(git diff HEAD@{0} HEAD@{1} --name-only) )
+merge_summary=""
+bazelignore_array=($(cat bazelignore))
 
-echo "Merge Summary:"${merge_summary[@]}
+BASE_SHA="$(git merge-base "$COMMIT_SHA" "$BASE_COMMIT_SHA")"
+merge_summary=( $(git diff --name-only $COMMIT_SHA..$BASE_SHA) )
 
-committed_folders=()
-committed_files=()
+echo "Merge Summary:" "${merge_summary[@]}"
+compile="true"
 
-for i in "${merge_summary[@]}"
-do
-  if [[ "$i" == *\/* ]]; then
-   committed_folders+=( "${i%%/*}" )
-  else
-    committed_files+=( "${i##*/}" )
+function compile_check() {
+  for file_name in "${merge_summary[@]}"; do
+    for i in "${bazelignore_array[@]}"; do
+      if [[ $file_name =~ ^$i ]]; then
+        printf >&2 "Compilation is not required for file $file_name :REGEX=$i \n"
+        compile=False
+        break
+      else
+        compile=True
+      fi
+    done
+    if [ $compile == True ]; then
+      echo >&2 "Compilation is required for " "$file_name"
+      break
     fi
-done
+  done
+  echo "$compile"
+}
 
-committed_folders=($(for i in "${committed_folders[@]}"; do echo "${i}"; done | sort -u))
-committed_files=($(for i in "${committed_files[@]}"; do echo "${i}"; done | sort -u))
-
-echo "List of files committed: ${committed_files[@]}"
-echo "List of folders committed: ${committed_folders[@]}"
-
-bazelignore_array=( $(cat scripts/jenkins/bazelignore) )
-
-compile1=false
-compile2=false
-
-for e1 in "${committed_folders[@]}"
-    do
-            if [[ ! " ${bazelignore_array[*]} " =~ $e1 ]]
-            then
-                compile1=true
-                break
-            else
-              compile1=false
-            fi
-    done
-echo "Folder compile $compile1"
-
-for e1 in "${committed_files[@]}"
-    do
-            if [[ ! " ${bazelignore_array[*]} " =~ $e1 ]] && [[ ! $e1 =~ $REGEX1 ]] && [[ ! $e1 =~ $REGEX2 ]] && [[ ! $e1 =~ $REGEX3 ]]
-            then
-                compile2=true
-                break
-            else
-              compile2=false
-            fi
-    done
-echo "Files compile $compile2"
-
-if [[ "$compile1" = "$compile2" ]] && [[  $compile1 == "false" ]]
-then
-  echo "Compilation is Not Required"
+function print_log() {
+  printf "##################################\n\n\n"
+  echo "Compilation is Not Required as files/folders are added in bazelignore"
+  echo "Also marking the heavy checks NotRequired!"
+  for checks in "${PR_Name[@]}"; do
+    printf "$checks\t NotRequired \n"
+  done
+  echo "Merge Summary:" "${merge_summary[@]}"
+  printf "\n\n\n##################################\n\n"
   export COMPILE="false"
   echo "false" >/tmp/COMPILE
-else
-    echo "Doing compilation"
-    export COMPILE="true"
-    echo "true" >/tmp/COMPILE
+}
 
+function send_webhook() {
+  for i in "${PR_Name[@]}"; do
+    curl --silent --output /dev/null --location --request POST 'https://api.github.com/repos/harness/harness-core/statuses/'"$COMMIT_SHA"'' \
+      --header 'Accept: application/vnd.github+json' \
+      --header 'Authorization: Bearer '"$BOT_PWD"'' \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+"state": "success",
+"target_url": "https://app.harness.io/ng/#/account/VRuJ8-dqQH6QZgAtoBr66g/ci/orgs/default/projects/PRCHECKS/pipelines/SmartPRChecks/executions/'"$Execution_Id"'/pipeline",
+"description": "Skipped the check as compilation is not required!",
+"context": "'"$i"'"
+}'
+  done
+}
+
+COMPILE=$( compile_check )
+
+echo Overall Result: "$COMPILE"
+if [[ $COMPILE == False ]]; then
+  export COMPILE="false"
+  echo "false" >/tmp/COMPILE
+  send_webhook
+  print_log
+else
+  export COMPILE="true"
+  echo "true" >/tmp/COMPILE
 fi
-echo "%%%%%% $COMPILE %%%%%%"
+
+#cat /tmp/COMPILE

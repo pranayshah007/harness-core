@@ -7,21 +7,35 @@
 
 package io.harness.resourcegroup.framework.v2.service.impl;
 
+import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.resourcegroup.ResourceGroupPermissions.VIEW_RESOURCEGROUP_PERMISSION;
+import static io.harness.resourcegroup.ResourceGroupResourceTypes.RESOURCE_GROUP;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.REETIKA;
+import static io.harness.utils.PageUtils.getPageRequest;
 
 import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO.AccessControlDTOBuilder;
+import io.harness.accesscontrol.acl.api.Principal;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
@@ -35,20 +49,27 @@ import io.harness.resourcegroup.framework.v2.repositories.spring.ResourceGroupV2
 import io.harness.resourcegroup.v1.remote.dto.ManagedFilter;
 import io.harness.resourcegroup.v1.remote.dto.ResourceGroupFilterDTO;
 import io.harness.resourcegroup.v2.model.ResourceGroup;
+import io.harness.resourcegroup.v2.model.ResourceGroup.ResourceGroupBuilder;
 import io.harness.resourcegroup.v2.model.ResourceGroup.ResourceGroupKeys;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupDTO;
+import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
 import io.harness.rule.Owner;
 import io.harness.utils.PageTestUtils;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -63,6 +84,15 @@ public class ResourceGroupServiceImplTest extends ResourceGroupTestBase {
   private ResourceGroupServiceImpl resourceGroupService;
   private ResourceGroupServiceImpl resourceGroupServiceMockRepo;
   private PageRequest pageRequest;
+  private AccessControlClient accessControlClient;
+
+  private static final String ACCOUNT_IDENTIFIER = "A1";
+  private static final String ORG_IDENTIFIER = "O1";
+  private static final String PROJECT_IDENTIFIER = "P1";
+
+  List<ResourceGroup> resourceGroupList = new ArrayList<>();
+  List<ResourceGroup> permittedResourceGroups = new ArrayList<>();
+  List<AccessControlDTO> accessControlDTOS = new ArrayList<>();
 
   @Before
   public void setup() {
@@ -70,12 +100,39 @@ public class ResourceGroupServiceImplTest extends ResourceGroupTestBase {
     resourceGroupV1ServiceMock = mock(io.harness.resourcegroup.framework.v1.service.ResourceGroupService.class);
     outboxService = mock(OutboxService.class);
     transactionTemplate = mock(TransactionTemplate.class);
-    resourceGroupService = spy(new ResourceGroupServiceImpl(
-        resourceGroupV2Repository, resourceGroupValidatorImpl, outboxService, transactionTemplate));
-    resourceGroupServiceMockRepo = spy(new ResourceGroupServiceImpl(
-        resourceGroupV2RepositoryMock, resourceGroupValidatorImpl, outboxService, transactionTemplate));
+    accessControlClient = mock(AccessControlClient.class);
+
+    resourceGroupService = spy(new ResourceGroupServiceImpl(resourceGroupV2Repository, resourceGroupValidatorImpl,
+        outboxService, transactionTemplate, accessControlClient));
+    resourceGroupServiceMockRepo = spy(new ResourceGroupServiceImpl(resourceGroupV2RepositoryMock,
+        resourceGroupValidatorImpl, outboxService, transactionTemplate, accessControlClient));
 
     pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
+
+    ResourceGroupBuilder resourceGroupBuilder = ResourceGroup.builder()
+                                                    .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                    .orgIdentifier(ORG_IDENTIFIER)
+                                                    .projectIdentifier(PROJECT_IDENTIFIER);
+
+    resourceGroupList.add(resourceGroupBuilder.identifier("RG1").createdAt(1674552111L).build());
+    resourceGroupList.add(resourceGroupBuilder.identifier("RG2").createdAt(1674552145L).build());
+    resourceGroupList.add(resourceGroupBuilder.identifier("RG3").createdAt(1674552157L).build());
+
+    permittedResourceGroups.add(resourceGroupBuilder.identifier("RG2").build());
+    permittedResourceGroups.add(resourceGroupBuilder.identifier("RG1").build());
+
+    AccessControlDTOBuilder accessControlDTOBuilder = AccessControlDTO.builder()
+                                                          .resourceType(RESOURCE_GROUP)
+                                                          .permission("core_resourcegroup_view")
+                                                          .resourceScope(ResourceScope.builder()
+                                                                             .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                                             .orgIdentifier(ORG_IDENTIFIER)
+                                                                             .projectIdentifier(PROJECT_IDENTIFIER)
+                                                                             .build());
+
+    accessControlDTOS.add(accessControlDTOBuilder.permitted(true).resourceIdentifier("RG1").build());
+    accessControlDTOS.add(accessControlDTOBuilder.permitted(true).resourceIdentifier("RG2").build());
+    accessControlDTOS.add(accessControlDTOBuilder.permitted(false).resourceIdentifier("RG3").build());
   }
 
   private Set<String> getRandomStrings(int count) {
@@ -348,6 +405,12 @@ public class ResourceGroupServiceImplTest extends ResourceGroupTestBase {
     ResourceGroupFilterDTO resourceGroupFilterDTO =
         ResourceGroupFilterDTO.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
     resourceGroupFilterDTO.setScopeLevelFilter(scopeLevelFilter);
+    when(accessControlClient.hasAccess(
+             ResourceScope.of(resourceGroupFilterDTO.getAccountIdentifier(), resourceGroupFilterDTO.getOrgIdentifier(),
+                 resourceGroupFilterDTO.getProjectIdentifier()),
+             Resource.of(RESOURCE_GROUP, null), VIEW_RESOURCEGROUP_PERMISSION))
+        .thenReturn(true);
+
     resourceGroupService.list(resourceGroupFilterDTO, pageRequest);
 
     Criteria criteria = getActualListCriteria(resourceGroupFilterDTO);
@@ -504,5 +567,108 @@ public class ResourceGroupServiceImplTest extends ResourceGroupTestBase {
 
     Criteria criteria = criteriaArgumentCaptor.getValue();
     assertGetOnlyCustomFilterCriteria(criteria, accountIdentifier, null, null, identifier);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testListFilter_withAllViewPermission_withNoIdentifierFilter() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    ResourceGroupFilterDTO resourceGroupFilterDTO =
+        ResourceGroupFilterDTO.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
+    when(accessControlClient.hasAccess(
+             ResourceScope.of(resourceGroupFilterDTO.getAccountIdentifier(), resourceGroupFilterDTO.getOrgIdentifier(),
+                 resourceGroupFilterDTO.getProjectIdentifier()),
+             Resource.of(RESOURCE_GROUP, null), VIEW_RESOURCEGROUP_PERMISSION))
+        .thenReturn(true);
+    resourceGroupService.list(resourceGroupFilterDTO, pageRequest);
+
+    Criteria criteria = getActualListCriteria(resourceGroupFilterDTO);
+    Criteria expectedCriteria = new Criteria();
+    Criteria scopeExpectedCriteria = getExpectedScopeCriteria(accountIdentifier, orgIdentifier, null);
+    Criteria expectedManagedCriteria = getExpectedManagedCriteria();
+    expectedManagedCriteria.and(ResourceGroupKeys.allowedScopeLevels)
+        .is(ScopeLevel.of(accountIdentifier, orgIdentifier, null).toString().toLowerCase());
+    expectedCriteria.andOperator(new Criteria().orOperator(scopeExpectedCriteria, expectedManagedCriteria));
+    assertEquals(expectedCriteria, criteria);
+    verify(resourceGroupV2RepositoryMock, times(1)).findAll(criteria, getPageRequest(pageRequest));
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testListFilter_withSelectedViewPermission_withNoIdentifierFilter() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    Criteria criteria = new Criteria();
+    ResourceGroupFilterDTO resourceGroupFilterDTO =
+        ResourceGroupFilterDTO.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
+    AccessCheckResponseDTO accessCheckResponseDTO =
+        AccessCheckResponseDTO.builder()
+            .principal(Principal.builder().principalIdentifier("id").principalType(USER).build())
+            .accessControlList(accessControlDTOS)
+            .build();
+    ArgumentCaptor<ResourceGroupFilterDTO> resourceGroupFilterDTOArgumentCaptor =
+        ArgumentCaptor.forClass(ResourceGroupFilterDTO.class);
+    when(accessControlClient.hasAccess(
+             ResourceScope.of(resourceGroupFilterDTO.getAccountIdentifier(), resourceGroupFilterDTO.getOrgIdentifier(),
+                 resourceGroupFilterDTO.getProjectIdentifier()),
+             Resource.of(RESOURCE_GROUP, null), VIEW_RESOURCEGROUP_PERMISSION))
+        .thenReturn(false);
+    when(resourceGroupServiceMockRepo.getResourceGroupFilterCriteria(resourceGroupFilterDTO)).thenReturn(criteria);
+    when(resourceGroupV2RepositoryMock.findAll(criteria, Pageable.unpaged()))
+        .thenReturn(PageTestUtils.getPage(resourceGroupList, 0));
+    when(accessControlClient.checkForAccessOrThrow(any())).thenReturn(accessCheckResponseDTO);
+
+    Page<ResourceGroupResponse> result = resourceGroupServiceMockRepo.list(resourceGroupFilterDTO, pageRequest);
+
+    verify(resourceGroupServiceMockRepo, times(1))
+        .getResourceGroupFilterCriteria(resourceGroupFilterDTOArgumentCaptor.capture());
+    verify(resourceGroupV2RepositoryMock, times(1)).findAll(criteria, Pageable.unpaged());
+    assertThat(result.getTotalElements()).isEqualTo(permittedResourceGroups.size());
+    assertThat(result.getContent()
+                   .stream()
+                   .map((item) -> item.getResourceGroup().getIdentifier())
+                   .collect(Collectors.toList()))
+        .isEqualTo(permittedResourceGroups.stream().map(ResourceGroup::getIdentifier).collect(Collectors.toList()));
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testListFilter_withSelectedViewPermission_withIdentifierFilter() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    ResourceGroupFilterDTO resourceGroupFilterDTO = ResourceGroupFilterDTO.builder()
+                                                        .accountIdentifier(accountIdentifier)
+                                                        .orgIdentifier(orgIdentifier)
+                                                        .identifierFilter(Set.of("RG1", "RG2", "RG3"))
+                                                        .build();
+    AccessCheckResponseDTO accessCheckResponseDTO =
+        AccessCheckResponseDTO.builder()
+            .principal(Principal.builder().principalIdentifier("id").principalType(USER).build())
+            .accessControlList(accessControlDTOS)
+            .build();
+
+    when(accessControlClient.hasAccess(
+             ResourceScope.of(resourceGroupFilterDTO.getAccountIdentifier(), resourceGroupFilterDTO.getOrgIdentifier(),
+                 resourceGroupFilterDTO.getProjectIdentifier()),
+             Resource.of(RESOURCE_GROUP, null), VIEW_RESOURCEGROUP_PERMISSION))
+        .thenReturn(false);
+
+    when(resourceGroupV2RepositoryMock.findAll(any(), eq(getPageRequest(pageRequest))))
+        .thenReturn(PageTestUtils.getPage(permittedResourceGroups, 0));
+    when(resourceGroupV2RepositoryMock.findAll(any(), eq(Pageable.unpaged())))
+        .thenReturn(PageTestUtils.getPage(resourceGroupList, 0));
+    when(accessControlClient.checkForAccessOrThrow(any())).thenReturn(accessCheckResponseDTO);
+
+    final Criteria resourceGroupFilterCriteria =
+        resourceGroupServiceMockRepo.getResourceGroupFilterCriteria(resourceGroupFilterDTO);
+
+    Page<ResourceGroupResponse> result = resourceGroupServiceMockRepo.list(resourceGroupFilterDTO, pageRequest);
+
+    verify(resourceGroupV2RepositoryMock, times(1)).findAll(resourceGroupFilterCriteria, Pageable.unpaged());
+    verify(resourceGroupV2RepositoryMock, times(0)).findAll(resourceGroupFilterCriteria, getPageRequest(pageRequest));
   }
 }

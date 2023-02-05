@@ -20,7 +20,7 @@ import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmUsernamePasswordDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.settings.helm.OciHelmRepoConfig;

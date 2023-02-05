@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
 
 import static java.util.stream.Collectors.counting;
@@ -23,6 +25,7 @@ import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.WorkflowSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -31,11 +34,11 @@ import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.service.MigratorMappingService;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.step.StepMapperFactory;
 import io.harness.ngmigration.service.workflow.WorkflowHandler;
 import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
@@ -63,6 +66,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -160,7 +164,7 @@ public class WorkflowMigrationService extends NgMigrationService {
     Set<CgEntityId> children = new HashSet<>();
     List<CgEntityId> referencedEntities =
         workflowHandlerFactory.getWorkflowHandler(workflow).getReferencedEntities(stepMapperFactory, workflow);
-    if (EmptyPredicate.isNotEmpty(referencedEntities)) {
+    if (isNotEmpty(referencedEntities)) {
       children.addAll(referencedEntities);
     }
     return DiscoveryNode.builder().children(children).entityNode(workflowNode).build();
@@ -174,7 +178,7 @@ public class WorkflowMigrationService extends NgMigrationService {
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    if (EmptyPredicate.isNotEmpty(inputDTO.getDefaults()) && inputDTO.getDefaults().containsKey(WORKFLOW)
+    if (isNotEmpty(inputDTO.getDefaults()) && inputDTO.getDefaults().containsKey(WORKFLOW)
         && inputDTO.getDefaults().get(WORKFLOW).isSkipMigration()) {
       return Collections.emptyList();
     }
@@ -187,13 +191,32 @@ public class WorkflowMigrationService extends NgMigrationService {
     String description = StringUtils.isBlank(workflow.getDescription()) ? "" : workflow.getDescription();
 
     WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
+    List<GraphNode> steps = workflowHandler.getSteps(workflow);
+    // We will skip migration if any of the steps are unsupported
+    if (EmptyPredicate.isEmpty(steps)
+        || steps.stream()
+               .map(step -> stepMapperFactory.getStepMapper(step.getType()).stepSupportStatus(step))
+               .anyMatch(WorkflowStepSupportStatus.UNSUPPORTED::equals)) {
+      return Collections.emptyList();
+    }
 
-    JsonNode templateSpec = workflowHandler.getTemplateSpec(migratedEntities, workflow);
+    JsonNode templateSpec = workflowHandler.getTemplateSpec(entities, migratedEntities, workflow);
     if (templateSpec == null) {
       return Collections.emptyList();
     }
 
     List<NGYamlFile> files = new ArrayList<>();
+
+    if (isNotEmpty(steps)) {
+      List<NGYamlFile> additionalYamlFiles =
+          steps.stream()
+              .map(step -> stepMapperFactory.getStepMapper(step.getType()).getChildNGYamlFiles(inputDTO, step, name))
+              .flatMap(List::stream)
+              .filter(Objects::nonNull)
+              .collect(Collectors.toList());
+      files.addAll(additionalYamlFiles);
+    }
+
     NGYamlFile ngYamlFile =
         NGYamlFile.builder()
             .type(WORKFLOW)
@@ -256,7 +279,7 @@ public class WorkflowMigrationService extends NgMigrationService {
       }
       return YamlUtils.read(response.getYaml(), NGTemplateConfig.class);
     } catch (Exception ex) {
-      log.error("Error when getting workflow templates - ", ex);
+      log.warn("Error when getting workflow templates - ", ex);
       return null;
     }
   }

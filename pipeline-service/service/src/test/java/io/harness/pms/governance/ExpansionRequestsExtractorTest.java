@@ -95,7 +95,9 @@ public class ExpansionRequestsExtractorTest extends CategoryTest {
                                              .stageType("Deployment")
                                              .localFQN("stage/spec/execution")
                                              .build();
-    localFQNRequestMetadata = Arrays.asList(sloExpansion, effExpansion);
+    LocalFQNExpansionInfo stageExpansion =
+        LocalFQNExpansionInfo.builder().module(ModuleType.CD).stageType("Deployment").localFQN("stage").build();
+    localFQNRequestMetadata = Arrays.asList(sloExpansion, effExpansion, stageExpansion);
   }
 
   @Test
@@ -169,21 +171,24 @@ public class ExpansionRequestsExtractorTest extends CategoryTest {
     YamlNode pipelineNode = YamlUtils.readTree(pipelineYaml).getNode();
     Set<ExpansionRequest> serviceCalls = new HashSet<>();
     expansionRequestsExtractor.getFQNBasedServiceCalls(pipelineNode, localFQNRequestMetadata, serviceCalls);
-    assertThat(serviceCalls).hasSize(2);
+    assertThat(serviceCalls).hasSize(3);
     List<ExpansionRequest> serviceCallsList = new ArrayList<>(serviceCalls);
-    ExpansionRequest expansionRequest0 = serviceCallsList.get(0);
-    if (expansionRequest0.getModule().equals(ModuleType.CV)) {
-      assertThat(expansionRequest0.getFqn()).isEqualTo("pipeline/stages/[1]/stage/spec");
-      ExpansionRequest expansionRequest1 = serviceCallsList.get(1);
-      assertThat(expansionRequest1.getModule()).isEqualTo(ModuleType.CE);
-      assertThat(expansionRequest1.getFqn()).isEqualTo("pipeline/stages/[1]/stage/spec/execution");
-      return;
+    List<ModuleType> selectedModules =
+        serviceCallsList.stream().map(serviceCall -> serviceCall.getModule()).collect(Collectors.toList());
+    assertThat(selectedModules).contains(ModuleType.CD, ModuleType.CV, ModuleType.CE);
+    for (ExpansionRequest expansionRequest : serviceCallsList) {
+      switch (expansionRequest.getModule()) {
+        case CD:
+          assertThat(expansionRequest.getFqn()).isEqualTo("pipeline/stages/[1]/stage");
+          break;
+        case CV:
+          assertThat(expansionRequest.getFqn()).isEqualTo("pipeline/stages/[1]/stage/spec");
+          break;
+        case CE:
+          assertThat(expansionRequest.getFqn()).isEqualTo("pipeline/stages/[1]/stage/spec/execution");
+          break;
+      }
     }
-    assertThat(expansionRequest0.getModule()).isEqualTo(ModuleType.CE);
-    assertThat(expansionRequest0.getFqn()).isEqualTo("pipeline/stages/[1]/stage/spec/execution");
-    ExpansionRequest expansionRequest1 = serviceCallsList.get(1);
-    assertThat(expansionRequest1.getModule()).isEqualTo(ModuleType.CV);
-    assertThat(expansionRequest1.getFqn()).isEqualTo("pipeline/stages/[1]/stage/spec");
   }
 
   @Test
@@ -196,11 +201,13 @@ public class ExpansionRequestsExtractorTest extends CategoryTest {
     Set<ExpansionRequest> serviceCalls = new HashSet<>();
     expansionRequestsExtractor.getFQNBasedServiceCalls(pipelineNode, localFQNRequestMetadata, serviceCalls);
     List<String> serviceCallsFQNs = serviceCalls.stream().map(ExpansionRequest::getFqn).collect(Collectors.toList());
-    assertThat(serviceCallsFQNs).hasSize(8);
+    assertThat(serviceCallsFQNs).hasSize(12);
     assertThat(serviceCallsFQNs)
         .contains("pipeline/stages/[0]/stage/spec", "pipeline/stages/[0]/stage/spec/execution",
             "pipeline/stages/[1]/parallel/[0]/stage/spec", "pipeline/stages/[1]/parallel/[0]/stage/spec/execution",
             "pipeline/stages/[1]/parallel/[1]/stage/spec", "pipeline/stages/[1]/parallel/[1]/stage/spec/execution",
-            "pipeline/stages/[2]/stage/spec", "pipeline/stages/[2]/stage/spec/execution");
+            "pipeline/stages/[2]/stage/spec", "pipeline/stages/[2]/stage/spec/execution", "pipeline/stages/[0]/stage",
+            "pipeline/stages/[1]/parallel/[0]/stage", "pipeline/stages/[1]/parallel/[1]/stage",
+            "pipeline/stages/[2]/stage");
   }
 }

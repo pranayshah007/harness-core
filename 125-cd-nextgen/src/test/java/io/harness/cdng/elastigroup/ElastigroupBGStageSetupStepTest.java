@@ -7,13 +7,16 @@
 
 package io.harness.cdng.elastigroup;
 
+import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
@@ -32,14 +35,17 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.elastigroup.request.AwsConnectedCloudProvider;
 import io.harness.delegate.task.elastigroup.request.AwsLoadBalancerConfig;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
+import io.harness.delegate.task.elastigroup.response.ElastigroupPreFetchResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
+import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -75,11 +81,7 @@ public class ElastigroupBGStageSetupStepTest extends CDNGTestBase {
   @Owner(developers = {PIYUSH_BHUWALKA})
   @Category(UnitTests.class)
   public void executeElastigroupTaskTest() {
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-                            .build();
+    Ambiance ambiance = anAmbiance();
     String elastigroupJson = "elastigroupJson";
     ElastigroupFixedInstances elastigroupFixedInstances =
         ElastigroupFixedInstances.builder()
@@ -195,11 +197,7 @@ public class ElastigroupBGStageSetupStepTest extends CDNGTestBase {
   @Owner(developers = {PIYUSH_BHUWALKA})
   @Category(UnitTests.class)
   public void finalizeExecutionWithSecurityContextTest() throws Exception {
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-                            .build();
+    Ambiance ambiance = anAmbiance();
     String elastigroupJson = "elastigroupJson";
     ElastigroupFixedInstances elastigroupFixedInstances =
         ElastigroupFixedInstances.builder()
@@ -284,5 +282,149 @@ public class ElastigroupBGStageSetupStepTest extends CDNGTestBase {
     assertThat(((ElastigroupSetupDataOutcome) stepResponse.getStepOutcomes().stream().findFirst().get().getOutcome())
                    .getElastigroupNamePrefix())
         .isEqualTo(elastigroupNamePrefix);
+  }
+
+  @Test
+  @Owner(developers = {FILIP})
+  @Category(UnitTests.class)
+  public void executeElastigroupTaskShouldQueueElastigroupTaskTest() throws Exception {
+    // Given
+    StepElementParameters stepParameters =
+        StepElementParameters.builder()
+            .spec(ElastigroupBGStageSetupStepParameters.infoBuilder()
+                      .instances(ElastigroupInstances.builder().type(ElastigroupInstancesType.FIXED).build())
+                      .loadBalancers(singletonList(
+                          LoadBalancer.builder().spec(AwsLoadBalancerConfigYaml.builder().build()).build()))
+                      .connectedCloudProvider(
+                          CloudProvider.builder()
+                              .spec(AwsCloudProviderBasicConfig.builder()
+                                        .connectorRef(ParameterField.createValueField("aws-connector-ref"))
+                                        .region(ParameterField.createValueField("us-east-1"))
+                                        .build())
+                              .build())
+                      .build())
+            .build();
+
+    when(elastigroupStepCommonHelper.generateOriginalConfigFromJson(any(), any(), any()))
+        .thenReturn(ElastiGroup.builder()
+                        .id("elastiid")
+                        .name("nameelast")
+                        .capacity(ElastiGroupCapacity.builder().minimum(10).target(20).maximum(30).build())
+                        .build());
+
+    ElastigroupExecutionPassThroughData passThroughData = ElastigroupExecutionPassThroughData.builder()
+                                                              .elastigroupNamePrefix("name-prefix")
+                                                              .base64EncodedStartupScript("startupscript")
+                                                              .image("image")
+                                                              .build();
+
+    // When
+    elastigroupSetupStep.executeElastigroupTask(anAmbiance(), stepParameters, passThroughData, null);
+
+    // Then
+    verify(elastigroupStepCommonHelper)
+        .queueElastigroupTask(eq(stepParameters), any(), eq(anAmbiance()), eq(passThroughData), eq(true),
+            eq(TaskType.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG));
+  }
+
+  @Test
+  @Owner(developers = {FILIP})
+  @Category(UnitTests.class)
+  public void getStepParametersClassTest() {
+    assertThat(elastigroupSetupStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+  }
+
+  @Test
+  @Owner(developers = {FILIP})
+  @Category(UnitTests.class)
+  public void executeNextLinkWithSecurityContextTest() throws Exception {
+    // Given
+    StepElementParameters stepElementParameters = StepElementParameters.builder().build();
+    StepInputPackage stepInputPackage = StepInputPackage.builder().build();
+    ElastigroupExecutionPassThroughData passThroughData = ElastigroupExecutionPassThroughData.builder().build();
+    ThrowingSupplier<ResponseData> responseDataThrowingSupplier = () -> ElastigroupPreFetchResponse.builder().build();
+
+    // When
+    elastigroupSetupStep.executeNextLinkWithSecurityContext(
+        anAmbiance(), stepElementParameters, stepInputPackage, passThroughData, responseDataThrowingSupplier);
+
+    // Then
+    verify(elastigroupStepCommonHelper)
+        .executeNextLink(eq(elastigroupSetupStep), eq(anAmbiance()), eq(stepElementParameters), eq(passThroughData),
+            eq(responseDataThrowingSupplier));
+  }
+
+  @Test
+  @Owner(developers = {FILIP})
+  @Category(UnitTests.class)
+  public void startChainLinkAfterRbacTest() {
+    // Given
+    StepElementParameters stepElementParameters = StepElementParameters.builder().build();
+    StepInputPackage stepInputPackage = StepInputPackage.builder().build();
+
+    // When
+    elastigroupSetupStep.startChainLinkAfterRbac(anAmbiance(), stepElementParameters, stepInputPackage);
+
+    // Then
+    ElastigroupExecutionPassThroughData passThroughData =
+        ElastigroupExecutionPassThroughData.builder().blueGreen(true).build();
+
+    verify(elastigroupStepCommonHelper)
+        .startChainLink(eq(anAmbiance()), eq(stepElementParameters), eq(passThroughData));
+  }
+
+  @Test
+  @Owner(developers = {FILIP})
+  @Category(UnitTests.class)
+  public void finalizeExecutionWithSecurityContextPositiveTest() throws Exception {
+    // Given
+    StepElementParameters stepParameters = StepElementParameters.builder().build();
+    ElastigroupExecutionPassThroughData passThroughData =
+        ElastigroupExecutionPassThroughData.builder()
+            .connectedCloudProvider(AwsConnectedCloudProvider.builder().build())
+            .build();
+    ThrowingSupplier<ResponseData> throwingSupplier = ()
+        -> ElastigroupSetupResponse.builder()
+               .elastigroupSetupResult(ElastigroupSetupResult.builder().build())
+               .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+               .unitProgressData(UnitProgressData.builder().build())
+               .build();
+
+    // When
+    final StepResponse response = elastigroupSetupStep.finalizeExecutionWithSecurityContext(
+        anAmbiance(), stepParameters, passThroughData, throwingSupplier);
+
+    // Then
+    assertThat(response).isNotNull().extracting(StepResponse::getStatus).isEqualTo(Status.SUCCEEDED);
+  }
+
+  @Test
+  @Owner(developers = {FILIP})
+  @Category(UnitTests.class)
+  public void finalizeExecutionWithSecurityContextNegativeTest() throws Exception {
+    // Given
+    StepElementParameters stepParameters = StepElementParameters.builder().build();
+    ElastigroupExecutionPassThroughData passThroughData =
+        ElastigroupExecutionPassThroughData.builder()
+            .connectedCloudProvider(AwsConnectedCloudProvider.builder().build())
+            .build();
+    ThrowingSupplier<ResponseData> throwingSupplier = () -> {
+      throw new RuntimeException();
+    };
+
+    // When
+    elastigroupSetupStep.finalizeExecutionWithSecurityContext(
+        anAmbiance(), stepParameters, passThroughData, throwingSupplier);
+
+    // Then
+    verify(elastigroupStepCommonHelper).handleTaskException(eq(anAmbiance()), eq(passThroughData), any());
+  }
+
+  private Ambiance anAmbiance() {
+    return Ambiance.newBuilder()
+        .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
+        .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
+        .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
+        .build();
   }
 }

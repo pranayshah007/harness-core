@@ -19,7 +19,8 @@ public enum TasArtifactRegistryType {
   @JsonProperty("ECR") ECR("ECR"),
   @JsonProperty("GCR") GCR("GCR"),
   @JsonProperty("NEXUS_PRIVATE_REGISTRY") NEXUS_PRIVATE_REGISTRY("Nexus Private Registry "),
-  @JsonProperty("GAR") GAR("GAR");
+  @JsonProperty("GAR") GAR("GAR"),
+  @JsonProperty("GITHUB_PACKAGE_REGISTRY") GITHUB_PACKAGE_REGISTRY("Github Package Registry");
 
   private final String value;
 

@@ -64,7 +64,7 @@ public class AwsEc2HelperServiceManagerImplTest extends CategoryTest {
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
     doReturn(AwsEc2ValidateCredentialsResponse.builder().valid(false).build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     assertThatThrownBy(() -> service.validateAwsAccountCredential(AwsConfig.builder().build(), emptyList()))
         .isInstanceOf(WingsException.class);
   }
@@ -78,7 +78,7 @@ public class AwsEc2HelperServiceManagerImplTest extends CategoryTest {
     on(service).set("delegateService", mockDelegateService);
     doReturn(AwsEc2ListRegionsResponse.builder().regions(asList("us-east-1", "us-east-2")).build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -98,12 +98,12 @@ public class AwsEc2HelperServiceManagerImplTest extends CategoryTest {
     on(service).set("delegateService", mockDelegateService);
     doReturn(AwsEc2ListVpcsResponse.builder().vpcs(asList(AwsVPC.builder().build(), AwsVPC.builder().build())).build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     doReturn(AwsEc2ListVpcsResponse.builder()
                  .vpcs(asList(AwsVPC.builder().id("vpc-00").build(), AwsVPC.builder().id("vpc-01").build()))
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -125,7 +125,7 @@ public class AwsEc2HelperServiceManagerImplTest extends CategoryTest {
                  .subnets(asList(AwsSubnet.builder().id("sub-00").build(), AwsSubnet.builder().id("sub-01").build()))
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -149,7 +149,7 @@ public class AwsEc2HelperServiceManagerImplTest extends CategoryTest {
                      AwsSecurityGroup.builder().id("sg-00").build(), AwsSecurityGroup.builder().id("sg-01").build()))
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -170,7 +170,7 @@ public class AwsEc2HelperServiceManagerImplTest extends CategoryTest {
     on(service).set("delegateService", mockDelegateService);
     doReturn(AwsEc2ListTagsResponse.builder().tags(newHashSet("tag-0", "tag-1")).build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -190,7 +190,7 @@ public class AwsEc2HelperServiceManagerImplTest extends CategoryTest {
                  .instances(asList(new Instance().withInstanceId("id-1"), new Instance().withInstanceId("id-2")))
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());

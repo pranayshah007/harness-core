@@ -128,7 +128,7 @@ public class TerragruntPlanTaskNGTest extends CategoryTest {
     when(taskService.uploadStateFile(eq("workingDir/"), eq("test-workspace"), any(), any(), any(), any(), any()))
         .thenReturn(TG_STATE_ID);
 
-    doReturn(encryptedPlanContent).when(encryptDecryptHelper).encryptFile(any(), eq("tfplan"), any(), any());
+    doReturn(encryptedPlanContent).when(encryptDecryptHelper).encryptFile(any(), eq("test-plan-name"), any(), any());
 
     when(taskService.getPlanJsonLogOutputStream()).thenReturn(planJsonLogOutputStream);
     when(planJsonLogOutputStream.getTfPlanJsonLocalPath()).thenReturn("test-tfPlanLocalPath");
@@ -173,8 +173,8 @@ public class TerragruntPlanTaskNGTest extends CategoryTest {
              eq("echo \"y\" | terragrunt run-all init -backend-config=backendFileDirectory/test-backendFile.tfvars"),
              anyLong(), eq(planParameters.getEnvVars()), any(), any(), any(), any(), any()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
-    when(cliHelper.executeCliCommand(eq("terragrunt workspace list"), anyLong(), eq(planParameters.getEnvVars()), any(),
-             any(), any(), any(), any()))
+    when(cliHelper.executeCliCommand(eq("echo \"y\" | terragrunt run-all workspace list"), anyLong(),
+             eq(planParameters.getEnvVars()), any(), any(), any(), any(), any()))
         .thenReturn(CliResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .exitCode(0)
@@ -185,7 +185,7 @@ public class TerragruntPlanTaskNGTest extends CategoryTest {
         .thenReturn(CliResponse.builder().exitCode(0).build());
     when(
         cliHelper.executeCliCommand(
-            eq("terragrunt run-all plan -out=tfplan -input=false -target=\"test-target\" -var-file=\"test-terragrunt-12345.tfvars\""),
+            eq("terragrunt run-all plan -out=tfplan -input=false --terragrunt-include-external-dependencies -target=\"test-target\" -var-file=\"test-terragrunt-12345.tfvars\""),
             anyLong(), eq(planParameters.getEnvVars()), any(), any(), any(), any(), any()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
     FileIo.createDirectoryIfDoesNotExist(TG_WORKING_DIR);
@@ -223,8 +223,11 @@ public class TerragruntPlanTaskNGTest extends CategoryTest {
     doReturn(logCallback).when(taskService).getLogCallback(any(), any(), any());
     when(cliHelper.executeCliCommand(eq("echo \"y\" | terragrunt run-all init"), anyLong(),
              eq(planParameters.getEnvVars()), any(), any(), any(), any(), any()))
+        .thenReturn(CliResponse.builder().exitCode(0).build());
+    when(cliHelper.executeCliCommand(eq("echo \"y\" | terragrunt run-all workspace list"), anyLong(),
+             eq(planParameters.getEnvVars()), any(), any(), any(), any(), any()))
         .thenReturn(CliResponse.builder()
-                        .command("echo \"y\" | terragrunt run-all init")
+                        .command("echo \"y\" | terragrunt run-all workspace list")
                         .error("command failed")
                         .commandExecutionStatus(CommandExecutionStatus.FAILURE)
                         .exitCode(-1)
@@ -234,7 +237,7 @@ public class TerragruntPlanTaskNGTest extends CategoryTest {
       assertThat(throwable).isInstanceOf(TaskNGDataException.class);
       assertThat(throwable.getCause()).isInstanceOf(TerragruntCliRuntimeException.class);
       assertThat(throwable.getCause().getMessage())
-          .contains("Terragrunt command 'echo \"y\" | terragrunt run-all init' failed with error code '-1'");
+          .contains("Terragrunt command 'echo \"y\" | terragrunt run-all workspace list' failed with error code '-1'");
       return true;
     });
   }

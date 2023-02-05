@@ -7,10 +7,8 @@
 
 package io.harness.ci.execution;
 
-import static io.harness.pms.contracts.execution.Status.RUNNING;
-
 import io.harness.beans.serializer.RunTimeInputHandler;
-import io.harness.beans.stages.IntegrationStageStepParametersPMS;
+import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
@@ -19,9 +17,8 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.ngexception.CIStageExecutionException;
-import io.harness.plancreator.steps.common.StageElementParameters;
-import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.repositories.CIExecutionRepository;
 
 import com.google.inject.Inject;
@@ -30,28 +27,23 @@ public class QueueExecutionUtils {
   @Inject private CIExecutionRepository ciExecutionRepository;
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
 
-  public void addActiveExecutionBuild(OrchestrationEvent event, String accountID, String runtimeID) {
-    int count = 0;
-    if (event.getResolvedStepParameters() != null && event.getStatus() == RUNNING
-        && event.getResolvedStepParameters() instanceof StageElementParameters) {
-      IntegrationStageStepParametersPMS specConfig =
-          (IntegrationStageStepParametersPMS) ((StageElementParameters) event.getResolvedStepParameters())
-              .getSpecConfig();
+  public void addActiveExecutionBuild(InitializeStepInfo initializeStepInfo, String accountID, String stagExecutionID) {
+    if (ciExecutionRepository.findByStageExecutionId(stagExecutionID) == null) {
+      IntegrationStageConfig stageConfig = initializeStepInfo.getStageElementConfig();
 
-      Infrastructure.Type infraType = specConfig.getInfrastructure().getType();
-      OSType buildType = getBuildType(specConfig);
+      Infrastructure.Type infraType = initializeStepInfo.getInfrastructure().getType();
+      OSType buildType = getBuildType(stageConfig);
       CIExecutionMetadata ciAccountBuildMetadata = CIExecutionMetadata.builder()
                                                        .accountId(accountID)
                                                        .buildType(buildType)
-                                                       .runtimeId(runtimeID)
+                                                       .stageExecutionId(stagExecutionID)
                                                        .infraType(infraType)
                                                        .build();
       ciExecutionRepository.save(ciAccountBuildMetadata);
     }
   }
 
-  private OSType getBuildType(IntegrationStageStepParametersPMS specConfig) {
-    String os = "Linux";
+  private OSType getBuildType(IntegrationStageConfig specConfig) {
     if (specConfig.getInfrastructure() instanceof VmInfraYaml) {
       VmInfraYaml infrastructure = (VmInfraYaml) specConfig.getInfrastructure();
       return RunTimeInputHandler.resolveOSType(((VmPoolYaml) infrastructure.getSpec()).getSpec().getOs());
@@ -77,7 +69,9 @@ public class QueueExecutionUtils {
     return ciExecutionRepository.countByAccountIdAndBuildType(accountID, OSType.MacOS);
   }
 
-  public void deleteActiveExecutionRecord(String runtimeID) {
-    ciExecutionRepository.deleteByRuntimeId(runtimeID);
+  public CIExecutionMetadata deleteActiveExecutionRecord(String stageExecutionID) {
+    CIExecutionMetadata executionMetadata = ciExecutionRepository.findByStageExecutionId(stageExecutionID);
+    ciExecutionRepository.deleteByStageExecutionId(stageExecutionID);
+    return executionMetadata;
   }
 }

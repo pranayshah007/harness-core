@@ -8,6 +8,7 @@
 package io.harness.cvng.utils;
 
 import io.harness.cvng.core.beans.params.ResourceParams;
+import io.harness.exception.InvalidArgumentsException;
 
 import com.cronutils.utils.Preconditions;
 import java.util.List;
@@ -59,7 +60,7 @@ public class ScopedInformation {
           .identifier(splitScopedIdentifier[2])
           .build();
     } else {
-      throw new IllegalArgumentException("Invalid Scoped Identifier");
+      throw new InvalidArgumentsException("Invalid Scoped Identifier");
     }
   }
 

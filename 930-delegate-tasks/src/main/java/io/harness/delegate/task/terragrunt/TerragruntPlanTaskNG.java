@@ -67,6 +67,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jose4j.lang.JoseException;
 
@@ -115,9 +116,13 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
 
       TerragruntClient client = terragruntContext.getClient();
 
-      executeWithErrorHandling(client::init,
-          createCliRequest(TerragruntCliRequest.builder(), terragruntContext, planTaskParameters).build(),
-          planLogCallback);
+      if (TerragruntTaskRunType.RUN_MODULE == planTaskParameters.getRunConfiguration().getRunType()
+          || (TerragruntTaskRunType.RUN_ALL == planTaskParameters.getRunConfiguration().getRunType()
+              && StringUtils.isNotBlank(terragruntContext.getBackendFile()))) {
+        executeWithErrorHandling(client::init,
+            createCliRequest(TerragruntCliRequest.builder(), terragruntContext, planTaskParameters).build(),
+            planLogCallback);
+      }
 
       if (isNotEmpty(planTaskParameters.getWorkspace())) {
         log.info("Create or select workspace {}", planTaskParameters.getWorkspace());
@@ -162,7 +167,7 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
                                             .build();
 
         tfPlanEncryptedRecord = (EncryptedRecordData) encryptDecryptHelper.encryptFile(
-            planFile, planName, planTaskParameters.getPlanSecretManager(), planDelegateFile);
+            planFile, planTaskParameters.getPlanName(), planTaskParameters.getPlanSecretManager(), planDelegateFile);
         planLogCallback.saveExecutionLog("Terraform plan command successfully encrypted.\n");
 
         stateFileId = taskService.uploadStateFile(terragruntContext.getTerragruntWorkingDirectory(),
@@ -195,6 +200,12 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
               format("\nTerraform JSON plan will be available at: %s\n", tfPlanJsonFilePath), INFO,
               CommandExecutionStatus.RUNNING);
         }
+      }
+
+      if (TerragruntTaskRunType.RUN_ALL == planTaskParameters.getRunConfiguration().getRunType()
+          && planTaskParameters.isExportJsonPlan()) {
+        planLogCallback.saveExecutionLog(
+            "Terragrunt export json plan is not supported when Run Configuration is \"All Modules\"", LogLevel.WARN);
       }
 
       planLogCallback.saveExecutionLog(

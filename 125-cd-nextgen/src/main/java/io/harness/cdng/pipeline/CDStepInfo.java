@@ -10,6 +10,8 @@ package io.harness.cdng.pipeline;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.aws.asg.AsgBlueGreenDeployStepInfo;
+import io.harness.cdng.aws.asg.AsgBlueGreenRollbackStepInfo;
 import io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepInfo;
 import io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo;
@@ -36,6 +38,10 @@ import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
+import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepInfo;
+import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepInfo;
+import io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStepInfo;
+import io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStepInfo;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.rollback.HelmRollbackStepInfo;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepInfo;
@@ -49,6 +55,7 @@ import io.harness.cdng.k8s.K8sDryRunManifestStepInfo;
 import io.harness.cdng.k8s.K8sRollingRollbackStepInfo;
 import io.harness.cdng.k8s.K8sRollingStepInfo;
 import io.harness.cdng.k8s.K8sScaleStepInfo;
+import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.pipeline.steps.CdStepParametersUtils;
 import io.harness.cdng.provision.azure.AzureARMRollbackStepInfo;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepInfo;
@@ -61,6 +68,7 @@ import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformDestroyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepInfo;
+import io.harness.cdng.provision.terraformcloud.TerraformCloudRunStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntDestroyStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntPlanStepInfo;
@@ -110,8 +118,11 @@ import io.swagger.annotations.ApiModel;
         TasCanaryAppSetupStepInfo.class, TasBGAppSetupStepInfo.class, TasBasicAppSetupStepInfo.class,
         TasCommandStepInfo.class, ElastigroupBGStageSetupStepInfo.class, ElastigroupSwapRouteStepInfo.class,
         TasAppResizeStepInfo.class, TasRollbackStepInfo.class, AsgRollingDeployStepInfo.class,
-        AsgRollingRollbackStepInfo.class, TasRollingDeployStepInfo.class, TasRollingRollbackStepInfo.class,
-        K8sDryRunManifestStepInfo.class, AsgBlueGreenSwapServiceStepInfo.class})
+        AsgRollingRollbackStepInfo.class, AsgBlueGreenDeployStepInfo.class, AsgBlueGreenRollbackStepInfo.class,
+        TasRollingDeployStepInfo.class, TasRollingRollbackStepInfo.class, K8sDryRunManifestStepInfo.class,
+        AsgBlueGreenSwapServiceStepInfo.class, TerraformCloudRunStepInfo.class, GoogleFunctionsDeployStepInfo.class,
+        GoogleFunctionsDeployWithoutTrafficStepInfo.class, GoogleFunctionsTrafficShiftStepInfo.class,
+        GoogleFunctionsRollbackStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 // keeping this class because of the swagger annotation and UI dependency on it

@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.YOGESH;
@@ -820,6 +821,18 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   }
 
   @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testCreateCriteriaForGetListWithOptionalOrgAndProject() {
+    Criteria criteriaFromServiceFilter =
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, false, false);
+
+    assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("accountId")).isTrue();
+    assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("orgIdentifier")).isTrue();
+    assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("projectIdentifier")).isTrue();
+  }
+
+  @Test
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testCRUDForAccountLevelService() {
@@ -925,6 +938,56 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     verify(entitySetupUsageService, times(0))
         .listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString());
   }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testDeleteAllServicesInOrg() {
+    ServiceEntity serviceEntity1 = ServiceEntity.builder()
+                                       .accountId("ACCOUNT_ID")
+                                       .identifier("IDENTIFIER_1")
+                                       .orgIdentifier("ORG_ID")
+                                       .name("Service")
+                                       .build();
+
+    ServiceEntity serviceEntity2 = ServiceEntity.builder()
+                                       .accountId("ACCOUNT_ID")
+                                       .identifier("IDENTIFIER_2")
+                                       .orgIdentifier("ORG_ID")
+                                       .name("Service")
+                                       .build();
+
+    ServiceEntity projectLevelService1 = ServiceEntity.builder()
+                                             .accountId("ACCOUNT_ID")
+                                             .identifier("IDENTIFIER_2")
+                                             .orgIdentifier("ORG_ID")
+                                             .projectIdentifier("PROJECT_ID")
+                                             .name("Service")
+                                             .build();
+
+    // Create operations
+    serviceEntityService.create(serviceEntity1);
+    serviceEntityService.create(serviceEntity2);
+    serviceEntityService.create(projectLevelService1);
+
+    boolean delete = serviceEntityService.forceDeleteAllInOrg("ACCOUNT_ID", "ORG_ID");
+    assertThat(delete).isTrue();
+
+    // List services operations.
+    Criteria criteriaFromServiceFilter = CoreCriteriaUtils.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", null);
+    Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
+    Page<ServiceEntity> list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
+    assertThat(list.getContent()).isNotNull();
+    assertThat(list.getContent().size()).isEqualTo(0);
+
+    // List services operations.
+    Criteria projectServiceCriteria = CoreCriteriaUtils.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", "PROJECT_ID");
+    pageRequest = PageUtils.getPageRequest(0, 10, null);
+    list = serviceEntityService.list(projectServiceCriteria, pageRequest);
+    assertThat(list.getContent()).isNotNull();
+    assertThat(list.getContent().size()).isEqualTo(1);
+  }
+
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {

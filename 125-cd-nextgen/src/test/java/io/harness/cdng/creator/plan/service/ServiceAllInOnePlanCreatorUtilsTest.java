@@ -9,6 +9,7 @@ package io.harness.cdng.creator.plan.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -69,6 +70,60 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void addServiceNodeContainBothUseFromStageAndService() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    assertThatThrownBy(
+        ()
+            -> ServiceAllInOnePlanCreatorUtils.addServiceNode(pipeline, kryoSerializer,
+                ServiceYamlV2.builder()
+                    .serviceRef(ParameterField.createValueField("my_service"))
+                    .useFromStage(
+                        ParameterField.createValueField(ServiceUseFromStageV2.builder().stage("stage1").build()))
+                    .build(),
+                EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId", ServiceDefinitionType.ECS, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Only one of serviceRef and useFromStage fields are allowed.");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void addServiceNodeNoServiceNodeChild() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    assertThatThrownBy(
+        ()
+            -> ServiceAllInOnePlanCreatorUtils.addServiceNode(pipeline, kryoSerializer, ServiceYamlV2.builder().build(),
+                EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId", ServiceDefinitionType.ECS, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("At least on of serviceRef and useFromStage fields is required.");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void addServiceNodeStageDeploymentTypeMismatch() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String(
+        "cdng/creator/servicePlanCreator/pipeline-with-stages-of-different-deployment-type.yaml");
+    YamlField yamlField = new YamlField("", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(yamlField, 1));
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(()
+                        -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
+                            ServiceYamlV2.builder()
+                                .useFromStage(ParameterField.createValueField(
+                                    ServiceUseFromStageV2.builder().stage("stage0").build()))
+                                .build(),
+                            EnvironmentYamlV2.builder().build(), "serviceNodeId", "nextNodeId",
+                            ServiceDefinitionType.ECS, null))
+        .withMessage(
+            "Deployment type: [Kubernetes] of stage: [stage1] does not match with deployment type: [NativeHelm] of stage: [stage0] from which service propagation is configured");
+  }
+
+  @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void addServiceNodeUseFromStageError_0() throws IOException {
@@ -79,7 +134,8 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
         .isThrownBy(()
                         -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
                             ServiceYamlV2.builder()
-                                .useFromStage(ServiceUseFromStageV2.builder().stage("stage1").build())
+                                .useFromStage(ParameterField.createValueField(
+                                    ServiceUseFromStageV2.builder().stage("stage1").build()))
                                 .build(),
                             EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId",
                             ServiceDefinitionType.ECS, null))
@@ -98,7 +154,8 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
         .isThrownBy(()
                         -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
                             ServiceYamlV2.builder()
-                                .useFromStage(ServiceUseFromStageV2.builder().stage("stage0").build())
+                                .useFromStage(ParameterField.createValueField(
+                                    ServiceUseFromStageV2.builder().stage("stage0").build()))
                                 .build(),
                             EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId",
                             ServiceDefinitionType.ECS, null))
@@ -117,7 +174,8 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
         .isThrownBy(()
                         -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
                             ServiceYamlV2.builder()
-                                .useFromStage(ServiceUseFromStageV2.builder().stage("adhoc").build())
+                                .useFromStage(ParameterField.createValueField(
+                                    ServiceUseFromStageV2.builder().stage("adhoc").build()))
                                 .build(),
                             EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId",
                             ServiceDefinitionType.ECS, null))

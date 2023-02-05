@@ -53,7 +53,7 @@ public class JenkinsArtifactTaskHelper {
           saveLogs(executionLogCallback, "Get the Jenkins Job " + registryUrl);
           break;
         case GET_ARTIFACT_PATH:
-          saveLogs(executionLogCallback, "Get the Jenkins Artifact Patb");
+          saveLogs(executionLogCallback, "Get the Jenkins Artifact Path");
           artifactTaskResponse = getSuccessTaskResponse(jenkinsArtifactTaskHandler.getArtifactPaths(attributes));
           saveLogs(executionLogCallback, "Get the Jenkins Job " + registryUrl);
           break;

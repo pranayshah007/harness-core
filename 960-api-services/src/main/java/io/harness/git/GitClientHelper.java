@@ -102,6 +102,12 @@ public class GitClientHelper {
   private static final String HTTPS = "https";
   private static final String BITBUCKET_SAAS_GIT_LABEL = "scm";
 
+  private static final String AZURE_OLD_REPO_PREFIX = ".visualstudio.com";
+
+  private static final String AZURE_NEW_REPO_PREFIX_HTTP = "https://dev.azure.com/";
+
+  private static final String AZURE_NEW_REPO_PREFIX_SSH = "git@ssh.dev.azure.com:v3/";
+
   static {
     try {
       createDirectoryIfDoesNotExist(REPOSITORY_GIT_LOCK_DIR);
@@ -619,5 +625,26 @@ public class GitClientHelper {
     String gitProject = parts.get(0);
     return StringUtils.join(
         AZURE_REPO_URL, PATH_SEPARATOR, gitOwner, PATH_SEPARATOR, gitProject, AZURE_REPO_GIT_LABEL, gitRepo);
+  }
+
+  public static String convertToNewHTTPUrlForAzure(String httpURL) {
+    // Convert Old Azure URLs to new URLs if any
+    if (httpURL.contains(AZURE_OLD_REPO_PREFIX)) {
+      return AZURE_NEW_REPO_PREFIX_HTTP
+          + StringUtils.substringBetween(httpURL, HTTPS + "://", AZURE_OLD_REPO_PREFIX + "/")
+          + StringUtils.substringAfter(httpURL, AZURE_OLD_REPO_PREFIX);
+    }
+
+    return httpURL;
+  }
+
+  public static String convertToNewSSHUrlForAzure(String sshURL) {
+    // Convert Old Azure URLs to new URLs if any
+    if (sshURL.contains(AZURE_OLD_REPO_PREFIX)) {
+      return AZURE_NEW_REPO_PREFIX_SSH
+          + StringUtils.substringBetween(sshURL, AZURE_SSH_PROTOCOl + ".", AZURE_OLD_REPO_PREFIX)
+          + StringUtils.substringAfter(sshURL, AZURE_OLD_REPO_PREFIX + ":v3");
+    }
+    return sshURL;
   }
 }

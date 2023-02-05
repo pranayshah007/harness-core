@@ -31,19 +31,10 @@ public class WaitStepServiceImpl implements WaitStepService {
     Optional<WaitStepInstance> waitStepInstance = findByNodeExecutionId(nodeExecutionId);
     String correlationId = waitStepInstance.get().getWaitStepInstanceId();
     waitNotifyEngine.doneWith(correlationId, WaitStepResponseData.builder().action(waitStepAction).build());
-    updatePlanStatus(planExecutionId, nodeExecutionId);
   }
 
   public WaitStepInstance getWaitStepExecutionDetails(String nodeExecutionId) {
     Optional<WaitStepInstance> waitStepInstance = findByNodeExecutionId(nodeExecutionId);
     return waitStepInstance.get();
-  }
-
-  public void updatePlanStatus(String planExecutionId, String nodeExecutionId) {
-    // Update plan status after the completion of the approval step.
-    Status planStatus = planExecutionService.calculateStatusExcluding(planExecutionId, nodeExecutionId);
-    if (!StatusUtils.isFinalStatus(planStatus)) {
-      planExecutionService.updateStatus(planExecutionId, planStatus);
-    }
   }
 }

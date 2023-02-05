@@ -531,4 +531,46 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
     assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
     assertThat(jobPathDetails.getChildJobName()).isEqualTo("master");
   }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void verifyGetConsoleLogs() throws IOException, URISyntaxException {
+    JenkinsInternalConfig jenkinsInternalConfigTest =
+        JenkinsInternalConfig.builder().jenkinsUrl(rootUrl).username(USERNAME).password(PASSWORD.toCharArray()).build();
+    JenkinsCustomServer jenkinsServer = mock(JenkinsCustomServer.class);
+    mockStatic(JenkinsClient.class);
+    PowerMockito.when(JenkinsClient.getJenkinsServer(any())).thenReturn(jenkinsServer);
+    when(jenkinsServer.getJenkinsConsoleLogs(any(), any(), any())).thenReturn("test logs");
+    String result = jenkinsRegistryUtils.getJenkinsConsoleLogs(jenkinsInternalConfigTest, "test", "1234");
+    assertThat(result).isEqualTo("test logs");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void verifyGetConsoleLogsIOException() throws IOException, URISyntaxException {
+    JenkinsInternalConfig jenkinsInternalConfigTest =
+        JenkinsInternalConfig.builder().jenkinsUrl(rootUrl).username(USERNAME).password(PASSWORD.toCharArray()).build();
+    JenkinsCustomServer jenkinsServer = mock(JenkinsCustomServer.class);
+    mockStatic(JenkinsClient.class);
+    PowerMockito.when(JenkinsClient.getJenkinsServer(any())).thenReturn(jenkinsServer);
+    when(jenkinsServer.getJenkinsConsoleLogs(any(), any(), any())).thenThrow(IOException.class);
+    assertThatThrownBy(() -> jenkinsRegistryUtils.getJenkinsConsoleLogs(jenkinsInternalConfigTest, "test", "1234"))
+        .isInstanceOf(HintException.class);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void verifyGetConsoleLogsURIException() throws IOException, URISyntaxException {
+    JenkinsInternalConfig jenkinsInternalConfigTest =
+        JenkinsInternalConfig.builder().jenkinsUrl(rootUrl).username(USERNAME).password(PASSWORD.toCharArray()).build();
+    JenkinsCustomServer jenkinsServer = mock(JenkinsCustomServer.class);
+    mockStatic(JenkinsClient.class);
+    PowerMockito.when(JenkinsClient.getJenkinsServer(any())).thenThrow(URISyntaxException.class);
+    when(jenkinsServer.getJenkinsConsoleLogs(any(), any(), any())).thenReturn("test log");
+    assertThatThrownBy(() -> jenkinsRegistryUtils.getJenkinsConsoleLogs(jenkinsInternalConfigTest, "test", "1234"))
+        .isInstanceOf(HintException.class);
+  }
 }

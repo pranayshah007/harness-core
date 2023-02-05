@@ -161,6 +161,7 @@ import software.wings.service.impl.AccessRequestServiceImpl;
 import software.wings.service.impl.AuditServiceHelper;
 import software.wings.service.impl.AwsMarketPlaceApiHandlerImpl;
 import software.wings.service.impl.HarnessUserGroupServiceImpl;
+import software.wings.service.impl.UserServiceHelper;
 import software.wings.service.impl.UserServiceImpl;
 import software.wings.service.impl.UserServiceLimitChecker;
 import software.wings.service.intfc.AccessRequestService;
@@ -296,6 +297,8 @@ public class UserServiceTest extends WingsBaseTest {
   @Inject @InjectMocks private AwsMarketPlaceApiHandlerImpl marketPlaceService;
   @Inject WingsPersistence realWingsPersistence;
   @Mock PortalConfig portalConfig;
+
+  @Mock UserServiceHelper userServiceHelper;
 
   @InjectMocks private HarnessUserGroupService harnessUserGroupService = mock(HarnessUserGroupServiceImpl.class);
   @InjectMocks private AccessRequestService accessRequestService = mock(AccessRequestServiceImpl.class);
@@ -598,6 +601,16 @@ public class UserServiceTest extends WingsBaseTest {
     when(configuration.getMarketPlaceConfig())
         .thenReturn(MarketPlaceConfig.builder().awsMarketPlaceCeProductCode("CE").build());
     marketPlace.setProductCode("CE");
+    user = userService.completeMarketPlaceSignup(savedUser, testInvite, MarketPlaceType.AWS);
+    assertThat(user).isEqualTo(savedUser);
+
+    // AWS marketplace signUp for FF
+    String ffProductCode = "FF";
+    when(configuration.getMarketPlaceConfig())
+        .thenReturn(MarketPlaceConfig.builder().awsMarketPlaceProductCode("").build());
+    when(configuration.getMarketPlaceConfig())
+        .thenReturn(MarketPlaceConfig.builder().awsMarketPlaceFfProductCode(ffProductCode).build());
+    marketPlace.setProductCode(ffProductCode);
     user = userService.completeMarketPlaceSignup(savedUser, testInvite, MarketPlaceType.AWS);
     assertThat(user).isEqualTo(savedUser);
   }
@@ -917,6 +930,26 @@ public class UserServiceTest extends WingsBaseTest {
     when(userGroupService.list(ACCOUNT_ID,
              aPageRequest().withLimit("0").addFilter(UserGroupKeys.memberIds, HAS, USER_ID).build(), true, null, null))
         .thenReturn(aPageResponse().withResponse(Collections.emptyList()).withTotal(0).withLimit("0").build());
+    userService.delete(ACCOUNT_ID, USER_ID);
+    verify(wingsPersistence).findAndDelete(any(), any());
+    verify(cache).remove(USER_ID);
+    verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId(eq(ACCOUNT_ID), any(User.class));
+  }
+
+  /**
+   * Should delete user flow V2.
+   */
+  @Test
+  @Owner(developers = ANUBHAW)
+  @Category(UnitTests.class)
+  public void shouldDeleteUserV2() {
+    when(wingsPersistence.get(User.class, USER_ID)).thenReturn(userBuilder.uuid(USER_ID).build());
+    when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
+    when(wingsPersistence.findAndDelete(any(), any())).thenReturn(userBuilder.uuid(USER_ID).build());
+    when(userGroupService.list(ACCOUNT_ID,
+             aPageRequest().withLimit("0").addFilter(UserGroupKeys.memberIds, HAS, USER_ID).build(), true, null, null))
+        .thenReturn(aPageResponse().withResponse(Collections.emptyList()).withTotal(0).withLimit("0").build());
+    when(userServiceHelper.isUserActiveInNG(any(), anyString())).thenReturn(false);
     userService.delete(ACCOUNT_ID, USER_ID);
     verify(wingsPersistence).findAndDelete(any(), any());
     verify(cache).remove(USER_ID);

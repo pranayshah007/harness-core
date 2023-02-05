@@ -34,6 +34,7 @@ import io.harness.cdng.infra.beans.AzureWebAppInfraMapping;
 import io.harness.cdng.infra.beans.CustomDeploymentInfraMapping;
 import io.harness.cdng.infra.beans.EcsInfraMapping;
 import io.harness.cdng.infra.beans.ElastigroupInfraMapping;
+import io.harness.cdng.infra.beans.GoogleFunctionsInfraMapping;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
 import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
@@ -82,6 +83,7 @@ public class NGEntitiesMorphiaRegistrar implements MorphiaRegistrar {
     set.add(PdcInfraMapping.class);
     set.add(SshWinRmAzureInfraMapping.class);
     set.add(TanzuApplicationServiceInfraMapping.class);
+    set.add(GoogleFunctionsInfraMapping.class);
     set.add(ModuleVersionInfo.class);
     set.add(ScopeAware.class);
   }

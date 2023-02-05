@@ -72,11 +72,11 @@ publisher = pubsub_v1.PublisherClient()
 GCPCFTOPIC = publisher.topic_path(PROJECTID, os.environ.get('GCPCFTOPIC', 'ce-gcp-billing-cf'))
 GCP_STANDARD_EXPORT_COLUMNS = ["billing_account_id", "usage_start_time", "usage_end_time", "export_time",
                                "cost", "currency", "currency_conversion_rate", "cost_type", "labels",
-                               "system_labels", "tags", "credits", "usage", "invoice", "adjustment_info",
+                               "system_labels", "credits", "usage", "invoice", "adjustment_info",
                                "service", "sku", "project", "location"]
 GCP_DETAILED_EXPORT_COLUMNS = ["billing_account_id", "usage_start_time", "usage_end_time", "export_time",
                                "cost", "currency", "currency_conversion_rate", "cost_type", "labels",
-                               "system_labels", "tags", "credits", "usage", "invoice", "adjustment_info",
+                               "system_labels", "credits", "usage", "invoice", "adjustment_info",
                                "service", "sku", "project", "location", "resource"]
 
 

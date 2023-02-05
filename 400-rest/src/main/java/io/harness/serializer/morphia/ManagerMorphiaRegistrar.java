@@ -94,6 +94,8 @@ import software.wings.api.k8s.K8sApplicationManifestSourceInfo;
 import software.wings.api.k8s.K8sCanaryDeleteServiceElement;
 import software.wings.api.k8s.K8sExecutionSummary;
 import software.wings.api.k8s.K8sGitConfigMapInfo;
+import software.wings.api.k8s.K8sGitFetchInfo;
+import software.wings.api.k8s.K8sGitInfo;
 import software.wings.api.k8s.K8sHelmDeploymentElement;
 import software.wings.api.k8s.K8sStateExecutionData;
 import software.wings.api.lambda.AwsLambdaDeploymentInfo;
@@ -228,6 +230,7 @@ import software.wings.beans.alert.UsageLimitExceededAlert;
 import software.wings.beans.alert.cv.ContinuousVerificationAlertData;
 import software.wings.beans.alert.cv.ContinuousVerificationDataCollectionAlert;
 import software.wings.beans.appmanifest.ApplicationManifest;
+import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.ManifestFile;
 import software.wings.beans.approval.ApprovalPollingJobEntity;
 import software.wings.beans.artifact.AcrArtifactStream;
@@ -388,6 +391,7 @@ import software.wings.service.impl.event.AlertEvent;
 import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo;
 import software.wings.service.impl.event.timeseries.TimeSeriesEventInfo;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskInfo;
+import software.wings.service.impl.instance.backup.InstanceSyncPTInfoBackup;
 import software.wings.service.impl.newrelic.LearningEngineAnalysisTask;
 import software.wings.service.impl.newrelic.LearningEngineExperimentalAnalysisTask;
 import software.wings.service.impl.newrelic.MLExperiments;
@@ -875,6 +879,8 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(AppContainer.class);
     set.add(LongerDataRetentionState.class);
     set.add(Log.class);
+    set.add(InstanceSyncPTInfoBackup.class);
+    set.add(HelmChart.class);
   }
 
   @Override
@@ -917,6 +923,8 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     w.put("api.JenkinsExecutionData", JenkinsExecutionData.class);
     w.put("api.k8s.k8sApplicationManifestInfo", K8sApplicationManifestSourceInfo.class);
     w.put("api.k8s.k8sGitConfigMapInfo", K8sGitConfigMapInfo.class);
+    w.put("api.k8s.k8sGitFetchInfo", K8sGitFetchInfo.class);
+    w.put("api.k8s.K8sGitInfo", K8sGitInfo.class);
     w.put("api.k8s.K8sHelmElement", K8sHelmDeploymentElement.class);
     w.put("api.k8s.K8sCanaryDeleteServiceElement", K8sCanaryDeleteServiceElement.class);
     w.put("api.k8s.K8sExecutionSummary", K8sExecutionSummary.class);

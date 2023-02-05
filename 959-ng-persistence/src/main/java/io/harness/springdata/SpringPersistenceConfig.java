@@ -21,8 +21,8 @@ import io.harness.reflection.HarnessReflections;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
-import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoClient;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -37,7 +37,7 @@ import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
-import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
+import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
@@ -51,7 +51,7 @@ import org.springframework.guice.annotation.GuiceModule;
     includeFilters = @ComponentScan.Filter(HarnessRepo.class), mongoTemplateRef = "primary")
 @EnableMongoAuditing
 @OwnedBy(HarnessTeam.PL)
-public class SpringPersistenceConfig extends AbstractMongoConfiguration {
+public class SpringPersistenceConfig extends AbstractMongoClientConfiguration {
   protected final Injector injector;
   protected final List<Class<? extends Converter<?, ?>>> springConverters;
   protected final MongoConfig mongoConfig;

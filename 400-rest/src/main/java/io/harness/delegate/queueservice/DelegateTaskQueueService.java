@@ -80,7 +80,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                                           .producerName(topic)
                                           .build();
 
-      EnqueueResponse response = hsqsServiceClient.enqueue(enqueueRequest, "sampleToken").execute().body();
+      EnqueueResponse response = hsqsServiceClient.enqueue(enqueueRequest).execute().body();
       log.info("Delegate task {} queued with item ID {}", delegateTask.getUuid(), response.getItemId());
     } catch (Exception e) {
       log.error("Error while queueing delegate task {}", delegateTask.getUuid(), e);
@@ -100,8 +100,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                                           .consumerName(delegateQueueServiceConfig.getTopic())
                                           .topic(delegateQueueServiceConfig.getTopic())
                                           .build();
-      List<DequeueResponse> dequeueResponses =
-          hsqsServiceClient.dequeue(dequeueRequest, "sampleToken").execute().body();
+      List<DequeueResponse> dequeueResponses = hsqsServiceClient.dequeue(dequeueRequest).execute().body();
       List<DelegateTaskDequeue> delegateTasksDequeueList =
           Objects.requireNonNull(dequeueResponses)
               .stream()
@@ -134,8 +133,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                                           .itemID(itemId)
                                           .topic(delegateQueueServiceConfig.getTopic())
                                           .subTopic(accountId)
-                                          .build(),
-                                     "sampleToken")
+                                          .build())
                                  .execute()
                                  .body();
       return Objects.requireNonNull(response).getItemID();

@@ -8,7 +8,10 @@
 package io.harness.delegate.task.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.network.Http.connectableHost;
 import static io.harness.state.StateConstants.DEFAULT_STEADY_STATE_TIMEOUT;
+
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -17,16 +20,19 @@ import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.ConnectorValidationResult.ConnectorValidationResultBuilder;
 import io.harness.connector.task.ConnectorValidationHandler;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
+import io.harness.delegate.beans.connector.helm.OciHelmAuthType;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmValidationParams;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Collections;
@@ -49,23 +55,31 @@ public class OciHelmValidationHandler implements ConnectorValidationHandler {
   public ConnectorValidationResult validate(
       ConnectorValidationParams connectorValidationParams, String accountIdentifier) {
     final OciHelmValidationParams helmValidationParams = (OciHelmValidationParams) connectorValidationParams;
+    OciHelmConnectorDTO ociHelmConnectorDTO = helmValidationParams.getOciHelmConnectorDTO();
+    String ociUrl = ociHelmConnectorDTO.getHelmRepoUrl();
     ConnectorValidationResultBuilder validationResultBuilder = ConnectorValidationResult.builder();
     try {
       log.info("Running OciHelmValidationHandler for account {} connector {}", accountIdentifier,
           connectorValidationParams.getConnectorName());
 
       decryptEncryptedDetails(helmValidationParams);
-
-      String workingDirectory = helmTaskHelperBase.createNewDirectoryAtPath(Paths.get(WORKING_DIR_BASE).toString());
-
-      helmTaskHelperBase.loginOciRegistry(helmValidationParams.getOciHelmConnectorDTO().getHelmRepoUrl(),
-          helmTaskHelperBase.getOciHelmUsername(helmValidationParams.getOciHelmConnectorDTO()),
-          helmTaskHelperBase.getOciHelmPassword(helmValidationParams.getOciHelmConnectorDTO()), HelmVersion.V380,
-          DEFAULT_TIMEOUT_IN_MILLIS, workingDirectory);
-
-      helmTaskHelperBase.cleanup(workingDirectory);
+      if (OciHelmAuthType.ANONYMOUS.equals(ociHelmConnectorDTO.getAuth().getAuthType())) {
+        URI parsedUri = helmTaskHelperBase.getParsedURI(ociUrl);
+        if (!connectableHost(parsedUri.getHost(), parsedUri.getPort())) {
+          throw new InvalidRequestException(format("Invalid oci url  %s", ociUrl));
+        }
+      } else if (OciHelmAuthType.USER_PASSWORD.equals(ociHelmConnectorDTO.getAuth().getAuthType())) {
+        String workingDirectory = helmTaskHelperBase.createNewDirectoryAtPath(Paths.get(WORKING_DIR_BASE).toString());
+        helmTaskHelperBase.loginOciRegistry(ociUrl, helmTaskHelperBase.getOciHelmUsername(ociHelmConnectorDTO),
+            helmTaskHelperBase.getOciHelmPassword(ociHelmConnectorDTO), HelmVersion.V380, DEFAULT_TIMEOUT_IN_MILLIS,
+            workingDirectory);
+        helmTaskHelperBase.cleanup(workingDirectory);
+      } else {
+        throw new InvalidRequestException(
+            format("Invalid oci auth type  %s", ociHelmConnectorDTO.getAuth().getAuthType()));
+      }
       validationResultBuilder.status(ConnectivityStatus.SUCCESS);
-    } catch (IOException exception) {
+    } catch (Exception exception) {
       log.error("OciHelmValidationHandler execution failed with exception ", exception);
       validationResultBuilder.status(ConnectivityStatus.FAILURE);
       String errorMessage = ExceptionUtils.getMessage(exception);

@@ -25,6 +25,9 @@ public class BasicFilterMatcher implements FilterMatcher {
 
   @Override
   public boolean matchesCondition() {
+    if (alertFilter == null) {
+      return false;
+    }
     boolean matches = alert.getType() == alertFilter.getAlertType();
 
     Conditions conditions = alertFilter.getConditions();

@@ -121,12 +121,11 @@ public class TasEntityHelper {
         .projectIdentifier(projectIdentifier)
         .build();
   }
-  public DelegateResponseData executeSyncTask(
-      TaskParameters params, BaseNGAccess ngAccess, String ifFailedMessage, TaskType taskType) {
-    return getResponseData(null, ngAccess, params, Optional.empty(), taskType);
+  public DelegateResponseData executeSyncTask(TaskParameters params, BaseNGAccess ngAccess, TaskType taskType) {
+    return getResponseData(ngAccess, params, Optional.empty(), taskType);
   }
-  public DelegateResponseData getResponseData(Ambiance ambiance, BaseNGAccess ngAccess, TaskParameters params,
-      Optional<Integer> customTimeoutInSec, TaskType taskType) {
+  public DelegateResponseData getResponseData(
+      BaseNGAccess ngAccess, TaskParameters params, Optional<Integer> customTimeoutInSec, TaskType taskType) {
     Set<String> taskSelectors =
         ((CfInfraMappingDataRequestNG) params).getTasInfraConfig().getTasConnectorDTO().getDelegateSelectors();
     DelegateTaskRequest delegateTaskRequest =
@@ -141,7 +140,7 @@ public class TasEntityHelper {
             .taskParameters(params)
             .taskType(taskType.name())
             .taskSelectors(taskSelectors)
-            .logStreamingAbstractions(createLogStreamingAbstractions(ngAccess, ambiance))
+            .logStreamingAbstractions(createLogStreamingAbstractions(ngAccess))
             .build();
     try {
       return delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
@@ -149,20 +148,11 @@ public class TasEntityHelper {
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }
   }
-  private LinkedHashMap<String, String> createLogStreamingAbstractions(BaseNGAccess ngAccess, Ambiance ambiance) {
+  private LinkedHashMap<String, String> createLogStreamingAbstractions(BaseNGAccess ngAccess) {
     LinkedHashMap<String, String> logStreamingAbstractions = new LinkedHashMap<>();
     logStreamingAbstractions.put(SetupAbstractionKeys.accountId, ngAccess.getAccountIdentifier());
     logStreamingAbstractions.put(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier());
     logStreamingAbstractions.put(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier());
-    if (ambiance != null) {
-      logStreamingAbstractions.put(SetupAbstractionKeys.pipelineId, ambiance.getMetadata().getPipelineIdentifier());
-      logStreamingAbstractions.put(
-          SetupAbstractionKeys.runSequence, String.valueOf(ambiance.getMetadata().getRunSequence()));
-
-      for (int i = 0; i < ambiance.getLevelsList().size(); i++) {
-        logStreamingAbstractions.put("level" + i, ambiance.getLevels(i).getIdentifier());
-      }
-    }
     return logStreamingAbstractions;
   }
   public OptionalSweepingOutput getSetupOutcome(Ambiance ambiance, String tasBGSetupFqn, String tasBasicSetupFqn,

@@ -237,11 +237,11 @@ public class TerragruntProvisionStateTest extends WingsBaseTest {
                                                           .build();
 
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
-    doReturn("taskId").when(delegateService).queueTask(any(DelegateTask.class));
+    doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
     ExecutionResponse response = destroyProvisionState.execute(executionContext);
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     DelegateTask createdTask = taskCaptor.getValue();
     verify(gitConfigHelperService).convertToRepoGitConfig(any(GitConfig.class), anyString());
 
@@ -281,14 +281,14 @@ public class TerragruntProvisionStateTest extends WingsBaseTest {
         .getLatestFileIdByQualifier(anyString(), eq(FileBucket.TERRAFORM_STATE), eq("apply"));
     doReturn(fileMetadata).when(fileService).getFileMetadata("fileId", FileBucket.TERRAFORM_STATE);
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
-    doReturn("taskId").when(delegateService).queueTask(any(DelegateTask.class));
+    doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
     doAnswer(invocation -> invocation.getArgument(0, String.class) + "-rendered")
         .when(executionContext)
         .renderExpression(anyString());
     ExecutionResponse response = destroyProvisionState.execute(executionContext);
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(taskCaptor.capture());
+    verify(delegateService).queueTaskV2(taskCaptor.capture());
     DelegateTask createdTask = taskCaptor.getValue();
     verify(gitConfigHelperService).convertToRepoGitConfig(any(GitConfig.class), anyString());
 

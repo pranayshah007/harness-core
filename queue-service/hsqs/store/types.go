@@ -25,16 +25,16 @@ type RegisterTopicMetadata struct {
 
 // EnqueueRequest Request object for Enqueuing messages
 type EnqueueRequest struct {
-	Topic        string `json:"topic"`
-	SubTopic     string `json:"subTopic"`
-	Payload      string `json:"payload"`
-	ProducerName string `json:"producerName"`
+	Topic        string `json:"topic" validate:"required"`
+	SubTopic     string `json:"subTopic" validate:"required"`
+	Payload      string `json:"payload" validate:"required"`
+	ProducerName string `json:"producerName" validate:"required"`
 }
 
 // EnqueueResponse Response object for Enqueuing messages
 type EnqueueResponse struct {
 	// ItemID is the identifier of the task in the Queue
-	ItemID string `json:"itemId"`
+	ItemID string `json:"itemId" validate:"required"`
 }
 
 // EnqueueErrorResponse Error Message object for Enqueuing messages
@@ -49,10 +49,10 @@ func (e *EnqueueErrorResponse) Error() string {
 
 // DequeueRequest Request object for Dequeuing messages
 type DequeueRequest struct {
-	Topic           string        `json:"topic"`
-	BatchSize       int           `json:"batchSize"`
-	ConsumerName    string        `json:"consumerName"`
-	MaxWaitDuration time.Duration `json:"maxWaitDuration"`
+	Topic           string        `json:"topic" validate:"required"`
+	BatchSize       int           `json:"batchSize" validate:"required"`
+	ConsumerName    string        `json:"consumerName" validate:"required"`
+	MaxWaitDuration time.Duration `json:"maxWaitDuration" validate:"required"`
 }
 
 // DequeueResponse Response object for Dequeuing messages
@@ -82,10 +82,10 @@ func (e *DequeueErrorResponse) Error() string {
 
 // AckRequest Request object for Acknowledging a message
 type AckRequest struct {
-	ItemID       string
-	Topic        string
-	SubTopic     string
-	ConsumerName string
+	ItemID       string `json:"itemId" validate:"required"`
+	Topic        string `json:"topic" validate:"required"`
+	SubTopic     string `json:"subTopic" validate:"required"`
+	ConsumerName string `json:"consumerName" validate:"required"`
 }
 
 // AckResponse Response object for Acknowledging a message

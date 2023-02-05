@@ -16,7 +16,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @TypeAlias("stoYamlGenericConfig")
 @RecasterAlias("io.harness.yaml.sto.variables.STOYamlGenericConfig")
-public enum STOYamlGenericConfig {
+public enum STOYamlGenericConfig implements STOYamlConfig {
   @JsonProperty("default") DEFAULT("default");
   private final String yamlName;
 

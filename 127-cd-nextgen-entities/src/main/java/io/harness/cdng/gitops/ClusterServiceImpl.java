@@ -150,6 +150,18 @@ public class ClusterServiceImpl implements ClusterService {
     checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
     checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
 
+    return deleteAllInternal(accountId, orgIdentifier, projectIdentifier);
+  }
+
+  @Override
+  public boolean deleteAllFromOrg(String accountId, String orgIdentifier) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
+
+    return deleteAllInternal(accountId, orgIdentifier, null);
+  }
+
+  private boolean deleteAllInternal(String accountId, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = getClusterEqCriteriaForAllClusters(accountId, orgIdentifier, projectIdentifier);
     DeleteResult delete = clusterRepository.delete(criteria);
     return delete.wasAcknowledged();

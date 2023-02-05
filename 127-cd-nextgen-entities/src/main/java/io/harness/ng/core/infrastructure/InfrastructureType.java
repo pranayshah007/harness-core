@@ -30,7 +30,9 @@ public enum InfrastructureType {
   @JsonProperty(InfrastructureKind.ECS) ECS(InfrastructureKind.ECS),
   @JsonProperty(InfrastructureKind.ELASTIGROUP) ELASTIGROUP(InfrastructureKind.ELASTIGROUP),
   @JsonProperty(InfrastructureKind.TAS) TAS(InfrastructureKind.TAS),
-  @JsonProperty(InfrastructureKind.ASG) ASG(InfrastructureKind.ASG);
+  @JsonProperty(InfrastructureKind.ASG) ASG(InfrastructureKind.ASG),
+  @JsonProperty(InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS)
+  GOOGLE_CLOUD_FUNCTIONS(InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS);
 
   private final String displayName;
 

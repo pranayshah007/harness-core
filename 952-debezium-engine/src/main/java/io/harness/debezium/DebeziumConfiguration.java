@@ -38,7 +38,6 @@ public class DebeziumConfiguration {
   public static final String CONNECT_BACKOFF_INITIAL_DELAY_MS = "connect.backoff.initial.delay.ms";
   public static final String CONNECT_BACKOFF_MAX_DELAY_MS = "connect.backoff.max.delay.ms";
   public static final String CONNECT_MAX_ATTEMPTS = "connect.max.attempts";
-  public static final String SNAPSHOT_FETCH_SIZE = "snapshot.fetch.size";
   public static final String SNAPSHOT_MODE = "snapshot.mode";
   public static final String TRANSFORMS_UNWRAP_ARRAY_ENCODING = "transforms.unwrap.array.encoding";
   public static final String MAX_QUEUE_SIZE = "max.queue.size";
@@ -59,10 +58,10 @@ public class DebeziumConfiguration {
     props.setProperty(CONNECTOR_NAME, debeziumConfig.getConnectorName());
     props.setProperty(OFFSET_STORAGE, RedisOffsetBackingStore.class.getName());
     props.setProperty(OFFSET_STORAGE_FILE_FILENAME, JsonUtils.asJson(redisLockConfig));
-    props.setProperty(KEY_CONVERTER_SCHEMAS_ENABLE, debeziumConfig.getKeyConverterSchemasEnable());
-    props.setProperty(VALUE_CONVERTER_SCHEMAS_ENABLE, debeziumConfig.getValueConverterSchemasEnable());
-    props.setProperty(OFFSET_FLUSH_INTERVAL_MS, debeziumConfig.getOffsetFlushIntervalMillis());
-    props.setProperty(TRANSFORMS_UNWRAP_ARRAY_ENCODING, debeziumConfig.getTransformsUnwrapArrayEncoding());
+    props.setProperty(KEY_CONVERTER_SCHEMAS_ENABLE, "false");
+    props.setProperty(VALUE_CONVERTER_SCHEMAS_ENABLE, "false");
+    props.setProperty(OFFSET_FLUSH_INTERVAL_MS, "5000");
+    props.setProperty(TRANSFORMS_UNWRAP_ARRAY_ENCODING, "document");
     props.setProperty(MAX_BATCH_SIZE, debeziumConfig.getMaxBatchSize());
     props.setProperty(MAX_QUEUE_SIZE, debeziumConfig.getMaxQueueSize());
     props.setProperty(MAX_QUEUE_SIZE_IN_BYTES, String.valueOf(debeziumConfig.getMaxQueueSizeInBytes()));
@@ -90,10 +89,9 @@ public class DebeziumConfiguration {
     props.setProperty(TRANSFORMS_UNWRAP_TYPE, DEBEZIUM_CONNECTOR_MONGODB_TRANSFORMS_EXTRACT_NEW_DOCUMENT_STATE);
     props.setProperty(TRANSFORMS_UNWRAP_DROP_TOMBSTONES, "false");
     props.setProperty(TRANSFORMS_UNWRAP_ADD_HEADERS, "op");
-    props.setProperty(CONNECT_BACKOFF_INITIAL_DELAY_MS, debeziumConfig.getConnectBackoffInitialDelayMillis());
-    props.setProperty(CONNECT_BACKOFF_MAX_DELAY_MS, debeziumConfig.getConnectBackoffMaxDelayMillis());
-    props.setProperty(CONNECT_MAX_ATTEMPTS, debeziumConfig.getConnectMaxAttempts());
-    props.setProperty(SNAPSHOT_FETCH_SIZE, debeziumConfig.getSnapshotFetchSize());
+    props.setProperty(CONNECT_BACKOFF_INITIAL_DELAY_MS, "1000");
+    props.setProperty(CONNECT_BACKOFF_MAX_DELAY_MS, "10000");
+    props.setProperty(CONNECT_MAX_ATTEMPTS, "3");
     return props;
   }
 

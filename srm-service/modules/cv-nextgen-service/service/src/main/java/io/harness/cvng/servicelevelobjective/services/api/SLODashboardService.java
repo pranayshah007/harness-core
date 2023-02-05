@@ -16,7 +16,10 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
+import io.harness.cvng.servicelevelobjective.beans.UnavailabilityInstancesResponse;
 import io.harness.ng.beans.PageResponse;
+
+import java.util.List;
 
 public interface SLODashboardService {
   PageResponse<SLODashboardWidget> getSloDashboardWidgets(
@@ -32,4 +35,7 @@ public interface SLODashboardService {
   SLORiskCountResponse getRiskCount(ProjectParams projectParams, SLODashboardApiFilter serviceLevelObjectiveFilter);
   PageResponse<MSDropdownResponse> getSLOAssociatedMonitoredServices(
       ProjectParams projectParams, PageParams pageParams);
+
+  List<UnavailabilityInstancesResponse> getUnavailabilityInstances(
+      ProjectParams projectParams, long startTime, long endTime, String identifier);
 }

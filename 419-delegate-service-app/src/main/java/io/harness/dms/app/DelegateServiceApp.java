@@ -12,9 +12,7 @@ import static io.harness.logging.LoggingInitializer.initializeLogging;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.authenticator.DelegateTokenAuthenticatorImpl;
-import io.harness.delegate.beans.DelegateAsyncTaskResponse;
-import io.harness.delegate.beans.DelegateSyncTaskResponse;
-import io.harness.delegate.beans.DelegateTaskProgressResponse;
+import io.harness.delegate.utils.DelegateServiceSwaggerGenerator;
 import io.harness.govern.ProviderModule;
 import io.harness.metrics.impl.DelegateMetricsServiceImpl;
 import io.harness.metrics.intfc.DelegateMetricsService;
@@ -114,7 +112,7 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
       @Override
       protected SwaggerBundleConfiguration getSwaggerBundleConfiguration(
           DelegateServiceConfiguration delegateServiceConfig) {
-        return delegateServiceConfig.getSwaggerBundleConfiguration();
+        return DelegateServiceSwaggerGenerator.getSwaggerBundleConfiguration();
       }
     });
     configureObjectMapper(bootstrap.getObjectMapper());

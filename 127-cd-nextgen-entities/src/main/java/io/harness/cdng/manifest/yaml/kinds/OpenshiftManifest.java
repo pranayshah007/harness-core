@@ -71,6 +71,7 @@ public class OpenshiftManifest implements ManifestAttributes, Visitable {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes({runtime})
   @SkipAutoEvaluation
+  @JsonProperty("paramsPaths")
   ParameterField<List<String>> paramsPaths;
 
   @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> skipResourceVersioning;

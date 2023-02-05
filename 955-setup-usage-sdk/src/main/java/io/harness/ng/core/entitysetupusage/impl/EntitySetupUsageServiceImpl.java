@@ -88,6 +88,17 @@ public class EntitySetupUsageServiceImpl implements EntitySetupUsageService {
   }
 
   @Override
+  public Page<EntitySetupUsageDTO> listAllEntityUsageWithSupportForTwoFqnForASingleEntity(int page, int size,
+      String accountIdentifier, String referredEntityFQN1, String referredEntityFQN2, EntityType referredEntityType,
+      String searchTerm) {
+    Criteria criteria = entitySetupUsageFilterHelper.createCriteriaWithTwoFqnsEntityFilter(
+        accountIdentifier, referredEntityFQN1, referredEntityFQN2, referredEntityType, searchTerm);
+    Pageable pageable = getPageRequest(page, size, Sort.by(Sort.Direction.DESC, EntitySetupUsageKeys.createdAt));
+    Page<EntitySetupUsage> entityReferences = entityReferenceRepository.findAll(criteria, pageable);
+    return entityReferences.map(entityReference -> setupUsageEntityToDTO.createEntityReferenceDTO(entityReference));
+  }
+
+  @Override
   public List<EntitySetupUsageDTO> listAllReferredUsages(int page, int size, String accountIdentifier,
       String referredByEntityFQN, EntityType referredEntityType, String searchTerm) {
     Criteria criteria = entitySetupUsageFilterHelper.createCriteriaForListAllReferredUsages(

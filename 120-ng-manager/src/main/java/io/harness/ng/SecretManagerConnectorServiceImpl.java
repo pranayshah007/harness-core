@@ -14,7 +14,7 @@ import static io.harness.git.model.ChangeType.NONE;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.common.EntityReference;
+import io.harness.beans.EntityReference;
 import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;

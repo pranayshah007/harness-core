@@ -79,7 +79,13 @@ public class ArtifactStreamMigrationService extends NgMigrationService {
     if (!ArtifactStreamType.CUSTOM.name().equals(artifactStream.getArtifactStreamType())) {
       children = Collections.singleton(
           CgEntityId.builder().type(NGMigrationEntityType.CONNECTOR).id(artifactStream.getSettingId()).build());
+    } else {
+      if (null != artifactStream.getTemplateUuid()) {
+        children = Collections.singleton(
+            CgEntityId.builder().type(NGMigrationEntityType.TEMPLATE).id(artifactStream.getTemplateUuid()).build());
+      }
     }
+
     return DiscoveryNode.builder().children(children).entityNode(artifactStreamNode).build();
   }
 

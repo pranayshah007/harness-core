@@ -39,6 +39,7 @@ import io.harness.pms.plan.execution.StagesExecutionHelper;
 import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.yaml.PipelineVersion;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -62,6 +63,7 @@ public class ValidateAndMergeHelper {
 
   public PipelineEntity getPipelineEntity(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String pipelineBranch, String pipelineRepoID, boolean checkForStoreType) {
+    // todo: move this to PMSPipelineService
     if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
       return getPipelineEntityForOldGitSyncFlow(
           accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID);
@@ -202,13 +204,15 @@ public class ValidateAndMergeHelper {
     PipelineEntity pipelineEntity = getPipelineEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false);
     String pipelineYaml = pipelineEntity.getYaml();
-    String pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
-        ? createTemplateFromPipeline(pipelineYaml)
-        : createTemplateFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
-
-    if (EmptyPredicate.isEmpty(pipelineTemplate)) {
-      throw new InvalidRequestException(
-          "Pipeline " + pipelineIdentifier + " does not have any runtime input. All existing input sets are invalid");
+    String pipelineTemplate = "";
+    if (PipelineVersion.V0.equals(pipelineEntity.getHarnessVersion())) {
+      pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
+          ? createTemplateFromPipeline(pipelineYaml)
+          : createTemplateFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
+      if (EmptyPredicate.isEmpty(pipelineTemplate)) {
+        throw new InvalidRequestException(
+            "Pipeline " + pipelineIdentifier + " does not have any runtime input. All existing input sets are invalid");
+      }
     }
 
     List<String> inputSetYamlList = new ArrayList<>();
@@ -261,8 +265,12 @@ public class ValidateAndMergeHelper {
     return mergeInputSetIntoPipelineForGivenStages(pipelineYaml, mergedRuntimeInputYaml, false, stageIdentifiers);
   }
 
-  private void checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(
+  @VisibleForTesting
+  void checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(
       PipelineEntity pipelineEntity, InputSetEntity inputSetEntity) {
+    if (pipelineEntity.getStoreType() == null || inputSetEntity.getStoreType() == null) {
+      return;
+    }
     if (!pipelineEntity.getStoreType().equals(inputSetEntity.getStoreType())) {
       throw NestedExceptionUtils.hintWithExplanationException("Please move the input-set from inline to remote.",
           "The pipeline is remote and input-set is inline",
