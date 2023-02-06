@@ -5,14 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng.core.transformer.changeSource;
+package io.harness.cvng.core.transformer.changeEvent;
 
 import static io.harness.rule.OwnerRule.ARPITJ;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
-import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
-import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.ChangeSourceDTODeserializer;
+import io.harness.cvng.beans.change.ChangeEventDTO;
+import io.harness.cvng.beans.change.ChangeEventDTODeserializer;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -28,23 +28,41 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class ChangeSourceDTODeserializerTest extends CvNextGenTestBase {
-  private ChangeSourceDTODeserializer changeSourceDTODeserializer;
+public class ChangeEventDTODeserializerTest extends CvNextGenTestBase {
+  private ChangeEventDTODeserializer changeEventDTODeserializer;
   Field[] excludedFields;
   String jsonString;
 
   @Before
   public void setup() throws IllegalAccessException {
-    changeSourceDTODeserializer = new ChangeSourceDTODeserializer();
+    changeEventDTODeserializer = new ChangeEventDTODeserializer();
     excludedFields = new Field[] {};
     jsonString = "{"
-        + "                \"name\": \"Harness CD Next Gen\","
-        + "                \"identifier\": \"harness_cd_next_gen\","
-        + "                \"type\": \"HarnessCDNextGen\","
-        + "                \"enabled\": true,"
-        + "                \"spec\": {},\n"
-        + "                \"category\": \"Deployment\""
-        + "            }";
+        + "    \"id\": \"-k53qRQAQ1O7DBLb9ACnjQ\","
+        + "    \"accountId\": \"-k53qRQAQ1O7DBLb9ACnjQ\","
+        + "    \"orgIdentifier\": \"default\","
+        + "    \"projectIdentifier\": \"projectId\","
+        + "    \"serviceIdentifier\": \"serviceId\","
+        + "    \"serviceName\": \"serviceName\","
+        + "    \"envIdentifier\": \"envId\","
+        + "    \"environmentName\": \"envName\","
+        + "    \"name\": \"name\","
+        + "    \"changeSourceIdentifier\": \"changeSourceId\","
+        + "    \"monitoredServiceIdentifier\": \"monitoredServiceId\","
+        + "    \"type\": \"HarnessCDNextGen\","
+        + "    \"eventTime\": 1630992973462,"
+        + "    \"metadata\": {"
+        + "        \"deploymentStartTime\": 1630992973462,"
+        + "        \"deploymentEndTime\": 1630992998599,"
+        + "        \"planExecutionId\": \"testex1\","
+        + "        \"pipelineId\": \"test\","
+        + "        \"stageStepId\": \"EOFUmKvJR1CEKvRmVvpzkw\","
+        + "        \"stageId\": \"test\","
+        + "        \"artifactType\": \"DockerRegistry\","
+        + "        \"artifactTag\": \"praveen-cv-test\","
+        + "        \"status\": \"ABORTED\""
+        + "    }"
+        + "}";
   }
 
   @Test
@@ -54,16 +72,16 @@ public class ChangeSourceDTODeserializerTest extends CvNextGenTestBase {
     ObjectMapper objectMapper = new ObjectMapper();
     JsonFactory jsonFactory = objectMapper.getFactory();
     JsonParser jsonParser = jsonFactory.createParser(jsonString);
-    ChangeSourceDTO changeSourceDTO = changeSourceDTODeserializer.deserialize(jsonParser, null);
+    ChangeEventDTO changeEventDTO = changeEventDTODeserializer.deserialize(jsonParser, null);
 
-    List<Field> fieldList = Arrays.stream(changeSourceDTO.getClass().getDeclaredFields())
+    List<Field> fieldList = Arrays.stream(changeEventDTO.getClass().getDeclaredFields())
                                 .filter(field -> Arrays.stream(excludedFields).noneMatch(field::equals))
                                 .collect(Collectors.toList());
 
     for (Field f : fieldList) {
       Class t = f.getType();
       f.setAccessible(true);
-      Object v = f.get(changeSourceDTO);
+      Object v = f.get(changeEventDTO);
       if (t == boolean.class && Boolean.FALSE.equals(v)) {
         Assert.fail("Deserialization Failed for field " + f
             + ". Update custom deserializer and add field in json string with non default value.");

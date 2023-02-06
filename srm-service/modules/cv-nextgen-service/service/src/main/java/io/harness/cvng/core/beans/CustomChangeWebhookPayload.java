@@ -8,6 +8,7 @@
 package io.harness.cvng.core.beans;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,16 +20,16 @@ import lombok.Value;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CustomChangeWebhookPayload {
   String eventIdentifier;
-  @NotNull long startTime;
-  @NotNull long endTime;
-  @NotNull String user;
-  @NotNull CustomChangeWebhookEventDetail eventDetail;
+  @NotNull @Valid long startTime;
+  @NotNull @Valid long endTime;
+  @NotNull @Valid String user;
+  @NotNull @Valid CustomChangeWebhookEventDetail eventDetail;
   @Value
   @Builder
   public static class CustomChangeWebhookEventDetail {
-    @NotNull String description;
+    @NotNull @Valid String description;
     String changeEventDetailsLink;
     String externalLinkToEntity;
-    @NotNull String name;
+    @NotNull @Valid String name;
   }
 }

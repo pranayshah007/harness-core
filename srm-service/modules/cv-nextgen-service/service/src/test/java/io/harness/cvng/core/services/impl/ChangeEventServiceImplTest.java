@@ -99,6 +99,60 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testRegister_insertCustomChangeEvent_withoutEventId() {
+    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
+        new HashSet<>(
+            Arrays.asList(builderFactory.getCustomChangeSourceDTOBuilder(ChangeSourceType.CUSTOM_DEPLOY).build())));
+    ChangeEventDTO changeEventDTO = builderFactory.getCustomChangeEventBuilder(ChangeSourceType.CUSTOM_DEPLOY).build();
+
+    changeEventService.register(changeEventDTO);
+    changeEventService.register(changeEventDTO);
+
+    Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
+    Assertions.assertThat(activityFromDb).isNotNull();
+    long count = hPersistence.createQuery(Activity.class).count();
+    assertThat(count).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testRegister_insertCustomChangeEvent_withDuplicateEventId() {
+    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
+        new HashSet<>(
+            Arrays.asList(builderFactory.getCustomChangeSourceDTOBuilder(ChangeSourceType.CUSTOM_DEPLOY).build())));
+    ChangeEventDTO changeEventDTO =
+        builderFactory.getCustomChangeEventBuilder(ChangeSourceType.CUSTOM_DEPLOY).id("identifier").build();
+
+    changeEventService.register(changeEventDTO);
+    changeEventService.register(changeEventDTO);
+
+    long count = hPersistence.createQuery(Activity.class).count();
+    assertThat(count).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testRegister_insertCustomChangeEvent_withUniqueEventId() {
+    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
+        new HashSet<>(
+            Arrays.asList(builderFactory.getCustomChangeSourceDTOBuilder(ChangeSourceType.CUSTOM_DEPLOY).build())));
+    ChangeEventDTO changeEventDTO =
+        builderFactory.getCustomChangeEventBuilder(ChangeSourceType.CUSTOM_DEPLOY).id("identifier1").build();
+
+    changeEventService.register(changeEventDTO);
+    ChangeEventDTO changeEventDTO2 =
+        builderFactory.getCustomChangeEventBuilder(ChangeSourceType.CUSTOM_DEPLOY).id("identifier2").build();
+    changeEventService.register(changeEventDTO2);
+
+    long count = hPersistence.createQuery(Activity.class).count();
+    assertThat(count).isEqualTo(2);
+  }
+
+  @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testRegister_insertWithNoMonitoredService() {
