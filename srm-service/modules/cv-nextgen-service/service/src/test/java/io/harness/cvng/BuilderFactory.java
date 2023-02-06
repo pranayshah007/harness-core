@@ -1247,6 +1247,10 @@ public class BuilderFactory {
         .type(changeSourceType);
   }
 
+  public ChangeSourceDTOBuilder getChangeSourceDTOBuilder_Deserialize(ChangeSourceType changeSourceType) {
+    return getChangeSourceDTOBuilder(changeSourceType);
+  }
+
   public ServiceLevelObjectiveDTOBuilder getServiceLevelObjectiveDTOBuilder() {
     return ServiceLevelObjectiveDTO.builder()
         .projectIdentifier(context.getProjectIdentifier())
