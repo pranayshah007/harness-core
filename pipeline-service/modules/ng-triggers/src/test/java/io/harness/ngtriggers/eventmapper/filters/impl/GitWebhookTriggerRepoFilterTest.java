@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
+import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -96,6 +97,12 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
                                               .httpURL("https://dev.azure.com/org/test/_git/test")
                                               .sshURL("")
                                               .link("https://dev.azure.com/org/test/_git/test")
+                                              .build();
+
+  private static Repository repository6 = Repository.builder()
+                                              .httpURL("https://org.visualstudio.com/test/_git/test")
+                                              .sshURL("git@ssh.org.visualstudio.com:v3/test/test")
+                                              .link("https://org.visualstudio.com/test/_git/test")
                                               .build();
 
   static {
@@ -493,6 +500,14 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
         "https://dev.azure.com/org/test/_git/test", "git@ssh.dev.azure.com:v3/org/test/test");
   }
 
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void testGetUrlsForOldAzure() {
+    HashSet<String> urls = filter.getUrls(repository6, "AZURE_REPO");
+    assertThat(urls).containsExactlyInAnyOrder(
+        "https://dev.azure.com/org/test/_git/test", "git@ssh.dev.azure.com:v3/org/test/test");
+  }
   @Test
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)

@@ -40,8 +40,6 @@ import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellType;
 import io.harness.yaml.core.variables.NGVariable;
-import io.harness.yaml.core.variables.NGVariableType;
-import io.harness.yaml.core.variables.StringNGVariable;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import software.wings.beans.command.CommandUnit;
@@ -93,13 +91,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
 
     List<NGVariable> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(template.getVariables())) {
-      template.getVariables().forEach(variable -> {
-        variables.add(StringNGVariable.builder()
-                          .name(variable.getName())
-                          .type(NGVariableType.STRING)
-                          .value(valueOrDefaultRuntime(variable.getValue()))
-                          .build());
-      });
+      variables.addAll(MigratorUtility.getVariables(template.getVariables()));
     }
 
     List<CommandUnitWrapper> commandUnitWrappers = sshCommandTemplate.getCommandUnits()
@@ -258,9 +250,5 @@ public class ServiceCommandTemplateService implements NgTemplateService {
 
   static ParameterField<String> valueOrDefaultEmpty(String val) {
     return ParameterField.createValueField(StringUtils.isNotBlank(val) ? val : "");
-  }
-
-  static ParameterField<String> valueOrDefaultRuntime(String val) {
-    return ParameterField.createValueField(StringUtils.isNotBlank(val) ? val : "<+input>");
   }
 }

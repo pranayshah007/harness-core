@@ -10,9 +10,11 @@ package io.harness.cvng.cdng.beans;
 import io.harness.cvng.core.entities.CVConfig;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.Value;
+import org.apache.commons.collections4.CollectionUtils;
 
 @Value
 @Builder
@@ -29,5 +31,9 @@ public class ResolvedCVConfigInfo {
     String connectorRef;
     String identifier;
     boolean demoEnabledForAnyCVConfig;
+  }
+
+  public List<String> getCvConfigIds() {
+    return CollectionUtils.emptyIfNull(cvConfigs).stream().map(CVConfig::getUuid).collect(Collectors.toList());
   }
 }

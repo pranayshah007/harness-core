@@ -38,4 +38,6 @@ public class NGCommonUtilPlanCreationConstants {
   public final String STEP_GROUP = "STEP_GROUP";
   public final String NOOP = "NOOP";
   public final String GROUP = "GROUP";
+
+  public final String ROLLBACK_STAGE = "ROLLBACK_STAGE";
 }

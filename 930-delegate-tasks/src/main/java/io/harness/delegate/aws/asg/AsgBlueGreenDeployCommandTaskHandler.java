@@ -12,6 +12,7 @@ import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.delegate.aws.asg.AsgBlueGreenPrepareRollbackCommandTaskHandler.VERSION_DELIMITER;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
@@ -106,13 +107,29 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
       String region = asgInfraConfig.getRegion();
       AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO(), region);
 
-      asgSdkManager.info(format("Starting Blue Green Deployment", Bold));
+      asgSdkManager.info("Starting Blue Green Deployment");
 
-      AutoScalingGroupContainer autoScalingGroupContainer = executeBGDeploy(asgSdkManager, asgStoreManifestsContent,
-          asgName, amiImageId, targetGroupArnsList, isFirstDeployment, awsInternalConfig, region);
+      AutoScalingGroupContainer stageAutoScalingGroupContainer =
+          executeBGDeploy(asgSdkManager, asgStoreManifestsContent, asgName, amiImageId, targetGroupArnsList,
+              isFirstDeployment, awsInternalConfig, region);
+
+      String asgNameWithoutSuffix = asgName.substring(0, asgName.length() - 3);
+      String asgNameSuffix = asgName.substring(asgName.length() - 1);
+      String prodAsgName = asgNameWithoutSuffix + VERSION_DELIMITER + 1;
+      if (asgNameSuffix.equalsIgnoreCase(String.valueOf(1))) {
+        prodAsgName = asgNameWithoutSuffix + VERSION_DELIMITER + 2;
+      }
+
+      AutoScalingGroupContainer prodAutoScalingGroupContainer = null;
+      if (!isFirstDeployment) {
+        prodAutoScalingGroupContainer = asgTaskHelper.mapToAutoScalingGroupContainer(asgSdkManager.getASG(prodAsgName));
+      }
 
       AsgBlueGreenDeployResult asgBlueGreenDeployResult =
-          AsgBlueGreenDeployResult.builder().autoScalingGroupContainer(autoScalingGroupContainer).build();
+          AsgBlueGreenDeployResult.builder()
+              .prodAutoScalingGroupContainer(prodAutoScalingGroupContainer)
+              .stageAutoScalingGroupContainer(stageAutoScalingGroupContainer)
+              .build();
 
       logCallback.saveExecutionLog(
           color("Blue Green Deployment Finished Successfully", Green, Bold), INFO, CommandExecutionStatus.SUCCESS);

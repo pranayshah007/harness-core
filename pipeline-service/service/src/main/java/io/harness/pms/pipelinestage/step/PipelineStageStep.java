@@ -75,7 +75,7 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
       Ambiance ambiance, PipelineStageStepParameters stepParameters, AsyncExecutableResponse executableResponse) {
     // This is required
     setSourcePrincipal(ambiance);
-    if (isNotEmpty(executableResponse.getCallbackIdsList())) {
+    if (executableResponse != null && isNotEmpty(executableResponse.getCallbackIdsList())) {
       pmsExecutionService.registerInterrupt(
           PlanExecutionInterruptType.ABORTALL, executableResponse.getCallbackIds(0), null);
     }

@@ -10,8 +10,10 @@ package software.wings.sm.states;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.REJECTED;
+import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION;
+import static io.harness.beans.FeatureName.SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
@@ -50,6 +52,7 @@ import io.harness.logging.Misc;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.EnvStateExecutionData;
+import software.wings.api.SkipStateExecutionData;
 import software.wings.api.artifact.ServiceArtifactElement;
 import software.wings.api.artifact.ServiceArtifactElements;
 import software.wings.api.artifact.ServiceArtifactVariableElement;
@@ -82,6 +85,7 @@ import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
 import software.wings.sm.ExecutionContext;
+import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionInterrupt;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.ExecutionResponse.ExecutionResponseBuilder;
@@ -111,7 +115,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
 
 /**
  * A Env state to pause state machine execution.
@@ -673,5 +679,101 @@ public class EnvState extends State implements WorkflowState {
     public void setStatus(ExecutionStatus status) {
       this.status = status;
     }
+  }
+
+  @Override
+  public ExecutionResponse checkDisableAssertion(
+      ExecutionContextImpl context, WorkflowService workflowService, Logger log) {
+    String disableAssertion = getDisableAssertion();
+    String workflowId = getWorkflowId();
+    SkipStateExecutionData skipStateExecutionData = SkipStateExecutionData.builder().workflowId(workflowId).build();
+    Workflow workflow = workflowService.readWorkflowWithoutServices(context.getAppId(), workflowId);
+
+    if (workflow == null || workflow.getOrchestrationWorkflow() == null) {
+      return ExecutionResponse.builder()
+          .executionStatus(FAILED)
+          .errorMessage("Workflow does not exist")
+          .stateExecutionData(skipStateExecutionData)
+          .build();
+    }
+    if (disableAssertion != null && disableAssertion.equals("true")) {
+      return ExecutionResponse.builder()
+          .executionStatus(SKIPPED)
+          .errorMessage(getName() + " step in " + context.getPipelineStageName() + " has been skipped")
+          .stateExecutionData(skipStateExecutionData)
+          .build();
+    }
+
+    if (isNotEmpty(disableAssertion)) {
+      try {
+        if (context.getStateExecutionInstance() != null
+            && isNotEmpty(context.getStateExecutionInstance().getContextElements())) {
+          WorkflowStandardParams stdParams =
+              (WorkflowStandardParams) context.getStateExecutionInstance().getContextElements().get(0);
+
+          if (stdParams.getWorkflowElement() != null) {
+            stdParams.getWorkflowElement().setName(workflow.getName());
+            stdParams.getWorkflowElement().setDescription(workflow.getDescription());
+
+            if (featureFlagService.isEnabled(
+                    SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE, context.getAccountId())
+                && this.getWorkflowVariables() != null) {
+              stdParams.getWorkflowElement().setVariables(new HashMap<>(this.getWorkflowVariables()));
+              stdParams.setWorkflowVariables(this.getWorkflowVariables());
+            }
+          }
+        }
+
+        Object resultObj = context.evaluateExpression(disableAssertion,
+            StateExecutionContext.builder()
+                .contextElements(context.getStateExecutionInstance().getContextElements())
+                .stateExecutionData(skipStateExecutionData)
+                .build());
+        //  rendering expression in order to have it tracked
+        context.renderExpression(disableAssertion);
+        if (!(resultObj instanceof Boolean)) {
+          return ExecutionResponse.builder()
+              .executionStatus(FAILED)
+              .errorMessage("Skip Assertion Evaluation Failed : Expression '" + disableAssertion
+                  + "' did not return a boolean value")
+              .stateExecutionData(skipStateExecutionData)
+              .build();
+        }
+
+        boolean assertionResult = (boolean) resultObj;
+        if (assertionResult) {
+          return ExecutionResponse.builder()
+              .executionStatus(SKIPPED)
+              .errorMessage(getName() + " step in " + context.getPipelineStageName()
+                  + " has been skipped based on assertion expression [" + disableAssertion + "]")
+              .stateExecutionData(skipStateExecutionData)
+              .build();
+        }
+      } catch (JexlException je) {
+        log.error("Skip Assertion Evaluation Failed", je);
+        String jexlError = Optional.ofNullable(je.getMessage()).orElse("");
+        if (jexlError.contains(":")) {
+          jexlError = jexlError.split(":")[1];
+        }
+        if (je instanceof JexlException.Variable
+            && ((JexlException.Variable) je).getVariable().equals("sweepingOutputSecrets")) {
+          jexlError = "Secret Variables defined in Script output of shell scripts cannot be used in assertions";
+        }
+        return ExecutionResponse.builder()
+            .executionStatus(FAILED)
+            .errorMessage("Skip Assertion Evaluation Failed : " + jexlError)
+            .stateExecutionData(skipStateExecutionData)
+            .build();
+      } catch (Exception e) {
+        log.error("Skip Assertion Evaluation Failed", e);
+        return ExecutionResponse.builder()
+            .executionStatus(FAILED)
+            .errorMessage("Skip Assertion Evaluation Failed : " + (e.getMessage() != null ? e.getMessage() : ""))
+            .stateExecutionData(skipStateExecutionData)
+            .build();
+      }
+    }
+
+    return null;
   }
 }

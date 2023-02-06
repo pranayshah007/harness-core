@@ -30,6 +30,7 @@ import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateRespons
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
 
@@ -48,6 +49,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   @Mock PMSPipelineService pmsPipelineService;
   @Mock PMSInputSetService pmsInputSetService;
   @Mock GitSyncSdkService gitSyncSdkService;
+  @Mock PMSExecutionService pmsExecutionService;
 
   private static final String accountId = "accountId";
   private static final String orgId = "orgId";

@@ -65,6 +65,7 @@ public abstract class AbstractTerragruntTaskParameters
   @Nullable CommandUnitsProgress commandUnitsProgress;
 
   List<EncryptedDataDetail> encryptedDataDetailList;
+  boolean tgModuleSourceInheritSSH;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

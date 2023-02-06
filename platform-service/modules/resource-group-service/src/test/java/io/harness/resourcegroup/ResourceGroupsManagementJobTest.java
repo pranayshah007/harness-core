@@ -11,16 +11,23 @@ import static io.harness.rule.OwnerRule.KARAN;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.MockitoAnnotations.initMocks;
 
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.lock.PersistentLocker;
 import io.harness.ng.beans.PageRequest;
+import io.harness.outbox.api.OutboxService;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.resourcegroup.commons.bootstrap.ConfigurationState;
 import io.harness.resourcegroup.commons.bootstrap.ConfigurationStateRepository;
-import io.harness.resourcegroup.framework.v2.service.ResourceGroupService;
+import io.harness.resourcegroup.framework.v2.repositories.spring.ResourceGroupV2Repository;
+import io.harness.resourcegroup.framework.v2.service.impl.ResourceGroupServiceImpl;
+import io.harness.resourcegroup.framework.v2.service.impl.ResourceGroupValidatorImpl;
 import io.harness.resourcegroup.v1.remote.dto.ManagedFilter;
 import io.harness.resourcegroup.v1.remote.dto.ResourceGroupFilterDTO;
 import io.harness.rule.Owner;
@@ -36,19 +43,37 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mockito;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(HarnessTeam.PL)
 @Slf4j
 @Singleton
 public class ResourceGroupsManagementJobTest extends ResourceGroupTestBase {
-  @Inject private ResourceGroupService resourceGroupService;
+  @Inject ResourceGroupV2Repository resourceGroupV2Repository;
+  @Inject ResourceGroupValidatorImpl resourceGroupValidatorImpl;
+  @Inject OutboxService outboxService;
+  @Inject TransactionTemplate transactionTemplate;
+  AccessControlClient accessControlClient;
+  private ResourceGroupServiceImpl resourceGroupService;
   @Inject private ConfigurationStateRepository configurationStateRepository;
   @Inject private PersistentLocker persistentLocker;
   @Inject private ResourceGroupsManagementJob resourceGroupsManagementJob;
   private static final String RESOURCE_GROUPS_CONFIG_FIELD = "resourceGroupsConfig";
   private static final String VERSION_FIELD = "version";
+
+  @Before
+  public void setup() {
+    accessControlClient = mock(AccessControlClient.class);
+    resourceGroupService = new ResourceGroupServiceImpl(
+        resourceGroupV2Repository, resourceGroupValidatorImpl, outboxService, transactionTemplate, accessControlClient);
+    resourceGroupsManagementJob =
+        new ResourceGroupsManagementJob(resourceGroupService, configurationStateRepository, persistentLocker);
+    Mockito.when(accessControlClient.hasAccess(any(), any(), any())).thenReturn(true);
+  }
 
   @Test
   @Owner(developers = KARAN)

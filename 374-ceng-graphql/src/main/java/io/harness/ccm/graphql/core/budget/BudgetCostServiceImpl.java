@@ -26,6 +26,8 @@ import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budget.utils.BudgetUtils;
+import io.harness.ccm.clickHouse.ClickHouseService;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetCostData;
 import io.harness.ccm.commons.entities.budget.BudgetData;
@@ -39,15 +41,18 @@ import io.harness.ccm.views.graphql.QLCEViewTimeTruncGroupBy;
 import io.harness.ccm.views.graphql.ViewCostData;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.service.ViewsBillingService;
+import io.harness.ccm.views.service.impl.ClickHouseViewsBillingServiceImpl;
 import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.joda.time.DateTime;
@@ -57,6 +62,10 @@ public class BudgetCostServiceImpl implements BudgetCostService {
   @Inject ViewsBillingService viewsBillingService;
   @Inject ViewsQueryHelper viewsQueryHelper;
   @Inject PerspectiveTimeSeriesHelper perspectiveTimeSeriesHelper;
+  @Inject @Nullable @Named("clickHouseConfig") ClickHouseConfig clickHouseConfig;
+  @Inject ClickHouseService clickHouseService;
+  @Inject ClickHouseViewsBillingServiceImpl clickHouseViewsBillingService;
+  @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
 
   @Override
   public double getActualCost(Budget budget) {
@@ -339,12 +348,21 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     if (endTime != 0L) {
       filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
     }
-    return perspectiveTimeSeriesHelper
-        .fetch(viewsBillingService.getTimeSeriesStatsNg(filters, groupBy, aggregationFunction, Collections.emptyList(),
-                   true, 100,
-                   viewsQueryHelper.buildQueryParams(accountId, true, false, false, false, timeOffsetInDays, false)),
-            perspectiveTimeSeriesHelper.getTimePeriod(groupBy), groupBy)
-        .getStats();
+
+    if (isClickHouseEnabled) {
+      return clickHouseViewsBillingService
+          .getClickHouseTimeSeriesStatsNg(filters, groupBy, aggregationFunction, Collections.emptyList(), true, 100,
+              viewsQueryHelper.buildQueryParams(accountId, true, false, false, false, timeOffsetInDays, false),
+              perspectiveTimeSeriesHelper.getTimePeriod(groupBy), null, null, null, false)
+          .getStats();
+    } else {
+      return perspectiveTimeSeriesHelper
+          .fetch(viewsBillingService.getTimeSeriesStatsNg(filters, groupBy, aggregationFunction,
+                     Collections.emptyList(), true, 100,
+                     viewsQueryHelper.buildQueryParams(accountId, true, false, false, false, timeOffsetInDays, false)),
+              perspectiveTimeSeriesHelper.getTimePeriod(groupBy), groupBy)
+          .getStats();
+    }
   }
 
   private QLCEViewTimeGroupType getTimeResolutionForBudget(BudgetPeriod period) {

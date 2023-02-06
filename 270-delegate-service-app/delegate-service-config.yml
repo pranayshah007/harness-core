@@ -386,3 +386,9 @@ totp:
     count: 10
     duration: 5
     durationUnit: MINUTES
+
+debeziumConsumersConfigs:
+  applicationTimescaleStreaming:
+    topic: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_harnessMongo.harness.applications}
+    threads: ${DEBEZIUM_CONSUMER_THREADS:-2}
+    batchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}

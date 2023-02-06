@@ -500,7 +500,7 @@ public class ScmFacilitatorResource {
 
   @POST
   @Path("get-batch-file")
-  @ApiOperation(value = "Get file url", nickname = "getFileURL")
+  @ApiOperation(value = "Get file url", nickname = "getBatchFile")
   @Hidden
   public ResponseDTO<ScmBatchGetFileResponseDTO> getBatchFile(
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotBlank @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY)

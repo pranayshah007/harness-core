@@ -2407,7 +2407,7 @@
 573596:io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceRequest
 573597:io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResponse
 573598:io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResult
-
+573599:io.harness.delegate.beans.instancesync.info.AsgServerInstanceInfo
 573600:io.harness.delegate.exception.ElastigroupNGException
 573601:io.harness.delegate.task.elastigroup.response.SpotInstConfig
 573602:io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse
@@ -2480,13 +2480,15 @@
 673602:io.harness.delegate.task.gcp.response.GcsBucketListResponse
 673603:io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException
 673604:com.google.common.util.concurrent.UncheckedTimeoutException
-680000:io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskParams
-680001:io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskType
+680000:io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams
+680001:io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType
 680002:io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse
 680003:io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse
 680004:io.harness.delegate.beans.connector.terraformcloud.TerraformCloudValidationParams
 680005:io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse
 680006:io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse
+680007:io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit
+680008:io.harness.delegate.beans.terraformcloud.PlanType
 930001:io.harness.licensing.beans.modules.CDModuleLicenseDTO
 930002:io.harness.licensing.beans.modules.CEModuleLicenseDTO
 930003:io.harness.licensing.beans.modules.CFModuleLicenseDTO

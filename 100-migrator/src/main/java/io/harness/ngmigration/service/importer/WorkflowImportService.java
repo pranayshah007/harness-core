@@ -49,7 +49,9 @@ public class WorkflowImportService implements ImportService {
         workflowIds = workflowList.stream().map(Base::getUuid).collect(Collectors.toSet());
       }
     }
-
+    if (EmptyPredicate.isEmpty(workflowIds)) {
+      return null;
+    }
     return discoveryService.discoverMulti(accountId,
         DiscoveryInput.builder()
             .exportImage(false)

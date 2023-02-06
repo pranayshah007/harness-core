@@ -33,6 +33,9 @@ public interface PMSExecutionService {
   InputSetYamlWithTemplateDTO getInputSetYamlWithTemplate(String accountId, String orgId, String projectId,
       String planExecutionId, boolean pipelineDeleted, boolean resolveExpressions);
 
+  String getInputSetYamlForRerun(
+      String accountId, String orgId, String projectId, String planExecutionId, boolean pipelineDeleted);
+
   Page<PipelineExecutionSummaryEntity> getPipelineExecutionSummaryEntity(Criteria criteria, Pageable pageable);
 
   PipelineExecutionSummaryEntity getPipelineExecutionSummaryEntity(
@@ -72,4 +75,8 @@ public interface PMSExecutionService {
   long getCountOfExecutions(Criteria criteria);
 
   ExecutionDataResponseDTO getExecutionData(String planExecutionId);
+
+  String mergeRuntimeInputIntoPipelineForRerun(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String planExecutionId, String pipelineBranch, String pipelineRepoID,
+      List<String> stageIdentifiers);
 }

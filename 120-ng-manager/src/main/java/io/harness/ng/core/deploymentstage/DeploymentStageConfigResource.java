@@ -112,8 +112,9 @@ public class DeploymentStageConfigResource {
         && deploymentStageConfig.getServiceConfig().getUseFromStage() != null) {
       return Optional.of(deploymentStageConfig.getServiceConfig().getUseFromStage().getStage());
     } else if (deploymentStageConfig.getService() != null
-        && deploymentStageConfig.getService().getUseFromStage() != null) {
-      return Optional.of(deploymentStageConfig.getService().getUseFromStage().getStage());
+        && deploymentStageConfig.getService().getUseFromStage() != null
+        && deploymentStageConfig.getService().getUseFromStage().getValue() != null) {
+      return Optional.of(deploymentStageConfig.getService().getUseFromStage().getValue().getStage());
     }
     return Optional.empty();
   }

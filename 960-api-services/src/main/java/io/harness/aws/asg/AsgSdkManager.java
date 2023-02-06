@@ -40,6 +40,49 @@ import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 import com.amazonaws.AmazonWebServiceClient;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
 import com.amazonaws.services.autoscaling.model.*;
+import com.amazonaws.services.autoscaling.model.AttachLoadBalancerTargetGroupsRequest;
+import com.amazonaws.services.autoscaling.model.AttachLoadBalancersRequest;
+import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
+import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
+import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupResult;
+import com.amazonaws.services.autoscaling.model.CreateOrUpdateTagsRequest;
+import com.amazonaws.services.autoscaling.model.DeleteAutoScalingGroupRequest;
+import com.amazonaws.services.autoscaling.model.DeleteLifecycleHookRequest;
+import com.amazonaws.services.autoscaling.model.DeletePolicyRequest;
+import com.amazonaws.services.autoscaling.model.DeleteTagsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
+import com.amazonaws.services.autoscaling.model.DescribeInstanceRefreshesRequest;
+import com.amazonaws.services.autoscaling.model.DescribeInstanceRefreshesResult;
+import com.amazonaws.services.autoscaling.model.DescribeLifecycleHooksRequest;
+import com.amazonaws.services.autoscaling.model.DescribeLoadBalancerTargetGroupsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeLoadBalancerTargetGroupsResult;
+import com.amazonaws.services.autoscaling.model.DescribeLoadBalancersRequest;
+import com.amazonaws.services.autoscaling.model.DescribeLoadBalancersResult;
+import com.amazonaws.services.autoscaling.model.DescribePoliciesRequest;
+import com.amazonaws.services.autoscaling.model.DescribePoliciesResult;
+import com.amazonaws.services.autoscaling.model.DescribeTagsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeTagsResult;
+import com.amazonaws.services.autoscaling.model.DetachLoadBalancerTargetGroupsRequest;
+import com.amazonaws.services.autoscaling.model.DetachLoadBalancersRequest;
+import com.amazonaws.services.autoscaling.model.Filter;
+import com.amazonaws.services.autoscaling.model.Instance;
+import com.amazonaws.services.autoscaling.model.InstanceRefresh;
+import com.amazonaws.services.autoscaling.model.LaunchTemplateSpecification;
+import com.amazonaws.services.autoscaling.model.LifecycleHook;
+import com.amazonaws.services.autoscaling.model.LifecycleHookSpecification;
+import com.amazonaws.services.autoscaling.model.LoadBalancerState;
+import com.amazonaws.services.autoscaling.model.LoadBalancerTargetGroupState;
+import com.amazonaws.services.autoscaling.model.PutLifecycleHookRequest;
+import com.amazonaws.services.autoscaling.model.PutScalingPolicyRequest;
+import com.amazonaws.services.autoscaling.model.PutScalingPolicyResult;
+import com.amazonaws.services.autoscaling.model.RefreshPreferences;
+import com.amazonaws.services.autoscaling.model.ScalingPolicy;
+import com.amazonaws.services.autoscaling.model.StartInstanceRefreshRequest;
+import com.amazonaws.services.autoscaling.model.StartInstanceRefreshResult;
+import com.amazonaws.services.autoscaling.model.Tag;
+import com.amazonaws.services.autoscaling.model.TagDescription;
+import com.amazonaws.services.autoscaling.model.UpdateAutoScalingGroupRequest;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateRequest;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateResult;
@@ -57,7 +100,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -147,12 +189,10 @@ public class AsgSdkManager {
 
   public LaunchTemplate createLaunchTemplate(String asgName, CreateLaunchTemplateRequest createLaunchTemplateRequest) {
     createLaunchTemplateRequest.setLaunchTemplateName(asgName);
-    String operationName = format("Create launchTemplate %s", asgName);
-    info("Operation `%s` has started", operationName);
-
+    info("Creating launchTemplate %s", asgName);
     CreateLaunchTemplateResult createLaunchTemplateResult =
         ec2Call(ec2Client -> ec2Client.createLaunchTemplate(createLaunchTemplateRequest));
-    infoBold("Operation `%s` ended successfully", operationName);
+    infoBold("Created launchTemplate %s successfully", asgName);
     return createLaunchTemplateResult.getLaunchTemplate();
   }
 
@@ -182,11 +222,10 @@ public class AsgSdkManager {
             .withSourceVersion(launchTemplate.getLatestVersionNumber().toString())
             .withLaunchTemplateData(requestLaunchTemplateData);
 
-    String operationName = format("Create new version for launchTemplate %s", launchTemplateName);
-    info("Operation `%s` has started", operationName);
+    info("Creating new version for launchTemplate %s", launchTemplateName);
     CreateLaunchTemplateVersionResult createLaunchTemplateVersionResult =
         ec2Call(ec2Client -> ec2Client.createLaunchTemplateVersion(createLaunchTemplateVersionRequest));
-    infoBold("Operation `%s` ended successfully", operationName);
+    infoBold("Created new version for launchTemplate %s", launchTemplateName);
 
     return createLaunchTemplateVersionResult.getLaunchTemplateVersion();
   }
@@ -416,26 +455,13 @@ public class AsgSdkManager {
   }
 
   public void deleteAsg(String asgName) {
-    String operationName = format("Delete Asg %s", asgName);
-    info("Operation `%s` has started", operationName);
+    info("Deleting Asg %s", asgName);
     DeleteAutoScalingGroupRequest deleteAutoScalingGroupRequest =
         new DeleteAutoScalingGroupRequest().withAutoScalingGroupName(asgName).withForceDelete(true);
     asgCall(asgClient -> asgClient.deleteAutoScalingGroup(deleteAutoScalingGroupRequest));
-    waitReadyState(asgName, this::checkAsgDeleted, operationName);
-    infoBold("Operation `%s` ended successfully", operationName);
-  }
-
-  public List<AutoScalingInstanceDetails> getAutoScalingInstanceDetails(AutoScalingGroup autoScalingGroup) {
-    List<String> instanceIds =
-        autoScalingGroup.getInstances().stream().map(Instance::getInstanceId).collect(Collectors.toList());
-    if (isEmpty(instanceIds)) {
-      return Collections.emptyList();
-    }
-    DescribeAutoScalingInstancesRequest describeAutoScalingInstancesRequest =
-        new DescribeAutoScalingInstancesRequest().withInstanceIds(instanceIds);
-    DescribeAutoScalingInstancesResult describeAutoScalingInstancesResult =
-        asgCall(asgClient -> asgClient.describeAutoScalingInstances(describeAutoScalingInstancesRequest));
-    return describeAutoScalingInstancesResult.getAutoScalingInstances();
+    info("Waiting for deletion of Asg %s to complete", asgName);
+    waitReadyState(asgName, this::checkAsgDeleted, format("deletion of Asg %s", asgName));
+    infoBold("Deleted Asg %s successfully", asgName);
   }
 
   public boolean checkAllInstancesInReadyState(String asgName) {
@@ -457,7 +483,7 @@ public class AsgSdkManager {
   }
 
   public boolean checkAsgDeleted(String asgName) {
-    info("Checking if service `%s` is deleted", asgName);
+    info("Checking if Asg `%s` is deleted", asgName);
     AutoScalingGroup autoScalingGroup = getASG(asgName);
     return autoScalingGroup == null;
   }
@@ -497,7 +523,6 @@ public class AsgSdkManager {
   }
 
   public void waitInstanceRefreshSteadyState(String asgName, String instanceRefreshId, String operationName) {
-    info("Waiting for operation `%s` to reach steady state", operationName);
     info("Polling every %d seconds", STEADY_STATE_INTERVAL_IN_SECONDS);
     try {
       HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMinutes(steadyStateTimeOutInMinutes), () -> {
@@ -507,24 +532,23 @@ public class AsgSdkManager {
         return true;
       });
     } catch (ExecutionException | UncheckedExecutionException | ExecutionError e) {
-      String errorMessage = format("Exception while waiting for steady state for `%s` operation. Error message: [%s]",
-          operationName, e.getMessage());
+      String errorMessage =
+          format("Exception while waiting the %s to complete. Error message: [%s]", operationName, e.getMessage());
       error(errorMessage);
       throw new InvalidRequestException(errorMessage, e.getCause());
     } catch (TimeoutException | InterruptedException e) {
-      String errorMessage = format("Timed out while waiting for steady state for `%s` operation", operationName);
+      String errorMessage = format("Timed out while waiting the %s to complete", operationName);
       error(errorMessage);
       throw new InvalidRequestException(errorMessage, e);
     } catch (Exception e) {
-      String errorMessage = format("Exception while waiting for steady state for `%s` operation. Error message: [%s]",
-          operationName, e.getMessage());
+      String errorMessage =
+          format("Exception while waiting for %s to complete. Error message: [%s]", operationName, e.getMessage());
       error(errorMessage);
       throw new InvalidRequestException(errorMessage, e);
     }
   }
 
   public <T> void waitReadyState(T input, Predicate<T> predicate, String operationName) {
-    info("Waiting for `%s` to reach steady state", operationName);
     info("Polling every %d seconds", STEADY_STATE_INTERVAL_IN_SECONDS);
     try {
       HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMinutes(steadyStateTimeOutInMinutes), () -> {
@@ -534,17 +558,17 @@ public class AsgSdkManager {
         return true;
       });
     } catch (ExecutionException | UncheckedExecutionException | ExecutionError e) {
-      String errorMessage = format(
-          "Exception while waiting for steady state for `%s`. Error message: [%s]", operationName, e.getMessage());
+      String errorMessage =
+          format("Exception while waiting the %s to complete. Error message: [%s]", operationName, e.getMessage());
       error(errorMessage);
       throw new InvalidRequestException(errorMessage, e.getCause());
     } catch (TimeoutException | InterruptedException e) {
-      String errorMessage = format("Timed out while waiting for steady state for `%s`", operationName);
+      String errorMessage = format("Timed out while waiting the %s to complete", operationName);
       error(errorMessage);
       throw new InvalidRequestException(errorMessage, e);
     } catch (Exception e) {
-      String errorMessage = format(
-          "Exception while waiting for steady state for `%s`. Error message: [%s]", operationName, e.getMessage());
+      String errorMessage =
+          format("Exception while waiting for %s to complete. Error message: [%s]", operationName, e.getMessage());
       error(errorMessage);
       throw new InvalidRequestException(errorMessage, e);
     }
@@ -722,20 +746,6 @@ public class AsgSdkManager {
     asgCall(asgClient -> asgClient.createOrUpdateTags(createOrUpdateTagsRequest));
   }
 
-  public String getDefaultListenerRuleForListener(
-      AwsInternalConfig awsInternalConfig, String region, String listenerArn) {
-    List<Rule> rules = getListenerRulesForListener(awsInternalConfig, region, listenerArn);
-    for (Rule rule : rules) {
-      if (rule.isDefault()) {
-        return rule.ruleArn();
-      }
-    }
-
-    // throw error if default listener rule not found
-    String errorMessage = format("Default listener rule not found for listener %s", listenerArn);
-    throw new InvalidRequestException(errorMessage);
-  }
-
   public List<Rule> getListenerRulesForListener(
       AwsInternalConfig awsInternalConfig, String region, String listenerArn) {
     List<Rule> rules = newArrayList();
@@ -821,6 +831,18 @@ public class AsgSdkManager {
 
     info("[%d] out of [%d] targets registered and in healthy state", instanceIdsRegistered.size(), targetIds.size());
     return instanceIdsRegistered.containsAll(targetIds);
+  }
+  public String describeBGTags(String asgName) {
+    Filter filter1 = new Filter().withName("auto-scaling-group").withValues(asgName);
+    Filter filter2 = new Filter().withName("key").withValues(BG_VERSION);
+
+    List<Filter> filterList = new ArrayList<>();
+    filterList.add(filter1);
+    filterList.add(filter2);
+
+    DescribeTagsRequest describeTagsRequest = new DescribeTagsRequest().withFilters(filterList);
+    DescribeTagsResult describeTagsResult = asgCall(asgClient -> asgClient.describeTags(describeTagsRequest));
+    return describeTagsResult.getTags().get(0).getValue();
   }
 
   public void info(String msg, Object... params) {

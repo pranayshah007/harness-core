@@ -38,7 +38,6 @@ import io.harness.utils.ApiUtils;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -81,15 +80,16 @@ public class OrgProjectApiImpl implements OrgProjectApi {
   @Override
   public Response getOrgScopedProjects(String org, List<String> projects, Boolean hasModule, String moduleType,
       String searchTerm, Integer page, Integer limit, String account, String sort, String order) {
-    List<ProjectResponse> projectResponses = getProjects(account, org == null ? null : Sets.newHashSet(org), projects,
-        hasModule, moduleType == null ? null : ModuleType.fromString(moduleType), searchTerm, page, limit, sort, order);
+    Page<ProjectResponse> projectPageResponses =
+        getProjects(account, org == null ? null : Sets.newHashSet(org), projects, hasModule,
+            moduleType == null ? null : ModuleType.fromString(moduleType), searchTerm, page, limit, sort, order);
 
     ResponseBuilder responseBuilder = Response.ok();
 
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
-        responseBuilder, format("/v1/orgs/%s/projects", org), projectResponses.size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, projectPageResponses.getTotalElements(), page, limit);
 
-    return responseBuilderWithLinks.entity(projectResponses).build();
+    return responseBuilderWithLinks.entity(projectPageResponses.getContent()).build();
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = EDIT_PROJECT_PERMISSION)
@@ -137,7 +137,7 @@ public class OrgProjectApiImpl implements OrgProjectApi {
     return Response.ok().entity(projectResponse).tag(projectOptional.get().getVersion().toString()).build();
   }
 
-  private List<ProjectResponse> getProjects(String account, Set<String> orgs, List<String> projects, Boolean hasModule,
+  private Page<ProjectResponse> getProjects(String account, Set<String> orgs, List<String> projects, Boolean hasModule,
       ModuleType moduleType, String searchTerm, Integer page, Integer limit, String sort, String order) {
     ProjectFilterDTO projectFilterDTO = ProjectFilterDTO.builder()
                                             .searchTerm(searchTerm)
@@ -149,9 +149,7 @@ public class OrgProjectApiImpl implements OrgProjectApi {
     Page<Project> projectPages = projectService.listPermittedProjects(
         account, projectApiUtils.getPageRequest(page, limit, sort, order), projectFilterDTO);
 
-    Page<ProjectResponse> projectResponsePage = projectPages.map(projectApiUtils::getProjectResponse);
-
-    return new ArrayList<>(projectResponsePage.getContent());
+    return projectPages.map(projectApiUtils::getProjectResponse);
   }
 
   private Response deleteProject(String identifier, String account, String org) {

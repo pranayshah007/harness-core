@@ -31,6 +31,7 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.ng.core.account.AccountTrustLevel;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.ServiceAccountConfig;
@@ -105,7 +106,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Getter @Setter private LicenseInfo licenseInfo;
 
-  @Getter @Setter private int trustLevel = -1;
+  @Getter @Setter private int trustLevel = AccountTrustLevel.UNINITIALIZED;
 
   @Getter @Setter private CeLicenseInfo ceLicenseInfo;
 
@@ -605,7 +606,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private boolean accountActivelyUsed;
     private ServiceAccountConfig serviceAccountConfig;
     private boolean globalDelegateAccount;
-    private int trustLevel;
+    private int trustLevel = AccountTrustLevel.UNINITIALIZED;
 
     private Builder() {}
 

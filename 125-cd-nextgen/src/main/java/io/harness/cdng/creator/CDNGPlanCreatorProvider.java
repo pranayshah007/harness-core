@@ -850,7 +850,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Google Function Deploy")
             .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY)
             .setStepMetaData(
-                StepMetaData.newBuilder().addCategory("Google Functions").setFolderPath("Google Functions").build())
+                StepMetaData.newBuilder().addCategory("GoogleCloudFunctions").setFolderPath("Google Functions").build())
             .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
             .build();
 
@@ -859,7 +859,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Google Function Deploy With No Traffic")
             .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC)
             .setStepMetaData(
-                StepMetaData.newBuilder().addCategory("Google Functions").setFolderPath("Google Functions").build())
+                StepMetaData.newBuilder().addCategory("GoogleCloudFunctions").setFolderPath("Google Functions").build())
             .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
             .build();
 
@@ -868,7 +868,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Google Function Traffic Shift")
             .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT)
             .setStepMetaData(
-                StepMetaData.newBuilder().addCategory("Google Functions").setFolderPath("Google Functions").build())
+                StepMetaData.newBuilder().addCategory("GoogleCloudFunctions").setFolderPath("Google Functions").build())
             .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
             .build();
 
@@ -877,7 +877,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Google Function Rollback")
             .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK)
             .setStepMetaData(
-                StepMetaData.newBuilder().addCategory("Google Functions").setFolderPath("Google Functions").build())
+                StepMetaData.newBuilder().addCategory("GoogleCloudFunctions").setFolderPath("Google Functions").build())
             .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
             .build();
     StepInfo createStack = StepInfo.newBuilder()

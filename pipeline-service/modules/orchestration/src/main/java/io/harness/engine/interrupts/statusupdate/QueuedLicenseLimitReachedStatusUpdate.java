@@ -16,6 +16,7 @@ import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.pms.contracts.execution.Status;
 
 import com.google.inject.Inject;
+import java.util.EnumSet;
 
 @OwnedBy(PIPELINE)
 public class QueuedLicenseLimitReachedStatusUpdate implements NodeStatusUpdateHandler {
@@ -23,6 +24,9 @@ public class QueuedLicenseLimitReachedStatusUpdate implements NodeStatusUpdateHa
 
   @Override
   public void handleNodeStatusUpdate(NodeUpdateInfo nodeStatusUpdateInfo) {
-    planExecutionService.updateStatus(nodeStatusUpdateInfo.getPlanExecutionId(), Status.QUEUED_LICENSE_LIMIT_REACHED);
+    // This update status will be called only after node execution status is updated to QUEUED_LICENSE_LIMIT_REACHED and
+    // hence we are sending an override status here - Running
+    planExecutionService.updateStatusForceful(nodeStatusUpdateInfo.getPlanExecutionId(),
+        Status.QUEUED_LICENSE_LIMIT_REACHED, null, false, EnumSet.of(Status.RUNNING));
   }
 }

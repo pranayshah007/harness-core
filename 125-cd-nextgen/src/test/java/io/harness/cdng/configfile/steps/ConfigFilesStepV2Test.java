@@ -32,8 +32,8 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
-import io.harness.cdng.service.steps.ServiceStepV3;
-import io.harness.cdng.service.steps.ServiceStepsHelper;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -121,7 +121,7 @@ public class ConfigFilesStepV2Test {
                  .build())
         .when(mockSweepingOutputService)
         .resolveOptional(any(Ambiance.class),
-            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
 
     StepResponse stepResponse = step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
 
@@ -147,7 +147,7 @@ public class ConfigFilesStepV2Test {
                  .build())
         .when(mockSweepingOutputService)
         .resolveOptional(any(Ambiance.class),
-            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
     List<EntityDetail> listEntityDetail = new ArrayList<>();
 
     listEntityDetail.add(EntityDetail.builder().name("configSecret1").build());
@@ -190,7 +190,7 @@ public class ConfigFilesStepV2Test {
                  .build())
         .when(mockSweepingOutputService)
         .resolveOptional(any(Ambiance.class),
-            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
 
     try {
       step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
