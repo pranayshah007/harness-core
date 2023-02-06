@@ -16,8 +16,6 @@
             "$ref" : "#/definitions/cvng/FailureStrategyConfig"
           }
         }, {
-          "type" : "array"
-        }, {
           "type" : "string",
           "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
           "minLength" : 1
@@ -213,8 +211,6 @@
                 "items" : {
                   "$ref" : "#/definitions/cvng/FailureStrategyConfig"
                 }
-              }, {
-                "type" : "array"
               }, {
                 "type" : "string",
                 "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
