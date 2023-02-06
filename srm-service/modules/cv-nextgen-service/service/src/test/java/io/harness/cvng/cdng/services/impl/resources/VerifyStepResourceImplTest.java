@@ -202,7 +202,7 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     assertThat(analysedDeploymentTestNode.getFailedLogClusters()).isEqualTo(1);
     assertThat(analysedDeploymentTestNode.getFailedMetrics()).isEqualTo(1);
 
-    assertThat(verificationOverview.getSpec().getAnalysisType()).isEqualTo(VerificationJobType.CANARY);
+    assertThat(verificationOverview.getSpec().getAnalysisType()).isEqualTo(VerificationJobType.TEST);
     assertThat(verificationOverview.getSpec().getDurationInMinutes()).isEqualTo(10);
     assertThat(verificationOverview.getSpec().getIsFailOnNoAnalysis()).isFalse();
     assertThat(verificationOverview.getSpec().getSensitivity()).isEqualTo(Sensitivity.MEDIUM);

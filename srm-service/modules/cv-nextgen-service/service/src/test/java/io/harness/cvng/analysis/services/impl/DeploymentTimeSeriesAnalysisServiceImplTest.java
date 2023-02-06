@@ -1033,45 +1033,65 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
         .isEqualTo(cvConfig.getFullyQualifiedIdentifier());
     assertThat(metricsAnalyses.get(0).getAnalysisResult()).isEqualTo(AnalysisResult.UNHEALTHY);
     assertThat(metricsAnalyses.get(0).getMetricType()).isEqualTo(MetricType.PERFORMANCE_OTHER);
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAnalysisResult())
-        .isEqualTo(AnalysisResult.NO_ANALYSIS);
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAnalysisReason())
-        .isEqualTo(AnalysisReason.NO_CONTROL_DATA);
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAppliedThresholds()).contains("thresholdId");
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlNodeIdentifier()).isEqualTo("node3");
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlDataType()).isNull();
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getNormalisedControlData()).hasSize(1);
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getNormalisedTestData()).hasSize(1);
-
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getTestData()).hasSize(1);
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getTestData().get(0).getValue()).isEqualTo(22.0);
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getTestData().get(0).getTimestampInMillis())
-        .isEqualTo(1980000);
-
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlData()).hasSize(1);
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlData().get(0).getValue()).isEqualTo(9.0);
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlData().get(0).getTimestampInMillis())
-        .isEqualTo(14040000);
-
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getAnalysisResult())
-        .isEqualTo(AnalysisResult.UNHEALTHY);
+        .isEqualTo(AnalysisResult.NO_ANALYSIS);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getAnalysisReason())
-        .isEqualTo(AnalysisReason.ML_ANALYSIS);
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getAppliedThresholds()).isNull();
+        .isEqualTo(AnalysisReason.NO_CONTROL_DATA);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getAppliedThresholds()).contains("thresholdId");
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getControlNodeIdentifier()).isEqualTo("node3");
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getControlDataType())
-        .isEqualTo(ControlDataType.MINIMUM_DEVIATION);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getControlDataType()).isNull();
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getNormalisedControlData()).hasSize(1);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getNormalisedControlData().get(0).getValue())
+        .isEqualTo(1.0);
+    assertThat(
+        metricsAnalyses.get(0).getTestDataNodes().get(1).getNormalisedControlData().get(0).getTimestampInMillis())
+        .isEqualTo(1587549810000L);
+
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getNormalisedTestData()).hasSize(1);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getNormalisedTestData().get(0).getValue())
+        .isEqualTo(1.0);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getNormalisedTestData().get(0).getTimestampInMillis())
+        .isEqualTo(1587549810000L);
 
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getTestData()).hasSize(1);
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getTestData().get(0).getValue()).isEqualTo(2332.0);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getTestData().get(0).getValue()).isEqualTo(22.0);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getTestData().get(0).getTimestampInMillis())
-        .isEqualTo(265980000);
+        .isEqualTo(1980000);
 
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getControlData()).hasSize(1);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getControlData().get(0).getValue()).isEqualTo(9.0);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getControlData().get(0).getTimestampInMillis())
+        .isEqualTo(14040000);
+
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAnalysisResult())
+        .isEqualTo(AnalysisResult.UNHEALTHY);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAnalysisReason())
+        .isEqualTo(AnalysisReason.ML_ANALYSIS);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAppliedThresholds()).isNull();
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlNodeIdentifier()).isEqualTo("node3");
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlDataType())
+        .isEqualTo(ControlDataType.MINIMUM_DEVIATION);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getNormalisedControlData()).hasSize(1);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getNormalisedControlData().get(0).getValue())
+        .isEqualTo(1.0);
+    assertThat(
+        metricsAnalyses.get(0).getTestDataNodes().get(0).getNormalisedControlData().get(0).getTimestampInMillis())
+        .isEqualTo(1587549810000L);
+
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getNormalisedTestData()).hasSize(1);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getNormalisedTestData().get(0).getValue())
+        .isEqualTo(1.0);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getNormalisedTestData().get(0).getTimestampInMillis())
+        .isEqualTo(1587549810000L);
+
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getTestData()).hasSize(1);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getTestData().get(0).getValue()).isEqualTo(2332.0);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getTestData().get(0).getTimestampInMillis())
+        .isEqualTo(265980000);
+
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlData()).hasSize(1);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlData().get(0).getValue()).isEqualTo(9.0);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlData().get(0).getTimestampInMillis())
         .isEqualTo(14040000);
   }
 
@@ -1326,18 +1346,21 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
                                  .metricValue(22.0)
                                  .epochMinute(33L)
                                  .host("node1")
+                                 .groupName("txn")
                                  .build());
     timeSeriesRecordDtos.add(TimeSeriesRecordDTO.builder()
                                  .metricIdentifier("identifier")
                                  .metricValue(2332.0)
                                  .epochMinute(4433L)
                                  .host("node2")
+                                 .groupName("txn")
                                  .build());
     timeSeriesRecordDtos.add(TimeSeriesRecordDTO.builder()
                                  .metricIdentifier("identifier")
                                  .metricValue(9.0)
                                  .epochMinute(234L)
                                  .host("node3")
+                                 .groupName("txn")
                                  .build());
     return timeSeriesRecordDtos;
   }

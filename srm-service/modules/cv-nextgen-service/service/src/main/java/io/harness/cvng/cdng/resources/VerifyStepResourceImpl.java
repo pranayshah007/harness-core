@@ -134,7 +134,7 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
             StringUtils.isBlank(verificationJobInstance.getResolvedJob().getMonitoredServiceTemplateIdentifier())
                 ? MonitoredServiceSpecType.DEFAULT
                 : MonitoredServiceSpecType.TEMPLATE)
-        .analysisType(deploymentVerificationJobInstanceSummary.getAdditionalInfo().getType())
+        .analysisType(verificationJobInstance.getResolvedJob().getType())
         .durationInMinutes(Duration.ofMillis(deploymentVerificationJobInstanceSummary.getDurationMs()).toMinutes())
         .sensitivity(verificationJobInstance.getResolvedJob().getSensitivity())
         .isFailOnNoAnalysis(verificationJobInstance.getResolvedJob().isFailOnNoAnalysis())
