@@ -22,6 +22,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type;
 import io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml;
 import io.harness.beans.yaml.extended.runtime.Runtime;
+import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -29,21 +30,23 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.plancreator.steps.common.SpecParameters;
+import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.registry.Registry;
 
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 import org.springframework.data.annotation.TypeAlias;
 
-@Value
+@Data
 @Builder
 @TypeAlias("integrationStageStepParameters")
 @OwnedBy(HarnessTeam.CI)
@@ -58,6 +61,9 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
   String childNodeID;
   Caching caching;
   Registry registry;
+  CodeBase codeBase;
+  TriggerPayload triggerPayload;
+  Boolean cloneManually;
 
   public static IntegrationStageStepParametersPMS getStepParameters(IntegrationStageNode stageNode, String childNodeID,
       BuildStatusUpdateParameter buildStatusUpdateParameter, PlanCreationContext ctx) {
@@ -80,6 +86,16 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
         .stepIdentifiers(stepIdentifiers)
         .caching(getCaching(stageNode))
         .build();
+  }
+
+  public static IntegrationStageStepParametersPMS getStepParameters(
+      PlanCreationContext ctx, IntegrationStageNode stageNode, CodeBase codeBase, String childNodeID) {
+    IntegrationStageStepParametersPMS integrationStageStepParametersPMS =
+        getStepParameters(stageNode, childNodeID, null, ctx);
+    integrationStageStepParametersPMS.setCodeBase(codeBase);
+    integrationStageStepParametersPMS.setTriggerPayload(ctx.getTriggerPayload());
+    integrationStageStepParametersPMS.setCloneManually(IntegrationStageUtils.shouldCloneManually(codeBase));
+    return integrationStageStepParametersPMS;
   }
 
   private static Infrastructure getRuntimeInfrastructure(IntegrationStageConfig integrationStageConfig) {

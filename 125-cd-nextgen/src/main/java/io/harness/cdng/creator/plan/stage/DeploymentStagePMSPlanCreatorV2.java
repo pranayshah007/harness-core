@@ -352,7 +352,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         && ParameterField.isNotNull(deploymentStageConfig.getService().getServiceRef());
     boolean serviceV2UseFromStage = deploymentStageConfig.getService() != null
         && deploymentStageConfig.getService().getUseFromStage() != null
-        && EmptyPredicate.isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getStage());
+        && deploymentStageConfig.getService().getUseFromStage().getValue() != null
+        && EmptyPredicate.isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getValue().getStage());
     boolean isServices = deploymentStageConfig.getServices() != null;
     return isServices || isServiceV2 || serviceV2UseFromStage;
   }
@@ -708,8 +709,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
   private void validateFailureStrategy(DeploymentStageNode stageNode) {
     // Failure strategy should be present.
-    List<FailureStrategyConfig> stageFailureStrategies = stageNode.getFailureStrategies();
-    if (EmptyPredicate.isEmpty(stageFailureStrategies)) {
+    ParameterField<List<FailureStrategyConfig>> stageFailureStrategies = stageNode.getFailureStrategies();
+    if (ParameterField.isNull(stageFailureStrategies) || isEmpty(stageFailureStrategies.getValue())) {
       throw new InvalidRequestException("There should be at least one failure strategy configured at stage level.");
     }
 

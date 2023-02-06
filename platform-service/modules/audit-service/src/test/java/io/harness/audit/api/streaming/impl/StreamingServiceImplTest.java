@@ -11,6 +11,7 @@ import static io.harness.beans.SortOrder.Builder.aSortOrder;
 import static io.harness.beans.SortOrder.OrderType.DESC;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.NISHANT;
+import static io.harness.rule.OwnerRule.REETIKA;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,16 +39,19 @@ import io.harness.audit.events.StreamingDestinationUpdateEvent;
 import io.harness.audit.mapper.streaming.StreamingDestinationMapper;
 import io.harness.audit.repositories.streaming.StreamingDestinationRepository;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.ConnectorDTO;
+import io.harness.connector.ConnectorResourceClient;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.outbox.api.OutboxService;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.spec.server.audit.v1.model.AwsS3StreamingDestinationSpecDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
-import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationStatus;
 import io.harness.utils.PageUtils;
 
 import com.mongodb.BasicDBList;
@@ -63,10 +67,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -76,6 +84,8 @@ import org.springframework.transaction.support.SimpleTransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({NGRestUtils.class})
 public class StreamingServiceImplTest extends CategoryTest {
   private static final int RANDOM_STRING_CHAR_COUNT_10 = 10;
   private static final int RANDOM_STRING_CHAR_COUNT_15 = 15;
@@ -83,7 +93,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   private String id;
   private String identifier;
   private String name;
-  private StatusEnum statusEnum;
+  private StreamingDestinationStatus statusEnum;
   private String bucket;
   private String connectorRef;
 
@@ -93,6 +103,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   @Mock OutboxService outboxService;
   @Mock TransactionTemplate transactionTemplate;
   @Mock private AccessControlClient accessControlClient;
+  @Mock private ConnectorResourceClient connectorResourceClient;
 
   @Rule public ExpectedException expectedException = ExpectedException.none();
   @Captor private ArgumentCaptor<StreamingDestination> streamingDestinationArgumentCaptor;
@@ -100,15 +111,16 @@ public class StreamingServiceImplTest extends CategoryTest {
 
   @Before
   public void setup() {
+    PowerMockito.mockStatic(NGRestUtils.class);
     MockitoAnnotations.initMocks(this);
     this.streamingService = new StreamingServiceImpl(streamingDestinationMapper, streamingDestinationRepository,
-        outboxService, transactionTemplate, accessControlClient);
-
+        outboxService, transactionTemplate, connectorResourceClient, accessControlClient);
     accountIdentifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     id = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     identifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     name = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
-    statusEnum = StatusEnum.values()[RandomUtils.nextInt(0, StatusEnum.values().length - 1)];
+    statusEnum =
+        StreamingDestinationStatus.values()[RandomUtils.nextInt(0, StreamingDestinationStatus.values().length - 1)];
     bucket = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     connectorRef = "account." + randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     when(transactionTemplate.execute(any()))
@@ -123,6 +135,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   public void testCreate() {
     StreamingDestinationDTO streamingDestinationDTO = getStreamingDestinationDTO();
     StreamingDestination streamingDestination = getStreamingDestination();
+    when(NGRestUtils.getResponse(any())).thenAnswer(invocationOnMock -> Optional.of(ConnectorDTO.builder().build()));
 
     when(streamingDestinationMapper.toStreamingDestinationEntity(accountIdentifier, streamingDestinationDTO))
         .thenReturn(streamingDestination);
@@ -145,6 +158,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   public void testCreateForDuplicateKeyException() {
     StreamingDestination streamingDestination = getStreamingDestination();
     StreamingDestinationDTO streamingDestinationDTO = getStreamingDestinationDTO();
+    when(NGRestUtils.getResponse(any())).thenAnswer(invocationOnMock -> Optional.of(ConnectorDTO.builder().build()));
 
     when(streamingDestinationMapper.toStreamingDestinationEntity(anyString(), any())).thenReturn(streamingDestination);
     when(streamingDestinationRepository.save(any())).thenThrow(new DuplicateKeyException("duplicate key error"));
@@ -161,7 +175,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testList() {
     String searchTerm = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
-    StreamingDestinationDTO.StatusEnum statusEnum = StreamingDestinationDTO.StatusEnum.ACTIVE;
+    StreamingDestinationStatus statusEnum = StreamingDestinationStatus.ACTIVE;
     int page = 0;
     int limit = 10;
     Pageable pageable = PageUtils.getPageRequest(new PageRequest(
@@ -210,6 +224,32 @@ public class StreamingServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void validateUniquenessOfValidStreamingDestination() {
+    StreamingDestination streamingDestination = getStreamingDestination();
+
+    when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
+        .thenReturn(Optional.of(streamingDestination));
+
+    boolean valid = streamingService.validateUniqueness(accountIdentifier, identifier);
+    verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
+    assertThat(valid).isFalse();
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void validateUniquenessOfInvalidStreamingDestination() {
+    when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
+        .thenReturn(Optional.empty());
+
+    boolean valid = streamingService.validateUniqueness(accountIdentifier, identifier);
+    verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
+    assertThat(valid).isTrue();
+  }
+
+  @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testGetStreamingDestination_withNotFoundException() {
@@ -226,7 +266,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeleteStreamingDestination() {
     StreamingDestination streamingDestination = getStreamingDestination();
-    streamingDestination.setStatus(StatusEnum.INACTIVE);
+    streamingDestination.setStatus(StreamingDestinationStatus.INACTIVE);
 
     when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
         .thenReturn(Optional.of(streamingDestination));
@@ -246,7 +286,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeleteStreamingDestination_withInvalidRequestException() {
     StreamingDestination streamingDestination = getStreamingDestination();
-    streamingDestination.setStatus(StatusEnum.ACTIVE);
+    streamingDestination.setStatus(StreamingDestinationStatus.ACTIVE);
 
     when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
         .thenReturn(Optional.of(streamingDestination));
@@ -268,7 +308,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   public void testUpdateStreamingDestination() throws Exception {
     StreamingDestinationDTO streamingDestinationDTO = getStreamingDestinationDTO();
     streamingDestinationDTO.setName(name + " changed");
-    streamingDestinationDTO.setStatus(StatusEnum.INACTIVE);
+    streamingDestinationDTO.setStatus(StreamingDestinationStatus.INACTIVE);
     streamingDestinationDTO.setSpec(new AwsS3StreamingDestinationSpecDTO()
                                         .bucket(bucket + " changed")
                                         .type(StreamingDestinationSpecDTO.TypeEnum.AWS_S3));
@@ -277,7 +317,7 @@ public class StreamingServiceImplTest extends CategoryTest {
 
     AwsS3StreamingDestination newStreamingDestination = (AwsS3StreamingDestination) getStreamingDestination();
     newStreamingDestination.setName(name + " changed");
-    newStreamingDestination.setStatus(StatusEnum.INACTIVE);
+    newStreamingDestination.setStatus(StreamingDestinationStatus.INACTIVE);
     newStreamingDestination.setBucket(bucket + " changed");
 
     when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))

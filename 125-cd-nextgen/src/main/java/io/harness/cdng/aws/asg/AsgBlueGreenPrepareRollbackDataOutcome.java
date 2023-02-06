@@ -27,7 +27,8 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("asgBlueGreenPrepareRollbackDataOutcome")
 @RecasterAlias("io.harness.cdng.aws.asg.AsgBlueGreenPrepareRollbackDataOutcome")
 public class AsgBlueGreenPrepareRollbackDataOutcome implements Outcome, ExecutionSweepingOutput {
-  Map<String, List<String>> asgManifestsDataForRollback;
+  Map<String, List<String>> prodAsgManifestDataForRollback;
+  Map<String, List<String>> stageAsgManifestDataForRollback;
   String prodAsgName;
   String asgName;
   String loadBalancer;

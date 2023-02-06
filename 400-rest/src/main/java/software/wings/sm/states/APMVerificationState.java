@@ -402,7 +402,7 @@ public class APMVerificationState extends AbstractMetricAnalysisState {
             .executionData(executionData)
             .build(),
         waitId);
-    return delegateService.queueTask(delegateTask);
+    return delegateService.queueTaskV2(delegateTask);
   }
 
   public static Map<String, List<APMMetricInfo>> buildMetricInfoMap(

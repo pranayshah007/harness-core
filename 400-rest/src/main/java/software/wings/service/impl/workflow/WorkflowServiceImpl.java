@@ -2729,8 +2729,12 @@ public class WorkflowServiceImpl implements WorkflowService {
               .appManifestId(applicationManifest.getUuid())
               .appManifestName(applicationManifest.getName())
               .settingId(applicationManifest.getHelmChartConfig().getConnectorId())
-              .defaultManifest(helmChartOptional.map(ManifestSummary::prepareSummaryFromHelmChart).orElse(null))
-              .lastCollectedManifest(ManifestSummary.prepareSummaryFromHelmChart(lastCollectedHelmChart))
+              .defaultManifest(helmChartOptional.isPresent()
+                      ? ManifestSummary.prepareSummaryFromHelmChart(helmChartOptional.get().toDto())
+                      : null)
+              .lastCollectedManifest(lastCollectedHelmChart == null
+                      ? null
+                      : ManifestSummary.prepareSummaryFromHelmChart(lastCollectedHelmChart.toDto()))
               .build());
     }
     return applicationManifestSummaryList;
@@ -2753,7 +2757,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     if (isHelmChartPresentInAppManifest(requiredHelmChart, serviceId, lastWorkflowExecution.getAppId())) {
       LastDeployedHelmChartInformationBuilder lastDeployedHelmChartInfoBuilder =
           LastDeployedHelmChartInformation.builder()
-              .helmchart(requiredHelmChart.get())
+              .helmchart(requiredHelmChart.get().toDto())
               .executionStartTime(lastWorkflowExecution.getStartTs());
       if (lastWorkflowExecution.getPipelineExecutionId() != null) {
         PipelineSummary pipelineSummary = lastWorkflowExecution.getPipelineSummary();

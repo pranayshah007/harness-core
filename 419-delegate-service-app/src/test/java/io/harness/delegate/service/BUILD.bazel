@@ -1,0 +1,35 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["*.java"]),
+    data = ["//419-delegate-service-app/src/test/resources:resource"],
+    resources = ["//419-delegate-service-app/src/test/resources:resource"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//419-delegate-service-app/src/main/java/io/harness/dms/app:library",
+        "//980-commons/src/main/java/io/harness/network:module",
+        "//990-commons-test:module",
+        "@bazel_tools//tools/java/runfiles",
+        "@maven//:io_dropwizard_dropwizard_testing",
+        "@maven//:jakarta_ws_rs_jakarta_ws_rs_api",
+        "@maven//:javax_ws_rs_javax_ws_rs_api",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_glassfish_jersey_core_jersey_client",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)
+
+run_analysis_per_module(test_only = True)
+
+run_tests("*Test.java")

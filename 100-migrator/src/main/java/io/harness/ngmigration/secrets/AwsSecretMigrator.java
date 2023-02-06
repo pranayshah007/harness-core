@@ -29,7 +29,7 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.secretmanagerclient.ValueType;
 
 import software.wings.beans.AwsSecretsManagerConfig;

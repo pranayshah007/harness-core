@@ -420,7 +420,7 @@ func convertStringsToBitbucketServerEnum(strings []string) (enums pb.NativeEvent
 	if m["repo:refs_changed"] {
 		array = append(array, pb.BitbucketServerWebhookEvent_BITBUCKET_SERVER_BRANCH_PUSH_TAG)
 	}
-	if m["pr:declined"] && m["pr:modified"] && m["pr:deleted"] && m["pr:opened"] && m["pr:merged"] {
+	if m["pr:declined"] && m["pr:modified"] && m["pr:deleted"] && m["pr:opened"] && m["pr:merged"] && m["pr:from_ref_updated"] {
 		array = append(array, pb.BitbucketServerWebhookEvent_BITBUCKET_SERVER_PR)
 	}
 	if m["pr:comment:added"] && m["pr:comment:deleted"] && m["pr:comment:edited"] {
@@ -438,7 +438,7 @@ func convertBitbucketServerEnumToStrings(enums *pb.BitbucketServerWebhookEvents)
 		case pb.BitbucketServerWebhookEvent_BITBUCKET_SERVER_BRANCH_PUSH_TAG:
 			strings = append(strings, "repo:refs_changed")
 		case pb.BitbucketServerWebhookEvent_BITBUCKET_SERVER_PR:
-			strings = append(strings, "pr:declined", "pr:modified", "pr:deleted", "pr:opened", "pr:merged")
+			strings = append(strings, "pr:declined", "pr:modified", "pr:deleted", "pr:opened", "pr:merged", "pr:from_ref_updated")
 		case pb.BitbucketServerWebhookEvent_BITBUCKET_SERVER_PR_COMMENT:
 			strings = append(strings, "pr:comment:added", "pr:comment:deleted", "pr:comment:edited")
 		}

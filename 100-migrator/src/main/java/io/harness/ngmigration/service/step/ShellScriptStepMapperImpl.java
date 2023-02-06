@@ -13,7 +13,7 @@ import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.expressions.step.ShellScripStepFunctor;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.shell.ScriptType;
@@ -45,9 +45,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-public class ShellScriptStepMapperImpl implements StepMapper {
+@Slf4j
+public class ShellScriptStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
     return WorkflowStepSupportStatus.SUPPORTED;
@@ -79,7 +81,7 @@ public class ShellScriptStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     ShellScriptState state = new ShellScriptState(stepYaml.getName());
     state.parseProperties(properties);
     return state;
@@ -87,7 +89,7 @@ public class ShellScriptStepMapperImpl implements StepMapper {
 
   @Override
   public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
-    return defaultTemplateSpecMapper(context.getMigratedEntities(), graphNode);
+    return defaultTemplateSpecMapper(context, graphNode);
   }
 
   @Override
@@ -97,7 +99,8 @@ public class ShellScriptStepMapperImpl implements StepMapper {
     baseSetup(graphNode, shellScriptStepNode);
 
     if (StringUtils.isNotBlank(graphNode.getTemplateUuid())) {
-      throw new IllegalStateException("Trying to map template step to actual step");
+      log.error(String.format("Trying to link a step which is not a step template - %s", graphNode.getTemplateUuid()));
+      return null;
     }
 
     ExecutionTarget executionTarget = null;
@@ -192,5 +195,10 @@ public class ShellScriptStepMapperImpl implements StepMapper {
                    .build())
         .map(ShellScripStepFunctor::new)
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public boolean loopingSupported() {
+    return true;
   }
 }

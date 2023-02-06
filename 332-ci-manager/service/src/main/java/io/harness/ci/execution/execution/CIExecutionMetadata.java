@@ -49,6 +49,7 @@ public class CIExecutionMetadata {
   @FdIndex String accountId;
   OSType buildType;
   String stageExecutionId;
+  String queueId;
   Infrastructure.Type infraType;
   @Builder.Default
   @FdTtlIndex

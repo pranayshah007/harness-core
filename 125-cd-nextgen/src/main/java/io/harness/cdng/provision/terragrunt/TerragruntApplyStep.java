@@ -144,6 +144,9 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
         ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier());
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);
 
+    builder.tgModuleSourceInheritSSH(
+        helper.isExportCredentialForSourceModule(spec.getConfigFiles(), stepElementParameters.getType()));
+
     builder.stateFileId(helper.getLatestFileId(entityId))
         .entityId(entityId)
         .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
@@ -179,7 +182,7 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
 
     if (TerragruntTaskRunType.RUN_ALL == inheritOutput.getRunConfiguration().getRunType()) {
       throw new InvalidRequestException(
-          "Inheriting from a plan which has used \"All Modules\" at Terragrunt PLan Step is not supported");
+          "Inheriting from a plan which has used \"All Modules\" at Terragrunt Plan Step is not supported");
     }
 
     TerragruntApplyTaskParametersBuilder<?, ?> builder = TerragruntApplyTaskParameters.builder();
@@ -187,6 +190,7 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);
     builder.accountId(accountId)
         .entityId(entityId)
+        .tgModuleSourceInheritSSH(inheritOutput.isUseConnectorCredentials())
         .stateFileId(helper.getLatestFileId(entityId))
         .workspace(inheritOutput.getWorkspace())
         .configFilesStore(helper.getGitFetchFilesConfig(

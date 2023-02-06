@@ -52,7 +52,7 @@ public class EntityIdentifierValidatorTest extends CategoryTest {
 
   @Builder
   static class CustomLengthEntityIdentifierValidator {
-    @EntityIdentifier(maxLength = 128) String identifier;
+    @EntityIdentifier String identifier;
   }
 
   @Before
@@ -94,7 +94,7 @@ public class EntityIdentifierValidatorTest extends CategoryTest {
         validator.validate(EntityIdentifierValidatorTestStructure.builder().build()).size());
 
     EntityIdentifierValidator entityIdentifierValidator = new EntityIdentifierValidator();
-    entityIdentifierValidator.identifierPattern = Pattern.compile("^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$");
+
     for (int i = 0; i < 5000; i++) {
       String identifier = generateRandomAsciiString(100);
       int violationsCount =
@@ -179,11 +179,6 @@ public class EntityIdentifierValidatorTest extends CategoryTest {
     }
 
     @Override
-    public int maxLength() {
-      return this.maxLength;
-    }
-
-    @Override
     public Class<? extends Annotation> annotationType() {
       return EntityIdentifier.class;
     }
@@ -216,7 +211,7 @@ public class EntityIdentifierValidatorTest extends CategoryTest {
     EntityIdentifierValidatorTestStructure entityIdentifierValidatorTestStructure =
         EntityIdentifierValidatorTestStructure.builder().identifier(identifier).build();
     assertEquals(1, validator.validate(entityIdentifierValidatorTestStructure).size());
-    assertEquals("can be 64 characters long and can only contain alphanumeric, underscore and $ characters,"
+    assertEquals("can be 128 characters long and can only contain alphanumeric, underscore and $ characters,"
             + " and not start with a number or $",
         validator.validate(entityIdentifierValidatorTestStructure).stream().findAny().get().getMessage());
   }

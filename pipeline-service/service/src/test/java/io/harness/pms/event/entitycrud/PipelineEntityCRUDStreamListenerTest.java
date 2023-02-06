@@ -16,6 +16,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PIPELI
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_ENTITY;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.MEET;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -35,6 +36,7 @@ import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.pms.contracts.interrupts.InterruptEvent;
 import io.harness.pms.contracts.interrupts.InterruptType;
@@ -62,6 +64,7 @@ import org.springframework.data.util.CloseableIterator;
 @OwnedBy(PIPELINE)
 public class PipelineEntityCRUDStreamListenerTest extends CategoryTest {
   @Mock private NGTriggerService ngTriggerService;
+  @Mock private NGTriggerEventsService ngTriggerEventsService;
   @Mock private PipelineMetadataService pipelineMetadataService;
   @Mock private PmsExecutionSummaryService pmsExecutionSummaryService;
   @Mock private BarrierService barrierService;
@@ -293,5 +296,44 @@ public class PipelineEntityCRUDStreamListenerTest extends CategoryTest {
     verify(graphGenerationService, times(1)).deleteAllGraphMetadataForGivenExecutionIds(any());
     // Verify nodeExecutions and its metadata delete
     verify(nodeExecutionService, times(40)).deleteAllNodeExecutionAndMetadata(any());
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testTriggerEventDeletionOnPipelineDeletion() {
+    String ACCOUNT_ID = "accountId";
+    String ORG_ID = "orgId";
+    String PROJECT_ID = "projectId";
+    String PIPELINE_ID = "pipelineId";
+
+    Message message = Message.newBuilder()
+                          .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
+                                          .putMetadata(ENTITY_TYPE, PIPELINE_ENTITY)
+                                          .putMetadata(ACTION, DELETE_ACTION)
+                                          .setData(EntityChangeDTO.newBuilder()
+                                                       .setAccountIdentifier(StringValue.of(ACCOUNT_ID))
+                                                       .setOrgIdentifier(StringValue.of(ORG_ID))
+                                                       .setProjectIdentifier(StringValue.of(PROJECT_ID))
+                                                       .setIdentifier(StringValue.of(PIPELINE_ID))
+                                                       .build()
+                                                       .toByteString())
+                                          .build())
+                          .build();
+    List<PipelineExecutionSummaryEntity> executionIds = new LinkedList<>();
+    for (int i = 0; i < 40; i++) {
+      PipelineExecutionSummaryEntity entity =
+          PipelineExecutionSummaryEntity.builder().planExecutionId(String.valueOf(i)).build();
+      executionIds.add(entity);
+    }
+
+    CloseableIterator<PipelineExecutionSummaryEntity> executionsIterator =
+        PipelineServiceTestHelper.createCloseableIterator(executionIds.iterator());
+    doReturn(executionsIterator)
+        .when(pmsExecutionSummaryService)
+        .fetchPlanExecutionIdsFromAnalytics(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID);
+
+    assertTrue(pipelineEntityCRUDStreamListener.handleMessage(message));
+    verify(ngTriggerEventsService, times(1)).deleteAllForPipeline(any(), any(), any(), any());
   }
 }

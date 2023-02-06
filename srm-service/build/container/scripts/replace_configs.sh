@@ -118,6 +118,10 @@ if [[ "" != "$ENABLE_AUDIT" ]]; then
   export ENABLE_AUDIT; yq -i '.enableAudit=env(ENABLE_AUDIT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$ENABLE_DEBUG_API" ]]; then
+  export ENABLE_DEBUG_API; yq -i '.enableDebugAPI=env($ENABLE_DEBUG_API)' $CONFIG_FILE
+fi
+
 
 
 
@@ -130,6 +134,8 @@ replace_key_value eventsFramework.redis.password $EVENTS_FRAMEWORK_REDIS_PASSWOR
 replace_key_value eventsFramework.redis.sslConfig.enabled $EVENTS_FRAMEWORK_REDIS_SSL_ENABLED
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
+replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
+replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"

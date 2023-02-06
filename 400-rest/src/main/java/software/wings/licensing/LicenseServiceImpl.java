@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.validation.Validator.notNullCheck;
 
+import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -21,8 +22,13 @@ import io.harness.ccm.license.CeLicenseType;
 import io.harness.configuration.DeployVariant;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseStatus;
+import io.harness.licensing.LicenseType;
+import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
+import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
 import io.harness.observer.Subject;
 import io.harness.persistence.HIterator;
 
@@ -76,6 +82,7 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.joda.time.DateTime;
 
 /**
  *
@@ -86,6 +93,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Slf4j
 @TargetModule(HarnessModule._820_PLATFORM_SERVICE)
 public class LicenseServiceImpl implements LicenseService {
+  private static final Long TEST_FF_NUMBER_OF_CLIENT_MAUS = 1000000L;
+  private static final int TEST_FF_NUMBER_OF_USERS = 50;
   private static final String EMAIL_SUBJECT_ACCOUNT_EXPIRED = "Harness License Expired!";
   private static final String EMAIL_SUBJECT_ACCOUNT_ABOUT_TO_EXPIRE = "Harness License about to Expire!";
 
@@ -107,6 +116,8 @@ public class LicenseServiceImpl implements LicenseService {
   private final EventPublishHelper eventPublishHelper;
   private final UserService userService;
   private final UserGroupService userGroupService;
+
+  private final AdminLicenseHttpClient adminLicenseHttpClient;
   private final AccountDao accountDao;
   private final NgLicenseHttpClient ngLicenseHttpClient;
   private List<String> trialDefaultContacts;
@@ -120,7 +131,8 @@ public class LicenseServiceImpl implements LicenseService {
       GenericDbCache dbCache, ExecutorService executorService, LicenseProvider licenseProvider,
       EmailNotificationService emailNotificationService, EventPublishHelper eventPublishHelper,
       MainConfiguration mainConfiguration, UserService userService, UserGroupService userGroupService,
-      NgLicenseHttpClient ngLicenseHttpClient, Subject<AccountLicenseObserver> accountLicenseObserverSubject) {
+      NgLicenseHttpClient ngLicenseHttpClient, AdminLicenseHttpClient adminLicenseHttpClient,
+      Subject<AccountLicenseObserver> accountLicenseObserverSubject) {
     this.accountService = accountService;
     this.accountDao = accountDao;
     this.wingsPersistence = wingsPersistence;
@@ -132,6 +144,7 @@ public class LicenseServiceImpl implements LicenseService {
     this.userService = userService;
     this.userGroupService = userGroupService;
     this.ngLicenseHttpClient = ngLicenseHttpClient;
+    this.adminLicenseHttpClient = adminLicenseHttpClient;
     this.accountLicenseObserverSubject = accountLicenseObserverSubject = new Subject<>();
     this.licenseExpiryCache = Caffeine.newBuilder().expireAfterWrite(6, TimeUnit.HOURS).build();
 
@@ -633,6 +646,19 @@ public class LicenseServiceImpl implements LicenseService {
     } else if (marketPlaceConfig.getAwsMarketPlaceCeProductCode().equals(productCode)) {
       updateCeLicense(
           accountId, CeLicenseInfo.builder().expiryTime(expirationTime).licenseType(CeLicenseType.PAID).build());
+    } else if (marketPlaceConfig.getAwsMarketPlaceFfProductCode().equals(productCode)) {
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          CFModuleLicenseDTO.builder()
+              .numberOfClientMAUs(TEST_FF_NUMBER_OF_CLIENT_MAUS)
+              .numberOfUsers(TEST_FF_NUMBER_OF_USERS)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.CF)
+              .edition(Edition.ENTERPRISE)
+              .licenseType(LicenseType.PAID)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(expirationTime)
+              .build());
     } else {
       log.error("Invalid AWS productcode received:[{}],", productCode);
       return false;

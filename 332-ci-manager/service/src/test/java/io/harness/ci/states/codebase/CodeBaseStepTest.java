@@ -25,6 +25,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import org.junit.After;
@@ -65,7 +66,7 @@ public class CodeBaseStepTest extends CategoryTest {
         CodeBaseStepParameters.builder()
             .codeBaseDelegateTaskId("delegateTaskId")
             .codeBaseSyncTaskId("syncTaskId")
-            .connectorRef("connectorRef")
+            .connectorRef(ParameterField.createValueField("connectorRef"))
             .executionSource(ManualExecutionSource.builder().branch("main").build())
             .build();
 
@@ -85,7 +86,7 @@ public class CodeBaseStepTest extends CategoryTest {
         CodeBaseStepParameters.builder()
             .codeBaseDelegateTaskId("delegateTaskId")
             .codeBaseSyncTaskId("syncTaskId")
-            .connectorRef("connectorRef")
+            .connectorRef(ParameterField.createValueField("connectorRef"))
             .executionSource(ManualExecutionSource.builder().prNumber("1").build())
             .build();
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
@@ -107,7 +108,7 @@ public class CodeBaseStepTest extends CategoryTest {
     CodeBaseStepParameters codeBaseStepParameters = CodeBaseStepParameters.builder()
                                                         .codeBaseDelegateTaskId("delegateTaskId")
                                                         .codeBaseSyncTaskId("syncTaskId")
-                                                        .connectorRef("connectorRef")
+                                                        .connectorRef(ParameterField.createValueField("connectorRef"))
                                                         .executionSource(WebhookExecutionSource.builder().build())
                                                         .build();
     when(connectorUtils.hasApiAccess(any())).thenReturn(true);

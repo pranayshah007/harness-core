@@ -337,6 +337,7 @@ gitFileActivity {"name": "accountId_filePath", "background": true} {"accountId":
 gitFileActivity {"name": "accountId_procCommitId_filePath_status", "background": true} {"accountId": 1, "processingCommitId": 1, "filePath": 1, "status": 1}
 gitFileActivity {"name": "accountId_procCommitId_status", "background": true} {"accountId": 1, "processingCommitId": 1, "status": 1}
 gitFileActivity {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+gitFileActivitySummary {"name": "accountId_appId_createdAt", "background": true} {"accountId": 1, "appId": 1, "createdAt": -1}
 gitFileActivitySummary {"name": "gitCommits_createdAt_direction_indx", "background": true} {"accountId": 1, "createdAt": 1, "gitToHarness": 1}
 gitFileActivitySummary {"name": "gitCommits_for_appId_indx", "background": true} {"accountId": 1, "appId": 1, "gitToHarness": 1}
 gitFileActivitySummary {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
@@ -811,7 +812,7 @@ userInvites {"name": "appId_1", "background": true} {"appId": 1}
 userInvites {"name": "createdAt_1", "background": true} {"createdAt": 1}
 userInvites {"name": "email_createdAt", "background": true} {"email": 1, "createdAt": -1}
 users {"name": "accountsCreatedAt", "background": true} {"accounts": 1, "createdAt": -1}
-users {"name": "accountsIdx", "background": true} {"accounts": 1}
+users {"name": "accountsIdx_disabled_lastUpdatedAt", "background": true} {"accounts": 1, "disabled": 1, "lastUpdatedAt": -1}
 users {"name": "appId_1", "background": true} {"appId": 1}
 users {"name": "createdAt_1", "background": true} {"createdAt": 1}
 users {"name": "email_1", "unique": true} {"email": 1}
@@ -819,7 +820,7 @@ users {"name": "email_accounts_disabled", "background": true} {"email": 1, "acco
 users {"name": "email_pendingAccounts_disabled", "background": true} {"email": 1, "pendingAccounts": 1, "disabled": 1}
 users {"name": "externalUserId_1", "background": true} {"externalUserId": 1}
 users {"name": "name_accounts_disabled", "background": true} {"name": 1, "accounts": 1, "disabled": 1}
-users {"name": "pendingAccountsIdx", "background": true} {"pendingAccounts": 1}
+users {"name": "pendingAccountsIdx_disabled_lastUpdatedAt", "background": true} {"pendingAccounts": 1, "disabled": 1, "lastUpdatedAt": -1}
 users {"name": "userIdAccountIdx", "background": true} {"accounts": 1, "externalUserId": 1}
 verificationServiceConfigurations {"name": "accountId_1", "background": true} {"accountId": 1}
 verificationServiceConfigurations {"name": "appId_1", "background": true} {"appId": 1}

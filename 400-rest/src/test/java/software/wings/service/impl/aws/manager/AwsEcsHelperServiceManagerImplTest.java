@@ -48,7 +48,7 @@ public class AwsEcsHelperServiceManagerImplTest extends CategoryTest {
     on(service).set("delegateService", mockDelegateService);
     doReturn(AwsEcsListClustersResponse.builder().clusters(asList("cluster-0", "cluster-1")).build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -70,7 +70,7 @@ public class AwsEcsHelperServiceManagerImplTest extends CategoryTest {
                  .services(asList(new Service().withServiceName("svc-00"), new Service().withServiceName("svc-01")))
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());

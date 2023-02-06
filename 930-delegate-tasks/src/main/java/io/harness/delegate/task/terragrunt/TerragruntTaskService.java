@@ -39,9 +39,12 @@ import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
+import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.task.terragrunt.files.DownloadResult;
 import io.harness.delegate.task.terragrunt.files.FetchFilesResult;
 import io.harness.delegate.task.terragrunt.files.TerragruntDownloadService;
@@ -100,6 +103,7 @@ public class TerragruntTaskService {
   @Inject private TerragruntClientFactory terragruntClientFactory;
   @Inject private DecryptionHelper decryptionHelper;
   @Inject private EncryptDecryptHelper encryptDecryptHelper;
+  @Inject TerraformBaseHelper terraformBaseHelper;
 
   public void decryptTaskParameters(AbstractTerragruntTaskParameters taskParameters) {
     List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails =
@@ -135,7 +139,7 @@ public class TerragruntTaskService {
   }
 
   public TerragruntContext prepareTerragrunt(LogCallback fetchLogCallback, AbstractTerragruntTaskParameters parameters,
-      String baseDir, LogCallback terragruntCommandLogCallback) {
+      String baseDir, LogCallback terragruntCommandLogCallback) throws IOException {
     String workingDirectory = getScriptDir(baseDir);
     String varFilesDirectory = getVarFilesDir(baseDir);
     String backendFilesDirectory = getBackendFilesDir(baseDir);
@@ -145,6 +149,12 @@ public class TerragruntTaskService {
     Map<String, String> varFilesSourceReference = new HashMap<>();
     log.info("Using base dir: {}, script dir: {}, var files dir: {}, backend dir: {}", baseDir, workingDirectory,
         varFilesDirectory, backendFilesDirectory);
+
+    if (parameters.isTgModuleSourceInheritSSH()
+        && StoreDelegateConfigType.GIT == parameters.getConfigFilesStore().getType()) {
+      terraformBaseHelper.configureCredentialsForModuleSource(baseDir, parameters.getEnvVars(),
+          (GitStoreDelegateConfig) parameters.getConfigFilesStore(), fetchLogCallback);
+    }
 
     log.info("Downloading terragrunt config files from store type {}", parameters.getConfigFilesStore().getType());
     fetchLogCallback.saveExecutionLog(color("Downloading terragrunt config files", LogColor.White, LogWeight.Bold));

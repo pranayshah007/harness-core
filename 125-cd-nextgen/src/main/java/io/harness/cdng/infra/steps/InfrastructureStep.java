@@ -39,6 +39,7 @@ import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
+import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -371,6 +372,14 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       }
     }
 
+    if (InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof GcpConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.GCP.name()));
+      }
+    }
+
     if (InfrastructureKind.ELASTIGROUP.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof SpotConnectorDTO)) {
         throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
@@ -492,6 +501,12 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(
             ecsInfrastructure.getConnectorRef(), ecsInfrastructure.getCluster(), ecsInfrastructure.getRegion());
+        break;
+
+      case InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS:
+        GoogleFunctionsInfrastructure googleFunctionsInfrastructure = (GoogleFunctionsInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(googleFunctionsInfrastructure.getConnectorRef(),
+            googleFunctionsInfrastructure.getProject(), googleFunctionsInfrastructure.getRegion());
         break;
 
       case InfrastructureKind.TAS:

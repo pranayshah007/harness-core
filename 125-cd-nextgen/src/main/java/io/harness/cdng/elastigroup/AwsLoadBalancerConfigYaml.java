@@ -18,6 +18,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Value;
@@ -31,15 +32,15 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("AwsLoadBalancerConfigYaml")
 @RecasterAlias("io.harness.cdng.elastigroup.AwsLoadBalancerConfigYaml")
 public class AwsLoadBalancerConfigYaml implements LoadBalancerSpec {
-  @NotEmpty @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> loadBalancer;
+  @NotEmpty @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> loadBalancer;
 
-  @NotEmpty @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> prodListenerPort;
+  @NotEmpty @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> prodListenerPort;
 
-  @NotEmpty @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> prodListenerRuleArn;
+  @NotEmpty @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> prodListenerRuleArn;
 
-  @NotEmpty @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> stageListenerPort;
+  @NotEmpty @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> stageListenerPort;
 
-  @NotEmpty @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> stageListenerRuleArn;
+  @NotEmpty @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> stageListenerRuleArn;
 
   @Override
   @JsonIgnore

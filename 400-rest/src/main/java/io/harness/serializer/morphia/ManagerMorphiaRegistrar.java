@@ -230,6 +230,7 @@ import software.wings.beans.alert.UsageLimitExceededAlert;
 import software.wings.beans.alert.cv.ContinuousVerificationAlertData;
 import software.wings.beans.alert.cv.ContinuousVerificationDataCollectionAlert;
 import software.wings.beans.appmanifest.ApplicationManifest;
+import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.ManifestFile;
 import software.wings.beans.approval.ApprovalPollingJobEntity;
 import software.wings.beans.artifact.AcrArtifactStream;
@@ -879,6 +880,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(LongerDataRetentionState.class);
     set.add(Log.class);
     set.add(InstanceSyncPTInfoBackup.class);
+    set.add(HelmChart.class);
   }
 
   @Override

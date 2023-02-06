@@ -23,6 +23,8 @@ import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRepoDetail
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryResponseDTO;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
+import io.harness.common.NGExpressionUtils;
+import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -214,6 +216,10 @@ public class ArtifactoryArtifactResource {
       if (isEmpty(repositoryType)) {
         repositoryType = artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
       }
+    }
+    if (artifactoryConnectorIdentifier != null && NGExpressionUtils.isRuntimeField(artifactoryConnectorIdentifier)) {
+      throw new InvalidIdentifierRefException(
+          "Artifactory Connector is required to fetch repositories. You can make this field Runtime input otherwise.");
     }
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);

@@ -331,8 +331,8 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
   private void addFiltersFromServiceV2(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
       ServiceYamlV2 service, ServiceDefinitionType deploymentType) {
-    if (service.getUseFromStage() != null) {
-      if (isEmpty(service.getUseFromStage().getStage())) {
+    if (service.getUseFromStage() != null && service.getUseFromStage().getValue() != null) {
+      if (isEmpty(service.getUseFromStage().getValue().getStage())) {
         throw new InvalidYamlRuntimeException(format(
             "stage identifier should be present in stage [%s] when propagating service from a different stage. Please add it and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));

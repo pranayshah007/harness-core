@@ -20,10 +20,10 @@ http_archive(
 
 http_archive(
     name = "com_google_protobuf",
-    sha256 = "d0f5f605d0d656007ce6c8b5a82df3037e1d8fe8b121ed42e536f569dec16113",
-    strip_prefix = "protobuf-3.14.0",
+    sha256 = "6aff9834fd7c540875e1836967c8d14c6897e3785a2efac629f69860fb7834ff",
+    strip_prefix = "protobuf-3.15.0",
     urls = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/protobuf-github/archive/v3.14.0.tar.gz",
+        "http://jfrogdev.dev.harness.io:80/artifactory/protobuf-github/archive/v3.15.0.tar.gz",
         #"https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v3.14.0.tar.gz",
         #"https://github.com/protocolbuffers/protobuf/archive/v3.14.0.tar.gz",
     ],
@@ -44,21 +44,21 @@ openapi_repositories(
 # Download the Go rules
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "2b1641428dff9018f9e85c0384f03ec6c10660d935b750e3fa1492a281a53b0f",
+    sha256 = "56d8c5a5c91e1af73eca71a6fab2ced959b67c86d12ba37feedb0a2dfea441a6",
     urls = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/rules-go-github/download/v0.29.0/rules_go-v0.29.0.zip",
-        # "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.29.0/rules_go-v0.29.0.zip",
-        # "https://github.com/bazelbuild/rules_go/releases/download/v0.29.0/rules_go-v0.29.0.zip",
+        "http://jfrogdev.dev.harness.io:80/artifactory/rules-go-github/download/v0.37.0/rules_go-v0.37.0.zip",
+        #"https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.37.0/rules_go-v0.37.0.zip",
+        #"https://github.com/bazelbuild/rules_go/releases/download/v0.37.0/rules_go-v0.37.0.zip",
     ],
 )
 
 http_archive(
     name = "bazel_gazelle",
-    sha256 = "222e49f034ca7a1d1231422cdb67066b885819885c356673cb1f72f748a3c9d4",
+    sha256 = "448e37e0dbf61d6fa8f00aaa12d191745e14f07c31cabfa731f0c8e8a4f41b97",
     urls = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/bazel-gazelle-github/download/v0.22.3/bazel-gazelle-v0.22.3.tar.gz",
-        #"https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.22.3/bazel-gazelle-v0.22.3.tar.gz",
-        #"https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.22.3/bazel-gazelle-v0.22.3.tar.gz",
+        "http://jfrogdev.dev.harness.io:80/artifactory/bazel-gazelle-github/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
+        #"https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
+        #"https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
     ],
 )
 
@@ -358,40 +358,6 @@ go_repository(
     importpath = "cloud.google.com/go/profiler",
     sum = "h1:R6y/xAeifaUXxd2x6w+jIwKxoKl8Cv5HJvcvASTPWJo=",
     version = "v0.3.0",
-)
-
-go_rules_dependencies()
-
-go_register_toolchains(version = "1.18.7")
-
-gazelle_dependencies()
-
-http_archive(
-    name = "rules_proto_grpc",
-    sha256 = "5f0f2fc0199810c65a2de148a52ba0aff14d631d4e8202f41aff6a9d590a471b",
-    strip_prefix = "rules_proto_grpc-1.0.2",
-    urls = ["http://jfrogdev.dev.harness.io:80/artifactory/rules-proto-grpc-github/archive/1.0.2.tar.gz"],
-)
-
-load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
-
-rules_proto_grpc_toolchains()
-
-rules_proto_grpc_repos()
-
-load("@rules_proto_grpc//java:repositories.bzl", rules_proto_grpc_java_repos = "java_repos")
-
-rules_proto_grpc_java_repos()
-
-load("@io_grpc_grpc_java//:repositories.bzl", "grpc_java_repositories")
-
-grpc_java_repositories()
-
-http_archive(
-    name = "com_github_query_builder_generator",
-    sha256 = "d72449d0ed7848260c6421be3677633946de46dc69af6588dbb4bc938e9714db",
-    strip_prefix = "query-builder-generator-0.1.23",
-    urls = ["https://github.com/wings-software/query-builder-generator/archive/refs/tags/v0.1.23.zip"],
 )
 
 # Add a go repository
@@ -1026,13 +992,6 @@ go_repository(
 )
 
 go_repository(
-    name = "org_golang_google_protobuf",
-    importpath = "google.golang.org/protobuf",
-    sum = "h1:4MY060fB1DLGMB/7MBTLnwQUY6+F09GEiz6SsrNqyzM=",
-    version = "v1.23.0",
-)
-
-go_repository(
     name = "org_golang_x_exp",
     importpath = "golang.org/x/exp",
     sum = "h1:FR+oGxGfbQu1d+jglI3rCkjAjUnhRSZcUxr+DqlDLNo=",
@@ -1322,8 +1281,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:HE9ukdqJZAtwBzA5fc66Fnc8XNOZmfPLxbucmf3/8SQ=",
-    version = "v1.27.1-0.20221116132008-1949a8eb7407",
+    sum = "h1:TB0fL4RpUrIngifmZ6CWFOJQpVKtKJGjLGGj00TLqYE=",
+    version = "v1.28.2-0.20230130112242-4428a9bf64df",
 )
 
 go_repository(
@@ -4602,6 +4561,47 @@ go_repository(
     version = "v1.3.1",
 )
 
+go_rules_dependencies()
+
+go_register_toolchains(version = "1.19.4")
+
+gazelle_dependencies()
+
+http_archive(
+    name = "rules_proto_grpc",
+    sha256 = "5f0f2fc0199810c65a2de148a52ba0aff14d631d4e8202f41aff6a9d590a471b",
+    strip_prefix = "rules_proto_grpc-1.0.2",
+    urls = ["http://jfrogdev.dev.harness.io:80/artifactory/rules-proto-grpc-github/archive/1.0.2.tar.gz"],
+)
+
+load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
+
+rules_proto_grpc_toolchains()
+
+rules_proto_grpc_repos()
+
+load("@rules_proto_grpc//java:repositories.bzl", rules_proto_grpc_java_repos = "java_repos")
+
+rules_proto_grpc_java_repos()
+
+load("@io_grpc_grpc_java//:repositories.bzl", "grpc_java_repositories")
+
+grpc_java_repositories()
+
+http_archive(
+    name = "com_github_query_builder_generator",
+    sha256 = "d72449d0ed7848260c6421be3677633946de46dc69af6588dbb4bc938e9714db",
+    strip_prefix = "query-builder-generator-0.1.23",
+    urls = ["https://github.com/wings-software/query-builder-generator/archive/refs/tags/v0.1.23.zip"],
+)
+
+go_repository(
+    name = "org_golang_google_protobuf",
+    importpath = "google.golang.org/protobuf",
+    sum = "h1:4MY060fB1DLGMB/7MBTLnwQUY6+F09GEiz6SsrNqyzM=",
+    version = "v1.23.0",
+)
+
 ###########################################################################################
 ########################################   Java code ######################################
 
@@ -4841,7 +4841,7 @@ plain_artifacts = [
     "com.sumologic.api.client:sumo-java-client:2.5",
     "com.sun.activation:jakarta.activation:1.2.2",
     "com.sun.istack:istack-commons-runtime:3.0.8",
-    "com.sun.mail:javax.mail:1.5.6",
+    "com.sun.mail:javax.mail:1.6.0",
     "com.sun.xml.fastinfoset:FastInfoset:1.2.16",
     "com.sun.xml.messaging.saaj:saaj-impl:1.4.0-b03",
     "com.tdunning:t-digest:3.2",
@@ -4857,7 +4857,7 @@ plain_artifacts = [
     "commons-io:commons-io:2.7",
     "commons-lang:commons-lang:2.3",
     "commons-logging:commons-logging:1.1.1",
-    "commons-net:commons-net:3.6",
+    "commons-net:commons-net:3.9.0",
     "commons-pool:commons-pool:1.5.4",
     "commons-validator:commons-validator:1.7",
     "de.danielbechler:java-object-diff:0.94",
@@ -4955,7 +4955,7 @@ plain_artifacts = [
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
     "io.harness.cv:data-collection-dsl:0.42-RELEASE",
-    "io.harness:ff-java-server-sdk:1.1.9",
+    "io.harness:ff-java-server-sdk:1.1.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:16.0.0",
     "io.kubernetes:client-java-extended:16.0.0",
@@ -5065,7 +5065,7 @@ plain_artifacts = [
     "org.apache.cxf:cxf-rt-databinding-jaxb:3.5.5",
     "org.apache.cxf:cxf-rt-frontend-jaxws:3.5.5",
     "org.apache.cxf:cxf-rt-frontend-simple:3.5.5",
-    "org.apache.cxf:cxf-rt-transports-http-hc:3.5.4",
+    "org.apache.cxf:cxf-rt-transports-http-hc:3.5.5",
     "org.apache.cxf:cxf-rt-transports-http:3.5.5",
     "org.apache.cxf:cxf-rt-ws-addr:3.5.5",
     "org.apache.cxf:cxf-rt-ws-policy:3.5.5",
@@ -5083,20 +5083,20 @@ plain_artifacts = [
     "org.apache.kafka:kafka-clients:2.8.1",
     "org.apache.logging.log4j:log4j-api:2.17.1",
     "org.apache.logging.log4j:log4j-to-slf4j:2.17.1",
-    "org.apache.lucene:lucene-analyzers-common:8.5.1",
-    "org.apache.lucene:lucene-backward-codecs:8.5.1",
-    "org.apache.lucene:lucene-core:8.5.1",
-    "org.apache.lucene:lucene-grouping:8.5.1",
-    "org.apache.lucene:lucene-highlighter:8.5.1",
-    "org.apache.lucene:lucene-join:8.5.1",
-    "org.apache.lucene:lucene-memory:8.5.1",
-    "org.apache.lucene:lucene-misc:8.5.1",
-    "org.apache.lucene:lucene-queries:8.5.1",
-    "org.apache.lucene:lucene-queryparser:8.5.1",
-    "org.apache.lucene:lucene-sandbox:8.5.1",
-    "org.apache.lucene:lucene-spatial-extras:8.5.1",
-    "org.apache.lucene:lucene-spatial3d:8.5.1",
-    "org.apache.lucene:lucene-suggest:8.5.1",
+    "org.apache.lucene:lucene-analyzers-common:8.11.1",
+    "org.apache.lucene:lucene-backward-codecs:8.11.1",
+    "org.apache.lucene:lucene-core:8.11.1",
+    "org.apache.lucene:lucene-grouping:8.11.1",
+    "org.apache.lucene:lucene-highlighter:8.11.1",
+    "org.apache.lucene:lucene-join:8.11.1",
+    "org.apache.lucene:lucene-memory:8.11.1",
+    "org.apache.lucene:lucene-misc:8.11.1",
+    "org.apache.lucene:lucene-queries:8.11.1",
+    "org.apache.lucene:lucene-queryparser:8.11.1",
+    "org.apache.lucene:lucene-sandbox:8.11.1",
+    "org.apache.lucene:lucene-spatial-extras:8.11.1",
+    "org.apache.lucene:lucene-spatial3d:8.11.1",
+    "org.apache.lucene:lucene-suggest:8.11.1",
     "org.apache.maven.plugin-tools:maven-plugin-annotations:3.4",
     "org.apache.maven.plugin-tools:maven-plugin-annotations:3.4",
     "org.apache.maven:maven-artifact:3.3.3",
@@ -5267,7 +5267,7 @@ plain_artifacts = [
     "org.projectlombok:lombok:1.18.18",
     "org.quartz-scheduler:quartz:2.3.2",
     "org.reactivestreams:reactive-streams:1.0.2",
-    "org.redisson:redisson:3.13.3",
+    "org.redisson:redisson:3.17.7",
     "org.reflections:reflections:0.9.12-SNAPSHOT",
     "org.slf4j:jcl-over-slf4j:1.7.30",
     "org.slf4j:jul-to-slf4j:1.7.30",
@@ -5384,6 +5384,7 @@ amazon_v2_artifacts = [
         "sdk-core",
         "health",
         "elasticloadbalancingv2",
+        "lambda",
     ]
 ]
 
@@ -5694,6 +5695,8 @@ filegroup(
     strip_prefix = "Python-3.9.10",
     urls = ["https://www.python.org/ftp/python/3.9.10/Python-3.9.10.tar.xz"],
 )
+
+register_toolchains("//:harness_no_fdLimit_jdk11_toolchain_definition")
 
 register_toolchains("//:py_toolchain")
 

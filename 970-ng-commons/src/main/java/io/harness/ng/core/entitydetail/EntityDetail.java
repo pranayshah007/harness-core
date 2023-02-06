@@ -8,7 +8,7 @@
 package io.harness.ng.core;
 
 import io.harness.EntityType;
-import io.harness.common.EntityReference;
+import io.harness.beans.EntityReference;
 import io.harness.ng.core.deserializer.EntityDetailDeserializer;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

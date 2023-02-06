@@ -29,6 +29,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HelmClientException;
 import io.harness.exception.HelmClientRuntimeException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.logging.CommandExecutionStatus;
@@ -553,8 +554,8 @@ public class HelmClientImpl implements HelmClient {
             && (outputMessage.contains("not found") && outputMessage.contains("release"))) {
           return helmCliResponse;
         }
-        throw new HelmClientRuntimeException(
-            new HelmClientException(errorMessagePrefix + command + ". " + outputMessage, USER, commandType));
+        throw new HelmClientRuntimeException(ExceptionMessageSanitizer.sanitizeException(
+            new HelmClientException(errorMessagePrefix + command + ". " + outputMessage, USER, commandType)));
       }
       return helmCliResponse;
     } catch (InterruptedException e) {

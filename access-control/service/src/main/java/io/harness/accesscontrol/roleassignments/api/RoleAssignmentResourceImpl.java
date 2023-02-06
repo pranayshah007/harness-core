@@ -19,6 +19,7 @@ import static io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTOMapp
 import static io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTOMapper.fromDTOIncludingChildScopes;
 import static io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTOMapper.toDTO;
 import static io.harness.accesscontrol.roles.HarnessRoleConstants.ORGANIZATION_VIEWER_ROLE;
+import static io.harness.accesscontrol.scopes.core.ScopeHelper.toParentScope;
 import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromParams;
 import static io.harness.accesscontrol.scopes.harness.ScopeMapper.toParams;
 import static io.harness.accesscontrol.scopes.harness.ScopeMapper.toParentScopeParams;
@@ -38,6 +39,8 @@ import io.harness.accesscontrol.principals.PrincipalDTO;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.principals.usergroups.UserGroup;
 import io.harness.accesscontrol.principals.usergroups.UserGroupService;
+import io.harness.accesscontrol.principals.users.User;
+import io.harness.accesscontrol.principals.users.UserService;
 import io.harness.accesscontrol.resourcegroups.api.ResourceGroupDTO;
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants;
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupService;
@@ -103,6 +106,7 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
   RoleService roleService;
   ResourceGroupService resourceGroupService;
   UserGroupService userGroupService;
+  UserService userService;
   RoleAssignmentDTOMapper roleAssignmentDTOMapper;
 
   RoleAssignmentAggregateMapper roleAssignmentAggregateMapper;
@@ -117,7 +121,7 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
   @Inject
   public RoleAssignmentResourceImpl(RoleAssignmentService roleAssignmentService,
       HarnessResourceGroupService harnessResourceGroupService, ScopeService scopeService, RoleService roleService,
-      ResourceGroupService resourceGroupService, UserGroupService userGroupService,
+      ResourceGroupService resourceGroupService, UserGroupService userGroupService, UserService userService,
       RoleAssignmentDTOMapper roleAssignmentDTOMapper, RoleAssignmentAggregateMapper roleAssignmentAggregateMapper,
       RoleDTOMapper roleDTOMapper, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
       @Named(MODEL_NAME) HarnessActionValidator<RoleAssignment> actionValidator, OutboxService outboxService,
@@ -128,6 +132,7 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     this.roleService = roleService;
     this.resourceGroupService = resourceGroupService;
     this.userGroupService = userGroupService;
+    this.userService = userService;
     this.roleAssignmentDTOMapper = roleAssignmentDTOMapper;
     this.roleAssignmentAggregateMapper = roleAssignmentAggregateMapper;
     this.roleDTOMapper = roleDTOMapper;
@@ -213,23 +218,24 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
 
     PageResponse<RoleAssignment> pageResponse = roleAssignmentService.list(pageRequest, filter);
     PageResponse<RoleAssignmentAggregate> roleAssignmentAggregateWithScope = pageResponse.map(response -> {
-      String userGroupName = null;
-      if (USER_GROUP.equals(response.getPrincipalType())) {
-        UserGroup principal = userGroups.stream()
-                                  .filter(userGroup
-                                      -> userGroup.getIdentifier().equals(response.getPrincipalIdentifier())
-                                          && scopeService.buildScopeFromScopeIdentifier(userGroup.getScopeIdentifier())
-                                                 .getLevel()
-                                                 .toString()
-                                                 .equals(response.getPrincipalScopeLevel()))
-                                  .findAny()
-                                  .orElse(null);
-        if (principal != null) {
-          userGroupName = principal.getName();
+      String principalName = null;
+      String principalEmail = null;
+      if (USER.equals(response.getPrincipalType())) {
+        Optional<User> userData = userService.get(response.getPrincipalIdentifier(), response.getScopeIdentifier());
+        if (userData.isPresent()) {
+          principalName = userData.get().getName();
+          principalEmail = userData.get().getEmail();
+        }
+      } else if (USER_GROUP.equals(response.getPrincipalType())) {
+        Scope scope = toParentScope(scopeService.buildScopeFromScopeIdentifier(response.getScopeIdentifier()),
+            response.getPrincipalScopeLevel());
+        Optional<UserGroup> principal = userGroupService.get(response.getPrincipalIdentifier(), scope.toString());
+        if (principal.isPresent()) {
+          principalName = principal.get().getName();
         }
       }
 
-      return roleAssignmentAggregateMapper.toDTO(response, userGroupName);
+      return roleAssignmentAggregateMapper.toDTO(response, principalName, principalEmail);
     });
 
     return ResponseDTO.newResponse(roleAssignmentAggregateWithScope);

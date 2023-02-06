@@ -20,13 +20,14 @@ import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.api.CloudProviderType;
 import software.wings.infra.AwsEcsInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,8 @@ public class EcsInfraDefMapper implements InfraDefMapper {
 
   @Override
   public Infrastructure getSpec(MigrationInputDTO inputDTO, InfrastructureDefinition infrastructureDefinition,
-      Map<CgEntityId, NGYamlFile> migratedEntities, List<ElastigroupConfiguration> elastigroupConfiguration) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, Map<CgEntityId, CgEntityNode> entities,
+      List<ElastigroupConfiguration> elastigroupConfiguration) {
     NgEntityDetail connectorDetail;
     if (infrastructureDefinition.getCloudProviderType() == CloudProviderType.AWS) {
       AwsEcsInfrastructure ecsInfrastructure = (AwsEcsInfrastructure) infrastructureDefinition.getInfrastructure();

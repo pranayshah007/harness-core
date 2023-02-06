@@ -20,7 +20,7 @@ import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.yaml.core.variables.NGVariable;
 
 import software.wings.beans.Service;

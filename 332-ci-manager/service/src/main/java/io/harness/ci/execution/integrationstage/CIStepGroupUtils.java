@@ -258,7 +258,7 @@ public class CIStepGroupUtils {
     Integer depth = ciCodebase.getDepth().getValue();
     ExecutionSource executionSource = ciExecutionArgs.getExecutionSource();
     if (depth == null) {
-      if (executionSource.getType() == ExecutionSource.Type.MANUAL) {
+      if (executionSource != null && executionSource.getType() == ExecutionSource.Type.MANUAL) {
         ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
         if (isNotEmpty(manualExecutionSource.getBranch()) || isNotEmpty(manualExecutionSource.getTag())) {
           depth = GIT_CLONE_MANUAL_DEPTH;

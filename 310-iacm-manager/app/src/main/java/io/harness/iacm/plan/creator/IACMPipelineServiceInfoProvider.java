@@ -7,6 +7,7 @@
 
 package io.harness.iacm.plan.creator;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -33,6 +34,7 @@ import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
 import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
+import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -50,8 +52,8 @@ import java.util.stream.Collectors;
 @Singleton
 @OwnedBy(HarnessTeam.IACM)
 public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvider {
-  @Inject InjectorUtils injectorUtils;
   private static final String LITE_ENGINE_TASK = "liteEngineTask";
+  @Inject InjectorUtils injectorUtils;
 
   @Override
   public List<PartialPlanCreator<?>> getPlanCreators() {
@@ -90,7 +92,7 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
     variableCreators.add(new IACMTemplateStepVariableCreator());
 
     variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS))); // ??
-
+    variableCreators.add(new EmptyVariableCreator(STEP, Set.of(LITE_ENGINE_TASK)));
     return variableCreators;
   }
 

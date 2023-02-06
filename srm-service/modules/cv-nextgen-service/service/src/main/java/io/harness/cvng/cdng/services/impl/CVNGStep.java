@@ -125,6 +125,7 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
     String monitoredServiceTemplateIdentifier = resolvedCVConfigInfo.getMonitoredServiceTemplateIdentifier();
     String monitoredServiceTemplateVersionLabel = resolvedCVConfigInfo.getMonitoredServiceTemplateVersionLabel();
     List<CVConfig> cvConfigs = resolvedCVConfigInfo.getCvConfigs();
+    log.info("Resolved cvConfigIds {}", resolvedCVConfigInfo.getCvConfigIds());
     Instant deploymentStartTime = Instant.ofEpochMilli(
         AmbianceUtils.getStageLevelFromAmbiance(ambiance)
             .orElseThrow(() -> new IllegalStateException("verify step needs to be part of a stage."))

@@ -38,7 +38,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(CDP)
 public class TasGoogleContainerRegistrySettingsProviderTest extends CategoryTest {
   @Mock DecryptionHelper decryptionHelper;
-  TasGoogleContainerRegistrySettingsProvider azureGoogleContainerRegistrySettingsProvider =
+  TasGoogleContainerRegistrySettingsProvider tasGoogleContainerRegistrySettingsProvider =
       new TasGoogleContainerRegistrySettingsProvider();
 
   @Before
@@ -63,7 +63,7 @@ public class TasGoogleContainerRegistrySettingsProviderTest extends CategoryTest
                     .build())
             .build();
 
-    TasArtifactCreds containerSettingsResult = azureGoogleContainerRegistrySettingsProvider.getContainerSettings(
+    TasArtifactCreds containerSettingsResult = tasGoogleContainerRegistrySettingsProvider.getContainerSettings(
         TasTestUtils.createTestContainerArtifactConfig(gcpConnectorDTO, TasArtifactRegistryType.GCR), decryptionHelper);
 
     assertThat(containerSettingsResult.getPassword()).isEqualTo("test-secretKey");
@@ -83,7 +83,7 @@ public class TasGoogleContainerRegistrySettingsProviderTest extends CategoryTest
 
     assertThatThrownBy(
         ()
-            -> azureGoogleContainerRegistrySettingsProvider.getContainerSettings(
+            -> tasGoogleContainerRegistrySettingsProvider.getContainerSettings(
                 TasTestUtils.createTestContainerArtifactConfig(gcpConnectorDTO, TasArtifactRegistryType.GCR),
                 decryptionHelper))
         .isInstanceOf(InvalidRequestException.class);

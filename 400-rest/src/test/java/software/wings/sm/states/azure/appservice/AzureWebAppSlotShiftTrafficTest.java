@@ -205,7 +205,7 @@ public class AzureWebAppSlotShiftTrafficTest extends WingsBaseTest {
     }
 
     doReturn(appServiceStateData).when(azureVMSSStateHelper).populateAzureAppServiceData(eq(mockContext), any());
-    doReturn(delegateResult).when(delegateService).queueTask(any());
+    doReturn(delegateResult).when(delegateService).queueTaskV2(any());
     doReturn(Integer.valueOf(trafficWeight))
         .when(azureVMSSStateHelper)
         .renderExpressionOrGetDefault(any(), eq(mockContext), anyInt());
@@ -223,7 +223,7 @@ public class AzureWebAppSlotShiftTrafficTest extends WingsBaseTest {
       return (String) args[0];
     });
     if (!isSuccess) {
-      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTask(any());
+      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTaskV2(any());
     }
     state.setTrafficWeightExpr("20");
     return mockContext;

@@ -49,7 +49,7 @@ public class AwsIamHelperServiceManagerImplTest extends CategoryTest {
     on(service).set("delegateService", mockDelegateService);
     doReturn(AwsIamListRolesResponse.builder().roles(ImmutableMap.of("k1", "v1", "k2", "v2")).build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -71,7 +71,7 @@ public class AwsIamHelperServiceManagerImplTest extends CategoryTest {
     on(service).set("delegateService", mockDelegateService);
     doReturn(AwsIamListInstanceRolesResponse.builder().instanceRoles(asList("r-0", "r-1")).build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());

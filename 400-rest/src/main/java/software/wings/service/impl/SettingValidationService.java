@@ -226,7 +226,7 @@ public class SettingValidationService {
         delegateTask.setSetupAbstractions(ngTaskSetupAbstractionsWithOwner);
       }
       try {
-        DelegateResponseData notifyResponseData = delegateService.executeTask(delegateTask);
+        DelegateResponseData notifyResponseData = delegateService.executeTaskV2(delegateTask);
         if (notifyResponseData instanceof ErrorNotifyResponseData) {
           return ValidationResult.builder()
               .errorMessage(((ErrorNotifyResponseData) notifyResponseData).getErrorMessage())
@@ -478,7 +478,7 @@ public class SettingValidationService {
                                           .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                           .appId(SCOPE_WILDCARD)
                                           .build();
-    ContainerService containerService = delegateProxyFactory.get(ContainerService.class, syncTaskContext);
+    ContainerService containerService = delegateProxyFactory.getV2(ContainerService.class, syncTaskContext);
 
     String namespace = "default";
     ContainerServiceParams containerServiceParams = ContainerServiceParams.builder()
@@ -527,7 +527,7 @@ public class SettingValidationService {
 
     SyncTaskContext syncTaskContext =
         SyncTaskContext.builder().accountId(settingAttribute.getAccountId()).timeout(DEFAULT_SYNC_CALL_TIMEOUT).build();
-    ContainerService containerService = delegateProxyFactory.get(ContainerService.class, syncTaskContext);
+    ContainerService containerService = delegateProxyFactory.getV2(ContainerService.class, syncTaskContext);
 
     String namespace = "default";
     ContainerServiceParams containerServiceParams = ContainerServiceParams.builder()
@@ -786,7 +786,7 @@ public class SettingValidationService {
                                                 .build())
                                       .build();
 
-      DelegateResponseData notifyResponseData = delegateService.executeTask(delegateTask);
+      DelegateResponseData notifyResponseData = delegateService.executeTaskV2(delegateTask);
 
       if (notifyResponseData instanceof ErrorNotifyResponseData) {
         throw new WingsException(((ErrorNotifyResponseData) notifyResponseData).getErrorMessage());

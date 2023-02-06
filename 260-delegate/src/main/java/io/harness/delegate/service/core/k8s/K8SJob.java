@@ -7,11 +7,15 @@
 
 package io.harness.delegate.service.core.k8s;
 
+import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import java.util.Map;
 import lombok.NonNull;
 
 public class K8SJob extends V1Job {
@@ -43,12 +47,25 @@ public class K8SJob extends V1Job {
     final var volumeMount = K8SVolumeUtils.createVolumeMount(volume, mountPath);
     getSpec().getTemplate().getSpec().addVolumesItem(volume).getContainers().forEach(
         container -> container.addVolumeMountsItem(volumeMount));
+    getSpec().getTemplate().getSpec().getInitContainers().forEach(
+        container -> container.addVolumeMountsItem(volumeMount));
     return this;
   }
 
   public K8SJob addEnvVar(final String key, final String value) {
     getSpec().getTemplate().getSpec().getContainers().forEach(
         container -> container.addEnvItem(new V1EnvVar().name(key).value(value)));
+    return this;
+  }
+
+  public K8SJob addInitContainer(final String name, final String image) {
+    final var resources =
+        new V1ResourceRequirements()
+            .limits(Map.of("memory", Quantity.fromString("512Mi")))
+            .requests(Map.of("memory", Quantity.fromString("512Mi"), "cpu", Quantity.fromString("0.5")));
+    final V1Container initContainer =
+        new V1Container().name(name).image(image).imagePullPolicy("Always").resources(resources);
+    getSpec().getTemplate().getSpec().addInitContainersItem(initContainer);
     return this;
   }
 }

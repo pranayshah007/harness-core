@@ -1,0 +1,65 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//125-cd-nextgen/modules/azure/core/src/main/java/io/harness/cdng/azure/webapp:module",
+        "//125-cd-nextgen/modules/azure/core/src/main/java/io/harness/cdng/provision/azure/beans:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/executables:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/featureFlag:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/k8s/beans:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/pipeline/steps:module",
+        "//127-cd-nextgen-entities:module",
+        "//440-connector-nextgen:module",
+        "//877-filestore:module",
+        "//878-ng-common-utilities:module",
+        "//884-pms-commons:module",
+        "//940-secret-manager-client:module",
+        "//950-delegate-tasks-beans:module",
+        "//950-ng-core:module",
+        "//953-yaml-commons:module",
+        "//954-connector-beans:module",
+        "//960-api-services/src/main/java/io/harness/k8s:module",
+        "//960-persistence/src/main/java/io/harness/persistence:module",
+        "//960-yaml-sdk:module",
+        "//967-walktree-visitor:module",
+        "//970-api-services-beans/src/main/java/io/harness/azure/model:module",
+        "//970-api-services-beans/src/main/java/io/harness/git/model:module",
+        "//970-api-services-beans/src/main/java/io/harness/logging:module",
+        "//970-api-services-beans/src/main/java/io/harness/security/encryption:module",
+        "//970-ng-commons:module",
+        "//979-recaster/src/main/java/io/harness/annotation:module",
+        "//980-commons/src/main/java/io/harness/beans:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/serializer:module",
+        "//980-commons/src/main/java/io/harness/supplier:module",
+        "//980-commons/src/main/java/io/harness/tasks:module",
+        "//980-commons/src/main/java/io/harness/validation:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//clients/pipeline-service/pms-sdk-core:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_inject_guice",
+        "@maven//:commons_io_commons_io",
+        "@maven//:dev_morphia_morphia_core",
+        "@maven//:io_harness_ng_license_beans",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:javax_annotation_javax_annotation_api",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)
+
+run_analysis_per_module()

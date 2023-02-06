@@ -20,6 +20,7 @@ import io.harness.cdng.provision.terraform.TerraformConfigDAL;
 import io.harness.cdng.provision.terraform.TerraformConfigHelper;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformCommandUnit;
@@ -86,9 +87,9 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     TerraformRollbackStepParameters stepParametersSpec = (TerraformRollbackStepParameters) stepParameters.getSpec();
     log.info("Running Obtain Inline Task for the Rollback Step");
-    String provisionerIdentifier = stepParametersSpec.getProvisionerIdentifier();
-    String entityId =
-        terraformStepHelper.generateFullIdentifier(stepParametersSpec.getProvisionerIdentifier(), ambiance);
+    String provisionerIdentifier =
+        ParameterFieldHelper.getParameterFieldValue(stepParametersSpec.getProvisionerIdentifier());
+    String entityId = terraformStepHelper.generateFullIdentifier(provisionerIdentifier, ambiance);
     try (HIterator<TerraformConfig> configIterator = terraformConfigHelper.getIterator(ambiance, entityId)) {
       if (!configIterator.hasNext()) {
         return TaskRequest.newBuilder()

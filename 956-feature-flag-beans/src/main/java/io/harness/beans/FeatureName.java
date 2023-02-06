@@ -24,10 +24,10 @@ public enum FeatureName {
   SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE("Enables refresh pipeline when trigger "
           + "continue pipeline execution",
       HarnessTeam.SPG),
+  SPG_WFE_PROJECTIONS_DEPLOYMENTS_PAGE("Enable projection on deployments page and executions", HarnessTeam.SPG),
   SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE("Enables the use of workflow variables to skip"
           + " pipeline stage",
       HarnessTeam.SPG),
-  SPG_WFE_PROJECTIONS_DEPLOYMENTS_PAGE("Enable projection on deployments page and executions", HarnessTeam.SPG),
   SPG_ENABLE_NOTIFICATION_RULES("Enables notification rules and approvals notifications by usergroup", HarnessTeam.SPG),
   SPG_ENABLE_VALIDATION_WORKFLOW_PIPELINE_STAGE(
       "Enables validation of dot on pipeline and workflow name", HarnessTeam.SPG),
@@ -230,7 +230,6 @@ public enum FeatureName {
   CI_INCREASE_DEFAULT_RESOURCES,
   DISABLE_DEPLOYMENTS_SEARCH_AND_LIMIT_DEPLOYMENT_STATS,
   RATE_LIMITED_TOTP,
-  CLOSE_TIME_SCALE_SYNC_PROCESSING_ON_FAILURE(Scope.GLOBAL),
   RESOURCE_CENTER_ENABLED,
   USE_IMMUTABLE_DELEGATE("Use immutable delegate on download delegate from UI", HarnessTeam.DEL),
   ACTIVE_MIGRATION_FROM_LOCAL_TO_GCP_KMS,
@@ -363,7 +362,6 @@ public enum FeatureName {
   STO_STEP_PALETTE_V2("Enable second iteration of individual steps for STO", HarnessTeam.STO),
   STO_JIRA_INTEGRATION("Enable Jira integration for STO", HarnessTeam.STO),
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
-  CD_ONBOARDING_ENABLED,
   SPOT_ELASTIGROUP_NG("Enables Spot Elastigroup implementation on NG", HarnessTeam.CDP),
   ATTRIBUTE_TYPE_ACL_ENABLED("Enable attribute filter on NG UI for ACL", HarnessTeam.PL),
   CREATE_DEFAULT_PROJECT("Enables auto create default project after user signup", HarnessTeam.GTM),
@@ -371,7 +369,6 @@ public enum FeatureName {
       "Enables parsing of the Terraform plan/apply/destroy summary [add/change/destroy] and exposing them as expressions",
       HarnessTeam.CDP),
   TERRAFORM_REMOTE_BACKEND_CONFIG("Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP),
-  REMOVE_HINT_YAML_GIT_COMMITS("Removes the hint usage in GitCommits collection", HarnessTeam.SPG),
   FIXED_INSTANCE_ZERO_ALLOW("To allow user to set the fixed instance count to 0 for ECS Deployments", HarnessTeam.CDP),
   ON_DEMAND_ROLLBACK_WITH_DIFFERENT_ARTIFACT(
       "Used to do on demand rollback to previously deployed different artifact on same inframapping", HarnessTeam.CDC),
@@ -430,6 +427,7 @@ public enum FeatureName {
       HarnessTeam.DEL),
   SRM_ENABLE_HEALTHSOURCE_CLOUDWATCH_METRICS("UI FF to enable CloudWatch Metrics healthsource", HarnessTeam.CV),
   SRM_ENABLE_VERIFY_STEP_LONG_DURATION("Enable longer duration for verify step", HarnessTeam.CV),
+  SRM_CUSTOM_CHANGE_SOURCE("UI FF to enable Custom Change Source", HarnessTeam.CV),
   SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
   ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC),
   LOOKER_ENTITY_RECONCILIATION,
@@ -499,6 +497,8 @@ public enum FeatureName {
       HarnessTeam.PIPELINE),
   SPG_CD_RUN_STEP("CD run step in NG", HarnessTeam.SPG),
   GITOPS_ONPREM_ENABLED("Enable the gitops tab in the UI in case of ONPREM/SMP", HarnessTeam.GITOPS),
+  GITOPS_HOSTED(
+      "Enable hosted GitOps.Allows to install agent and ArgoCD components in Harness cluster", HarnessTeam.GITOPS),
   CIE_HOSTED_VMS_MAC("FF for enabling hosted builds for mac os", HarnessTeam.CI),
   SPG_DELETE_ENVIRONMENTS_ON_SERVICE_RENAME_GIT_SYNC(
       "On service rename delete stale folders inside environments folders.", HarnessTeam.SPG),
@@ -598,7 +598,26 @@ public enum FeatureName {
       HarnessTeam.CDP),
   SPG_SIDENAV_COLLAPSE("FF for enabling collapse and expand of side nav", HarnessTeam.SPG),
   PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS("Enable removal of user level viewer role assignments", HarnessTeam.PL),
-  TERRAFORM_CLOUD("Enable support of Terraform Cloud in the NG", HarnessTeam.CDP);
+  PL_REMOVE_EXTERNAL_USER_ORG_PROJECT(
+      "Allow deletion of externally managed user from orgs and projects", HarnessTeam.PL),
+  CDP_AWS_SAM("FF for enabling AWS SAM deployments", HarnessTeam.CDP),
+  TERRAFORM_CLOUD("Enable support of Terraform Cloud in the NG", HarnessTeam.CDP),
+  CI_REMOTE_DEBUG("Enable the option for remote debug for CI users.", HarnessTeam.CI),
+  NG_CDS_HELM_SUB_CHARTS("Support for helm sub charts", HarnessTeam.CDP),
+  CDS_GOOGLE_CLOUD_FUNCTION("This flag is to enable the Google Functions Deployment Swimlane for users. "
+          + "This flag only works with Service and Environments v2",
+      HarnessTeam.CDP),
+  CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY(
+      "FF for disabling headers while doing capability check for HTTP", HarnessTeam.CDC),
+  CDS_DEBEZIUM_ENABLED_CG("This flag is enable sync using debezium in cg", HarnessTeam.CDC, Scope.GLOBAL),
+  CCM_CLUSTER_ORCH("Show/ Hide navigation link for cluster orchestrator page", HarnessTeam.CE),
+  SPG_DISABLE_SECRET_DETAILS("Disable secret management logs show in CG", HarnessTeam.SPG),
+  CDS_AWS_NATIVE_LAMBDA("This flag is to enable the AWS Native Lambda Deployments for users. "
+          + "This flag only works with Service and Environments v2",
+      HarnessTeam.CDP),
+  CI_PIPELINE_VARIABLES_IN_STEPS("For enabling pipeline variables as env variables in CI steps", HarnessTeam.CI),
+  CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS(
+      "Do not add quotes to strings when a user reconciles a template, pipeline", HarnessTeam.CDC, Scope.GLOBAL);
 
   @Deprecated
   FeatureName() {

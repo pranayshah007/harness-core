@@ -10,6 +10,7 @@ package io.harness.ngmigration.template;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
@@ -29,6 +30,10 @@ import org.apache.commons.lang3.StringUtils;
 public interface NgTemplateService {
   default Set<String> getExpressions(Template template) {
     return Collections.emptySet();
+  }
+
+  default TemplateEntityType getTemplateEntityType() {
+    return TemplateEntityType.STEP_TEMPLATE;
   }
 
   default boolean isMigrationSupported() {

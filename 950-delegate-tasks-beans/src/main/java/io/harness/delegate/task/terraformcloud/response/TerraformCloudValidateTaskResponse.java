@@ -11,12 +11,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorValidationResult;
 
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data
-@Builder
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 public class TerraformCloudValidateTaskResponse extends TerraformCloudDelegateTaskResponse {
   private ConnectorValidationResult connectorValidationResult;
 }

@@ -332,8 +332,9 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
       throw new IllegalArgumentException("Delegate received a task intended for delegate with instanceId "
           + delegateTaskPackage.getDelegateInstanceId());
     } else {
-      log.info("Delegate {} received task package {} for delegateInstance {}",
-          DelegateAgentCommonVariables.getDelegateId(), delegateTaskPackage, DELEGATE_INSTANCE_ID);
+      log.info("{} Delegate {} received task package {} for delegateInstance {}",
+          delegateTaskPackage.getData().getTaskType(), DelegateAgentCommonVariables.getDelegateId(),
+          delegateTaskPackage, DELEGATE_INSTANCE_ID);
       return delegateTaskPackage;
     }
   }

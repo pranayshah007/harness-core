@@ -463,7 +463,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
         dataCollectionInfo.getApplicationId(), null, new Object[] {dataCollectionInfo}, dataCollectionInfo.getEnvId(),
         dataCollectionInfo.getCvConfigId(), dataCollectionInfo.getStateExecutionId(),
         dataCollectionInfo.getStateType());
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     return true;
   }
 
@@ -1477,7 +1477,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                             .build();
       String logCollectionResponse =
-          delegateProxyFactory.get(APMDelegateService.class, syncTaskContext)
+          delegateProxyFactory.getV2(APMDelegateService.class, syncTaskContext)
               .fetch(apmValidateCollectorConfig, ThirdPartyApiCallLog.createApiCallLog(accountId, config.getGuid()));
       if (isNotEmpty(logCollectionResponse)) {
         response.setProviderReachable(true);
@@ -1527,7 +1527,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
     SyncTaskContext syncTaskContext =
         SyncTaskContext.builder().accountId(accountId).appId(GLOBAL_APP_ID).timeout(DEFAULT_SYNC_CALL_TIMEOUT).build();
     String apmResponse =
-        delegateProxyFactory.get(APMDelegateService.class, syncTaskContext)
+        delegateProxyFactory.getV2(APMDelegateService.class, syncTaskContext)
             .fetch(apmValidateCollectorConfig, ThirdPartyApiCallLog.createApiCallLog(accountId, config.getGuid()));
     if (isNotEmpty(apmResponse)) {
       response.setProviderReachable(true);
@@ -1855,7 +1855,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
         .getLoggerByCVConfigId(
             cvConfiguration.getAccountId(), cvConfiguration.getUuid(), TimeUnit.MILLISECONDS.toMinutes(endTime))
         .info("Submitting service guard data collection task for time range %t to %t.", startTime, endTime);
-    delegateService.queueTask(task);
+    delegateService.queueTaskV2(task);
     return true;
   }
 
@@ -2380,7 +2380,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
       LogDataCollectionInfo info = (LogDataCollectionInfo) task.getData().getParameters()[0];
       log.info(
           "Creating a delegate task for stateExecutionId {} for hosts {}", info.getStateExecutionId(), info.getHosts());
-      delegateService.queueTask(task);
+      delegateService.queueTaskV2(task);
     }
     return true;
   }
@@ -2523,7 +2523,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
       String accountId, APMValidateCollectorConfig apmValidateCollectorConfig, String guid) {
     SyncTaskContext syncTaskContext =
         SyncTaskContext.builder().accountId(accountId).appId(GLOBAL_APP_ID).timeout(DEFAULT_SYNC_CALL_TIMEOUT).build();
-    String apmResponse = delegateProxyFactory.get(APMDelegateService.class, syncTaskContext)
+    String apmResponse = delegateProxyFactory.getV2(APMDelegateService.class, syncTaskContext)
                              .fetch(apmValidateCollectorConfig, ThirdPartyApiCallLog.createApiCallLog(accountId, guid));
     JSONObject jsonObject = new JSONObject(apmResponse);
 

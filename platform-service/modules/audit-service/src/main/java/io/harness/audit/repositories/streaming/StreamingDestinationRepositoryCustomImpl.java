@@ -7,7 +7,10 @@
 
 package io.harness.audit.repositories.streaming;
 
+import static io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys.status;
+
 import io.harness.audit.entities.streaming.StreamingDestination;
+import io.harness.spec.server.audit.v1.model.StatusWiseCount;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
@@ -16,6 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.repository.support.PageableExecutionUtils;
@@ -43,5 +50,17 @@ public class StreamingDestinationRepositoryCustomImpl implements StreamingDestin
     DeleteResult deleteResult = template.remove(query, StreamingDestination.class);
 
     return deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() == 1;
+  }
+
+  @Override
+  public List<StatusWiseCount> countByStatus(Criteria criteria) {
+    MatchOperation matchStage = Aggregation.match(criteria);
+    GroupOperation groupStage = Aggregation.group(status).count().as("count");
+    ProjectionOperation projectStage =
+        Aggregation.project().andInclude("count").andExclude("_id").and("_id").as(status);
+    Aggregation aggregation = Aggregation.newAggregation(matchStage, groupStage, projectStage);
+    return template
+        .aggregate(aggregation, template.getCollectionName(StreamingDestination.class), StatusWiseCount.class)
+        .getMappedResults();
   }
 }

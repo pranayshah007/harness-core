@@ -20,7 +20,7 @@ import io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 
 import software.wings.beans.JenkinsConfig;
 import software.wings.beans.SettingAttribute;

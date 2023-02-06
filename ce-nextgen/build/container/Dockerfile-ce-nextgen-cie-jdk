@@ -12,6 +12,8 @@ COPY --chown=65534:65534 ce-nextgen-capsule.jar /opt/harness/
 COPY --chown=65534:65534 keystore.jks /opt/harness/
 COPY --chown=65534:65534 config.yml /opt/harness/
 COPY --chown=65534:65534 protocol.info /opt/harness/
+COPY --chown=65534:65534 default.jfc /opt/harness/
+COPY --chown=65534:65534 profile.jfc /opt/harness/
 
 RUN chmod 755 /opt/harness/ce-nextgen-capsule.jar
 RUN chmod 755 /opt/harness/keystore.jks

@@ -105,7 +105,6 @@ public class JenkinsBuildStepVariableCreatorTest extends CategoryTest {
             "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.identifier",
             "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.when",
             "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.startTs",
-            "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.endTs",
-            "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.failureStrategies");
+            "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.endTs");
   }
 }

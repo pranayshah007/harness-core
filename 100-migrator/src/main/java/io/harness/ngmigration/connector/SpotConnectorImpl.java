@@ -19,7 +19,7 @@ import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SpotInstConfig;

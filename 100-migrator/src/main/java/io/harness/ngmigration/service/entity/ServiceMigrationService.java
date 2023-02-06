@@ -52,9 +52,9 @@ import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorMappingService;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.servicev2.ServiceV2Factory;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.service.remote.ServiceResourceClient;
@@ -364,7 +364,7 @@ public class ServiceMigrationService extends NgMigrationService {
       ServiceResponseDTO responseDTO = response.getService();
       return YamlPipelineUtils.read(responseDTO.getYaml(), NGServiceConfig.class);
     } catch (Exception ex) {
-      log.error("Error when getting service - ", ex);
+      log.warn("Error when getting service - ", ex);
       return null;
     }
   }

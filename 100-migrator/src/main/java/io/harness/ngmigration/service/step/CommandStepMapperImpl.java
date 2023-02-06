@@ -23,9 +23,11 @@ import software.wings.sm.states.CommandState;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-public class CommandStepMapperImpl implements StepMapper {
+@Slf4j
+public class CommandStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
     String templateId = graphNode.getTemplateUuid();
@@ -52,7 +54,7 @@ public class CommandStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     CommandState state = new CommandState(stepYaml.getName());
     state.parseProperties(properties);
     return state;
@@ -60,7 +62,7 @@ public class CommandStepMapperImpl implements StepMapper {
 
   @Override
   public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
-    return defaultTemplateSpecMapper(context.getMigratedEntities(), graphNode);
+    return defaultTemplateSpecMapper(context, graphNode);
   }
 
   @Override
@@ -73,5 +75,10 @@ public class CommandStepMapperImpl implements StepMapper {
     String templateId1 = stepYaml1.getTemplateUuid();
     String templateId2 = stepYaml2.getTemplateUuid();
     return StringUtils.isNoneBlank(templateId2, templateId1) && StringUtils.equals(templateId1, templateId2);
+  }
+
+  @Override
+  public boolean loopingSupported() {
+    return true;
   }
 }

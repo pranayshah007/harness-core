@@ -32,6 +32,11 @@ public class RunInfoUtils {
   String PIPELINE_FAILURE = "OnPipelineFailure";
   String ALWAYS = "Always";
 
+  // adding == true here because if <+pipeline.rollback.isPipelineRollback> is null, then
+  // (<+pipeline.rollback.isPipelineRollback> || <+OnStageFailure>) will equate to (null || true) and this leads to a
+  // jexl error
+  String IS_PIPELINE_ROLLBACK = "(<+pipeline.rollback.isPipelineRollback> == true)";
+
   public String getRunCondition(StageWhenCondition stageWhenCondition) {
     if (stageWhenCondition == null) {
       return getDefaultWhenCondition(true);

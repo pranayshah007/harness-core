@@ -42,6 +42,8 @@ import io.harness.ci.license.CILicenseService;
 import io.harness.ci.license.impl.CILicenseServiceImpl;
 import io.harness.ci.logserviceclient.CILogServiceClientModule;
 import io.harness.ci.tiserviceclient.TIServiceClientModule;
+import io.harness.ci.validation.CIAccountValidationService;
+import io.harness.ci.validation.CIAccountValidationServiceImpl;
 import io.harness.ci.validation.CIYAMLSanitizationService;
 import io.harness.ci.validation.CIYAMLSanitizationServiceImpl;
 import io.harness.cistatus.service.GithubService;
@@ -231,6 +233,7 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
     bind(CIBuildEnforcer.class).to(CIBuildEnforcerImpl.class);
     bind(CIYAMLSanitizationService.class).to(CIYAMLSanitizationServiceImpl.class).in(Singleton.class);
+    bind(CIAccountValidationService.class).to(CIAccountValidationServiceImpl.class).in(Singleton.class);
     install(NgLicenseHttpClientModule.getInstance(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId()));
 

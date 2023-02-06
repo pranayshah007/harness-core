@@ -203,6 +203,13 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
     log.info("Received step {} for execution with type {}", stepIdentifier,
         ((CIStepInfo) stepParameters.getSpec()).getStepType().getType());
 
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
+    if (!optionalSweepingOutput.isFound()) {
+      throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
+    }
+
+    StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();
     resolveGitAppFunctor(ambiance, ciStepInfo);
 
     long timeoutInMillis = ciStepInfo.getDefaultTimeout();
@@ -217,10 +224,10 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
     StageInfraDetails.Type stageInfraType = stageInfraDetails.getType();
     if (stageInfraType == StageInfraDetails.Type.K8) {
       return executeK8AsyncAfterRbac(ambiance, stepIdentifier, runtimeId, ciStepInfo, stepParametersName, accountId,
-          logKey, timeoutInMillis, stringTimeout, (K8StageInfraDetails) stageInfraDetails);
+          logKey, timeoutInMillis, stringTimeout, (K8StageInfraDetails) stageInfraDetails, stageDetails);
     } else if (stageInfraType == StageInfraDetails.Type.VM || stageInfraType == StageInfraDetails.Type.DLITE_VM) {
       return executeVmAsyncAfterRbac(ambiance, stepIdentifier, runtimeId, ciStepInfo, accountId, logKey,
-          timeoutInMillis, stringTimeout, stageInfraDetails);
+          timeoutInMillis, stringTimeout, stageInfraDetails, stageDetails);
     } else {
       throw new CIStageExecutionException(format("Invalid infra type: %s", stageInfraType));
     }
@@ -243,11 +250,11 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
 
   private AsyncExecutableResponse executeK8AsyncAfterRbac(Ambiance ambiance, String stepIdentifier, String runtimeId,
       CIStepInfo ciStepInfo, String stepParametersName, String accountId, String logKey, long timeoutInMillis,
-      String stringTimeout, K8StageInfraDetails k8StageInfraDetails) {
+      String stringTimeout, K8StageInfraDetails k8StageInfraDetails, StageDetails stageDetails) {
     String parkedTaskId = queueParkedDelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor);
     OSType os = IntegrationStageUtils.getK8OS(k8StageInfraDetails.getInfrastructure());
     UnitStep unitStep = serialiseStep(ciStepInfo, parkedTaskId, logKey, stepIdentifier,
-        getPort(ambiance, stepIdentifier), accountId, stepParametersName, stringTimeout, os, ambiance);
+        getPort(ambiance, stepIdentifier), accountId, stepParametersName, stringTimeout, os, ambiance, stageDetails);
     String liteEngineTaskId =
         queueK8DelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor, unitStep, runtimeId);
 
@@ -263,14 +270,7 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
 
   private AsyncExecutableResponse executeVmAsyncAfterRbac(Ambiance ambiance, String stepIdentifier, String runtimeId,
       CIStepInfo ciStepInfo, String accountId, String logKey, long timeoutInMillis, String stringTimeout,
-      StageInfraDetails stageInfraDetails) {
-    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
-    if (!optionalSweepingOutput.isFound()) {
-      throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
-    }
-    StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();
-
+      StageInfraDetails stageInfraDetails, StageDetails stageDetails) {
     OptionalOutcome optionalOutput = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME));
     if (!optionalOutput.isFound()) {
@@ -282,7 +282,8 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
     }
 
     VmStepInfo vmStepInfo = vmStepSerializer.serialize(ambiance, ciStepInfo, stageInfraDetails, stepIdentifier,
-        ParameterField.createValueField(Timeout.fromString(stringTimeout)), stageDetails.getRegistries());
+        ParameterField.createValueField(Timeout.fromString(stringTimeout)), stageDetails.getRegistries(),
+        stageDetails.getExecutionSource());
     Set<String> secrets = vmStepSerializer.getStepSecrets(vmStepInfo, ambiance);
     CIExecuteStepTaskParams params = getVmTaskParams(ambiance, vmStepInfo, secrets, stageInfraDetails, stageDetails,
         vmDetailsOutcome, runtimeId, stepIdentifier, logKey);
@@ -554,7 +555,8 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
       Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {}
 
   private UnitStep serialiseStep(CIStepInfo ciStepInfo, String taskId, String logKey, String stepIdentifier,
-      Integer port, String accountId, String stepName, String timeout, OSType os, Ambiance ambiance) {
+      Integer port, String accountId, String stepName, String timeout, OSType os, Ambiance ambiance,
+      StageDetails stageDetails) {
     switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
       case RUN:
         return runStepProtobufSerializer.serializeStepWithStepParameters((RunStepInfo) ciStepInfo, port, taskId, logKey,
@@ -565,7 +567,8 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
             (BackgroundStepInfo) ciStepInfo, port, taskId, logKey, stepIdentifier, accountId, stepName);
       case PLUGIN:
         return pluginStepProtobufSerializer.serializeStepWithStepParameters((PluginStepInfo) ciStepInfo, port, taskId,
-            logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName);
+            logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName,
+            stageDetails.getExecutionSource());
       case GCR:
       case DOCKER:
       case ECR:

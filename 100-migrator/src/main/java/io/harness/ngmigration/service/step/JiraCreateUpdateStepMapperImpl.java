@@ -7,7 +7,7 @@
 
 package io.harness.ngmigration.service.step;
 
-import static io.harness.ngmigration.service.MigratorUtility.RUNTIME_INPUT;
+import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_INPUT;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -26,12 +26,14 @@ import software.wings.beans.GraphNode;
 import software.wings.sm.State;
 import software.wings.sm.states.collaboration.JiraCreateUpdate;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import net.rcarz.jiraclient.Field;
+import org.apache.commons.lang3.StringUtils;
 
-public class JiraCreateUpdateStepMapperImpl implements StepMapper {
+public class JiraCreateUpdateStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
     return WorkflowStepSupportStatus.SUPPORTED;
@@ -52,7 +54,7 @@ public class JiraCreateUpdateStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     JiraCreateUpdate state = new JiraCreateUpdate(stepYaml.getName());
     state.parseProperties(properties);
     return state;
@@ -97,18 +99,26 @@ public class JiraCreateUpdateStepMapperImpl implements StepMapper {
   }
 
   private static List<JiraField> getFields(JiraCreateUpdate state) {
-    if (EmptyPredicate.isEmpty(state.getCustomFieldsMap())) {
-      return Collections.emptyList();
+    List<JiraField> jiraFields = new ArrayList<>();
+    addJiraField(jiraFields, Field.SUMMARY, state.getSummary());
+    addJiraField(jiraFields, Field.DESCRIPTION, state.getDescription());
+    addJiraField(jiraFields, Field.PRIORITY, state.getPriority());
+    addJiraField(jiraFields, Field.COMMENT, state.getComment());
+    addJiraField(jiraFields, Field.STATUS, state.getStatus());
+    if (EmptyPredicate.isNotEmpty(state.getLabels())) {
+      addJiraField(jiraFields, Field.LABELS, String.join(",", state.getLabels()));
     }
-    return state.getCustomFieldsMap()
-        .entrySet()
-        .stream()
-        .map(entry
-            -> JiraField.builder()
-                   .name(entry.getKey())
-                   .value(ParameterField.createValueField(entry.getValue().getFieldValue()))
-                   .build())
-        .collect(Collectors.toList());
+    if (EmptyPredicate.isEmpty(state.getCustomFieldsMap())) {
+      return jiraFields;
+    }
+    state.getCustomFieldsMap().forEach((key, value) -> addJiraField(jiraFields, key, value.getFieldValue()));
+    return jiraFields;
+  }
+
+  private static void addJiraField(List<JiraField> jiraFields, String key, String value) {
+    if (StringUtils.isNotBlank(value)) {
+      jiraFields.add(JiraField.builder().name(key).value(ParameterField.createValueField(value)).build());
+    }
   }
 
   private JiraUpdateStepNode buildUpdate(JiraCreateUpdate state) {

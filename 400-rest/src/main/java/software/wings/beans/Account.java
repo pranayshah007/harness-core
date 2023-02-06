@@ -31,6 +31,7 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.ng.core.account.AccountTrustLevel;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.ServiceAccountConfig;
@@ -104,6 +105,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   private List<String> salesContacts;
 
   @Getter @Setter private LicenseInfo licenseInfo;
+
+  @Getter @Setter private int trustLevel = AccountTrustLevel.UNINITIALIZED;
 
   @Getter @Setter private CeLicenseInfo ceLicenseInfo;
 
@@ -603,6 +606,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private boolean accountActivelyUsed;
     private ServiceAccountConfig serviceAccountConfig;
     private boolean globalDelegateAccount;
+    private int trustLevel = AccountTrustLevel.UNINITIALIZED;
 
     private Builder() {}
 
@@ -780,6 +784,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       return this;
     }
 
+    public Builder withTrustLevel(int trustLevel) {
+      this.trustLevel = trustLevel;
+      return this;
+    }
+
     public Builder but() {
       return anAccount()
           .withCompanyName(companyName)
@@ -810,7 +819,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
           .withIsProductLed(isProductLed)
           .withAccountActivelyUsed(accountActivelyUsed)
           .withAccountPreferences(accountPreferences)
-          .withServiceAccountConfig(serviceAccountConfig);
+          .withServiceAccountConfig(serviceAccountConfig)
+          .withTrustLevel(trustLevel);
     }
 
     public Account build() {
@@ -848,6 +858,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       account.setAccountPreferences(accountPreferences);
       account.setNextGenEnabled(nextGenEnabled);
       account.setServiceAccountConfig(serviceAccountConfig);
+      account.setTrustLevel(trustLevel);
       return account;
     }
   }

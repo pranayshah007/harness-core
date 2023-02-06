@@ -47,11 +47,10 @@ public class AsgScalingPolicyManifestHandler extends AsgManifestHandler<PutScali
           manifestRequest.getManifests().stream().map(this::parseContentToManifest).collect(Collectors.toList());
     }
     String asgName = chainState.getAsgName();
-    String operationName = format("Modify scaling policies of autoscaling group %s", asgName);
-    asgSdkManager.info("Operation `%s` has started", operationName);
+    asgSdkManager.info("Modifying scaling policies of Asg %s", asgName);
     asgSdkManager.clearAllScalingPoliciesForAsg(asgName);
     asgSdkManager.attachScalingPoliciesToAsg(asgName, manifests);
-    asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
+    asgSdkManager.infoBold("Modified scaling policies of Asg %s successfully", asgName);
     return chainState;
   }
 

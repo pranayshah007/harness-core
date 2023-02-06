@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.yaml.ParameterField;
 
 import lombok.Builder;
 import lombok.Value;
@@ -23,7 +24,6 @@ import lombok.Value;
 public class CodeBaseStepParameters implements StepParameters {
   String codeBaseSyncTaskId;
   String codeBaseDelegateTaskId;
-
-  String connectorRef;
+  ParameterField<String> connectorRef;
   ExecutionSource executionSource;
 }
