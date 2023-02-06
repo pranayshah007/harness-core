@@ -43,13 +43,6 @@ if [[ "" != "$LOGGERS" ]]; then
   done
 fi
 
-if [[ "" != "$SERVER_PORT" ]]; then
-  export SERVER_PORT; yq -i '.server.applicationConnectors[0].port=env(SERVER_PORT)' $CONFIG_FILE
-else
-  yq -i '.server.applicationConnectors[0].port=7090' $CONFIG_FILE
-fi
-
-
 if [[ "" != "$SERVER_MAX_THREADS" ]]; then
   export SERVER_MAX_THREADS; yq -i '.server.maxThreads=env(SERVER_MAX_THREADS)' $CONFIG_FILE
 fi

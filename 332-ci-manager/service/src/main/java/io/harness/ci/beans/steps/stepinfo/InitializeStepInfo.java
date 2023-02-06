@@ -81,6 +81,7 @@ public class InitializeStepInfo implements CIStepInfo, WithConnectorRef {
   CodeBase ciCodebase;
   ExecutionSource executionSource;
   List<NGVariable> variables;
+  List<NGVariable> pipelineVariables;
   String stageIdentifier;
   IntegrationStageConfig stageElementConfig;
   @NotNull boolean skipGitClone;
@@ -91,12 +92,12 @@ public class InitializeStepInfo implements CIStepInfo, WithConnectorRef {
   @Builder
   @ConstructorProperties({"accountId", "timeout", "identifier", "name", "retry", "buildJobEnvInfo",
       "executionElementConfig", "usePVC", "ciCodebase", "skipGitClone", "infrastructure", "executionSource",
-      "stageElementConfig", "variables", "stageIdentifier", "strategyExpansionMap"})
+      "stageElementConfig", "variables", "stageIdentifier", "strategyExpansionMap", "pipelineVariables"})
   public InitializeStepInfo(String accountId, int timeout, String identifier, String name, Integer retry,
       BuildJobEnvInfo buildJobEnvInfo, ExecutionElementConfig executionElementConfig, boolean usePVC,
       CodeBase ciCodebase, boolean skipGitClone, Infrastructure infrastructure, ExecutionSource executionSource,
       IntegrationStageConfig stageElementConfig, List<NGVariable> variables, String stageIdentifier,
-      Map<String, StrategyExpansionData> strategyExpansionMap) {
+      Map<String, StrategyExpansionData> strategyExpansionMap, List<NGVariable> pipelineVariables) {
     this.accountId = accountId;
     this.timeout = timeout;
     this.identifier = identifier;
@@ -112,6 +113,7 @@ public class InitializeStepInfo implements CIStepInfo, WithConnectorRef {
     this.executionSource = executionSource;
     this.stageIdentifier = stageIdentifier;
     this.variables = variables;
+    this.pipelineVariables = pipelineVariables;
     this.strategyExpansionMap = strategyExpansionMap;
   }
 

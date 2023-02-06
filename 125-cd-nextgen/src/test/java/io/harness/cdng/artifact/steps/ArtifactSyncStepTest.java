@@ -17,6 +17,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
+import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.logstreaming.NGLogCallback;

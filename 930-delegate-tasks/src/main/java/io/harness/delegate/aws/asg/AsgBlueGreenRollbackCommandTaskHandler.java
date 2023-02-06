@@ -116,7 +116,7 @@ public class AsgBlueGreenRollbackCommandTaskHandler extends AsgCommandTaskNGHand
           asgSdkManager.deleteAsg(stageAsgName);
         }
 
-        if (prodAsgName != null && isNotEmpty(prodAsgManifestsDataForRollback)) {
+        if (isNotEmpty(prodAsgManifestsDataForRollback)) {
           asgSdkManager.info("Rolling back Prod ASG %s to previous version", prodAsgName);
           executeRollbackVersion(asgSdkManager, prodAsgName, prodAsgManifestsDataForRollback);
         }

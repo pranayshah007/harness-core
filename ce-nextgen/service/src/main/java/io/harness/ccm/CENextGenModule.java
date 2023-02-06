@@ -18,7 +18,6 @@ import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_FOLDER;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_REPORT;
 import static io.harness.authorization.AuthorizationServiceHeader.CE_NEXT_GEN;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
-import static io.harness.configuration.DeployMode.KUBERNETES_ONPREM;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
@@ -291,6 +290,13 @@ public class CENextGenModule extends AbstractModule {
       DeployMode deployMode() {
         return configuration.getDeployMode();
       }
+
+      @Provides
+      @Singleton
+      @Named("isClickHouseEnabled")
+      boolean isClickHouseEnabled() {
+        return configuration.isClickHouseEnabled();
+      }
     });
 
     // Bind Services
@@ -390,10 +396,10 @@ public class CENextGenModule extends AbstractModule {
     bind(BudgetGroupService.class).to(BudgetGroupServiceImpl.class);
     bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
 
-    if (configuration.getDeployMode() != KUBERNETES_ONPREM) {
-      bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
-    } else {
+    if (configuration.isClickHouseEnabled()) {
       bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);
+    } else {
+      bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
     }
 
     try {

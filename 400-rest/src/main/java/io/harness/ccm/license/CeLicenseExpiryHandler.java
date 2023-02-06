@@ -32,6 +32,9 @@ import java.util.Optional;
 
 @OwnedBy(CE)
 public class CeLicenseExpiryHandler extends IteratorPumpModeHandler implements Handler<Account> {
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(60);
+  private static final Duration ACCEPTABLE_EXECUTION_TIME = ofMinutes(5);
+
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MorphiaPersistenceProvider<Account> persistenceProvider;
   @Inject private AccountService accountService;
@@ -46,13 +49,30 @@ public class CeLicenseExpiryHandler extends IteratorPumpModeHandler implements H
                            .clazz(Account.class)
                            .fieldName(AccountKeys.ceLicenseExpiryIteration)
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofMinutes(60))
-                           .acceptableExecutionTime(ofMinutes(5))
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
                            .handler(this)
                            .filterExpander(query -> query.field(AccountKeys.ceLicenseInfo).exists())
                            .schedulingType(REGULAR)
                            .persistenceProvider(persistenceProvider)
                            .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<Account, MorphiaFilterExpander<Account>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       CeLicenseExpiryHandler.class,
+                       MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
+                           .clazz(Account.class)
+                           .fieldName(AccountKeys.ceLicenseExpiryIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
+                           .handler(this)
+                           .filterExpander(query -> query.field(AccountKeys.ceLicenseInfo).exists())
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override

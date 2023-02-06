@@ -45,7 +45,8 @@ public class StepParametersCommonUtilsTest extends CategoryTest {
             .description("DESCRIPTION")
             .type("TYPE")
             .skipCondition(ParameterField.createValueField("SKIPCONDITION"))
-            .when(StepWhenCondition.builder().stageStatus(WhenConditionStatus.SUCCESS).build())
+            .when(ParameterField.createValueField(
+                StepWhenCondition.builder().stageStatus(WhenConditionStatus.SUCCESS).build()))
             .build();
     StepElementParameters stepElementParameters = StepParameterCommonUtils.getStepParameters(stepElementConfig).build();
     assertThat(stepElementParameters.getIdentifier()).isEqualTo(stepElementConfig.getIdentifier());
@@ -67,7 +68,8 @@ public class StepParametersCommonUtilsTest extends CategoryTest {
             .description(ParameterField.createValueField("DESCRIPTION"))
             .type("TYPE")
             .skipCondition(ParameterField.createValueField("SKIPCONDITION"))
-            .when(StageWhenCondition.builder().pipelineStatus(WhenConditionStatus.SUCCESS).build())
+            .when(ParameterField.createValueField(
+                StageWhenCondition.builder().pipelineStatus(WhenConditionStatus.SUCCESS).build()))
             .build();
     StageElementParameters stageParameters = StepParameterCommonUtils.getStageParameters(config).build();
     assertThat(stageParameters.getIdentifier()).isEqualTo(config.getIdentifier());

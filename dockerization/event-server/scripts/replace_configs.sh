@@ -80,6 +80,24 @@ if [[ "" != "$EVENTS_MONGO_HOSTS_AND_PORTS" ]]; then
   write_mongo_params events-mongo "$EVENTS_MONGO_PARAMS"
 fi
 
+if [[ "" != "$DMS_MONGO_INDEX_MANAGER_MODE" ]]; then
+  export DMS_MONGO_INDEX_MANAGER_MODE; yq -i '.dms-mongo.indexManagerMode=env(DMS_MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DMS_MONGO_URI" ]]; then
+  export DMS_MONGO_URI; yq -i '.dms-mongo.uri=env(DMS_MONGO_URI)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DMS_MONGO_HOSTS_AND_PORTS" ]]; then
+  yq -i 'del(.dms-mongo.uri)' $CONFIG_FILE
+  export DMS_MONGO_USERNAME; yq -i '.dms-mongo.username=env(DMS_MONGO_USERNAME)' $CONFIG_FILE
+  export DMS_MONGO_PASSWORD; yq -i '.dms-mongo.password=env(DMS_MONGO_PASSWORD)' $CONFIG_FILE
+  export DMS_MONGO_DATABASE; yq -i '.dms-mongo.database=env(DMS_MONGO_DATABASE)' $CONFIG_FILE
+  export DMS_MONGO_SCHEMA; yq -i '.dms-mongo.schema=env(DMS_MONGO_SCHEMA)' $CONFIG_FILE
+  write_mongo_hosts_and_ports dms-mongo "$DMS_MONGO_HOSTS_AND_PORTS"
+  write_mongo_params dms-mongo "$DMS_MONGO_PARAMS"
+fi
+
 if [[ "" != "$GCP_SECRET_MANAGER_PROJECT" ]]; then
   export GCP_SECRET_MANAGER_PROJECT; yq -i '.secretsConfiguration.gcpSecretManagerProject=env(GCP_SECRET_MANAGER_PROJECT)' $CONFIG_FILE
 fi

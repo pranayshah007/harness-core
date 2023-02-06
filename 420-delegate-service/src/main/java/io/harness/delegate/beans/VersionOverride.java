@@ -10,6 +10,7 @@ package io.harness.delegate.beans;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
@@ -31,6 +32,7 @@ import org.joda.time.DateTime;
 @Data
 @Builder
 @StoreIn(DbAliases.HARNESS)
+@SecondaryStoreIn(DbAliases.DMS)
 @Entity(value = "versionOverride", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class VersionOverride implements PersistentEntity {

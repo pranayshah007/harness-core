@@ -57,6 +57,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EventDeliveryHandler extends IteratorPumpModeHandler implements Handler<Event> {
   public static final String GROUP = "EVENT_TELEMETRY_CRON_GROUP";
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(30);
+  private static final int ITERATOR_SCHEDULE_INITIAL_DELAY = 0;
 
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
@@ -82,7 +84,7 @@ public class EventDeliveryHandler extends IteratorPumpModeHandler implements Han
                 .clazz(Event.class)
                 .fieldName(EventsKeys.nextIteration)
                 .targetInterval(targetInterval)
-                .acceptableNoAlertDelay(ofSeconds(30))
+                .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                 .executorService(instrumentedExecutorService)
                 .semaphore(new Semaphore(executorOptions.getPoolSize()))
                 .handler(this)
@@ -93,7 +95,41 @@ public class EventDeliveryHandler extends IteratorPumpModeHandler implements Han
                 .redistribute(true));
 
     if (iterator != null) {
-      eventDeliveryExecutor.scheduleAtFixedRate(() -> iterator.process(), 0, 10, TimeUnit.SECONDS);
+      eventDeliveryExecutor.scheduleAtFixedRate(()
+                                                    -> iterator.process(),
+          ITERATOR_SCHEDULE_INITIAL_DELAY, executorOptions.getInterval().toSeconds(), TimeUnit.SECONDS);
+    }
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    String threadName = "Iterator-Event-Delivery";
+    final ScheduledThreadPoolExecutor eventDeliveryExecutor = new ScheduledThreadPoolExecutor(
+        executorOptions.getPoolSize(), new ThreadFactoryBuilder().setNameFormat(threadName).build());
+    InstrumentedExecutorService instrumentedExecutorService = new InstrumentedExecutorService(
+        eventDeliveryExecutor, harnessMetricRegistry.getThreadPoolMetricRegistry(), threadName);
+    iterator =
+        (MongoPersistenceIterator<Event, MorphiaFilterExpander<Event>>) persistenceIteratorFactory.createIterator(
+            EventDeliveryHandler.class,
+            MongoPersistenceIterator.<Event, MorphiaFilterExpander<Event>>builder()
+                .mode(ProcessMode.REDIS_BATCH)
+                .iteratorName(iteratorName)
+                .clazz(Event.class)
+                .fieldName(EventsKeys.nextIteration)
+                .targetInterval(targetInterval)
+                .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                .executorService(instrumentedExecutorService)
+                .semaphore(new Semaphore(executorOptions.getPoolSize()))
+                .handler(this)
+                .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                .filterExpander(query -> query.field(EventsKeys.status).equal(EventStatus.QUEUED))
+                .persistenceProvider(persistenceProvider));
+
+    if (iterator != null) {
+      eventDeliveryExecutor.scheduleAtFixedRate(()
+                                                    -> iterator.redisBatchProcess(),
+          ITERATOR_SCHEDULE_INITIAL_DELAY, executorOptions.getInterval().toSeconds(), TimeUnit.SECONDS);
     }
   }
 

@@ -14,6 +14,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 
+import java.time.Instant;
 import java.util.List;
 
 public interface ServiceLevelIndicatorService {
@@ -48,4 +49,7 @@ public interface ServiceLevelIndicatorService {
 
   void setMonitoredServiceSLIsEnableFlag(
       ProjectParams projectParams, String monitoredServiceIdentifier, boolean isEnabled);
+
+  void enqueueDataCollectionFailureInstanceAndTriggerAnalysis(
+      String verificationTaskId, Instant startTime, Instant endTime, ServiceLevelIndicator serviceLevelIndicator);
 }

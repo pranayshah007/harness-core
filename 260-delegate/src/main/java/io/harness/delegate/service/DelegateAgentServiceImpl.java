@@ -468,7 +468,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
    */
   @SuppressWarnings("PMD")
   private void checkForImmutbleAndStatefulset() {
-    if (!this.isImmutableDelegate || !KUBERNETES.equals(DELEGATE_TYPE) || !HELM_DELEGATE.equals(DELEGATE_TYPE)) {
+    if (!this.isImmutableDelegate || !KUBERNETES.equals(DELEGATE_TYPE) && !HELM_DELEGATE.equals(DELEGATE_TYPE)) {
       return;
     }
 

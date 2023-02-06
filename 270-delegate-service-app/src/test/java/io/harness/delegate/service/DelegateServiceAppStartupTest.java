@@ -37,6 +37,7 @@ import org.junit.experimental.categories.Category;
 
 public class DelegateServiceAppStartupTest extends DelegateServiceAppTestBase {
   public static MongoServer MONGO_SERVER;
+
   public static DropwizardTestSupport<DelegateServiceConfig> SUPPORT;
 
   private static MongoServer startMongoServer() {

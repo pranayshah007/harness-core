@@ -9,13 +9,19 @@ package io.harness.ccm.connectors;
 
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.bigQuery.BigQueryService;
+import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.timescaledb.DBUtils;
 
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.FieldValueList;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.TableResult;
 import com.google.inject.Inject;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +32,7 @@ import org.springframework.stereotype.Service;
 public class CEConnectorsHelper {
   @Inject private BigQueryService bigQueryService;
   @Inject private CENextGenConfiguration configuration;
+  @Inject ClickHouseService clickHouseService;
 
   public final String JOB_TYPE_CLOUDFUNCTION = "cloudfunction";
   public final String JOB_TYPE_BATCH = "batch";
@@ -33,6 +40,10 @@ public class CEConnectorsHelper {
       "SELECT count(*) as count FROM `%s.CE_INTERNAL.connectorDataSyncStatus` "
       + "WHERE lastSuccessfullExecutionAt >= DATETIME_SUB(CURRENT_TIMESTAMP, INTERVAL 1 DAY) "
       + "AND cloudProviderId = '%s' AND accountId = '%s' AND connectorId = '%s' AND jobType='%s';";
+
+  private final String CH_DATA_SYNC_CHECK_TEMPLATE = "SELECT count(*) as count FROM ccm.connectorDataSyncStatus "
+      + "WHERE lastSuccessfullExecutionAt >= (now() - toIntervalDay(1))"
+      + "AND cloudProviderId = '%s' AND connectorId = '%s' AND jobType='%s';";
 
   public String modifyStringToComplyRegex(String accountInfo) {
     return accountInfo.toLowerCase().replaceAll("[^a-z0-9]", "_");
@@ -47,7 +58,6 @@ public class CEConnectorsHelper {
   public boolean isDataSyncCheck(
       String accountIdentifier, String connectorIdentifier, ConnectorType connectorType, String jobType) {
     String cloudProvider = "";
-    BigQuery bigquery = bigQueryService.get();
     String gcpProjectId = configuration.getGcpConfig().getGcpProjectId();
     switch (connectorType) {
       case CE_AWS:
@@ -63,15 +73,25 @@ public class CEConnectorsHelper {
         log.error("Unknown connector type: {}", connectorType);
         return false;
     }
-    String query = String.format(
-        BQ_DATA_SYNC_CHECK_TEMPLATE, gcpProjectId, cloudProvider, accountIdentifier, connectorIdentifier, jobType);
-    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
+    if (configuration.isClickHouseEnabled()) {
+      String query = String.format(CH_DATA_SYNC_CHECK_TEMPLATE, cloudProvider, connectorIdentifier, jobType);
+      return isDataSyncCheckCH(query);
+    } else {
+      String query = String.format(
+          BQ_DATA_SYNC_CHECK_TEMPLATE, gcpProjectId, cloudProvider, accountIdentifier, connectorIdentifier, jobType);
+      QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
+      return isDataSyncCheckBQ(query);
+    }
+  }
 
+  public boolean isDataSyncCheckBQ(String query) {
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
+    BigQuery bigQuery = bigQueryService.get();
     // Get the results.
     TableResult result;
     try {
       log.info("Running query: {}", query);
-      result = bigquery.query(queryConfig);
+      result = bigQuery.query(queryConfig);
     } catch (InterruptedException e) {
       log.error("Failed to check for data. {}", e);
       Thread.currentThread().interrupt();
@@ -84,6 +104,28 @@ public class CEConnectorsHelper {
         log.info("count: {}", count);
         return true;
       }
+    }
+    return false;
+  }
+
+  public boolean isDataSyncCheckCH(String query) {
+    // Get the results.
+    ResultSet resultSet = null;
+    try (Connection connection = clickHouseService.getConnection(configuration.getClickHouseConfig());
+         Statement statement = connection.createStatement()) {
+      resultSet = statement.executeQuery(query);
+      while (resultSet != null && resultSet.next()) {
+        long count = resultSet.getLong("count");
+        if (count > 0) {
+          log.info("count: {}", count);
+          return true;
+        }
+      }
+    } catch (SQLException e) {
+      log.error("Failed to check for data. {}", e.toString());
+      return false;
+    } finally {
+      DBUtils.close(resultSet);
     }
     return false;
   }

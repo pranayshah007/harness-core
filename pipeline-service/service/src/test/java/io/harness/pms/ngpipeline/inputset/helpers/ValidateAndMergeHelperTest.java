@@ -10,13 +10,11 @@ package io.harness.pms.ngpipeline.inputset.helpers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
-import static io.harness.rule.OwnerRule.SHALINI;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.PipelineServiceTestBase;
@@ -26,15 +24,12 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
-import io.harness.pms.merger.helpers.InputSetMergeHelper;
-import io.harness.pms.merger.helpers.InputSetTemplateHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
-import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
 
@@ -46,8 +41,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
 @OwnedBy(PIPELINE)
 public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
@@ -55,7 +48,6 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   @Mock PMSPipelineService pmsPipelineService;
   @Mock PMSInputSetService pmsInputSetService;
   @Mock GitSyncSdkService gitSyncSdkService;
-  @Mock PMSExecutionService pmsExecutionService;
 
   private static final String accountId = "accountId";
   private static final String orgId = "orgId";
@@ -446,33 +438,110 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   }
 
   @Test
-  @Owner(developers = SHALINI)
+  @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testMergeInputSetIntoPipelineForRerun() {
-    String planExecutionID = "planExecutionId";
+  public void testGetMergedYamlFromInputSetReferencesAndRuntimeInputYaml() {
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
-    doReturn("mergedYaml")
-        .when(pmsExecutionService)
-        .getInputSetYamlForRerun(accountId, orgId, projectId, planExecutionID, false);
-    doReturn(Optional.of(PipelineEntity.builder().yaml("pipelineYaml").build()))
+    String base = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: s1\n"
+        + "      field1: <+input>\n"
+        + "      field2: <+input>\n"
+        + "  - stage:\n"
+        + "      identifier: s2\n"
+        + "      field1: <+input>\n"
+        + "      field2: <+input>\n"
+        + "  - stage:\n"
+        + "      identifier: s3\n"
+        + "      field1: <+input>\n"
+        + "      field2: <+input>\n";
+    doReturn(Optional.of(PipelineEntity.builder().yaml(base).build()))
         .when(pmsPipelineService)
         .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
-    MockedStatic<InputSetMergeHelper> aStatic = Mockito.mockStatic(InputSetMergeHelper.class);
-    aStatic.when(() -> InputSetMergeHelper.mergeInputSetIntoPipeline("pipelineTemplate", "mergedYaml", false))
-        .thenReturn("finalMergedYaml");
-    MockedStatic<InputSetTemplateHelper> bStatic = Mockito.mockStatic(InputSetTemplateHelper.class);
-    bStatic.when(() -> InputSetTemplateHelper.createTemplateFromPipeline("pipelineYaml"))
-        .thenReturn("pipelineTemplate");
-    assertEquals("finalMergedYaml",
-        validateAndMergeHelper.mergeInputSetIntoPipelineForRerun(
-            accountId, orgId, projectId, pipelineId, planExecutionID, "", "", Collections.emptyList()));
-    bStatic.when(() -> InputSetTemplateHelper.createTemplateFromPipeline("pipelineYaml")).thenReturn("");
-    assertThatThrownBy(()
-                           -> validateAndMergeHelper.mergeInputSetIntoPipelineForRerun(accountId, orgId, projectId,
-                               pipelineId, planExecutionID, "", "", Collections.emptyList()))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Pipeline " + pipelineId + " or given stage identifiers []"
-            + " do not have any runtime input or given stage identifiers don't exist in the pipeline");
+    String lastRuntimeS1S2 = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: s1\n"
+        + "      field1: lastRuntimeYaml\n"
+        + "      field2: lastRuntimeYaml\n"
+        + "  - stage:\n"
+        + "      identifier: s2\n"
+        + "      field1: lastRuntimeYaml\n"
+        + "      field2: lastRuntimeYaml\n";
+    String merged1 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(
+        accountId, orgId, projectId, pipelineId, null, null, null, Collections.singletonList("s1"), lastRuntimeS1S2);
+    String expectedMerged1 = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"s1\"\n"
+        + "      field1: \"lastRuntimeYaml\"\n"
+        + "      field2: \"lastRuntimeYaml\"\n";
+    assertThat(merged1).isEqualTo(expectedMerged1);
+
+    String lastRuntimeS2 = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"s2\"\n"
+        + "      field1: \"<+input>\"\n"
+        + "      field2: \"lastRuntimeS2\"\n";
+    String merged2 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(
+        accountId, orgId, projectId, pipelineId, null, null, null, Collections.singletonList("s2"), lastRuntimeS2);
+    String expectedMerged2 = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"s2\"\n"
+        + "      field1: \"<+input>\"\n"
+        + "      field2: \"lastRuntimeS2\"\n";
+    assertThat(merged2).isEqualTo(expectedMerged2);
+
+    String merged3 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(
+        accountId, orgId, projectId, pipelineId, null, null, null, Collections.singletonList("s3"), lastRuntimeS1S2);
+    String expectedMerged3 = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"s3\"\n"
+        + "      field1: \"<+input>\"\n"
+        + "      field2: \"<+input>\"\n";
+    assertThat(merged3).isEqualTo(expectedMerged3);
+
+    doReturn(
+        Optional.of(
+            InputSetEntity.builder().yaml(lastRuntimeS1S2).inputSetEntityType(InputSetEntityType.INPUT_SET).build()))
+        .when(pmsInputSetService)
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "is1", false);
+    String merged4 =
+        validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId, projectId,
+            pipelineId, Collections.singletonList("is1"), null, null, Collections.singletonList("s2"), lastRuntimeS2);
+    String expectedMerged4 = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"s2\"\n"
+        + "      field1: \"lastRuntimeYaml\"\n"
+        + "      field2: \"lastRuntimeS2\"\n";
+    assertThat(merged4).isEqualTo(expectedMerged4);
+
+    String merged5 =
+        validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId, projectId,
+            pipelineId, Collections.singletonList("is1"), null, null, Collections.singletonList("s1"), lastRuntimeS2);
+    String expectedMerged5 = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"s1\"\n"
+        + "      field1: \"lastRuntimeYaml\"\n"
+        + "      field2: \"lastRuntimeYaml\"\n";
+    assertThat(merged5).isEqualTo(expectedMerged5);
+
+    String merged6 =
+        validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId, projectId,
+            pipelineId, Collections.singletonList("is1"), null, null, Collections.singletonList("s3"), lastRuntimeS2);
+    String expectedMerged6 = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"s3\"\n"
+        + "      field1: \"<+input>\"\n"
+        + "      field2: \"<+input>\"\n";
+    assertThat(merged6).isEqualTo(expectedMerged6);
   }
 
   private String getPipelineYamlWithNoRuntime() {

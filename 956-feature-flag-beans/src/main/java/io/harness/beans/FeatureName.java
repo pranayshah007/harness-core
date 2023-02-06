@@ -20,7 +20,7 @@ import lombok.Getter;
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   SPG_UI_ALLOW_ENCODING_FOR_JENKINS_ARTIFACT("Enables correct encoding for jenkins artifact", HarnessTeam.SPG),
-
+  SPG_HTTP_STEP_CERTIFICATE("Allow enforce SSL/TLS certificate in HTTP step", HarnessTeam.SPG),
   SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE("Enables refresh pipeline when trigger "
           + "continue pipeline execution",
       HarnessTeam.SPG),
@@ -614,7 +614,10 @@ public enum FeatureName {
   SPG_DISABLE_SECRET_DETAILS("Disable secret management logs show in CG", HarnessTeam.SPG),
   CDS_AWS_NATIVE_LAMBDA("This flag is to enable the AWS Native Lambda Deployments for users. "
           + "This flag only works with Service and Environments v2",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  CI_PIPELINE_VARIABLES_IN_STEPS("For enabling pipeline variables as env variables in CI steps", HarnessTeam.CI),
+  CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS(
+      "Do not add quotes to strings when a user reconciles a template, pipeline", HarnessTeam.CDC, Scope.GLOBAL);
 
   @Deprecated
   FeatureName() {

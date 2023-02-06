@@ -258,7 +258,8 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
     ExecutionTriggerInfo triggerInfo = ambiance.getMetadata().getTriggerInfo();
     TriggerPayload triggerPayload = integrationStageStepParametersPMS.getTriggerPayload();
     return IntegrationStageUtils.buildExecutionSourceV2(ambiance, triggerInfo, triggerPayload, identifier,
-        codeBase.getBuild(), codeBase.getConnectorRef().getValue(), connectorUtils, codeBase);
+        codeBase.getBuild(), codeBase.getConnectorRef().getValue(), connectorUtils, codeBase,
+        integrationStageStepParametersPMS.getCloneManually());
   }
 
   private BuildStatusUpdateParameter obtainBuildStatusUpdateParameter(

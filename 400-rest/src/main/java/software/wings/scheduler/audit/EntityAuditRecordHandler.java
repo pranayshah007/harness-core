@@ -38,6 +38,8 @@ import java.util.List;
 
 @OwnedBy(PL)
 public class EntityAuditRecordHandler extends IteratorPumpModeHandler implements Handler<AuditRecord> {
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(45);
+
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private AuditService auditService;
@@ -52,12 +54,28 @@ public class EntityAuditRecordHandler extends IteratorPumpModeHandler implements
                            .clazz(AuditRecord.class)
                            .fieldName(AuditRecordKeys.nextIteration)
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofSeconds(45))
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                            .handler(this)
                            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
                            .schedulingType(REGULAR)
                            .persistenceProvider(persistenceProvider)
                            .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<AuditRecord, MorphiaFilterExpander<AuditRecord>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       EntityAuditRecordHandler.class,
+                       MongoPersistenceIterator.<AuditRecord, MorphiaFilterExpander<AuditRecord>>builder()
+                           .clazz(AuditRecord.class)
+                           .fieldName(AuditRecordKeys.nextIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override
