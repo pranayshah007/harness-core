@@ -1930,6 +1930,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       return;
     }
 
+    if (Boolean.parseBoolean(System.getenv().get("REJECT_TASK"))) {
+      log.error("Arpit: Will not acquire task {}", delegateTaskId);
+      return;
+    }
+
     if (!shouldContactManager()) {
       log.info("Dropping task, self destruct in progress");
       return;
