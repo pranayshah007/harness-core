@@ -85,4 +85,11 @@ public enum ModuleType {
   public boolean isInternal() {
     return internal;
   }
+
+  public String getAlias(ModuleType moduleType) {
+    if (moduleType == ModuleType.CV) {
+      return ModuleType.SRM.name();
+    }
+    return moduleType.name();
+  }
 }
