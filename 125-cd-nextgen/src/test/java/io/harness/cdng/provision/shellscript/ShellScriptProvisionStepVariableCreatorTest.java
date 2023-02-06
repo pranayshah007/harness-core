@@ -56,7 +56,8 @@ public class ShellScriptProvisionStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.test.spec.execution.steps.shell1.description",
             "pipeline.stages.test.spec.execution.steps.shell1.timeout",
             "pipeline.stages.test.spec.execution.steps.shell1.spec.delegateSelectors",
-            "pipeline.stages.test.spec.execution.steps.shell1.spec.source.spec.script");
+            "pipeline.stages.test.spec.execution.steps.shell1.spec.source.spec.script",
+            "pipeline.stages.test.spec.execution.steps.shell1.when");
   }
 
   @Test
@@ -72,6 +73,7 @@ public class ShellScriptProvisionStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.test.spec.execution.steps.shell2.timeout",
             "pipeline.stages.test.spec.execution.steps.shell2.spec.delegateSelectors",
             "pipeline.stages.test.spec.execution.steps.shell2.spec.source.spec.file",
-            "pipeline.stages.test.spec.execution.steps.shell2.spec.environmentVariables.testvariable");
+            "pipeline.stages.test.spec.execution.steps.shell2.spec.environmentVariables.testvariable",
+            "pipeline.stages.test.spec.execution.steps.shell2.when");
   }
 }

@@ -254,6 +254,7 @@ public class GoogleFunctionCommandTaskHelper {
       }
       Morpheus.sleep(ofSeconds(10));
     } while (currentApiCall < MAXIMUM_STEADY_STATE_CHECK_API_CALL);
+
     if (function.getState() == Function.State.ACTIVE) {
       logCallback.saveExecutionLog(color("Deployed Function successfully...", LogColor.Green));
       logCallback.saveExecutionLog(function.getStateMessagesList().toString());
@@ -577,8 +578,8 @@ public class GoogleFunctionCommandTaskHelper {
 
   public GoogleFunction getGoogleFunction(Function function, GcpGoogleFunctionInfraConfig googleFunctionInfraConfig,
       LogCallback logCallback) throws InvalidProtocolBufferException {
-    logCallback.saveExecutionLog(color("Updated Functions details: ", Blue, Bold), INFO);
-    logCallback.saveExecutionLog(JsonFormat.printer().print(function));
+    saveLogs(logCallback, color("Updated Functions details: ", Blue, Bold), INFO);
+    saveLogs(logCallback, JsonFormat.printer().print(function), INFO);
     GoogleFunction.GoogleCloudRunService googleCloudRunService =
         GoogleFunction.GoogleCloudRunService.builder()
             .serviceName(function.getServiceConfig().getService())
@@ -589,13 +590,15 @@ public class GoogleFunctionCommandTaskHelper {
     Service cloudRunService =
         getCloudRunService(function.getServiceConfig().getService(), googleFunctionInfraConfig.getGcpConnectorDTO(),
             googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion());
-    logCallback.saveExecutionLog(color("Updated Cloud-Run Service details: ", Blue, Bold), INFO);
-    logCallback.saveExecutionLog(JsonFormat.printer().print(cloudRunService));
+    saveLogs(logCallback, color("Updated Cloud-Run Service details: ", Blue, Bold), INFO);
+    saveLogs(logCallback, JsonFormat.printer().print(cloudRunService), INFO);
 
     return GoogleFunction.builder()
         .functionName(function.getName())
         .state(function.getState().toString())
         .runtime(function.getBuildConfig().getRuntime())
+        .source(getSourceAsString(function.getBuildConfig().getSource()))
+        .updatedTime(function.getUpdateTime().getSeconds() * 1000)
         .environment(function.getEnvironment().name())
         .cloudRunService(googleCloudRunService)
         .activeCloudRunRevisions(getGoogleCloudRunRevisions(cloudRunService))
@@ -608,8 +611,13 @@ public class GoogleFunctionCommandTaskHelper {
     trafficTargetStatuses.stream()
         .filter(trafficTargetStatus -> trafficTargetStatus.getPercent() > 0)
         .forEach(trafficTargetStatus -> {
+          String revision = trafficTargetStatus.getRevision();
+          if (revision.isEmpty() && trafficTargetStatus.getType() == TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST) {
+            /// this is a temporary change
+            revision = "Latest";
+          }
           revisions.add(GoogleFunction.GoogleCloudRunRevision.builder()
-                            .revision(trafficTargetStatus.getRevision())
+                            .revision(revision)
                             .trafficPercent(trafficTargetStatus.getPercent())
                             .build());
         });
@@ -641,5 +649,25 @@ public class GoogleFunctionCommandTaskHelper {
         .region(region)
         .project(project)
         .build();
+  }
+
+  private String getSourceAsString(Source source) {
+    if (source.hasStorageSource()) {
+      StorageSource storageSource = source.getStorageSource();
+      return "Bucket: " + storageSource.getBucket() + "\n"
+          + "Object: " + storageSource.getObject();
+    } else if (source.hasRepoSource()) {
+      RepoSource repoSource = source.getRepoSource();
+      return "Repository Name: " + repoSource.getRepoName() + "\n"
+          + "Branch: " + repoSource.getBranchName() + "\n"
+          + "Directory: " + repoSource.getDir();
+    }
+    return null;
+  }
+
+  private void saveLogs(LogCallback executionLogCallback, String message, LogLevel logLevel) {
+    if (executionLogCallback != null) {
+      executionLogCallback.saveExecutionLog(message, logLevel);
+    }
   }
 }

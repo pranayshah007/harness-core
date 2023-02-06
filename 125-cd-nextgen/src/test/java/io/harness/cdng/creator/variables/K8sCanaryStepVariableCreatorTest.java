@@ -56,6 +56,7 @@ public class K8sCanaryStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.execution.steps.K8s_Canary.description",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Canary.spec.delegateSelectors",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Canary.spec.skipDryRun",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_Canary.name");
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Canary.name",
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Canary.when");
   }
 }

@@ -66,7 +66,10 @@ public abstract class AbstractStageNode {
   @ApiModelProperty(hidden = true)
   ParameterField<String> skipCondition;
 
-  @VariableExpression StageWhenCondition when;
+  @ApiModelProperty(dataType = SwaggerConstants.STAGE_WHEN_CLASSPATH)
+  @VariableExpression
+  @YamlSchemaTypes(value = {runtime})
+  ParameterField<StageWhenCondition> when;
 
   @VariableExpression List<NGVariable> variables;
   Map<String, String> tags;

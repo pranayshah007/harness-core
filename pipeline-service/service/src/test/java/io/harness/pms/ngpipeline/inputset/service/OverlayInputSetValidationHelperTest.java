@@ -232,7 +232,7 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testForLengthCheckOnOverlayInputSetIdentifiers() {
     String yaml = "overlayInputSet:\n"
-        + "  identifier: abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghij";
+        + "  identifier: abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijdsalksdajsdnanfnoaniondna12213123034r78978987879897jkkljasad";
     InputSetEntity inputSetEntity = InputSetEntity.builder()
                                         .accountId(accountId)
                                         .orgIdentifier(orgId)
@@ -242,7 +242,7 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
                                         .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
                                         .build();
     assertThatThrownBy(() -> OverlayInputSetValidationHelper.validateOverlayInputSet(null, inputSetEntity))
-        .hasMessage("Overlay Input Set identifier length cannot be more that 63 characters.");
+        .hasMessage("Overlay Input Set identifier length cannot be more that 127 characters.");
   }
 
   @Test

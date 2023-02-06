@@ -30,6 +30,10 @@ import io.harness.cdng.elastigroup.ElastigroupBGStageSetupStep;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStep;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStep;
 import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStep;
+import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStep;
+import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStep;
+import io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStep;
+import io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
 import io.harness.cdng.k8s.K8sBlueGreenStep;
@@ -69,7 +73,10 @@ public class InstanceSyncStepResolver {
       TasRollingDeployStep.STEP_TYPE.getType(), TasRollingRollbackStep.STEP_TYPE.getType(),
       AsgRollingDeployStep.STEP_TYPE.getType(), AsgCanaryDeployStep.STEP_TYPE.getType(),
       AsgRollingRollbackStep.STEP_TYPE.getType(), AsgBlueGreenDeployStep.STEP_TYPE.getType(),
-      AsgBlueGreenSwapServiceStep.STEP_TYPE.getType(), AsgBlueGreenRollbackStep.STEP_TYPE.getType()));
+      AsgBlueGreenSwapServiceStep.STEP_TYPE.getType(), AsgBlueGreenRollbackStep.STEP_TYPE.getType(),
+      GoogleFunctionsDeployStep.STEP_TYPE.getType(), GoogleFunctionsRollbackStep.STEP_TYPE.getType(),
+      GoogleFunctionsDeployWithoutTrafficStep.STEP_TYPE.getType(),
+      GoogleFunctionsTrafficShiftStep.STEP_TYPE.getType()));
 
   public boolean shouldRunInstanceSync(StepType stepType) {
     return nonNull(stepType) && INSTANCE_SYN_STEP_TYPES.contains(stepType.getType());
