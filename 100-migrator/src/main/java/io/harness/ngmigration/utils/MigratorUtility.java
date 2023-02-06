@@ -412,7 +412,7 @@ public class MigratorUtility {
     Pattern p = Pattern.compile("[^-0-9a-zA-Z_\\s]", Pattern.CASE_INSENSITIVE);
     Matcher m = p.matcher(str);
     String generated = m.replaceAll("_");
-    return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
+    return !Character.isLetter(generated.charAt(0)) ? "_" + generated : generated;
   }
 
   @Nullable

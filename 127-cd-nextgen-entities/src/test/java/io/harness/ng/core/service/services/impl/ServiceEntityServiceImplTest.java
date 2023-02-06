@@ -828,8 +828,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
         ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, false, false);
 
     assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("accountId")).isTrue();
-    assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("orgIdentifier")).isFalse();
-    assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("projectIdentifier")).isFalse();
+    assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("orgIdentifier")).isTrue();
+    assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("projectIdentifier")).isTrue();
   }
 
   @Test

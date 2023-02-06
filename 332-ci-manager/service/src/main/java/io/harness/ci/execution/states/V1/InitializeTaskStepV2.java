@@ -519,8 +519,6 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     }
 
     for (ExecutionWrapperConfig config : executionElement.getSteps()) {
-      // Inject the envVariables before calling strategy expansion
-      IntegrationStageUtils.injectLoopEnvVariables(config);
       ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
           strategyHelper.expandExecutionWrapperConfig(config, maxExpansionLimit);
       expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());

@@ -19,7 +19,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
-import io.harness.execution.StagesExecutionMetadata;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
@@ -31,15 +30,12 @@ import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
-import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlWithTemplateDTO;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.plan.execution.StagesExecutionHelper;
-import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
-import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.yaml.PipelineVersion;
 
@@ -64,10 +60,10 @@ public class ValidateAndMergeHelper {
   private final PMSInputSetService pmsInputSetService;
   private final PMSPipelineTemplateHelper pipelineTemplateHelper;
   private final GitSyncSdkService gitSyncSdkService;
-  private PMSExecutionService pmsExecutionService;
 
   public PipelineEntity getPipelineEntity(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String pipelineBranch, String pipelineRepoID, boolean checkForStoreType) {
+    // todo: move this to PMSPipelineService
     if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
       return getPipelineEntityForOldGitSyncFlow(
           accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID);
@@ -204,6 +200,13 @@ public class ValidateAndMergeHelper {
   public String getMergeInputSetFromPipelineTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch, String pipelineRepoID,
       List<String> stageIdentifiers) {
+    return getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID, stageIdentifiers, null);
+  }
+
+  public String getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch,
+      String pipelineRepoID, List<String> stageIdentifiers, String lastYamlToMerge) {
     Set<String> inputSetVersions = new HashSet<>();
     PipelineEntity pipelineEntity = getPipelineEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false);
@@ -220,35 +223,41 @@ public class ValidateAndMergeHelper {
     }
 
     List<String> inputSetYamlList = new ArrayList<>();
-    inputSetReferences.forEach(identifier -> {
-      Optional<InputSetEntity> entity = pmsInputSetService.getWithoutValidations(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false);
-      if (entity.isEmpty()) {
-        return;
-      }
-      InputSetEntity inputSet = entity.get();
-      inputSetVersions.add(inputSet.getHarnessVersion());
-      checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(pipelineEntity, inputSet);
-      if (inputSet.getInputSetEntityType() == InputSetEntityType.INPUT_SET) {
-        inputSetYamlList.add(inputSet.getYaml());
-      } else {
-        List<String> overlayReferences = inputSet.getInputSetReferences();
-        overlayReferences.forEach(id -> {
-          Optional<InputSetEntity> entity2 = pmsInputSetService.getWithoutValidations(
-              accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, id, false);
-          entity2.ifPresent(inputSetEntity -> {
-            checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(pipelineEntity, entity2.get());
-            inputSetYamlList.add(inputSetEntity.getYaml());
+    if (inputSetReferences != null) {
+      inputSetReferences.forEach(identifier -> {
+        Optional<InputSetEntity> entity = pmsInputSetService.getWithoutValidations(
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false);
+        if (entity.isEmpty()) {
+          return;
+        }
+        InputSetEntity inputSet = entity.get();
+        inputSetVersions.add(inputSet.getHarnessVersion());
+        checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(pipelineEntity, inputSet);
+        if (inputSet.getInputSetEntityType() == InputSetEntityType.INPUT_SET) {
+          inputSetYamlList.add(inputSet.getYaml());
+        } else {
+          List<String> overlayReferences = inputSet.getInputSetReferences();
+          overlayReferences.forEach(id -> {
+            Optional<InputSetEntity> entity2 = pmsInputSetService.getWithoutValidations(
+                accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, id, false);
+            entity2.ifPresent(inputSetEntity -> {
+              checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(pipelineEntity, entity2.get());
+              inputSetYamlList.add(inputSetEntity.getYaml());
+            });
           });
-        });
-      }
-    });
+        }
+      });
+    }
 
     if (inputSetVersions.contains(PipelineVersion.V0) && inputSetVersions.contains(PipelineVersion.V1)) {
       throw new InvalidRequestException("Input set versions 0 and 1 are not compatible");
     }
     if (inputSetVersions.contains(PipelineVersion.V1)) {
       return InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList);
+    }
+
+    if (EmptyPredicate.isNotEmpty(lastYamlToMerge)) {
+      inputSetYamlList.add(lastYamlToMerge);
     }
 
     if (EmptyPredicate.isEmpty(stageIdentifiers)) {
@@ -267,27 +276,6 @@ public class ValidateAndMergeHelper {
       return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineYaml, mergedRuntimeInputYaml, false);
     }
     return mergeInputSetIntoPipelineForGivenStages(pipelineYaml, mergedRuntimeInputYaml, false, stageIdentifiers);
-  }
-
-  public String mergeInputSetIntoPipelineForRerun(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String planExecutionId, String pipelineBranch, String pipelineRepoID,
-      List<String> stageIdentifiers) {
-    String pipelineYaml = getPipelineEntity(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false)
-                              .getYaml();
-    String pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
-        ? createTemplateFromPipeline(pipelineYaml)
-        : createTemplateFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
-    if (EmptyPredicate.isEmpty(pipelineTemplate)) {
-      throw new InvalidRequestException("Pipeline " + pipelineIdentifier + " or given stage identifiers "
-          + stageIdentifiers + " do not have any runtime input or given stage identifiers don't exist in the pipeline");
-    }
-    String mergedRuntimeInputYaml = pmsExecutionService.getInputSetYamlForRerun(
-        accountId, orgIdentifier, projectIdentifier, planExecutionId, false);
-    if (EmptyPredicate.isEmpty(stageIdentifiers)) {
-      return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineTemplate, mergedRuntimeInputYaml, false);
-    }
-    return mergeInputSetIntoPipelineForGivenStages(pipelineTemplate, mergedRuntimeInputYaml, false, stageIdentifiers);
   }
 
   @VisibleForTesting

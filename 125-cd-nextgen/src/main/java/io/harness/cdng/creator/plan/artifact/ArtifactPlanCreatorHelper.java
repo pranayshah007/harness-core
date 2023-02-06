@@ -12,9 +12,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
-import io.harness.cdng.artifact.steps.ArtifactStep;
-import io.harness.cdng.artifact.steps.ArtifactStepParameters;
-import io.harness.cdng.artifact.steps.ArtifactSyncStep;
+import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
+import io.harness.cdng.artifact.steps.constants.ArtifactStepConstants;
+import io.harness.cdng.artifact.steps.constants.ArtifactSyncStepConstants;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.steps.StepType;
@@ -28,10 +28,10 @@ import org.apache.commons.lang3.StringUtils;
 public class ArtifactPlanCreatorHelper {
   public StepType getStepType(ArtifactStepParameters artifactStepParameters) {
     if (shouldCreateDelegateTask(artifactStepParameters)) {
-      return ArtifactStep.STEP_TYPE;
+      return ArtifactStepConstants.STEP_TYPE;
     }
 
-    return ArtifactSyncStep.STEP_TYPE;
+    return ArtifactSyncStepConstants.STEP_TYPE;
   }
 
   public FacilitatorType getFacilitatorType(ArtifactStepParameters artifactStepParameters) {

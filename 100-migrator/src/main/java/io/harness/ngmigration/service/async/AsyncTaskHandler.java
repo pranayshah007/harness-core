@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.async;
 
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigrationAsyncTracker;
@@ -14,10 +16,12 @@ import io.harness.beans.MigrationAsyncTracker.MigrationAsyncTrackerKeys;
 import io.harness.beans.MigrationAsyncTrackerStatus;
 import io.harness.beans.MigrationTrackReqPayload;
 import io.harness.beans.MigrationTrackRespPayload;
+import io.harness.logging.AutoLogContext;
 import io.harness.persistence.HPersistence;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableMap;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.util.concurrent.ExecutorService;
@@ -30,6 +34,10 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public abstract class AsyncTaskHandler {
+  private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
+  private static final String REQUEST_ID = "requestId";
+  private static final String TASK_TYPE = "taskType";
+
   private static final ExecutorService service = Executors.newFixedThreadPool(8);
 
   private static final Cache<String, String> cache =
@@ -81,7 +89,9 @@ public abstract class AsyncTaskHandler {
   }
 
   void process(String apiKey, String accountId, String reqId, MigrationTrackReqPayload reqPayload) {
-    try {
+    try (AutoLogContext ignore1 = new AutoLogContext(
+             ImmutableMap.of(ACCOUNT_IDENTIFIER, accountId, REQUEST_ID, reqId, TASK_TYPE, getTaskType()),
+             OVERRIDE_ERROR)) {
       MigrationTrackRespPayload respPayload = processTask(apiKey, accountId, reqId, reqPayload);
       onComplete(accountId, reqId, respPayload);
     } catch (Exception e) {
@@ -94,7 +104,7 @@ public abstract class AsyncTaskHandler {
     Query<MigrationAsyncTracker> query = hPersistence.createQuery(MigrationAsyncTracker.class)
                                              .filter(MigrationAsyncTracker.UUID_KEY, reqId)
                                              .filter(MigrationAsyncTracker.ACCOUNT_ID_KEY, accountId);
-    log.error("There was an error processing the similar workflows", e);
+    log.error("There was an error processing the task", e);
     UpdateOperations<MigrationAsyncTracker> updateOperations =
         hPersistence.createUpdateOperations(MigrationAsyncTracker.class)
             .set(MigrationAsyncTrackerKeys.status, MigrationAsyncTrackerStatus.ERROR);

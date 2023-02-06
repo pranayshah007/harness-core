@@ -9,6 +9,7 @@ package io.harness.delegate.aws.asg;
 
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgSwapService;
 
 import static software.wings.beans.LogHelper.color;
@@ -24,6 +25,7 @@ import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgSwapServiceManifestRequest;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
@@ -51,7 +53,6 @@ import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -75,6 +76,7 @@ public class AsgBlueGreenSwapServiceCommandTaskHandler extends AsgCommandTaskNGH
       throw new InvalidArgumentsException(
           Pair.of("asgCommandRequest", "Must be instance of AsgBlueGreenSwapServiceRequest"));
     }
+
     AsgBlueGreenSwapServiceRequest asgBlueGreenSwapServiceRequest = (AsgBlueGreenSwapServiceRequest) asgCommandRequest;
 
     asgInfraConfig = asgBlueGreenSwapServiceRequest.getAsgInfraConfig();
@@ -89,13 +91,13 @@ public class AsgBlueGreenSwapServiceCommandTaskHandler extends AsgCommandTaskNGH
       AwsInternalConfig awsInternalConfig =
           awsNgConfigMapper.createAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO());
 
-      AutoScalingGroup autoScalingGroup = asgSdkManager.getASG(asgBlueGreenSwapServiceRequest.getOldAsgName());
+      AutoScalingGroup prodAutoScalingGroup = asgSdkManager.getASG(asgBlueGreenSwapServiceRequest.getProdAsgName());
 
       AsgManifestHandlerChainFactory asgManifestHandlerChainFactory =
           (AsgManifestHandlerChainFactory) AsgManifestHandlerChainFactory.builder()
               .initialChainState(AsgManifestHandlerChainState.builder()
-                                     .asgName(asgBlueGreenSwapServiceRequest.getOldAsgName())
-                                     .newAsgName(asgBlueGreenSwapServiceRequest.getNewAsgName())
+                                     .asgName(asgBlueGreenSwapServiceRequest.getProdAsgName())
+                                     .newAsgName(asgBlueGreenSwapServiceRequest.getStageAsgName())
                                      .build())
               .asgSdkManager(asgSdkManager)
               .build()
@@ -106,21 +108,19 @@ public class AsgBlueGreenSwapServiceCommandTaskHandler extends AsgCommandTaskNGH
                       .awsInternalConfig(awsInternalConfig)
                       .build());
 
-      if (asgBlueGreenSwapServiceRequest.isDownsizeOldAsg() && autoScalingGroup != null) {
+      if (asgBlueGreenSwapServiceRequest.isDownsizeOldAsg() && prodAutoScalingGroup != null) {
         // if its not a first deployment, update old asg with zero desired instance count (if downsize flag is enabled)
         // and change its tag
         String asgConfigurationContent = "{}";
-
         Map<String, Object> asgConfigurationOverrideProperties = new HashMap<>();
-
         asgConfigurationOverrideProperties.put(AsgConfigurationManifestHandler.OverrideProperties.minSize, 0);
         asgConfigurationOverrideProperties.put(AsgConfigurationManifestHandler.OverrideProperties.maxSize, 0);
         asgConfigurationOverrideProperties.put(AsgConfigurationManifestHandler.OverrideProperties.desiredCapacity, 0);
-        List<String> asgScalingPolicyContentList = null;
 
         asgManifestHandlerChainFactory
-            .addHandler(AsgScalingPolicy,
-                AsgScalingPolicyManifestRequest.builder().manifests(asgScalingPolicyContentList).build())
+            .addHandler(AsgScalingPolicy, AsgScalingPolicyManifestRequest.builder().manifests(null).build())
+            .addHandler(
+                AsgScheduledUpdateGroupAction, AsgScheduledActionManifestRequest.builder().manifests(null).build())
             .addHandler(AsgConfiguration,
                 AsgConfigurationManifestRequest.builder()
                     .manifests(Arrays.asList(asgConfigurationContent))
@@ -130,13 +130,18 @@ public class AsgBlueGreenSwapServiceCommandTaskHandler extends AsgCommandTaskNGH
 
       AsgManifestHandlerChainState chainState = asgManifestHandlerChainFactory.executeUpsert();
 
-      AutoScalingGroup newAutoScalingGroup = asgSdkManager.getASG(chainState.getNewAsgName());
-      AutoScalingGroupContainer newAutoScalingGroupContainer =
-          asgTaskHelper.mapToAutoScalingGroupContainer(newAutoScalingGroup);
+      AutoScalingGroup prodAutoScalingGroupAfterTrafficShift = asgSdkManager.getASG(chainState.getNewAsgName());
+      AutoScalingGroupContainer prodAutoScalingGroupContainerAfterTrafficShift =
+          asgTaskHelper.mapToAutoScalingGroupContainer(prodAutoScalingGroupAfterTrafficShift);
+
+      AutoScalingGroup stageAutoScalingGroupAfterTrafficShift = asgSdkManager.getASG(chainState.getAsgName());
+      AutoScalingGroupContainer stageAutoScalingGroupContainerAfterTrafficShift =
+          asgTaskHelper.mapToAutoScalingGroupContainer(stageAutoScalingGroupAfterTrafficShift);
 
       AsgBlueGreenSwapServiceResult asgBlueGreenSwapServiceResult =
           AsgBlueGreenSwapServiceResult.builder()
-              .autoScalingGroupContainer(newAutoScalingGroupContainer)
+              .prodAutoScalingGroupContainer(prodAutoScalingGroupContainerAfterTrafficShift)
+              .stageAutoScalingGroupContainer(stageAutoScalingGroupContainerAfterTrafficShift)
               .trafficShifted(true)
               .build();
 
@@ -145,11 +150,13 @@ public class AsgBlueGreenSwapServiceCommandTaskHandler extends AsgCommandTaskNGH
               .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
               .asgBlueGreenSwapServiceResult(asgBlueGreenSwapServiceResult)
               .build();
+
       swapServiceLogCallback.saveExecutionLog(
           color(format("Swapping Finished Successfully. %n"), LogColor.Green, LogWeight.Bold), LogLevel.INFO,
           CommandExecutionStatus.SUCCESS);
 
       return asgBlueGreenSwapServiceResponse;
+
     } catch (Exception e) {
       swapServiceLogCallback.saveExecutionLog(color(format("Swapping Failed. %n"), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);

@@ -222,14 +222,15 @@ public class IntegrationStageUtils {
 
   public static ExecutionSource buildExecutionSourceV2(Ambiance ambiance, ExecutionTriggerInfo executionTriggerInfo,
       TriggerPayload triggerPayload, String identifier, ParameterField<Build> parameterFieldBuild,
-      String connectorIdentifier, ConnectorUtils connectorUtils, CodeBase codeBase) {
+      String connectorIdentifier, ConnectorUtils connectorUtils, CodeBase codeBase, boolean cloneManually) {
     if (!executionTriggerInfo.getIsRerun()) {
       if (executionTriggerInfo.getTriggerType() == TriggerType.MANUAL
           || executionTriggerInfo.getTriggerType() == TriggerType.SCHEDULER_CRON) {
         return handleManualExecution(parameterFieldBuild, identifier);
       } else if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK) {
         ParsedPayload parsedPayload = triggerPayload.getParsedPayload();
-        if (treatWebhookAsManualExecutionWithContextV2(
+        if (cloneManually
+            || treatWebhookAsManualExecutionWithContextV2(
                 ambiance, connectorIdentifier, connectorUtils, parsedPayload, codeBase, triggerPayload.getVersion())) {
           return handleManualExecution(parameterFieldBuild, identifier);
         }
@@ -247,7 +248,8 @@ public class IntegrationStageUtils {
         return handleManualExecution(parameterFieldBuild, identifier);
       } else if (executionTriggerInfo.getRerunInfo().getRootTriggerType() == TriggerType.WEBHOOK) {
         ParsedPayload parsedPayload = triggerPayload.getParsedPayload();
-        if (treatWebhookAsManualExecutionWithContextV2(
+        if (cloneManually
+            || treatWebhookAsManualExecutionWithContextV2(
                 ambiance, connectorIdentifier, connectorUtils, parsedPayload, codeBase, triggerPayload.getVersion())) {
           return handleManualExecution(parameterFieldBuild, identifier);
         }
@@ -327,33 +329,16 @@ public class IntegrationStageUtils {
 
     Build build = RunTimeInputHandler.resolveBuild(codeBase.getBuild());
     if (build != null) {
-      if (build.getType() == BuildType.PR) {
-        ParameterField<String> number = ((PRBuildSpec) build.getSpec()).getNumber();
-        String numberString =
-            RunTimeInputHandler.resolveStringParameter("number", "Git Clone", "identifier", number, false);
-        if (webhookExecutionSource.getWebhookEvent().getType() == PR) {
-          PRWebhookEvent prWebhookEvent = (PRWebhookEvent) webhookExecutionSource.getWebhookEvent();
-          if (isNotEmpty(numberString) && !numberString.equals(String.valueOf(prWebhookEvent.getPullRequestId()))) {
-            return true;
-          }
-        } else if (webhookExecutionSource.getWebhookEvent().getType() == BRANCH) {
-          throw new CIStageExecutionException(
-              "Building PR with expression <+trigger.prNumber> for push event is not supported");
-        }
+      if (build.getType() == BuildType.PR && webhookExecutionSource.getWebhookEvent().getType() == BRANCH) {
+        throw new CIStageExecutionException(
+            "Building PR with expression <+trigger.prNumber> for push event is not supported");
       }
 
       if (build.getType() == BuildType.BRANCH) {
         ParameterField<String> branch = ((BranchBuildSpec) build.getSpec()).getBranch();
         String branchString =
             RunTimeInputHandler.resolveStringParameter("branch", "Git Clone", "identifier", branch, false);
-        if (isNotEmpty(branchString)) {
-          if (webhookExecutionSource.getWebhookEvent().getType() == BRANCH) {
-            BranchWebhookEvent branchWebhookEvent = (BranchWebhookEvent) webhookExecutionSource.getWebhookEvent();
-            if (!branchString.equals(branchWebhookEvent.getBranchName())) {
-              return true;
-            }
-          }
-        } else {
+        if (isEmpty(branchString)) {
           throw new CIStageExecutionException("Branch should not be empty for branch build type");
         }
       }
@@ -957,5 +942,32 @@ public class IntegrationStageUtils {
 
     log.error("Non supported event type, status will be empty");
     return "";
+  }
+
+  public static boolean shouldCloneManually(CodeBase codeBase) {
+    if (codeBase == null) {
+      return false;
+    }
+    Build build = RunTimeInputHandler.resolveBuild(codeBase.getBuild());
+    if (build == null) {
+      return false;
+    }
+    switch (build.getType()) {
+      case BRANCH:
+        ParameterField<String> branch = ((BranchBuildSpec) build.getSpec()).getBranch();
+        String branchString =
+            RunTimeInputHandler.resolveStringParameter("branch", "Git Clone", "identifier", branch, false);
+        return isNotEmpty(branchString) && !branchString.equals(BRANCH_EXPRESSION);
+      case PR:
+        ParameterField<String> number = ((PRBuildSpec) build.getSpec()).getNumber();
+        String numberString =
+            RunTimeInputHandler.resolveStringParameter("number", "Git Clone", "identifier", number, false);
+        return isNotEmpty(numberString) && !numberString.equals(PR_EXPRESSION);
+      case TAG:
+        ParameterField<String> tag = ((TagBuildSpec) build.getSpec()).getTag();
+        String tagString = RunTimeInputHandler.resolveStringParameter("tag", "Git Clone", "identifier", tag, false);
+        return isNotEmpty(tagString) && !tagString.equals(TAG_EXPRESSION);
+    }
+    return false;
   }
 }

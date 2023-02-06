@@ -100,7 +100,7 @@ public class DebugResource {
   @POST
   @Timed
   @Path("health-source-spec")
-  @ApiOperation(value = "get health source spec", nickname = "getHealthSourceSpec", hidden = true)
+  @ApiOperation(value = "get health source spec", nickname = "getHealthSourceSpec")
   public RestResponse<HealthSourceSpec> validateHealthSourceSpec(
       @NotNull @BeanParam ProjectScopedProjectParams projectParams) {
     return new RestResponse<>(NextGenHealthSourceSpec.builder().build());

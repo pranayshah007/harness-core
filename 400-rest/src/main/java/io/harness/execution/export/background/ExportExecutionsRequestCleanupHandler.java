@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ExportExecutionsRequestCleanupHandler
     extends IteratorPumpModeHandler implements Handler<ExportExecutionsRequest> {
-  private static final int ACCEPTABLE_DELAY_MINUTES = 45;
+  private static final Duration ACCEPTABLE_DELAY_MINUTES = ofMinutes(45);
 
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private ExportExecutionsService exportExecutionsService;
@@ -53,7 +53,7 @@ public class ExportExecutionsRequestCleanupHandler
                            .clazz(ExportExecutionsRequest.class)
                            .fieldName(ExportExecutionsRequestKeys.nextCleanupIteration)
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofMinutes(ACCEPTABLE_DELAY_MINUTES))
+                           .acceptableNoAlertDelay(ACCEPTABLE_DELAY_MINUTES)
                            .handler(this)
                            .filterExpander(query
                                -> query.field(ExportExecutionsRequestKeys.status)
@@ -65,6 +65,29 @@ public class ExportExecutionsRequestCleanupHandler
                            .schedulingType(REGULAR)
                            .persistenceProvider(persistenceProvider)
                            .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<ExportExecutionsRequest, MorphiaFilterExpander<ExportExecutionsRequest>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       ExportExecutionsRequestCleanupHandler.class,
+                       MongoPersistenceIterator
+                           .<ExportExecutionsRequest, MorphiaFilterExpander<ExportExecutionsRequest>>builder()
+                           .clazz(ExportExecutionsRequest.class)
+                           .fieldName(ExportExecutionsRequestKeys.nextCleanupIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_DELAY_MINUTES)
+                           .handler(this)
+                           .filterExpander(query
+                               -> query.field(ExportExecutionsRequestKeys.status)
+                                      .equal(Status.READY)
+                                      .field(ExportExecutionsRequestKeys.expiresAt)
+                                      .greaterThan(0)
+                                      .field(ExportExecutionsRequestKeys.expiresAt)
+                                      .lessThan(System.currentTimeMillis()))
+                           .persistenceProvider(persistenceProvider));
   }
 
   public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {

@@ -74,4 +74,18 @@ public class NGTriggerEventServiceImpl implements NGTriggerEventsService {
   public Page<TriggerEventHistory> getEventHistory(Criteria criteria, Pageable pageable) {
     return triggerEventHistoryRepository.findAll(criteria, pageable);
   }
+
+  @Override
+  public void deleteAllForPipeline(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    Criteria criteria = Criteria.where(TriggerEventHistoryKeys.accountId)
+                            .is(accountId)
+                            .and(TriggerEventHistoryKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(TriggerEventHistoryKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(TriggerEventHistoryKeys.targetIdentifier)
+                            .is(pipelineIdentifier);
+    triggerEventHistoryRepository.deleteBatch(criteria);
+  }
 }

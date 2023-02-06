@@ -11,11 +11,14 @@ import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.DEFAULT
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.DEFAULT_LIMIT_MILLI_CPU;
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.PLUGIN_STEP_LIMIT_CPU;
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.PLUGIN_STEP_LIMIT_MEM;
+import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.getRunStepElementConfigAsJsonNode;
+import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.getRunStepElementConfigWithVariables;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.util.Lists.newArrayList;
 
 import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
@@ -32,13 +35,20 @@ import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.matrix.StrategyExpansionData;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.core.variables.NGVariableType;
+import io.harness.yaml.core.variables.NumberNGVariable;
+import io.harness.yaml.core.variables.SecretNGVariable;
+import io.harness.yaml.core.variables.StringNGVariable;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -382,6 +392,76 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     memory = Whitebox.invokeMethod(
         k8InitializeStepUtils, "getExecutionWrapperMemoryRequest", executionWrapperConfig, "acct");
     assertThat(memory).isEqualTo(300);
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testVariablePopulation() {
+    List<ExecutionWrapperConfig> steps =
+        newArrayList(ExecutionWrapperConfig.builder().step(getRunStepElementConfigWithVariables()).build());
+
+    IntegrationStageNode stageNode = K8InitializeStepUtilsHelper.getIntegrationStageNode();
+
+    List<NGVariable> pipelineVariables = new ArrayList<>();
+    pipelineVariables.add(StringNGVariable.builder()
+                              .name("pipelineVar1")
+                              .type(NGVariableType.STRING)
+                              .value(ParameterField.<String>builder().value("pipelineVar1").build())
+                              .build());
+    pipelineVariables.add(StringNGVariable.builder()
+                              .name("pipelineVar2")
+                              .type(NGVariableType.STRING)
+                              .value(ParameterField.<String>builder().value("pipelineVar2").build())
+                              .build());
+    pipelineVariables.add(NumberNGVariable.builder()
+                              .name("pipelineVar3")
+                              .type(NGVariableType.NUMBER)
+                              .value(ParameterField.<Double>builder().value(1.0).build())
+                              .build());
+
+    List<NGVariable> stageVariables = new ArrayList<>();
+    stageVariables.add(StringNGVariable.builder()
+                           .name("pipelineVar1")
+                           .type(NGVariableType.STRING)
+                           .value(ParameterField.<String>builder().value("stageVar1").build())
+                           .build());
+    stageVariables.add(StringNGVariable.builder()
+                           .name("pipelineVar2")
+                           .type(NGVariableType.STRING)
+                           .value(ParameterField.<String>builder().value("stageVar2").build())
+                           .build());
+    stageVariables.add(NumberNGVariable.builder()
+                           .name("stageVar3")
+                           .type(NGVariableType.NUMBER)
+                           .value(ParameterField.<Double>builder().value(1.0).build())
+                           .build());
+    stageVariables.add(NumberNGVariable.builder()
+                           .name("stageVar4")
+                           .type(NGVariableType.NUMBER)
+                           .value(ParameterField.<Double>builder().value(2.0).build())
+                           .build());
+
+    stageNode.setVariables(stageVariables);
+    stageNode.setPipelineVariables(pipelineVariables);
+
+    PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
+    CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
+
+    InitializeStepInfo initializeStepInfo =
+        InitializeStepInfo.builder()
+            .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
+            .build();
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
+        initializeStepInfo, stageNode, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
+    Map<String, String> envVars = stepContainers.get(0).getEnvVars();
+    assertThat(envVars.get("pipelineVar1")).isEqualTo("stepVarOverride");
+    assertThat(envVars.get("pipelineVar2")).isEqualTo("stageVar2");
+    assertThat(envVars.get("pipelineVar3")).isEqualTo("1.0");
+    assertThat(envVars.get("stageVar3")).isEqualTo("9.0");
+    assertThat(envVars.get("stageVar4")).isEqualTo("2.0");
+    assertThat(envVars.get("stepVar")).isEqualTo("stepVar");
   }
 
   private HashMap<String, ContainerResourceParams> populateMap(List<ContainerDefinitionInfo> stepContainers) {

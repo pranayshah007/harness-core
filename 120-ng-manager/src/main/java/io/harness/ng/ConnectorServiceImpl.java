@@ -495,7 +495,7 @@ public class ConnectorServiceImpl implements ConnectorService {
     int page = 0;
     int size = 2;
     Page<ConnectorResponseDTO> connectorResponseDTOList =
-        list(page, size, accountIdentifier, null, null, null, null, SECRET_MANAGER, null);
+        list(page, size, accountIdentifier, null, null, null, null, SECRET_MANAGER, null, null);
     if (connectorResponseDTOList.getContent().size() == 1) {
       throw new InvalidRequestException(
           String.format("Cannot delete the connector: %s as no other secret manager is present in the account.",
@@ -766,9 +766,9 @@ public class ConnectorServiceImpl implements ConnectorService {
   @Override
   public Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
-      ConnectorCategory sourceCategory) {
-    return defaultConnectorService.list(
-        page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, type, category, sourceCategory);
+      ConnectorCategory sourceCategory, String version) {
+    return defaultConnectorService.list(page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm,
+        type, category, sourceCategory, version);
   }
 
   @Override

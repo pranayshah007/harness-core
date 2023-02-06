@@ -14,6 +14,7 @@ import static com.google.common.base.Ascii.toUpperCase;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getMessage;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.HttpCertificate;
 import io.harness.beans.KeyValuePair;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -25,16 +26,23 @@ import io.harness.http.beans.HttpInternalResponse;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.manage.GlobalContextManager;
 import io.harness.network.Http;
+import io.harness.security.PemReader;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Splitter;
 import com.google.inject.Singleton;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
+import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
@@ -61,28 +69,18 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.ProxyAuthenticationStrategy;
 import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.http.ssl.TrustStrategy;
 import org.apache.http.util.EntityUtils;
 
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
 public class HttpServiceImpl implements HttpService {
-  private static final Splitter HEADERS_SPLITTER = Splitter.on(",").trimResults().omitEmptyStrings();
-  private static final Splitter HEADER_SPLITTER = Splitter.on(":").trimResults();
-
   @Override
-  public HttpInternalResponse executeUrl(HttpInternalConfig httpInternalConfig) throws IOException {
+  public HttpInternalResponse executeUrl(HttpInternalConfig config) throws IOException {
     HttpInternalResponse httpInternalResponse = new HttpInternalResponse();
 
-    SSLContextBuilder builder = new SSLContextBuilder();
-
-    if (!httpInternalConfig.isCertValidationRequired()) {
-      try {
-        builder.loadTrustMaterial((x509Certificates, s) -> true);
-      } catch (NoSuchAlgorithmException | KeyStoreException e) {
-        log.error("", e);
-      }
-    }
+    SSLContextBuilder builder = createSslContextBuilder(config);
 
     SSLConnectionSocketFactory sslsf = null;
     try {
@@ -93,16 +91,15 @@ public class HttpServiceImpl implements HttpService {
 
     RequestConfig.Builder requestBuilder = RequestConfig.custom();
     requestBuilder = requestBuilder.setConnectTimeout(2000);
-    requestBuilder = requestBuilder.setSocketTimeout(httpInternalConfig.getSocketTimeoutMillis());
+    requestBuilder = requestBuilder.setSocketTimeout(config.getSocketTimeoutMillis());
     HttpClientBuilder httpClientBuilder =
         HttpClients.custom().setSSLSocketFactory(sslsf).setDefaultRequestConfig(requestBuilder.build());
 
-    if (httpInternalConfig.isUseProxy()) {
-      if (Http.shouldUseNonProxy(httpInternalConfig.getUrl())) {
-        if (httpInternalConfig.isThrowErrorIfNoProxySetWithDelegateProxy()) {
+    if (config.isUseProxy()) {
+      if (Http.shouldUseNonProxy(config.getUrl())) {
+        if (config.isThrowErrorIfNoProxySetWithDelegateProxy()) {
           throw new InvalidRequestException(
-              "Delegate is configured not to use proxy for the given url: " + httpInternalConfig.getUrl(),
-              WingsException.USER);
+              "Delegate is configured not to use proxy for the given url: " + config.getUrl(), WingsException.USER);
         }
       } else {
         HttpHost proxyHost = Http.getHttpProxyHost();
@@ -123,18 +120,18 @@ public class HttpServiceImpl implements HttpService {
 
     CloseableHttpClient httpclient = httpClientBuilder.build();
 
-    HttpUriRequest httpUriRequest = getMethodSpecificHttpRequest(
-        toUpperCase(httpInternalConfig.getMethod()), httpInternalConfig.getUrl(), httpInternalConfig.getBody());
+    HttpUriRequest httpUriRequest =
+        getMethodSpecificHttpRequest(toUpperCase(config.getMethod()), config.getUrl(), config.getBody());
 
-    if (isNotEmpty(httpInternalConfig.getHeaders())) {
-      for (KeyValuePair header : httpInternalConfig.getHeaders()) {
+    if (isNotEmpty(config.getHeaders())) {
+      for (KeyValuePair header : config.getHeaders()) {
         httpUriRequest.addHeader(header.getKey(), header.getValue());
       }
     }
 
     // For NG Headers
-    if (httpInternalConfig.getRequestHeaders() != null) {
-      for (Map.Entry<String, String> entry : httpInternalConfig.getRequestHeaders().entrySet()) {
+    if (config.getRequestHeaders() != null) {
+      for (Map.Entry<String, String> entry : config.getRequestHeaders().entrySet()) {
         httpUriRequest.addHeader(entry.getKey(), entry.getValue());
       }
     }
@@ -144,10 +141,10 @@ public class HttpServiceImpl implements HttpService {
     ErrorHandlingGlobalContextData globalContextData =
         GlobalContextManager.get(ErrorHandlingGlobalContextData.IS_SUPPORTED_ERROR_FRAMEWORK);
     if (globalContextData != null && globalContextData.isSupportedErrorFramework()) {
-      return executeHttpStep(httpclient, httpInternalResponse, httpUriRequest, httpInternalConfig, true);
+      return executeHttpStep(httpclient, httpInternalResponse, httpUriRequest, config, true);
     } else {
       try {
-        executeHttpStep(httpclient, httpInternalResponse, httpUriRequest, httpInternalConfig, false);
+        executeHttpStep(httpclient, httpInternalResponse, httpUriRequest, config, false);
       } catch (SocketTimeoutException | ConnectTimeoutException | HttpHostConnectException e) {
         handleException(httpInternalResponse, e, true);
       } catch (IOException e) {
@@ -220,5 +217,90 @@ public class HttpServiceImpl implements HttpService {
     if (body != null) {
       entityEnclosingRequestBase.setEntity(new StringEntity(body, StandardCharsets.UTF_8));
     }
+  }
+
+  private SSLContextBuilder createSslContextBuilder(final HttpInternalConfig config) {
+    SSLContextBuilder builder = new SSLContextBuilder();
+
+    final boolean insecure = isInsecure(config);
+    if (config.getCertificate() == null) {
+      if (insecure) {
+        prepareInsecureSslContext(builder);
+      }
+    } else {
+      log.info("Prepare ssl/tls authentication [mutual={},insecure={}]", config.getCertificate().isMutual(), insecure);
+      prepareSslContext(builder, config);
+    }
+
+    return builder;
+  }
+
+  private void prepareInsecureSslContext(SSLContextBuilder builder) {
+    try {
+      builder.loadTrustMaterial((x509Certificates, s) -> true);
+    } catch (NoSuchAlgorithmException | KeyStoreException e) {
+      log.error("", e);
+    }
+  }
+
+  /**
+   * Should ignore the CA certificate validation? It's relate to use -k or --insecure from cURL command.
+   */
+  private boolean isInsecure(HttpInternalConfig config) {
+    return !config.isCertValidationRequired();
+  }
+
+  private void prepareSslContext(SSLContextBuilder builder, HttpInternalConfig config) {
+    io.harness.beans.HttpCertificate httpC = config.getCertificate();
+    try {
+      final KeyStore ks =
+          KeyStore.getInstance(httpC.getKeyStoreType() == null ? KeyStore.getDefaultType() : httpC.getKeyStoreType());
+      ks.load(null, null);
+
+      final String rawCert = String.valueOf(httpC.getCert());
+      final X509Certificate[] certs = readCertificates(rawCert);
+      loadTrustMaterial(builder, ks, certs, isInsecure(config));
+
+      if (httpC.isMutual()) {
+        loadKeyMaterial(builder, ks, certs, httpC);
+      }
+
+    } catch (CertificateException | KeyStoreException | NoSuchAlgorithmException | IOException | RuntimeException
+        | InvalidKeySpecException | UnrecoverableKeyException e) {
+      log.warn("Unable to prepare ssl/tls authentication", e);
+    }
+  }
+
+  /**
+   * Trusted certificates for verifying the remote endpoint's certificate
+   */
+  private void loadTrustMaterial(SSLContextBuilder builder, KeyStore ks, X509Certificate[] certs, boolean insecure)
+      throws KeyStoreException, NoSuchAlgorithmException {
+    int i = 1;
+    for (X509Certificate cert : certs) {
+      String alias = Integer.toString(i);
+      ks.setCertificateEntry(alias, cert);
+      i++;
+    }
+
+    // WHEN INSECURE WE TRUST ALL CERTIFICATE IGNORING THE CA VERIFICATION
+    final TrustStrategy trustStrategy = insecure ? (x509Certificates, s) -> true : null;
+    builder.loadTrustMaterial(ks, trustStrategy);
+  }
+
+  private void loadKeyMaterial(SSLContextBuilder builder, KeyStore ks, X509Certificate[] certs, HttpCertificate httpC)
+      throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, KeyStoreException,
+             UnrecoverableKeyException {
+    final String rawKey = String.valueOf(httpC.getCertKey());
+    final ByteArrayInputStream is = new ByteArrayInputStream(rawKey.getBytes());
+    final PrivateKey key = PemReader.readPrivateKey(is);
+    ks.setKeyEntry("key", key, null, certs);
+
+    builder.loadKeyMaterial(ks, null);
+  }
+
+  private X509Certificate[] readCertificates(String rawCert) throws CertificateException {
+    final ByteArrayInputStream is = new ByteArrayInputStream(rawCert.getBytes());
+    return PemReader.getCertificates(is);
   }
 }

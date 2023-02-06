@@ -8,7 +8,6 @@
 package io.harness.beans.stages;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
@@ -16,6 +15,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.beans.steps.STOStepSpecTypeConstants;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
@@ -27,6 +27,7 @@ import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
@@ -66,7 +67,8 @@ public class SecurityStageNode extends AbstractStageNode {
     }
   }
 
+  @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {runtime, list})
+  @YamlSchemaTypes(value = {runtime})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;
 }

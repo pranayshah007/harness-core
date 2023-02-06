@@ -16,8 +16,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.artifact.bean.yaml.SidecarsListWrapper;
-import io.harness.cdng.artifact.steps.ArtifactStepParameters;
-import io.harness.cdng.artifact.steps.SidecarsStep;
+import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
+import io.harness.cdng.artifact.steps.constants.SidecarsStepConstants;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
@@ -169,7 +169,7 @@ public class SideCarListPlanCreatorTest extends CDNGTestBase {
     PlanCreationContext ctx = PlanCreationContext.builder().dependency(dependency).build();
     PlanNode planForParentNode = sidecarListPlanCreator.createPlanForParentNode(ctx, null, childrenNodeId);
     assertThat(planForParentNode.getUuid()).isEqualTo(uuid);
-    assertThat(planForParentNode.getStepType()).isEqualTo(SidecarsStep.STEP_TYPE);
+    assertThat(planForParentNode.getStepType()).isEqualTo(SidecarsStepConstants.STEP_TYPE);
     assertThat(planForParentNode.getName()).isEqualTo(PlanCreatorConstants.SIDECARS_NODE_NAME);
     assertThat(planForParentNode.getStepParameters())
         .isEqualTo(ForkStepParameters.builder().parallelNodeIds(childrenNodeId).build());

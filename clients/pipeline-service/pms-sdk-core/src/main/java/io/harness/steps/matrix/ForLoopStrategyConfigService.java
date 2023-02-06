@@ -33,51 +33,55 @@ import org.jetbrains.annotations.NotNull;
 public class ForLoopStrategyConfigService implements StrategyConfigService {
   @Override
   public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfig strategyConfig, String childNodeId) {
-    HarnessForConfig harnessForConfig = strategyConfig.getRepeat();
-    List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
-    if (!ParameterField.isBlank(harnessForConfig.getTimes())) {
-      for (int i = 0; i < harnessForConfig.getTimes().getValue(); i++) {
-        children.add(ChildrenExecutableResponse.Child.newBuilder()
-                         .setChildNodeId(childNodeId)
-                         .setStrategyMetadata(StrategyMetadata.newBuilder()
-                                                  .setCurrentIteration(i)
-                                                  .setTotalIterations(harnessForConfig.getTimes().getValue())
-                                                  .build())
-                         .build());
-      }
-    } else if (!ParameterField.isBlank(harnessForConfig.getPartitionSize())) {
-      int currentIteration = 0;
-      List<List<String>> partitions = partitionItems(harnessForConfig);
+    try {
+      HarnessForConfig harnessForConfig = strategyConfig.getRepeat();
+      List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
+      if (!ParameterField.isBlank(harnessForConfig.getTimes())) {
+        for (int i = 0; i < harnessForConfig.getTimes().getValue(); i++) {
+          children.add(ChildrenExecutableResponse.Child.newBuilder()
+                           .setChildNodeId(childNodeId)
+                           .setStrategyMetadata(StrategyMetadata.newBuilder()
+                                                    .setCurrentIteration(i)
+                                                    .setTotalIterations(harnessForConfig.getTimes().getValue())
+                                                    .build())
+                           .build());
+        }
+      } else if (!ParameterField.isBlank(harnessForConfig.getPartitionSize())) {
+        int currentIteration = 0;
+        List<List<String>> partitions = partitionItems(harnessForConfig);
 
-      for (List<String> partition : partitions) {
-        children.add(
-            ChildrenExecutableResponse.Child.newBuilder()
-                .setChildNodeId(childNodeId)
-                .setStrategyMetadata(StrategyMetadata.newBuilder()
-                                         .setForMetadata(ForMetadata.newBuilder().addAllPartition(partition).build())
-                                         .setCurrentIteration(currentIteration)
-                                         .setTotalIterations(partition.size())
-                                         .build())
-                .build());
-        currentIteration++;
+        for (List<String> partition : partitions) {
+          children.add(
+              ChildrenExecutableResponse.Child.newBuilder()
+                  .setChildNodeId(childNodeId)
+                  .setStrategyMetadata(StrategyMetadata.newBuilder()
+                                           .setForMetadata(ForMetadata.newBuilder().addAllPartition(partition).build())
+                                           .setCurrentIteration(currentIteration)
+                                           .setTotalIterations(partition.size())
+                                           .build())
+                  .build());
+          currentIteration++;
+        }
+      } else {
+        int currentIteration = 0;
+        List<String> params = splitParamsIfNeeded(harnessForConfig);
+        for (String value : params) {
+          children.add(ChildrenExecutableResponse.Child.newBuilder()
+                           .setChildNodeId(childNodeId)
+                           .setStrategyMetadata(StrategyMetadata.newBuilder()
+                                                    .setForMetadata(ForMetadata.newBuilder().setValue(value).build())
+                                                    .setCurrentIteration(currentIteration)
+                                                    .setTotalIterations(params.size())
+                                                    .build())
+                           .build());
+          currentIteration++;
+        }
       }
-    } else {
-      int currentIteration = 0;
-      List<String> params = splitParamsIfNeeded(harnessForConfig);
-      for (String value : params) {
-        children.add(ChildrenExecutableResponse.Child.newBuilder()
-                         .setChildNodeId(childNodeId)
-                         .setStrategyMetadata(StrategyMetadata.newBuilder()
-                                                  .setForMetadata(ForMetadata.newBuilder().setValue(value).build())
-                                                  .setCurrentIteration(currentIteration)
-                                                  .setTotalIterations(params.size())
-                                                  .build())
-                         .build());
-        currentIteration++;
-      }
+      return children;
+    } catch (ClassCastException classCastException) {
+      throw new InvalidRequestException(
+          "Could not parse the repeat strategy. Please ensure you are using list of strings");
     }
-
-    return children;
   }
 
   private List<List<String>> partitionItems(HarnessForConfig harnessForConfig) {
