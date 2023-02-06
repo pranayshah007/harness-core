@@ -31,14 +31,10 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.harnesscode.HarnessCodeConnectorDTO;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.git.GitClientHelper;
-import io.harness.product.ci.scm.proto.AzureProvider;
-import io.harness.product.ci.scm.proto.BitbucketCloudProvider;
-import io.harness.product.ci.scm.proto.BitbucketServerProvider;
-import io.harness.product.ci.scm.proto.GithubProvider;
-import io.harness.product.ci.scm.proto.GitlabProvider;
-import io.harness.product.ci.scm.proto.Provider;
+import io.harness.product.ci.scm.proto.*;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -66,6 +62,8 @@ public class ScmGitProviderMapper {
       return mapToBitbucketProvider((BitbucketConnectorDTO) scmConnector, debug);
     } else if (scmConnector instanceof AzureRepoConnectorDTO) {
       return mapToAzureRepoProvider((AzureRepoConnectorDTO) scmConnector, debug);
+    } else if (scmConnector instanceof HarnessCodeConnectorDTO) {
+      return mapToHarnessCodeProvider((HarnessCodeConnectorDTO) scmConnector, debug);
     } else {
       throw new NotImplementedException(
           String.format("The scm apis for the provider type %s is not supported", scmConnector.getClass()));
@@ -194,6 +192,27 @@ public class ScmGitProviderMapper {
         .setGithub(createGithubProvider(githubConnector))
         .setDebug(debug)
         .setEndpoint(GitClientHelper.getGithubApiURL(githubConnector.getUrl()))
+        .setSkipVerify(skipVerify)
+        .setAdditionalCertsPath(getAdditionalCertsPath())
+        .build();
+  }
+
+  private Provider mapToHarnessCodeProvider(HarnessCodeConnectorDTO harnessCodeConnectorDTO, boolean debug) {
+    boolean skipVerify = checkScmSkipVerify();
+    String[] splitedUrl = harnessCodeConnectorDTO.getUrl().split("/");
+    String projectId = splitedUrl[splitedUrl.length - 1];
+    String orgId = splitedUrl[splitedUrl.length - 2];
+    String accountId = splitedUrl[splitedUrl.length - 3];
+
+    HarnessPlatform harnessPlatform =
+        HarnessPlatform.newBuilder().setAccount(accountId).setOrganization(orgId).setProject(projectId).build();
+
+    HarnessProvider harnessProvider = HarnessProvider.newBuilder().setHarnessPlatform(harnessPlatform).build();
+
+    return Provider.newBuilder()
+        .setHarness(harnessProvider)
+        .setDebug(debug)
+        .setEndpoint(harnessCodeConnectorDTO.getUrl())
         .setSkipVerify(skipVerify)
         .setAdditionalCertsPath(getAdditionalCertsPath())
         .build();

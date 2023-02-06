@@ -84,6 +84,8 @@ import io.harness.connector.mappers.githubconnector.GithubDTOToEntity;
 import io.harness.connector.mappers.githubconnector.GithubEntityToDTO;
 import io.harness.connector.mappers.gitlabconnector.GitlabDTOToEntity;
 import io.harness.connector.mappers.gitlabconnector.GitlabEntityToDTO;
+import io.harness.connector.mappers.harnesscode.HarnessCodeDTOToEntity;
+import io.harness.connector.mappers.harnesscode.HarnessCodeEntityToDTO;
 import io.harness.connector.mappers.helm.HttpHelmDTOToEntity;
 import io.harness.connector.mappers.helm.HttpHelmEntityToDTO;
 import io.harness.connector.mappers.helm.OciHelmDTOToEntity;
@@ -165,14 +167,7 @@ import io.harness.connector.validator.SecretManagerConnectorValidator;
 import io.harness.connector.validator.ServiceNowConnectorValidator;
 import io.harness.connector.validator.SpotConnectorValidator;
 import io.harness.connector.validator.TerraformCloudConnectorValidator;
-import io.harness.connector.validator.scmValidators.AwsCodeCommitValidator;
-import io.harness.connector.validator.scmValidators.AzureRepoConnectorValidator;
-import io.harness.connector.validator.scmValidators.BitbucketConnectorValidator;
-import io.harness.connector.validator.scmValidators.GitConnectorValidator;
-import io.harness.connector.validator.scmValidators.GithubConnectorValidator;
-import io.harness.connector.validator.scmValidators.GitlabConnectorValidator;
-import io.harness.connector.validator.scmValidators.JenkinsConnectorValidationsParamsProvider;
-import io.harness.connector.validator.scmValidators.TasConnectorValidator;
+import io.harness.connector.validator.scmValidators.*;
 import io.harness.delegate.beans.connector.ConnectorType;
 
 import java.util.HashMap;
@@ -301,6 +296,10 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.CODECOMMIT,
         new ConnectorRegistrar(ConnectorCategory.CODE_REPO, AwsCodeCommitValidator.class,
             NoOpConnectorValidationParamsProvider.class, AwsCodeCommitDTOToEntity.class, AwsCodeCommitEntityToDTO.class,
+            NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.HARNESS_CODE,
+        new ConnectorRegistrar(ConnectorCategory.CODE_REPO, HarnessCodeConnectorValidator.class,
+            NoOpConnectorValidationParamsProvider.class, HarnessCodeDTOToEntity.class, HarnessCodeEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.CE_AZURE,
         new ConnectorRegistrar(ConnectorCategory.CLOUD_COST, CCMConnectorValidator.class,

@@ -21,6 +21,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harnesscode.HarnessCodeConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 
 import lombok.experimental.UtilityClass;
@@ -37,6 +38,8 @@ public class GitApiAccessDecryptionHelper {
       return getAPIAccessDecryptableEntity((GitlabConnectorDTO) scmConnector);
     } else if (scmConnector instanceof AzureRepoConnectorDTO) {
       return getAPIAccessDecryptableEntity((AzureRepoConnectorDTO) scmConnector);
+    } else if (scmConnector instanceof HarnessCodeConnectorDTO) {
+      return getAPIAccessDecryptableEntity((HarnessCodeConnectorDTO) scmConnector);
     }
     throw new InvalidRequestException("Unsupported Scm Connector");
   }
@@ -102,6 +105,13 @@ public class GitApiAccessDecryptionHelper {
       throw new InvalidRequestException("The given connector doesn't have api access field set");
     }
     return azureRepoConnectorDTO.getApiAccess().getSpec();
+  }
+
+  public DecryptableEntity getAPIAccessDecryptableEntity(HarnessCodeConnectorDTO harnessCodeConnectorDTO) {
+    if (harnessCodeConnectorDTO == null) {
+      throw new InvalidRequestException("The given connector doesn't have api access field set");
+    }
+    return harnessCodeConnectorDTO.getApiAccess().getSpec();
   }
 
   public void setAPIAccessDecryptableEntity(ScmConnector scmConnector, DecryptableEntity decryptableEntity) {

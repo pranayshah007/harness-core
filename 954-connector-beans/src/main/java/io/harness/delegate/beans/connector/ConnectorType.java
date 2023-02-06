@@ -46,6 +46,7 @@ public enum ConnectorType implements EntitySubtype {
   @JsonProperty("Gitlab") GITLAB("Gitlab"),
   @JsonProperty("Bitbucket") BITBUCKET("Bitbucket"),
   @JsonProperty("Codecommit") CODECOMMIT("Codecommit"),
+  @JsonProperty("HarnessCode") HARNESS_CODE("HarnessCode"),
   @JsonProperty("CEAws") CE_AWS("CEAws"),
   @JsonProperty("CEAzure") CE_AZURE("CEAzure"),
   @JsonProperty("GcpCloudCost") GCP_CLOUD_COST("GcpCloudCost"),

@@ -7,12 +7,7 @@
 
 package io.harness.utils;
 
-import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
-import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
-import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
-import static io.harness.delegate.beans.connector.ConnectorType.GIT;
-import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
-import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
+import static io.harness.delegate.beans.connector.ConnectorType.*;
 import static io.harness.delegate.beans.connector.scm.adapter.AzureRepoToGitMapper.mapToGitConnectionType;
 
 import static java.lang.String.format;
@@ -49,6 +44,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harnesscode.HarnessCodeConnectorDTO;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -115,6 +111,7 @@ public class ConnectorUtils {
       case BITBUCKET:
       case CODECOMMIT:
       case AZURE_REPO:
+      case HARNESS_CODE:
         connectorDetails = getGitConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
         break;
       case GCP:
@@ -213,6 +210,9 @@ public class ConnectorUtils {
         AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) connectorConfigDTO;
         connectorDetailsBuilder.executeOnDelegate(azureRepoConnectorDTO.getExecuteOnDelegate());
         break;
+      case HARNESS_CODE:
+        connectorDetailsBuilder.executeOnDelegate(false);
+        break;
       default:
         break;
     }
@@ -297,6 +297,9 @@ public class ConnectorUtils {
     } else if (gitConnector.getConnectorType() == AZURE_REPO) {
       AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getUrl();
+    } else if (gitConnector.getConnectorType() == HARNESS_CODE) {
+      HarnessCodeConnectorDTO harnessCodeConnectorDTO = (HarnessCodeConnectorDTO) gitConnector.getConnectorConfig();
+      return harnessCodeConnectorDTO.getUrl();
     } else {
       throw new CIStageExecutionException("scmType " + gitConnector.getConnectorType() + "is not supported.");
     }

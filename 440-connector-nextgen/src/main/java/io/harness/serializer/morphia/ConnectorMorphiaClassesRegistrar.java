@@ -81,6 +81,7 @@ import io.harness.connector.entities.embedded.gitlabconnector.GitlabSshAuthentic
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabTokenApiAccess;
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabUsernamePassword;
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabUsernameToken;
+import io.harness.connector.entities.embedded.harnesscodeconnector.HarnessCodeConnector;
 import io.harness.connector.entities.embedded.helm.HttpHelmConnector;
 import io.harness.connector.entities.embedded.helm.HttpHelmUsernamePasswordAuthentication;
 import io.harness.connector.entities.embedded.helm.OciHelmConnector;
@@ -143,6 +144,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(GithubConnector.class);
     set.add(GitlabConnector.class);
     set.add(BitbucketConnector.class);
+    set.add(HarnessCodeConnector.class);
     set.add(CEAzureConfig.class);
     set.add(CEK8sDetails.class);
     set.add(AwsCodeCommitConfig.class);

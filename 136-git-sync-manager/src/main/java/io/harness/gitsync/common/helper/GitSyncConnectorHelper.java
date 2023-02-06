@@ -21,6 +21,7 @@ import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.ManagerExecutable;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
@@ -30,6 +31,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harnesscode.HarnessCodeConnectorDTO;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidRequestException;
@@ -119,8 +121,11 @@ public class GitSyncConnectorHelper {
     PrincipalContextData currentPrincipal = GlobalContextManager.get(PrincipalContextData.PRINCIPAL_CONTEXT);
     // setting service principal for connector decryption in case of Git Connector
     GitSyncUtils.setGitSyncServicePrincipal();
-    ScmConnector scmConnector =
-        decryptGitApiAccessHelper.decryptScmApiAccess(connectorDTO, accountId, projectIdentifier, orgIdentifier);
+    ScmConnector scmConnector = connectorDTO;
+    if (!(scmConnector instanceof HarnessCodeConnectorDTO)) {
+      scmConnector =
+          decryptGitApiAccessHelper.decryptScmApiAccess(connectorDTO, accountId, projectIdentifier, orgIdentifier);
+    }
     // setting back current principal for all other operations
     GitSyncUtils.setCurrentPrincipalContext(currentPrincipal);
     return scmConnector;
