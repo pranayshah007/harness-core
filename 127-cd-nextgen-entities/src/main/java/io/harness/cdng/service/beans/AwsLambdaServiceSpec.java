@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.service;
+package io.harness.cdng.service.beans;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.visitor.helpers.manifest.AwsLambdaManifestVisitorHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.k8s.ServiceSpecType;
@@ -38,7 +38,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(ServiceSpecType.AWS_LAMBDA)
 @SimpleVisitorHelper(helperClass = AwsLambdaManifestVisitorHelper.class)
 @TypeAlias("awsLambdaServiceSpec")
-@RecasterAlias("io.harness.cdng.service.AwsLambdaServiceSpec")
+@RecasterAlias("io.harness.cdng.service.beans.AwsLambdaServiceSpec")
 public class AwsLambdaServiceSpec implements ServiceSpec, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

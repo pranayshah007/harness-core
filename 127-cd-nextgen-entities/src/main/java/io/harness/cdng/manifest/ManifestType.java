@@ -56,6 +56,7 @@ public interface ManifestType {
   String AsgScheduledUpdateGroupAction = "AsgScheduledUpdateGroupAction";
   String GoogleCloudFunctionDefinition = "GoogleCloudFunctionDefinition";
   String HelmRepoOverride = "HelmRepoOverride";
+  String AwsLambda = "AwsLambda";
 
   static HashSet<String> getAllManifestTypes() {
     return new HashSet<>(Arrays.asList(ManifestType.K8Manifest, ManifestType.VALUES, ManifestType.OpenshiftTemplate,

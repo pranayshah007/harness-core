@@ -88,6 +88,7 @@ import io.harness.cdng.manifest.yaml.AsgLaunchTemplateManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScalingPolicyManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScheduledUpdateGroupActionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
+import io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AzureRepoStore;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
@@ -130,6 +131,7 @@ import io.harness.cdng.manifest.yaml.kinds.AsgLaunchTemplateManifest;
 import io.harness.cdng.manifest.yaml.kinds.AsgScalingPolicyManifest;
 import io.harness.cdng.manifest.yaml.kinds.AsgScheduledUpdateGroupActionManifest;
 import io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest;
+import io.harness.cdng.manifest.yaml.kinds.AwsLambdaDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
@@ -377,5 +379,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(GoogleCloudFunctionDefinitionManifestOutcome.class, 140069);
     kryo.register(GoogleFunctionsInfrastructureOutcome.class, 1500001);
     kryo.register(CfCliVersionNG.class, 140070);
+    kryo.register(AwsLambdaDefinitionManifest.class, 140071);
+    kryo.register(AwsLambdaDefinitionManifestOutcome.class, 140072);
   }
 }

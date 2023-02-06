@@ -7,13 +7,15 @@
 
 package io.harness.cdng.visitor.helpers.manifest;
 
+import io.harness.cdng.manifest.yaml.kinds.AwsLambdaDefinitionManifest;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
 public class AwsLambdaManifestVisitorHelper implements ConfigValidator {
   @Override
   public Object createDummyVisitableElement(Object originalElement) {
-    return null;
+    AwsLambdaDefinitionManifest awsLambdaDefinitionManifest = (AwsLambdaDefinitionManifest) originalElement;
+    return AwsLambdaDefinitionManifest.builder().identifier(awsLambdaDefinitionManifest.getIdentifier()).build();
   }
 
   @Override
