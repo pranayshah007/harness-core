@@ -266,7 +266,11 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK)
   GOOGLE_CLOUD_FUNCTIONS_ROLLBACK("Google Cloud Functions Rollback",
       Arrays.asList(ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS), "Google Functions",
-      StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK);
+      StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.BAMBOO_BUILD)
+  BAMBOO_BUILD(
+      "Bamboo Build", Arrays.asList(ServiceDefinitionType.values()), "Builds", StepSpecTypeConstants.BAMBOO_BUILD);
+  ;
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

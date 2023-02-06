@@ -22,6 +22,7 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.sm.states.FilePathAssertionEntry;
+import software.wings.sm.states.ParameterEntry;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -45,6 +46,7 @@ public class BambooArtifactDelegateRequest implements ArtifactSourceDelegateRequ
   String authMechanism;
   List<String> delegateSelectors;
   String connectorRef;
+  List<ParameterEntry> parameterEntries;
   List<EncryptedDataDetail> encryptedDataDetails;
   String planKey;
   List<String> artifactPaths;
@@ -56,6 +58,7 @@ public class BambooArtifactDelegateRequest implements ArtifactSourceDelegateRequ
   private String buildDisplayName;
   private String buildFullDisplayName;
   private String description;
+  private String queuedBuildUrl;
   private List<FilePathAssertionEntry> filePathAssertionMap;
 
   public Set<String> getDelegateSelectors() {

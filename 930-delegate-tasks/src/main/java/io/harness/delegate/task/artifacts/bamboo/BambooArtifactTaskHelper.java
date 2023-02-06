@@ -67,27 +67,11 @@ public class BambooArtifactTaskHelper {
           artifactTaskResponse = getSuccessTaskResponse(bambooArtifactTaskHandler.getArtifactPaths(attributes));
           saveLogs(executionLogCallback, "Get the Bamboo Job " + registryUrl);
           break;
-
-          //                case GET_JOB_PARAMETERS:
-          //                    saveLogs(executionLogCallback, "Get the Jenkins Job");
-          //                    artifactTaskResponse =
-          //                    getSuccessTaskResponse(jenkinsArtifactTaskHandler.getJobWithParamters(attributes));
-          //                    saveLogs(executionLogCallback, "Get the Jenkins Job " + registryUrl);
-          //                    break;
-          //                case JENKINS_BUILD:
-          //                    saveLogs(executionLogCallback, "Trigger the Jenkins Builds");
-          //                    artifactTaskResponse =
-          //                            getSuccessTaskResponse(jenkinsArtifactTaskHandler.triggerBuild(attributes,
-          //                            executionLogCallback));
-          //                    saveLogs(executionLogCallback, "Trigger the Jenkins Builds " + registryUrl);
-          //                    break;
-          //                case JENKINS_POLL_TASK:
-          //                    saveLogs(executionLogCallback, "Get the Jenkins poll task");
-          //                    artifactTaskResponse =
-          //                            getSuccessTaskResponse(jenkinsArtifactTaskHandler.pollTask(attributes,
-          //                            executionLogCallback));
-          //                    saveLogs(executionLogCallback, "Get the Jenkins poll task " + registryUrl);
-          //                    break;
+        case BAMBOO_BUILD:
+          saveLogs(executionLogCallback, "Trigger the Jenkins Builds");
+          artifactTaskResponse = getSuccessTaskResponse(bambooArtifactTaskHandler.triggerBuild(attributes));
+          saveLogs(executionLogCallback, "Trigger the Jenkins Builds " + registryUrl);
+          break;
         default:
           saveLogs(executionLogCallback,
               "No corresponding Jenkins artifact task type [{}]: " + artifactTaskParameters.toString());

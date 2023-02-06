@@ -534,7 +534,10 @@ public enum EntityType {
       IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT),
   @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK)
   GOOGLE_CLOUD_FUNCTIONS_ROLLBACK(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK,
-      IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK);
+      IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.BAMBOO_BUILD)
+  BAMBOO_BUILD(ModuleType.CD, EntityTypeConstants.BAMBOO_BUILD, IdentifierRef.class, EntityYamlRootNames.BAMBOO_BUILD),
+  ;
 
   private final ModuleType moduleType;
   String yamlName;
