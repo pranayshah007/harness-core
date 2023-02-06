@@ -346,7 +346,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
     } catch (TimeoutException e) {
       executionDataBuilder.expired(true);
       handleException(executionDataBuilder, envVariablesMap, e, "Script execution timed out");
-    } catch (RuntimeException e) {
+    } catch (RuntimeException | IOException e) {
       handleException(
           executionDataBuilder, envVariablesMap, e, format("Exception occurred in Script execution. Reason: %s", e));
     } catch (Exception e) {
