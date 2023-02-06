@@ -5625,6 +5625,7 @@ maven_install(
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
         "https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-core/4.3.4",
+        "https://oss.sonatype.org/content/repositories/snapshots/",
     ],
 )
 
