@@ -17,6 +17,7 @@ import io.harness.exception.InvalidRequestException;
 import io.debezium.embedded.EmbeddedEngineChangeEvent;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
+import io.debezium.engine.Header;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -44,7 +45,8 @@ public class EventsFrameworkChangeConsumerSnapshot extends EventsFrameworkChange
     // Add the batch records to the stream(s)
     for (ChangeEvent<String, String> record : recordsMap.values()) {
       cnt++;
-      Optional<OpType> opType = getOperationType(((EmbeddedEngineChangeEvent<String, String>) record).sourceRecord());
+      Optional<OpType> opType =
+          getOperationType(((EmbeddedEngineChangeEvent<String, String, List<Header>>) record).sourceRecord());
       if (!opType.isEmpty()) {
         if (!opType.get().equals(OpType.SNAPSHOT)) {
           throw new InvalidRequestException("Snapshot completed");

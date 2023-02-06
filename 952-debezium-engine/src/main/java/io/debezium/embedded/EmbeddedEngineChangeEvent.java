@@ -8,8 +8,9 @@
 package io.debezium.embedded;
 
 import io.debezium.engine.ChangeEvent;
+import io.debezium.engine.Header;
 import io.debezium.engine.RecordChangeEvent;
-import lombok.ToString;
+import java.util.List;
 import org.apache.kafka.connect.source.SourceRecord;
 
 /**
@@ -19,35 +20,51 @@ import org.apache.kafka.connect.source.SourceRecord;
  * Please change this class if you change the version of Debezium in the future, right now it is 2.0.0.Final
  */
 
-@ToString
-public class EmbeddedEngineChangeEvent<K, V> implements ChangeEvent<K, V>, RecordChangeEvent<V> {
+public class EmbeddedEngineChangeEvent<K, V, H> implements ChangeEvent<K, V>, RecordChangeEvent<V> {
   private final K key;
   private final V value;
+  private final List<Header<H>> headers;
   private final SourceRecord sourceRecord;
 
-  public EmbeddedEngineChangeEvent(K key, V value, SourceRecord sourceRecord) {
+  EmbeddedEngineChangeEvent(K key, V value, List<Header<H>> headers, SourceRecord sourceRecord) {
     this.key = key;
     this.value = value;
+    this.headers = headers;
     this.sourceRecord = sourceRecord;
   }
 
+  @Override
   public K key() {
-    return this.key;
+    return key;
   }
 
+  @Override
   public V value() {
-    return this.value;
+    return value;
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
+  public List<Header<H>> headers() {
+    return headers;
+  }
+
+  @Override
   public V record() {
-    return this.value;
+    return value;
   }
 
+  @Override
   public String destination() {
-    return this.sourceRecord.topic();
+    return sourceRecord.topic();
   }
 
   public SourceRecord sourceRecord() {
-    return this.sourceRecord;
+    return sourceRecord;
+  }
+
+  @Override
+  public String toString() {
+    return "EmbeddedEngineChangeEvent [key=" + key + ", value=" + value + ", sourceRecord=" + sourceRecord + "]";
   }
 }
