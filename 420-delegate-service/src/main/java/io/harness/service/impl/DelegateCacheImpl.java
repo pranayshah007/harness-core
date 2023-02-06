@@ -12,7 +12,6 @@ import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIR
 import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATES_FROM_GROUP_CACHE;
 import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATE_CACHE;
 import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATE_GROUP_CACHE;
-import static io.harness.serializer.DelegateServiceCacheRegistrar.PERPETUAL_TASK_COUNT_DELEGATE;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -66,7 +65,6 @@ public class DelegateCacheImpl implements DelegateCache {
   @Inject @Named(DELEGATE_CACHE) RLocalCachedMap<String, Delegate> delegateRedisCache;
   @Inject @Named(DELEGATE_GROUP_CACHE) RLocalCachedMap<String, DelegateGroup> delegateGroupRedisCache;
   @Inject @Named(DELEGATES_FROM_GROUP_CACHE) RLocalCachedMap<String, List<Delegate>> delegatesFromGroupRedisCache;
-  @Inject @Named(PERPETUAL_TASK_COUNT_DELEGATE) RLocalCachedMap<String, Integer> perpetualTaskCountAccountCache;
 
   @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
 

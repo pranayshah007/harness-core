@@ -56,14 +56,6 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
     return cacheManager.getCache(DELEGATES_FROM_GROUP_CACHE, String.class, List.class, getLocalCachedMapOptions(30));
   }
 
-  @Provides
-  @Named(PERPETUAL_TASK_COUNT_DELEGATE)
-  @Singleton
-  public RLocalCachedMap<String, Integer> getPerpetualTasksCountInAccount(DelegateRedissonCacheManager cacheManager) {
-    return cacheManager.getCache(
-        PERPETUAL_TASK_COUNT_DELEGATE, String.class, Integer.class, getLocalCachedMapOptions(30));
-  }
-
   @Override
   protected void configure() {
     registerRequiredBindings();
@@ -79,9 +71,6 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
     rmapBinder.addBinding(DELEGATES_FROM_GROUP_CACHE)
         .to(Key.get(
             new TypeLiteral<RLocalCachedMap<String, List<Delegate>>>() {}, Names.named(DELEGATES_FROM_GROUP_CACHE)));
-    rmapBinder.addBinding(PERPETUAL_TASK_COUNT_DELEGATE)
-        .to(Key.get(
-            new TypeLiteral<RLocalCachedMap<String, Integer>>() {}, Names.named(PERPETUAL_TASK_COUNT_DELEGATE)));
   }
 
   public LocalCachedMapOptions getLocalCachedMapOptions(int timeToLiveInMinutes) {
