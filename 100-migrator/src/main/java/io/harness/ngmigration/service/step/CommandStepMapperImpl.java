@@ -76,4 +76,9 @@ public class CommandStepMapperImpl extends StepMapper {
     String templateId2 = stepYaml2.getTemplateUuid();
     return StringUtils.isNoneBlank(templateId2, templateId1) && StringUtils.equals(templateId1, templateId2);
   }
+
+  @Override
+  public boolean loopingSupported() {
+    return true;
+  }
 }

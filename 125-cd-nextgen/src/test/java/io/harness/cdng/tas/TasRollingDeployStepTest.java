@@ -400,4 +400,120 @@ public class TasRollingDeployStepTest extends CDNGTestBase {
             () -> responseData);
     assertThat(stepResponse1.getStatus()).isEqualTo(Status.FAILED);
   }
+
+  @Test(expected = Exception.class)
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testFinalizeExecutionWithSecurityContextWhenException() throws Exception {
+    TasRollingDeployStepParameters tasRollingDeployStepParameters =
+        TasRollingDeployStepParameters.infoBuilder().build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .spec(tasRollingDeployStepParameters)
+                                                      .timeout(ParameterField.createValueField("10m"))
+                                                      .build();
+
+    String instanceIndex = "1";
+    String appId = "id";
+    String displayName = "displayName";
+    String org = "org";
+    String space = "space";
+    UnitProgressData unitProgressData = UnitProgressData.builder().build();
+    CfInternalInstanceElement cfInternalInstanceElement = CfInternalInstanceElement.builder()
+                                                              .instanceIndex(instanceIndex)
+                                                              .applicationId(appId)
+                                                              .displayName(displayName)
+                                                              .build();
+    TasServerInstanceInfo tasServerInstanceInfo = TasServerInstanceInfo.builder()
+                                                      .id(appId + ":" + instanceIndex)
+                                                      .instanceIndex(instanceIndex)
+                                                      .tasApplicationName(displayName)
+                                                      .tasApplicationGuid(appId)
+                                                      .organization(org)
+                                                      .space(space)
+                                                      .build();
+    CfRollingDeployResponseNG responseData = CfRollingDeployResponseNG.builder()
+                                                 .unitProgressData(unitProgressData)
+                                                 .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+                                                 .build();
+
+    doReturn(unitProgressData).when(tasStepHelper).completeUnitProgressData(any(), any(), any());
+
+    ThrowingSupplier<CfRollingDeployResponseNG> responseDataSupplier = () -> responseData;
+    CfRollingDeployResponseNG cfRollingDeployResponseNG = (CfRollingDeployResponseNG) responseDataSupplier.get();
+    TanzuApplicationServiceInfrastructureOutcome tanzuApplicationServiceInfrastructureOutcome =
+        TanzuApplicationServiceInfrastructureOutcome.builder().organization(org).space(space).build();
+    doReturn(tanzuApplicationServiceInfrastructureOutcome)
+        .when(outcomeService)
+        .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+    StepResponse.StepOutcome stepOutcome = StepResponse.StepOutcome.builder().name("name").build();
+    doReturn(stepOutcome)
+        .when(instanceInfoService)
+        .saveServerInstancesIntoSweepingOutput(ambiance, Arrays.asList(tasServerInstanceInfo));
+
+    tasRollingDeployStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+        TasExecutionPassThroughData.builder().build(), () -> { throw new Exception("exception"); });
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testFinalizeExecutionWithSecurityContextWhenCurrentProdInfoIsNotNull() throws Exception {
+    TasRollingDeployStepParameters tasRollingDeployStepParameters =
+        TasRollingDeployStepParameters.infoBuilder().build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .spec(tasRollingDeployStepParameters)
+                                                      .timeout(ParameterField.createValueField("10m"))
+                                                      .build();
+
+    String instanceIndex = "1";
+    String appId = "id";
+    String displayName = "displayName";
+    String org = "org";
+    String space = "space";
+    UnitProgressData unitProgressData = UnitProgressData.builder().build();
+    CfInternalInstanceElement cfInternalInstanceElement = CfInternalInstanceElement.builder()
+                                                              .instanceIndex(instanceIndex)
+                                                              .applicationId(appId)
+                                                              .displayName(displayName)
+                                                              .build();
+    TasServerInstanceInfo tasServerInstanceInfo = TasServerInstanceInfo.builder()
+                                                      .id(appId + ":" + instanceIndex)
+                                                      .instanceIndex(instanceIndex)
+                                                      .tasApplicationName(displayName)
+                                                      .tasApplicationGuid(appId)
+                                                      .organization(org)
+                                                      .space(space)
+                                                      .build();
+    CfRollingDeployResponseNG responseData = CfRollingDeployResponseNG.builder()
+                                                 .unitProgressData(unitProgressData)
+                                                 .errorMessage("error")
+                                                 .newApplicationInfo(TasApplicationInfo.builder().build())
+                                                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                 .currentProdInfo(TasApplicationInfo.builder().build())
+                                                 .build();
+
+    doReturn(unitProgressData).when(tasStepHelper).completeUnitProgressData(any(), any(), any());
+
+    ThrowingSupplier<CfRollingDeployResponseNG> responseDataSupplier = () -> responseData;
+    CfRollingDeployResponseNG tasRunPluginResponse = (CfRollingDeployResponseNG) responseDataSupplier.get();
+    TanzuApplicationServiceInfrastructureOutcome tanzuApplicationServiceInfrastructureOutcome =
+        TanzuApplicationServiceInfrastructureOutcome.builder().organization(org).space(space).build();
+    doReturn(tanzuApplicationServiceInfrastructureOutcome)
+        .when(outcomeService)
+        .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+    doReturn(TasInfraConfig.builder().build()).when(cdStepHelper).getTasInfraConfig(any(), any());
+
+    StepResponse.StepOutcome stepOutcome = StepResponse.StepOutcome.builder().name("name").build();
+    doReturn(stepOutcome)
+        .when(instanceInfoService)
+        .saveServerInstancesIntoSweepingOutput(ambiance, Arrays.asList(tasServerInstanceInfo));
+
+    StepResponse stepResponse1 =
+        tasRollingDeployStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+            TasExecutionPassThroughData.builder().tasManifestsPackage(TasManifestsPackage.builder().build()).build(),
+            () -> responseData);
+    assertThat(stepResponse1.getStatus()).isEqualTo(Status.SUCCEEDED);
+  }
 }

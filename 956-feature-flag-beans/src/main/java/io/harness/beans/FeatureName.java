@@ -614,7 +614,8 @@ public enum FeatureName {
   SPG_DISABLE_SECRET_DETAILS("Disable secret management logs show in CG", HarnessTeam.SPG),
   CDS_AWS_NATIVE_LAMBDA("This flag is to enable the AWS Native Lambda Deployments for users. "
           + "This flag only works with Service and Environments v2",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  CI_PIPELINE_VARIABLES_IN_STEPS("For enabling pipeline variables as env variables in CI steps", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {

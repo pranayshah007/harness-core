@@ -10,7 +10,9 @@ package io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
@@ -34,6 +36,11 @@ public class BitbucketListRepoScmApiErrorHandler implements ScmApiErrorHandler {
             ErrorMessageFormatter.formatMessage(
                 LIST_REPO_FAILED_MESSAGE + ScmErrorExplanations.REPO_NOT_FOUND, errorMetadata),
             new ScmUnauthorizedException(errorMessage));
+      case 429:
+        throw NestedExceptionUtils.hintWithExplanationException(ScmErrorHints.RATE_LIMIT,
+            ScmErrorExplanations.RATE_LIMIT,
+            new ScmBadRequestException(
+                EmptyPredicate.isEmpty(errorMessage) ? ScmErrorDefaultMessage.RATE_LIMIT : errorMessage));
       default:
         log.error(String.format("Error while listing bitbucket repos: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);

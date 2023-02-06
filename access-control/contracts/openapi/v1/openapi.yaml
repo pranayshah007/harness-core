@@ -508,15 +508,15 @@ components:
         identifier:
           type: string
           description: Role Identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           description: Role Name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         permissions:
           type: array
           description: Permissions for this Role.
@@ -579,14 +579,14 @@ components:
         identifier:
           type: string
           minLength: 1
-          maxLength: 64
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          maxLength: 128
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           description: Role identifier
         name:
           type: string
           minLength: 1
-          maxLength: 64
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          maxLength: 128
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           description: Role name
         permissions:
           type: array

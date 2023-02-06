@@ -147,13 +147,14 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
       clusterDataAggregatedTableName = "clusterDataHourlyAggregated";
     }
 
-    log.info("ClusterDataToBigQuery Job- isDeploymentOnPrem: " + config.getDeployMode());
+    log.info("ClusterDataToBigQuery Job- isDeploymentOnPrem: {} and isClickHouseEnabled: {}", config.getDeployMode(),
+        config.isClickHouseEnabled());
 
-    if (!DeployMode.isOnPrem(config.getDeployMode().name())) {
-      handleDataForBigQuery(batchJobType, jobConstants, batchSize, billingDataReader, billingDataFileName);
-    } else {
+    if (DeployMode.isOnPrem(config.getDeployMode().name()) && config.isClickHouseEnabled()) {
       handleDataForClickHouse(batchJobType, jobConstants, batchSize, billingDataReader, zdt, clusterDataTableName,
           clusterDataAggregatedTableName);
+    } else {
+      handleDataForBigQuery(batchJobType, jobConstants, batchSize, billingDataReader, billingDataFileName);
     }
     return null;
   }

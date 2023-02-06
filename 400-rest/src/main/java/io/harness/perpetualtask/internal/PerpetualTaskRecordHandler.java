@@ -82,6 +82,9 @@ public class PerpetualTaskRecordHandler extends IteratorPumpModeHandler implemen
   @Inject private KryoSerializer kryoSerializer;
   @Inject private PerpetualTaskRecordDao perpetualTaskRecordDao;
 
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(45);
+  private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(30);
+
   @Override
   protected void createAndStartIterator(PumpExecutorOptions executorOptions, Duration targetInterval) {
     iterator =
@@ -92,8 +95,8 @@ public class PerpetualTaskRecordHandler extends IteratorPumpModeHandler implemen
                     .clazz(PerpetualTaskRecord.class)
                     .fieldName(PerpetualTaskRecordKeys.assignIteration)
                     .targetInterval(targetInterval)
-                    .acceptableNoAlertDelay(ofSeconds(45))
-                    .acceptableExecutionTime(ofSeconds(30))
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                    .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
                     .handler(this::assign)
                     .filterExpander(query
                         -> query.filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_UNASSIGNED)
@@ -104,6 +107,29 @@ public class PerpetualTaskRecordHandler extends IteratorPumpModeHandler implemen
                     .schedulingType(REGULAR)
                     .persistenceProvider(persistenceProvider)
                     .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator =
+        (MongoPersistenceIterator<PerpetualTaskRecord, MorphiaFilterExpander<PerpetualTaskRecord>>)
+            persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                PerpetualTaskRecordHandler.class,
+                MongoPersistenceIterator.<PerpetualTaskRecord, MorphiaFilterExpander<PerpetualTaskRecord>>builder()
+                    .clazz(PerpetualTaskRecord.class)
+                    .fieldName(PerpetualTaskRecordKeys.assignIteration)
+                    .targetInterval(targetInterval)
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                    .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
+                    .handler(this::assign)
+                    .filterExpander(query
+                        -> query.filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_UNASSIGNED)
+                               .field(PerpetualTaskRecordKeys.assignAfterMs)
+                               .lessThanOrEq(System.currentTimeMillis()))
+                    .entityProcessController(
+                        new CrossEnvironmentAccountStatusBasedEntityProcessController<>(accountService))
+                    .persistenceProvider(persistenceProvider));
   }
 
   @Override

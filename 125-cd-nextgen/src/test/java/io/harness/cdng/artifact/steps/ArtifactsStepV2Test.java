@@ -50,6 +50,7 @@ import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScripts;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cdng.artifact.steps.constants.ArtifactsStepV2Constants;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
@@ -949,7 +950,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     levels.add(Level.newBuilder()
                    .setRuntimeId(generateUuid())
                    .setSetupId(generateUuid())
-                   .setStepType(ArtifactsStepV2.STEP_TYPE)
+                   .setStepType(ArtifactsStepV2Constants.STEP_TYPE)
                    .build());
     return Ambiance.newBuilder()
         .setPlanExecutionId(generateUuid())

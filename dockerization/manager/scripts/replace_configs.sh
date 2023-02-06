@@ -200,6 +200,34 @@ else
   fi
 fi
 
+if [[ "" != "$DMS_MONGO_CONNECT_TIMEOUT" ]]; then
+  export DMS_MONGO_CONNECT_TIMEOUT; yq -i '.dms-mongo.connectTimeout=env(DMS_MONGO_CONNECT_TIMEOUT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DMS_MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
+  export DMS_MONGO_SERVER_SELECTION_TIMEOUT; yq -i '.dms-mongo.serverSelectionTimeout=env(DMS_MONGO_SERVER_SELECTION_TIMEOUT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DMS_MONGO_SOCKET_TIMEOUT" ]]; then
+  export DMS_MONGO_SOCKET_TIMEOUT; yq -i '.dms-mongo.socketTimeout=env(DMS_MONGO_SOCKET_TIMEOUT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DMS_MAX_CONNECTION_IDLE_TIME" ]]; then
+  export DMS_MAX_CONNECTION_IDLE_TIME; yq -i '.dms-mongo.maxConnectionIdleTime=env(DMS_MAX_CONNECTION_IDLE_TIME)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DMS_MONGO_INDEX_MANAGER_MODE" ]]; then
+  export DMS_MONGO_INDEX_MANAGER_MODE; yq -i '.dms-mongo.indexManagerMode=env(DMS_MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DMS_MONGO_CONNECTIONS_PER_HOST" ]]; then
+  export DMS_MONGO_CONNECTIONS_PER_HOST; yq -i '.dms-mongo.connectionsPerHost=env(DMS_MONGO_CONNECTIONS_PER_HOST)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DMS_MONGO_URI" ]]; then
+  export DMS_MONGO_URI; yq -i '.dms-mongo.uri=env(DMS_MONGO_URI)' $CONFIG_FILE
+fi
+
 if [[ "" != "$CF_CLIENT_API_KEY" ]]; then
   export CF_CLIENT_API_KEY; yq -i '.cfClientConfig.apiKey=env(CF_CLIENT_API_KEY)' $CONFIG_FILE
 fi

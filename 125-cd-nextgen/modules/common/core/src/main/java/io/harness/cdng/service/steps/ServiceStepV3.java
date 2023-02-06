@@ -629,8 +629,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   private String mergeServiceInputsIntoService(String originalServiceYaml, Map<String, Object> serviceInputs) {
     Map<String, Object> serviceInputsYaml = new HashMap<>();
     serviceInputsYaml.put(YamlTypes.SERVICE_ENTITY, serviceInputs);
-    return MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
-        originalServiceYaml, YamlPipelineUtils.writeYamlString(serviceInputsYaml), true);
+    return MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+        originalServiceYaml, YamlPipelineUtils.writeYamlString(serviceInputsYaml), true, true);
   }
 
   private NGEnvironmentConfig mergeEnvironmentInputs(
@@ -640,8 +640,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     }
     Map<String, Object> environmentInputYaml = new HashMap<>();
     environmentInputYaml.put(YamlTypes.ENVIRONMENT_YAML, environmentInputs);
-    String resolvedYaml = MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
-        originalEnvYaml, YamlPipelineUtils.writeYamlString(environmentInputYaml), true);
+    String resolvedYaml = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+        originalEnvYaml, YamlPipelineUtils.writeYamlString(environmentInputYaml), true, true);
     return YamlUtils.read(resolvedYaml, NGEnvironmentConfig.class);
   }
 

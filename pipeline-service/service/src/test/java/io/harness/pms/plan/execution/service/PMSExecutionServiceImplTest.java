@@ -34,6 +34,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.merger.helpers.InputSetMergeHelper;
+import io.harness.pms.merger.helpers.InputSetTemplateHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -56,8 +58,11 @@ import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Assertions;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -387,5 +392,31 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
     assertEquals("inputSetYaml",
         pmsExecutionService.getInputSetYamlForRerun(
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID, false));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testMergeInputSetIntoPipelineForRerun() {
+    doReturn((PipelineEntity.builder().yaml("pipelineYaml").build()))
+        .when(validateAndMergeHelper)
+        .getPipelineEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false);
+    doReturn(Optional.of(PipelineExecutionSummaryEntity.builder().inputSetYaml("inputSetYaml").build()))
+        .when(pmsExecutionSummaryRepository)
+        .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID, true);
+    MockedStatic<InputSetMergeHelper> aStatic = Mockito.mockStatic(InputSetMergeHelper.class);
+    aStatic.when(() -> InputSetMergeHelper.mergeInputSetIntoPipeline("pipelineTemplate", "inputSetYaml", false))
+        .thenReturn("finalMergedYaml");
+    MockedStatic<InputSetTemplateHelper> bStatic = Mockito.mockStatic(InputSetTemplateHelper.class);
+    bStatic.when(() -> InputSetTemplateHelper.createTemplateFromPipeline("pipelineYaml"))
+        .thenReturn("pipelineTemplate");
+    Assertions.assertEquals("finalMergedYaml",
+        pmsExecutionService.mergeRuntimeInputIntoPipelineForRerun(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, PLAN_EXECUTION_ID, null, null, Collections.emptyList()));
+    bStatic.when(() -> InputSetTemplateHelper.createTemplateFromPipeline("pipelineYaml")).thenReturn("");
+    assertThat(pmsExecutionService.mergeRuntimeInputIntoPipelineForRerun(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                   PIPELINE_IDENTIFIER, PLAN_EXECUTION_ID, null, null, Collections.emptyList()))
+        .isEqualTo("");
   }
 }

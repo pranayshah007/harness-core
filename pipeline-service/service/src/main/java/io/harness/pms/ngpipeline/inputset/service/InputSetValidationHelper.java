@@ -145,8 +145,8 @@ public class InputSetValidationHelper {
     if (EmptyPredicate.isEmpty(identifier)) {
       throw new InvalidRequestException("Identifier cannot be empty");
     }
-    if (identifier.length() > 63) {
-      throw new InvalidRequestException("Input Set identifier length cannot be more that 63 characters.");
+    if (identifier.length() > 127) {
+      throw new InvalidRequestException("Input Set identifier length cannot be more that 127 characters.");
     }
     InputSetYamlHelper.confirmPipelineIdentifierInInputSet(yaml, pipelineIdentifier);
     InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml, "inputSet", orgIdentifier, projectIdentifier);

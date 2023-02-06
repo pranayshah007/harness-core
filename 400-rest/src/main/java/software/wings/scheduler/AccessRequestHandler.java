@@ -36,6 +36,9 @@ import java.time.Duration;
 @OwnedBy(HarnessTeam.PL)
 @TargetModule(_970_RBAC_CORE)
 public class AccessRequestHandler extends IteratorPumpModeHandler implements Handler<AccessRequest> {
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(15);
+  private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(10);
+
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private AccessRequestService accessRequestService;
   @Inject private MorphiaPersistenceProvider<AccessRequest> persistenceProvider;
@@ -53,12 +56,29 @@ public class AccessRequestHandler extends IteratorPumpModeHandler implements Han
                     .filterExpander(query -> query.filter(AccessRequestKeys.accessActive, Boolean.TRUE))
                     .fieldName(AccessRequestKeys.nextIteration)
                     .targetInterval(targetInterval)
-                    .acceptableNoAlertDelay(ofSeconds(15))
-                    .acceptableExecutionTime(ofSeconds(10))
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                    .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
                     .handler(this)
                     .schedulingType(REGULAR)
                     .persistenceProvider(persistenceProvider)
                     .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<AccessRequest, MorphiaFilterExpander<AccessRequest>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       AccessRequest.class,
+                       MongoPersistenceIterator.<AccessRequest, MorphiaFilterExpander<AccessRequest>>builder()
+                           .clazz(AccessRequest.class)
+                           .filterExpander(query -> query.filter(AccessRequestKeys.accessActive, Boolean.TRUE))
+                           .fieldName(AccessRequestKeys.nextIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
+                           .handler(this)
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override

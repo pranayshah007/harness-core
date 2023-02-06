@@ -76,6 +76,25 @@ public class DelegateDisconnectDetectorIterator
   }
 
   @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator =
+        (MongoPersistenceIterator<Delegate, MorphiaFilterExpander<Delegate>>)
+            persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions, Delegate.class,
+                MongoPersistenceIterator.<Delegate, MorphiaFilterExpander<Delegate>>builder()
+                    .clazz(Delegate.class)
+                    .fieldName(DelegateKeys.delegateDisconnectDetectorNextIteration)
+                    .filterExpander(q
+                        -> q.field(DelegateKeys.lastHeartBeat)
+                               .lessThan(
+                                   System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(DELEGATE_DISCONNECT_TIMEOUT)))
+                    .targetInterval(targetInterval)
+                    .acceptableNoAlertDelay(Duration.ofMinutes(DELEGATE_EXPIRY_CHECK_MINUTES + 2))
+                    .handler(this)
+                    .persistenceProvider(persistenceProvider));
+  }
+
+  @Override
   public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
     iteratorName = "DelegateDisconnectDetector";
 

@@ -36,6 +36,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GCPBillingHandler extends IteratorPumpModeHandler implements Handler<GCPBillingJobEntity> {
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(1);
+  private static final int ITERATOR_SCHEDULE_INITIAL_DELAY = 0;
+
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject GCPMarketPlaceService gcpMarketPlaceService;
@@ -52,7 +55,7 @@ public class GCPBillingHandler extends IteratorPumpModeHandler implements Handle
                    .clazz(GCPBillingJobEntity.class)
                    .fieldName(GCPBillingJobEntityKeys.nextIteration)
                    .targetInterval(targetInterval)
-                   .acceptableNoAlertDelay(ofMinutes(1))
+                   .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                    .executorService(executor)
                    .semaphore(semaphore)
                    .handler(this)
@@ -63,7 +66,34 @@ public class GCPBillingHandler extends IteratorPumpModeHandler implements Handle
                    .build();
     // this'll check every 30 minutes if there are any new jobs to process.
     // this value must be lower than `targetInterval`
-    executor.scheduleAtFixedRate(() -> iterator.process(), 0, 30, TimeUnit.MINUTES);
+    executor.scheduleAtFixedRate(()
+                                     -> iterator.process(),
+        ITERATOR_SCHEDULE_INITIAL_DELAY, executorOptions.getInterval().toSeconds(), TimeUnit.SECONDS);
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(
+        executorOptions.getPoolSize(), new ThreadFactoryBuilder().setNameFormat("Iterator-GCPBilling").build());
+    Semaphore semaphore = new Semaphore(executorOptions.getPoolSize());
+    iterator = MongoPersistenceIterator.<GCPBillingJobEntity, MorphiaFilterExpander<GCPBillingJobEntity>>builder()
+                   .mode(ProcessMode.REDIS_BATCH)
+                   .clazz(GCPBillingJobEntity.class)
+                   .fieldName(GCPBillingJobEntityKeys.nextIteration)
+                   .targetInterval(targetInterval)
+                   .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                   .executorService(executor)
+                   .semaphore(semaphore)
+                   .handler(this)
+                   .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                   .persistenceProvider(persistenceProvider)
+                   .build();
+    // this'll check every 30 minutes if there are any new jobs to process.
+    // this value must be lower than `targetInterval`
+    executor.scheduleAtFixedRate(()
+                                     -> iterator.redisBatchProcess(),
+        ITERATOR_SCHEDULE_INITIAL_DELAY, executorOptions.getInterval().toSeconds(), TimeUnit.SECONDS);
   }
 
   @Override
