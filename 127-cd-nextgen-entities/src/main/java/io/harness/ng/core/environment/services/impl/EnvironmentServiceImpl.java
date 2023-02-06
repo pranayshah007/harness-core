@@ -427,7 +427,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public List<Environment> fetchesNonDeletedEnvironmentFromListOfIdentifiers(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> envRefsList) {
-    List<String> envIdentifierList = getIdentifiersFromRefs(envRefsList);
+    List<String> envIdentifierList = IdentifierRefHelper.getIdentifiersFromRefs(envRefsList);
 
     Criteria criteria = Criteria.where(EnvironmentKeys.accountId)
                             .is(accountId)
@@ -444,24 +444,10 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
   public List<Environment> fetchesEnvironmentFromListOfIdentifiers(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> envRefsList) {
-    List<String> envIdentifierList = getIdentifiersFromRefs(envRefsList);
+    List<String> envIdentifierList = IdentifierRefHelper.getIdentifiersFromRefs(envRefsList);
     Criteria criteria = getEnvironmentsEqualityCriteria(accountId, orgIdentifier, projectIdentifier);
     criteria = criteria.and(EnvironmentKeys.identifier).in(envIdentifierList);
     return environmentRepository.findAll(criteria);
-  }
-
-  public List<String> getIdentifiersFromRefs(List<String> envRefsList) {
-    // assume same scope
-    List<String> envIdentifierList = new ArrayList<>();
-    for (String envRef : envRefsList) {
-      String[] envRefSplit = StringUtils.split(envRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-      if (envRefSplit == null || envRefSplit.length == 1) {
-        envIdentifierList.add(envRef);
-      } else if (envRefSplit.length == 2) {
-        envIdentifierList.add(envRefSplit[1]);
-      }
-    }
-    return envIdentifierList;
   }
 
   public String getScopedErrorMessageForInvalidEnvironments(

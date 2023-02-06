@@ -20,8 +20,11 @@ import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.exception.InvalidRequestException;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -259,6 +262,20 @@ public class IdentifierRefHelper {
           "Invalid Identifier Reference %s. " + GENERIC_IDENTIFIER_REFERENCE_HELP, scopedIdentifierConfig));
     }
     return identifier;
+  }
+
+  public List<String> getIdentifiersFromRefs(List<String> envRefsList) {
+    // assume same scope
+    List<String> envIdentifierList = new ArrayList<>();
+    for (String envRef : envRefsList) {
+      String[] envRefSplit = StringUtils.split(envRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+      if (envRefSplit == null || envRefSplit.length == 1) {
+        envIdentifierList.add(envRef);
+      } else if (envRefSplit.length == 2) {
+        envIdentifierList.add(envRefSplit[1]);
+      }
+    }
+    return envIdentifierList;
   }
 
   // provide fields in order of accountId, orgId and projectId
