@@ -9,12 +9,17 @@ package io.harness.cdng.aws.lambda;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.exception.WingsException.USER;
 
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
+import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -31,7 +36,11 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.validator.constraints.NotEmpty;
 
 @Slf4j
 public class AwsLambdaHelper extends CDStepHelper {
@@ -67,5 +76,20 @@ public class AwsLambdaHelper extends CDStepHelper {
         .chainEnd(isChainEnd)
         .passThroughData(passThroughData)
         .build();
+  }
+
+  public ManifestOutcome getAwsLambdaManifestOutcome(@NotEmpty Collection<ManifestOutcome> manifestOutcomes) {
+    // Filter only Aws Lambda supported manifest types
+    List<ManifestOutcome> awsLambdaManifests =
+        manifestOutcomes.stream()
+            .filter(
+                manifestOutcome -> ManifestType.AWS_LAMBDA_SUPPORTED_MANIFEST_TYPES.contains(manifestOutcome.getType()))
+            .collect(Collectors.toList());
+
+    // Check if Aws Lambda Manifests are empty
+    if (isEmpty(awsLambdaManifests)) {
+      throw new InvalidRequestException("Aws Lambda Manifest is mandatory.", USER);
+    }
+    return awsLambdaManifests.get(0);
   }
 }
