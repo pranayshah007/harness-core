@@ -96,7 +96,7 @@ scmConnectionConfig:
 
 logServiceConfig:
   internalUrl: http://localhost:8079
-  baseUrl: https://9202-122-171-21-106.in.ngrok.io
+  baseUrl: https://3688-2401-4900-1cb9-7bf5-c59d-1398-e4bf-7128.in.ngrok.io
 
   globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
 
@@ -132,7 +132,7 @@ ciExecutionServiceConfig:
   defaultCPULimit: 400
   defaultInternalImageConnector: ''
   pvcDefaultStorageSize: 25600
-  delegateServiceEndpointVariableValue: "tcp://0.tcp.in.ngrok.io:18944"
+  delegateServiceEndpointVariableValue: "tcp://0.tcp.in.ngrok.io:11936"
   addonImage: harness/ci-addon:1.14.19
   liteEngineImage: harness/ci-lite-engine:1.14.20
   isLocal: true

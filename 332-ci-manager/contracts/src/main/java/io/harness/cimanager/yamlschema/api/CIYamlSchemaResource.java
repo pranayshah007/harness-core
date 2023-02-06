@@ -54,6 +54,12 @@ public interface CIYamlSchemaResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier, @QueryParam("scope") Scope scope);
+
+  @GET
+  @ApiOperation(value = "dummy api for checking integration stage", nickname = "idpProxyServer")
+  @Path("/idpProxyServer")
+  String idpProxyServer();
+
   @GET
   @ApiOperation(value = "dummy api for checking integration stage", nickname = "dummyApiForSwaggerStageSchemaCheck")
   @Path("/dummyApiForSwaggerStageSchemaCheck")
