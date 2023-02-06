@@ -39,6 +39,9 @@ public class CIYAMLSanitizationServiceImpl implements CIYAMLSanitizationService 
         continue;
       }
       CIAbstractStepNode abstractNode = IntegrationStageUtils.getStepNode(executionWrapper);
+      if (abstractNode != null) {
+        continue;
+      }
       if (!(abstractNode.getStepSpecType() instanceof CIStepInfo)) {
         continue;
       }

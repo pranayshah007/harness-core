@@ -166,7 +166,9 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
     if (executionWrapper != null) {
       if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
         CIAbstractStepNode stepNode = getStepElementConfig(executionWrapper);
-        stepIdentifiers.add(stepNode.getIdentifier());
+        if (stepNode != null) {
+          stepIdentifiers.add(stepNode.getIdentifier());
+        }
       } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
         ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapper);
         parallelStepElementConfig.getSections().forEach(section -> addStepIdentifier(section, stepIdentifiers));
@@ -193,7 +195,8 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
     try {
       return YamlUtils.read(executionWrapperConfig.getStep().toString(), CIAbstractStepNode.class);
     } catch (Exception ex) {
-      throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
+      return null;
+      //      throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
     }
   }
 

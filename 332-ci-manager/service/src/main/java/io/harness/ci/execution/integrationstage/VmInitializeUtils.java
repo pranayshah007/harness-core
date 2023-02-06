@@ -86,7 +86,9 @@ public class VmInitializeUtils {
   private void validateStageConfigUtil(ExecutionWrapperConfig executionWrapper) {
     if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
       CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapper);
-      validateStepConfig(stepNode);
+      if (stepNode != null) {
+        validateStepConfig(stepNode);
+      }
     } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
       ParallelStepElementConfig parallelStepElementConfig =
           IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);

@@ -84,7 +84,9 @@ public class ValidationUtils {
         return;
       }
       CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapper);
-      validateStepUtil(stepNode, infrastructure);
+      if (stepNode != null) {
+        validateStepUtil(stepNode, infrastructure);
+      }
     } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
       ParallelStepElementConfig parallelStepElementConfig =
           IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);

@@ -171,6 +171,9 @@ public class K8InitializeStepUtils {
       OSType os, Ambiance ambiance, int maxAllocatableMemoryRequest, int maxAllocatableCpuRequest, int stepIndex,
       String stepGroupIdOfParent) {
     CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapper);
+    if (stepNode == null) {
+      return null;
+    }
     if (Strings.isNotBlank(stepGroupIdOfParent)) {
       stepNode.setIdentifier(stepGroupIdOfParent + "_" + stepNode.getIdentifier());
     }
@@ -785,12 +788,14 @@ public class K8InitializeStepUtils {
 
     if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
       CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapper);
-      if (resource.equals(MEMORY)) {
-        executionWrapperRequest = getStepMemoryLimit(stepNode, accountId);
-      } else if (resource.equals(CPU)) {
-        executionWrapperRequest = getStepCpuLimit(stepNode, accountId);
-      } else {
-        throw new InvalidRequestException("Invalid resource type : " + resource);
+      if (stepNode != null) {
+        if (resource.equals(MEMORY)) {
+          executionWrapperRequest = getStepMemoryLimit(stepNode, accountId);
+        } else if (resource.equals(CPU)) {
+          executionWrapperRequest = getStepCpuLimit(stepNode, accountId);
+        } else {
+          throw new InvalidRequestException("Invalid resource type : " + resource);
+        }
       }
     } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
       ParallelStepElementConfig parallel = IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
@@ -865,7 +870,9 @@ public class K8InitializeStepUtils {
     Integer executionWrapperMemoryRequest = 0;
     if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
       CIAbstractStepNode stepElementConfig = IntegrationStageUtils.getStepNode(executionWrapper);
-      executionWrapperMemoryRequest = getStepMemoryLimit(stepElementConfig, accountId);
+      if (stepElementConfig != null) {
+        executionWrapperMemoryRequest = getStepMemoryLimit(stepElementConfig, accountId);
+      }
     } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
       ParallelStepElementConfig parallel = IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
       if (isNotEmpty(parallel.getSections())) {
@@ -977,7 +984,9 @@ public class K8InitializeStepUtils {
     Integer executionWrapperCpuRequest = 0;
     if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
       CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapper);
-      executionWrapperCpuRequest = getStepCpuLimit(stepNode, accountId);
+      if (stepNode != null) {
+        executionWrapperCpuRequest = getStepCpuLimit(stepNode, accountId);
+      }
     } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
       ParallelStepElementConfig parallelStepElement =
           IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
@@ -1101,7 +1110,9 @@ public class K8InitializeStepUtils {
       Map<String, List<ConnectorConversionInfo>> map, String stepGroupIdOfParent) {
     if (executionWrapperConfig.getStep() != null && !executionWrapperConfig.getStep().isNull()) {
       CIAbstractStepNode stepNode = getStepNode(executionWrapperConfig);
-      map.putAll(getStepConnectorConversionInfo(stepNode, ambiance, stepGroupIdOfParent));
+      if (stepNode != null) {
+        map.putAll(getStepConnectorConversionInfo(stepNode, ambiance, stepGroupIdOfParent));
+      }
     } else if (executionWrapperConfig.getParallel() != null && !executionWrapperConfig.getParallel().isNull()) {
       ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapperConfig);
       for (ExecutionWrapperConfig executionWrapper : parallelStepElementConfig.getSections()) {
@@ -1227,14 +1238,16 @@ public class K8InitializeStepUtils {
     try {
       return YamlUtils.read(executionWrapperConfig.getStep().toString(), CIAbstractStepNode.class);
     } catch (Exception ex) {
-      throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
+      log.error("Failed to deserialize ExecutionWrapperConfig step node", ex);
+      //      throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
+      return null;
     }
   }
 
   private boolean isStepEligibleForExtraResource(ExecutionWrapperConfig executionWrapperConfig) {
     if (executionWrapperConfig.getStep() != null && !executionWrapperConfig.getStep().isNull()) {
       CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapperConfig);
-      return !(stepNode.getStepSpecType() instanceof BackgroundStepInfo);
+      return stepNode != null && !(stepNode.getStepSpecType() instanceof BackgroundStepInfo);
     } else if (executionWrapperConfig.getParallel() != null && !executionWrapperConfig.getParallel().isNull()) {
       ParallelStepElementConfig parallelStepElementConfig =
           IntegrationStageUtils.getParallelStepElementConfig(executionWrapperConfig);

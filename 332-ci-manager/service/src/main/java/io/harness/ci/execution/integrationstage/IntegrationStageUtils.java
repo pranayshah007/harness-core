@@ -159,7 +159,9 @@ public class IntegrationStageUtils {
     try {
       return YamlUtils.read(executionWrapperConfig.getStep().toString(), CIAbstractStepNode.class);
     } catch (Exception ex) {
-      throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
+      log.error("Failed to deserialize ExecutionWrapperConfig step node", ex);
+      //      throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
+      return null;
     }
   }
 
@@ -523,7 +525,10 @@ public class IntegrationStageUtils {
       }
 
       if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
-        stepNodes.add(getStepNode(executionWrapper));
+        CIAbstractStepNode step = getStepNode(executionWrapper);
+        if (step != null) {
+          stepNodes.add(step);
+        }
       } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
         ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapper);
         List<CIAbstractStepNode> fromParallel = getAllSteps(parallelStepElementConfig.getSections());
@@ -748,9 +753,11 @@ public class IntegrationStageUtils {
     for (ExecutionWrapperConfig executionWrapper : wrappers) {
       if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
         CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapper);
-        String identifier = getConnectorIdentifier(stepNode);
-        if (identifier != null) {
-          connectorIdentifiers.add(identifier);
+        if (stepNode != null) {
+          String identifier = getConnectorIdentifier(stepNode);
+          if (identifier != null) {
+            connectorIdentifiers.add(identifier);
+          }
         }
       } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
         ParallelStepElementConfig parallelStepElementConfig =
