@@ -8,6 +8,7 @@
 package io.harness.service.instancesyncperpetualtask;
 
 import static io.harness.perpetualtask.PerpetualTaskType.ASG_INSTANCE_SYNC_NG;
+import static io.harness.perpetualtask.PerpetualTaskType.AWS_LAMBDA_INSTANCE_SYNC_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.AWS_SSH_WINRM_INSTANCE_SYNC_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.AZURE_SSH_WINRM_INSTANCE_SYNC_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.AZURE_WEB_APP_NG_INSTANCE_SYNC;
@@ -60,6 +61,7 @@ public final class InstanceSyncPerpetualTaskServiceRegister {
   private final TasInstanceSyncPerpetualTaskHandler tasInstanceSyncPerpetualTaskHandler;
   private final AsgInstanceSyncPerpetualTaskHandler asgInstanceSyncPerpetualTaskHandler;
   private final GoogleFunctionInstanceSyncPerpetualTaskHandler googleFunctionInstanceSyncPerpetualTaskHandler;
+  private final GoogleFunctionInstanceSyncPerpetualTaskHandler googleFunctionInstanceSyncPerpetualTaskHandler;
 
   public InstanceSyncPerpetualTaskHandler getInstanceSyncPerpetualService(String perpetualTaskType) {
     switch (perpetualTaskType) {
@@ -88,6 +90,8 @@ public final class InstanceSyncPerpetualTaskServiceRegister {
       case ASG_INSTANCE_SYNC_NG:
         return asgInstanceSyncPerpetualTaskHandler;
       case GOOGLE_CLOUD_FUNCTION_INSTANCE_SYNC_NG:
+        return googleFunctionInstanceSyncPerpetualTaskHandler;
+      case AWS_LAMBDA_INSTANCE_SYNC_NG:
         return googleFunctionInstanceSyncPerpetualTaskHandler;
       default:
         throw new UnexpectedException(

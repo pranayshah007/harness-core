@@ -18,6 +18,7 @@ import io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStep;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStep;
+import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStep;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStep;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStep;
@@ -76,7 +77,7 @@ public class InstanceSyncStepResolver {
       AsgBlueGreenSwapServiceStep.STEP_TYPE.getType(), AsgBlueGreenRollbackStep.STEP_TYPE.getType(),
       GoogleFunctionsDeployStep.STEP_TYPE.getType(), GoogleFunctionsRollbackStep.STEP_TYPE.getType(),
       GoogleFunctionsDeployWithoutTrafficStep.STEP_TYPE.getType(),
-      GoogleFunctionsTrafficShiftStep.STEP_TYPE.getType()));
+      GoogleFunctionsTrafficShiftStep.STEP_TYPE.getType(), AwsLambdaDeployStep.STEP_TYPE.getType()));
 
   public boolean shouldRunInstanceSync(StepType stepType) {
     return nonNull(stepType) && INSTANCE_SYN_STEP_TYPES.contains(stepType.getType());
