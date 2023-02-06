@@ -361,6 +361,7 @@ public abstract class WorkflowHandler {
     if (EmptyPredicate.isEmpty(stepYamls)) {
       return Collections.emptyList();
     }
+    MigratorExpressionUtils.render(phaseStep, getExpressions(phase, context.getStepExpressionFunctors()));
     List<StepSkipStrategy> cgSkipConditions = phaseStep.getStepSkipStrategies();
     Map<String, String> skipStrategies = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(cgSkipConditions)
