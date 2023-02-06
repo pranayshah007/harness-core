@@ -33,9 +33,6 @@
           }
         },
         {
-          "type": "array"
-        },
-        {
           "type": "string",
           "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
           "minLength": 1
@@ -3986,9 +3983,6 @@
               "items": {
                 "$ref": "#/definitions/FailureStrategyConfig"
               }
-            },
-            {
-              "type": "array"
             },
             {
               "type": "string",
@@ -9136,9 +9130,6 @@
               }
             },
             {
-              "type": "array"
-            },
-            {
               "type": "string",
               "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
@@ -10160,9 +10151,6 @@
               "items": {
                 "$ref": "#/definitions/FailureStrategyConfig"
               }
-            },
-            {
-              "type": "array"
             },
             {
               "type": "string",
