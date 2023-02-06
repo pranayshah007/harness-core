@@ -181,7 +181,8 @@ public class ConnectorServiceImplTest extends CategoryTest {
         FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(accountIdentifier, null, null, connectorIdentifier);
     int page = 0;
     int size = 2;
-    when(defaultConnectorService.list(page, size, accountIdentifier, null, null, null, null, SECRET_MANAGER, null))
+    when(
+        defaultConnectorService.list(page, size, accountIdentifier, null, null, null, null, SECRET_MANAGER, null, null))
         .thenReturn(connectorsPage);
     when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(
              fullyQualifiedIdentifier, null, null, accountIdentifier, true))
