@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -32,7 +32,6 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
   public static final String DELEGATE_CACHE = "delegate";
   public static final String DELEGATE_GROUP_CACHE = "delegate_group";
   public static final String DELEGATES_FROM_GROUP_CACHE = "delegates_from_group";
-  public static final String PERPETUAL_TASK_COUNT_DELEGATE = "perpetual_task_count_delegate";
   private static final Integer CACHE_SIZE = 10000;
 
   @Provides
