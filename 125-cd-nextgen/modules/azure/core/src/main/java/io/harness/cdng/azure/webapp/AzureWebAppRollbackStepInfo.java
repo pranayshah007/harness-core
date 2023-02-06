@@ -10,9 +10,7 @@ package io.harness.cdng.azure.webapp;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.AzureWebAppSwapSlotStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -27,43 +25,39 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
-import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SimpleVisitorHelper(helperClass = AzureWebAppSwapSlotStepInfoVisitorHelper.class)
-@JsonTypeName(StepSpecTypeConstants.AZURE_SWAP_SLOT)
-@TypeAlias("azureWebAppSwapSlotStepInfo")
-@RecasterAlias("io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepInfo")
-public class AzureWebAppSwapSlotStepInfo
-    extends AzureWebAppSwapSlotBaseStepInfo implements CDAbstractStepInfo, Visitable {
+@SimpleVisitorHelper(helperClass = AzureWebAppRollbackStepInfoVisitorHelper.class)
+@JsonTypeName(StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK)
+@TypeAlias("azureWebAppRollbackStepInfo")
+@RecasterAlias("io.harness.cdng.azure.webapp.AzureWebAppRollbackStepInfo")
+public class AzureWebAppRollbackStepInfo
+    extends AzureWebAppRollbackBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   private String uuid;
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
-  @NotNull @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> targetSlot;
 
   @Builder(builderMethodName = "infoBuilder")
-  public AzureWebAppSwapSlotStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      String slotDeploymentStepFqn, ParameterField<String> targetSlot) {
-    super(delegateSelectors, slotDeploymentStepFqn);
-    this.targetSlot = targetSlot;
+  public AzureWebAppRollbackStepInfo(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String slotDeploymentStepFqn, String swapSlotStepFqn) {
+    super(delegateSelectors, slotDeploymentStepFqn, swapSlotStepFqn);
   }
 
   @Override
   public StepType getStepType() {
-    return AzureWebAppSwapSlotStep.STEP_TYPE;
+    return AzureWebAppRollbackStep.STEP_TYPE;
   }
 
   @Override
@@ -73,10 +67,7 @@ public class AzureWebAppSwapSlotStepInfo
 
   @Override
   public SpecParameters getSpecParameters() {
-    return AzureWebAppSwapSlotStepParameters.infoBuilder()
-        .targetSlot(this.getTargetSlot())
-        .delegateSelectors(this.getDelegateSelectors())
-        .build();
+    return AzureWebAppRollbackStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
   }
 
   @Override

@@ -5,16 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.visitor.helpers.cdstepinfo;
+package io.harness.cdng.azure.webapp;
 
-import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
-public class AzureWebAppSwapSlotStepInfoVisitorHelper implements ConfigValidator {
+public class AzureWebAppTrafficShiftStepInfoVisitorHelper implements ConfigValidator {
   @Override
   public Object createDummyVisitableElement(Object originalElement) {
-    return AzureWebAppSwapSlotStepInfo.infoBuilder().build();
+    return AzureWebAppTrafficShiftStepInfo.infoBuilder().build();
   }
 
   @Override

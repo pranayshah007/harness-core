@@ -7,14 +7,11 @@
 
 package io.harness.cdng.azure.webapp;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.number;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
-
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.AzureWebAppTrafficShiftStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -24,7 +21,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
-import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -43,12 +39,12 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SimpleVisitorHelper(helperClass = AzureWebAppTrafficShiftStepInfoVisitorHelper.class)
-@JsonTypeName(StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT)
-@TypeAlias("azureWebAppTrafficShiftStepInfo")
-@RecasterAlias("io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepInfo")
-public class AzureWebAppTrafficShiftStepInfo
-    extends AzureWebAppTrafficShiftBaseStepInfo implements CDAbstractStepInfo, Visitable {
+@SimpleVisitorHelper(helperClass = AzureWebAppSlotDeploymentStepInfoVisitorHelper.class)
+@JsonTypeName(StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT)
+@TypeAlias("azureWebAppSlotDeploymentStepInfo")
+@RecasterAlias("io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepInfo")
+public class AzureWebAppSlotDeploymentStepInfo
+    extends AzureWebAppSlotDeploymentBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -56,29 +52,35 @@ public class AzureWebAppTrafficShiftStepInfo
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
-  @NotNull @NotEmpty @YamlSchemaTypes(value = {string, number}) ParameterField<String> traffic;
+  @NotNull @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> webApp;
+  @NotNull
+  @NotEmpty
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  ParameterField<String> deploymentSlot;
 
   @Builder(builderMethodName = "infoBuilder")
-  public AzureWebAppTrafficShiftStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      String slotDeploymentStepFqn, ParameterField<String> traffic) {
-    super(delegateSelectors, slotDeploymentStepFqn);
-    this.traffic = traffic;
+  public AzureWebAppSlotDeploymentStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<String> webApp, ParameterField<String> deploymentSlot) {
+    super(delegateSelectors);
+    this.webApp = webApp;
+    this.deploymentSlot = deploymentSlot;
   }
 
   @Override
   public StepType getStepType() {
-    return AzureWebAppTrafficShiftStep.STEP_TYPE;
+    return AzureWebAppSlotDeploymentStep.STEP_TYPE;
   }
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
+    return OrchestrationFacilitatorType.TASK_CHAIN;
   }
 
   @Override
   public SpecParameters getSpecParameters() {
-    return AzureWebAppTrafficShiftStepParameters.infoBuilder()
-        .traffic(this.traffic)
+    return AzureWebAppSlotDeploymentStepParameters.infoBuilder()
+        .webApp(this.getWebApp())
+        .deploymentSlot(this.getDeploymentSlot())
         .delegateSelectors(this.getDelegateSelectors())
         .build();
   }

@@ -12,7 +12,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.AzureWebAppSlotDeploymentStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -40,48 +39,41 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SimpleVisitorHelper(helperClass = AzureWebAppSlotDeploymentStepInfoVisitorHelper.class)
-@JsonTypeName(StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT)
-@TypeAlias("azureWebAppSlotDeploymentStepInfo")
-@RecasterAlias("io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepInfo")
-public class AzureWebAppSlotDeploymentStepInfo
-    extends AzureWebAppSlotDeploymentBaseStepInfo implements CDAbstractStepInfo, Visitable {
+@SimpleVisitorHelper(helperClass = AzureWebAppSwapSlotStepInfoVisitorHelper.class)
+@JsonTypeName(StepSpecTypeConstants.AZURE_SWAP_SLOT)
+@TypeAlias("azureWebAppSwapSlotStepInfo")
+@RecasterAlias("io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepInfo")
+public class AzureWebAppSwapSlotStepInfo
+    extends AzureWebAppSwapSlotBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   private String uuid;
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
-
-  @NotNull @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> webApp;
-  @NotNull
-  @NotEmpty
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  ParameterField<String> deploymentSlot;
+  @NotNull @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> targetSlot;
 
   @Builder(builderMethodName = "infoBuilder")
-  public AzureWebAppSlotDeploymentStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<String> webApp, ParameterField<String> deploymentSlot) {
-    super(delegateSelectors);
-    this.webApp = webApp;
-    this.deploymentSlot = deploymentSlot;
+  public AzureWebAppSwapSlotStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      String slotDeploymentStepFqn, ParameterField<String> targetSlot) {
+    super(delegateSelectors, slotDeploymentStepFqn);
+    this.targetSlot = targetSlot;
   }
 
   @Override
   public StepType getStepType() {
-    return AzureWebAppSlotDeploymentStep.STEP_TYPE;
+    return AzureWebAppSwapSlotStep.STEP_TYPE;
   }
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
+    return OrchestrationFacilitatorType.TASK;
   }
 
   @Override
   public SpecParameters getSpecParameters() {
-    return AzureWebAppSlotDeploymentStepParameters.infoBuilder()
-        .webApp(this.getWebApp())
-        .deploymentSlot(this.getDeploymentSlot())
+    return AzureWebAppSwapSlotStepParameters.infoBuilder()
+        .targetSlot(this.getTargetSlot())
         .delegateSelectors(this.getDelegateSelectors())
         .build();
   }

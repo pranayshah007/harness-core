@@ -20,7 +20,6 @@ import io.harness.azure.model.ARMScopeType;
 import io.harness.azure.model.AzureDeploymentMode;
 import io.harness.beans.DecryptableEntity;
 import io.harness.cdng.CDStepHelper;
-import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -78,7 +77,6 @@ import org.apache.commons.io.IOUtils;
 @OwnedBy(CDP)
 public class AzureCommonHelper {
   @Inject private CDStepHelper cdStepHelper;
-  @Inject private K8sStepHelper k8sStepHelper;
 
   @Inject private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
 
