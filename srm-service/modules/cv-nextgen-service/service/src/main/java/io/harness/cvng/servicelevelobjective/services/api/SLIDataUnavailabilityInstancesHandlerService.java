@@ -10,9 +10,10 @@ package io.harness.cvng.servicelevelobjective.services.api;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
 
+import java.time.Instant;
 import java.util.List;
 
-public interface SLIDataUnavailabilityFilterService {
+public interface SLIDataUnavailabilityInstancesHandlerService {
   List<SLIRecordParam> filterSLIRecordsToSkip(List<SLIRecordParam> sliRecordList, ProjectParams projectParams,
-      long startTime, long endTime, String monitoredServiceIdentifier, String sliId);
+      Instant startTime, Instant endTime, String monitoredServiceIdentifier, String sliId);
 }

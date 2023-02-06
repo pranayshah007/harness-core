@@ -14,7 +14,7 @@ import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
-import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityFilterService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityInstancesHandlerService;
 
 import com.google.inject.Inject;
 import java.time.Instant;
@@ -25,15 +25,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class SLIDataUnavailabilityFilterServiceImpl implements SLIDataUnavailabilityFilterService {
+public class SLIDataUnavailabilityInstancesHandlerServiceImpl implements SLIDataUnavailabilityInstancesHandlerService {
   @Inject private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
 
   @Inject private DowntimeService downtimeService;
   @Override
   public List<SLIRecordParam> filterSLIRecordsToSkip(List<SLIRecordParam> sliRecordList, ProjectParams projectParams,
-      long startTime, long endTime, String monitoredServiceIdentifier, String sliId) {
+      Instant startTime, Instant endTime, String monitoredServiceIdentifier, String sliId) {
     List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
-        entityUnavailabilityStatusesService.getAllInstances(projectParams, startTime, endTime);
+        entityUnavailabilityStatusesService.getAllInstances(
+            projectParams, startTime.getEpochSecond(), endTime.getEpochSecond());
 
     // Adding downtime Instances
     List<EntityUnavailabilityStatusesDTO> failureInstances =
