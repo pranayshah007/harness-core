@@ -354,7 +354,7 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   @Override
   public Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
-      ConnectorCategory sourceCategory) {
+      ConnectorCategory sourceCategory, String version) {
     throw new UnsupportedOperationException("Cannot call list api on secret manager");
   }
 

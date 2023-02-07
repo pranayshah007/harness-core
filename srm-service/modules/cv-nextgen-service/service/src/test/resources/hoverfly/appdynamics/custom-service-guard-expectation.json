@@ -3,12 +3,14 @@
     "metricIdentifier": "calls_number",
     "metricName": "Calls Number",
     "metricValue": 0.0,
-    "timestamp": 1642966080000
+    "timestamp": 1642966080000,
+    "txnName": "group1"
   },
   {
     "metricIdentifier": "stall_number",
     "metricName": "Stall Count",
     "metricValue": 0.0,
-    "timestamp": 1642966080000
+    "timestamp": 1642966080000,
+    "txnName": "group1"
   }
 ]

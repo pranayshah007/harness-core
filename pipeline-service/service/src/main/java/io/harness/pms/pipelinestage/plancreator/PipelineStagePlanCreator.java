@@ -153,7 +153,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
                     .getField(YAMLFieldNameConstants.INPUTS),
                 planNodeId, childPipelineEntity.get().getHarnessVersion()))
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-            .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
+            .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())

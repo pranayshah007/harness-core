@@ -211,24 +211,24 @@ components:
         name:
           type: string
           description: Connector name
-          pattern: '^[0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[0-9a-zA-Z-_ ]{0,127}$'
         identifier:
           type: string
           minLength: 1
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           description: Connector identifier
-          maxLength: 64
+          maxLength: 128
         description:
           type: string
           description: Connector description
         org:
           type: string
           description: Organization identifier for connector
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
         project:
           type: string
           description: Project identifier for connector
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
         tags:
           type: object
           additionalProperties:

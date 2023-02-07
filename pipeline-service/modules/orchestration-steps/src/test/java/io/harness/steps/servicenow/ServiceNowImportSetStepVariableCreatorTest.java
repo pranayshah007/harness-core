@@ -101,7 +101,8 @@ public class ServiceNowImportSetStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.timeout",
             "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.spec.stagingTableName",
             "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.spec.connectorRef",
-            "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.spec.delegateSelectors");
+            "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.spec.delegateSelectors",
+            "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -114,8 +115,7 @@ public class ServiceNowImportSetStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.identifier",
             "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.type",
             "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.startTs",
-            "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.endTs",
-            "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.when");
+            "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.endTs");
     List<YamlProperties> outputProperties = variablesForParentNodeV2.getYamlExtraProperties()
                                                 .get("-QisXuoqS_eJZTnix7M2PQ") // uuid for step node
                                                 .getOutputPropertiesList();
@@ -123,7 +123,7 @@ public class ServiceNowImportSetStepVariableCreatorTest extends CategoryTest {
                                           .get("-QisXuoqS_eJZTnix7M2PQ") // uuid for step node
                                           .getPropertiesList();
     assertThat(outputProperties).hasSize(5);
-    assertThat(properties).hasSize(5);
+    assertThat(properties).hasSize(4);
     assertYamlProperties(outputProperties.get(0),
         "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.output.importSetNumber",
         "execution.steps.app.output.importSetNumber", "", true);
@@ -146,12 +146,9 @@ public class ServiceNowImportSetStepVariableCreatorTest extends CategoryTest {
         "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.identifier",
         "execution.steps.app.identifier", "identifier", true);
     assertYamlProperties(properties.get(2),
-        "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.when", "execution.steps.app.when",
-        "when", true);
-    assertYamlProperties(properties.get(3),
         "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.startTs",
         "execution.steps.app.startTs", "", false);
-    assertYamlProperties(properties.get(4),
+    assertYamlProperties(properties.get(3),
         "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.endTs", "execution.steps.app.endTs",
         "", false);
   }

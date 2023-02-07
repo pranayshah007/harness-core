@@ -93,6 +93,8 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
 import io.harness.pms.rbac.PipelineRbacPermissions;
+import io.harness.pms.utils.PipelineYamlHelper;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -736,22 +738,26 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       }
       return null;
     } else {
-      NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
-      if (isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
-        return null;
-      }
-      NGTriggerConfigV2 triggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerEntity);
-      String pipelineBranch = triggerConfigV2.getPipelineBranchName();
-      String branch = null;
-      if (isNotEmpty(pipelineBranch) && !isBranchExpr(pipelineBranch)) {
-        branch = pipelineBranch;
-      }
-      List<String> inputSetRefs = triggerConfigV2.getInputSetRefs();
-      return NGRestUtils.getResponse(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(
-          ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(),
-          ngTriggerEntity.getTargetIdentifier(), branch,
-          MergeInputSetRequestDTOPMS.builder().inputSetReferences(inputSetRefs).build()));
+      return validateInputSetRefs(triggerDetails);
     }
+  }
+
+  private MergeInputSetResponseDTOPMS validateInputSetRefs(TriggerDetails triggerDetails) {
+    NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
+    if (isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
+      return null;
+    }
+    NGTriggerConfigV2 triggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerEntity);
+    String pipelineBranch = triggerConfigV2.getPipelineBranchName();
+    String branch = null;
+    if (isNotEmpty(pipelineBranch) && !isBranchExpr(pipelineBranch)) {
+      branch = pipelineBranch;
+    }
+    List<String> inputSetRefs = triggerConfigV2.getInputSetRefs();
+    return NGRestUtils.getResponse(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(
+        ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(),
+        ngTriggerEntity.getTargetIdentifier(), branch,
+        MergeInputSetRequestDTOPMS.builder().inputSetReferences(inputSetRefs).build()));
   }
 
   @Override
@@ -760,19 +766,29 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     Map<String, Map<String, String>> errorMap = new HashMap<>();
     if (pipelineYmlOptional.isPresent()) {
       String pipelineYaml = pipelineYmlOptional.get();
-      String templateYaml = createRuntimeInputForm(pipelineYaml);
-      String triggerYaml = triggerDetails.getNgTriggerEntity().getYaml();
-      String triggerPipelineYml = getPipelineComponent(triggerYaml);
-      Map<FQN, String> invalidFQNs = getInvalidFQNsInTrigger(templateYaml, triggerPipelineYml);
-      if (isEmpty(invalidFQNs)) {
-        return errorMap;
-      }
+      if (PipelineVersion.V1.equals(PipelineYamlHelper.getVersion(pipelineYaml))) {
+        MergeInputSetResponseDTOPMS mergeInputSetResponseDTOPMS = validateInputSetRefs(triggerDetails);
+        if (mergeInputSetResponseDTOPMS != null
+            && (mergeInputSetResponseDTOPMS.isErrorResponse()
+                || mergeInputSetResponseDTOPMS.getInputSetErrorWrapper() != null)) {
+          InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS = mergeInputSetResponseDTOPMS.getInputSetErrorWrapper();
+          errorMap = generateErrorMap(inputSetErrorWrapperDTOPMS);
+        }
+      } else {
+        String templateYaml = createRuntimeInputForm(pipelineYaml);
+        String triggerYaml = triggerDetails.getNgTriggerEntity().getYaml();
+        String triggerPipelineYml = getPipelineComponent(triggerYaml);
+        Map<FQN, String> invalidFQNs = getInvalidFQNsInTrigger(templateYaml, triggerPipelineYml);
+        if (isEmpty(invalidFQNs)) {
+          return errorMap;
+        }
 
-      for (Map.Entry<FQN, String> entry : invalidFQNs.entrySet()) {
-        Map<String, String> innerMap = new HashMap<>();
-        innerMap.put("fieldName", entry.getKey().getFieldName());
-        innerMap.put("message", entry.getValue());
-        errorMap.put(entry.getKey().getExpressionFqn(), innerMap);
+        for (Map.Entry<FQN, String> entry : invalidFQNs.entrySet()) {
+          Map<String, String> innerMap = new HashMap<>();
+          innerMap.put("fieldName", entry.getKey().getFieldName());
+          innerMap.put("message", entry.getValue());
+          errorMap.put(entry.getKey().getExpressionFqn(), innerMap);
+        }
       }
     }
     return errorMap;

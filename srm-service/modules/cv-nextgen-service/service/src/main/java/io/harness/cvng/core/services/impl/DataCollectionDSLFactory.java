@@ -19,12 +19,15 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DataCollectionDSLFactory {
+  private static final String SUMOLOGIC_LOG_DATACOLLECTION_FILE = "sumologic-log.datacollection";
+  private static final String ELK_LOG_DATACOLLECTION_FILE = "elk-log-fetch-data.datacollection";
+
   public static String readLogDSL(DataSourceType dataSourceType) {
     // TODO dont read repeatedly and also move it from here
     if (dataSourceType == DataSourceType.SUMOLOGIC_LOG) {
-      return readFile("sumologic-log.datacollection");
+      return readFile(SUMOLOGIC_LOG_DATACOLLECTION_FILE);
     } else if (dataSourceType == DataSourceType.ELASTICSEARCH) {
-      return readFile("elk-log-fetch-data.datacollection");
+      return readFile(ELK_LOG_DATACOLLECTION_FILE);
     } else {
       throw new NotImplementedForHealthSourceException("Not Implemented.");
     }

@@ -201,4 +201,6 @@ public interface YamlTypes {
   String TAS_ROLLING_ROLLBACK = StepSpecTypeConstants.TAS_ROLLING_ROLLBACK;
 
   String K8S_DRY_RUN_MANIFEST = StepSpecTypeConstants.K8S_DRY_RUN_MANIFEST;
+
+  String AWS_LAMBDA_DEPLOY = StepSpecTypeConstants.AWS_LAMBDA_DEPLOY;
 }

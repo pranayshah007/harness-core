@@ -40,4 +40,5 @@ public interface TemplateEntityConstants {
   String ARTIFACT_SOURCE = "ArtifactSource";
   String STEP_GROUP = "StepGroup";
   String STEP_GROUP_ROOT_FIELD = "stepGroup";
+  String TEMPLATE_ID_PARAM_MESSAGE = "Template Identifier";
 }

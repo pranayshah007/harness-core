@@ -26,6 +26,9 @@ import io.harness.ngmigration.service.step.terraform.TerraformApplyStepMapperImp
 import io.harness.ngmigration.service.step.terraform.TerraformDestroyStepMapperImpl;
 import io.harness.ngmigration.service.step.terraform.TerraformProvisionStepMapperImpl;
 import io.harness.ngmigration.service.step.terraform.TerraformRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.terragrunt.TerragruntDestroyStepMapperImpl;
+import io.harness.ngmigration.service.step.terragrunt.TerragruntProvisionStepMapperImpl;
+import io.harness.ngmigration.service.step.terragrunt.TerragruntRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.verification.ApmVerificationStepMapperImpl;
 import io.harness.ngmigration.service.step.verification.AppDynamicsStepMapperImpl;
 import io.harness.ngmigration.service.step.verification.BugsnagStepMapperImpl;
@@ -74,6 +77,9 @@ public class StepMapperFactory {
   @Inject TerraformProvisionStepMapperImpl terraformProvisionStepMapper;
   @Inject TerraformDestroyStepMapperImpl terraformDestroyStepMapper;
   @Inject TerraformRollbackStepMapperImpl terraformRollbackStepMapper;
+  @Inject TerragruntProvisionStepMapperImpl terragruntProvisionStepMapper;
+  @Inject TerragruntDestroyStepMapperImpl terragruntDestroyStepMapper;
+  @Inject TerragruntRollbackStepMapperImpl terragruntRollbackStepMapper;
   @Inject ElastigroupSetupStepMapperImpl elastigroupSetupStepMapper;
   @Inject ElastigroupDeployStepMapperImpl elastigroupDeployStepMapper;
   @Inject ElastigroupListenerRollbackStepMapperImpl elastigroupListenerRollbackStepMapper;
@@ -206,6 +212,12 @@ public class StepMapperFactory {
         return azureRollbackARMResourceStepMapper;
       case "CUSTOM_DEPLOYMENT_FETCH_INSTANCES":
         return customFetchInstancesStepMapper;
+      case "TERRAGRUNT_PROVISION":
+        return terragruntProvisionStepMapper;
+      case "TERRAGRUNT_DESTROY":
+        return terragruntDestroyStepMapper;
+      case "TERRAGRUNT_ROLLBACK":
+        return terragruntRollbackStepMapper;
       default:
         return unsupportedStepMapper;
     }

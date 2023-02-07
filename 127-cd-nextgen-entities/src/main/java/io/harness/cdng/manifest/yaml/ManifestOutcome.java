@@ -44,6 +44,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
           name = ManifestType.AsgScheduledUpdateGroupAction),
       @JsonSubTypes.Type(value = GoogleCloudFunctionDefinitionManifestOutcome.class,
           name = ManifestType.GoogleCloudFunctionDefinition),
+      @JsonSubTypes.Type(value = AwsLambdaDefinitionManifestOutcome.class, name = ManifestType.AwsLambda),
 })
 public interface ManifestOutcome extends Outcome, WithIdentifier {
   String getIdentifier();

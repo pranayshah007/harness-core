@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 45
+version: 46
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1298,55 +1298,55 @@ permissions:
       - project
   - identifier: ccm_cloudAssetGovernanceRule_edit
     name: Edit a CCM Governance Rule
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_cloudAssetGovernanceRule_view
     name: View a CCM Governance Rule
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_cloudAssetGovernanceRule_delete
     name: Delete a CCM Governance Rule
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_cloudAssetGovernanceRuleSet_edit
     name: Edit a CCM Governance  Rule Set
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_cloudAssetGovernanceRuleSet_view
     name: View a CCM Governance Rule Set
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_cloudAssetGovernanceRuleSet_delete
     name: Delete a CCM Governance Rule Set
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_cloudAssetGovernanceEnforcement_edit
     name: Edit a CCM Governance Enforcement
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_cloudAssetGovernanceEnforcement_view
     name: View a CCM Governance Enforcement
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_cloudAssetGovernanceEnforcement_delete
     name: Delete a CCM Governance Enforcement
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account

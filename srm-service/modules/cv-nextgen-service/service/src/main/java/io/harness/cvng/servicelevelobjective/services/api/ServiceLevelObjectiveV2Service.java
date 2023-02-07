@@ -61,6 +61,8 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
   List<AbstractServiceLevelObjective> getByMonitoredServiceIdentifier(
       ProjectParams projectParams, String monitoredServiceIdentifier);
 
+  List<SimpleServiceLevelObjective> getByMonitoredServiceIdentifiers(
+      ProjectParams projectParams, Set<String> monitoredServiceIdentifiers);
   PageResponse<CVNGLogDTO> getCVNGLogs(
       ProjectParams projectParams, String identifier, SLILogsFilter sliLogsFilter, PageParams pageParams);
 

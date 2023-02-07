@@ -70,6 +70,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
@@ -98,7 +99,6 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ArtifactResourceUtils {
-  private final String preStageFqn = "pipeline/stages/";
   @Inject PipelineServiceClient pipelineServiceClient;
   @Inject TemplateResourceClient templateResourceClient;
   @Inject ServiceEntityService serviceEntityService;
@@ -147,7 +147,12 @@ public class ArtifactResourceUtils {
   public String getResolvedImagePath(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String runtimeInputYaml, String imagePath, String fqnPath,
       GitEntityFindInfoDTO gitEntityBasicInfo, String serviceId) {
-    if (EngineExpressionEvaluator.hasExpressions(imagePath)) {
+    final ParameterField<String> imageParameterField = RuntimeInputValuesValidator.getInputSetParameterField(imagePath);
+    if (imageParameterField == null) {
+      return imagePath;
+    } else if (!imageParameterField.isExpression()) {
+      return imageParameterField.getValue();
+    } else {
       // this check assumes ui sends -1 as pipeline identifier when pipeline is under construction
       if ("-1".equals(pipelineIdentifier)) {
         throw new InvalidRequestException(String.format(

@@ -17,13 +17,13 @@ import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getHealthSour
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getMetricTypeFromCvConfigAndMetricDefinition;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getThresholdsFromDefinition;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getTransactionGroupFromCVConfig;
-import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.isAnalysisResultExcluded;
-import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.isTransactionGroupExcluded;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.isAnalysisResultIncluded;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.isTransactionGroupIncluded;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.parseControlNodeIdentifiersFromDeploymentTimeSeriesAnalysis;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.parseTestNodeIdentifiersFromDeploymentTimeSeriesAnalysis;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.populateRawMetricDataInMetricAnalysis;
-import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.removeMetricFromResult;
-import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.setDeeplinkURLWithRange;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.populateTimestampsForNormalisedData;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.sortMetricsAnalysisResults;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -54,10 +54,10 @@ import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricCVConfig;
 import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
-import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
+import io.harness.cvng.core.services.DeeplinkURLService;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.CVNGObjectUtils;
@@ -65,7 +65,7 @@ import io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
-import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.persistence.HPersistence;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.PageUtils;
@@ -77,7 +77,6 @@ import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import dev.morphia.query.Sort;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -96,16 +95,15 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.utils.URIBuilder;
 
 public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSeriesAnalysisService {
   public static final int DEFAULT_PAGE_SIZE = 10;
-  private static final String STEP_INPUT_IN_SECONDS = "60";
   @Inject private HPersistence hPersistence;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private NextGenService nextGenService;
   @Inject private TimeSeriesRecordService timeSeriesRecordService;
+  @Inject private DeeplinkURLService deeplinkURLService;
 
   @Override
   public void save(DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis) {
@@ -389,39 +387,65 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
       Map<String, MetricsAnalysis> metricsForThisAnalysis =
           mapOfCvConfigIdAndFilteredMetrics.get(cvConfigIdForThisAnalysis);
 
-      if (areMetricsFromCVConfigFilteredOut(metricsForThisAnalysis)) {
+      MetricCVConfig<? extends AnalysisInfo> cvConfig =
+          (MetricCVConfig<? extends AnalysisInfo>) verificationJobInstance.getCvConfigMap().get(
+              cvConfigIdForThisAnalysis);
+      boolean isCustomMetricPackBasedCvConfig = CollectionUtils.isNotEmpty(cvConfig.getMetricInfos());
+
+      if (isCustomMetricPackBasedCvConfig && areMetricsFromCVConfigFilteredOut(metricsForThisAnalysis)) {
         continue;
       }
+      Map<String, MetricsAnalysis> metricAnalysisDefinitionsForDefaultMetrics =
+          getMetricAnalysesFromMetricDefinitions(cvConfig);
 
       AppliedDeploymentAnalysisType appliedDeploymentAnalysisType =
           getAppliedDeploymentAnalysisType(verificationJobInstance.getUuid(), verificationTaskId);
 
-      Map<String, Map<String, List<TimeSeriesRecordDTO>>> controlNodesRawData = getControlNodesRawData(
-          appliedDeploymentAnalysisType, verificationJobInstance, verificationTaskId, timeSeriesAnalysis);
-      Map<String, Map<String, List<TimeSeriesRecordDTO>>> testNodesRawData = getTestNodesRawData(
-          appliedDeploymentAnalysisType, verificationJobInstance, verificationTaskId, timeSeriesAnalysis);
+      Optional<TimeRange> controlDataTimeRange =
+          getControlDataTimeRange(appliedDeploymentAnalysisType, verificationJobInstance, timeSeriesAnalysis);
+      TimeRange testDataTimeRange = getTestDataTimeRange(verificationJobInstance, timeSeriesAnalysis);
+
+      Map<String, Map<String, List<TimeSeriesRecordDTO>>> controlNodesRawData =
+          getControlNodesRawData(appliedDeploymentAnalysisType, verificationJobInstance, verificationTaskId,
+              timeSeriesAnalysis, controlDataTimeRange);
+
+      Map<String, Map<String, List<TimeSeriesRecordDTO>>> testNodesRawData =
+          getTestNodesRawData(appliedDeploymentAnalysisType, verificationTaskId, timeSeriesAnalysis, testDataTimeRange);
 
       for (TransactionMetricHostData transactionMetricHostData : timeSeriesAnalysis.getTransactionMetricSummaries()) {
         // LE metricName is BE metricIdentifier
         String metricIdentifier = transactionMetricHostData.getMetricName();
         String transactionGroup = transactionMetricHostData.getTransactionName();
         AnalysisResult analysisResult = AnalysisResult.fromRisk(transactionMetricHostData.getRisk());
-        if (isAnalysisResultExcluded(deploymentTimeSeriesAnalysisFilter, analysisResult)
-            || isTransactionGroupExcluded(deploymentTimeSeriesAnalysisFilter, transactionGroup)) {
-          removeMetricFromResult(metricsForThisAnalysis, metricIdentifier);
-        } else {
+        if (isAnalysisResultIncluded(deploymentTimeSeriesAnalysisFilter, analysisResult)) {
           MetricsAnalysis metricsAnalysis = metricsForThisAnalysis.get(metricIdentifier);
-          // Setting timeranges for the deeplink URL
-          if (StringUtils.isNotEmpty(metricsAnalysis.getDeeplinkURL())) {
-            String deeplinkURLWithRange = setDeeplinkURLWithRange(timeSeriesAnalysis, metricsAnalysis.getDeeplinkURL());
-            metricsAnalysis.setDeeplinkURL(deeplinkURLWithRange);
+          if (!isCustomMetricPackBasedCvConfig
+              && isTransactionGroupIncluded(deploymentTimeSeriesAnalysisFilter, transactionGroup)) {
+            MetricsAnalysis metricAnalysisDefinition = metricAnalysisDefinitionsForDefaultMetrics.get(metricIdentifier);
+            metricsAnalysis = MetricsAnalysis.builder()
+                                  .metricIdentifier(metricIdentifier)
+                                  .transactionGroup(transactionGroup)
+                                  .metricName(metricAnalysisDefinition.getMetricName())
+                                  .healthSource(metricAnalysisDefinition.getHealthSource())
+                                  .metricType(metricAnalysisDefinition.getMetricType())
+                                  .thresholds(metricAnalysisDefinition.getThresholds())
+                                  .build();
+            metricsForThisAnalysis.put(UUIDGenerator.generateUuid(), metricsAnalysis);
           }
-          metricsAnalysis.setTransactionGroup(transactionGroup);
-          metricsAnalysis.setAnalysisResult(analysisResult);
-          metricsAnalysis.setTestDataNodes(getFilteredAnalysedTestDataNodes(
-              transactionMetricHostData, deploymentTimeSeriesAnalysisFilter, metricsAnalysis.getThresholds()));
-          populateRawMetricDataInMetricAnalysis(appliedDeploymentAnalysisType,
-              controlNodesRawData.get(metricIdentifier), testNodesRawData.get(metricIdentifier), metricsAnalysis);
+          if (Objects.nonNull(metricsAnalysis)) {
+            Optional<String> deeplinkURL = deeplinkURLService.buildDeeplinkURLFromCVConfig(
+                cvConfig, metricIdentifier, testDataTimeRange.getStartTime(), testDataTimeRange.getEndTime());
+            deeplinkURL.ifPresent(metricsAnalysis::setDeeplinkURL);
+            metricsAnalysis.setAnalysisResult(analysisResult);
+            metricsAnalysis.setTestDataNodes(getFilteredAnalysedTestDataNodes(
+                transactionMetricHostData, deploymentTimeSeriesAnalysisFilter, metricsAnalysis.getThresholds()));
+            populateRawMetricDataInMetricAnalysis(appliedDeploymentAnalysisType,
+                controlNodesRawData.getOrDefault(metricIdentifier, Collections.emptyMap()),
+                testNodesRawData.getOrDefault(metricIdentifier, Collections.emptyMap()), metricsAnalysis);
+            populateTimestampsForNormalisedData(metricsAnalysis, controlDataTimeRange, testDataTimeRange);
+          }
+        } else {
+          metricsForThisAnalysis.remove(metricIdentifier);
         }
       }
     }
@@ -429,8 +453,10 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
     for (Map<String, MetricsAnalysis> map : mapOfCvConfigIdAndFilteredMetrics.values()) {
       metricsAnalyses.addAll(map.values());
     }
+    sortMetricsAnalysisResults(metricsAnalyses);
     return metricsAnalyses;
   }
+
   public Map<String, Map<String, MetricsAnalysis>> getMapOfCvConfigIdAndFilteredMetrics(
       VerificationJobInstance verificationJobInstance,
       DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter) {
@@ -447,32 +473,34 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
   private Map<String, MetricsAnalysis> getMetricsFromCvConfig(MetricCVConfig<? extends AnalysisInfo> metricCVConfig) {
     HealthSource healthSource = getHealthSourceFromCVConfig(metricCVConfig);
     String transactionGroup = getTransactionGroupFromCVConfig(metricCVConfig);
-    List<MetricsAnalysis> metricsAnalyses;
-    if (CollectionUtils.isEmpty(metricCVConfig.getMetricInfos())) {
-      metricsAnalyses = getMetricAnalysesFromMetricDefinitions(metricCVConfig, healthSource, transactionGroup);
-    } else {
+    List<MetricsAnalysis> metricsAnalyses = null;
+    if (CollectionUtils.isNotEmpty(metricCVConfig.getMetricInfos())) {
       metricsAnalyses = getMetricAnalysesFromMetricInfos(metricCVConfig, healthSource, transactionGroup);
     }
-    return metricsAnalyses.stream().collect(Collectors.toMap(
-        MetricsAnalysis::getMetricIdentifier, metricsAnalysis -> metricsAnalysis, (existing, current) -> current));
+    return CollectionUtils.emptyIfNull(metricsAnalyses)
+        .stream()
+        .collect(Collectors.toMap(
+            MetricsAnalysis::getMetricIdentifier, metricsAnalysis -> metricsAnalysis, (existing, current) -> current));
   }
 
-  private List<MetricsAnalysis> getMetricAnalysesFromMetricDefinitions(
-      MetricCVConfig<? extends AnalysisInfo> metricCVConfig, HealthSource healthSource, String transactionGroup) {
+  private Map<String, MetricsAnalysis> getMetricAnalysesFromMetricDefinitions(
+      MetricCVConfig<? extends AnalysisInfo> metricCVConfig) {
+    HealthSource healthSource = getHealthSourceFromCVConfig(metricCVConfig);
     return metricCVConfig.getMetricPack()
         .getMetrics()
         .stream()
         .filter(MetricDefinition::isIncluded)
-        .map(metricDefinition
-            -> MetricsAnalysis.builder()
-                   .metricName(metricDefinition.getName())
-                   .metricIdentifier(metricDefinition.getIdentifier())
-                   .healthSource(healthSource)
-                   .transactionGroup(transactionGroup)
-                   .metricType(getMetricTypeFromCvConfigAndMetricDefinition(metricCVConfig, metricDefinition))
-                   .thresholds(getThresholdsFromDefinition(metricDefinition))
-                   .build())
-        .collect(Collectors.toList());
+        .map(metricDefinition -> {
+          return MetricsAnalysis.builder()
+              .metricName(metricDefinition.getName())
+              .metricIdentifier(metricDefinition.getIdentifier())
+              .healthSource(healthSource)
+              .metricType(getMetricTypeFromCvConfigAndMetricDefinition(metricCVConfig, metricDefinition))
+              .thresholds(getThresholdsFromDefinition(metricDefinition))
+              .build();
+        })
+        .collect(
+            Collectors.toMap(MetricsAnalysis::getMetricIdentifier, metricsAnalysis -> metricsAnalysis, (u, v) -> v));
   }
 
   private List<MetricsAnalysis> getMetricAnalysesFromMetricInfos(
@@ -483,90 +511,77 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
         .stream()
         .filter(VerifyStepMetricsAnalysisUtils::isDeploymentVerificationEnabledForThisMetric)
         .map(metricInfo -> {
-          MetricsAnalysis metricsAnalysis =
-              MetricsAnalysis.builder()
-                  .metricName(metricInfo.getMetricName())
-                  .metricIdentifier(metricInfo.getIdentifier())
-                  .healthSource(healthSource)
-                  .transactionGroup(transactionGroup)
-                  .metricType(getMetricTypeFromCvConfigAndMetricDefinition(
-                      metricCVConfig, metricDefinitions.get(metricInfo.getIdentifier())))
-                  .thresholds(getThresholdsFromDefinition(metricDefinitions.get(metricInfo.getIdentifier())))
-                  .build();
-
-          Optional<String> deeplinkURL = buildDeepLinkURL(metricCVConfig, metricInfo);
-          deeplinkURL.ifPresent(metricsAnalysis::setDeeplinkURL);
-
-          return metricsAnalysis;
+          return MetricsAnalysis.builder()
+              .metricName(metricInfo.getMetricName())
+              .metricIdentifier(metricInfo.getIdentifier())
+              .healthSource(healthSource)
+              .transactionGroup(transactionGroup)
+              .metricType(getMetricTypeFromCvConfigAndMetricDefinition(
+                  metricCVConfig, metricDefinitions.get(metricInfo.getIdentifier())))
+              .thresholds(getThresholdsFromDefinition(metricDefinitions.get(metricInfo.getIdentifier())))
+              .analysisResult(AnalysisResult.NO_ANALYSIS)
+              .build();
         })
         .collect(Collectors.toList());
   }
-
-  private Optional<String> buildDeepLinkURL(MetricCVConfig metricCVConfig, AnalysisInfo metric) {
-    Optional<String> deeplinkURL = Optional.empty();
-    if (metric instanceof PrometheusCVConfig.MetricInfo) {
-      PrometheusCVConfig prometheusCVConfig = (PrometheusCVConfig) metricCVConfig;
-      PrometheusCVConfig.MetricInfo metricInfo = (PrometheusCVConfig.MetricInfo) metric;
-      Optional<ConnectorInfoDTO> connectorInfoDTO =
-          nextGenService.get(prometheusCVConfig.getAccountId(), prometheusCVConfig.getConnectorIdentifier(),
-              prometheusCVConfig.getOrgIdentifier(), prometheusCVConfig.getProjectIdentifier());
-      if (connectorInfoDTO.isPresent()) {
-        PrometheusConnectorDTO connectorConfigDTO =
-            (PrometheusConnectorDTO) connectorInfoDTO.get().getConnectorConfig();
-
-        try {
-          URIBuilder uriBuilder;
-          uriBuilder = new URIBuilder(connectorConfigDTO.getUrl() + "/graph");
-          uriBuilder.addParameter("g0.step_input", STEP_INPUT_IN_SECONDS);
-          uriBuilder.addParameter("g0.expr", metricInfo.getQuery());
-          deeplinkURL = Optional.ofNullable(uriBuilder.build().toString());
-        } catch (URISyntaxException ignored) {
-        }
-      }
-    }
-    return deeplinkURL;
-  }
-
   private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getControlNodesRawData(
       AppliedDeploymentAnalysisType appliedDeploymentAnalysisType, VerificationJobInstance verificationJobInstance,
-      String verificationTaskId, DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
+      String verificationTaskId, DeploymentTimeSeriesAnalysis timeSeriesAnalysis, Optional<TimeRange> timeRange) {
     if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.TEST) {
-      return getControlNodesRawDataForLoadTestAnalysis(verificationJobInstance, verificationTaskId);
+      return getControlNodesRawDataForLoadTestAnalysis(verificationJobInstance, verificationTaskId, timeRange);
     } else if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.CANARY) {
-      return getControlNodesRawDataForCanaryAnalysis(verificationJobInstance, verificationTaskId, timeSeriesAnalysis);
+      return getControlNodesRawDataForCanaryAnalysis(verificationTaskId, timeSeriesAnalysis, timeRange);
     } else if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.ROLLING) {
-      return getControlNodesRawDataForRollingAnalysis(verificationJobInstance, verificationTaskId, timeSeriesAnalysis);
+      return getControlNodesRawDataForRollingAnalysis(verificationTaskId, timeSeriesAnalysis, timeRange);
     } else {
       return Collections.emptyMap();
     }
   }
 
-  private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getTestNodesRawData(
-      AppliedDeploymentAnalysisType appliedDeploymentAnalysisType, VerificationJobInstance verificationJobInstance,
-      String verificationTaskId, DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
+  private Optional<TimeRange> getControlDataTimeRange(AppliedDeploymentAnalysisType appliedDeploymentAnalysisType,
+      VerificationJobInstance verificationJobInstance, DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
     if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.TEST) {
-      return getTestNodesRawDataForLoadTestAnalysis(verificationJobInstance, verificationTaskId, timeSeriesAnalysis);
+      return getControlDataTimeRangeForLoadTestAnalysis(verificationJobInstance);
+    } else if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.CANARY) {
+      return getControlDataTimeRangeForCanaryAnalysis(verificationJobInstance, timeSeriesAnalysis);
+    } else if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.ROLLING) {
+      return getControlDataTimeRangeForRollingAnalysis(verificationJobInstance);
     } else {
-      return getTestNodesRawDataForCanaryAndRollingAnalysis(
-          verificationJobInstance, verificationTaskId, timeSeriesAnalysis);
+      return Optional.empty();
     }
   }
 
+  private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getTestNodesRawData(
+      AppliedDeploymentAnalysisType appliedDeploymentAnalysisType, String verificationTaskId,
+      DeploymentTimeSeriesAnalysis timeSeriesAnalysis, TimeRange testDataTimeRange) {
+    if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.TEST) {
+      return getTestNodesRawDataForLoadTestAnalysis(verificationTaskId, testDataTimeRange);
+    } else {
+      return getTestNodesRawDataForCanaryAndRollingAnalysis(verificationTaskId, timeSeriesAnalysis, testDataTimeRange);
+    }
+  }
+
+  private TimeRange getTestDataTimeRange(
+      VerificationJobInstance verificationJobInstance, DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
+    return TimeRange.builder()
+        .startTime(verificationJobInstance.getStartTime())
+        .endTime(timeSeriesAnalysis.getEndTime())
+        .build();
+  }
+
   private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getTestNodesRawDataForCanaryAndRollingAnalysis(
-      VerificationJobInstance verificationJobInstance, String verificationTaskId,
-      DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
+      String verificationTaskId, DeploymentTimeSeriesAnalysis timeSeriesAnalysis, TimeRange testDataTimeRange) {
     Set<String> testNodes = parseTestNodeIdentifiersFromDeploymentTimeSeriesAnalysis(timeSeriesAnalysis);
     List<TimeSeriesRecordDTO> timeSeriesRecordDtos = timeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(
-        verificationTaskId, verificationJobInstance.getStartTime(), timeSeriesAnalysis.getEndTime(), testNodes);
+        verificationTaskId, testDataTimeRange.getStartTime(), testDataTimeRange.getEndTime(), testNodes);
 
     return convertTimeSeriesRecordDtosListToMap(timeSeriesRecordDtos);
   }
 
   private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getTestNodesRawDataForLoadTestAnalysis(
-      VerificationJobInstance verificationJobInstance, String verificationTaskId,
-      DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
+      String verificationTaskId, TimeRange testDataTimeRange) {
     List<TimeSeriesRecordDTO> timeSeriesRecordDtos = timeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(
-        verificationTaskId, verificationJobInstance.getStartTime(), timeSeriesAnalysis.getEndTime(), null);
+        verificationTaskId, testDataTimeRange.getStartTime(), testDataTimeRange.getEndTime(), null);
 
     CollectionUtils.emptyIfNull(timeSeriesRecordDtos)
         .forEach(timeSeriesRecordDTO -> timeSeriesRecordDTO.setHost(LOAD_TEST_CURRENT_NODE_IDENTIFIER));
@@ -581,19 +596,17 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
   }
 
   private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getControlNodesRawDataForLoadTestAnalysis(
-      VerificationJobInstance verificationJobInstance, String verificationTaskId) {
+      VerificationJobInstance verificationJobInstance, String verificationTaskId, Optional<TimeRange> timeRange) {
     List<TimeSeriesRecordDTO> timeSeriesRecordDtos = null;
     TestVerificationJob verificationJob = (TestVerificationJob) verificationJobInstance.getResolvedJob();
     String baselineVerificationJobInstanceId = verificationJob.getBaselineVerificationJobInstanceId();
     if (StringUtils.isNotBlank(baselineVerificationJobInstanceId)) {
-      VerificationJobInstance baselineVerificationJobInstance =
-          verificationJobInstanceService.getVerificationJobInstance(baselineVerificationJobInstanceId);
       Optional<String> baselineVerificationTaskId =
           verificationTaskService.findBaselineVerificationTaskId(verificationTaskId, verificationJobInstance);
       if (baselineVerificationTaskId.isPresent()) {
-        timeSeriesRecordDtos =
-            timeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(baselineVerificationTaskId.get(),
-                baselineVerificationJobInstance.getStartTime(), baselineVerificationJobInstance.getEndTime(), null);
+        Preconditions.checkState(timeRange.isPresent(), "Time range must not be null");
+        timeSeriesRecordDtos = timeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(
+            baselineVerificationTaskId.get(), timeRange.get().getStartTime(), timeRange.get().getEndTime(), null);
       }
     }
 
@@ -603,32 +616,57 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
     return convertTimeSeriesRecordDtosListToMap(timeSeriesRecordDtos);
   }
 
+  private Optional<TimeRange> getControlDataTimeRangeForLoadTestAnalysis(
+      VerificationJobInstance verificationJobInstance) {
+    TimeRange timeRange = null;
+    TestVerificationJob verificationJob = (TestVerificationJob) verificationJobInstance.getResolvedJob();
+    String baselineVerificationJobInstanceId = verificationJob.getBaselineVerificationJobInstanceId();
+    if (StringUtils.isNotBlank(baselineVerificationJobInstanceId)) {
+      VerificationJobInstance baselineVerificationJobInstance =
+          verificationJobInstanceService.getVerificationJobInstance(baselineVerificationJobInstanceId);
+      timeRange = TimeRange.builder()
+                      .startTime(baselineVerificationJobInstance.getStartTime())
+                      .endTime(baselineVerificationJobInstance.getEndTime())
+                      .build();
+    }
+    return Optional.ofNullable(timeRange);
+  }
+
   private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getControlNodesRawDataForCanaryAnalysis(
-      VerificationJobInstance verificationJobInstance, String verificationTaskId,
-      DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
+      String verificationTaskId, DeploymentTimeSeriesAnalysis timeSeriesAnalysis, Optional<TimeRange> timeRange) {
+    Preconditions.checkState(timeRange.isPresent(), "Time range must not be null");
     List<TimeSeriesRecordDTO> timeSeriesRecordDtos;
     Set<String> controlNodes = parseControlNodeIdentifiersFromDeploymentTimeSeriesAnalysis(timeSeriesAnalysis);
     timeSeriesRecordDtos = timeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(
-        verificationTaskId, verificationJobInstance.getStartTime(), timeSeriesAnalysis.getEndTime(), controlNodes);
+        verificationTaskId, timeRange.get().getStartTime(), timeRange.get().getEndTime(), controlNodes);
 
     return convertTimeSeriesRecordDtosListToMap(timeSeriesRecordDtos);
   }
 
+  private Optional<TimeRange> getControlDataTimeRangeForCanaryAnalysis(
+      VerificationJobInstance verificationJobInstance, DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
+    return Optional.of(TimeRange.builder()
+                           .startTime(verificationJobInstance.getStartTime())
+                           .endTime(timeSeriesAnalysis.getEndTime())
+                           .build());
+  }
+
   private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getControlNodesRawDataForRollingAnalysis(
-      VerificationJobInstance verificationJobInstance, String verificationTaskId,
-      DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
+      String verificationTaskId, DeploymentTimeSeriesAnalysis timeSeriesAnalysis, Optional<TimeRange> timeRange) {
     List<TimeSeriesRecordDTO> timeSeriesRecordDtos = null;
-
-    Optional<TimeRange> dataCollectionTimeRange = verificationJobInstance.getResolvedJob().getPreActivityTimeRange(
-        verificationJobInstance.getDeploymentStartTime());
-
-    if (dataCollectionTimeRange.isPresent()) {
+    if (timeRange.isPresent()) {
       Set<String> controlNodes = parseControlNodeIdentifiersFromDeploymentTimeSeriesAnalysis(timeSeriesAnalysis);
-      timeSeriesRecordDtos = timeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(verificationTaskId,
-          dataCollectionTimeRange.get().getStartTime(), dataCollectionTimeRange.get().getEndTime(), controlNodes);
+      timeSeriesRecordDtos = timeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(
+          verificationTaskId, timeRange.get().getStartTime(), timeRange.get().getEndTime(), controlNodes);
     }
 
     return convertTimeSeriesRecordDtosListToMap(timeSeriesRecordDtos);
+  }
+
+  private Optional<TimeRange> getControlDataTimeRangeForRollingAnalysis(
+      VerificationJobInstance verificationJobInstance) {
+    return verificationJobInstance.getResolvedJob().getPreActivityTimeRange(
+        verificationJobInstance.getDeploymentStartTime());
   }
 
   private NodeRiskCountDTO getNodeRiskCountDTO(Map<Risk, Integer> nodeCountByRiskStatusMap) {

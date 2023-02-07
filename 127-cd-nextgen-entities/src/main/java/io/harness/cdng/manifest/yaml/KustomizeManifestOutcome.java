@@ -39,6 +39,7 @@ public class KustomizeManifestOutcome implements ManifestOutcome {
   ParameterField<OverlayConfiguration> overlayConfiguration;
   ParameterField<String> pluginPath;
   ParameterField<Boolean> skipResourceVersioning;
+  ParameterField<Boolean> enableDeclarativeRollback;
   ParameterField<List<String>> patchesPaths;
 
   public ParameterField<List<String>> getPatchesPaths() {

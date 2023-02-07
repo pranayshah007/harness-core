@@ -24,10 +24,8 @@ public class HealthSourceParamValuesRequest {
   String connectorIdentifier;
 
   public void validate() {
-    if (providerType == MonitoredServiceDataSourceType.ELASTICSEARCH) {
-      if (QueryParamsDTO.QueryParamKeys.index.equals(paramName)) {
-        Preconditions.checkNotNull(connectorIdentifier, "The connector Identifer cannot be null");
-      }
+    if (QueryParamsDTO.QueryParamKeys.index.equals(paramName)) {
+      Preconditions.checkNotNull(connectorIdentifier, "The connector Identifer cannot be null");
     }
   }
 }

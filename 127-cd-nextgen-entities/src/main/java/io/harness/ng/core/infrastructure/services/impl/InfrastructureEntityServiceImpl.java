@@ -199,11 +199,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     if (infraEntityOptional.isPresent()) {
       InfrastructureEntity oldInfrastructureEntity = infraEntityOptional.get();
 
-      if (oldInfrastructureEntity != null && oldInfrastructureEntity.getDeploymentType() != null
-          && requestInfra.getDeploymentType() != null
-          && !oldInfrastructureEntity.getDeploymentType().equals(requestInfra.getDeploymentType())) {
-        throw new InvalidRequestException(String.format("Infrastructure Deployment Type is not allowed to change."));
-      }
+      validateImmutableFieldsAndThrow(requestInfra, oldInfrastructureEntity);
 
       InfrastructureEntity updatedInfra =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -235,6 +231,19 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
           String.format("Infrastructure [%s] under Environment [%s], Project [%s], Organization [%s] doesn't exist.",
               requestInfra.getIdentifier(), requestInfra.getEnvIdentifier(), requestInfra.getProjectIdentifier(),
               requestInfra.getOrgIdentifier()));
+    }
+  }
+
+  private void validateImmutableFieldsAndThrow(InfrastructureEntity requestInfra, InfrastructureEntity oldInfra) {
+    if (oldInfra != null) {
+      if (oldInfra.getDeploymentType() != null && requestInfra.getDeploymentType() != null
+          && !oldInfra.getDeploymentType().equals(requestInfra.getDeploymentType())) {
+        throw new InvalidRequestException("Infrastructure Deployment Type is not allowed to change.");
+      }
+      if (oldInfra.getType() != null && requestInfra.getType() != null
+          && !oldInfra.getType().equals(requestInfra.getType())) {
+        throw new InvalidRequestException("Infrastructure Type is not allowed to change.");
+      }
     }
   }
 
