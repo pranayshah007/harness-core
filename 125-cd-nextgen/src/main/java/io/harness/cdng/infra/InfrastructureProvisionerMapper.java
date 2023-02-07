@@ -12,6 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -34,10 +37,8 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -46,7 +47,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -92,12 +92,19 @@ public class InfrastructureProvisionerMapper {
     }
 
     try {
-      TypeReference<List<Map<String, Object>>> typeRef = new TypeReference<>() {};
-      return new ObjectMapper().readValue(IOUtils.toInputStream(hostInstancesJson), typeRef);
-    } catch (IOException ex) {
-      log.error("Unable to parse host object array  JSON", ex);
-      throw new InvalidRequestException("Host object array JSON cannot be parsed", ex);
+      return createHostObjects(hostInstancesJson);
+    } catch (Exception ex) {
+      log.error("Unable to parse host object array JSON", ex);
+      throw new InvalidRequestException("Host object array JSON cannot be parsed.", ex);
     }
+  }
+
+  private List<Map<String, Object>> createHostObjects(String hostInstancesJson) {
+    // this adds quotes to json values, allowing us to not put <+json.format(...)> around provisioner output
+    String quotedJsonContent = new JsonParser().parse(hostInstancesJson).toString();
+
+    Type type = new TypeToken<List<Map<String, Object>>>() {}.getType();
+    return new Gson().fromJson(quotedJsonContent, type);
   }
 
   private void validateHostObjects(List<Map<String, Object>> hostObjects) {
