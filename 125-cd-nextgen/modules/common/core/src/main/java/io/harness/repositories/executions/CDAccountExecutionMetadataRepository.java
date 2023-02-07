@@ -19,6 +19,6 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 @HarnessRepo
 @OwnedBy(PIPELINE)
 public interface CDAccountExecutionMetadataRepository
-    extends PagingAndSortingRepository<CDAccountExecutionMetadata, String>, io.harness.repositories.executions.CDAccountExecutionMetadataRepositoryCustom {
+    extends PagingAndSortingRepository<CDAccountExecutionMetadata, String>, CDAccountExecutionMetadataRepositoryCustom {
   Optional<CDAccountExecutionMetadata> findByAccountId(String accountId);
 }
