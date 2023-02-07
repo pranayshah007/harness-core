@@ -28,6 +28,7 @@ import io.harness.beans.Scope;
 import io.harness.beans.request.GitFileRequestV2;
 import io.harness.beans.response.GitFileBatchResponse;
 import io.harness.category.element.UnitTests;
+import io.harness.code.CodeResourceClient;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -106,6 +107,8 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock GitClientEnabledHelper gitClientEnabledHelper;
   @Mock ConnectorService connectorService;
+
+  @Mock CodeResourceClient codeResourceClient;
   ScmFacilitatorServiceImpl scmFacilitatorService;
   FileContent fileContent = FileContent.newBuilder().build();
   String accountIdentifier = "accountIdentifier";
@@ -140,7 +143,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     MockitoAnnotations.initMocks(this);
     scmFacilitatorService = new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, connectorService,
         scmOrchestratorService, ngFeatureFlagHelperService, gitClientEnabledHelper, gitFileCacheService,
-        executorService, gitFilePathHelper, delegateServiceGrpcClient);
+        executorService, gitFilePathHelper, delegateServiceGrpcClient, codeResourceClient);
     pageRequest = PageRequest.builder().build();
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
                                              .connectionType(GitConnectionType.ACCOUNT)

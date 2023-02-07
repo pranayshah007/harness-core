@@ -29,11 +29,14 @@ import io.harness.beans.request.ListFilesInCommitRequest;
 import io.harness.beans.response.GitFileBatchResponse;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
+import io.harness.code.CodeRepoResponse;
+import io.harness.code.CodeResourceClient;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harnesscode.HarnessCodeConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.git.GitClientHelper;
@@ -86,6 +89,7 @@ import io.harness.gitsync.common.service.ScmOrchestratorService;
 import io.harness.gitsync.core.beans.GitFileFetchRunnableParams;
 import io.harness.gitsync.utils.GitProviderUtils;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.network.SafeHttpCall;
 import io.harness.ng.beans.PageRequest;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
@@ -98,6 +102,7 @@ import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.Repository;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
+import io.harness.rest.RestResponse;
 import io.harness.utils.FilePathUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.RetryUtils;
@@ -105,6 +110,7 @@ import io.harness.utils.RetryUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -117,6 +123,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import retrofit2.Call;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
@@ -133,13 +140,16 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   GitFilePathHelper gitFilePathHelper;
   DelegateServiceGrpcClient delegateServiceGrpcClient;
 
+  CodeResourceClient codeResourceClient;
+
   @Inject
   public ScmFacilitatorServiceImpl(GitSyncConnectorHelper gitSyncConnectorHelper,
       @Named("connectorDecoratorService") ConnectorService connectorService,
       ScmOrchestratorService scmOrchestratorService, NGFeatureFlagHelperService ngFeatureFlagHelperService,
       GitClientEnabledHelper gitClientEnabledHelper, GitFileCacheService gitFileCacheService,
       @Named(GitSyncModule.GITX_BACKGROUND_CACHE_UPDATE_EXECUTOR_NAME) ExecutorService executor,
-      GitFilePathHelper gitFilePathHelper, DelegateServiceGrpcClient delegateServiceGrpcClient) {
+      GitFilePathHelper gitFilePathHelper, DelegateServiceGrpcClient delegateServiceGrpcClient,
+      CodeResourceClient codeResourceClient) {
     this.gitSyncConnectorHelper = gitSyncConnectorHelper;
     this.connectorService = connectorService;
     this.scmOrchestratorService = scmOrchestratorService;
@@ -149,6 +159,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     this.executor = executor;
     this.gitFilePathHelper = gitFilePathHelper;
     this.delegateServiceGrpcClient = delegateServiceGrpcClient;
+    this.codeResourceClient = codeResourceClient;
   }
 
   @Override
@@ -181,38 +192,60 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     return prepareListRepoResponse(scmConnector, response);
   }
 
+  private List<UserRepoResponse> getReposForHarnessCode(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, ScmConnector scmConnector) {
+    try {
+      List<CodeRepoResponse> codeRepos =
+          SafeHttpCall.executeWithExceptions(codeResourceClient.listRepos(accountIdentifier));
+      ArrayList userRepoResponses = new ArrayList();
+      for (CodeRepoResponse userRepo : codeRepos) {
+        userRepoResponses.add(UserRepoResponse.builder().namespace(userRepo.getPath()).name(userRepo.getUid()).build());
+      }
+      return userRepoResponses;
+    } catch (IOException e) {
+      log.error("Exception while calling code api", e);
+      throw new RuntimeException(e);
+    }
+  }
+
   @Override
   public List<UserRepoResponse> listAllReposForOnboardingFlow(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
     ScmConnector scmConnector =
         gitSyncConnectorHelper.getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
 
-    int maxRetries = 1;
-    // Adding retry only on manager as delegate already has retry logic
-    if (!GitSyncUtils.isExecuteOnDelegate(scmConnector)) {
-      maxRetries = 4;
+    if (scmConnector instanceof HarnessCodeConnectorDTO) {
+      log.info("Inside code scm connector {}", scmConnector);
+      return getReposForHarnessCode(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
+
+    } else {
+      int maxRetries = 1;
+      // Adding retry only on manager as delegate already has retry logic
+      if (!GitSyncUtils.isExecuteOnDelegate(scmConnector)) {
+        maxRetries = 4;
+      }
+
+      RetryPolicy<Object> retryPolicy =
+          RetryUtils.createRetryPolicy("Scm grpc retry attempt: ", Duration.ofMillis(750), maxRetries, log);
+      GetUserReposResponse response =
+          Failsafe.with(retryPolicy)
+              .get(()
+                       -> scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
+                           -> scmClientFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier,
+                               projectIdentifier, scmConnector, PageRequestDTO.builder().fetchAll(true).build()),
+                           scmConnector));
+
+      if (ScmApiErrorHandlingHelper.isFailureResponse(response.getStatus(), scmConnector.getConnectorType())) {
+        ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_REPOSITORIES, scmConnector.getConnectorType(),
+            scmConnector.getUrl(), response.getStatus(), response.getError(),
+            ErrorMetadata.builder().connectorRef(connectorRef).build());
+      }
+
+      // For hosted flow where we are creating a default docker connector
+      gitSyncConnectorHelper.testConnectionAsync(accountIdentifier, null, null, NGCommonEntityConstants.HARNESS_IMAGE);
+
+      return convertToUserRepo(response.getReposList());
     }
-
-    RetryPolicy<Object> retryPolicy =
-        RetryUtils.createRetryPolicy("Scm grpc retry attempt: ", Duration.ofMillis(750), maxRetries, log);
-    GetUserReposResponse response =
-        Failsafe.with(retryPolicy)
-            .get(()
-                     -> scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
-                         -> scmClientFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier,
-                             projectIdentifier, scmConnector, PageRequestDTO.builder().fetchAll(true).build()),
-                         scmConnector));
-
-    if (ScmApiErrorHandlingHelper.isFailureResponse(response.getStatus(), scmConnector.getConnectorType())) {
-      ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_REPOSITORIES, scmConnector.getConnectorType(),
-          scmConnector.getUrl(), response.getStatus(), response.getError(),
-          ErrorMetadata.builder().connectorRef(connectorRef).build());
-    }
-
-    // For hosted flow where we are creating a default docker connector
-    gitSyncConnectorHelper.testConnectionAsync(accountIdentifier, null, null, NGCommonEntityConstants.HARNESS_IMAGE);
-
-    return convertToUserRepo(response.getReposList());
   }
 
   @Override

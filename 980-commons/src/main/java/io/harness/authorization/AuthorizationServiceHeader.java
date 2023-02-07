@@ -45,7 +45,6 @@ public enum AuthorizationServiceHeader {
   CODE("Code"),
   IACM_MANAGER("IACMManager"),
   MIGRATOR("MigratorService");
-
   private final String serviceId;
 
   AuthorizationServiceHeader(String serviceId) {

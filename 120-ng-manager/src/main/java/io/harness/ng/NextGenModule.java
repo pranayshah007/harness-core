@@ -23,8 +23,7 @@ import static io.harness.audit.ResourceTypeConstants.SETTING;
 import static io.harness.audit.ResourceTypeConstants.TOKEN;
 import static io.harness.audit.ResourceTypeConstants.USER;
 import static io.harness.audit.ResourceTypeConstants.VARIABLE;
-import static io.harness.authorization.AuthorizationServiceHeader.CHAOS_SERVICE;
-import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.*;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS;
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE;
@@ -75,6 +74,7 @@ import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperService;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
+import io.harness.code.CodeResourceClientModule;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.connector.events.ConnectorEventHandler;
@@ -667,6 +667,9 @@ public class NextGenModule extends AbstractModule {
     install(new PipelineRemoteClientModule(
         ServiceHttpClientConfig.builder().baseUrl(appConfig.getPipelineServiceClientConfig().getBaseUrl()).build(),
         appConfig.getNextGenConfig().getPipelineServiceSecret(), NG_MANAGER.toString()));
+    install(new CodeResourceClientModule(
+        ServiceHttpClientConfig.builder().baseUrl(appConfig.getCodeServiceClientConfig().getBaseUrl()).build(),
+        appConfig.getNextGenConfig().getCodeServiceSecret(), CODE.toString()));
     install(new TemplateResourceClientModule(appConfig.getTemplateServiceClientConfig(),
         appConfig.getNextGenConfig().getTemplateServiceSecret(), NG_MANAGER.toString()));
     install(new ConnectorResourceClientModule(appConfig.getNgManagerClientConfig(),
