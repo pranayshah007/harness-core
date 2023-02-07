@@ -13,11 +13,13 @@ import io.harness.idp.config.resource.ConfigManagerResource;
 import io.harness.idp.config.resources.ConfigManagerResourceImpl;
 import io.harness.idp.config.service.AppConfigService;
 import io.harness.idp.config.service.AppConfigServiceImpl;
-import io.harness.idp.secret.resources.SecretManagerApiImpl;
-import io.harness.idp.secret.service.EnvironmentVariableService;
-import io.harness.idp.secret.service.EnvironmentVariableServiceImpl;
+import io.harness.idp.secret.resources.EnvironmentSecretApiImpl;
+import io.harness.idp.secret.service.EnvironmentSecretService;
+import io.harness.idp.secret.service.EnvironmentSecretServiceImpl;
 import io.harness.idp.status.resource.IDPStatusResource;
 import io.harness.idp.status.resources.IDPStatusResourceImpl;
+import io.harness.k8s.client.K8sApiClient;
+import io.harness.k8s.client.K8sClient;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
@@ -27,7 +29,7 @@ import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.serializer.IDPServiceRegistrars;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.spec.server.idp.v1.SecretManagerApi;
+import io.harness.spec.server.idp.v1.EnvironmentSecretApi;
 import io.harness.threading.ThreadPool;
 import io.harness.version.VersionModule;
 
@@ -121,10 +123,11 @@ public class IDPModule extends AbstractModule {
                 .build()));
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
     bind(AppConfigService.class).to(AppConfigServiceImpl.class);
-    bind(EnvironmentVariableService.class).to(EnvironmentVariableServiceImpl.class);
+    bind(EnvironmentSecretService.class).to(EnvironmentSecretServiceImpl.class);
     bind(ConfigManagerResource.class).to(ConfigManagerResourceImpl.class);
-    bind(SecretManagerApi.class).to(SecretManagerApiImpl.class);
+    bind(EnvironmentSecretApi.class).to(EnvironmentSecretApiImpl.class);
     bind(IDPStatusResource.class).to(IDPStatusResourceImpl.class);
+    bind(K8sClient.class).to(K8sApiClient.class);
   }
 
   @Provides
