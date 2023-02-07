@@ -603,7 +603,9 @@ public class YamlUtils {
     for (FQN fqn : fqnToValueMap.keySet()) {
       Object value = fqnToValueMap.get(fqn);
       if (value instanceof TextNode) {
-        String trimValue = ((TextNode) value).textValue().trim();
+        // .textValue() is not giving a value that can be deserialized into ParameterField.class in some cases. toString
+        // is working in these cases
+        String trimValue = value.toString();
         String valueWithoutValidators = trimValue;
         for (String validator : VALIDATORS) {
           if (trimValue.contains(validator)) {

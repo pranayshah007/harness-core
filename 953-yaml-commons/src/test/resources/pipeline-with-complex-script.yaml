@@ -1,0 +1,33 @@
+pipeline:
+  name: pipeline113232
+  identifier: pipeline1213213
+  projectIdentifier: naidusanity
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: s1
+        identifier: s1
+        description: ""
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Shell Script_1
+                  identifier: ShellScript_1
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          curl -X POST  -H 'content-type: application/json' \
+                          --url "https://app.harness.io/gateway/pipeline/api/webhook/custom?accountIdentifier=vpCkHKsDSxK9_KYfjCTMKA&orgIdentifier=default&projectIdentifier=RELEASEMANAGEMENT&pipelineIdentifier=CoreUIBuild&triggerIdentifier=develop_build" \
+                          -d '{"sample_key": "sample_value"}'
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+        tags: {}
