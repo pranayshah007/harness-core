@@ -53,13 +53,12 @@ import org.hibernate.validator.constraints.NotBlank;
 @Schema(name = "HarnessCodeConnector", description = "This contains details of HarnessCodeConnector connectors")
 public class HarnessCodeConnectorDTO
     extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
-  @NotNull
   @JsonProperty("type")
   @Schema(type = "string", allowableValues = {"Account", "Repo"})
   GitConnectionType connectionType;
   @NotBlank @NotNull String url;
   String validationRepo;
-  @Valid @NotNull GithubAuthenticationDTO authentication;
+  @Valid GithubAuthenticationDTO authentication;
   @Valid GithubApiAccessDTO apiAccess;
   Set<String> delegateSelectors;
   Boolean executeOnDelegate;
@@ -67,12 +66,10 @@ public class HarnessCodeConnectorDTO
 
   @Builder
   public HarnessCodeConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,
-      GithubAuthenticationDTO authentication, GithubApiAccessDTO apiAccess, Set<String> delegateSelectors,
-      boolean executeOnDelegate) {
+      GithubApiAccessDTO apiAccess, Set<String> delegateSelectors, boolean executeOnDelegate) {
     this.connectionType = connectionType;
     this.url = url;
     this.validationRepo = validationRepo;
-    this.authentication = authentication;
     this.apiAccess = apiAccess;
     this.delegateSelectors = delegateSelectors;
     this.executeOnDelegate = executeOnDelegate;
@@ -80,23 +77,7 @@ public class HarnessCodeConnectorDTO
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
-    List<DecryptableEntity> decryptableEntities = new ArrayList<>();
-    if (authentication.getAuthType() == GitAuthType.HTTP) {
-      GithubHttpCredentialsSpecDTO httpCredentialsSpec =
-          ((GithubHttpCredentialsDTO) authentication.getCredentials()).getHttpCredentialsSpec();
-      if (httpCredentialsSpec != null) {
-        decryptableEntities.add(httpCredentialsSpec);
-      }
-    } else {
-      GithubSshCredentialsDTO sshCredential = (GithubSshCredentialsDTO) authentication.getCredentials();
-      if (sshCredential != null) {
-        decryptableEntities.add(sshCredential);
-      }
-    }
-    if (apiAccess != null && apiAccess.getSpec() != null) {
-      decryptableEntities.add(apiAccess.getSpec());
-    }
-    return decryptableEntities;
+    return new ArrayList<>();
   }
 
   @Override
@@ -157,7 +138,6 @@ public class HarnessCodeConnectorDTO
         .type(this.connectionType)
         .url(this.url)
         .validationRepo(this.validationRepo)
-        .authentication(this.authentication.toOutcome())
         .apiAccess(this.apiAccess)
         .delegateSelectors(this.delegateSelectors)
         .executeOnDelegate(this.executeOnDelegate)
