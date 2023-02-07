@@ -109,7 +109,8 @@ public class SetupUsageChangeEventMessageListener implements MessageListener {
   }
 
   private boolean handledByNgCore(String entityTypeProtoEnum) {
-    return entityTypesSupportedByNGCore.contains(EntityTypeProtoEnum.valueOf(entityTypeProtoEnum));
+    return EntityTypeProtoEnum.getDescriptor().findValueByName(entityTypeProtoEnum) != null
+        && entityTypesSupportedByNGCore.contains(EntityTypeProtoEnum.valueOf(entityTypeProtoEnum));
   }
 
   private Boolean processDeleteAction(DeleteSetupUsageDTO deleteRequestDTO, EntityType referredEntityTypeFromChannel) {
