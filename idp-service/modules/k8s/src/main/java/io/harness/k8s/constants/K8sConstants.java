@@ -5,23 +5,16 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.secret.beans.dto;
+package io.harness.k8s.constants;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import lombok.Builder;
-import lombok.Getter;
+import lombok.experimental.UtilityClass;
 
+@UtilityClass
 @OwnedBy(HarnessTeam.IDP)
-@Getter
-@Builder
-public class EnvironmentVariableDTO {
-  private String envName;
-  private String secretIdentifier;
-  private String accountIdentifier;
-  private Long createdAt;
-  private Long lastModifiedAt;
-  private boolean isDeleted;
-  private long deletedAt;
+public final class K8sConstants {
+  public static final String BACKSTAGE_SECRET = "backstage-env";
+  public static final String DEFAULT_NAMESPACE = "default";
 }

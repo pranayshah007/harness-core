@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.0.0
 x-stoplight:
   id: cw2rng7ei2wad
 info:
@@ -8,127 +8,125 @@ info:
 servers:
   - url: 'https://api.harness.io'
 paths:
-  /v1/secret:
+  /v1/environment-secrets:
     get:
       summary: GetSecrets
       responses:
         '200':
-          $ref: '#/components/responses/SecretResponseList'
-      operationId: get-secrets
-      description: Get all secret for a given account
+          $ref: '#/components/responses/EnvironmentSecretResponseList'
+      operationId: get-environment-secrets
+      description: Get all environment secrets mapping for a given account
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Sort'
       requestBody:
-        $ref: '#/components/requestBodies/SecretRequest'
+        $ref: '#/components/requestBodies/EnvironmentSecretRequest'
       security:
         - x-api-key: []
+      x-internal: true
       tags:
-        - SecretManager
+        - EnvironmentSecret
     post:
       summary: CreateSecret
-      operationId: create-secret
+      operationId: create-environment-secret
       responses:
         '201':
-          $ref: '#/components/responses/SecretResponse'
-      description: Creates a secret
+          $ref: '#/components/responses/EnvironmentSecretResponse'
+      description: Creates an environment secret
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
         - x-api-key: []
       requestBody:
-        $ref: '#/components/requestBodies/SecretRequest'
+        $ref: '#/components/requestBodies/EnvironmentSecretRequest'
       tags:
-        - SecretManager
+        - EnvironmentSecret
     parameters: []
-  '/v1/secret/{secret}':
+  '/v1/environment-secrets/{environment-secret}':
     parameters:
       - schema:
           type: string
-        name: secret
+        name: environment-secret
         in: path
         required: true
     get:
-      summary: GetSecret
+      summary: GetEnvironmentSecret
       responses:
         '200':
-          $ref: '#/components/responses/SecretResponse'
-      operationId: get-secret
-      description: Get secret for a given secret name
+          $ref: '#/components/responses/EnvironmentSecretResponse'
+      operationId: get-environment-secret
+      description: Get environment secret mapping for a given environment secret
       security:
         - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
       tags:
-        - SecretManager
+        - EnvironmentSecret
     put:
-      summary: UpdateSecret
-      operationId: update-secret
+      summary: UpdateEnvironment
+      operationId: update-environment-secret
       responses:
         '200':
-          $ref: '#/components/responses/SecretResponse'
+          $ref: '#/components/responses/EnvironmentSecretResponse'
       security:
         - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
-        $ref: '#/components/requestBodies/SecretRequest'
-      description: Updates the specified secret
+        $ref: '#/components/requestBodies/EnvironmentSecretRequest'
+      description: Updates the specified environment secret
       tags:
-        - SecretManager
+        - EnvironmentSecret
     delete:
-      summary: DeleteSecret
-      operationId: delete-secret
+      summary: DeleteEnvironment
+      operationId: delete-environment-secret
       responses:
         '200':
-          $ref: '#/components/responses/SecretResponse'
-      description: Deletes the requested secret
+          $ref: '#/components/responses/EnvironmentSecretResponse'
+      description: Deletes the requested environment secret
       security:
         - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
-        - SecretManager
+        - EnvironmentSecret
 components:
   schemas:
-    Secret:
-      title: Secret
+    EnvironmentSecret:
+      title: EnvironmentSecret
       x-stoplight:
-        id: 1avd7teg9jznm
+        id: c62d4d8f19081
       type: object
       properties:
         name:
           type: string
         secretIdentifier:
           type: string
-        description:
-          type: string
-        account:
-          type: string
-    SecretRequest:
-      title: SecretRequest
-      x-stoplight:
-        id: 0q9h14r875kg2
-      type: object
-      properties:
-        secret:
-          $ref: '#/components/schemas/Secret'
-    SecretResponse:
-      title: SecretResponse
-      x-stoplight:
-        id: a3p63xmqmdp42
-      type: object
-      properties:
-        secret:
-          $ref: '#/components/schemas/Secret'
         created:
           type: integer
           format: int64
         updated:
           type: integer
           format: int64
+    EnvironmentSecretRequest:
+      title: EnvironmentSecretRequest
+      x-stoplight:
+        id: a94746e067851
+      type: object
+      properties:
+        secret:
+          $ref: '#/components/schemas/EnvironmentSecret'
+    EnvironmentSecretResponse:
+      title: EnvironmentSecretResponse
+      x-stoplight:
+        id: e8875709fc5b1
+      type: object
+      properties:
+        secret:
+          $ref: '#/components/schemas/EnvironmentSecret'
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -166,26 +164,26 @@ components:
         type: string
       description: Identifier field of the secret the resource is scoped to
   requestBodies:
-    SecretRequest:
+    EnvironmentSecretRequest:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SecretRequest'
+            $ref: '#/components/schemas/EnvironmentSecretRequest'
   responses:
-    SecretResponse:
+    EnvironmentSecretResponse:
       description: Example response
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SecretResponse'
-    SecretResponseList:
+            $ref: '#/components/schemas/EnvironmentSecretResponse'
+    EnvironmentSecretResponseList:
       description: Example response
       content:
         application/json:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/SecretResponse'
+              $ref: '#/components/schemas/EnvironmentSecretResponse'
       headers:
         X-Total-Elements:
           schema:

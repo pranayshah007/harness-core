@@ -10,14 +10,16 @@ package io.harness.idp.secret.repositories;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.secret.beans.entity.EnvironmentVariable;
+import io.harness.idp.secret.beans.entity.EnvironmentSecretEntity;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 
 @HarnessRepo
 @OwnedBy(HarnessTeam.IDP)
-public interface EnvironmentVariableRepository
-    extends CrudRepository<EnvironmentVariable, String>, EnvironmentVariableRepositoryCustom {
-  Optional<EnvironmentVariable> findByEnvNameAndAccountIdentifier(String envName, String accountIdentifier);
+public interface EnvironmentEnvironmentSecretRepository
+    extends CrudRepository<EnvironmentSecretEntity, String>, EnvironmentSecretRepositoryCustom {
+  Optional<EnvironmentSecretEntity> findByIdAndAccountIdentifier(String identifier, String accountIdentifier);
+  List<EnvironmentSecretEntity> findByAccountIdentifier(String accountIdentifier);
 }

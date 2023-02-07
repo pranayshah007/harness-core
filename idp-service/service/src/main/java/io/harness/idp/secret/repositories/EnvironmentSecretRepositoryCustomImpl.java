@@ -13,6 +13,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
-public class EnvironmentVariableRepositoryCustomImpl implements EnvironmentVariableRepositoryCustom {
+public class EnvironmentSecretRepositoryCustomImpl implements EnvironmentSecretRepositoryCustom {
   private MongoTemplate mongoTemplate;
 }

@@ -29,26 +29,26 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
-@FieldNameConstants(innerTypeName = "EnvironmentVariableKeys")
+@FieldNameConstants(innerTypeName = "EnvironmentSecretsEntityKeys")
 @StoreIn(DbAliases.IDP)
-@Entity(value = "environmentVariable", noClassnameStored = true)
-@Document("environmentVariable")
+@Entity(value = "environmentSecrets", noClassnameStored = true)
+@Document("environmentSecrets")
 @Persistent
 @OwnedBy(HarnessTeam.IDP)
-public class EnvironmentVariable implements PersistentEntity {
+public class EnvironmentSecretEntity implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("unique_account_envName_secretId")
+                 .name("unique_account_name_secretId")
                  .unique(true)
-                 .field(EnvironmentVariableKeys.accountIdentifier)
-                 .field(EnvironmentVariableKeys.envName)
-                 .field(EnvironmentVariableKeys.secretIdentifier)
+                 .field(EnvironmentSecretsEntityKeys.accountIdentifier)
+                 .field(EnvironmentSecretsEntityKeys.name)
+                 .field(EnvironmentSecretsEntityKeys.secretIdentifier)
                  .build())
         .build();
   }
   @Id @org.mongodb.morphia.annotations.Id private String id;
-  private String envName;
+  private String name;
   private String accountIdentifier;
   private String secretIdentifier;
   @CreatedDate Long createdAt;
