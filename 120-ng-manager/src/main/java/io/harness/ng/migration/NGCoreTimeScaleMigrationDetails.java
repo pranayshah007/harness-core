@@ -14,6 +14,8 @@ import io.harness.ng.core.migration.timescale.AddRollbackDurationToServiceInfraI
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
+
+import io.harness.ng.core.migration.timescale.CreatePLGLicensesUtilizationTable;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class NGCoreTimeScaleMigrationDetails implements MigrationDetails {
@@ -31,6 +33,7 @@ public class NGCoreTimeScaleMigrationDetails implements MigrationDetails {
   public List<Pair<Integer, Class<? extends NGMigration>>> getMigrations() {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, AddRollbackDurationToServiceInfraInfoTable.class))
+        .add(Pair.of(2, CreatePLGLicensesUtilizationTable.class))
         .build();
   }
 }
