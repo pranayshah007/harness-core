@@ -11,6 +11,9 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.polling.bean.artifact.ArtifactInfo;
+import io.harness.polling.bean.gitpolling.GitPollingInfo;
+import io.harness.polling.bean.manifest.ManifestInfo;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
