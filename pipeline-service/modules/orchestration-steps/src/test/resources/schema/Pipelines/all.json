@@ -744,7 +744,8 @@
                     "Sh",
                     "Bash",
                     "Powershell",
-                    "Pwsh"
+                    "Pwsh",
+                    "Python"
                   ]
                 },
                 {
