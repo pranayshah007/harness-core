@@ -9,6 +9,7 @@ package io.harness.pms.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
@@ -830,6 +831,17 @@ public class YamlUtilsTest extends CategoryTest {
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
     assertThat(EXPECTED_YAML_WITHOUT_RUNTIME_INPUTS)
         .isEqualTo(YamlUtils.getYamlWithoutInputs(new YamlConfig(yamlContent)));
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testRemoveInputsFromYamlForComplicatedScript() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipeline-with-complex-script.yaml");
+    String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
+    // method call to confirm that no exception is thrown
+    YamlUtils.getYamlWithoutInputs(new YamlConfig(yamlContent));
   }
 
   @Test
