@@ -14,7 +14,6 @@ import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.polling.bean.ArtifactInfo;
 
 import lombok.Builder;
 import lombok.Value;

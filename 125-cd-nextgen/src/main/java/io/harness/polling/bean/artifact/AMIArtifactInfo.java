@@ -15,7 +15,6 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ami.AMIFilter;
 import io.harness.delegate.task.artifacts.ami.AMITag;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.polling.bean.ArtifactInfo;
 
 import java.util.List;
 import lombok.Builder;
