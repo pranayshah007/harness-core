@@ -14,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.service.ServiceResourceClientModule;
-import io.harness.template.TemplateResourceClientModule;
 import io.harness.token.TokenClientModule;
 
 import com.google.inject.AbstractModule;

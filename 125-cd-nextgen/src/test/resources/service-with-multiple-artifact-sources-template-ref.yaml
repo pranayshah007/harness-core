@@ -18,7 +18,7 @@ service:
                   spec:
                     tag: latest
             - name: publicdockernginx
-              identifier: fromtemp1
+              identifier: fromtemp2
               template:
                 templateRef: anotherRef1
                 versionLabel: v2

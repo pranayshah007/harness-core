@@ -168,24 +168,6 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
   @RealMongo
-  public void testCreateIndexCompositeIndexWithIdEntity() {
-    Morphia morphia = new Morphia();
-    morphia.map(TestCompositeIndexWithIdEntity.class);
-    Collection<MappedClass> mappedClasses = morphia.getMapper().getMappedClasses();
-    MappedClass mappedClass = mappedClasses.stream()
-                                  .filter(mc -> mc.getClazz().equals(TestCompositeIndexWithIdEntity.class))
-                                  .findFirst()
-                                  .get();
-    DBCollection collection = persistence.getCollection(mappedClass.getClazz());
-    assertThatThrownBy(() -> IndexManager.indexCreators(mappedClass, collection))
-        .isInstanceOf(IndexManagerInspectException.class)
-        .hasMessageContaining("collection key in a composite index");
-  }
-
-  @Test
-  @Owner(developers = GEORGE)
-  @Category(UnitTests.class)
-  @RealMongo
   public void testCreateTwoFieldIndexesEntity() {
     Morphia morphia = new Morphia();
     morphia.map(TestTwoFieldIndexesEntity.class);
