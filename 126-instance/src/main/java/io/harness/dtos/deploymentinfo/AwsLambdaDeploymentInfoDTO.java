@@ -26,9 +26,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(CDP)
 public class AwsLambdaDeploymentInfoDTO extends DeploymentInfoDTO {
-  @NotNull private String revision;
   @NotNull private String functionName;
-  @NotNull private String project;
   @NotNull private String region;
   @NotNull private String infraStructureKey;
 

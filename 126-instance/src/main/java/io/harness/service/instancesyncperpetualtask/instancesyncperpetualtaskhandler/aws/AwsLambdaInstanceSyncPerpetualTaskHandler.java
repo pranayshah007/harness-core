@@ -18,7 +18,9 @@ import io.harness.cdng.googlefunctions.GoogleFunctionsEntityHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.aws.lambda.AwsLambdaDeploymentReleaseData;
+import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
+import io.harness.delegate.task.aws.lambda.request.AwsLambdaInstanceSyncRequest;
 import io.harness.delegate.task.googlefunction.GoogleFunctionDeploymentReleaseData;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionInfraConfig;
 import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionInstanceSyncRequest;
@@ -28,6 +30,8 @@ import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.GoogleFunctionDeploymentInfoDTO;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
+import io.harness.perpetualtask.instancesync.AwsLambdaDeploymentRelease;
+import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskParamsNg;
 import io.harness.perpetualtask.instancesync.GoogleFunctionDeploymentRelease;
 import io.harness.perpetualtask.instancesync.GoogleFunctionInstanceSyncPerpetualTaskParams;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.InstanceSyncPerpetualTaskHandler;
@@ -102,44 +106,44 @@ public class AwsLambdaInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpe
     return Any.pack(createAwsLambdaInstanceSyncPerpetualTaskParams(accountIdentifier, deploymentReleaseData));
   }
 
-  private GoogleFunctionInstanceSyncPerpetualTaskParams createAwsLambdaInstanceSyncPerpetualTaskParams(
-      String accountIdentifier, List<GoogleFunctionDeploymentReleaseData> deploymentReleaseData) {
-    return GoogleFunctionInstanceSyncPerpetualTaskParams.newBuilder()
+  private AwsLambdaInstanceSyncPerpetualTaskParamsNg createAwsLambdaInstanceSyncPerpetualTaskParams(
+      String accountIdentifier, List<AwsLambdaDeploymentReleaseData> deploymentReleaseData) {
+    return AwsLambdaInstanceSyncPerpetualTaskParamsNg.newBuilder()
         .setAccountId(accountIdentifier)
-        .addAllGoogleFunctionsDeploymentReleaseList(toGoogleFunctionsDeploymentReleaseList(deploymentReleaseData))
+        .addAllAwsLambdaDeploymentReleaseList(toAwsLambdaDeploymentReleaseList(deploymentReleaseData))
         .build();
   }
 
-  private List<GoogleFunctionDeploymentRelease> toGoogleFunctionsDeploymentReleaseList(
-      List<GoogleFunctionDeploymentReleaseData> deploymentReleaseData) {
-    return deploymentReleaseData.stream().map(this::toGoogleFunctionDeploymentRelease).collect(Collectors.toList());
+  private List<AwsLambdaDeploymentRelease> toAwsLambdaDeploymentReleaseList(
+      List<AwsLambdaDeploymentReleaseData> deploymentReleaseData) {
+    return deploymentReleaseData.stream().map(this::toAwsLambdaDeploymentRelease).collect(Collectors.toList());
   }
 
-  private GoogleFunctionDeploymentRelease toGoogleFunctionDeploymentRelease(
-      GoogleFunctionDeploymentReleaseData releaseData) {
-    return GoogleFunctionDeploymentRelease.newBuilder()
+  private AwsLambdaDeploymentRelease toAwsLambdaDeploymentRelease(
+          AwsLambdaDeploymentReleaseData releaseData) {
+    return AwsLambdaDeploymentRelease.newBuilder()
         .setFunction(releaseData.getFunction())
         .setRegion(releaseData.getRegion())
-        .setGoogleFunctionsInfraConfig(
-            ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getGoogleFunctionInfraConfig())))
+        .setAwsLambdaInfraConfig(
+            ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getAwsLambdaInfraConfig())))
         .build();
   }
 
   private List<ExecutionCapability> getExecutionCapabilities(
-      List<GoogleFunctionDeploymentReleaseData> deploymentReleaseDataList) {
-    Optional<GoogleFunctionDeploymentReleaseData> deploymentReleaseSample =
+      List<AwsLambdaDeploymentReleaseData> deploymentReleaseDataList) {
+    Optional<AwsLambdaDeploymentReleaseData> deploymentReleaseSample =
         deploymentReleaseDataList.stream().findFirst();
     if (!deploymentReleaseSample.isPresent()) {
       return Collections.emptyList();
     }
-    return toGoogleFunctionsInstanceSyncRequest(deploymentReleaseSample.get()).fetchRequiredExecutionCapabilities(null);
+    return toAwsLambdaInstanceSyncRequest(deploymentReleaseSample.get()).fetchRequiredExecutionCapabilities(null);
   }
 
-  private GoogleFunctionInstanceSyncRequest toGoogleFunctionsInstanceSyncRequest(
-      GoogleFunctionDeploymentReleaseData googleFunctionsDeploymentReleaseData) {
-    return GoogleFunctionInstanceSyncRequest.builder()
-        .googleFunctionInfraConfig(googleFunctionsDeploymentReleaseData.getGoogleFunctionInfraConfig())
-        .function(googleFunctionsDeploymentReleaseData.getFunction())
+  private AwsLambdaInstanceSyncRequest toAwsLambdaInstanceSyncRequest(
+      AwsLambdaDeploymentReleaseData awsLambdaDeploymentReleaseData) {
+    return AwsLambdaInstanceSyncRequest.builder()
+        .awsLambdaFunctionsInfraConfig((AwsLambdaFunctionsInfraConfig) awsLambdaDeploymentReleaseData.getAwsLambdaInfraConfig())
+        .function(awsLambdaDeploymentReleaseData.getFunction())
         .build();
   }
 }
