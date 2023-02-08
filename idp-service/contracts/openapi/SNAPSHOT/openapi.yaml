@@ -10,7 +10,7 @@ servers:
 paths:
   /v1/environment-secrets:
     get:
-      summary: GetEnvironmentSecrets
+      summary: Retrieves all Environment Secrets
       responses:
         '200':
           $ref: '#/components/responses/EnvironmentSecretResponseList'
@@ -29,7 +29,7 @@ paths:
       tags:
         - EnvironmentSecret
     post:
-      summary: CreateEnvironmentSecret
+      summary: Creates an Environment Secret
       operationId: create-environment-secret
       responses:
         '201':
@@ -49,7 +49,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/EnvironmentSecret'
     get:
-      summary: GetEnvironmentSecret
+      summary: Retrieves an Environment Secret
       responses:
         '200':
           $ref: '#/components/responses/EnvironmentSecretResponse'
@@ -63,7 +63,7 @@ paths:
       tags:
         - EnvironmentSecret
     put:
-      summary: UpdateEnvironmentSecret
+      summary: Updates an Environment Secret
       operationId: update-environment-secret
       responses:
         '200':
@@ -79,11 +79,8 @@ paths:
         - EnvironmentSecret
       x-internal: true
     delete:
-      summary: DeleteEnvironmentSecret
+      summary: Deletes an Environment Secret
       operationId: delete-environment-secret
-      responses:
-        '200':
-          $ref: '#/components/responses/EnvironmentSecretResponse'
       description: Deletes the requested environment secret
       security:
         - x-api-key: []
@@ -92,6 +89,9 @@ paths:
       tags:
         - EnvironmentSecret
       x-internal: true
+      responses:
+        '204':
+          description: No Content
 components:
   schemas:
     EnvironmentSecret:
@@ -102,7 +102,7 @@ components:
       properties:
         name:
           type: string
-        secretIdentifier:
+        secret_identifier:
           type: string
         created:
           type: integer
@@ -166,6 +166,9 @@ components:
     EnvironmentSecretRequest:
       content:
         application/json:
+          schema:
+            $ref: '#/components/schemas/EnvironmentSecretRequest'
+        application/yaml:
           schema:
             $ref: '#/components/schemas/EnvironmentSecretRequest'
   responses:
