@@ -72,7 +72,6 @@ public class StepGroupElementConfig {
 
   @VariableExpression(skipVariableExpression = true) TemplateLinkConfig template;
 
-  @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
   @YamlSchemaTypes(value = {runtime, list})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;

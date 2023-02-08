@@ -16,7 +16,6 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.SwaggerConstants;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
@@ -30,7 +29,6 @@ import io.harness.yaml.core.variables.NGVariable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -72,7 +70,6 @@ public class IntegrationStageNode extends AbstractStageNode {
       this.name = name;
     }
   }
-  @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
   @YamlSchemaTypes(value = {runtime, list})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;

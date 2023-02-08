@@ -13,7 +13,6 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
@@ -22,7 +21,6 @@ import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
-import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -45,8 +43,6 @@ public class StepGroupStepParameters implements StepParameters {
   String name;
   ParameterField<String> skipCondition;
   StepWhenCondition when;
-
-  @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
   @YamlSchemaTypes(value = {runtime, list})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;

@@ -27,10 +27,7 @@
     "failureStrategies": {
       "oneOf": [
         {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FailureStrategyConfig"
-          }
+          "$ref": "#/definitions/ParameterFieldListFailureStrategyConfig"
         },
         {
           "type": "array"
@@ -3983,10 +3980,7 @@
         "failureStrategies": {
           "oneOf": [
             {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/FailureStrategyConfig"
-              }
+              "$ref": "#/definitions/ParameterFieldListFailureStrategyConfig"
             },
             {
               "type": "array"
@@ -5894,6 +5888,45 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/DependencyElement"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldListFailureStrategyConfig": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FailureStrategyConfig"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FailureStrategyConfig"
           }
         }
       },
@@ -9153,10 +9186,7 @@
         "failureStrategies": {
           "oneOf": [
             {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/FailureStrategyConfig"
-              }
+              "$ref": "#/definitions/ParameterFieldListFailureStrategyConfig"
             },
             {
               "type": "array"
@@ -10179,10 +10209,7 @@
         "failureStrategies": {
           "oneOf": [
             {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/FailureStrategyConfig"
-              }
+              "$ref": "#/definitions/ParameterFieldListFailureStrategyConfig"
             },
             {
               "type": "array"
