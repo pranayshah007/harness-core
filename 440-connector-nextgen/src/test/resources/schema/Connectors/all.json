@@ -1503,6 +1503,113 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "BambooAuthCredentialsDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "BambooAuthenticationDTO": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "UsernamePassword",
+            "Anonymous",
+            "Bearer Token(HTTP Header)"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "UsernamePassword"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BambooUserNamePasswordDTO"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "BambooConnectorDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "bambooUrl"
+          ],
+          "properties": {
+            "auth": {
+              "$ref": "#/definitions/BambooAuthenticationDTO"
+            },
+            "bambooUrl": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "BambooUserNamePasswordDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/BambooAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "passwordRef"
+          ],
+          "properties": {
+            "passwordRef": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "usernameRef": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "usernameRef"
+              ]
+            },
+            {
+              "required": [
+                "username"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "BillingExportSpec": {
       "type": "object",
       "required": [
@@ -2019,6 +2126,7 @@
             "AzureArtifacts",
             "Tas",
             "Spot",
+            "Bamboo",
             "TerraformCloud"
           ]
         }
@@ -2165,6 +2273,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AzureRepoConnector"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Bamboo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BambooConnectorDTO"
               }
             }
           }
