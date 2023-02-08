@@ -11,21 +11,31 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.expression.Expression;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
-import software.amazon.awssdk.regions.Region;
 
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class AwsLambdaFunctionsInfraConfig implements AwsLambdaInfraConfig {
-  AwsConnectorDTO awsConnectorDTO;
+public class AwsLambdaS3ArtifactConfig implements AwsLambdaArtifactConfig, NestedAnnotationResolver {
+  @NonFinal @Expression(ALLOW_SECRETS) String bucketName;
+  @NonFinal @Expression(ALLOW_SECRETS) String filePath;
   @NonFinal @Expression(ALLOW_SECRETS) String region;
-  List<EncryptedDataDetail> encryptionDataDetails;
+  String type;
+  String identifier;
+  ConnectorInfoDTO connectorDTO;
+  boolean primaryArtifact;
+  List<EncryptedDataDetail> encryptedDataDetails;
+
+  @Override
+  public AwsLambdaArtifactType getAwsLambdaArtifactType() {
+    return AwsLambdaArtifactType.AMAZON_S3;
+  }
 }

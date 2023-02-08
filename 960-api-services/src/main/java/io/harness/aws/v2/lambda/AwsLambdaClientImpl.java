@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.aws.lambda;
+package io.harness.aws.v2.lambda;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
@@ -13,11 +13,15 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.v2.AwsClientHelper;
 import io.harness.exception.InvalidRequestException;
 
+import com.google.api.gax.rpc.NotFoundException;
 import com.google.inject.Singleton;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.SdkClient;
 import software.amazon.awssdk.core.waiters.WaiterResponse;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.lambda.LambdaClient;
@@ -30,19 +34,22 @@ import software.amazon.awssdk.services.lambda.model.GetFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.InvokeRequest;
 import software.amazon.awssdk.services.lambda.model.InvokeResponse;
 import software.amazon.awssdk.services.lambda.model.LambdaException;
+import software.amazon.awssdk.services.lambda.model.LambdaResponse;
+import software.amazon.awssdk.services.lambda.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.lambda.waiters.LambdaWaiter;
 
 @OwnedBy(CDP)
 @Singleton
 @Slf4j
-public class AwsLambdaClientImpl implements AwsLambdaClient {
+public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaClient {
   private static final String CLIENT_NAME = "AWS Lambda";
+
   @Override
   public CreateFunctionResponse createFunction(
       AwsInternalConfig awsInternalConfig, CreateFunctionRequest createFunctionRequest) {
-    Region region = Region.of(awsInternalConfig.getDefaultRegion());
     try {
-      LambdaClient awsLambdaClient = getAwsLambdaClient(region);
+      LambdaClient awsLambdaClient =
+          ((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion()));
       LambdaWaiter waiter = awsLambdaClient.waiter();
       logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
 
@@ -64,11 +71,36 @@ public class AwsLambdaClientImpl implements AwsLambdaClient {
   @Override
   public DeleteFunctionResponse deleteFunction(
       AwsInternalConfig awsInternalConfig, DeleteFunctionRequest deleteFunctionRequest) {
-    Region region = Region.of(awsInternalConfig.getDefaultRegion());
-
     try {
       logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
-      return getAwsLambdaClient(region).deleteFunction(deleteFunctionRequest);
+      return ((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion()))
+          .deleteFunction(deleteFunctionRequest);
+    } catch (LambdaException e) {
+      logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage());
+      throw new InvalidRequestException(e.getMessage());
+    }
+  }
+
+  public Optional<GetFunctionResponse> getFunction(
+      AwsInternalConfig awsInternalConfig, GetFunctionRequest getFunctionRequest) {
+    try {
+      logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
+      return Optional.ofNullable(((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion()))
+                                     .getFunction(getFunctionRequest));
+    } catch (LambdaException lambdaException) {
+      if (lambdaException instanceof ResourceNotFoundException) {
+        return Optional.empty();
+      }
+      logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
+      throw new InvalidRequestException(lambdaException.getMessage());
+    }
+  }
+
+  @Override
+  public InvokeResponse invokeFunction(AwsInternalConfig awsInternalConfig, InvokeRequest invokeRequest) {
+    try {
+      logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion())).invoke(invokeRequest);
     } catch (LambdaException e) {
       logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage());
       throw new InvalidRequestException(e.getMessage());
@@ -76,22 +108,24 @@ public class AwsLambdaClientImpl implements AwsLambdaClient {
   }
 
   @Override
-  public InvokeResponse invokeFunction(AwsInternalConfig awsInternalConfig, InvokeRequest invokeRequest) {
-    Region region = Region.of(awsInternalConfig.getDefaultRegion());
-
-    try {
-      logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
-      return getAwsLambdaClient(region).invoke(invokeRequest);
-    } catch (LambdaException e) {
-      logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage());
-      throw new InvalidRequestException(e.getMessage());
-    }
+  public SdkClient getClient(AwsInternalConfig awsConfig, String region) {
+    return software.amazon.awssdk.services.lambda.LambdaClient.builder()
+        .credentialsProvider(getAwsCredentialsProvider(awsConfig))
+        .region(Region.of(region))
+        .overrideConfiguration(getClientOverrideConfiguration(awsConfig))
+        .build();
   }
 
-  public LambdaClient getAwsLambdaClient(Region region) {
-    LambdaClient awsLambda =
-        (LambdaClient) LambdaClient.builder().region(region).credentialsProvider(ProfileCredentialsProvider.create());
-    return awsLambda;
+  @Override
+  public String client() {
+    return "LAMBDA";
+  }
+
+  @Override
+  public void handleClientServiceException(AwsServiceException awsServiceException) {
+    if (awsServiceException instanceof LambdaException) {
+      throw new InvalidRequestException(awsServiceException.getMessage());
+    }
   }
 
   public void logCall(String client, String method) {

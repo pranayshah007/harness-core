@@ -484,6 +484,15 @@ import io.harness.delegate.task.aws.asg.AsgRollingRollbackResponse;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackResult;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupInstance;
+import io.harness.delegate.task.aws.lambda.AwsLambda;
+import io.harness.delegate.task.aws.lambda.AwsLambdaArtifactConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
+import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaS3ArtifactConfig;
+import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
+import io.harness.delegate.task.aws.lambda.request.AwsLambdaPrepareRollbackRequest;
+import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.AzureTaskParameters;
 import io.harness.delegate.task.azure.AzureTaskResponse;
@@ -2339,5 +2348,14 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerraformCloudRunTaskResponse.class, 680009);
 
     kryo.register(AwsSamInstallationCapability.class, 10000401);
+    kryo.register(AwsLambdaDeployRequest.class, 10000402);
+    kryo.register(AwsLambdaDeployResponse.class, 10000403);
+    kryo.register(AwsLambdaPrepareRollbackRequest.class, 10000404);
+    kryo.register(AwsLambdaCommandTypeNG.class, 10000405);
+    kryo.register(AwsLambdaInfraConfig.class, 10000406);
+    kryo.register(AwsLambdaFunctionsInfraConfig.class, 10000407);
+    kryo.register(AwsLambdaArtifactConfig.class, 10000408);
+    kryo.register(AwsLambdaS3ArtifactConfig.class, 10000409);
+    kryo.register(AwsLambda.class, 10000410);
   }
 }
