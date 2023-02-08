@@ -476,8 +476,9 @@ public class VerifyStepMetricsAnalysisUtils {
       metricsAnalyses.forEach(metricsAnalysis -> sortTestDataNodes(metricsAnalysis.getTestDataNodes()));
       metricsAnalyses.sort(
           Comparator.comparing(metricsAnalysis -> ((MetricsAnalysis) metricsAnalysis).getHealthSource().getIdentifier())
-              .thenComparing(Comparator.nullsLast(
-                  Comparator.comparing(metricsAnalysis -> ((MetricsAnalysis) metricsAnalysis).getTransactionGroup())))
+              .thenComparing(metricsAnalysis
+                  -> ((MetricsAnalysis) metricsAnalysis).getTransactionGroup(),
+                  Comparator.nullsLast(Comparator.naturalOrder()))
               .thenComparing(
                   metricsAnalysis -> ((MetricsAnalysis) metricsAnalysis).getAnalysisResult(), Comparator.reverseOrder())
               .thenComparing(metricsAnalysis -> ((MetricsAnalysis) metricsAnalysis).getMetricName()));
@@ -486,13 +487,14 @@ public class VerifyStepMetricsAnalysisUtils {
 
   private static void sortTestDataNodes(List<AnalysedDeploymentTestDataNode> testDataNodes) {
     if (CollectionUtils.isNotEmpty(testDataNodes)) {
-      testDataNodes.sort(
-          Comparator
-              .nullsLast(Comparator.comparing(
-                  node -> ((AnalysedDeploymentTestDataNode) node).getAnalysisResult(), Comparator.reverseOrder()))
-              .thenComparing(Comparator.nullsLast(
-                  Comparator.comparing(node -> ((AnalysedDeploymentTestDataNode) node).getControlNodeIdentifier())))
-              .thenComparing(node -> ((AnalysedDeploymentTestDataNode) node).getNodeIdentifier()));
+      testDataNodes.sort(Comparator
+                             .comparing(node
+                                 -> ((AnalysedDeploymentTestDataNode) node).getAnalysisResult(),
+                                 Comparator.nullsLast(Comparator.reverseOrder()))
+                             .thenComparing(node
+                                 -> ((AnalysedDeploymentTestDataNode) node).getControlNodeIdentifier(),
+                                 Comparator.nullsLast(Comparator.naturalOrder()))
+                             .thenComparing(node -> ((AnalysedDeploymentTestDataNode) node).getNodeIdentifier()));
     }
   }
   private VerifyStepMetricsAnalysisUtils() {}

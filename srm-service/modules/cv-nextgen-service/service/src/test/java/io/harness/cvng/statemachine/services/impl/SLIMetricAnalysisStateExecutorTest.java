@@ -25,6 +25,7 @@ import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.Sources;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.downtime.beans.AllEntitiesRule;
 import io.harness.cvng.downtime.beans.DowntimeDTO;
 import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
@@ -201,6 +202,41 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testExecuteWithSkipDataBecauseOfDowntime() throws IllegalAccessException {
     DowntimeDTO downtimeDTO = builderFactory.getOnetimeEndTimeBasedDowntimeDTO();
+    downtimeDTO.getSpec().getSpec().setStartTime(startTime.minus(10, ChronoUnit.MINUTES).getEpochSecond());
+    ((OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) ((OnetimeDowntimeSpec) downtimeDTO.getSpec().getSpec()).getSpec())
+        .setEndTime(endTime.plus(10, ChronoUnit.MINUTES).getEpochSecond());
+    downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
+    FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "downtimeService", downtimeService, true);
+    FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "entityUnavailabilityStatusesService",
+        entityUnavailabilityStatusesService, true);
+    FieldUtils.writeField(sliMetricAnalysisStateExecutor, "sliDataUnavailabilityInstancesHandlerService",
+        sliDataUnavailabilityInstancesHandlerService, true);
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(any(), any(), any())).thenReturn(new ArrayList<>());
+    doCallRealMethod()
+        .when(sliDataUnavailabilityInstancesHandlerService)
+        .filterSLIRecordsToSkip(any(), any(), any(), any(), any(), any());
+    sliMetricAnalysisState = (SLIMetricAnalysisState) sliMetricAnalysisStateExecutor.execute(sliMetricAnalysisState);
+    List<SLIRecord> sliRecordList = hPersistence.createQuery(SLIRecord.class)
+                                        .filter(SLIRecordKeys.sliId, serviceLevelIndicator.getUuid())
+                                        .field(SLIRecordKeys.timestamp)
+                                        .greaterThanOrEq(startTime)
+                                        .field(SLIRecordKeys.timestamp)
+                                        .lessThan(endTime)
+                                        .asList();
+    assertThat(sliMetricAnalysisState.getStatus().name()).isEqualTo(AnalysisStatus.SUCCESS.name());
+    assertThat(sliRecordList.size()).isEqualTo(5);
+    assertThat(sliRecordList.get(0).getSliState()).isEqualTo(SLIRecord.SLIState.SKIP_DATA);
+    SLOHealthIndicator sloHealthIndicator = sloHealthIndicatorService.getBySLOIdentifier(
+        builderFactory.getProjectParams(), serviceLevelObjective.getIdentifier());
+    assertThat(sloHealthIndicator.getErrorBudgetRemainingPercentage()).isEqualTo(100);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testExecuteWithSkipDataBecauseOfDowntimeWithALLMonitoredServices() throws IllegalAccessException {
+    DowntimeDTO downtimeDTO = builderFactory.getOnetimeEndTimeBasedDowntimeDTO();
+    downtimeDTO.setEntitiesRule(AllEntitiesRule.builder().build());
     downtimeDTO.getSpec().getSpec().setStartTime(startTime.minus(10, ChronoUnit.MINUTES).getEpochSecond());
     ((OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) ((OnetimeDowntimeSpec) downtimeDTO.getSpec().getSpec()).getSpec())
         .setEndTime(endTime.plus(10, ChronoUnit.MINUTES).getEpochSecond());

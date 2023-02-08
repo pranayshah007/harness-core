@@ -16,7 +16,6 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ProjectPathParams;
@@ -27,6 +26,7 @@ import io.harness.cvng.downtime.beans.DowntimeHistoryView;
 import io.harness.cvng.downtime.beans.DowntimeListView;
 import io.harness.cvng.downtime.beans.DowntimeResponse;
 import io.harness.cvng.downtime.services.api.DowntimeService;
+import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -209,5 +209,17 @@ public class DowntimeProjectLevelResource {
     ProjectParams projectParams = fromResourcePathParams(resourcePathParams);
     return new RestResponse<>(
         downtimeService.enableOrDisable(projectParams, resourcePathParams.getIdentifier(), enable));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @Path("monitored-services")
+  @ApiOperation(value = "get all monitored services associated with the downtime",
+      nickname = "getDowntimeSLOAssociatedMonitoredServices")
+  @NGAccessControlCheck(resourceType = DOWNTIME, permission = VIEW_PERMISSION)
+  public ResponseDTO<PageResponse<MSDropdownResponse>>
+  getSLOAssociatedMonitoredServices(@BeanParam ProjectParams projectParams, @BeanParam PageParams pageParams) {
+    return ResponseDTO.newResponse(downtimeService.getDowntimeAssociatedMonitoredServices(projectParams, pageParams));
   }
 }

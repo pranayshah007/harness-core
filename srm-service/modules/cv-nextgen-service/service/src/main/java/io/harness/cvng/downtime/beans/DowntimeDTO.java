@@ -12,7 +12,6 @@ import io.harness.gitsync.beans.YamlDTO;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
 import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
@@ -45,6 +44,8 @@ public class DowntimeDTO implements YamlDTO {
   @ApiModelProperty(required = true) @NotNull DowntimeCategory category;
   @ApiModelProperty(required = true) @DefaultValue("Project") DowntimeScope scope;
   @Valid @NotNull DowntimeSpecDTO spec;
-  @ApiModelProperty(required = true) @NotNull @NotEmpty List<EntityDetails> entityRefs;
+
+  @ApiModelProperty(required = true) @NotNull @NotEmpty EntitiesRule entitiesRule;
+
   boolean enabled;
 }

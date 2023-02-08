@@ -1018,6 +1018,24 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServiceDetails.get(0).getServiceName()).isEqualTo("Mocked service name");
     assertThat(monitoredServiceDetails.get(0).getEnvironmentName()).isEqualTo("Mocked env name");
   }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetAll() {
+    MonitoredServiceDTO monitoredServiceDTO1 = createMonitoredServiceDTOBuilder("ms1", "service1", "env1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
+    MonitoredServiceDTO monitoredServiceDTO2 = createMonitoredServiceDTOBuilder("ms2", "service1", "env2").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO2);
+    List<MonitoredServiceDetail> monitoredServiceDetails =
+        monitoredServiceService.getAllMonitoredServiceDetails(builderFactory.getContext().getProjectParams());
+    assertThat(monitoredServiceDetails.size()).isEqualTo(2);
+    assertThat(monitoredServiceDetails.get(0).getMonitoredServiceIdentifier()).isEqualTo("ms1");
+    assertThat(monitoredServiceDetails.get(0).getServiceIdentifier()).isEqualTo("service1");
+    assertThat(monitoredServiceDetails.get(0).getEnvironmentIdentifier()).isEqualTo("env1");
+    assertThat(monitoredServiceDetails.get(0).getServiceName()).isEqualTo("Mocked service name");
+    assertThat(monitoredServiceDetails.get(0).getEnvironmentName()).isEqualTo("Mocked env name");
+  }
   @Test
   @Owner(developers = KANHAIYA)
   @Category(UnitTests.class)
