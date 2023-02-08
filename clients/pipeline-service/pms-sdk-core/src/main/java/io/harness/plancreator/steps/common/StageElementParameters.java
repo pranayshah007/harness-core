@@ -46,10 +46,7 @@ public class StageElementParameters implements StepParameters {
   ParameterField<String> skipCondition;
   ParameterField<StageWhenCondition> when;
 
-  @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
-  @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {runtime})
-  ParameterField<List<FailureStrategyConfig>> failureStrategies;
+  List<FailureStrategyConfig> failureStrategies;
   @SkipAutoEvaluation ParameterField<Map<String, Object>> variables;
   Map<String, String> tags;
   String type;

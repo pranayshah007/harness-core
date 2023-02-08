@@ -28,7 +28,8 @@ public class CvStepParametersUtils {
     stepBuilder.delegateSelectors(stepNode.getDelegateSelectors());
     stepBuilder.description(stepNode.getDescription());
     stepBuilder.skipCondition(stepNode.getSkipCondition());
-    stepBuilder.failureStrategies(stepNode.getFailureStrategies());
+    stepBuilder.failureStrategies(
+        stepNode.getFailureStrategies() != null ? stepNode.getFailureStrategies().getValue() : null);
     stepBuilder.timeout(ParameterField.createValueField(TimeoutUtils.getTimeoutString(stepNode.getTimeout())));
     stepBuilder.when(stepNode.getWhen());
     stepBuilder.type(stepNode.getType());

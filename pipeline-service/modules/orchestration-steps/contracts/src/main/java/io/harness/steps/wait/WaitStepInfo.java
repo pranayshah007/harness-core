@@ -110,7 +110,8 @@ public class WaitStepInfo implements PMSStepInfo, Visitable {
     stepBuilder.delegateSelectors(stepElementConfig.getDelegateSelectors());
     stepBuilder.description(stepElementConfig.getDescription());
     stepBuilder.skipCondition(stepElementConfig.getSkipCondition());
-    stepBuilder.failureStrategies(stepElementConfig.getFailureStrategies());
+    stepBuilder.failureStrategies(
+        stepElementConfig.getFailureStrategies() != null ? stepElementConfig.getFailureStrategies().getValue() : null);
     stepBuilder.when(stepElementConfig.getWhen());
     stepBuilder.type(stepElementConfig.getType());
     stepBuilder.uuid(stepElementConfig.getUuid());
