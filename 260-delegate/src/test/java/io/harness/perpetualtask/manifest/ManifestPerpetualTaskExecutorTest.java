@@ -34,7 +34,7 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
 
-import software.wings.beans.appmanifest.HelmChart;
+import software.wings.beans.dto.HelmChart;
 import software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 

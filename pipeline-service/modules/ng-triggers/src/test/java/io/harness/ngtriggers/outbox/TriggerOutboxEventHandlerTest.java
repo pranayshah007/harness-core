@@ -31,6 +31,7 @@ import io.harness.audit.client.api.AuditClientService;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
+import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.events.TriggerCreateEvent;
 import io.harness.ngtriggers.events.TriggerDeleteEvent;
 import io.harness.ngtriggers.events.TriggerOutboxEvents;
@@ -93,8 +94,12 @@ public class TriggerOutboxEventHandlerTest extends CategoryTest {
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
     String identifier = randomAlphabetic(10);
-    NGTriggerEntity triggerEntity =
-        NGTriggerEntity.builder().name(randomAlphabetic(10)).identifier(identifier).yaml(newYaml).build();
+    NGTriggerEntity triggerEntity = NGTriggerEntity.builder()
+                                        .name(randomAlphabetic(10))
+                                        .identifier(identifier)
+                                        .type(NGTriggerType.WEBHOOK)
+                                        .yaml(newYaml)
+                                        .build();
     TriggerCreateEvent triggerCreateEvent =
         new TriggerCreateEvent(accountIdentifier, orgIdentifier, projectIdentifier, triggerEntity);
     String eventData = objectMapper.writeValueAsString(triggerCreateEvent);
@@ -135,10 +140,18 @@ public class TriggerOutboxEventHandlerTest extends CategoryTest {
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
     String identifier = randomAlphabetic(10);
-    NGTriggerEntity newTrigger =
-        NGTriggerEntity.builder().name(randomAlphabetic(10)).identifier(identifier).yaml(newYaml).build();
-    NGTriggerEntity oldTrigger =
-        NGTriggerEntity.builder().name(randomAlphabetic(10)).identifier(identifier).yaml(oldYaml).build();
+    NGTriggerEntity newTrigger = NGTriggerEntity.builder()
+                                     .name(randomAlphabetic(10))
+                                     .identifier(identifier)
+                                     .type(NGTriggerType.WEBHOOK)
+                                     .yaml(newYaml)
+                                     .build();
+    NGTriggerEntity oldTrigger = NGTriggerEntity.builder()
+                                     .name(randomAlphabetic(10))
+                                     .identifier(identifier)
+                                     .type(NGTriggerType.SCHEDULED)
+                                     .yaml(oldYaml)
+                                     .build();
     TriggerUpdateEvent triggerUpdateEvent =
         new TriggerUpdateEvent(accountIdentifier, orgIdentifier, projectIdentifier, oldTrigger, newTrigger);
     String eventData = objectMapper.writeValueAsString(triggerUpdateEvent);
@@ -179,8 +192,12 @@ public class TriggerOutboxEventHandlerTest extends CategoryTest {
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
     String identifier = randomAlphabetic(10);
-    NGTriggerEntity triggerEntity =
-        NGTriggerEntity.builder().name(randomAlphabetic(10)).identifier(identifier).yaml(oldYaml).build();
+    NGTriggerEntity triggerEntity = NGTriggerEntity.builder()
+                                        .name(randomAlphabetic(10))
+                                        .identifier(identifier)
+                                        .type(NGTriggerType.WEBHOOK)
+                                        .yaml(oldYaml)
+                                        .build();
     TriggerDeleteEvent triggerDeleteEvent =
         new TriggerDeleteEvent(accountIdentifier, orgIdentifier, projectIdentifier, triggerEntity);
     String eventData = objectMapper.writeValueAsString(triggerDeleteEvent);

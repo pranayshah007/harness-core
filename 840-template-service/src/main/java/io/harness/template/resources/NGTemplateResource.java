@@ -31,6 +31,7 @@ import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitImportInfoDTO;
+import io.harness.gitaware.helper.TemplateMoveConfigRequestDTO;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
@@ -41,6 +42,7 @@ import io.harness.ng.core.customDeployment.CustomDeploymentYamlRequestDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateListType;
@@ -61,6 +63,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.FilterParamsDTO;
+import io.harness.template.beans.NGTemplateConstants;
 import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.TemplateDeleteListRequestDTO;
@@ -68,6 +71,7 @@ import io.harness.template.beans.TemplateFilterProperties;
 import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.beans.TemplateImportSaveResponse;
 import io.harness.template.beans.TemplateListRepoResponse;
+import io.harness.template.beans.TemplateMoveConfigResponse;
 import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
@@ -94,6 +98,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -239,7 +244,12 @@ public class NGTemplateResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = "This contains details of Git Entity like Git Branch, Git Repository to be created")
       @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo,
-      @Parameter(description = "Template YAML") @NotNull String templateYaml,
+      @RequestBody(required = true, description = "Template YAML",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Create", summary = "Sample Create Template YAML",
+                         value = NGTemplateConstants.API_SAMPLE_TEMPLATE_YAML, description = "Sample Template YAML"))
+          }) @NotNull String templateYaml,
       @Parameter(description = "Specify true if Default Template is to be set") @QueryParam(
           "setDefaultTemplate") @DefaultValue("false") boolean setDefaultTemplate,
       @Parameter(description = "Comments") @QueryParam("comments") String comments) {
@@ -319,7 +329,12 @@ public class NGTemplateResource {
           NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
       @Parameter(description = "This contains details of Git Entity like Git Branch information to be updated")
       @BeanParam GitEntityUpdateInfoDTO gitEntityInfo,
-      @Parameter(description = "Template YAML") @NotNull String templateYaml,
+      @RequestBody(required = true, description = "Template YAML",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Update", summary = "Sample Update Template YAML",
+                         value = NGTemplateConstants.API_SAMPLE_TEMPLATE_YAML, description = "Sample Template YAML"))
+          }) @NotNull String templateYaml,
       @Parameter(description = "Specify true if Default Template is to be set") @QueryParam(
           "setDefaultTemplate") @DefaultValue("false") boolean setDefaultTemplate,
       @Parameter(description = "Comments") @QueryParam("comments") String comments) {
@@ -604,6 +619,28 @@ public class NGTemplateResource {
         templateIdentifier, projectId, orgId, accountId));
     return ResponseDTO.newResponse(templateMergeService.getTemplateInputs(accountId, orgId, projectId,
         templateIdentifier, templateLabel, NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache)));
+  }
+
+  @GET
+  @Path("/entitySetupUsage/{templateIdentifier}")
+  @ApiOperation(value = "Get Entities referring this template", nickname = "listTemplateUsage")
+  @Hidden
+  public ResponseDTO<List<EntitySetupUsageDTO>> listTemplateEntityUsage(
+      @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
+          "templateIdentifier") @ResourceIdentifier String templateIdentifier,
+      @Parameter(description = "Version Label") @QueryParam(
+          NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
+      @Parameter(description = "Is Stable Template") @QueryParam(NGCommonEntityConstants.IS_STABLE_TEMPLATE)
+      boolean isStableTemplate, @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
+    return ResponseDTO.newResponse(templateService.listTemplateReferences(page, size, accountIdentifier, orgIdentifier,
+        projectIdentifier, templateIdentifier, versionLabel, searchTerm, isStableTemplate));
   }
 
   @GET
@@ -910,5 +947,29 @@ public class NGTemplateResource {
     TemplateListRepoResponse templateListRepoResponse = templateService.getListOfRepos(
         accountIdentifier, orgIdentifier, projectIdentifier, includeAllTemplatesAccessibleAtScope);
     return ResponseDTO.newResponse(templateListRepoResponse);
+  }
+
+  @POST
+  @Path("/move-config/{templateIdentifier}")
+  @ApiOperation(value = "Move Template YAML from inline to remote", nickname = "moveTemplateConfigs")
+  @Operation(operationId = "moveTemplateConfigs", summary = "Move Template YAML from inline to remote",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Fetches Template YAML from Harness DB and creates a remote entity")
+      })
+  public ResponseDTO<TemplateMoveConfigResponse>
+  moveConfig(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                 NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
+          "templateIdentifier") @ResourceIdentifier String templateIdentifier,
+      @BeanParam TemplateMoveConfigRequestDTO templateMoveConfigRequestDTO) {
+    TemplateMoveConfigResponse templateMoveConfigResponse = templateService.moveTemplateStoreTypeConfig(
+        accountId, orgId, projectId, templateIdentifier, templateMoveConfigRequestDTO);
+    return ResponseDTO.newResponse(templateMoveConfigResponse);
   }
 }

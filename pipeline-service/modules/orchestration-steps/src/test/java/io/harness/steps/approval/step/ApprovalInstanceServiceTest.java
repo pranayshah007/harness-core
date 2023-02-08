@@ -8,6 +8,7 @@
 package io.harness.steps.approval.step;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,19 +18,25 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.executions.plan.PlanExecutionService;
+import io.harness.execution.NodeExecution;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.repositories.ApprovalInstanceRepository;
 import io.harness.rule.Owner;
+import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
@@ -47,7 +54,9 @@ import io.harness.waiter.WaitNotifyEngine;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -58,6 +67,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -266,5 +276,127 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
     assertThat(approvalInstanceServiceImpl.addHarnessApprovalActivity(
                    "hello", embeddedUser, harnessApprovalActivityRequestDTO))
         .isEqualTo(harnessApprovalInstance);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testdeleteByNodeExecutionIdsWhenLessThanBatchSize() {
+    Set<String> nodeExecutionIds = new HashSet<>();
+    nodeExecutionIds.add(UUIDGenerator.generateUuid());
+    nodeExecutionIds.add(UUIDGenerator.generateUuid());
+    when(approvalInstanceRepository.deleteAllByNodeExecutionIdIn(any())).thenReturn(2L);
+
+    approvalInstanceServiceImpl.deleteByNodeExecutionIds(nodeExecutionIds);
+    ArgumentCaptor<Set<String>> setArgumentCaptor = ArgumentCaptor.forClass(Set.class);
+    verify(approvalInstanceRepository, times(1)).deleteAllByNodeExecutionIdIn(setArgumentCaptor.capture());
+    Set<String> setArgs = setArgumentCaptor.getValue();
+    assertThat(setArgs).isEqualTo(nodeExecutionIds);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testdeleteByNodeExecutionIdsWhenEqualToBatchSize() {
+    Set<String> nodeExecutionIds = new HashSet<>();
+    for (int i = 0; i < 500; i++) {
+      nodeExecutionIds.add(UUIDGenerator.generateUuid());
+    }
+    // only return value if called with valid query else throw exception
+    when(approvalInstanceRepository.deleteAllByNodeExecutionIdIn(any())).thenAnswer((Answer<Long>) invocation -> {
+      Object[] args = invocation.getArguments();
+      Set<String> setNodeExecutionId = (Set<String>) args[0];
+      if (setNodeExecutionId.equals(nodeExecutionIds))
+        return 500L;
+      throw new Exception();
+    });
+
+    approvalInstanceServiceImpl.deleteByNodeExecutionIds(nodeExecutionIds);
+    verify(approvalInstanceRepository, times(1)).deleteAllByNodeExecutionIdIn(any());
+    verifyNoMoreInteractions(approvalInstanceRepository);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testdeleteByNodeExecutionIdsWhenMoreThanBatchSize() {
+    Set<String> nodeExecutionIds = new HashSet<>();
+    for (int i = 0; i < 600; i++) {
+      nodeExecutionIds.add(UUIDGenerator.generateUuid());
+    }
+    // only return value if called with valid query else throw exception
+    when(approvalInstanceRepository.deleteAllByNodeExecutionIdIn(any())).thenAnswer((Answer<Long>) invocation -> {
+      Object[] args = invocation.getArguments();
+      Set<String> setNodeExecutionId = (Set<String>) args[0];
+      if (setNodeExecutionId.size() == 500) {
+        return 500L;
+      } else if (setNodeExecutionId.size() == 100) {
+        return 100L;
+      }
+      throw new Exception();
+    });
+
+    approvalInstanceServiceImpl.deleteByNodeExecutionIds(nodeExecutionIds);
+    verify(approvalInstanceRepository, times(2)).deleteAllByNodeExecutionIdIn(any());
+    verifyNoMoreInteractions(approvalInstanceRepository);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testIsNodeExecutionOfApprovalStepType() {
+    assertThat(approvalInstanceServiceImpl.isNodeExecutionOfApprovalStepType(null)).isFalse();
+    assertThat(approvalInstanceServiceImpl.isNodeExecutionOfApprovalStepType(NodeExecution.builder().build()))
+        .isFalse();
+    assertThat(approvalInstanceServiceImpl.isNodeExecutionOfApprovalStepType(
+                   NodeExecution.builder().stepType(StepType.newBuilder().build()).build()))
+        .isFalse();
+    assertThat(approvalInstanceServiceImpl.isNodeExecutionOfApprovalStepType(
+                   NodeExecution.builder()
+                       .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP_GROUP).build())
+                       .build()))
+        .isFalse();
+    assertThat(
+        approvalInstanceServiceImpl.isNodeExecutionOfApprovalStepType(
+            NodeExecution.builder().stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build()).build()))
+        .isFalse();
+    assertThat(
+        approvalInstanceServiceImpl.isNodeExecutionOfApprovalStepType(
+            NodeExecution.builder()
+                .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).setType("notApproval").build())
+                .build()))
+        .isFalse();
+    assertThat(approvalInstanceServiceImpl.isNodeExecutionOfApprovalStepType(
+                   NodeExecution.builder()
+                       .stepType(StepType.newBuilder()
+                                     .setStepCategory(StepCategory.STEP)
+                                     .setType(StepSpecTypeConstants.CUSTOM_APPROVAL)
+                                     .build())
+                       .build()))
+        .isTrue();
+    assertThat(approvalInstanceServiceImpl.isNodeExecutionOfApprovalStepType(
+                   NodeExecution.builder()
+                       .stepType(StepType.newBuilder()
+                                     .setStepCategory(StepCategory.STEP)
+                                     .setType(StepSpecTypeConstants.JIRA_APPROVAL)
+                                     .build())
+                       .build()))
+        .isTrue();
+    assertThat(approvalInstanceServiceImpl.isNodeExecutionOfApprovalStepType(
+                   NodeExecution.builder()
+                       .stepType(StepType.newBuilder()
+                                     .setStepCategory(StepCategory.STEP)
+                                     .setType(StepSpecTypeConstants.SERVICENOW_APPROVAL)
+                                     .build())
+                       .build()))
+        .isTrue();
+    assertThat(approvalInstanceServiceImpl.isNodeExecutionOfApprovalStepType(
+                   NodeExecution.builder()
+                       .stepType(StepType.newBuilder()
+                                     .setStepCategory(StepCategory.STEP)
+                                     .setType(StepSpecTypeConstants.HARNESS_APPROVAL)
+                                     .build())
+                       .build()))
+        .isTrue();
   }
 }

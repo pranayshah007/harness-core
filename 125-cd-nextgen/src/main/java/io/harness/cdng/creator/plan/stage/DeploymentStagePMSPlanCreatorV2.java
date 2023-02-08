@@ -201,7 +201,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .stepParameters(stageParameters.build())
             .stepType(getStepType(stageNode))
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-            .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
+            .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
@@ -352,7 +352,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         && ParameterField.isNotNull(deploymentStageConfig.getService().getServiceRef());
     boolean serviceV2UseFromStage = deploymentStageConfig.getService() != null
         && deploymentStageConfig.getService().getUseFromStage() != null
-        && EmptyPredicate.isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getStage());
+        && deploymentStageConfig.getService().getUseFromStage().getValue() != null
+        && EmptyPredicate.isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getValue().getStage());
     boolean isServices = deploymentStageConfig.getServices() != null;
     return isServices || isServiceV2 || serviceV2UseFromStage;
   }

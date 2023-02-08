@@ -27,5 +27,4 @@ public @interface NGEntityName {
   String message() default "Invalid name";
   Class<?>[] groups() default {};
   Class<? extends Payload>[] payload() default {};
-  int maxLength() default 64;
 }

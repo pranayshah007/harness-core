@@ -16,11 +16,13 @@ import io.harness.ng.core.AccountScope;
 import io.harness.ng.core.OrgScope;
 import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
+import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.ResourceScope;
 import io.harness.template.entity.TemplateEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.collect.ImmutableMap;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -51,10 +53,14 @@ public class TemplateForceDeleteEvent implements Event {
   @JsonIgnore
   @Override
   public Resource getResource() {
+    Map<String, String> labels = new HashMap<>();
+    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, templateEntity.getName());
+    labels.put("versionLabel", templateEntity.getVersionLabel());
+    labels.put("templateEntityType", templateEntity.getTemplateEntityType().toString());
     return Resource.builder()
         .identifier(templateEntity.getIdentifier())
         .type(ResourceTypeConstants.TEMPLATE)
-        .labels(ImmutableMap.<String, String>builder().put("versionLabel", templateEntity.getVersionLabel()).build())
+        .labels(labels)
         .build();
   }
 

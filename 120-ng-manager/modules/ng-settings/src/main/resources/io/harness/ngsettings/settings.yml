@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 11
+version : 12
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -131,7 +131,7 @@ settings :
         defaultValue: 10h
         editable: true
       ENTERPRISE:
-        defaultValue: NO_LIMIT
+        defaultValue: 52w
         editable: true
   - identifier: concurrent_active_pipeline_executions
     name: Concurrent Active Pipeline Executions

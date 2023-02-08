@@ -64,7 +64,7 @@ public class PlanExecutionMonitorServiceImplTest extends OrchestrationTestBase {
                            .build());
     CloseableIterator<PlanExecution> iterator =
         OrchestrationTestHelper.createCloseableIterator(planExecutions.iterator());
-    doReturn(iterator).when(planExecutionService).fetchPlanExecutionsByStatus(any(), any());
+    doReturn(iterator).when(planExecutionService).fetchPlanExecutionsByStatusFromAnalytics(any(), any());
     planExecutionMonitorService.registerActiveExecutionMetrics();
     verify(metricService, times(3)).recordMetric(anyString(), anyDouble());
   }

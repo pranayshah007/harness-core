@@ -292,9 +292,11 @@ import software.wings.sm.status.StateStatusUpdateInfo;
 import software.wings.verification.VerificationDataAnalysisResponse;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
 
+import com.amazonaws.services.kms.model.AWSKMSException;
 import com.esotericsoftware.kryo.Kryo;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
+import com.mongodb.MongoExecutionTimeoutException;
 
 @OwnedBy(PL)
 @TargetModule(_360_CG_MANAGER)
@@ -620,5 +622,7 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(Artifact.class, 50029);
     kryo.register(Artifact.ContentStatus.class, 50030);
     kryo.register(Artifact.Status.class, 50031);
+    kryo.register(MongoExecutionTimeoutException.class, 50032);
+    kryo.register(AWSKMSException.class, 50033);
   }
 }

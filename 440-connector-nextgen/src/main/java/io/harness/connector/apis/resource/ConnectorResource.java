@@ -160,7 +160,7 @@ public class ConnectorResource {
           NGCommonEntityConstants.ORG_KEY) @io.harness.accesscontrol.OrgIdentifier String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @ProjectIdentifier @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @io.harness.accesscontrol.ProjectIdentifier String projectIdentifier,
-      @Parameter(description = "Connector Identifier") @EntityIdentifier(maxLength = 128) @PathParam(
+      @Parameter(description = "Connector Identifier") @EntityIdentifier @PathParam(
           NGCommonEntityConstants.IDENTIFIER_KEY) @ResourceIdentifier String connectorIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     Optional<ConnectorResponseDTO> connectorResponseDTO =
@@ -190,8 +190,8 @@ public class ConnectorResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
-      @Parameter(description = "Connector ID") @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier(
-          maxLength = 128) String connectorIdentifier) {
+      @Parameter(description = "Connector ID") @QueryParam(
+          NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier String connectorIdentifier) {
     if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(connectorIdentifier)) {
       return ResponseDTO.newResponse(false);
     }
@@ -230,11 +230,11 @@ public class ConnectorResource {
       @Parameter(description = "Filter Connectors by Source Category. Available Source Categories are "
               + "CLOUD_PROVIDER, SECRET_MANAGER, CLOUD_COST, ARTIFACTORY, CODE_REPO,  "
               + "MONITORING and TICKETING") @QueryParam(SOURCE_CATEGORY_KEY) ConnectorCategory sourceCategory,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @QueryParam("version") String version, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
-    return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(
-        page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, type, category, sourceCategory)));
+    return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(page, size, accountIdentifier, orgIdentifier,
+        projectIdentifier, searchTerm, type, category, sourceCategory, version)));
   }
 
   @POST
@@ -498,8 +498,8 @@ public class ConnectorResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "URL of the repository, specify only in the case of Account Type"
               + " Git Connector") @QueryParam(NGCommonEntityConstants.REPO_URL) String repoURL,
-      @Parameter(description = "Connector ID") @PathParam(NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier(
-          maxLength = 128) String connectorIdentifier) {
+      @Parameter(description = "Connector ID") @PathParam(
+          NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier String connectorIdentifier) {
     return ResponseDTO.newResponse(connectorService.testGitRepoConnection(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, getDecodedString(repoURL)));
   }

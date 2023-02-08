@@ -14,19 +14,32 @@ import io.harness.cvng.exception.NotImplementedForHealthSourceException;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class DataCollectionDSLFactory {
+  private static final String SUMOLOGIC_LOG_DATACOLLECTION_FILE = "sumologic-log.datacollection";
+  private static final String ELK_LOG_DATACOLLECTION_FILE = "elk-log-fetch-data.datacollection";
+
   public static String readLogDSL(DataSourceType dataSourceType) {
     // TODO dont read repeatedly and also move it from here
     if (dataSourceType == DataSourceType.SUMOLOGIC_LOG) {
-      try {
-        return Resources.toString(
-            NextGenLogCVConfig.class.getResource("sumologic-log.datacollection"), StandardCharsets.UTF_8);
-      } catch (IOException e) {
-        throw new IllegalStateException(e);
-      }
+      return readFile(SUMOLOGIC_LOG_DATACOLLECTION_FILE);
+    } else if (dataSourceType == DataSourceType.ELASTICSEARCH) {
+      return readFile(ELK_LOG_DATACOLLECTION_FILE);
     } else {
       throw new NotImplementedForHealthSourceException("Not Implemented.");
+    }
+  }
+
+  private static String readFile(String fileName) {
+    try {
+      return Resources.toString(
+          Objects.requireNonNull(NextGenLogCVConfig.class.getResource(fileName)), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      log.error("Cannot read DSL {}", fileName);
+      throw new RuntimeException(e);
     }
   }
 }

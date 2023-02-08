@@ -16,8 +16,8 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.delegate.task.ListNotifyResponseData;
 
-import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
+import software.wings.beans.dto.HelmChart;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.utils.RepositoryType;
 

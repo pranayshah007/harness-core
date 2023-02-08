@@ -211,8 +211,16 @@ public class VmInitializeTaskParamsBuilder {
     envVars.putAll(stoEnvVars);
     envVars.putAll(commonEnvVars);
 
-    Map<String, String> stageVars = getEnvironmentVariables(
-        NGVariablesUtils.getMapOfVariables(initializeStepInfo.getVariables(), ambiance.getExpressionFunctorToken()));
+    // Order of precedence is Pipeline -> Stage -> Step
+    // First pipeline variables will be put in the map, then stage and then step variables
+    // If some pipeline variable has same name as stage variable then it will be replaced by stage variable in the map
+    // Same logic goes for stage and step variables.
+    // More details on https://harness.atlassian.net/browse/CI-6709
+    Map<String, String> stageVars = getEnvironmentVariables(NGVariablesUtils.getMapOfVariables(
+        initializeStepInfo.getPipelineVariables(), ambiance.getExpressionFunctorToken()));
+    stageVars.putAll(getEnvironmentVariables(
+        NGVariablesUtils.getMapOfVariables(initializeStepInfo.getVariables(), ambiance.getExpressionFunctorToken())));
+
     CIVmSecretEvaluator ciVmSecretEvaluator = CIVmSecretEvaluator.builder().build();
     Set<String> secrets = ciVmSecretEvaluator.resolve(stageVars, ngAccess, ambiance.getExpressionFunctorToken());
     envVars.putAll(stageVars);

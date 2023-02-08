@@ -24,9 +24,11 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
@@ -55,6 +57,7 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.swagger.v3.oas.annotations.Hidden;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -121,7 +124,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
 
     if (!ngTriggerEntity.isPresent()) {
-      throw new InvalidRequestException(String.format("Trigger %s does not exist", triggerIdentifier));
+      throw new EntityNotFoundException(String.format("Trigger %s does not exist", triggerIdentifier));
     }
 
     return ResponseDTO.newResponse(ngTriggerEntity.get().getVersion().toString(),
@@ -140,7 +143,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     if (!ngTriggerEntity.isPresent()) {
-      throw new InvalidRequestException("Trigger doesn't not exists");
+      throw new EntityNotFoundException(String.format("Trigger %s does not exist", triggerIdentifier));
     }
 
     try {
@@ -255,7 +258,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     if (!ngTriggerEntity.isPresent()) {
-      throw new InvalidRequestException(String.format("Trigger %s doesn't not exists", triggerIdentifier));
+      throw new EntityNotFoundException(String.format("Trigger %s does not exist", triggerIdentifier));
     }
     try {
       TriggerDetails triggerDetails =
@@ -280,7 +283,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     if (!ngTriggerEntity.isPresent()) {
-      throw new InvalidRequestException(String.format("Trigger %s doesn't not exists", triggerIdentifier));
+      throw new EntityNotFoundException(String.format("Trigger %s does not exist", triggerIdentifier));
     }
 
     Criteria criteria = ngTriggerEventsService.formCriteria(accountIdentifier, orgIdentifier, projectIdentifier,
@@ -308,11 +311,17 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     if (!ngTriggerEntity.isPresent()) {
-      throw new InvalidRequestException(String.format("Trigger %s doesn't not exists", triggerIdentifier));
+      throw new EntityNotFoundException(String.format("Trigger %s does not exist", triggerIdentifier));
     }
     TriggerDetails triggerDetails =
         ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier,
             triggerIdentifier, ngTriggerEntity.get().getYaml(), ngTriggerEntity.get().getWithServiceV2());
     return ResponseDTO.newResponse(ngTriggerService.getTriggerYamlDiff(triggerDetails));
+  }
+
+  @Override
+  @Hidden
+  public ResponseDTO<NGTriggerConfigV2> getNGTriggerConfigV2() {
+    return null;
   }
 }

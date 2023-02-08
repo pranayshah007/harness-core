@@ -42,7 +42,7 @@ features:
     restrictions:
       COMMUNITY:
         restrictionType: STATIC_LIMIT
-        limit: 1
+        limit: 100
         clientName: ngmanager
       FREE:
         restrictionType: STATIC_LIMIT
@@ -59,7 +59,7 @@ features:
     restrictions:
       COMMUNITY:
         restrictionType: STATIC_LIMIT
-        limit: 10
+        limit: 100
         clientName: ngmanager
       FREE:
         restrictionType: STATIC_LIMIT
@@ -76,7 +76,7 @@ features:
     restrictions:
       COMMUNITY:
         restrictionType: STATIC_LIMIT
-        limit: 1
+        limit: 100
         clientName: ngmanager
       FREE:
         restrictionType: STATIC_LIMIT
@@ -93,7 +93,7 @@ features:
     restrictions:
       COMMUNITY:
         restrictionType: STATIC_LIMIT
-        limit: 1
+        limit: 100
         clientName: ngmanager
       FREE:
         restrictionType: STATIC_LIMIT
@@ -110,7 +110,7 @@ features:
     restrictions:
       COMMUNITY:
         restrictionType: STATIC_LIMIT
-        limit: 1
+        limit: 100
         clientName: ngmanager
       FREE:
         restrictionType: STATIC_LIMIT

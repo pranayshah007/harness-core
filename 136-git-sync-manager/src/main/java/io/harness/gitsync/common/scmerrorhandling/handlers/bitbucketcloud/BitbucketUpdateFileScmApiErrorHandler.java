@@ -13,6 +13,7 @@ import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud
 import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.ScmErrorHints.REPO_NOT_FOUND;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmConflictException;
@@ -68,6 +69,11 @@ public class BitbucketUpdateFileScmApiErrorHandler implements ScmApiErrorHandler
             ErrorMessageFormatter.formatMessage(UPDATE_FILE_CONFLICT_ERROR_HINT, errorMetadata),
             ErrorMessageFormatter.formatMessage(UPDATE_FILE_CONFLICT_ERROR_EXPLANATION, errorMetadata),
             new ScmConflictException(errorMessage));
+      case 429:
+        throw NestedExceptionUtils.hintWithExplanationException(ScmErrorHints.RATE_LIMIT,
+            ScmErrorExplanations.RATE_LIMIT,
+            new ScmBadRequestException(
+                EmptyPredicate.isEmpty(errorMessage) ? ScmErrorDefaultMessage.RATE_LIMIT : errorMessage));
       default:
         log.error(String.format("Error while updating bitbucket file: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);

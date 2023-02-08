@@ -49,6 +49,7 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -99,7 +100,7 @@ public class TerragruntRollbackStepTest extends CategoryTest {
                             .putSetupAbstractions("accountId", "test-account")
                             .build();
     TerragruntRollbackStepParameters rollbackSpec =
-        TerragruntRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerragruntRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terragruntStepHelper).generateFullIdentifier("id", ambiance);
@@ -181,7 +182,7 @@ public class TerragruntRollbackStepTest extends CategoryTest {
                             .putSetupAbstractions("accountId", "test-account")
                             .build();
     TerragruntRollbackStepParameters rollbackSpec =
-        TerragruntRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerragruntRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terragruntStepHelper).generateFullIdentifier("id", ambiance);
@@ -261,7 +262,7 @@ public class TerragruntRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerragruntRollbackStepParameters rollbackSpec =
-        TerragruntRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerragruntRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
@@ -301,7 +302,7 @@ public class TerragruntRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerragruntRollbackStepParameters rollbackSpec =
-        TerragruntRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerragruntRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();

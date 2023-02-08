@@ -23,8 +23,10 @@ import software.wings.sm.states.CommandState;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@Slf4j
 public class CommandStepMapperImpl extends StepMapper {
   @Override
   public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
@@ -73,5 +75,10 @@ public class CommandStepMapperImpl extends StepMapper {
     String templateId1 = stepYaml1.getTemplateUuid();
     String templateId2 = stepYaml2.getTemplateUuid();
     return StringUtils.isNoneBlank(templateId2, templateId1) && StringUtils.equals(templateId1, templateId2);
+  }
+
+  @Override
+  public boolean loopingSupported() {
+    return true;
   }
 }

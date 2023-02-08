@@ -38,6 +38,8 @@ public class CIMiningPatternJob {
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
 
   private static final int CACHE_UPDATE_PERIOD = 10;
+  private static final String MINING_PATTERENS_FILE = "suspiciousMiningPatterns.txt";
+  private static final String VALID_DOMAINS_FILE = "validDomains.txt";
 
   private final LoadingCache<String, Set<String>> maliciousMiningPatternsCache =
       CacheBuilder.newBuilder()
@@ -45,7 +47,17 @@ public class CIMiningPatternJob {
           .build(new CacheLoader<String, Set<String>>() {
             @Override
             public Set<String> load(String blank) {
-              return downloadFromGCS();
+              return initializeMiningPatterens();
+            }
+          });
+
+  private final LoadingCache<String, Set<String>> validDomains =
+      CacheBuilder.newBuilder()
+          .expireAfterWrite(CACHE_UPDATE_PERIOD, TimeUnit.MINUTES)
+          .build(new CacheLoader<String, Set<String>>() {
+            @Override
+            public Set<String> load(String blank) {
+              return initializeValidDomains();
             }
           });
 
@@ -57,23 +69,83 @@ public class CIMiningPatternJob {
     }
   }
 
-  private Set<String> downloadFromGCS() {
+  public Set<String> getValidDomains() {
+    try {
+      return validDomains.get("");
+    } catch (Exception e) {
+      return new HashSet<>();
+    }
+  }
+
+  private Set<String> initializeMiningPatterens() {
     Set<String> maliciousMiningPatterns = new HashSet<>();
+
+    try {
+      byte[] fileContent = downloadFromGCS(MINING_PATTERENS_FILE);
+
+      String[] patterns = new String(fileContent, StandardCharsets.UTF_8).split("\n");
+
+      if (patterns == null || patterns.length != 0) {
+        maliciousMiningPatterns.clear();
+      }
+
+      for (String pattern : patterns) {
+        if (isNotEmpty(pattern)) {
+          maliciousMiningPatterns.add(pattern.trim());
+        }
+      }
+
+    } catch (Exception e) {
+      log.error("Error initialize mining patterns for CI hosted");
+    }
+
+    log.info("Successfully initialize mining patterns. Set size {}", maliciousMiningPatterns.size());
+    return maliciousMiningPatterns;
+  }
+
+  private Set<String> initializeValidDomains() {
+    Set<String> validDomains = new HashSet<String>();
+
+    try {
+      byte[] fileContent = downloadFromGCS(VALID_DOMAINS_FILE);
+
+      String[] patterns = new String(fileContent, StandardCharsets.UTF_8).split("\n");
+
+      if (patterns == null || patterns.length != 0) {
+        validDomains.clear();
+      }
+
+      for (String pattern : patterns) {
+        if (isNotEmpty(pattern)) {
+          validDomains.add(pattern.trim());
+        }
+      }
+
+    } catch (Exception e) {
+      log.error("Error initialize valid domains set for CI hosted");
+    }
+
+    log.info("Successfully initialize valid domains. Set size {}", validDomains.size());
+    return validDomains;
+  }
+
+  private byte[] downloadFromGCS(String fileName) {
+    byte[] fileContent = null;
     MiningPatternConfig miningPatternConfig = ciExecutionServiceConfig.getMiningPatternConfig();
 
     if (Objects.isNull(miningPatternConfig)) {
       log.warn("Couldn't get GCS credentials from configuration");
-      return maliciousMiningPatterns;
+      return fileContent;
     }
 
     String projectId = miningPatternConfig.getProjectId();
     String bucketName = miningPatternConfig.getBucketName();
     String gcsCredsBase64 = miningPatternConfig.getGcsCreds();
-    String objectName = "suspiciousMiningPatterns.txt";
+    String objectName = fileName;
 
     if (isBlank(projectId) || isBlank(bucketName) || isBlank(gcsCredsBase64)) {
       log.warn("Couldn't get GCS credentials from configuration");
-      return maliciousMiningPatterns;
+      return fileContent;
     }
 
     try {
@@ -84,20 +156,11 @@ public class CIMiningPatternJob {
           StorageOptions.newBuilder().setCredentials(credentials).setProjectId(projectId).build().getService();
 
       byte[] content = storage.readAllBytes(bucketName, objectName);
-      String[] patterns = new String(content, StandardCharsets.UTF_8).split("\n");
+      return content;
 
-      if (patterns.length != 0) {
-        maliciousMiningPatterns.clear();
-      }
-
-      for (String pattern : patterns) {
-        if (isNotEmpty(pattern)) {
-          maliciousMiningPatterns.add(pattern.trim());
-        }
-      }
     } catch (Exception e) {
-      log.error("Exception occurred while fetching mining patterns: ", e);
+      log.error("Exception occurred while fetching file {} domains: ", fileName, e);
+      return null;
     }
-    return maliciousMiningPatterns;
   }
 }

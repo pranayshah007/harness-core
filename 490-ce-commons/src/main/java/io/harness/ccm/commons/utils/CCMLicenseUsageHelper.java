@@ -13,6 +13,8 @@ import com.google.cloud.bigquery.TableResult;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Set;
 
 public class CCMLicenseUsageHelper {
@@ -49,8 +51,20 @@ public class CCMLicenseUsageHelper {
     return Math.round(cost.doubleValue() * 100L) / 100L;
   }
 
+  public static Long computeDeduplicatedActiveSpend(ResultSet result) throws SQLException {
+    long cost = 0L;
+    while (result != null && result.next()) {
+      cost += fetchNumericValue(result, COST);
+    }
+    return Math.round(cost * 100L) / 100L;
+  }
+
   private static long getNumericValue(FieldValueList row, String fieldName) {
     FieldValue value = row.get(fieldName);
     return Math.round(value.getNumericValue().doubleValue() * 100L) / 100L;
+  }
+
+  private static long fetchNumericValue(ResultSet resultSet, String field) throws SQLException {
+    return resultSet.getLong(field);
   }
 }

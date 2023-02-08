@@ -268,8 +268,10 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
     final DeploymentStageNode node2 = new DeploymentStageNode();
     node2.setDeploymentStageConfig(
         DeploymentStageConfig.builder()
-            .service(
-                ServiceYamlV2.builder().useFromStage(ServiceUseFromStageV2.builder().stage("stage1").build()).build())
+            .service(ServiceYamlV2.builder()
+                         .useFromStage(
+                             ParameterField.createValueField(ServiceUseFromStageV2.builder().stage("stage1").build()))
+                         .build())
             .environment(EnvironmentYamlV2.builder()
                              .environmentRef(ParameterField.<String>builder().value(envEntity.getIdentifier()).build())
                              // default to false

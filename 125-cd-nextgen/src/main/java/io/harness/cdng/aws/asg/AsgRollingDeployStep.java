@@ -14,8 +14,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataRequest;
@@ -61,6 +64,7 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
   @Inject private AsgStepCommonHelper asgStepCommonHelper;
   @Inject private AsgStepHelper asgStepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -122,11 +126,12 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgStoreManifestsContent(asgStepExecutorParams.getAsgStoreManifestsContent())
-            .skipMatching(Boolean.TRUE.equals(asgSpecParameters.getSkipMatching().getValue()))
+            .skipMatching(ParameterFieldHelper.getBooleanParameterFieldValue(asgSpecParameters.getSkipMatching()))
             .useAlreadyRunningInstances(
-                Boolean.TRUE.equals(asgSpecParameters.getUseAlreadyRunningInstances().getValue()))
-            .instanceWarmup(asgSpecParameters.getInstanceWarmup().getValue())
-            .minimumHealthyPercentage(asgSpecParameters.getMinimumHealthyPercentage().getValue())
+                ParameterFieldHelper.getBooleanParameterFieldValue(asgSpecParameters.getUseAlreadyRunningInstances()))
+            .instanceWarmup(ParameterFieldHelper.getIntegerParameterFieldValue(asgSpecParameters.getInstanceWarmup()))
+            .minimumHealthyPercentage(
+                ParameterFieldHelper.getIntegerParameterFieldValue(asgSpecParameters.getMinimumHealthyPercentage()))
             .amiImageId(amiImageId)
             .build();
 
@@ -187,7 +192,12 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_ROLLING_DEPLOY_OUTCOME,
         asgRollingDeployOutcome, StepOutcomeGroup.STEP.name());
 
-    return stepResponseBuilder.status(Status.SUCCEEDED).build();
+    List<ServerInstanceInfo> serverInstanceInfos = asgStepCommonHelper.getServerInstanceInfos(asgRollingDeployResponse,
+        infrastructureOutcome.getInfrastructureKey(),
+        asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance).getRegion());
+    StepResponse.StepOutcome stepOutcome =
+        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
+    return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
   }
 
   @Override

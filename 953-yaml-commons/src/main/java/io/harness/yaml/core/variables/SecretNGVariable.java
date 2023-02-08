@@ -21,6 +21,7 @@ import io.harness.visitor.helpers.variables.SecretVariableVisitorHelper;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.yaml.core.VariableExpression;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -62,6 +63,7 @@ public class SecretNGVariable implements NGVariable {
   SecretRefData defaultValue;
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
+  @JsonIgnore
   @Override
   public ParameterField<?> getCurrentValue() {
     return ParameterField.isNull(value)

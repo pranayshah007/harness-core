@@ -32,9 +32,11 @@ import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG;
+import io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG;
 import io.harness.delegate.task.pcf.request.TasManifestsPackage;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.pcf.CfCommandUnitConstants;
@@ -72,6 +74,143 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
   @Mock protected CfCommandTaskHelperNG pcfCommandTaskHelper;
   @Mock PcfCommandTaskBaseHelper pcfCommandTaskBaseHelper;
   @InjectMocks @Spy CfRollingDeployCommandTaskHandlerNG cfRollingDeployCommandTaskHandlerNG;
+
+  @Test(expected = InvalidArgumentsException.class)
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void executeTaskInternalTestWhenException() throws Exception {
+    TasInfraConfig tasInfraConfig = TasInfraConfig.builder().build();
+    char[] password = {'a'};
+    char[] username = {'b'};
+    CloudFoundryConfig cfConfig = CloudFoundryConfig.builder().userName(username).password(password).build();
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+
+    File file = new File("/gs");
+    doReturn(file).when(pcfCommandTaskBaseHelper).generateWorkingDirectoryForDeployment();
+
+    doReturn(executionLogCallback)
+        .when(tasTaskHelperBase)
+        .getLogCallback(logStreamingTaskClient, CfCommandUnitConstants.Deploy, true, commandUnitsProgress);
+
+    doReturn(executionLogCallback)
+        .when(tasTaskHelperBase)
+        .getLogCallback(logStreamingTaskClient, CfCommandUnitConstants.Wrapup, true, commandUnitsProgress);
+
+    doReturn(cfConfig)
+        .when(tasNgConfigMapper)
+        .mapTasConfigWithDecryption(tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
+
+    TasArtifactConfig tasArtifactConfig = TasPackageArtifactConfig.builder().build();
+    String variableYamls = "\n"
+        + "\n"
+        + "APP_MEMORY: 350M\n"
+        + "INSTANCES: 1\n"
+        + "APP_NAME: rolling_rollback_locallyyyyw_rediessre";
+    String manifestsYaml = "applications:\n"
+        + "- name: ((APP_NAME))\n"
+        + "  instances: ((INSTANCES))\n"
+        + "  memory: ((APP_MEMORY))\n"
+        + "  routes:\n"
+        + "    - route: rishabh_basic_app_addt.apps.pcf-harness.com\n"
+        + "  services:\n"
+        + "    - myautoscaler";
+    String autoscalarYaml = "---\n"
+        + "instance_limits:\n"
+        + "  min: 1\n"
+        + "  max: 2\n"
+        + "rules: []\n"
+        + "scheduled_limit_changes:\n"
+        + "- recurrence: 10\n"
+        + "  executes_at: \"2032-01-01T00:00:00Z\"\n"
+        + "  instance_limits:\n"
+        + "    min: 1\n"
+        + "    max: 2";
+    TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder()
+                                                  .manifestYml(manifestsYaml)
+                                                  .autoscalarManifestYml(autoscalarYaml)
+                                                  .variableYmls(Arrays.asList(variableYamls))
+                                                  .build();
+
+    CfRollingRollbackRequestNG cfRollingRollbackRequestNG = CfRollingRollbackRequestNG.builder()
+                                                                .tasInfraConfig(tasInfraConfig)
+                                                                .tasArtifactConfig(tasArtifactConfig)
+                                                                .tasManifestsPackage(tasManifestsPackage)
+                                                                .timeoutIntervalInMin(5)
+                                                                .routeMaps(emptyList())
+                                                                .build();
+
+    CfRollingDeployRequestNG cfRollingDeployRequestNG = CfRollingDeployRequestNG.builder()
+                                                            .tasInfraConfig(tasInfraConfig)
+                                                            .tasArtifactConfig(tasArtifactConfig)
+                                                            .tasManifestsPackage(tasManifestsPackage)
+                                                            .timeoutIntervalInMin(5)
+                                                            .routeMaps(emptyList())
+                                                            .build();
+
+    doReturn(file).when(pcfCommandTaskBaseHelper).createManifestYamlFileLocally(any());
+
+    String cfCliPath = "cfCliPath";
+    doReturn(cfCliPath)
+        .when(pcfCommandTaskHelper)
+        .getCfCliPathOnDelegate(true, cfRollingDeployRequestNG.getCfCliVersion());
+
+    CfRequestConfig cfRequestConfig =
+        CfRequestConfig.builder()
+            .userName(String.valueOf(cfConfig.getUserName()))
+            .endpointUrl(cfConfig.getEndpointUrl())
+            .password(String.valueOf(cfConfig.getPassword()))
+            .orgName(tasInfraConfig.getOrganization())
+            .spaceName(tasInfraConfig.getSpace())
+            .timeOutIntervalInMins(cfRollingDeployRequestNG.getTimeoutIntervalInMin())
+            .cfHomeDirPath(file.getAbsolutePath())
+            .cfCliPath(pcfCommandTaskHelper.getCfCliPathOnDelegate(true, cfRollingDeployRequestNG.getCfCliVersion()))
+            .cfCliVersion(cfRollingDeployRequestNG.getCfCliVersion())
+            .useCFCLI(true)
+            .applicationName(cfRollingDeployRequestNG.getApplicationName())
+            .desiredCount(cfRollingDeployRequestNG.getDesiredCount())
+            .build();
+
+    String name = "name";
+    String id = "id";
+    String url = "url";
+    ApplicationSummary applicationSummary = ApplicationSummary.builder()
+                                                .id(id)
+                                                .diskQuota(1)
+                                                .instances(0)
+                                                .memoryLimit(1)
+                                                .name(name)
+                                                .requestedState(STOPPED)
+                                                .runningInstances(0)
+                                                .build();
+    doReturn(Arrays.asList(applicationSummary))
+        .when(cfDeploymentManager)
+        .getPreviousReleasesForRolling(cfRequestConfig, cfRollingDeployRequestNG.getApplicationName());
+
+    int instances = 1;
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .id(id)
+                                              .diskQuota(1)
+                                              .instances(instances)
+                                              .memoryLimit(1)
+                                              .name(name)
+                                              .requestedState(STOPPED)
+                                              .stack("")
+                                              .runningInstances(instances)
+                                              .build();
+    doReturn(applicationDetail).when(pcfCommandTaskHelper).getApplicationDetails(cfRequestConfig, cfDeploymentManager);
+
+    doReturn(true).when(cfDeploymentManager).checkIfAppHasAutoscalarEnabled(any(), any());
+
+    File fileArtifact = new File("/gs");
+    TasArtifactDownloadResponse tasArtifactDownloadResponse =
+        TasArtifactDownloadResponse.builder().artifactFile(fileArtifact).build();
+    doReturn(tasArtifactDownloadResponse).when(pcfCommandTaskHelper).downloadPackageArtifact(any(), any());
+
+    doReturn(applicationDetail).when(cfDeploymentManager).createRollingApplicationWithSteadyStateCheck(any(), any());
+
+    CfCommandResponseNG cfCommandExecutionResponse = cfRollingDeployCommandTaskHandlerNG.executeTaskInternal(
+        cfRollingRollbackRequestNG, logStreamingTaskClient, commandUnitsProgress);
+  }
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)

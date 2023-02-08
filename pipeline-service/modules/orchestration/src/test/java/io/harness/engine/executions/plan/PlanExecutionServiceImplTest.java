@@ -21,11 +21,14 @@ import static io.harness.rule.OwnerRule.SHALINI;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
@@ -37,15 +40,19 @@ import io.harness.engine.interrupts.statusupdate.NodeStatusUpdateHandlerFactory;
 import io.harness.engine.interrupts.statusupdate.PausedStepStatusUpdate;
 import io.harness.engine.interrupts.statusupdate.QueuedLicenseLimitReachedStatusUpdate;
 import io.harness.engine.observers.NodeUpdateInfo;
+import io.harness.engine.observers.PlanExecutionDeleteObserver;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.observer.Subject;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
+import io.harness.pms.execution.utils.PlanExecutionProjectionConstants;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.repositories.PlanExecutionRepository;
 import io.harness.rule.Owner;
 import io.harness.testlib.RealMongo;
 
@@ -54,15 +61,21 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
+import org.joor.Reflect;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
@@ -72,6 +85,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   @Mock NodeExecutionService nodeExecutionService;
   @Mock PausedStepStatusUpdate pausedStepStatusUpdate;
   @Mock QueuedLicenseLimitReachedStatusUpdate queuedLicenseLimitReachedStatusUpdate;
+  @Mock Subject<PlanExecutionDeleteObserver> planExecutionDeleteObserverSubject;
   @Spy @Inject @InjectMocks PlanExecutionService planExecutionService;
 
   @Test
@@ -267,7 +281,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
 
     List<PlanExecution> finalList = new LinkedList<>();
     try (CloseableIterator<PlanExecution> iterator =
-             planExecutionService.fetchPlanExecutionsByStatus(StatusUtils.activeStatuses(),
+             planExecutionService.fetchPlanExecutionsByStatusFromAnalytics(StatusUtils.activeStatuses(),
                  ImmutableSet.of(PlanExecutionKeys.setupAbstractions, PlanExecutionKeys.metadata))) {
       while (iterator.hasNext()) {
         finalList.add(iterator.next());
@@ -383,5 +397,37 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     assertEquals(2, planExecutions.size());
     assertEquals(Status.ABORTED, planExecutions.get(0).getStatus());
     assertEquals(Status.SUCCEEDED, planExecutions.get(1).getStatus());
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestDeleteAllPlanExecutionAndMetadata() {
+    MongoTemplate mongoTemplateMock = Mockito.mock(MongoTemplate.class);
+    Reflect.on(planExecutionService).set("mongoTemplate", mongoTemplateMock);
+    PlanExecutionRepository planExecutionRepositoryMock = Mockito.mock(PlanExecutionRepository.class);
+    Reflect.on(planExecutionService).set("planExecutionRepository", planExecutionRepositoryMock);
+    Reflect.on(planExecutionService).set("planExecutionDeleteObserverSubject", planExecutionDeleteObserverSubject);
+
+    List<PlanExecution> planExecutionList = new LinkedList<>();
+    Set<String> planExecutionIds = new HashSet<>();
+    for (int i = 0; i < 1200; i++) {
+      String uuid = generateUuid();
+      planExecutionIds.add(uuid);
+      planExecutionList.add(PlanExecution.builder().uuid(uuid).build());
+    }
+
+    CloseableIterator<PlanExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(planExecutionList.iterator());
+    Query query = query(where(PlanExecutionKeys.uuid).in(planExecutionIds));
+    for (String fieldName : PlanExecutionProjectionConstants.fieldsForPlanExecutionDelete) {
+      query.fields().include(fieldName);
+    }
+    doReturn(iterator).when(planExecutionRepositoryMock).fetchPlanExecutionsFromAnalytics(query);
+
+    planExecutionService.deleteAllPlanExecutionAndMetadata(planExecutionIds);
+
+    verify(planExecutionDeleteObserverSubject, times(2)).fireInform(any(), any());
+    verify(planExecutionRepositoryMock, times(1)).deleteAllByUuidIn(any());
   }
 }

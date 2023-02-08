@@ -57,6 +57,24 @@ public class EntitySetupUsageResourceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = OwnerRule.UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testListAllEntityUsageWithSupportForTwoFqnForASingleEntity() {
+    String accountIdentifier = "accountIdentifier";
+    String orgIdentifier = "orgIdentifier";
+    String projectIdentifier = "projectIdentifier";
+    String identifier = "identifier";
+    String searchTerm = "searchTerm";
+    String referredEntityFQN = "referredEntityFQN";
+    String referredEntityFQN2 = "referredEntityFQN2";
+    entitySetupUsageResource.listAllEntityUsageWith2Fqns(
+        100, 100, accountIdentifier, referredEntityFQN, referredEntityFQN2, EntityType.TEMPLATE, searchTerm);
+    Mockito.verify(entitySetupUsageService, times(1))
+        .listAllEntityUsageWithSupportForTwoFqnForASingleEntity(eq(100), eq(100), eq(accountIdentifier),
+            eq(referredEntityFQN), eq(referredEntityFQN2), eq(EntityType.TEMPLATE), eq(searchTerm));
+  }
+
+  @Test
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
   public void isEntityReferenced() {

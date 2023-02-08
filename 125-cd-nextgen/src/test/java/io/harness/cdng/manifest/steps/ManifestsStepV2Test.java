@@ -40,7 +40,7 @@ import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
-import io.harness.cdng.service.steps.ServiceStepV3;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -135,7 +135,7 @@ public class ManifestsStepV2Test {
                  .build())
         .when(sweepingOutputService)
         .resolveOptional(any(Ambiance.class),
-            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
     List<EntityDetail> listEntityDetail = new ArrayList<>();
 
     listEntityDetail.add(EntityDetail.builder().name("ManifestSecret1").build());
@@ -189,7 +189,7 @@ public class ManifestsStepV2Test {
                  .build())
         .when(sweepingOutputService)
         .resolveOptional(any(Ambiance.class),
-            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
 
     try {
       step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
@@ -225,7 +225,7 @@ public class ManifestsStepV2Test {
                  .build())
         .when(sweepingOutputService)
         .resolveOptional(any(Ambiance.class),
-            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
 
     try {
       step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
@@ -263,7 +263,7 @@ public class ManifestsStepV2Test {
                  .build())
         .when(sweepingOutputService)
         .resolveOptional(any(Ambiance.class),
-            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
 
     try {
       step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
@@ -298,7 +298,7 @@ public class ManifestsStepV2Test {
                  .build())
         .when(sweepingOutputService)
         .resolveOptional(any(Ambiance.class),
-            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
 
     ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
     step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
@@ -333,7 +333,7 @@ public class ManifestsStepV2Test {
                  .build())
         .when(sweepingOutputService)
         .resolveOptional(any(Ambiance.class),
-            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
 
     ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
     step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
@@ -369,7 +369,7 @@ public class ManifestsStepV2Test {
                  .build())
         .when(sweepingOutputService)
         .resolveOptional(any(Ambiance.class),
-            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
 
     ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
     step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);

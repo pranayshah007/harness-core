@@ -59,7 +59,8 @@ public class TerraformApplyStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply_Inherit.description",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply_Inherit.timeout",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply_Inherit.spec.provisionerIdentifier",
-            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply_Inherit.name");
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply_Inherit.name",
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply_Inherit.when");
   }
 
   @Test
@@ -88,6 +89,7 @@ public class TerraformApplyStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.backendConfig.spec.content",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.targets",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.environmentVariables.ANSWER",
-            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.configFiles.moduleSource.useConnectorCredentials");
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.configFiles.moduleSource.useConnectorCredentials",
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.when");
   }
 }

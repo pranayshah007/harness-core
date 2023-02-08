@@ -74,6 +74,9 @@ public class GitSyncEntitiesExpiryHandler extends IteratorPumpModeHandler implem
   // Delete 2k record in a batch
   private static final String BATCH_SIZE = "500";
 
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(120);
+  private static final Duration ACCEPTABLE_EXECUTION_TIME = ofMinutes(5);
+
   @Override
   protected void createAndStartIterator(
       PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
@@ -84,13 +87,30 @@ public class GitSyncEntitiesExpiryHandler extends IteratorPumpModeHandler implem
                            .clazz(Account.class)
                            .fieldName(AccountKeys.gitSyncExpiryCheckIteration)
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofMinutes(120))
-                           .acceptableExecutionTime(ofMinutes(5))
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
                            .handler(this)
                            .entityProcessController(new AccountLevelEntityProcessController(accountService))
                            .schedulingType(REGULAR)
                            .persistenceProvider(persistenceProvider)
                            .redistribute(true));
+  }
+
+  @Override
+  public void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<Account, MorphiaFilterExpander<Account>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       GitSyncEntitiesExpiryHandler.class,
+                       MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
+                           .clazz(Account.class)
+                           .fieldName(AccountKeys.gitSyncExpiryCheckIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
+                           .handler(this)
+                           .entityProcessController(new AccountLevelEntityProcessController(accountService))
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override

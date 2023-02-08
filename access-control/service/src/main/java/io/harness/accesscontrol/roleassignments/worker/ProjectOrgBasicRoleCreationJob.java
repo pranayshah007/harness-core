@@ -1,0 +1,221 @@
+/*
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
+package io.harness.accesscontrol.roleassignments.worker;
+
+import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
+import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
+import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
+import static io.harness.beans.FeatureName.*;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
+import static org.springframework.data.mongodb.core.query.Update.update;
+
+import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
+import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
+import io.harness.accesscontrol.scopes.core.ScopeService;
+import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
+import io.harness.account.AccountClient;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.ff.FeatureFlagService;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
+import io.harness.ng.core.dto.AccountDTO;
+import io.harness.remote.client.CGRestUtils;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
+import io.harness.utils.CryptoUtils;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.query.Criteria;
+
+@Slf4j
+@Singleton
+@OwnedBy(HarnessTeam.PL)
+public class ProjectOrgBasicRoleCreationJob implements Runnable {
+  private final RoleAssignmentRepository roleAssignmentRepository;
+  private final FeatureFlagService featureFlagService;
+  private final AccountClient accountClient;
+  private final ScopeService scopeService;
+  private final PersistentLocker persistentLocker;
+  private final String DEBUG_MESSAGE = "ProjectOrgBasicRoleCreationJob: ";
+  private static final String LOCK_NAME = "ProjectOrgBasicRoleCreationJobLock";
+
+  private static final String ORGANIZATION_VIEWER = "_organization_viewer";
+  private static final String PROJECT_VIEWER = "_project_viewer";
+
+  private static final String ORGANIZATION_BASIC = "_organization_basic";
+  private static final String PROJECT_BASIC = "_project_basic";
+
+  @Inject
+  public ProjectOrgBasicRoleCreationJob(RoleAssignmentRepository roleAssignmentRepository,
+      FeatureFlagService featureFlagService, AccountClient accountClient, ScopeService scopeService,
+      PersistentLocker persistentLocker) {
+    this.roleAssignmentRepository = roleAssignmentRepository;
+    this.featureFlagService = featureFlagService;
+    this.accountClient = accountClient;
+    this.scopeService = scopeService;
+    this.persistentLocker = persistentLocker;
+  }
+
+  @Override
+  public void run() {
+    log.info(DEBUG_MESSAGE + "started...");
+    try (AcquiredLock<?> lock =
+             persistentLocker.tryToAcquireInfiniteLockWithPeriodicRefresh(LOCK_NAME, Duration.ofSeconds(5))) {
+      if (lock == null) {
+        log.info(DEBUG_MESSAGE + "failed to acquire lock");
+        return;
+      }
+      try {
+        SecurityContextBuilder.setContext(new ServicePrincipal(ACCESS_CONTROL_SERVICE.getServiceId()));
+        log.info(DEBUG_MESSAGE + "Setting SecurityContext completed.");
+        execute();
+      } catch (Exception ex) {
+        log.error(DEBUG_MESSAGE + " unexpected error occurred while Setting SecurityContext", ex);
+      } finally {
+        SecurityContextBuilder.unsetCompleteContext();
+        log.info(DEBUG_MESSAGE + "Unsetting SecurityContext completed.");
+      }
+    } catch (Exception ex) {
+      log.error(DEBUG_MESSAGE + " failed to acquire lock", ex);
+    }
+    log.info(DEBUG_MESSAGE + " completed...");
+  }
+
+  private void execute() {
+    List<AccountDTO> accountDTOS = new ArrayList<>();
+    try {
+      accountDTOS = CGRestUtils.getResponse(accountClient.getAllAccounts());
+    } catch (Exception ex) {
+      log.error(DEBUG_MESSAGE + "Failed to fetch all accounts", ex);
+    }
+    List<String> targetAccounts = filterAccountsForFFEnabled(accountDTOS);
+    if (isEmpty(targetAccounts)) {
+      return;
+    }
+    try {
+      for (String accountId : targetAccounts) {
+        Pattern startsWithScope = Pattern.compile("^".concat("/ACCOUNT/" + accountId));
+        Criteria projectCriteria = Criteria.where(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeIdentifier)
+                                       .regex(startsWithScope)
+                                       .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.resourceGroupIdentifier)
+                                       .is(DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER)
+                                       .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.roleIdentifier)
+                                       .is(PROJECT_VIEWER)
+                                       .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalIdentifier)
+                                       .is(DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER)
+
+                                       .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalScopeLevel)
+                                       .is(HarnessScopeLevel.PROJECT.getName())
+                                       .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalType)
+                                       .is(USER_GROUP);
+        Criteria orgCriteria = Criteria.where(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeIdentifier)
+                                   .regex(startsWithScope)
+                                   .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.resourceGroupIdentifier)
+                                   .is(DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER)
+                                   .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.roleIdentifier)
+                                   .is(ORGANIZATION_VIEWER)
+
+                                   .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalIdentifier)
+                                   .is(DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER)
+
+                                   .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalScopeLevel)
+                                   .is(HarnessScopeLevel.ORGANIZATION.getName())
+                                   .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalType)
+                                   .is(USER_GROUP);
+        addBasicRoleToDefaultUserGroup(projectCriteria, PROJECT_BASIC);
+        addBasicRoleToDefaultUserGroup(orgCriteria, ORGANIZATION_BASIC);
+      }
+    } catch (Exception ex) {
+      log.error(DEBUG_MESSAGE + "Failed to create basic role for org/project", ex);
+    }
+  }
+
+  private List<String> filterAccountsForFFEnabled(List<AccountDTO> accountDTOS) {
+    List<String> targetAccounts = new ArrayList<>();
+    try {
+      for (AccountDTO accountDTO : accountDTOS) {
+        boolean isBasicRoleCreationEnabled =
+            featureFlagService.isEnabled(PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS, accountDTO.getIdentifier());
+        if (isBasicRoleCreationEnabled) {
+          targetAccounts.add(accountDTO.getIdentifier());
+        }
+      }
+    } catch (Exception ex) {
+      log.error(DEBUG_MESSAGE + "Failed to filter accounts for FF PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS");
+    }
+    return targetAccounts;
+  }
+
+  private void addBasicRoleToDefaultUserGroup(Criteria criteria, String roleIdentifier) {
+    int pageSize = 1000;
+    int pageIndex = 0;
+
+    do {
+      Pageable pageable = PageRequest.of(pageIndex, pageSize);
+      List<RoleAssignmentDBO> roleAssignmentList =
+          roleAssignmentRepository
+              .findAll(
+                  criteria, pageable, Sort.by(Sort.Direction.ASC, RoleAssignmentDBO.RoleAssignmentDBOKeys.createdAt))
+              .getContent();
+      if (isEmpty(roleAssignmentList)) {
+        break;
+      }
+      for (RoleAssignmentDBO roleAssignment : roleAssignmentList) {
+        if (roleAssignment.isManaged()) {
+          RoleAssignmentDBO newRoleAssignmentDBO = buildRoleAssignmentDBO(roleAssignment, roleIdentifier);
+          try {
+            try {
+              roleAssignmentRepository.save(newRoleAssignmentDBO);
+            } catch (DuplicateKeyException e) {
+              log.error("[ProjectOrgBasicRoleCreationJob]: Corresponding basic role assigment was already created {}",
+                  newRoleAssignmentDBO.toString(), e);
+            }
+            roleAssignmentRepository.updateById(
+                roleAssignment.getId(), update(RoleAssignmentDBO.RoleAssignmentDBOKeys.managed, false));
+          } catch (Exception exception) {
+            log.error("[ProjectOrgBasicRoleCreationJob] Unexpected error occurred.", exception);
+          }
+        }
+      }
+      log.info("[ProjectOrgBasicRoleCreationJob] Migration for page {} with  completed successfully.", pageIndex,
+          roleAssignmentList.size());
+      pageIndex++;
+    } while (true);
+  }
+
+  private RoleAssignmentDBO buildRoleAssignmentDBO(RoleAssignmentDBO roleAssignmentDBO, String roleIdentifier) {
+    return RoleAssignmentDBO.builder()
+        .identifier("role_assignment_".concat(CryptoUtils.secureRandAlphaNumString(20)))
+        .scopeIdentifier(roleAssignmentDBO.getScopeIdentifier())
+        .scopeLevel(roleAssignmentDBO.getScopeLevel())
+        .disabled(roleAssignmentDBO.isDisabled())
+        .managed(true)
+        .internal(true)
+        .roleIdentifier(roleIdentifier)
+        .resourceGroupIdentifier(roleAssignmentDBO.getResourceGroupIdentifier())
+        .principalScopeLevel(roleAssignmentDBO.getPrincipalScopeLevel())
+        .principalIdentifier(roleAssignmentDBO.getPrincipalIdentifier())
+        .principalType(roleAssignmentDBO.getPrincipalType())
+        .build();
+  }
+}

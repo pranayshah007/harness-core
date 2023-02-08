@@ -95,8 +95,8 @@ public class OrgResourceGroupsApiImpl implements OrganizationResourceGroupsApi {
     Page<ResourceGroupResponse> pageResponse =
         resourceGroupService.list(Scope.of(account, org, null), pageRequest, searchTerm);
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
-        responseBuilder, format("/v1/orgs/%s/resource-groups)", org), pageResponse.getContent().size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotalElements(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getContent()
                     .stream()

@@ -25,12 +25,12 @@ import org.apache.commons.lang3.StringUtils;
 public class MigrationTemplateUtils {
   @Inject private TemplateResourceClient templateResourceClient;
 
-  public JsonNode getTemplateInputs(NGYamlFile wfTemplate, String accountIdentifier, String versionLabel) {
+  public JsonNode getTemplateInputs(NGYamlFile wfTemplate, String accountIdentifier) {
     NgEntityDetail ngEntityDetail = wfTemplate.getNgEntityDetail();
     try {
-      String response = NGRestUtils.getResponse(
-          templateResourceClient.getTemplateInputsYaml(ngEntityDetail.getIdentifier(), accountIdentifier,
-              ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier(), versionLabel, false));
+      String response =
+          NGRestUtils.getResponse(templateResourceClient.getTemplateInputsYaml(ngEntityDetail.getIdentifier(),
+              accountIdentifier, ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier(), "", false));
       if (response == null || StringUtils.isBlank(response)) {
         return null;
       }

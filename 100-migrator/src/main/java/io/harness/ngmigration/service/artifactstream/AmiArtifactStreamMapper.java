@@ -61,7 +61,6 @@ public class AmiArtifactStreamMapper implements ArtifactStreamMapper {
     return PrimaryArtifact.builder()
         .sourceType(ArtifactSourceType.AMI)
         .spec(AMIArtifactConfig.builder()
-                  .primaryArtifact(true)
                   .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
                   .region(ParameterField.createValueField(amiArtifactStream.getRegion()))
                   .tags(ParameterField.createValueField(tags))

@@ -25,6 +25,8 @@ public interface SwaggerConstants {
       "[Lio.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;";
   String CLUSTER_YAML_NODE_LIST_CLASSPATH = "[Lio.harness.cdng.gitops.yaml.ClusterYaml;";
 
+  String USE_FROM_STAGE = "io.harness.cdng.service.beans.ServiceUseFromStageV2";
+
   String SERVICE_YAML_LIST_CLASSPATH = "[Lio.harness.cdng.service.beans.ServiceYamlV2;";
 
   String ENVIRONMENT_YAML_LIST_CLASSPATH = "[Lio.harness.cdng.environment.yaml.EnvironmentYamlV2;";
@@ -45,4 +47,7 @@ public interface SwaggerConstants {
   String LOAD_BALANCER_CONFIGURATION_CLASSPATH = "[Lio.harness.cdng.elastigroup.LoadBalancer;";
   String CLOUD_PROVIDER_CONFIGURATION_CLASSPATH = "io.harness.cdng.elastigroup.CloudProvider";
   String TAS_COMMAND_SCRIPT_YAML_CONFIGURATION_CLASSPATH = "io.harness.cdng.tas.TasCommandScript";
+  String FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH = "[Lio.harness.yaml.core.failurestrategy.FailureStrategyConfig;";
+  String STAGE_WHEN_CLASSPATH = "io.harness.when.beans.StageWhenCondition";
+  String STEP_WHEN_CLASSPATH = "io.harness.when.beans.StepWhenCondition";
 }

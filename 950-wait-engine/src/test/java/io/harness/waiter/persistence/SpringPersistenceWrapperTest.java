@@ -37,9 +37,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.joor.Reflect;
 import org.junit.Test;
@@ -64,7 +63,7 @@ public class SpringPersistenceWrapperTest extends WaitEngineTestBase {
     Reflect.on(persistenceWrapper).set("timeoutEngine", timeoutEngine);
     Reflect.on(persistenceWrapper).set("mongoTemplate", mongoTemplateMock);
     String correlationId = generateUuid();
-    Set<String> correlationIds = new HashSet<>();
+    List<String> correlationIds = new LinkedList<>();
     for (int i = 0; i < 100; i++) {
       correlationIds.add(String.valueOf(i));
     }

@@ -58,6 +58,7 @@ public class CloudformationRollbackStackStepVariableCreatorTest extends Category
             "pipeline.stages.foo2.spec.infrastructure.infrastructureDefinition.provisioner.rollbackSteps.tfrg.spec.delegateSelectors",
             "pipeline.stages.foo2.spec.infrastructure.infrastructureDefinition.provisioner.rollbackSteps.tfrg.timeout",
             "pipeline.stages.foo2.spec.infrastructure.infrastructureDefinition.provisioner.rollbackSteps.tfrg.name",
-            "pipeline.stages.foo2.spec.infrastructure.infrastructureDefinition.provisioner.rollbackSteps.tfrg.description");
+            "pipeline.stages.foo2.spec.infrastructure.infrastructureDefinition.provisioner.rollbackSteps.tfrg.description",
+            "pipeline.stages.foo2.spec.infrastructure.infrastructureDefinition.provisioner.rollbackSteps.tfrg.when");
   }
 }

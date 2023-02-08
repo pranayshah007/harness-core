@@ -26,6 +26,9 @@ import io.harness.ngmigration.service.step.terraform.TerraformApplyStepMapperImp
 import io.harness.ngmigration.service.step.terraform.TerraformDestroyStepMapperImpl;
 import io.harness.ngmigration.service.step.terraform.TerraformProvisionStepMapperImpl;
 import io.harness.ngmigration.service.step.terraform.TerraformRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.terragrunt.TerragruntDestroyStepMapperImpl;
+import io.harness.ngmigration.service.step.terragrunt.TerragruntProvisionStepMapperImpl;
+import io.harness.ngmigration.service.step.terragrunt.TerragruntRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.verification.ApmVerificationStepMapperImpl;
 import io.harness.ngmigration.service.step.verification.AppDynamicsStepMapperImpl;
 import io.harness.ngmigration.service.step.verification.BugsnagStepMapperImpl;
@@ -52,6 +55,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class StepMapperFactory {
+  @Inject CustomFetchInstancesStepMapperImpl customFetchInstancesStepMapper;
   @Inject ShellScriptStepMapperImpl shellScriptStepMapper;
   @Inject K8sRollingStepMapperImpl k8sRollingStepMapper;
   @Inject HttpStepMapperImpl httpStepMapper;
@@ -73,11 +77,14 @@ public class StepMapperFactory {
   @Inject TerraformProvisionStepMapperImpl terraformProvisionStepMapper;
   @Inject TerraformDestroyStepMapperImpl terraformDestroyStepMapper;
   @Inject TerraformRollbackStepMapperImpl terraformRollbackStepMapper;
+  @Inject TerragruntProvisionStepMapperImpl terragruntProvisionStepMapper;
+  @Inject TerragruntDestroyStepMapperImpl terragruntDestroyStepMapper;
+  @Inject TerragruntRollbackStepMapperImpl terragruntRollbackStepMapper;
   @Inject ElastigroupSetupStepMapperImpl elastigroupSetupStepMapper;
   @Inject ElastigroupDeployStepMapperImpl elastigroupDeployStepMapper;
   @Inject ElastigroupListenerRollbackStepMapperImpl elastigroupListenerRollbackStepMapper;
   @Inject ElastigroupRollbackStepMapperImpl elastigroupRollbackStepMapper;
-
+  @Inject ServiceNowStepMapperImpl serviceNowStepMapper;
   @Inject ApmVerificationStepMapperImpl apmVerificationStepMapper;
   @Inject AppDynamicsStepMapperImpl appDynamicsStepMapper;
   @Inject DataDogStepMapperImpl dataDogStepMapper;
@@ -134,6 +141,8 @@ public class StepMapperFactory {
         return k8sBlueGreenDeployStepMapper;
       case "JIRA_CREATE_UPDATE":
         return jiraCreateUpdateStepMapper;
+      case "SERVICENOW_CREATE_UPDATE":
+        return serviceNowStepMapper;
       case "COMMAND":
         return commandStepMapper;
       case "TERRAFORM_PROVISION":
@@ -201,6 +210,14 @@ public class StepMapperFactory {
         return azureCreateARMResourceStepMapper;
       case "ARM_ROLLBACK":
         return azureRollbackARMResourceStepMapper;
+      case "CUSTOM_DEPLOYMENT_FETCH_INSTANCES":
+        return customFetchInstancesStepMapper;
+      case "TERRAGRUNT_PROVISION":
+        return terragruntProvisionStepMapper;
+      case "TERRAGRUNT_DESTROY":
+        return terragruntDestroyStepMapper;
+      case "TERRAGRUNT_ROLLBACK":
+        return terragruntRollbackStepMapper;
       default:
         return unsupportedStepMapper;
     }

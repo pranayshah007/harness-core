@@ -23,8 +23,9 @@ import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -93,6 +94,16 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
 
   @Override
   public List<EntityUnavailabilityStatusesDTO> getAllInstances(
+      ProjectParams projectParams, EntityType entityType, String entityIdentifier) {
+    List<EntityUnavailabilityStatuses> allInstances =
+        getAllInstancesQuery(projectParams, entityType, entityIdentifier).asList();
+    return allInstances.stream()
+        .map(status -> statusesEntityAndDTOTransformer.getDto(status))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<EntityUnavailabilityStatusesDTO> getAllInstances(
       ProjectParams projectParams, long startTime, long endTime) {
     List<EntityUnavailabilityStatuses> allInstances =
         hPersistence.createQuery(EntityUnavailabilityStatuses.class)
@@ -112,22 +123,30 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
   }
 
   @Override
-  public Set<String> getActiveInstances(ProjectParams projectParams, List<String> entityIds) {
-    List<EntityUnavailabilityStatuses> entityUnavailabilityStatuses =
+  public List<EntityUnavailabilityStatusesDTO> getActiveOrFirstUpcomingInstance(
+      ProjectParams projectParams, List<String> entityIds) {
+    Query<EntityUnavailabilityStatuses> query =
         hPersistence.createQuery(EntityUnavailabilityStatuses.class)
             .filter(EntityUnavailabilityStatusesKeys.accountId, projectParams.getAccountIdentifier())
             .filter(EntityUnavailabilityStatusesKeys.orgIdentifier, projectParams.getOrgIdentifier())
             .filter(EntityUnavailabilityStatusesKeys.projectIdentifier, projectParams.getProjectIdentifier())
             .field(EntityUnavailabilityStatusesKeys.entityIdentifier)
-            .in(entityIds)
-            .field(EntityUnavailabilityStatusesKeys.startTime)
-            .lessThanOrEq(clock.millis() / 1000)
-            .field(EntityUnavailabilityStatusesKeys.endTime)
-            .greaterThanOrEq(clock.millis() / 1000)
-            .asList();
-    return entityUnavailabilityStatuses.stream()
-        .map(EntityUnavailabilityStatuses::getEntityIdentifier)
-        .collect(Collectors.toSet());
+            .in(entityIds);
+    query.or(query.criteria(EntityUnavailabilityStatusesKeys.startTime).greaterThanOrEq(clock.millis() / 1000),
+        query.and(query.criteria(EntityUnavailabilityStatusesKeys.startTime).lessThanOrEq(clock.millis() / 1000),
+            query.criteria(EntityUnavailabilityStatusesKeys.endTime).greaterThanOrEq(clock.millis() / 1000)));
+    List<EntityUnavailabilityStatuses> entityUnavailabilityStatuses =
+        query.order(Sort.ascending(EntityUnavailabilityStatusesKeys.startTime)).asList();
+    Map<String, EntityUnavailabilityStatuses> firstUnavailabilityInstances = new HashMap<>();
+    for (EntityUnavailabilityStatuses downtime : entityUnavailabilityStatuses) {
+      if (firstUnavailabilityInstances.get(downtime.getEntityIdentifier()) == null) {
+        firstUnavailabilityInstances.put(downtime.getEntityIdentifier(), downtime);
+      }
+    }
+    return firstUnavailabilityInstances.values()
+        .stream()
+        .map(status -> statusesEntityAndDTOTransformer.getDto(status))
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -211,6 +230,16 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
         .field(EntityUnavailabilityStatusesKeys.endTime)
         .lessThanOrEq(clock.millis() / 1000)
         .order(Sort.descending(EntityUnavailabilityStatusesKeys.endTime));
+  }
+
+  private Query<EntityUnavailabilityStatuses> getAllInstancesQuery(
+      ProjectParams projectParams, EntityType entityType, String entityId) {
+    return hPersistence.createQuery(EntityUnavailabilityStatuses.class)
+        .filter(EntityUnavailabilityStatusesKeys.accountId, projectParams.getAccountIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.projectIdentifier, projectParams.getProjectIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.entityType, entityType)
+        .filter(EntityUnavailabilityStatusesKeys.entityIdentifier, entityId);
   }
 
   private Query<EntityUnavailabilityStatuses> getFutureInstances(ProjectParams projectParams, String entityId) {

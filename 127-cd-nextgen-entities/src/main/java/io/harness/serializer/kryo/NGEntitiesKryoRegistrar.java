@@ -67,6 +67,7 @@ import io.harness.cdng.customdeployment.CustomDeploymentStringNGVariable;
 import io.harness.cdng.infra.beans.AsgInfrastructureOutcome;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
+import io.harness.cdng.infra.beans.GoogleFunctionsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
@@ -87,6 +88,7 @@ import io.harness.cdng.manifest.yaml.AsgLaunchTemplateManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScalingPolicyManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScheduledUpdateGroupActionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
+import io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AzureRepoStore;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
@@ -129,6 +131,7 @@ import io.harness.cdng.manifest.yaml.kinds.AsgLaunchTemplateManifest;
 import io.harness.cdng.manifest.yaml.kinds.AsgScalingPolicyManifest;
 import io.harness.cdng.manifest.yaml.kinds.AsgScheduledUpdateGroupActionManifest;
 import io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest;
+import io.harness.cdng.manifest.yaml.kinds.AwsLambdaDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
@@ -374,6 +377,9 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(AsgInfrastructure.class, 140067);
     kryo.register(GoogleCloudFunctionDefinitionManifest.class, 140068);
     kryo.register(GoogleCloudFunctionDefinitionManifestOutcome.class, 140069);
+    kryo.register(GoogleFunctionsInfrastructureOutcome.class, 1500001);
     kryo.register(CfCliVersionNG.class, 140070);
+    kryo.register(AwsLambdaDefinitionManifest.class, 140071);
+    kryo.register(AwsLambdaDefinitionManifestOutcome.class, 140072);
   }
 }

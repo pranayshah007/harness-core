@@ -379,6 +379,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   public ScmGetBatchFilesResponseDTO getBatchFilesByBranch(
       ScmGetBatchFilesByBranchRequestDTO scmGetBatchFilesByBranchRequestDTO) {
     scmGetBatchFilesByBranchRequestDTO.validate();
+    logBatchFileRequestIdentifiers(scmGetBatchFilesByBranchRequestDTO);
     if (scmGetBatchFilesByBranchRequestDTO.getScmGetFileByBranchRequestDTOMap().size()
         > MAX_ALLOWED_BATCH_FILE_REQUESTS_COUNT) {
       log.warn("Too many file requests {} in single batch file request, exceeding threshold of {}",
@@ -999,5 +1000,16 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         .commitId(gitFileResponse.getCommitId())
         .branchName(gitFileResponse.getBranch())
         .build();
+  }
+
+  //  TODO: @Adithya remove logger before FF PIE_NG_BATCH_GET_TEMPLATES GA
+  private void logBatchFileRequestIdentifiers(ScmGetBatchFilesByBranchRequestDTO scmGetBatchFilesByBranchRequestDTO) {
+    List<String> uniqueFileRequests = new ArrayList<>();
+    scmGetBatchFilesByBranchRequestDTO.getScmGetFileByBranchRequestDTOMap().forEach(
+        (requestIdentifier, scmGetFileByBranchRequestDTO) -> {
+          uniqueFileRequests.add(requestIdentifier.getIdentifier());
+        });
+    log.info(String.format(
+        "getBatchFilesByBranch request size %d and filePaths %s", uniqueFileRequests.size(), uniqueFileRequests));
   }
 }

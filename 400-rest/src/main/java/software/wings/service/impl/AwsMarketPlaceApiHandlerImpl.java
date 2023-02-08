@@ -119,7 +119,8 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     String productCode = resolveCustomerResult.getProductCode();
 
     if (!marketPlaceConfig.getAwsMarketPlaceProductCode().equals(productCode)
-        && !marketPlaceConfig.getAwsMarketPlaceCeProductCode().equals(productCode)) {
+        && !marketPlaceConfig.getAwsMarketPlaceCeProductCode().equals(productCode)
+        && !marketPlaceConfig.getAwsMarketPlaceFfProductCode().equals(productCode)) {
       final String message =
           "Customer order from AWS could not be resolved, please contact Harness at support@harness.io";
       log.error("Invalid AWS productcode received:[{}],", productCode);
