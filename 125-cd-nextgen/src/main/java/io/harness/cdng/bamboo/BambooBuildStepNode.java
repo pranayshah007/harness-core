@@ -36,7 +36,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(PIPELINE)
 @RecasterAlias("BambooBuildStepNode")
 public class BambooBuildStepNode extends CdAbstractStepNode {
-  @JsonProperty("type") @NotNull BambooBuildStepNode.StepType type = BambooBuildStepNode.StepType.BAMBOO_BUILD;
+  @JsonProperty("type") @NotNull BambooBuildStepNode.StepType type = BambooBuildStepNode.StepType.BambooBuild;
   @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
@@ -52,7 +52,7 @@ public class BambooBuildStepNode extends CdAbstractStepNode {
   }
 
   enum StepType {
-    BAMBOO_BUILD(StepSpecTypeConstants.BAMBOO_BUILD);
+    BambooBuild(StepSpecTypeConstants.BAMBOO_BUILD);
     @Getter String name;
     StepType(String name) {
       this.name = name;

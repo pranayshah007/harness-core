@@ -57,11 +57,11 @@ public class BambooBuildStepInfo implements CDAbstractStepInfo, WithConnectorRef
   private String uuid;
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> connectorRef;
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> jobName;
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> planName;
 
   @ApiModelProperty(dataType = SwaggerConstants.BAMBOO_PARAMETER_FIELD_CLASSPATH)
   @YamlSchemaTypes(value = {runtime})
-  ParameterField<List<BambooParameterField>> jobParameter;
+  ParameterField<List<BambooParameterField>> planParameter;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {runtime})
@@ -81,8 +81,8 @@ public class BambooBuildStepInfo implements CDAbstractStepInfo, WithConnectorRef
   public SpecParameters getSpecParameters() {
     return BambooBuildSpecParameters.builder()
         .connectorRef(connectorRef)
-        .fields(BambooBuildStepUtils.processBambooFieldsList(jobParameter.getValue()))
-        .planName(jobName)
+        .fields(BambooBuildStepUtils.processBambooFieldsList(planParameter.getValue()))
+        .planName(planName)
         .delegateSelectors(delegateSelectors)
         .build();
   }

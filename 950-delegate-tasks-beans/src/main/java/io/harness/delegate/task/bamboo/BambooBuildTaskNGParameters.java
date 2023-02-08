@@ -7,6 +7,9 @@
 
 package io.harness.delegate.task.bamboo;
 
+import static io.harness.annotations.dev.HarnessTeam.CDC;
+
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
@@ -15,21 +18,27 @@ import io.harness.delegate.task.mixin.BambooCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import software.wings.beans.BambooConfig;
+import software.wings.sm.states.ParameterEntry;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Value;
+import lombok.experimental.FieldDefaults;
 
+@OwnedBy(CDC)
+@Value
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class BambooBuildTaskNGParameters implements TaskParameters, ExecutionCapabilityDemander {
   BambooConnectorDTO bambooConnectorDTO;
-  BambooConfig bambooConfig;
   List<EncryptedDataDetail> encryptionDetails;
   List<String> delegateSelectors;
   String planName;
-
-  Map<String, String> jobParameter;
+  List<ParameterEntry> parameterEntries;
 
   public Set<String> getDelegateSelectors() {
     Set<String> combinedDelegateSelectors = new HashSet<>();

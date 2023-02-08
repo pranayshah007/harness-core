@@ -47,6 +47,6 @@ public class BambooBuildTaskNGResponse implements DelegateTaskNotifyResponseData
   private String buildNumber;
   private ExecutionStatus executionStatus;
   private String errorMessage;
-  private List<ParameterEntry> parameters;
+  private Map<String, String> parameters;
   private List<FilePathAssertionEntry> filePathAssertionMap;
 }

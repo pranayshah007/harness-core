@@ -46,7 +46,7 @@ public class BambooArtifactDelegateRequest implements ArtifactSourceDelegateRequ
   String authMechanism;
   List<String> delegateSelectors;
   String connectorRef;
-  List<ParameterEntry> parameterEntries;
+  Map<String, String> parameterEntries;
   List<EncryptedDataDetail> encryptedDataDetails;
   String planKey;
   List<String> artifactPaths;

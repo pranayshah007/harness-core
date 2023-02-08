@@ -41,6 +41,6 @@ public class BambooBuildOutcome implements Outcome {
   private String buildNumber;
   private ExecutionStatus executionStatus;
   private String errorMessage;
-  private List<ParameterEntry> parameters;
+  private Map<String, String> parameters;
   private List<FilePathAssertionEntry> filePathAssertionMap;
 }

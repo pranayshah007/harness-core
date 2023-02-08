@@ -10,6 +10,7 @@ package io.harness.cdng.bamboo;
 import io.harness.EntityType;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
+import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepUtils;
 import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -79,6 +80,7 @@ public class BambooBuildStep extends CdTaskExecutable<ArtifactTaskResponse> {
         BambooArtifactDelegateRequest.builder()
             .connectorRef(specParameters.getConnectorRef().getValue())
             .planKey(specParameters.getPlanName().getValue())
+            .parameterEntries(BambooBuildStepUtils.processBambooFieldsInParameters(specParameters.getFields()))
             .delegateSelectors(
                 StepUtils.getDelegateSelectorListFromTaskSelectorYaml(specParameters.getDelegateSelectors()));
 

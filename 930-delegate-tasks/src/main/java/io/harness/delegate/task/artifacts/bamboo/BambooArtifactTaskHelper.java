@@ -15,7 +15,7 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionMetadataKeys;
-import io.harness.exception.runtime.JenkinsServerRuntimeException;
+import io.harness.exception.runtime.BambooServerRuntimeException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.manage.GlobalContextManager;
@@ -68,22 +68,22 @@ public class BambooArtifactTaskHelper {
           saveLogs(executionLogCallback, "Get the Bamboo Job " + registryUrl);
           break;
         case BAMBOO_BUILD:
-          saveLogs(executionLogCallback, "Trigger the Jenkins Builds");
-          artifactTaskResponse = getSuccessTaskResponse(bambooArtifactTaskHandler.triggerBuild(attributes));
-          saveLogs(executionLogCallback, "Trigger the Jenkins Builds " + registryUrl);
+          saveLogs(executionLogCallback, "Trigger the Bamboo Builds");
+          artifactTaskResponse =
+              getSuccessTaskResponse(bambooArtifactTaskHandler.triggerBuild(attributes, executionLogCallback));
+          saveLogs(executionLogCallback, "Trigger the Bamboo Builds " + registryUrl);
           break;
         default:
-          saveLogs(executionLogCallback,
-              "No corresponding Jenkins artifact task type [{}]: " + artifactTaskParameters.toString());
-          log.error("No corresponding Jenkins artifact task type [{}]", artifactTaskParameters.toString());
+          saveLogs(executionLogCallback, "No corresponding Bamboo artifact task type [{}]: " + artifactTaskParameters);
+          log.error("No corresponding Bamboo artifact task type [{}]", artifactTaskParameters);
           return ArtifactTaskResponse.builder()
               .commandExecutionStatus(CommandExecutionStatus.FAILURE)
-              .errorMessage("There is no Jenkins artifact task type impl defined for - "
+              .errorMessage("There is no Bamboo artifact task type impl defined for - "
                   + artifactTaskParameters.getArtifactTaskType().name())
               .errorCode(ErrorCode.INVALID_ARGUMENT)
               .build();
       }
-    } catch (JenkinsServerRuntimeException ex) {
+    } catch (BambooServerRuntimeException ex) {
       if (GlobalContextManager.get(MdcGlobalContextData.MDC_ID) == null) {
         MdcGlobalContextData mdcGlobalContextData = MdcGlobalContextData.builder().map(new HashMap<>()).build();
         GlobalContextManager.upsertGlobalContextRecord(mdcGlobalContextData);

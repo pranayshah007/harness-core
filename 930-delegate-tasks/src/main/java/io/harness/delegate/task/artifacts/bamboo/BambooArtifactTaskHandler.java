@@ -18,6 +18,8 @@ import io.harness.delegate.task.artifacts.mappers.BambooRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.bamboo.BambooBuildTaskNGResponse;
 import io.harness.exception.ExceptionUtils;
+import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
@@ -93,30 +95,32 @@ public class BambooArtifactTaskHandler extends DelegateArtifactTaskHandler<Bambo
     return ArtifactTaskExecutionResponse.builder().plans(plans).build();
   }
 
-  public ArtifactTaskExecutionResponse triggerBuild(BambooArtifactDelegateRequest attributesRequest) {
+  public ArtifactTaskExecutionResponse triggerBuild(
+      BambooArtifactDelegateRequest attributesRequest, LogCallback executionLogCallback) {
     BambooBuildTaskNGResponse bambooBuildTaskNGResponse = new BambooBuildTaskNGResponse();
     ExecutionStatus executionStatus = ExecutionStatus.SUCCESS;
     BambooConfig bambooConfig = BambooRequestResponseMapper.toBambooConfig(attributesRequest);
     String errorMessage = null;
     try {
-      Map<String, String> evaluatedParameters = Maps.newLinkedHashMap();
-      if (isNotEmpty(attributesRequest.getParameterEntries())) {
-        attributesRequest.getParameterEntries().forEach(
-            parameterEntry -> evaluatedParameters.put(parameterEntry.getKey(), parameterEntry.getValue()));
-      }
       String buildResultKey = bambooService.triggerPlan(bambooConfig, attributesRequest.getEncryptedDataDetails(),
-          attributesRequest.getPlanKey(), evaluatedParameters);
-      Result result =
-          waitForBuildExecutionToFinish(bambooConfig, attributesRequest.getEncryptedDataDetails(), buildResultKey);
+          attributesRequest.getPlanKey(), attributesRequest.getParameterEntries(), executionLogCallback);
+      Result result = waitForBuildExecutionToFinish(
+          bambooConfig, attributesRequest.getEncryptedDataDetails(), buildResultKey, executionLogCallback);
       String buildState = result.getBuildState();
       if (result == null || buildState == null) {
         executionStatus = ExecutionStatus.FAILED;
         log.info("Bamboo execution failed for plan {}", attributesRequest.getPlanKey());
+        executionLogCallback.saveExecutionLog(
+            "Bamboo execution failed for plan " + attributesRequest.getPlanKey(), LogLevel.ERROR);
       } else {
         if (!"Successful".equalsIgnoreCase(buildState)) {
           executionStatus = ExecutionStatus.FAILED;
           log.info("Build result for Bamboo url {}, plan key {}, build key {} is Failed. Result {}",
               bambooConfig.getBambooUrl(), attributesRequest.getPlanKey(), buildResultKey, result);
+          executionLogCallback.saveExecutionLog(
+              String.format("Build result for Bamboo url %s, plan key %s, build key %s is Failed. Result %s",
+                  bambooConfig.getBambooUrl(), attributesRequest.getPlanKey(), buildResultKey, result),
+              LogLevel.ERROR);
         }
         bambooBuildTaskNGResponse.setProjectName(result.getProjectName());
         bambooBuildTaskNGResponse.setPlanName(result.getPlanName());
@@ -127,6 +131,7 @@ public class BambooArtifactTaskHandler extends DelegateArtifactTaskHandler<Bambo
       }
     } catch (Exception e) {
       log.warn("Failed to execute Bamboo verification task: " + ExceptionUtils.getMessage(e), e);
+      executionLogCallback.saveExecutionLog("Failed to execute Bamboo verification task", LogLevel.ERROR);
       errorMessage = ExceptionUtils.getMessage(e);
       executionStatus = ExecutionStatus.FAILED;
     }
@@ -135,17 +140,24 @@ public class BambooArtifactTaskHandler extends DelegateArtifactTaskHandler<Bambo
     return ArtifactTaskExecutionResponse.builder().bambooBuildTaskNGResponse(bambooBuildTaskNGResponse).build();
   }
 
-  private Result waitForBuildExecutionToFinish(
-      BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails, String buildResultKey) {
+  private Result waitForBuildExecutionToFinish(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails,
+      String buildResultKey, LogCallback executionLogCallback) {
     Result result;
     do {
+      executionLogCallback.saveExecutionLog(
+          String.format("Waiting for build execution %s to finish", buildResultKey), LogLevel.INFO);
       log.info("Waiting for build execution {} to finish", buildResultKey);
       sleep(ofSeconds(5));
       result = bambooService.getBuildResult(bambooConfig, encryptionDetails, buildResultKey);
+      executionLogCallback.saveExecutionLog(
+          String.format("Build result for build key %s is %s", buildResultKey, result), LogLevel.INFO);
       log.info("Build result for build key {} is {}", buildResultKey, result);
     } while (result.getBuildState() == null || result.getBuildState().equalsIgnoreCase("Unknown"));
 
     // Get the build result
+    executionLogCallback.saveExecutionLog(
+        String.format("Build execution for build key %s is finished. Result:%s ", buildResultKey, result),
+        LogLevel.INFO);
     log.info("Build execution for build key {} is finished. Result:{} ", buildResultKey, result);
     return result;
   }

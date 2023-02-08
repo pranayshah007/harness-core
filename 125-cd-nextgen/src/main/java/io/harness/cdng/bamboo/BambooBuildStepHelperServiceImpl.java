@@ -141,6 +141,11 @@ public class BambooBuildStepHelperServiceImpl implements BambooBuildStepHelperSe
             .buildStatus(bambooBuildTaskNGResponse.getBuildStatus())
             .buildUrl(bambooBuildTaskNGResponse.getBuildUrl())
             .executionStatus(bambooBuildTaskNGResponse.getExecutionStatus())
+            .planUrl(bambooBuildTaskNGResponse.getPlanUrl())
+            .errorMessage(bambooBuildTaskNGResponse.getErrorMessage())
+            .projectName(bambooBuildTaskNGResponse.getProjectName())
+            .planName(bambooBuildTaskNGResponse.getPlanName())
+            .parameters(bambooBuildTaskNGResponse.getParameters())
             .delegateMetaInfo(bambooBuildTaskNGResponse.getDelegateMetaInfo());
     Status status = Status.SUCCEEDED;
     if (!ExecutionStatus.SUCCESS.equals(bambooBuildTaskNGResponse.getExecutionStatus())) {

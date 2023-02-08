@@ -10,6 +10,7 @@ package io.harness.cdng.bamboo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionStatus;
+import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.contracts.plan.YamlExtraProperties;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
@@ -21,6 +22,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -81,10 +83,15 @@ public class BambooBuildStepVariableCreator extends GenericStepVariableCreator<B
 
     BambooBuildOutcome bambooBuildOutcome = BambooBuildOutcome.builder()
                                                 .executionStatus(ExecutionStatus.SUCCESS)
-                                                .buildFullDisplayName("")
                                                 .buildNumber("")
-                                                .jobUrl("")
-                                                .buildFullDisplayName("")
+                                                .buildStatus("")
+                                                .buildUrl("")
+                                                .parameters(Collections.emptyMap())
+                                                .delegateMetaInfo(DelegateMetaInfo.builder().build())
+                                                .errorMessage("")
+                                                .planUrl("")
+                                                .projectName("")
+                                                .planName("")
                                                 .build();
 
     List<String> outputExpressions = VariableCreatorHelper.getExpressionsInObject(bambooBuildOutcome, "build");
