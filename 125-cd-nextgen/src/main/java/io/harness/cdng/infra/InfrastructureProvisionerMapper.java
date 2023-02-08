@@ -12,9 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonParser;
-import com.google.gson.reflect.TypeToken;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -37,6 +34,9 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -95,7 +95,7 @@ public class InfrastructureProvisionerMapper {
       return createHostObjects(hostInstancesJson);
     } catch (Exception ex) {
       log.error("Unable to parse host object array JSON", ex);
-      throw new InvalidRequestException("Host object array JSON cannot be parsed.", ex);
+      throw new InvalidRequestException("Host object array JSON cannot be parsed", ex);
     }
   }
 
