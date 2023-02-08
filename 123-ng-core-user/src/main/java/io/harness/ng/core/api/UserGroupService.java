@@ -132,5 +132,12 @@ public interface UserGroupService {
    */
   UserGroup updateDefaultUserGroup(UserGroup userGroup);
 
+  /**
+   * This method is to be used to return Permitted User Group.
+   * @param userGroups List  of userGroups to be checked if permitted.
+   * @return UserGroup This returns permitted user group.
+   */
+  List<UserGroup> getPermittedUserGroups(List<UserGroup> userGroups);
+
   Long countUserGroups(String accountIdentifier);
 }

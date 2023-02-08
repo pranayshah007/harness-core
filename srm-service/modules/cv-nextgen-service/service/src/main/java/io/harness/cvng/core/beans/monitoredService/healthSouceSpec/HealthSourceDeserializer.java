@@ -62,10 +62,9 @@ public class HealthSourceDeserializer extends JsonDeserializer<HealthSource> {
           JsonUtils.treeToValue(tree.get(HealthSource.Fields.version), HealthSourceVersion.class);
       if (healthSourceVersion == HealthSourceVersion.V2) {
         NextGenHealthSourceSpec nextGenHealthSourceSpec = JsonUtils.treeToValue(spec, NextGenHealthSourceSpec.class);
-        if (type == MonitoredServiceDataSourceType.SUMOLOGIC_LOG) {
-          nextGenHealthSourceSpec.setDataSourceType(DataSourceType.SUMOLOGIC_LOG);
-        } else if (type == MonitoredServiceDataSourceType.SUMOLOGIC_METRICS) {
-          nextGenHealthSourceSpec.setDataSourceType(DataSourceType.SUMOLOGIC_METRICS);
+        DataSourceType dataSourceType = MonitoredServiceDataSourceType.getDataSourceType(type);
+        if (dataSourceType.isNextGenSpec()) {
+          nextGenHealthSourceSpec.setDataSourceType(dataSourceType);
         }
         healthSource.setVersion(healthSourceVersion);
         healthSource.setSpec(nextGenHealthSourceSpec);

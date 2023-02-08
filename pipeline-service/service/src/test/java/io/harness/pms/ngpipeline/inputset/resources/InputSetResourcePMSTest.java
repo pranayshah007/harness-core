@@ -487,8 +487,8 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   public void testGetMergeInputSetFromPipelineTemplate() {
     doReturn(pipelineYaml)
         .when(validateAndMergeHelper)
-        .getMergeInputSetFromPipelineTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
-            Collections.emptyList(), null, null, null);
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, null, null);
     doReturn(pipelineYaml)
         .when(validateAndMergeHelper)
         .mergeInputSetIntoPipeline(
@@ -506,8 +506,8 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
 
     doReturn(pipelineYaml)
         .when(validateAndMergeHelper)
-        .getMergeInputSetFromPipelineTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
-            Collections.emptyList(), null, null, stages);
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, stages, null);
 
     MergeInputSetRequestDTOPMS inputSetRequestDTOPMSWithStages = MergeInputSetRequestDTOPMS.builder()
                                                                      .withMergedPipelineYaml(false)
@@ -519,8 +519,8 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getStatus(), Status.SUCCESS);
     assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getData().getPipelineYaml(), pipelineYaml);
     verify(validateAndMergeHelper, times(1))
-        .getMergeInputSetFromPipelineTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
-            Collections.emptyList(), null, null, stages);
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, stages, null);
   }
 
   @Test
@@ -532,8 +532,8 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
         InputSetErrorWrapperDTOPMS.builder().uuidToErrorResponseMap(Collections.singletonMap("fqn", null)).build();
     doThrow(new InvalidInputSetException("merging error", dummyErrorResponse))
         .when(validateAndMergeHelper)
-        .getMergeInputSetFromPipelineTemplate(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, inputSetReferences, null, null, null);
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, inputSetReferences, null, null, null, null);
     MergeInputSetRequestDTOPMS inputSetRequestDTO = MergeInputSetRequestDTOPMS.builder()
                                                         .withMergedPipelineYaml(true)
                                                         .inputSetReferences(inputSetReferences)

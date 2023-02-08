@@ -503,6 +503,23 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   }
 
   @Override
+  public List<SimpleServiceLevelObjective> getByMonitoredServiceIdentifiers(
+      ProjectParams projectParams, Set<String> monitoredServiceIdentifiers) {
+    return hPersistence.createQuery(SimpleServiceLevelObjective.class)
+        .disableValidation()
+        .filter(
+            AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.accountId, projectParams.getAccountIdentifier())
+        .filter(
+            AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.projectIdentifier,
+            projectParams.getProjectIdentifier())
+        .field(SimpleServiceLevelObjectiveKeys.monitoredServiceIdentifier)
+        .in(monitoredServiceIdentifiers)
+        .order(Sort.descending(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.lastUpdatedAt))
+        .asList();
+  }
+
+  @Override
   public PageResponse<CVNGLogDTO> getCVNGLogs(
       ProjectParams projectParams, String identifier, SLILogsFilter sliLogsFilter, PageParams pageParams) {
     AbstractServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);

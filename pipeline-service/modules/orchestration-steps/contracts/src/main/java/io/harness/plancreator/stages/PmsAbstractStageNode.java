@@ -7,7 +7,6 @@
 
 package io.harness.plancreator.stages;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.beans.SwaggerConstants;
@@ -25,6 +24,6 @@ import lombok.Data;
 public abstract class PmsAbstractStageNode extends AbstractStageNode {
   @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {runtime, list})
+  @YamlSchemaTypes(value = {runtime})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;
 }

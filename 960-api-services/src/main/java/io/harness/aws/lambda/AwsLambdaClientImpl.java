@@ -7,7 +7,7 @@
 
 package io.harness.aws.lambda;
 
-public class AwsLambdaClientImpl implements AwsLambaClient {
+public class AwsLambdaClientImpl implements AwsLambdaClient {
   @Override
   public void createFunction() {}
 

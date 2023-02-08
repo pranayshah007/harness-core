@@ -9,12 +9,16 @@ package io.harness.cdng.visitor.helper.deploymentstage.validator;
 
 import static io.harness.executions.steps.StepSpecTypeConstants.DEPLOYMENT_STAGE;
 import static io.harness.executions.steps.StepSpecTypeConstants.SWAP_ROLLBACK;
+import static io.harness.executions.steps.StepSpecTypeConstants.TANZU_COMMAND;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_APP_RESIZE;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BASIC_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BG_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_CANARY_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLBACK;
+import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLING_DEPLOY;
+import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLING_ROLLBACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_SWAP_ROUTES;
+import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.RISHABH;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -88,6 +92,23 @@ public class TasStageValidatorHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testValidateMultipleRollingDeploy() {
+    List<ExecutionWrapperConfig> steps = new ArrayList<>();
+    steps.add(ExecutionWrapperConfig.builder().step(getRollingDeploy(TAS_ROLLING_DEPLOY)).build());
+    List<ExecutionWrapperConfig> rollbackSteps = new ArrayList<>();
+    rollbackSteps.add(ExecutionWrapperConfig.builder().step(getRollingDeploy(TAS_ROLLING_DEPLOY)).build());
+    DeploymentStageConfig stageConfig =
+        DeploymentStageConfig.builder()
+            .deploymentType(ServiceDefinitionType.TAS)
+            .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
+            .build();
+    assertThatThrownBy(() -> tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId))
+        .hasMessage("Only one Rolling Deploy step is valid, found: 2");
+  }
+
+  @Test
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
   public void testValidateMultipleCanaryAppSetup() {
@@ -135,7 +156,7 @@ public class TasStageValidatorHelperTest extends CategoryTest {
             .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(new ArrayList<>()).build())
             .build();
     assertThatThrownBy(() -> tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId))
-        .hasMessage("Only one App Setup step out of [BasicAppSetup, BGAppSetup, CanaryAppSetup] is supported");
+        .hasMessage("Only one App Setup or Rolling Deploy is supported");
   }
 
   @Test
@@ -207,6 +228,39 @@ public class TasStageValidatorHelperTest extends CategoryTest {
             .build();
     assertThatThrownBy(() -> tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId))
         .hasMessage("At max one App Rollback step is valid, found: 2");
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testValidateMultipleRollingRollback() {
+    List<ExecutionWrapperConfig> steps = new ArrayList<>();
+    steps.add(ExecutionWrapperConfig.builder().step(getRollingDeploy(TAS_ROLLING_DEPLOY)).build());
+    steps.add(ExecutionWrapperConfig.builder().step(getRollingDeploy(TANZU_COMMAND)).build());
+    List<ExecutionWrapperConfig> rollbackSteps = new ArrayList<>();
+    rollbackSteps.add(ExecutionWrapperConfig.builder().step(getRollingRollback(TAS_ROLLING_ROLLBACK)).build());
+    rollbackSteps.add(ExecutionWrapperConfig.builder().step(getRollingRollback(TAS_ROLLING_ROLLBACK + "_1")).build());
+    DeploymentStageConfig stageConfig =
+        DeploymentStageConfig.builder()
+            .deploymentType(ServiceDefinitionType.TAS)
+            .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
+            .build();
+    assertThatThrownBy(() -> tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId))
+        .hasMessage("At max one Rolling Rollback step is valid, found: 2");
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testValidateMultipleTanzuCommand() {
+    List<ExecutionWrapperConfig> steps = new ArrayList<>();
+    steps.add(ExecutionWrapperConfig.builder().step(getTanzuCommand(TANZU_COMMAND)).build());
+    steps.add(ExecutionWrapperConfig.builder().step(getTanzuCommand(TANZU_COMMAND + "_1")).build());
+    List<ExecutionWrapperConfig> rollbackSteps = new ArrayList<>();
+    DeploymentStageConfig.builder()
+        .deploymentType(ServiceDefinitionType.TAS)
+        .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
+        .build();
   }
 
   @Test
@@ -320,6 +374,42 @@ public class TasStageValidatorHelperTest extends CategoryTest {
     ObjectNode stepSpecType = mapper.createObjectNode();
     stepSpecType.put("tasInstanceCountType", "FromManifest");
     stepSpecType.put("existingVersionToKeep", "3");
+    stepElementConfig.set("spec", stepSpecType);
+    return stepElementConfig;
+  }
+
+  public static JsonNode getRollingDeploy(String type) {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode stepElementConfig = mapper.createObjectNode();
+    stepElementConfig.put("identifier", type);
+    stepElementConfig.put("type", type);
+    stepElementConfig.put("name", type);
+
+    ObjectNode stepSpecType = mapper.createObjectNode();
+    stepElementConfig.set("spec", stepSpecType);
+    return stepElementConfig;
+  }
+
+  public static JsonNode getRollingRollback(String type) {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode stepElementConfig = mapper.createObjectNode();
+    stepElementConfig.put("identifier", type);
+    stepElementConfig.put("type", TAS_ROLLING_ROLLBACK);
+    stepElementConfig.put("name", type);
+
+    ObjectNode stepSpecType = mapper.createObjectNode();
+    stepElementConfig.set("spec", stepSpecType);
+    return stepElementConfig;
+  }
+
+  public static JsonNode getTanzuCommand(String type) {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode stepElementConfig = mapper.createObjectNode();
+    stepElementConfig.put("identifier", type);
+    stepElementConfig.put("type", TANZU_COMMAND);
+    stepElementConfig.put("name", type);
+
+    ObjectNode stepSpecType = mapper.createObjectNode();
     stepElementConfig.set("spec", stepSpecType);
     return stepElementConfig;
   }

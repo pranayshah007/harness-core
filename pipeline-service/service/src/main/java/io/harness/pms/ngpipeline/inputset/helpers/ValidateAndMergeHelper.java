@@ -200,6 +200,13 @@ public class ValidateAndMergeHelper {
   public String getMergeInputSetFromPipelineTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch, String pipelineRepoID,
       List<String> stageIdentifiers) {
+    return getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID, stageIdentifiers, null);
+  }
+
+  public String getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch,
+      String pipelineRepoID, List<String> stageIdentifiers, String lastYamlToMerge) {
     Set<String> inputSetVersions = new HashSet<>();
     PipelineEntity pipelineEntity = getPipelineEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false);
@@ -216,35 +223,41 @@ public class ValidateAndMergeHelper {
     }
 
     List<String> inputSetYamlList = new ArrayList<>();
-    inputSetReferences.forEach(identifier -> {
-      Optional<InputSetEntity> entity = pmsInputSetService.getWithoutValidations(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false);
-      if (entity.isEmpty()) {
-        return;
-      }
-      InputSetEntity inputSet = entity.get();
-      inputSetVersions.add(inputSet.getHarnessVersion());
-      checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(pipelineEntity, inputSet);
-      if (inputSet.getInputSetEntityType() == InputSetEntityType.INPUT_SET) {
-        inputSetYamlList.add(inputSet.getYaml());
-      } else {
-        List<String> overlayReferences = inputSet.getInputSetReferences();
-        overlayReferences.forEach(id -> {
-          Optional<InputSetEntity> entity2 = pmsInputSetService.getWithoutValidations(
-              accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, id, false);
-          entity2.ifPresent(inputSetEntity -> {
-            checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(pipelineEntity, entity2.get());
-            inputSetYamlList.add(inputSetEntity.getYaml());
+    if (inputSetReferences != null) {
+      inputSetReferences.forEach(identifier -> {
+        Optional<InputSetEntity> entity = pmsInputSetService.getWithoutValidations(
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false);
+        if (entity.isEmpty()) {
+          return;
+        }
+        InputSetEntity inputSet = entity.get();
+        inputSetVersions.add(inputSet.getHarnessVersion());
+        checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(pipelineEntity, inputSet);
+        if (inputSet.getInputSetEntityType() == InputSetEntityType.INPUT_SET) {
+          inputSetYamlList.add(inputSet.getYaml());
+        } else {
+          List<String> overlayReferences = inputSet.getInputSetReferences();
+          overlayReferences.forEach(id -> {
+            Optional<InputSetEntity> entity2 = pmsInputSetService.getWithoutValidations(
+                accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, id, false);
+            entity2.ifPresent(inputSetEntity -> {
+              checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(pipelineEntity, entity2.get());
+              inputSetYamlList.add(inputSetEntity.getYaml());
+            });
           });
-        });
-      }
-    });
+        }
+      });
+    }
 
     if (inputSetVersions.contains(PipelineVersion.V0) && inputSetVersions.contains(PipelineVersion.V1)) {
       throw new InvalidRequestException("Input set versions 0 and 1 are not compatible");
     }
     if (inputSetVersions.contains(PipelineVersion.V1)) {
       return InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList);
+    }
+
+    if (EmptyPredicate.isNotEmpty(lastYamlToMerge)) {
+      inputSetYamlList.add(lastYamlToMerge);
     }
 
     if (EmptyPredicate.isEmpty(stageIdentifiers)) {

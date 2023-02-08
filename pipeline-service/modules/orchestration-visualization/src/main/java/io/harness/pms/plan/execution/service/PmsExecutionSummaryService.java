@@ -54,4 +54,11 @@ public interface PmsExecutionSummaryService {
    */
   CloseableIterator<PipelineExecutionSummaryEntity> fetchPlanExecutionIdsFromAnalytics(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
+
+  /**
+   * Delete all PipelineExecutionSummaryEntity for given planExecutionIds
+   * Uses - planExecutionId_idx index
+   * @param planExecutionIds
+   */
+  void deleteAllSummaryForGivenPlanExecutionIds(Set<String> planExecutionIds);
 }

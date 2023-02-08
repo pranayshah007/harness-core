@@ -65,6 +65,7 @@ public class BatchMainConfig {
   @JsonProperty("currencyPreferences") private CurrencyPreferencesConfig currencyPreferencesConfig;
   @JsonProperty("clickHouseConfig") private ClickHouseConfig clickHouseConfig;
   @JsonProperty(defaultValue = "KUBERNETES") private DeployMode deployMode = DeployMode.KUBERNETES;
+  @JsonProperty(defaultValue = "false") private boolean isClickHouseEnabled;
 
   public List<String> getDbAliases() {
     List<String> dbAliases = new ArrayList<>();

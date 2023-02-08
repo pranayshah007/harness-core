@@ -13,7 +13,7 @@ import static software.wings.helpers.ext.ecr.EcrService.MAX_NO_OF_TAGS_PER_IMAGE
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
-import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
+import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDateDescending;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -61,7 +61,7 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
         attributesRequest.getImagePath(), MAX_NO_OF_TAGS_PER_IMAGE);
     List<EcrArtifactDelegateResponse> ecrArtifactDelegateResponseList =
         builds.stream()
-            .sorted(new BuildDetailsInternalComparatorDescending())
+            .sorted(new BuildDetailsInternalComparatorDateDescending()) // Sort by latest timestamp.
             .map(build -> EcrRequestResponseMapper.toEcrResponse(build, attributesRequest, null))
             .collect(Collectors.toList());
     return getSuccessTaskExecutionResponse(ecrArtifactDelegateResponseList);

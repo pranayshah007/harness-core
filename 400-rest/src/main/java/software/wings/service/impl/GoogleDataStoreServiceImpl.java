@@ -55,13 +55,15 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
   private static int DATA_STORE_BATCH_SIZE = 500;
 
   private static final String GOOGLE_APPLICATION_CREDENTIALS_PATH = "GOOGLE_APPLICATION_CREDENTIALS";
+  private static final String ENV_VARIABLE_WORKLOAD_IDENTITY = "USE_WORKLOAD_IDENTITY";
   private final Datastore datastore = DatastoreOptions.getDefaultInstance().getService();
   private DataStoreService mongoDataStoreService;
 
   @Inject
   public GoogleDataStoreServiceImpl(WingsPersistence wingsPersistence) {
     String googleCredentialsPath = System.getenv(GOOGLE_APPLICATION_CREDENTIALS_PATH);
-    if (isEmpty(googleCredentialsPath) || !new File(googleCredentialsPath).exists()) {
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv(ENV_VARIABLE_WORKLOAD_IDENTITY));
+    if (!usingWorkloadIdentity && isEmpty(googleCredentialsPath) || !new File(googleCredentialsPath).exists()) {
       throw new WingsException("Invalid credentials found at " + googleCredentialsPath);
     }
     mongoDataStoreService = new MongoDataStoreServiceImpl(wingsPersistence);

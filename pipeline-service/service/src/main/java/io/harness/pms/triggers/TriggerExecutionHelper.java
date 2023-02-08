@@ -233,7 +233,8 @@ public class TriggerExecutionHelper {
       PipelineEntity pipelineEntity = pipelineEntityToExecute.get();
 
       String runtimeInputYaml = null;
-      if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
+      if (PipelineVersion.V0.equals(pipelineEntity.getHarnessVersion())
+          && isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
           && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
         runtimeInputYaml = triggerDetails.getNgTriggerConfigV2().getInputYaml();
       } else {

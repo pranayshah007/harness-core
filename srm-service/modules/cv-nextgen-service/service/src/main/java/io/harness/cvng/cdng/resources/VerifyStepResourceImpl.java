@@ -73,8 +73,7 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
             -> HealthSource.builder()
                    .name(dto.getName())
                    .identifier(dto.getIdentifier())
-                   .type(MonitoredServiceDataSourceType.dataSourceTypeMonitoredServiceDataSourceTypeMap.get(
-                       dto.getType()))
+                   .type(MonitoredServiceDataSourceType.getMonitoredServiceDataSourceType(dto.getType()))
                    .providerType(ProviderType.fromVerificationType(dto.getVerificationType()))
                    .build())
         .collect(Collectors.toList());
@@ -134,7 +133,7 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
             StringUtils.isBlank(verificationJobInstance.getResolvedJob().getMonitoredServiceTemplateIdentifier())
                 ? MonitoredServiceSpecType.DEFAULT
                 : MonitoredServiceSpecType.TEMPLATE)
-        .analysisType(deploymentVerificationJobInstanceSummary.getAdditionalInfo().getType())
+        .analysisType(verificationJobInstance.getResolvedJob().getType())
         .durationInMinutes(Duration.ofMillis(deploymentVerificationJobInstanceSummary.getDurationMs()).toMinutes())
         .sensitivity(verificationJobInstance.getResolvedJob().getSensitivity())
         .isFailOnNoAnalysis(verificationJobInstance.getResolvedJob().isFailOnNoAnalysis())

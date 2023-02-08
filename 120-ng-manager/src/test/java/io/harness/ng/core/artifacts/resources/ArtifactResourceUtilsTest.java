@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.VINICIUS;
+import static io.harness.rule.OwnerRule.YOGESH;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,6 +56,7 @@ import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -68,19 +70,24 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
+@RunWith(JUnitParamsRunner.class)
 public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @InjectMocks ArtifactResourceUtils artifactResourceUtils;
   @Mock PipelineServiceClient pipelineServiceClient;
@@ -223,7 +230,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
-  public void testGetResolvedPathWithImagePathWhenPipelineUnderConstruction() throws IOException {
+  public void testGetResolvedPathWithImagePathWhenPipelineUnderConstruction() {
     assertThatThrownBy(
         ()
             -> artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, "-1", "",
@@ -557,7 +564,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
-  public void testGetBuildDetailsV2GAR() throws IOException {
+  public void testGetBuildDetailsV2GAR() {
     // spy for ArtifactResourceUtils
     ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
 
@@ -596,18 +603,21 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
-  public void testGetBuildDetailsV2Custom() throws IOException {
+  public void testGetBuildDetailsV2Custom() {
     // spy for ArtifactResourceUtils
     ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
-    CustomArtifactConfig customArtifactConfig = CustomArtifactConfig.builder()
-                                                    .identifier("test")
-                                                    .primaryArtifact(true)
-                                                    .version(ParameterField.createValueField("build-x"))
-                                                    .build();
 
-    // Creating IdentifierRef for mock
-    IdentifierRef identifierRef =
-        IdentifierRefHelper.getIdentifierRef("connectorref", "accountId", "orgId", "projectId");
+    List<TaskSelectorYaml> delegateSelectorsValue = new ArrayList<>();
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("abc");
+    delegateSelectorsValue.add(taskSelectorYaml);
+
+    CustomArtifactConfig customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .version(ParameterField.createValueField("build-x"))
+            .delegateSelectors(ParameterField.<List<TaskSelectorYaml>>builder().value(delegateSelectorsValue).build())
+            .build();
 
     doReturn(customArtifactConfig)
         .when(spyartifactResourceUtils)
@@ -623,7 +633,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
-  public void testArtifactoryImagePaths() throws IOException {
+  public void testArtifactoryImagePaths() {
     // spy for ArtifactResourceUtils
     ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
 
@@ -816,6 +826,18 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     assertThat(artifactConfig).isNotNull();
     assertThat(((DockerHubArtifactConfig) artifactConfig).getConnectorRef().getExpressionValue()).isEqualTo("<+input>");
     assertThat(((DockerHubArtifactConfig) artifactConfig).getImagePath().getExpressionValue()).isEqualTo("<+input>");
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  @Parameters({"library/nginx.allowedValues(library/nginx), library/nginx",
+      "library/http.regex(library.*), library/http", "http, http"})
+  public void
+  testGetResolvedImagePathWithFixed(String imagePathInput, String expectedImagePath) {
+    String resolvedImagePath =
+        artifactResourceUtils.getResolvedImagePath("a", "o", "p", "p", "", imagePathInput, "fqn", null, null);
+    assertThat(resolvedImagePath).isEqualTo(expectedImagePath);
   }
 
   private void mockEnvironmentGetCall() {

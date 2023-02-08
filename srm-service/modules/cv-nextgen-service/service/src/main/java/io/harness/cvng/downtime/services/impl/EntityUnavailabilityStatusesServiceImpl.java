@@ -94,6 +94,16 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
 
   @Override
   public List<EntityUnavailabilityStatusesDTO> getAllInstances(
+      ProjectParams projectParams, EntityType entityType, String entityIdentifier) {
+    List<EntityUnavailabilityStatuses> allInstances =
+        getAllInstancesQuery(projectParams, entityType, entityIdentifier).asList();
+    return allInstances.stream()
+        .map(status -> statusesEntityAndDTOTransformer.getDto(status))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<EntityUnavailabilityStatusesDTO> getAllInstances(
       ProjectParams projectParams, long startTime, long endTime) {
     List<EntityUnavailabilityStatuses> allInstances =
         hPersistence.createQuery(EntityUnavailabilityStatuses.class)
@@ -220,6 +230,16 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
         .field(EntityUnavailabilityStatusesKeys.endTime)
         .lessThanOrEq(clock.millis() / 1000)
         .order(Sort.descending(EntityUnavailabilityStatusesKeys.endTime));
+  }
+
+  private Query<EntityUnavailabilityStatuses> getAllInstancesQuery(
+      ProjectParams projectParams, EntityType entityType, String entityId) {
+    return hPersistence.createQuery(EntityUnavailabilityStatuses.class)
+        .filter(EntityUnavailabilityStatusesKeys.accountId, projectParams.getAccountIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.projectIdentifier, projectParams.getProjectIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.entityType, entityType)
+        .filter(EntityUnavailabilityStatusesKeys.entityIdentifier, entityId);
   }
 
   private Query<EntityUnavailabilityStatuses> getFutureInstances(ProjectParams projectParams, String entityId) {

@@ -1757,12 +1757,21 @@ public class AccountServiceImpl implements AccountService {
     return false;
   }
 
+  private void validateName(String name) {
+    String[] parts = name.split(ILLEGAL_ACCOUNT_NAME_CHARACTERS, 2);
+    if (parts.length > 1) {
+      throw new InvalidRequestException("Account or Company Name '" + name + "' contains illegal characters", USER);
+    }
+  }
+
   @Override
   public Account updateAccountName(String accountId, String accountName, String companyName) {
     notNullCheck("Account name can not be set to null!", accountName);
+    validateName(accountName);
     UpdateOperations<Account> updateOperations = wingsPersistence.createUpdateOperations(Account.class);
     updateOperations.set(AccountKeys.accountName, accountName);
     if (isNotEmpty(companyName)) {
+      validateName(companyName);
       updateOperations.set(AccountKeys.companyName, companyName);
     }
     wingsPersistence.update(

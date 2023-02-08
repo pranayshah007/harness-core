@@ -414,6 +414,7 @@ public class AsgSdkManager {
   }
 
   public List<LifecycleHookSpecification> getLifeCycleHookSpecificationList(String asgName) {
+    info("Getting LifecycleHooks for Asg %s", asgName);
     DescribeLifecycleHooksRequest describeLifecycleHooksRequest = new DescribeLifecycleHooksRequest();
     describeLifecycleHooksRequest.setAutoScalingGroupName(asgName);
 
@@ -439,6 +440,7 @@ public class AsgSdkManager {
   }
 
   public AutoScalingGroup getASG(String asgName) {
+    info("Getting Asg %s", asgName);
     DescribeAutoScalingGroupsRequest describeAutoScalingGroupsRequest =
         new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(asgName);
 
@@ -516,10 +518,17 @@ public class AsgSdkManager {
 
     DescribeInstanceRefreshesResult describeInstanceRefreshesResult =
         asgCall(asgClient -> asgClient.describeInstanceRefreshes(describeInstanceRefreshesRequest));
-    List<InstanceRefresh> instanceRefreshList = describeInstanceRefreshesResult.getInstanceRefreshes();
 
-    Set<String> statuses = instanceRefreshList.stream().map(InstanceRefresh::getStatus).collect(Collectors.toSet());
-    return statuses.size() == 1 && statuses.contains(INSTANCE_REFRESH_STATUS_SUCCESSFUL);
+    // always one instanceRefresh
+    InstanceRefresh instanceRefresh = describeInstanceRefreshesResult.getInstanceRefreshes().get(0);
+    if (instanceRefresh.getPercentageComplete() != null) {
+      info("Percentage completed: %d", instanceRefresh.getPercentageComplete());
+    }
+    if (instanceRefresh.getStatusReason() != null) {
+      info(instanceRefresh.getStatusReason());
+    }
+
+    return instanceRefresh.getStatus().equals(INSTANCE_REFRESH_STATUS_SUCCESSFUL);
   }
 
   public void waitInstanceRefreshSteadyState(String asgName, String instanceRefreshId, String operationName) {
@@ -575,6 +584,7 @@ public class AsgSdkManager {
   }
 
   public List<ScalingPolicy> listAllScalingPoliciesOfAsg(String asgName) {
+    info("Getting ScalingPolicies for Asg %s", asgName);
     List<ScalingPolicy> scalingPolicies = newArrayList();
     String nextToken = null;
     do {
@@ -620,6 +630,7 @@ public class AsgSdkManager {
   }
 
   public List<ScheduledUpdateGroupAction> listAllScheduledActionsOfAsg(String asgName) {
+    info("Getting ScheduledUpdateGroupActions for Asg %s", asgName);
     List<ScheduledUpdateGroupAction> actions = newArrayList();
     String nextToken = null;
     do {

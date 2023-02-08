@@ -53,8 +53,8 @@ public class OverlayInputSetValidationHelper {
     if (EmptyPredicate.isEmpty(identifier)) {
       throw new InvalidRequestException("Identifier cannot be empty");
     }
-    if (identifier.length() > 63) {
-      throw new InvalidRequestException("Overlay Input Set identifier length cannot be more that 63 characters.");
+    if (identifier.length() > 127) {
+      throw new InvalidRequestException("Overlay Input Set identifier length cannot be more that 127 characters.");
     }
     List<String> inputSetReferences = InputSetYamlHelper.getReferencesFromOverlayInputSetYaml(yaml);
     if (inputSetReferences.isEmpty()) {

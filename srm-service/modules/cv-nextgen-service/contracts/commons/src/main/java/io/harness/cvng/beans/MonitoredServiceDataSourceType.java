@@ -52,4 +52,18 @@ public enum MonitoredServiceDataSourceType {
     dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.SUMOLOGIC_LOG, SUMOLOGIC_LOG);
     dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.SUMOLOGIC_METRICS, SUMOLOGIC_METRICS);
   }
+
+  public static MonitoredServiceDataSourceType getMonitoredServiceDataSourceType(DataSourceType dataSourceType) {
+    return dataSourceTypeMonitoredServiceDataSourceTypeMap.get(dataSourceType);
+  }
+
+  public static DataSourceType getDataSourceType(MonitoredServiceDataSourceType monitoredServiceDataSourceType) {
+    for (Map.Entry<DataSourceType, MonitoredServiceDataSourceType> entry :
+        dataSourceTypeMonitoredServiceDataSourceTypeMap.entrySet()) {
+      if (entry.getValue() == monitoredServiceDataSourceType) {
+        return entry.getKey();
+      }
+    }
+    throw new RuntimeException("Cannot get the mapping for " + monitoredServiceDataSourceType);
+  }
 }

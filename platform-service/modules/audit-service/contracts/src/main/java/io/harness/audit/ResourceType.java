@@ -28,6 +28,7 @@ public enum ResourceType {
   DELEGATE_GROUPS(ResourceTypeConstants.DELEGATE_GROUPS),
   SERVICE(ResourceTypeConstants.SERVICE),
   ENVIRONMENT(ResourceTypeConstants.ENVIRONMENT),
+  ENVIRONMENT_GROUP(ResourceTypeConstants.ENVIRONMENT_GROUP),
   DELEGATE(ResourceTypeConstants.DELEGATE),
   SERVICE_ACCOUNT(ResourceTypeConstants.SERVICE_ACCOUNT),
   CONNECTOR(ResourceTypeConstants.CONNECTOR),

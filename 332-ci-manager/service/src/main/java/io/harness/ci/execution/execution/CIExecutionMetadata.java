@@ -48,7 +48,7 @@ public class CIExecutionMetadata {
   @Wither @Id @dev.morphia.annotations.Id String uuid;
   @FdIndex String accountId;
   OSType buildType;
-  String stageExecutionId;
+  @FdIndex String stageExecutionId;
   String queueId;
   Infrastructure.Type infraType;
   @Builder.Default
@@ -61,6 +61,11 @@ public class CIExecutionMetadata {
                  .name("accountIdAndBuildType")
                  .field(CIExecutionMetadataKeys.accountId)
                  .field(CIExecutionMetadataKeys.buildType)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountIdAndStageExecutionId")
+                 .field(CIExecutionMetadataKeys.accountId)
+                 .field(CIExecutionMetadataKeys.stageExecutionId)
                  .build())
         .build();
   }

@@ -386,7 +386,7 @@ public class AuthHandlerTest extends WingsBaseTest {
     when(environmentService.list(any(PageRequest.class), eq(false), eq(null))).thenReturn(envResponse);
 
     List<Workflow> workflowResponse = asList(workflow1, workflow2, workflow3, workflow4);
-    when(workflowService.list(any(), any())).thenReturn(workflowResponse);
+    when(workflowService.list(any(), any(), any())).thenReturn(workflowResponse);
 
     List<Pipeline> pipelines = Lists.newArrayList(pipeline1, pipeline2, pipeline3, pipeline4, pipeline5);
     if (includeEmptyPipeline) {
@@ -418,7 +418,7 @@ public class AuthHandlerTest extends WingsBaseTest {
     when(environmentService.list(any(PageRequest.class), eq(false), eq(null))).thenReturn(envResponse);
 
     List<Workflow> workflowResponse = asList(workflow1, workflow2, workflow3, workflow4, buildWorkflow);
-    when(workflowService.list(any(), any())).thenReturn(workflowResponse);
+    when(workflowService.list(any(), any(), any())).thenReturn(workflowResponse);
 
     PageResponse<Pipeline> pipelineResponse = aPageResponse()
                                                   .withResponse(asList(pipeline1, pipeline2, pipeline3, pipeline4,
