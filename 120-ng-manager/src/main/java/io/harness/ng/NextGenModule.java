@@ -669,7 +669,7 @@ public class NextGenModule extends AbstractModule {
         appConfig.getNextGenConfig().getPipelineServiceSecret(), NG_MANAGER.toString()));
     install(new CodeResourceClientModule(
         ServiceHttpClientConfig.builder().baseUrl(appConfig.getCodeServiceClientConfig().getBaseUrl()).build(),
-        appConfig.getNextGenConfig().getCodeServiceSecret(), CODE.toString()));
+        appConfig.getNextGenConfig().getCodeServiceSecret(), NG_MANAGER.getServiceId(), ClientMode.PRIVILEGED));
     install(new TemplateResourceClientModule(appConfig.getTemplateServiceClientConfig(),
         appConfig.getNextGenConfig().getTemplateServiceSecret(), NG_MANAGER.toString()));
     install(new ConnectorResourceClientModule(appConfig.getNgManagerClientConfig(),

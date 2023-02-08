@@ -196,10 +196,16 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, ScmConnector scmConnector) {
     try {
       List<CodeRepoResponse> codeRepos = SafeHttpCall.executeWithExceptions(
-          codeResourceClient.listRepos(accountIdentifier, orgIdentifier, projectIdentifier, accountIdentifier));
+          codeResourceClient.listRepos(accountIdentifier, orgIdentifier, projectIdentifier));
       ArrayList userRepoResponses = new ArrayList();
       for (CodeRepoResponse userRepo : codeRepos) {
-        userRepoResponses.add(UserRepoResponse.builder().namespace(userRepo.getPath()).name(userRepo.getUid()).build());
+        String path = userRepo.getPath();
+        int idx = path.lastIndexOf("/");
+        if (idx == -1) {
+          throw new RuntimeException("invalid path");
+        }
+        String namespace = path.substring(0, idx);
+        userRepoResponses.add(UserRepoResponse.builder().namespace(namespace).name(userRepo.getUid()).build());
       }
       return userRepoResponses;
     } catch (IOException e) {

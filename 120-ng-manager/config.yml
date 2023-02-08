@@ -172,7 +172,7 @@ templateServiceClientConfig:
   readTimeOutSeconds: 15
 
 codeServiceClientConfig:
-  baseUrl: http://localhost:3000/code/api/
+  baseUrl: http://localhost:3000/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
