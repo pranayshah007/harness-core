@@ -10,7 +10,7 @@ servers:
 paths:
   /v1/environment-secrets:
     get:
-      summary: GetSecrets
+      summary: GetEnvironmentSecrets
       responses:
         '200':
           $ref: '#/components/responses/EnvironmentSecretResponseList'
@@ -29,7 +29,7 @@ paths:
       tags:
         - EnvironmentSecret
     post:
-      summary: CreateSecret
+      summary: CreateEnvironmentSecret
       operationId: create-environment-secret
       responses:
         '201':
@@ -43,6 +43,7 @@ paths:
         $ref: '#/components/requestBodies/EnvironmentSecretRequest'
       tags:
         - EnvironmentSecret
+      x-internal: true
     parameters: []
   '/v1/environment-secrets/{environment-secret}':
     parameters:
@@ -62,7 +63,7 @@ paths:
       tags:
         - EnvironmentSecret
     put:
-      summary: UpdateEnvironment
+      summary: UpdateEnvironmentSecret
       operationId: update-environment-secret
       responses:
         '200':
@@ -76,8 +77,9 @@ paths:
       description: Updates the specified environment secret
       tags:
         - EnvironmentSecret
+      x-internal: true
     delete:
-      summary: DeleteEnvironment
+      summary: DeleteEnvironmentSecret
       operationId: delete-environment-secret
       responses:
         '200':
@@ -89,6 +91,7 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
         - EnvironmentSecret
+      x-internal: true
 components:
   schemas:
     EnvironmentSecret:
