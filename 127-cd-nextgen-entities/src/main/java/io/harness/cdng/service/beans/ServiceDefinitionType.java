@@ -84,7 +84,11 @@ public enum ServiceDefinitionType {
   GOOGLE_CLOUD_FUNCTIONS(ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS,
       Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
           ExecutionStrategyType.DEFAULT),
-      ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS);
+      ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS),
+
+  @JsonProperty(ServiceSpecType.AWS_LAMBDA)
+  AWS_LAMBDA(ServiceSpecType.AWS_LAMBDA, Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT),
+      ServiceSpecType.AWS_LAMBDA);
 
   /*
   //Unsupported for now

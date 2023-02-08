@@ -25,13 +25,14 @@ import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
-import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityFilterService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityInstancesHandlerService;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,7 +44,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class SLIDataUnavailabilityFilterServiceImplTest extends CvNextGenTestBase {
-  @Inject SLIDataUnavailabilityFilterService sliDataUnavailabilityFilterService;
+  @Inject SLIDataUnavailabilityInstancesHandlerService sliDataUnavailabilityFilterService;
 
   @Mock EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
 
@@ -80,10 +81,9 @@ public class SLIDataUnavailabilityFilterServiceImplTest extends CvNextGenTestBas
     doReturn(Collections.singletonList(downtimeEntityUnavailabilityStatusesDTO))
         .when(downtimeService)
         .filterDowntimeInstancesOnMonitoredService(builderFactory.getProjectParams(), statusesDTOS, "msIdentifier");
-    List<SLIRecordParam> updatedSliRecordParams =
-        sliDataUnavailabilityFilterService.filterSLIRecordsToSkip(sliRecordParams, builderFactory.getProjectParams(),
-            startTime.getEpochSecond(), startTime.getEpochSecond() + Duration.ofMinutes(10).toSeconds(), "msIdentifier",
-            sloEntityUnavailabilityStatusesDTO.getEntityId());
+    List<SLIRecordParam> updatedSliRecordParams = sliDataUnavailabilityFilterService.filterSLIRecordsToSkip(
+        sliRecordParams, builderFactory.getProjectParams(), startTime, startTime.plus(10, ChronoUnit.MINUTES),
+        "msIdentifier", sloEntityUnavailabilityStatusesDTO.getEntityId());
     assertThat(updatedSliRecordParams.size()).isEqualTo(10);
     assertThat(updatedSliRecordParams.get(9).getSliState()).isEqualTo(SKIP_DATA);
   }

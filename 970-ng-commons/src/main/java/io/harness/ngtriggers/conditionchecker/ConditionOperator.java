@@ -9,6 +9,7 @@ package io.harness.ngtriggers.conditionchecker;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.conditionchecker.OperationEvaluator.CONTAINS_OPERATOR;
+import static io.harness.ngtriggers.conditionchecker.OperationEvaluator.DOES_NOT_CONTAIN_OPERATOR;
 import static io.harness.ngtriggers.conditionchecker.OperationEvaluator.ENDS_WITH_OPERATOR;
 import static io.harness.ngtriggers.conditionchecker.OperationEvaluator.EQUALS_OPERATOR;
 import static io.harness.ngtriggers.conditionchecker.OperationEvaluator.IN_OPERATOR;
@@ -36,7 +37,8 @@ public enum ConditionOperator {
   @JsonProperty(REGEX_OPERATOR) REGEX(REGEX_OPERATOR),
   @JsonProperty(ENDS_WITH_OPERATOR) ENDS_WITH(ENDS_WITH_OPERATOR),
   @JsonProperty(STARTS_WITH_OPERATOR) STARTS_WITH(STARTS_WITH_OPERATOR),
-  @JsonProperty(CONTAINS_OPERATOR) CONTAINS(CONTAINS_OPERATOR);
+  @JsonProperty(CONTAINS_OPERATOR) CONTAINS(CONTAINS_OPERATOR),
+  @JsonProperty(DOES_NOT_CONTAIN_OPERATOR) DOES_NOT_CONTAIN(DOES_NOT_CONTAIN_OPERATOR);
 
   private static final Set<ConditionOperator> listOperators =
       Collections.unmodifiableSet(new HashSet<>(Arrays.asList(IN, NOT_IN)));

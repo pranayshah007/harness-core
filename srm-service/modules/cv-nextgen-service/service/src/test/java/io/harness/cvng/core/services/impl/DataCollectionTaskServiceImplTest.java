@@ -24,10 +24,15 @@ import static io.harness.rule.OwnerRule.KANHAIYA;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.NEMANJA;
 import static io.harness.rule.OwnerRule.RAGHU;
+import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 import static io.harness.rule.OwnerRule.VUK;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CvNextGenTestBase;
@@ -36,14 +41,17 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.beans.AppDynamicsDataCollectionInfo;
+import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionInfo;
 import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.DataCollectionTaskDTO.DataCollectionTaskResult;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.SplunkDataCollectionInfo;
+import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
@@ -51,17 +59,31 @@ import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.DataCollectionTask.DataCollectionTaskKeys;
 import io.harness.cvng.core.entities.DataCollectionTask.Type;
 import io.harness.cvng.core.entities.DeploymentDataCollectionTask;
+import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.MonitoringSourcePerpetualTask;
+import io.harness.cvng.core.entities.PrometheusCVConfig;
+import io.harness.cvng.core.entities.SLIDataCollectionTask;
 import io.harness.cvng.core.entities.ServiceGuardDataCollectionTask;
 import io.harness.cvng.core.entities.SplunkCVConfig;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.CVNGLogService;
+import io.harness.cvng.core.services.api.DataCollectionSLIInfoMapper;
 import io.harness.cvng.core.services.api.DataCollectionTaskManagementService;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
+import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.models.VerificationType;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveResponse;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelIndicatorServiceImpl;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.ExecutionStatus;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
@@ -97,7 +119,11 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
   @Inject private DataCollectionTaskService dataCollectionTaskService;
   @Inject @Spy private DataCollectionTaskServiceImpl dataCollectionTaskServiceImpl;
   @Inject private ServiceGuardDataCollectionTaskServiceImpl serviceGuardDataCollectionTaskService;
+
+  @Inject private SLIDataCollectionTaskServiceImpl sliDataCollectionTaskService;
   @Inject private HPersistence hPersistence;
+
+  @Inject private HealthSourceService healthSourceService;
   @Inject private CVConfigService cvConfigService;
   @Inject private MetricPackService metricPackService;
   @Inject private VerificationTaskService verificationTaskService;
@@ -105,6 +131,12 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private MonitoringSourcePerpetualTaskService monitoringSourcePerpetualTaskService;
   @Inject private CVNGLogService cvngLogService;
+
+  @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
+
+  @Inject private MonitoredServiceService monitoredServiceService;
+
+  @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
   private String cvConfigId;
   private String accountId;
   private String orgIdentifier;
@@ -112,9 +144,17 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
   private Instant fakeNow;
   private String dataCollectionWorkerId;
   private String verificationTaskId;
+
+  private String sliVerificationTaskId;
   private CVConfig cvConfig;
   private BuilderFactory builderFactory;
+
+  private String monitoredServiceIdentifier;
+
+  private ServiceLevelIndicator serviceLevelIndicator;
   @Inject private Map<Type, DataCollectionTaskManagementService> dataCollectionTaskManagementServiceMapBinder;
+
+  @Inject private Map<DataSourceType, DataCollectionSLIInfoMapper> dataSourceTypeDataCollectionInfoMapperMap;
 
   @Before
   public void setupTests() throws IllegalAccessException {
@@ -744,6 +784,61 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testUpdateTaskStatus_sliCreateNewTaskIfRetryTaskIsTooOld() throws IllegalAccessException {
+    serviceLevelIndicator = createSLI();
+    sliVerificationTaskId =
+        verificationTaskService.getSLIVerificationTaskId(accountId, serviceLevelIndicator.getUuid());
+    ServiceLevelIndicatorService serviceLevelIndicatorServiceMock = mock(ServiceLevelIndicatorServiceImpl.class);
+    Exception exception = new RuntimeException("exception msg");
+    DataCollectionTask dataCollectionTask = createAndSave(RUNNING, Type.SLI);
+    DataCollectionTaskResult result = DataCollectionTaskDTO.DataCollectionTaskResult.builder()
+                                          .status(DataCollectionExecutionStatus.FAILED)
+                                          .stacktrace(ExceptionUtils.getStackTrace(exception))
+                                          .dataCollectionTaskId(dataCollectionTask.getUuid())
+                                          .exception(exception.getMessage())
+                                          .build();
+    dataCollectionTaskService.updateTaskStatus(result);
+    markRunning(dataCollectionTask.getUuid());
+    Clock clock = Clock.fixed(this.clock.instant().plus(Duration.ofHours(25)), ZoneOffset.UTC);
+    FieldUtils.writeField(dataCollectionTaskService, "clock", clock, true);
+    FieldUtils.writeField(sliDataCollectionTaskService, "clock", clock, true);
+    sliDataCollectionTaskService =
+        (SLIDataCollectionTaskServiceImpl) dataCollectionTaskManagementServiceMapBinder.get(Type.SLI);
+    doCallRealMethod().when(serviceLevelIndicatorServiceMock).get(any());
+    doCallRealMethod().when(serviceLevelIndicatorServiceMock).fetchCVConfigForSLI((ServiceLevelIndicator) any());
+    FieldUtils.writeField(serviceLevelIndicatorServiceMock, "healthSourceService", healthSourceService, true);
+    FieldUtils.writeField(serviceLevelIndicatorServiceMock, "hPersistence", hPersistence, true);
+    FieldUtils.writeField(sliDataCollectionTaskService, "clock", clock, true);
+    FieldUtils.writeField(sliDataCollectionTaskService, "dataSourceTypeDataCollectionInfoMapperMap",
+        dataSourceTypeDataCollectionInfoMapperMap, true);
+    FieldUtils.writeField(
+        dataCollectionTaskService, "serviceLevelIndicatorService", serviceLevelIndicatorServiceMock, true);
+    FieldUtils.writeField(
+        sliDataCollectionTaskService, "serviceLevelIndicatorService", serviceLevelIndicatorServiceMock, true);
+    FieldUtils.writeField(dataCollectionTaskService, "dataCollectionTaskManagementServiceMapBinder",
+        dataCollectionTaskManagementServiceMapBinder, true);
+    dataCollectionTaskService.updateTaskStatus(result);
+    DataCollectionTask updated = dataCollectionTaskService.getDataCollectionTask(dataCollectionTask.getUuid());
+    verify(serviceLevelIndicatorServiceMock)
+        .enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId,
+            fakeNow.minus(Duration.ofMinutes(7)), fakeNow.minus(Duration.ofMinutes(2)), serviceLevelIndicator);
+    verify(serviceLevelIndicatorServiceMock)
+        .enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId,
+            fakeNow.minus(Duration.ofMinutes(1)), fakeNow.plus(Duration.ofMinutes(59)), serviceLevelIndicator);
+    assertThat(updated.getStatus()).isEqualTo(DataCollectionExecutionStatus.FAILED);
+    assertThat(updated.getRetryCount()).isEqualTo(1);
+    assertThat(updated.getException()).isEqualTo("exception msg");
+    DataCollectionTask newTask =
+        hPersistence.createQuery(DataCollectionTask.class).filter(DataCollectionTaskKeys.status, QUEUED).get();
+    assertThat(newTask.getStatus()).isEqualTo(QUEUED);
+    assertThat(newTask.getRetryCount()).isEqualTo(0);
+    assertThat(newTask.getValidAfter())
+        .isEqualTo(
+            CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().plus(25, ChronoUnit.HOURS).plus(5, ChronoUnit.SECONDS));
+  }
+  @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testUpdateTaskStatus_DeploymentWithAbortedNextTask() throws IllegalAccessException {
@@ -1065,6 +1160,18 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
           .dataCollectionInfo(createDataCollectionInfo())
           .lastPickedAt(executionStatus == RUNNING ? fakeNow.minus(Duration.ofMinutes(5)) : null)
           .build();
+    } else if (type == Type.SLI) {
+      return SLIDataCollectionTask.builder()
+          .verificationTaskId(sliVerificationTaskId)
+          .type(Type.SLI)
+          .dataCollectionWorkerId(dataCollectionWorkerId)
+          .accountId(accountId)
+          .startTime(fakeNow.minus(Duration.ofMinutes(7)))
+          .endTime(fakeNow.minus(Duration.ofMinutes(2)))
+          .status(executionStatus)
+          .dataCollectionInfo(createDataCollectionInfo())
+          .lastPickedAt(executionStatus == RUNNING ? fakeNow.minus(Duration.ofMinutes(5)) : null)
+          .build();
     } else {
       return DeploymentDataCollectionTask.builder()
           .verificationTaskId(verificationTaskId)
@@ -1093,9 +1200,30 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
   }
 
   private CVConfig createCVConfig() {
-    SplunkCVConfig cvConfig = builderFactory.splunkCVConfigBuilder().build();
-    cvConfig.setQuery("exception");
-    cvConfig.setServiceInstanceIdentifier(generateUuid());
+    PrometheusCVConfig cvConfig = builderFactory.prometheusCVConfigBuilder().build();
+    String identifier = HealthSourceService.getNameSpacedIdentifier(
+        builderFactory.getContext().getServiceIdentifier() + "_" + builderFactory.getContext().getEnvIdentifier(),
+        "healthSourceIdentifier");
+    cvConfig.setVerificationType(VerificationType.TIME_SERIES);
+    cvConfig.setAccountId(accountId);
+    cvConfig.setEnabled(true);
+    cvConfig.setConnectorIdentifier(generateUuid());
+    cvConfig.setProjectIdentifier(projectIdentifier);
+    cvConfig.setOrgIdentifier(orgIdentifier);
+    cvConfig.setIdentifier(identifier);
+    cvConfig.setMonitoringSourceName(identifier);
+    cvConfig.setCategory(CVMonitoringCategory.PERFORMANCE);
+    cvConfig.setProductName(generateUuid());
+    cvConfig.setGroupName("myGroupName");
+    MetricPack metricPack = MetricPack.builder().dataCollectionDsl("metric-pack-dsl").build();
+    cvConfig.setMetricPack(metricPack);
+    PrometheusCVConfig.MetricInfo metricInfo = PrometheusCVConfig.MetricInfo.builder()
+                                                   .metricName("myMetric")
+                                                   .metricType(TimeSeriesMetricType.RESP_TIME)
+                                                   .prometheusMetricName("cpu_usage_total")
+                                                   .build();
+
+    cvConfig.setMetricInfoList(Arrays.asList(metricInfo));
     return cvConfig;
   }
 
@@ -1118,5 +1246,31 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
     Query<DataCollectionTask> query =
         hPersistence.createQuery(DataCollectionTask.class).filter(DataCollectionTaskKeys.uuid, uuid);
     hPersistence.update(query, updateOperations);
+  }
+
+  private void createMonitoredService() {
+    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
+    monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+  }
+
+  private ServiceLevelIndicator createSLI() {
+    ServiceLevelObjectiveDTO sloDTO = builderFactory.getServiceLevelObjectiveDTOBuilder().build();
+    createMonitoredService();
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(accountId)
+                                      .projectIdentifier(projectIdentifier)
+                                      .orgIdentifier(orgIdentifier)
+                                      .build();
+    ServiceLevelObjectiveResponse serviceLevelObjectiveResponse =
+        serviceLevelObjectiveService.create(projectParams, sloDTO);
+    String identifier =
+        serviceLevelObjectiveResponse.getServiceLevelObjectiveDTO().getServiceLevelIndicators().get(0).getIdentifier();
+    return hPersistence.createQuery(ServiceLevelIndicator.class)
+        .filter(ServiceLevelIndicatorKeys.accountId, projectParams.getAccountIdentifier())
+        .filter(ServiceLevelIndicatorKeys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(ServiceLevelIndicatorKeys.projectIdentifier, projectParams.getProjectIdentifier())
+        .filter(ServiceLevelIndicatorKeys.identifier, identifier)
+        .get();
   }
 }

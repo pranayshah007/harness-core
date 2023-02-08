@@ -9,12 +9,14 @@ package io.harness.graph.stepDetail;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
@@ -43,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,7 +59,8 @@ import org.springframework.data.mongodb.core.query.Query;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
-  @Mock private NodeExecutionsInfoRepository nodeExecutionsInfoRepository;
+  @Mock private NodeExecutionsInfoRepository nodeExecutionsInfoRepositoryMock;
+  @Inject private NodeExecutionsInfoRepository nodeExecutionsInfoRepository;
 
   @Mock private Subject<StepDetailsUpdateObserver> stepDetailsUpdateObserverSubject;
   @Inject private MongoTemplate mongoTemplate;
@@ -76,7 +80,7 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
     String planExecutionId = generateUuid();
     PmsStepDetails pmsStepDetails = new PmsStepDetails(new HashMap<>());
     String name = "name";
-    when(nodeExecutionsInfoRepository.save(any())).thenReturn(null);
+    when(nodeExecutionsInfoRepositoryMock.save(any())).thenReturn(null);
     doNothing().when(stepDetailsUpdateObserverSubject).fireInform(any());
 
     pmsGraphStepDetailsService.addStepDetail(nodeExecutionId, planExecutionId, pmsStepDetails, name);
@@ -93,7 +97,7 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
     PmsStepParameters pmsStepDetails = new PmsStepParameters(new HashMap<>());
     pmsGraphStepDetailsService.saveNodeExecutionInfo(nodeExecutionId, planExecutionId, pmsStepDetails);
     verify(stepDetailsUpdateObserverSubject, times(1)).fireInform(any(), any());
-    verify(nodeExecutionsInfoRepository, times(1)).save(any());
+    verify(nodeExecutionsInfoRepositoryMock, times(1)).save(any());
   }
 
   @Test
@@ -102,13 +106,13 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
   public void testGetStepInputs() {
     String nodeExecutionId = generateUuid();
     String planExecutionId = generateUuid();
-    when(nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId))
+    when(nodeExecutionsInfoRepositoryMock.findByNodeExecutionId(nodeExecutionId))
         .thenReturn(Optional.of(NodeExecutionsInfo.builder().build()));
     doNothing().when(stepDetailsUpdateObserverSubject).fireInform(any());
 
     pmsGraphStepDetailsService.getStepInputs(planExecutionId, nodeExecutionId);
 
-    verify(nodeExecutionsInfoRepository, times(1)).findByNodeExecutionId(nodeExecutionId);
+    verify(nodeExecutionsInfoRepositoryMock, times(1)).findByNodeExecutionId(nodeExecutionId);
   }
 
   @Test
@@ -117,12 +121,12 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
   public void testGetStepInputsWithEmptyOptional() {
     String nodeExecutionId = generateUuid();
     String planExecutionId = generateUuid();
-    when(nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId)).thenReturn(Optional.empty());
+    when(nodeExecutionsInfoRepositoryMock.findByNodeExecutionId(nodeExecutionId)).thenReturn(Optional.empty());
     doNothing().when(stepDetailsUpdateObserverSubject).fireInform(any());
 
     pmsGraphStepDetailsService.getStepInputs(planExecutionId, nodeExecutionId);
 
-    verify(nodeExecutionsInfoRepository, times(1)).findByNodeExecutionId(nodeExecutionId);
+    verify(nodeExecutionsInfoRepositoryMock, times(1)).findByNodeExecutionId(nodeExecutionId);
   }
 
   @Test
@@ -139,7 +143,7 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
                                                                  .build())
                                                 .build();
 
-    when(nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId))
+    when(nodeExecutionsInfoRepositoryMock.findByNodeExecutionId(nodeExecutionId))
         .thenReturn(Optional.of(nodeExecutionsInfo));
 
     Map<String, PmsStepDetails> stepDetails =
@@ -157,11 +161,11 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
   @Category(UnitTests.class)
   public void testGetNodeExecutionsInfo() {
     String nodeExecutionId = generateUuid();
-    when(nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId))
+    when(nodeExecutionsInfoRepositoryMock.findByNodeExecutionId(nodeExecutionId))
         .thenReturn(Optional.of(NodeExecutionsInfo.builder().nodeExecutionId(nodeExecutionId).build()));
     NodeExecutionsInfo nodeExecutionsInfo = pmsGraphStepDetailsService.getNodeExecutionsInfo(nodeExecutionId);
     assertEquals(nodeExecutionsInfo.getNodeExecutionId(), nodeExecutionId);
-    verify(nodeExecutionsInfoRepository, times(1)).findByNodeExecutionId(nodeExecutionId);
+    verify(nodeExecutionsInfoRepositoryMock, times(1)).findByNodeExecutionId(nodeExecutionId);
   }
 
   @Test
@@ -169,10 +173,10 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
   @Category(UnitTests.class)
   public void testGetNodeExecutionsInfoWithEmptyOptional() {
     String nodeExecutionId = generateUuid();
-    when(nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId)).thenReturn(Optional.empty());
+    when(nodeExecutionsInfoRepositoryMock.findByNodeExecutionId(nodeExecutionId)).thenReturn(Optional.empty());
     NodeExecutionsInfo nodeExecutionsInfo = pmsGraphStepDetailsService.getNodeExecutionsInfo(nodeExecutionId);
     assertNull(nodeExecutionsInfo);
-    verify(nodeExecutionsInfoRepository, times(1)).findByNodeExecutionId(nodeExecutionId);
+    verify(nodeExecutionsInfoRepositoryMock, times(1)).findByNodeExecutionId(nodeExecutionId);
   }
 
   @Test
@@ -182,12 +186,12 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
     String originalNodeExecutionId = generateUuid();
     String planExecutionId = generateUuid();
     String newNodeExecutionId = generateUuid();
-    when(nodeExecutionsInfoRepository.findByNodeExecutionId(originalNodeExecutionId))
+    when(nodeExecutionsInfoRepositoryMock.findByNodeExecutionId(originalNodeExecutionId))
         .thenReturn(Optional.of(NodeExecutionsInfo.builder().build()));
     pmsGraphStepDetailsService.copyStepDetailsForRetry(planExecutionId, originalNodeExecutionId, newNodeExecutionId);
-    verify(nodeExecutionsInfoRepository, times(1)).save(any(NodeExecutionsInfo.class));
+    verify(nodeExecutionsInfoRepositoryMock, times(1)).save(any(NodeExecutionsInfo.class));
     ArgumentCaptor<NodeExecutionsInfo> mCaptor = ArgumentCaptor.forClass(NodeExecutionsInfo.class);
-    verify(nodeExecutionsInfoRepository).save(mCaptor.capture());
+    verify(nodeExecutionsInfoRepositoryMock).save(mCaptor.capture());
     NodeExecutionsInfo actualNodeExecutionsInfo = mCaptor.getValue();
     assertEquals(actualNodeExecutionsInfo.getNodeExecutionId(), newNodeExecutionId);
     assertEquals(actualNodeExecutionsInfo.getPlanExecutionId(), planExecutionId);
@@ -205,9 +209,9 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
     String originalNodeExecutionId = generateUuid();
     String planExecutionId = generateUuid();
     String newNodeExecutionId = generateUuid();
-    when(nodeExecutionsInfoRepository.findByNodeExecutionId(originalNodeExecutionId)).thenReturn(Optional.empty());
+    when(nodeExecutionsInfoRepositoryMock.findByNodeExecutionId(originalNodeExecutionId)).thenReturn(Optional.empty());
     pmsGraphStepDetailsService.copyStepDetailsForRetry(planExecutionId, originalNodeExecutionId, newNodeExecutionId);
-    verify(nodeExecutionsInfoRepository, times(0)).save(any(NodeExecutionsInfo.class));
+    verify(nodeExecutionsInfoRepositoryMock, times(0)).save(any(NodeExecutionsInfo.class));
   }
 
   @Test
@@ -281,5 +285,27 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
         pmsGraphStepDetailsService.fetchConcurrentChildInstance(nodeExecutionId);
     assertEquals(concurrentChildInstance.getCursor(), 4);
     assertEquals(concurrentChildInstance.getChildrenNodeExecutionIds().get(0), "ID1");
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testDeleteNodeExecutionInfoForGivenIds() {
+    on(pmsGraphStepDetailsService).set("nodeExecutionsInfoRepository", nodeExecutionsInfoRepository);
+    String nodeExecutionId = generateUuid();
+    NodeExecutionsInfo nodeExecutionsInfo = NodeExecutionsInfo.builder()
+                                                .nodeExecutionId(nodeExecutionId)
+                                                .uuid(generateUuid())
+                                                .planExecutionId(generateUuid())
+                                                .build();
+    mongoTemplate.save(nodeExecutionsInfo);
+
+    Optional<NodeExecutionsInfo> byNodeExecutionId =
+        nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId);
+    assertThat(byNodeExecutionId).isPresent();
+
+    pmsGraphStepDetailsService.deleteNodeExecutionInfoForGivenIds(Set.of(nodeExecutionId));
+    byNodeExecutionId = nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId);
+    assertThat(byNodeExecutionId).isNotPresent();
   }
 }

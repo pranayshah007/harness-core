@@ -19,7 +19,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
-import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityFilterService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityInstancesHandlerService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -40,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMetricAnalysisState> {
-  @Inject private SLIDataUnavailabilityFilterService sliDataUnavailabilityFilterService;
+  @Inject private SLIDataUnavailabilityInstancesHandlerService sliDataUnavailabilityInstancesHandlerService;
 
   @Inject private SLIDataProcessorService sliDataProcessorService;
 
@@ -84,9 +84,8 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
     List<SLIAnalyseResponse> sliAnalyseResponseList = sliDataProcessorService.process(
         sliAnalyseRequest, serviceLevelIndicatorDTO.getSpec().getSpec(), startTime, endTime);
     List<SLIRecordParam> sliRecordList = sliMetricAnalysisTransformer.getSLIAnalyseResponse(sliAnalyseResponseList);
-    sliRecordList = sliDataUnavailabilityFilterService.filterSLIRecordsToSkip(sliRecordList, projectParams,
-        startTime.getEpochSecond(), endTime.getEpochSecond(), monitoredServiceIdentifier,
-        serviceLevelIndicator.getIdentifier());
+    sliRecordList = sliDataUnavailabilityInstancesHandlerService.filterSLIRecordsToSkip(
+        sliRecordList, projectParams, startTime, endTime, monitoredServiceIdentifier, serviceLevelIndicator.getUuid());
     sliRecordService.create(
         sliRecordList, serviceLevelIndicator.getUuid(), verificationTaskId, serviceLevelIndicator.getVersion());
     sloHealthIndicatorService.upsert(serviceLevelIndicator);

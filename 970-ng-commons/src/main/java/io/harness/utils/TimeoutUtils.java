@@ -10,6 +10,7 @@ package io.harness.utils;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.common.NGExpressionUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.timeout.Timeout;
 
@@ -52,6 +53,10 @@ public class TimeoutUtils {
 
   public ParameterField<Timeout> getTimeout(ParameterField<Timeout> timeout) {
     if (ParameterField.isNull(timeout)) {
+      return ParameterField.createValueField(Timeout.fromString(DEFAULT_TIMEOUT));
+    }
+    // If the timeout field is runtime input then use default value
+    if (timeout.isExpression() && NGExpressionUtils.matchesInputSetPattern(timeout.getExpressionValue())) {
       return ParameterField.createValueField(Timeout.fromString(DEFAULT_TIMEOUT));
     }
     return timeout;

@@ -913,33 +913,33 @@ components:
         account:
           type: string
           description: Account Identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         identifier:
           type: string
           description: Identifier of the Service Request.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         org:
           type: string
           description: Organization Identifier for the Entity.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         project:
           type: string
           description: Project Identifier for the Entity.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           description: Name of the Service Request.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         description:
           type: string
           description: Description of the entity
@@ -1011,15 +1011,15 @@ components:
         identifier:
           type: string
           description: Identifier of the Service
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           description: Name of the Service
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         description:
           type: string
           description: Description of the entity
@@ -1050,15 +1050,15 @@ components:
         identifier:
           type: string
           minLength: 1
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           description: Organization identifier
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           minLength: 1
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           description: Organization name
-          maxLength: 64
+          maxLength: 128
         description:
           type: string
           maxLength: 1024
@@ -1113,15 +1113,15 @@ components:
         identifier:
           type: string
           minLength: 1
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           description: Project identifier
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           minLength: 1
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           description: Project name
-          maxLength: 64
+          maxLength: 128
         org:
           type: string
           description: Organization identifier for the project
@@ -1567,21 +1567,21 @@ components:
         name:
           type: string
           description: Secret name
-          pattern: '^[0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[0-9a-zA-Z-_ ]{0,127}$'
         identifier:
           type: string
           minLength: 1
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           description: Secret identifier
-          maxLength: 64
+          maxLength: 128
         org:
           type: string
           description: Organization identifier for secret
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
         project:
           type: string
           description: Project identifier for secret
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
         tags:
           type: object
           additionalProperties:

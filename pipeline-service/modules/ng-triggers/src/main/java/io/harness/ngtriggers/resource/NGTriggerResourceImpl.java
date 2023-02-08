@@ -24,6 +24,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -123,7 +124,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
 
     if (!ngTriggerEntity.isPresent()) {
-      throw new InvalidRequestException(String.format("Trigger %s does not exist", triggerIdentifier));
+      throw new EntityNotFoundException(String.format("Trigger %s does not exist", triggerIdentifier));
     }
 
     return ResponseDTO.newResponse(ngTriggerEntity.get().getVersion().toString(),
@@ -142,7 +143,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     if (!ngTriggerEntity.isPresent()) {
-      throw new InvalidRequestException("Trigger doesn't not exists");
+      throw new EntityNotFoundException(String.format("Trigger %s does not exist", triggerIdentifier));
     }
 
     try {
@@ -257,7 +258,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     if (!ngTriggerEntity.isPresent()) {
-      throw new InvalidRequestException(String.format("Trigger %s doesn't not exists", triggerIdentifier));
+      throw new EntityNotFoundException(String.format("Trigger %s does not exist", triggerIdentifier));
     }
     try {
       TriggerDetails triggerDetails =
@@ -282,7 +283,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     if (!ngTriggerEntity.isPresent()) {
-      throw new InvalidRequestException(String.format("Trigger %s doesn't not exists", triggerIdentifier));
+      throw new EntityNotFoundException(String.format("Trigger %s does not exist", triggerIdentifier));
     }
 
     Criteria criteria = ngTriggerEventsService.formCriteria(accountIdentifier, orgIdentifier, projectIdentifier,
@@ -310,7 +311,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     if (!ngTriggerEntity.isPresent()) {
-      throw new InvalidRequestException(String.format("Trigger %s doesn't not exists", triggerIdentifier));
+      throw new EntityNotFoundException(String.format("Trigger %s does not exist", triggerIdentifier));
     }
     TriggerDetails triggerDetails =
         ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier,

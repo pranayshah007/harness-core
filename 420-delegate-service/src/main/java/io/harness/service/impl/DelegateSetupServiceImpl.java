@@ -184,7 +184,10 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
           }
         }
       }
-    } else if (isNotEmpty(delegate.getHostName())) {
+    }
+
+    if (isNotEmpty(delegate.getHostName())) {
+      // Consider hostname as selector for delegate.
       selectorTypeMap.put(delegate.getHostName().toLowerCase(), SelectorType.HOST_NAME);
     }
 

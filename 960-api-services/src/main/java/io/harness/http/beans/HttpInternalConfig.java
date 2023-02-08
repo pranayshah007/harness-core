@@ -7,7 +7,9 @@
 
 package io.harness.http.beans;
 
+import io.harness.beans.HttpCertificate;
 import io.harness.beans.KeyValuePair;
+import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
 import java.util.Map;
@@ -27,4 +29,6 @@ public class HttpInternalConfig {
   boolean useProxy;
   boolean isCertValidationRequired;
   boolean throwErrorIfNoProxySetWithDelegateProxy; // We need to throw this error in cg but not in ng
+  HttpCertificate certificate;
+  List<EncryptedDataDetail> encryptedDataDetails;
 }

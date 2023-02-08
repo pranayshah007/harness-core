@@ -11,10 +11,13 @@ import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVI
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.executions.steps.StepSpecTypeConstants.DEPLOYMENT_STAGE;
 import static io.harness.executions.steps.StepSpecTypeConstants.SWAP_ROLLBACK;
+import static io.harness.executions.steps.StepSpecTypeConstants.TANZU_COMMAND;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BASIC_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BG_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_CANARY_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLBACK;
+import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLING_DEPLOY;
+import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLING_ROLLBACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_SWAP_ROUTES;
 import static io.harness.ng.core.template.TemplateListType.STABLE_TEMPLATE_TYPE;
 
@@ -76,22 +79,29 @@ public class TasStageValidatorHelper implements StageValidatorHelper {
     int basicAppSetupStepCount = stepTypeToCount.getOrDefault(TAS_BASIC_APP_SETUP, 0);
     int canaryAppSetupStepCount = stepTypeToCount.getOrDefault(TAS_CANARY_APP_SETUP, 0);
     int bgAppSetupStepCount = stepTypeToCount.getOrDefault(TAS_BG_APP_SETUP, 0);
+    int commandStepCount = stepTypeToCount.getOrDefault(TANZU_COMMAND, 0);
+    int rollingDeployStepCount = stepTypeToCount.getOrDefault(TAS_ROLLING_DEPLOY, 0);
     validateStepCount(basicAppSetupStepCount, "Only one Basic App Setup step is valid, found: %d");
     validateStepCount(canaryAppSetupStepCount, "Only one Canary App Setup step is valid, found: %d");
     validateStepCount(bgAppSetupStepCount, "Only one BG App Setup step is valid, found: %d");
-    if ((basicAppSetupStepCount + bgAppSetupStepCount + canaryAppSetupStepCount) != 1) {
-      throw new InvalidYamlException(format("Only one App Setup step out of %s is supported",
-          List.of(TAS_BASIC_APP_SETUP, TAS_BG_APP_SETUP, TAS_CANARY_APP_SETUP)));
+    validateStepCount(rollingDeployStepCount, "Only one Rolling Deploy step is valid, found: %d");
+
+    if (((basicAppSetupStepCount + bgAppSetupStepCount + canaryAppSetupStepCount + rollingDeployStepCount) > 1)
+        || ((basicAppSetupStepCount + bgAppSetupStepCount + canaryAppSetupStepCount + rollingDeployStepCount) == 0
+            && commandStepCount == 0)) {
+      throw new InvalidYamlException("Only one App Setup or Rolling Deploy is supported");
     }
     int swapRouteStepCount = stepTypeToCount.getOrDefault(TAS_SWAP_ROUTES, 0);
     validateStepCount(swapRouteStepCount, "At max one Swap Route step is valid, found: %d");
     int appRollbackStepCount = stepTypeToCount.getOrDefault(TAS_ROLLBACK, 0);
     int swapRollbackStepCount = stepTypeToCount.getOrDefault(SWAP_ROLLBACK, 0);
+    int rollingRollbackStepCount = stepTypeToCount.getOrDefault(TAS_ROLLING_ROLLBACK, 0);
+    validateStepCount(rollingRollbackStepCount, "At max one Rolling Rollback step is valid, found: %d");
     validateStepCount(appRollbackStepCount, "At max one App Rollback step is valid, found: %d");
     validateStepCount(swapRollbackStepCount, "At max one Swap Rollback step is valid, found: %d");
-    if ((appRollbackStepCount + swapRollbackStepCount) > 1) {
-      throw new InvalidYamlException(
-          format("Only one Rollback step out of %s is supported", List.of(TAS_ROLLBACK, SWAP_ROLLBACK)));
+    if ((appRollbackStepCount + swapRollbackStepCount + rollingRollbackStepCount) > 1) {
+      throw new InvalidYamlException(format(
+          "Only one Rollback step out of %s is supported", List.of(TAS_ROLLBACK, SWAP_ROLLBACK, TAS_ROLLING_ROLLBACK)));
     }
   }
 

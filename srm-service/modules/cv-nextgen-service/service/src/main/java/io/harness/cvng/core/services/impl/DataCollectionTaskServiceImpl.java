@@ -24,14 +24,18 @@ import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.DataCollectionTask.DataCollectionTaskKeys;
 import io.harness.cvng.core.entities.DeploymentDataCollectionTask;
 import io.harness.cvng.core.entities.MetricCVConfig;
+import io.harness.cvng.core.entities.SLIDataCollectionTask;
 import io.harness.cvng.core.services.api.DataCollectionTaskManagementService;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.ExecutionLogger;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
+import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.DataCollectionProgressLog;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
@@ -70,9 +74,13 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       dataCollectionTaskManagementServiceMapBinder;
   @Inject private ExecutionLogService executionLogService;
 
+  @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
+
   // TODO: this is creating reverse dependency. Find a way to get rid of this dependency.
   // Probabally by moving ProgressLog concept to a separate service and model.
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
+
+  @Inject private VerificationTaskService verificationTaskService;
 
   @Override
   public void save(DataCollectionTask dataCollectionTask) {
@@ -272,6 +280,12 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
   }
 
   private void markDependentTasksFailed(DataCollectionTask task) {
+    if (task instanceof SLIDataCollectionTask) {
+      ServiceLevelIndicator serviceLevelIndicator =
+          serviceLevelIndicatorService.get(verificationTaskService.getSliId(task.getVerificationTaskId()));
+      serviceLevelIndicatorService.enqueueDataCollectionFailureInstanceAndTriggerAnalysis(
+          task.getVerificationTaskId(), task.getStartTime(), task.getEndTime(), serviceLevelIndicator);
+    }
     if (task instanceof DeploymentDataCollectionTask) {
       verificationJobInstanceService.logProgress(
           DataCollectionProgressLog.builder()

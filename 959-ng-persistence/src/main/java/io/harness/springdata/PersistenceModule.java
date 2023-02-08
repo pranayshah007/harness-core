@@ -34,6 +34,8 @@ import org.springframework.transaction.TransactionException;
 
 @OwnedBy(PL)
 public abstract class PersistenceModule extends AbstractModule {
+  // Batch size to define to update multiple records should be limited within this value
+  public static final int MAX_BATCH_SIZE = 1000;
   @Override
   protected void configure() {
     install(new SpringModule(BeanFactoryProvider.from(getConfigClasses())));

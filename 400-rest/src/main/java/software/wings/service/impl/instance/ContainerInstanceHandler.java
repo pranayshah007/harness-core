@@ -563,8 +563,9 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
       return k8sStateHelper.fetchPodListForCluster(containerInfraMapping, containerMetadata.getNamespace(),
           containerMetadata.getReleaseName(), containerMetadata.getClusterName());
     } catch (Exception e) {
-      throw new K8sPodSyncException(format("Exception in fetching podList for release %s, namespace %s",
-                                        containerMetadata.getReleaseName(), containerMetadata.getNamespace()),
+      throw new K8sPodSyncException(
+          format("Exception in fetching podList for release %s, namespace %s. Detail error Msg: %s",
+              containerMetadata.getReleaseName(), containerMetadata.getNamespace(), e.getMessage()),
           e);
     }
   }
@@ -922,6 +923,10 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
     ContainerMetadataType syncType = null;
     if (responseData instanceof K8sTaskExecutionResponse) {
       K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) responseData;
+      if (k8sTaskExecutionResponse.getCommandExecutionStatus().equals(FAILURE)) {
+        throw new K8sPodSyncException(format("Failed to fetch PodList Msg: %s. Status: %s",
+            k8sTaskExecutionResponse.getErrorMessage(), k8sTaskExecutionResponse.getCommandExecutionStatus()));
+      }
       K8sInstanceSyncResponse syncResponse = (K8sInstanceSyncResponse) k8sTaskExecutionResponse.getK8sTaskResponse();
 
       syncNamespace = syncResponse.getNamespace();
@@ -932,6 +937,10 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
       syncType = ContainerMetadataType.K8S;
     } else if (responseData instanceof ContainerSyncResponse) {
       ContainerSyncResponse containerSyncResponse = (ContainerSyncResponse) responseData;
+      if (containerSyncResponse.getCommandExecutionStatus().equals(FAILURE)) {
+        throw new K8sPodSyncException(format("Failed to fetch PodList Msg: %s. Status: %s",
+            containerSyncResponse.getErrorMessage(), containerSyncResponse.getCommandExecutionStatus()));
+      }
       if (containerSyncResponse.isEcs()) {
         return null;
       }

@@ -88,7 +88,7 @@ public class FeatureFlagStagePlanCreator extends ChildrenPlanCreator<StageElemen
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
-        .whenCondition(RunInfoUtils.getRunCondition(config.getWhen()))
+        .whenCondition(RunInfoUtils.getRunConditionForStage(config.getWhen()))
         .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField()))
         .build();
   }

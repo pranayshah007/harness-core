@@ -358,11 +358,11 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
 
   public Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
-      ConnectorCategory sourceCategory) {
+      ConnectorCategory sourceCategory, String version) {
     Boolean isBuiltInSMDisabled = isBuiltInSMDisabled(accountIdentifier);
 
     Criteria criteria = filterService.createCriteriaFromConnectorFilter(accountIdentifier, orgIdentifier,
-        projectIdentifier, searchTerm, type, category, sourceCategory, isBuiltInSMDisabled);
+        projectIdentifier, searchTerm, type, category, sourceCategory, isBuiltInSMDisabled, version);
     Pageable pageable = getPageRequest(
         PageRequest.builder()
             .pageIndex(page)
@@ -792,7 +792,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   @Override
   public long count(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = filterService.createCriteriaFromConnectorFilter(
-        accountIdentifier, orgIdentifier, projectIdentifier, null, null, null, null, false);
+        accountIdentifier, orgIdentifier, projectIdentifier, null, null, null, null, false, null);
     return connectorRepository.count(criteria);
   }
 

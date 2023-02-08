@@ -459,7 +459,7 @@ public enum TaskType {
   GOOGLE_CLOUD_SOURCE_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Google Cloud Source Artifact Task"),
   GCP_PROJECTS_TASK_NG(TaskGroup.GCP, "Gcp List Projects Task"),
   GCS_BUCKETS_TASK_NG(TaskGroup.GCP, "Gcs List Buckets per Project Task"),
-  AWS_LAMBDA_COMMAND_TASK_NG(TaskGroup.AWS_LAMBDA_NG, "AWS Lambda Task NG");
+  AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG(TaskGroup.AWS_LAMBDA_NG, "AWS Lambda Deploy Task NG");
 
   private final TaskGroup taskGroup;
   private final String displayName;

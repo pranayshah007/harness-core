@@ -29,17 +29,22 @@ import software.wings.service.mappers.artifact.ArtifactConfigMapper;
 import software.wings.service.mappers.artifact.AwsConfigToInternalMapper;
 
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.ecr.model.DescribeImagesRequest;
+import com.amazonaws.services.ecr.model.DescribeImagesResult;
 import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
 import com.amazonaws.services.ecr.model.DescribeRepositoriesResult;
+import com.amazonaws.services.ecr.model.ImageDetail;
 import com.amazonaws.services.ecr.model.ImageIdentifier;
-import com.amazonaws.services.ecr.model.ListImagesRequest;
-import com.amazonaws.services.ecr.model.ListImagesResult;
 import com.amazonaws.services.ecr.model.Repository;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.Test;
@@ -70,23 +75,27 @@ public class EcrServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
-  public void shouldGetBuilds() {
+  public void shouldGetBuilds() throws ParseException {
     String region = Regions.US_EAST_1.getName();
     when(ecrServiceDelegate.getEcrImageUrl(awsConfig, null, region, "imageName")).thenReturn("imageUrl");
-    ListImagesResult imagesResult = new ListImagesResult();
+    DescribeImagesResult imagesResult = new DescribeImagesResult();
     imagesResult.setNextToken(null);
-    imagesResult.setImageIds(Lists.newArrayList(null, buildImageIdentifier(null), buildImageIdentifier("latest"),
-        buildImageIdentifier("v2"), buildImageIdentifier("v1")));
-    when(awsApiHelperService.listEcrImages(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), region,
-             new ListImagesRequest().withRepositoryName("imageName")))
+    imagesResult.setImageDetails(
+        Lists.newArrayList(null, buildImageDetails(Arrays.asList("latest"), "2023-02-02T16:48:55-08:00"),
+            buildImageDetails(Arrays.asList("stable-perl"), "022-11-22T23:03:17-08:00"),
+            buildImageDetails(Arrays.asList("stable"), "2022-11-22T04:18:35-08:00"),
+            buildImageDetails(Arrays.asList("v1", "v2", "v3"), "2023-02-02T16:45:50-08:00")));
+    when(awsApiHelperService.describeEcrImages(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), region,
+             new DescribeImagesRequest().withRepositoryName("imageName")))
         .thenReturn(imagesResult);
     assertThat(
         ecrService.getBuilds(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), null, region, "imageName", 10)
             .stream()
             .map(ArtifactConfigMapper::toBuildDetails)
             .collect(Collectors.toList()))
-        .hasSize(3)
-        .isEqualTo(Lists.newArrayList(buildBuildDetails("latest"), buildBuildDetails("v1"), buildBuildDetails("v2")));
+        .hasSize(6)
+        .isEqualTo(Lists.newArrayList(buildBuildDetails("latest"), buildBuildDetails("stable-perl"),
+            buildBuildDetails("stable"), buildBuildDetails("v1"), buildBuildDetails("v2"), buildBuildDetails("v3")));
   }
 
   @Test
@@ -137,6 +146,13 @@ public class EcrServiceTest extends WingsBaseTest {
     ImageIdentifier imageIdentifier = new ImageIdentifier();
     imageIdentifier.setImageTag(tag);
     return imageIdentifier;
+  }
+
+  private ImageDetail buildImageDetails(List<String> tags, String date) throws ParseException {
+    ImageDetail imageDetail = new ImageDetail();
+    imageDetail.setImageTags(tags);
+    imageDetail.setImagePushedAt(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date));
+    return imageDetail;
   }
 
   private BuildDetails buildBuildDetails(String tag) {

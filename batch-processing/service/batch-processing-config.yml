@@ -181,3 +181,5 @@ clickHouseConfig:
   password: ""
 
 deployMode: KUBERNETES
+
+isClickHouseEnabled: false

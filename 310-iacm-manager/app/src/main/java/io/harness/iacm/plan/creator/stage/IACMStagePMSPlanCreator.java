@@ -330,7 +330,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
         .stepParameters(stageParameters.build())
         .stepType(getStepType(stageNode))
         .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-        .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
+        .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())

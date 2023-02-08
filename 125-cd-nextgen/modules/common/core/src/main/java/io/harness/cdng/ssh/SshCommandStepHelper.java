@@ -12,6 +12,7 @@ import static io.harness.cdng.execution.ExecutionInfoUtility.getScope;
 import static io.harness.cdng.ssh.CommandUnitSpecType.COPY;
 import static io.harness.cdng.ssh.CommandUnitSpecType.DOWNLOAD_ARTIFACT;
 import static io.harness.cdng.ssh.CommandUnitSpecType.SCRIPT;
+import static io.harness.cdng.ssh.SshWinRmConstants.FILE_STORE_SCRIPT_ERROR_MSG;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getHost;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getOutputVariables;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getWorkingDirectory;
@@ -529,9 +530,13 @@ public class SshCommandStepHelper extends CDStepHelper {
     } else if (HARNESS.equals(shellScriptSourceWrapper.getType())) {
       HarnessFileStoreSource spec =
           (HarnessFileStoreSource) cdExpressionResolver.updateExpressions(ambiance, shellScriptSourceWrapper.getSpec());
+      String scopedFilePath = spec.getFile().getValue();
       String script = sshWinRmConfigFileHelper.fetchFileContent(
-          FileReference.of(spec.getFile().getValue(), AmbianceUtils.getAccountId(ambiance),
+          FileReference.of(scopedFilePath, AmbianceUtils.getAccountId(ambiance),
               AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance)));
+      if (isEmpty(script)) {
+        throw new InvalidRequestException(format(FILE_STORE_SCRIPT_ERROR_MSG, scopedFilePath));
+      }
       return cdExpressionResolver.renderExpression(ambiance, script);
     } else {
       throw new InvalidRequestException("Unsupported source type: " + shellScriptSourceWrapper.getType());

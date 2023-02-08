@@ -166,7 +166,6 @@ public class MonitoringSourcePerpetualTaskServiceImpl
     return getWorkerId(accountId, orgIdentifier, projectIdentifier, connectorIdentifier, monitoringSourceIdentifier,
         VerificationType.DEPLOYMENT);
   }
-
   @Override
   public Optional<CVNGPerpetualTaskDTO> getPerpetualTaskStatus(String dataCollectionWorkerId) {
     MonitoringSourcePerpetualTask monitoringSourcePerpetualTask =
