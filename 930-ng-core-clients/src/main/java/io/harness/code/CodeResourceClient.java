@@ -24,7 +24,7 @@ import retrofit2.http.*;
 
 @OwnedBy(HarnessTeam.CE)
 public interface CodeResourceClient {
-  String BASE_API = "code/api/v1";
+  String BASE_API = "v1";
   @GET(BASE_API + "/spaces/{accountIdentifier}/{orgIdentifier}/{projectIdentifier}/+/repos?")
   Call<List<CodeRepoResponse>> listRepos(@Path("accountIdentifier") String accountIdentifier,
       @Path("orgIdentifier") String orgIdentifier, @Path("projectIdentifier") String projectIdentifier,
