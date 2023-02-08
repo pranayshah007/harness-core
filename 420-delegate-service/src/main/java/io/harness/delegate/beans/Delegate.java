@@ -191,6 +191,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
         .keepAlivePacket(delegateParams.isKeepAlivePacket())
         .polllingModeEnabled(delegateParams.isPollingModeEnabled())
         .ng(delegateParams.isNg())
+        .disconnected(false)
         .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
         .location(delegateParams.getLocation())
         .mtls(connectedUsingMtls)

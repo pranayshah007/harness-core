@@ -2683,6 +2683,8 @@ public class DelegateServiceImpl implements DelegateService {
             .delegateName(delegateParams.getDelegateName())
             .delegateProfileId(delegateProfileId)
             .lastHeartBeat(delegateParams.getLastHeartBeat())
+            .disconnected(false)
+            .delegateConnectionId(delegateParams.getDelegateConnectionId())
             .version(delegateParams.getVersion())
             .sequenceNum(delegateParams.getSequenceNum())
             .delegateType(delegateParams.getDelegateType())
