@@ -1,8 +1,8 @@
-openapi: 3.0.0
+openapi: 3.0.3
 x-stoplight:
-  id: cw2rng7ei2wad
+  id: cvtx2sc7fr201
 info:
-  title: idp-3-0-3
+  title: IDP
   version: '1.0'
   description: Harness Internal Developer Portal API Reference
 servers:
@@ -46,11 +46,7 @@ paths:
     parameters: []
   '/v1/environment-secrets/{environment-secret}':
     parameters:
-      - schema:
-          type: string
-        name: environment-secret
-        in: path
-        required: true
+      - $ref: '#/components/parameters/EnvironmentSecret'
     get:
       summary: GetEnvironmentSecret
       responses:
@@ -156,13 +152,13 @@ components:
       schema:
         type: string
       description: Parameter on the basis of which sorting is done.
-    SecretPathParam:
-      name: secret
+    EnvironmentSecret:
+      name: environment-secret
       in: path
       required: true
       schema:
         type: string
-      description: Identifier field of the secret the resource is scoped to
+      description: Identifier field of the environment secret the resource is scoped to
   requestBodies:
     EnvironmentSecretRequest:
       content:
