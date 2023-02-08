@@ -16,7 +16,6 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-
 public class AwsLambdaInfrastructureDetails extends InfrastructureDetails {
-  String project;
+  String region;
 }

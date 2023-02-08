@@ -41,6 +41,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @Singleton
 public class InfrastructureValidator {
   private static final String CANNOT_BE_EMPTY_ERROR_MSG = "cannot be empty";
+  private static final String AWS_REGION = "region";
 
   public void validate(Infrastructure infrastructure) {
     switch (infrastructure.getKind()) {
@@ -215,7 +216,7 @@ public class InfrastructureValidator {
   private void validateServerlessAwsInfrastructure(ServerlessAwsLambdaInfrastructure infrastructure) {
     if (ParameterField.isNull(infrastructure.getRegion())
         || isEmpty(getParameterFieldValue(infrastructure.getRegion()))) {
-      throw new InvalidArgumentsException(Pair.of("region", CANNOT_BE_EMPTY_ERROR_MSG));
+      throw new InvalidArgumentsException(Pair.of(AWS_REGION, CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getStage())) {
       throw new InvalidArgumentsException(Pair.of("stage", CANNOT_BE_EMPTY_ERROR_MSG));
@@ -245,7 +246,7 @@ public class InfrastructureValidator {
       throw new InvalidArgumentsException(Pair.of("connectorRef", CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getRegion())) {
-      throw new InvalidArgumentsException(Pair.of("region", CANNOT_BE_EMPTY_ERROR_MSG));
+      throw new InvalidArgumentsException(Pair.of(AWS_REGION, CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getHostConnectionType())) {
       throw new InvalidArgumentsException(Pair.of("hostConnectionType", CANNOT_BE_EMPTY_ERROR_MSG));
@@ -264,7 +265,7 @@ public class InfrastructureValidator {
       throw new InvalidArgumentsException(Pair.of("cluster", CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getRegion())) {
-      throw new InvalidArgumentsException(Pair.of("region", CANNOT_BE_EMPTY_ERROR_MSG));
+      throw new InvalidArgumentsException(Pair.of(AWS_REGION, CANNOT_BE_EMPTY_ERROR_MSG));
     }
   }
 
@@ -276,7 +277,7 @@ public class InfrastructureValidator {
       throw new InvalidArgumentsException(Pair.of("project", "cannot be empty"));
     }
     if (!hasValueOrExpression(infrastructure.getRegion())) {
-      throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of(AWS_REGION, "cannot be empty"));
     }
   }
 
@@ -310,14 +311,14 @@ public class InfrastructureValidator {
     }
 
     if (!hasValueOrExpression(infrastructure.getRegion())) {
-      throw new InvalidArgumentsException(Pair.of("region", CANNOT_BE_EMPTY_ERROR_MSG));
+      throw new InvalidArgumentsException(Pair.of(AWS_REGION, CANNOT_BE_EMPTY_ERROR_MSG));
     }
   }
 
   private void validateAwsLambdaInfrastructure(AwsLambdaInfrastructure infrastructure) {
     if (ParameterField.isNull(infrastructure.getRegion())
         || isEmpty(getParameterFieldValue(infrastructure.getRegion()))) {
-      throw new InvalidArgumentsException(Pair.of("region", CANNOT_BE_EMPTY_ERROR_MSG));
+      throw new InvalidArgumentsException(Pair.of(AWS_REGION, CANNOT_BE_EMPTY_ERROR_MSG));
     }
   }
 }
