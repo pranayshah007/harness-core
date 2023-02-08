@@ -46,9 +46,7 @@ public class AwsLambdaCommandTaskHelper {
     CreateFunctionRequest createFunctionRequest =
         jsonReader.readValue(awsLambdaDeployManifestContent, CreateFunctionRequest.class);
 
-    CreateFunctionResponse createFunctionResponse =
-        awsLambdaClient.createFunction(awsInternalConfig, createFunctionRequest);
-    return createFunctionResponse;
+    return awsLambdaClient.createFunction(awsInternalConfig, createFunctionRequest);
   }
 
   public InvokeResponse invokeFunction(AwsInternalConfig awsInternalConfig, String awsLambdaDeployManifestContent,
@@ -88,7 +86,7 @@ public class AwsLambdaCommandTaskHelper {
     ObjectMapper jsonReader = new ObjectMapper(new JsonFactory());
     DeleteFunctionRequest deleteFunctionRequest =
         jsonReader.readValue(awsLambdaDeployManifestContent, DeleteFunctionRequest.class);
-    DeleteFunctionResponse deleteFunctionResponse = awsLambdaClient.deleteFunction(awsInternalConfig, null);
-    return deleteFunctionResponse;
+
+    return awsLambdaClient.deleteFunction(awsInternalConfig, null);
   }
 }

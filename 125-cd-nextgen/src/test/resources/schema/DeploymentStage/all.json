@@ -1348,6 +1348,34 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AwsLambdaInfrastructure": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Infrastructure"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "region"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string",
+              "minLength": 1
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AwsLambdaServiceSpec": {
       "allOf": [
         {
@@ -6729,7 +6757,8 @@
             "Elastigroup",
             "TAS",
             "Asg",
-            "GoogleCloudFunctions"
+            "GoogleCloudFunctions",
+            "AwsLambda"
           ]
         }
       },
@@ -6747,6 +6776,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AsgInfrastructure"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AwsLambda"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsLambdaInfrastructure"
               }
             }
           }
