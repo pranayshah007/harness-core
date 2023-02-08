@@ -33,7 +33,8 @@ public class StepParameterCommonUtils {
     stepBuilder.identifier(stepElementConfig.getIdentifier());
     stepBuilder.delegateSelectors(stepElementConfig.getDelegateSelectors());
     stepBuilder.description(stepElementConfig.getDescription());
-    stepBuilder.failureStrategies(stepElementConfig.getFailureStrategies());
+    stepBuilder.failureStrategies(
+        stepElementConfig.getFailureStrategies() != null ? stepElementConfig.getFailureStrategies().getValue() : null);
     stepBuilder.skipCondition(stepElementConfig.getSkipCondition());
     stepBuilder.timeout(ParameterField.createValueField(TimeoutUtils.getTimeoutString(stepElementConfig.getTimeout())));
     stepBuilder.when(stepElementConfig.getWhen());
@@ -57,7 +58,9 @@ public class StepParameterCommonUtils {
     stageBuilder.name(stageElementConfig.getName());
     stageBuilder.identifier(stageElementConfig.getIdentifier());
     stageBuilder.description(SdkCoreStepUtils.getParameterFieldHandleValueNull(stageElementConfig.getDescription()));
-    stageBuilder.failureStrategies(stageElementConfig.getFailureStrategies());
+    stageBuilder.failureStrategies(stageElementConfig.getFailureStrategies() != null
+            ? stageElementConfig.getFailureStrategies().getValue()
+            : null);
     stageBuilder.skipCondition(stageElementConfig.getSkipCondition());
     stageBuilder.when(stageElementConfig.getWhen());
     stageBuilder.type(stageElementConfig.getType());
