@@ -33,6 +33,7 @@ import io.harness.filter.service.FilterService;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.dto.FetchRemoteEntityRequest;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitaware.helper.TemplateMoveConfigOperationDTO;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -71,6 +72,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @Inject }))
@@ -618,5 +620,18 @@ public class NGTemplateServiceHelper {
       return String.format(
           "[HARNESS]: Template with template identifier [%s] has been [%s]", templateIdentifier, operationType);
     }
+  }
+
+  public Update getTemplateUpdateForInlineToRemote(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, TemplateMoveConfigOperationDTO moveConfigOperationDTO) {
+    Update update = new Update();
+    update.set(TemplateEntityKeys.repo, moveConfigOperationDTO.getRepoName());
+    update.set(TemplateEntityKeys.storeType, StoreType.REMOTE);
+    update.set(TemplateEntityKeys.filePath, moveConfigOperationDTO.getFilePath());
+    update.set(TemplateEntityKeys.connectorRef, moveConfigOperationDTO.getConnectorRef());
+    update.set(TemplateEntityKeys.repoURL,
+        gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier));
+    update.set(TemplateEntityKeys.fallBackBranch, moveConfigOperationDTO.getBranch());
+    return update;
   }
 }

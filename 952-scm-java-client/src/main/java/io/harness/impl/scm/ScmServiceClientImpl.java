@@ -37,8 +37,10 @@ import io.harness.constants.Constants;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.ConnectException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
+import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.git.GitClientHelper;
@@ -124,6 +126,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -1001,6 +1004,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     return getLatestCommitOnFile(scmConnector, scmBlockingStub, branchName, filepath);
   }
 
+  @SneakyThrows
   @Override
   public GitFileResponse getFile(
       ScmConnector scmConnector, GitFileRequest gitFileRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
@@ -1062,6 +1066,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
                               .build())
           .build();
     } catch (Exception exception) {
+      checkAndRethrowExceptionIfApplicable(exception);
       log.error("Faced exception in getFile operation: ", exception);
       return GitFileResponse.builder()
           .error(exception.getMessage())
@@ -1222,5 +1227,16 @@ public class ScmServiceClientImpl implements ScmServiceClient {
 
   private boolean isBitbucket(ScmConnector scmConnector) {
     return ConnectorType.BITBUCKET.equals(scmConnector.getConnectorType());
+  }
+
+  // Need to not process and rethrow exceptions defined in SCM GRPC Utils so that ScmDelegateClient is able to handle
+  // them
+  // TODO:
+  //  We should fix the exceptions in SCM GRPC Utils and also correspondingly ScmDelegateClient to use correct
+  //  exceptions with proper error codes
+  private void checkAndRethrowExceptionIfApplicable(Exception exception) throws Exception {
+    if (exception instanceof ConnectException || exception instanceof GeneralException) {
+      throw exception;
+    }
   }
 }

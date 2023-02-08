@@ -38,6 +38,7 @@ import software.wings.beans.ARMInfrastructureProvisioner;
 import software.wings.beans.ARMSourceType;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.TerraformInfrastructureProvisioner;
+import software.wings.beans.TerragruntInfrastructureProvisioner;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
@@ -108,6 +109,23 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
         }
       }
     }
+    if (provisioner instanceof TerragruntInfrastructureProvisioner) {
+      TerragruntInfrastructureProvisioner terragruntInfrastructureProvisioner =
+          (TerragruntInfrastructureProvisioner) provisioner;
+      if (StringUtils.isNotBlank(terragruntInfrastructureProvisioner.getSourceRepoSettingId())) {
+        children.add(CgEntityId.builder()
+                         .type(CONNECTOR)
+                         .id(terragruntInfrastructureProvisioner.getSourceRepoSettingId())
+                         .build());
+      }
+      if (StringUtils.isNotBlank(terragruntInfrastructureProvisioner.getSecretManagerId())) {
+        children.add(CgEntityId.builder()
+                         .type(SECRET_MANAGER)
+                         .id(terragruntInfrastructureProvisioner.getSecretManagerId())
+                         .build());
+      }
+    }
+
     return DiscoveryNode.builder().children(children).entityNode(entityNode).build();
   }
 

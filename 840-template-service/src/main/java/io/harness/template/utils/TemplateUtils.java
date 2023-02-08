@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ScmException;
@@ -25,6 +26,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import java.io.IOException;
@@ -34,6 +36,7 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class TemplateUtils {
+  public static final String TEMPLATE_FIELD_NAME = "template";
   public Scope buildScope(TemplateEntity templateEntity) {
     return Scope.of(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
         templateEntity.getProjectIdentifier());
@@ -136,5 +139,11 @@ public class TemplateUtils {
       throw new NGTemplateException("Could not convert yaml to JsonNode: " + e.getMessage());
     }
     return yamlNode;
+  }
+
+  public static IdentifierRef getIdentifierRef(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    return IdentifierRefHelper.getIdentifierRefOrThrowException(
+        identifier, accountIdentifier, orgIdentifier, projectIdentifier, TEMPLATE_FIELD_NAME);
   }
 }

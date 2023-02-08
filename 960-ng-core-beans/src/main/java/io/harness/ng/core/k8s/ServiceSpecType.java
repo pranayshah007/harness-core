@@ -21,4 +21,5 @@ public interface ServiceSpecType {
   String ELASTIGROUP = "Elastigroup";
   String ASG = "Asg";
   String GOOGLE_CLOUD_FUNCTIONS = "GoogleCloudFunctions";
+  String AWS_LAMBDA = "AwsLambda";
 }

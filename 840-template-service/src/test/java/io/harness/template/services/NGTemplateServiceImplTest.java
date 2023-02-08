@@ -25,6 +25,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -45,6 +46,10 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitaware.helper.TemplateMoveConfigOperationDTO;
+import io.harness.gitaware.helper.TemplateMoveConfigOperationType;
+import io.harness.gitaware.helper.TemplateMoveConfigRequestDTO;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -71,6 +76,7 @@ import io.harness.rule.OwnerRule;
 import io.harness.springdata.TransactionHelper;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.PermissionTypes;
+import io.harness.template.beans.TemplateMoveConfigResponse;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
@@ -133,6 +139,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
   @Mock TemplateGitXService templateGitXService;
   @Mock NGTemplateFeatureFlagHelperService featureFlagHelperService;
+  @Mock GitAwareEntityHelper gitAwareEntityHelper;
   @Mock NgManagerReconcileClient ngManagerReconcileClient;
   @InjectMocks InputsValidator inputsValidator;
   @InjectMocks TemplateInputsValidator templateInputsValidator;
@@ -1097,6 +1104,79 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     verify(accessControlClient, times(2))
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
             Resource.of(NGTemplateResource.TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_ACCESS_PERMISSION);
+  }
+
+  @Test()
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testMoveConfig() {
+    NGTemplateServiceImpl ngTemplateService = spy(templateService);
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier(TEMPLATE_IDENTIFIER)
+                                        .name(TEMPLATE_IDENTIFIER)
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .templateScope(Scope.PROJECT)
+                                        .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
+                                        .yaml(yaml)
+                                        .build();
+    ngTemplateService.create(templateEntity, true, "");
+    doReturn(templateEntity)
+        .when(ngTemplateService)
+        .moveTemplateEntity(any(), any(), any(), any(), any(), any(TemplateMoveConfigOperationDTO.class), any());
+    TemplateMoveConfigRequestDTO moveConfigOperationDTO =
+        TemplateMoveConfigRequestDTO.builder()
+            .isNewBranch(false)
+            .moveConfigOperationType(TemplateMoveConfigOperationType.INLINE_TO_REMOTE)
+            .versionLabel(TEMPLATE_VERSION_LABEL)
+            .build();
+    TemplateMoveConfigResponse response = ngTemplateService.moveTemplateStoreTypeConfig(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, moveConfigOperationDTO);
+    assertThat(response.getTemplateIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
+    assertThat(response.getVersionLabel()).isEqualTo(TEMPLATE_VERSION_LABEL);
+  }
+
+  @Test()
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testMoveTemplateEntity() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier(TEMPLATE_IDENTIFIER)
+                                        .name(TEMPLATE_IDENTIFIER)
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .templateScope(Scope.PROJECT)
+                                        .storeType(StoreType.INLINE)
+                                        .deleted(false)
+                                        .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
+                                        .yaml(yaml)
+                                        .build();
+    templateService.create(templateEntity, true, "");
+    when(gitAwareEntityHelper.getRepoUrl(any(), any(), any())).thenReturn("repoUrl");
+    TemplateMoveConfigOperationDTO moveConfigOperationDTO =
+        TemplateMoveConfigOperationDTO.builder()
+            .repoName("repo")
+            .branch("branch")
+            .moveConfigOperationType(TemplateMoveConfigOperationType.INLINE_TO_REMOTE)
+            .connectorRef("connector")
+            .baseBranch("baseBranch")
+            .commitMessage("Commit message")
+            .isNewBranch(false)
+            .filePath("filepath")
+            .build();
+    TemplateEntity updatedTemplateEntity = templateService.moveTemplateEntity(ACCOUNT_ID, ORG_IDENTIFIER,
+        PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, moveConfigOperationDTO, templateEntity);
+    assertThat(updatedTemplateEntity.getStoreType()).isEqualTo(StoreType.REMOTE);
+    assertThat(updatedTemplateEntity.getRepo()).isEqualTo("repo");
+    assertThat(updatedTemplateEntity.getConnectorRef()).isEqualTo("connector");
+    assertThat(updatedTemplateEntity.getFilePath()).isEqualTo("filepath");
+    assertThat(updatedTemplateEntity.getFallBackBranch()).isEqualTo("branch");
+    assertThat(updatedTemplateEntity.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
+    assertThat(updatedTemplateEntity.getVersionLabel()).isEqualTo(TEMPLATE_VERSION_LABEL);
   }
 
   @Test(expected = InvalidRequestException.class)

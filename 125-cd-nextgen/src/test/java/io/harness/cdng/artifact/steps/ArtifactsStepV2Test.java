@@ -808,6 +808,22 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     String expectedServiceYaml = readFile(processedServiceYamlFileName);
     assertThat(actualServiceYaml).isEqualTo(expectedServiceYaml);
   }
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void testProcessServiceYamlWithPrimaryArtifactRefInputValidator() {
+    String serviceYamlFileName = "service-with-multiple-artifact-sources-template-ref.yaml";
+    // merged service yaml
+    String serviceYamlFromSweepingOutput =
+        readFile(serviceYamlFileName)
+            .replace("$PRIMARY_ARTIFACT_REF", "fromtemp1.allowedValues(fromtemp1,fromtemp2,gcr)");
+
+    // primary artifact processed
+    String actualServiceYaml = stepHelper.getArtifactProcessedServiceYaml(ambiance, serviceYamlFromSweepingOutput);
+    String processedServiceYamlFileName = "service-with-processed-primaryartifact.yaml";
+    String expectedServiceYaml = readFile(processedServiceYamlFileName);
+    assertThat(actualServiceYaml).isEqualTo(expectedServiceYaml);
+  }
 
   @Test
   @Owner(developers = OwnerRule.HINGER)

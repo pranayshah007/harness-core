@@ -43,6 +43,7 @@ import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.plan.utils.PlanResourceUtility;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
+import io.harness.utils.PipelineExceptionsHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -111,17 +112,6 @@ public class RetryExecutionHelper {
 
   public RetryInfo validateRetry(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId) {
-    Optional<PipelineEntity> updatedPipelineEntity =
-        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
-
-    if (!updatedPipelineEntity.isPresent()) {
-      return RetryInfo.builder()
-          .isResumable(false)
-          .errorMessage(
-              String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineIdentifier))
-          .build();
-    }
-
     // Checking if this is the latest execution
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         pmsExecutionService.getPipelineExecutionSummaryEntity(
@@ -134,6 +124,18 @@ public class RetryExecutionHelper {
           .build();
     }
 
+    PipelineExceptionsHelper.setupEntityDetails(pipelineExecutionSummaryEntity.getEntityGitDetails());
+
+    Optional<PipelineEntity> optionalPipelineEntity =
+        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
+    if (optionalPipelineEntity.isEmpty()) {
+      return RetryInfo.builder()
+          .isResumable(false)
+          .errorMessage(
+              String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineIdentifier))
+          .build();
+    }
+
     boolean inTimeLimit =
         PlanResourceUtility.validateInTimeLimitForRetry(pipelineExecutionSummaryEntity.getCreatedAt());
     if (!inTimeLimit) {
@@ -143,11 +145,11 @@ public class RetryExecutionHelper {
           .build();
     }
 
-    String updatedPipeline = updatedPipelineEntity.get().getYaml();
+    String updatedPipeline = optionalPipelineEntity.get().getYaml();
 
     Optional<PlanExecutionMetadata> byPlanExecutionId =
         planExecutionMetadataService.findByPlanExecutionId(planExecutionId);
-    if (!byPlanExecutionId.isPresent()) {
+    if (byPlanExecutionId.isEmpty()) {
       return RetryInfo.builder()
           .isResumable(false)
           .errorMessage("No Plan Execution exists for id " + planExecutionId)

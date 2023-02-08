@@ -31,7 +31,7 @@ import lombok.experimental.FieldNameConstants;
 @OwnedBy(PL)
 @NoArgsConstructor
 @AllArgsConstructor
-public class MoveConfigRequestDTO {
+public class PipelineMoveConfigRequestDTO {
   @Parameter(description = GitSyncApiConstants.GIT_CONNECTOR_REF_PARAM_MESSAGE)
   @QueryParam(GitSyncApiConstants.CONNECTOR_REF)
   String connectorRef;

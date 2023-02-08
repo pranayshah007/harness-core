@@ -22,7 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.beans.ExecutionNode;
 import io.harness.gitaware.helper.GitImportInfoDTO;
-import io.harness.gitaware.helper.MoveConfigRequestDTO;
+import io.harness.gitaware.helper.PipelineMoveConfigRequestDTO;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -627,7 +627,7 @@ public interface PipelineResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @PathParam(NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier @Parameter(
           description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) String pipelineIdentifier,
-      @BeanParam MoveConfigRequestDTO moveConfigRequestDTO);
+      @BeanParam PipelineMoveConfigRequestDTO pipelineMoveConfigRequestDTO);
 
   @POST
   @Path("/{pipelineIdentifier}/validate")
