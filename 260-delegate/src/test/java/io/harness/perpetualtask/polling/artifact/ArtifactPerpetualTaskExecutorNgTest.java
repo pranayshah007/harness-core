@@ -50,6 +50,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.Protocol;
 import okhttp3.RequestBody;
@@ -68,6 +69,7 @@ import retrofit2.Response;
 
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String CONNECTOR_REF = "CONNECTOR_REF";
@@ -83,12 +85,14 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
 
   @Before
   public void setup() {
+    log.error("I am initialising");
     PollingResponsePublisher pollingResponsePublisher =
         new PollingResponsePublisher(kryoSerializer, delegateAgentManagerClient);
     artifactPerpetualTaskExecutorNg =
         new ArtifactPerpetualTaskExecutorNg(kryoSerializer, artifactRepositoryService, pollingResponsePublisher);
     perpetualTaskId = PerpetualTaskId.newBuilder().setId(UUIDGenerator.generateUuid()).build();
     polling_doc_id = UUIDGenerator.generateUuid();
+    log.error("Finish initialising");
   }
 
   @Test
@@ -112,6 +116,7 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
   @Owner(developers = OwnerRule.INDER)
   @Category(UnitTests.class)
   public void testArtifactsChangeInRepository() throws IOException {
+    log.error("I am running testArtifactsChangeInRepository");
     ArgumentCaptor<RequestBody> captor = ArgumentCaptor.forClass(RequestBody.class);
     Buffer bufferedSink = new Buffer();
 
@@ -135,6 +140,7 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
         (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
 
     validateRunOnceOutput(pollingDelegateResponse2, 10004, false, 5, 2);
+    log.error("Finish running testArtifactsChangeInRepository");
   }
 
   @Test
