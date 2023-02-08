@@ -11,6 +11,10 @@ load("//tools/bazel/pmd:dependencies.bzl", "rules_pmd_dependencies")
 
 rules_pmd_dependencies()
 
+auth_pattern = {
+    "harness.jfrog.io": "harness-internal-read <password>",
+}
+
 http_archive(
     name = "com_github_bazelbuild_buildtools",
     sha256 = "932160d5694e688cb7a05ac38efba4b9a90470c75f39716d85fb1d2f95eec96d",
