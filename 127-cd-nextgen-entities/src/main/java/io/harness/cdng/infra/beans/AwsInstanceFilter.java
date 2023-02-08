@@ -29,5 +29,5 @@ public class AwsInstanceFilter {
 
   @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_MAP_CLASSPATH)
-  private ParameterField<String> tags;
+  private ParameterField<Map<String, String>> tags;
 }

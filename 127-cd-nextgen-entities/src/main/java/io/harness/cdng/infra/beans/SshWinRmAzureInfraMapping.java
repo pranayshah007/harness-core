@@ -32,6 +32,6 @@ public class SshWinRmAzureInfraMapping implements InfraMapping {
   private String subscriptionId;
   private String resourceGroup;
   private String credentialsRef;
-  private String tags;
+  private Map<String, String> tags;
   private String hostConnectionType;
 }

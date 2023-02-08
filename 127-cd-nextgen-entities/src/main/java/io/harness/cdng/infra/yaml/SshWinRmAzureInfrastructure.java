@@ -81,7 +81,7 @@ public class SshWinRmAzureInfrastructure
   @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_MAP_CLASSPATH)
   @Wither
-  ParameterField<String> tags;
+  ParameterField<Map<String, String>> tags;
 
   @NotNull
   @NotEmpty

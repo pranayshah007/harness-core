@@ -11,11 +11,8 @@ import static io.harness.cdng.infra.beans.host.dto.HostFilterSpecDTO.HOSTS_SEPAR
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
@@ -64,27 +61,20 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.environment.EnvironmentOutcome;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import lombok.extern.slf4j.Slf4j;
-
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
 
 @OwnedBy(HarnessTeam.CDP)
-@Slf4j
 public class InfrastructureMapper {
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
@@ -193,7 +183,7 @@ public class InfrastructureMapper {
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, infrastructure.getInfrastructureKeyValues()))
-                .tags(getTags(getParameterFieldValue(sshWinRmAwsInfrastructure.getAwsInstanceFilter().getTags())))
+                .tags(getParameterFieldValue(sshWinRmAwsInfrastructure.getAwsInstanceFilter().getTags()))
                 .hostConnectionType(getParameterFieldValue(sshWinRmAwsInfrastructure.getHostConnectionType()))
                 .build();
 
@@ -210,7 +200,7 @@ public class InfrastructureMapper {
                 .subscriptionId(getParameterFieldValue(sshWinRmAzureInfrastructure.getSubscriptionId()))
                 .resourceGroup(getParameterFieldValue(sshWinRmAzureInfrastructure.getResourceGroup()))
                 .credentialsRef(getParameterFieldValue(sshWinRmAzureInfrastructure.getCredentialsRef()))
-                .tags(getTags(getParameterFieldValue(sshWinRmAzureInfrastructure.getTags())))
+                .tags(getParameterFieldValue(sshWinRmAzureInfrastructure.getTags()))
                 .hostConnectionType(getParameterFieldValue(sshWinRmAzureInfrastructure.getHostConnectionType()))
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
@@ -364,20 +354,6 @@ public class InfrastructureMapper {
           -> infrastructureOutcome.setConnector(
               Connector.builder().name(c.getConnector() != null ? c.getConnector().getName() : "").build()));
     }
-  }
-
-
-  private Map<String, String> getTags(String tags) {
-    if (isNotEmpty(tags)) {
-      try {
-        Type type = new TypeToken<Map<String, String>>(){}.getType();
-        return new Gson().fromJson(tags, type);
-      } catch (Exception e) {
-        log.error("Unable to parse tags into a map.", e);
-        throw new InvalidRequestException("Host tags JSON map cannot be parsed.", e);
-      }
-    }
-    return Collections.emptyMap();
   }
 
   private void setPdcInfrastructureHostValueSplittingStringToListIfNeeded(PdcInfrastructure pdcInfrastructure) {
