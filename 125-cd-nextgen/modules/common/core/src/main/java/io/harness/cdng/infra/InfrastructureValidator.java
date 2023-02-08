@@ -15,6 +15,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
+import io.harness.cdng.infra.yaml.AwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
@@ -99,6 +100,10 @@ public class InfrastructureValidator {
 
       case InfrastructureKind.ASG:
         validateAsgInfrastructure((AsgInfrastructure) infrastructure);
+        break;
+
+      case InfrastructureKind.AWS_LAMBDA:
+        validateAwsLambdaInfrastructure((AwsLambdaInfrastructure) infrastructure);
         break;
 
       default:
@@ -305,6 +310,13 @@ public class InfrastructureValidator {
     }
 
     if (!hasValueOrExpression(infrastructure.getRegion())) {
+      throw new InvalidArgumentsException(Pair.of("region", CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+  }
+
+  private void validateAwsLambdaInfrastructure(AwsLambdaInfrastructure infrastructure) {
+    if (ParameterField.isNull(infrastructure.getRegion())
+        || isEmpty(getParameterFieldValue(infrastructure.getRegion()))) {
       throw new InvalidArgumentsException(Pair.of("region", CANNOT_BE_EMPTY_ERROR_MSG));
     }
   }

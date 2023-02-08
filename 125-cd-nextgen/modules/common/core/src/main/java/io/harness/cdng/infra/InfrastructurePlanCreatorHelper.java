@@ -12,6 +12,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
+import io.harness.cdng.infra.yaml.AwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
@@ -159,6 +160,12 @@ public class InfrastructurePlanCreatorHelper {
         AsgInfrastructure asgInfrastructure = (AsgInfrastructure) infrastructure;
         asgInfrastructure.setInfraName(infraName);
         asgInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.AWS_LAMBDA:
+        AwsLambdaInfrastructure awsLambdaInfrastructure = (AwsLambdaInfrastructure) infrastructure;
+        awsLambdaInfrastructure.setInfraName(infraName);
+        awsLambdaInfrastructure.setInfraIdentifier(infraIdentifier);
         return;
 
       default:

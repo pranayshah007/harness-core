@@ -13,6 +13,7 @@ import io.harness.cdng.aws.lambda.AwsLambdaHelper;
 import io.harness.cdng.aws.lambda.AwsLambdaStepExceptionPassThroughData;
 import io.harness.cdng.aws.lambda.AwsLambdaStepExecutor;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
@@ -21,6 +22,7 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
@@ -45,29 +47,32 @@ public class AwsLambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac 
   private final String AWS_LAMBDA_DEPLOY_COMMAND_NAME = "DeployAwsLambda";
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
-    return null;
+    return StepElementParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+    // nothing
+  }
 
   @Override
   public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
       throws Exception {
-    return null;
+    log.info("Calling executeNextLink");
+    return TaskChainResponse.builder().build();
   }
 
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
-    return null;
+    return StepResponse.builder().build();
   }
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return null;
+    return TaskChainResponse.builder().build();
   }
 
   @Override

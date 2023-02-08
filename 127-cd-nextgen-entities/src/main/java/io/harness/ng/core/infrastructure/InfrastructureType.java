@@ -32,7 +32,8 @@ public enum InfrastructureType {
   @JsonProperty(InfrastructureKind.TAS) TAS(InfrastructureKind.TAS),
   @JsonProperty(InfrastructureKind.ASG) ASG(InfrastructureKind.ASG),
   @JsonProperty(InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS)
-  GOOGLE_CLOUD_FUNCTIONS(InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS);
+  GOOGLE_CLOUD_FUNCTIONS(InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS),
+  @JsonProperty(InfrastructureKind.AWS_LAMBDA) AWS_LAMBDA(InfrastructureKind.AWS_LAMBDA);
 
   private final String displayName;
 
