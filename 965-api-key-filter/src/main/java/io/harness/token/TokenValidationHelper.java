@@ -15,6 +15,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.TokenDTO;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -24,9 +25,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 @OwnedBy(HarnessTeam.PL)
 public class TokenValidationHelper {
   public static final String apiKeyOrTokenDelimiterRegex = "\\.";
+  @Inject ApiKeyTokenPasswordCacheHelper apiKeyTokenPasswordCacheHelper;
 
   private void checkIfApiKeyHasExpired(String tokenId, TokenDTO tokenDTO) {
     if (!tokenDTO.isValid()) {
+      invalidateApiKeyToken(tokenId);
       throw new InvalidRequestException(
           "Incoming API token " + tokenDTO.getName() + String.format(" has expired %s", tokenId));
     }
@@ -41,16 +44,24 @@ public class TokenValidationHelper {
   }
 
   private void checkIFRawPasswordMatches(String[] splitToken, String tokenId, TokenDTO tokenDTO) {
+    String password = null;
+    String errorMsg = null;
+    if (isOldApiKeyToken(splitToken)) {
+      password = splitToken[2];
+      errorMsg = "Raw password not matching for API token";
+    } else if (isNewApiKeyToken(splitToken)) {
+      password = splitToken[3];
+      errorMsg = "Raw password not matching for new API token format";
+    }
     BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder($2A, 10);
-    if (isOldApiKeyToken(splitToken) && !bCryptPasswordEncoder.matches(splitToken[2], tokenDTO.getEncodedPassword())) {
-      String message = "Raw password not matching for API token";
-      log.warn(message);
-      throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
-    } else if (isNewApiKeyToken(splitToken)
-        && !bCryptPasswordEncoder.matches(splitToken[3], tokenDTO.getEncodedPassword())) {
-      String message = "Raw password not matching for new API token format";
-      log.warn(message);
-      throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
+    if (null != password && null != tokenId) {
+      String cachedPassword = apiKeyTokenPasswordCacheHelper.get(tokenId);
+      if (cachedPassword == null && bCryptPasswordEncoder.matches(password, tokenDTO.getEncodedPassword())) {
+        apiKeyTokenPasswordCacheHelper.putInCache(tokenId, password);
+      } else if (null == cachedPassword || !cachedPassword.equals(password)) {
+        log.warn(errorMsg);
+        throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, errorMsg));
+      }
     }
   }
 
@@ -108,5 +119,9 @@ public class TokenValidationHelper {
       throw new InvalidRequestException(String.format("Invalid API Token: %s", message));
     }
     return isOldApiKeyToken(splitToken) ? splitToken[1] : splitToken[2];
+  }
+
+  public void invalidateApiKeyToken(String tokenId) {
+    apiKeyTokenPasswordCacheHelper.invalidate(tokenId);
   }
 }

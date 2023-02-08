@@ -10,7 +10,6 @@ package io.harness.template.helpers;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
-import static io.harness.pms.merger.helpers.MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml;
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
 import static io.harness.template.beans.NGTemplateConstants.DUMMY_NODE;
 import static io.harness.template.beans.NGTemplateConstants.SPEC;
@@ -39,6 +38,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
 import io.harness.pms.yaml.YamlField;
@@ -53,8 +53,8 @@ import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateGitXService;
+import io.harness.template.utils.TemplateUtils;
 import io.harness.template.yaml.TemplateYamlUtils;
-import io.harness.utils.IdentifierRefHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -122,8 +122,7 @@ public class TemplateMergeServiceHelper {
   public TemplateEntity getLinkedTemplateEntityHelper(String accountId, String orgId, String projectId,
       String identifier, String versionLabel, Map<String, TemplateEntity> templateCacheMap, String versionMarker,
       boolean loadFromCache) {
-    IdentifierRef templateIdentifierRef =
-        IdentifierRefHelper.getIdentifierRefOrThrowException(identifier, accountId, orgId, projectId, "template");
+    IdentifierRef templateIdentifierRef = TemplateUtils.getIdentifierRef(accountId, orgId, projectId, identifier);
     String templateUniqueIdentifier = generateUniqueTemplateIdentifier(templateIdentifierRef.getAccountIdentifier(),
         templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
         templateIdentifierRef.getIdentifier(), versionMarker);
@@ -323,9 +322,8 @@ public class TemplateMergeServiceHelper {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, JsonNode value) {
     TemplateUniqueIdentifier templateUniqueIdentification = parseYamlAndGetTemplateIdentifierAndVersion(value);
 
-    IdentifierRef templateIdentifierRef =
-        IdentifierRefHelper.getIdentifierRefOrThrowException(templateUniqueIdentification.getTemplateIdentifier(),
-            accountIdentifier, orgIdentifier, projectIdentifier, "template");
+    IdentifierRef templateIdentifierRef = TemplateUtils.getIdentifierRef(
+        accountIdentifier, orgIdentifier, projectIdentifier, templateUniqueIdentification.getTemplateIdentifier());
     String templateUniqueIdentifier = generateUniqueTemplateIdentifier(templateIdentifierRef.getAccountIdentifier(),
         templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
         templateIdentifierRef.getIdentifier(), templateUniqueIdentification.getVersionMaker());
@@ -346,9 +344,12 @@ public class TemplateMergeServiceHelper {
       JsonNode yaml = entry.getValue().getCurrJsonNode();
       TemplateUniqueIdentifier templateUniqueIdentifier = parseYamlAndGetTemplateIdentifierAndVersion(yaml);
 
+      IdentifierRef templateIdentifierRef = TemplateUtils.getIdentifierRef(
+          accountIdentifier, orgIdentifier, projectIdentifier, templateUniqueIdentifier.getTemplateIdentifier());
+
       GetTemplateEntityRequest request = GetTemplateEntityRequest.builder()
                                              .scope(scope)
-                                             .templateIdentifier(templateUniqueIdentifier.getTemplateIdentifier())
+                                             .templateIdentifier(templateIdentifierRef.getIdentifier())
                                              .version(templateUniqueIdentifier.getVersionLabel())
                                              .loadFromCache(loadFromCache)
                                              .build();
@@ -607,7 +608,8 @@ public class TemplateMergeServiceHelper {
       dummyTemplateInputsMap.put(DUMMY_NODE, templateInputs);
       dummyTemplateInputsYaml = TemplateYamlUtils.writeYamlString(dummyTemplateInputsMap);
 
-      mergedYaml = mergeRuntimeInputValuesIntoOriginalYaml(dummyTemplateSpecYaml, dummyTemplateInputsYaml, true);
+      mergedYaml = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+          dummyTemplateSpecYaml, dummyTemplateInputsYaml, true, true);
     }
 
     try {

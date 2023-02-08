@@ -62,6 +62,7 @@ import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.utils.PageUtils;
 
@@ -89,6 +90,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   private final GitSyncSdkService gitSyncSdkService;
   private final ValidateAndMergeHelper validateAndMergeHelper;
   private final InputSetsApiUtils inputSetsApiUtils;
+  private final PMSExecutionService executionService;
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<InputSetResponseDTOPMS> getInputSet(String inputSetIdentifier,
@@ -285,7 +287,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     String planExecutionId = mergeInputSetRequestDTO.getPlanExecutionId();
     String mergedYaml;
     try {
-      mergedYaml = validateAndMergeHelper.mergeInputSetIntoPipelineForRerun(accountId, orgIdentifier, projectIdentifier,
+      mergedYaml = executionService.mergeRuntimeInputIntoPipelineForRerun(accountId, orgIdentifier, projectIdentifier,
           pipelineIdentifier, planExecutionId, pipelineBranch, pipelineRepoID,
           mergeInputSetRequestDTO.getStageIdentifiers());
     } catch (InvalidInputSetException e) {

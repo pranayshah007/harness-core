@@ -162,6 +162,8 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
             && ParameterFieldHelper.getBooleanParameterFieldValue(exportTgPlanJsonField))
         .planSecretManager(helper.getEncryptionConfig(ambiance, planStepParameters))
         .stateFileId(helper.getLatestFileId(entityId))
+        .planName(helper.getTerragruntPlanName(planStepParameters.getConfiguration().getCommand(), ambiance,
+            planStepParameters.getProvisionerIdentifier().getValue()))
         .timeoutInMillis(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), DEFAULT_TIMEOUT))
         .encryptedDataDetailList(helper.getEncryptionDetails(configuration.getConfigFiles().getStore().getSpec(),
             configuration.getBackendConfig(), configuration.getVarFiles(), ambiance))

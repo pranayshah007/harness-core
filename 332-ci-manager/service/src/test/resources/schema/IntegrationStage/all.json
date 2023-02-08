@@ -27,10 +27,10 @@
     "failureStrategies": {
       "oneOf": [
         {
-          "$ref": "#/definitions/ParameterFieldListFailureStrategyConfig"
-        },
-        {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FailureStrategyConfig"
+          }
         },
         {
           "type": "string",
@@ -41,11 +41,27 @@
     },
     "identifier": {
       "type": "string",
-      "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+      "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
     },
     "name": {
       "type": "string",
-      "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+      "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+    },
+    "pipelineVariables": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/NumberNGVariable"
+          },
+          {
+            "$ref": "#/definitions/SecretNGVariable"
+          },
+          {
+            "$ref": "#/definitions/StringNGVariable"
+          }
+        ]
+      }
     },
     "strategy": {
       "$ref": "#/definitions/StrategyConfig"
@@ -3756,6 +3772,12 @@
             "infrastructure": {
               "$ref": "#/definitions/Infrastructure"
             },
+            "pipelineVariables": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NGVariable"
+              }
+            },
             "skipGitClone": {
               "type": "boolean"
             },
@@ -3957,10 +3979,10 @@
         "failureStrategies": {
           "oneOf": [
             {
-              "$ref": "#/definitions/ParameterFieldListFailureStrategyConfig"
-            },
-            {
-              "type": "array"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FailureStrategyConfig"
+              }
             },
             {
               "type": "string",
@@ -3971,11 +3993,27 @@
         },
         "identifier": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+        },
+        "pipelineVariables": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/StringNGVariable"
+              }
+            ]
+          }
         },
         "strategy": {
           "$ref": "#/definitions/StrategyConfig"
@@ -5278,7 +5316,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -5474,7 +5512,7 @@
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5827,45 +5865,6 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/DependencyElement"
-          }
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ParameterFieldListFailureStrategyConfig": {
-      "type": "object",
-      "properties": {
-        "defaultValue": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FailureStrategyConfig"
-          }
-        },
-        "executionInput": {
-          "type": "boolean"
-        },
-        "expression": {
-          "type": "boolean"
-        },
-        "expressionValue": {
-          "type": "string"
-        },
-        "inputSetValidator": {
-          "$ref": "#/definitions/InputSetValidator"
-        },
-        "jsonResponseField": {
-          "type": "boolean"
-        },
-        "responseField": {
-          "type": "string"
-        },
-        "typeString": {
-          "type": "boolean"
-        },
-        "value": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FailureStrategyConfig"
           }
         }
       },
@@ -8385,7 +8384,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -9125,10 +9124,10 @@
         "failureStrategies": {
           "oneOf": [
             {
-              "$ref": "#/definitions/ParameterFieldListFailureStrategyConfig"
-            },
-            {
-              "type": "array"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FailureStrategyConfig"
+              }
             },
             {
               "type": "string",
@@ -9139,11 +9138,11 @@
         },
         "identifier": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
         "strategy": {
           "$ref": "#/definitions/StrategyConfig"
@@ -10148,10 +10147,10 @@
         "failureStrategies": {
           "oneOf": [
             {
-              "$ref": "#/definitions/ParameterFieldListFailureStrategyConfig"
-            },
-            {
-              "type": "array"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FailureStrategyConfig"
+              }
             },
             {
               "type": "string",
@@ -10162,11 +10161,11 @@
         },
         "identifier": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
         "steps": {
           "type": "array",
@@ -10334,7 +10333,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
             },
             "type": {
               "type": "string",

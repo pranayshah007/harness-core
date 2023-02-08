@@ -147,10 +147,14 @@ public class InfraMigrationService extends NgMigrationService {
     }
 
     if (infra.getCloudProviderType() == AWS) {
-      AwsAmiInfrastructure awsInfra = (AwsAmiInfrastructure) infra.getInfrastructure();
-      if (isNotEmpty(awsInfra.getSpotinstCloudProvider())) {
-        children.add(CgEntityId.builder().id(infra.getUuid()).type(ELASTIGROUP_CONFIGURATION).build());
+      // AMI
+      if (infra.getInfrastructure() instanceof AwsAmiInfrastructure) {
+        AwsAmiInfrastructure awsInfra = (AwsAmiInfrastructure) infra.getInfrastructure();
+        if (isNotEmpty(awsInfra.getSpotinstCloudProvider())) {
+          children.add(CgEntityId.builder().id(infra.getUuid()).type(ELASTIGROUP_CONFIGURATION).build());
+        }
       }
+      // To Add for Traditional Deployments
     }
 
     if (infra.getDeploymentType() == DeploymentType.CUSTOM) {

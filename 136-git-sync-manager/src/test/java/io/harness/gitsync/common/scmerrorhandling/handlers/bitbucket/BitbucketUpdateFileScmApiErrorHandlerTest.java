@@ -7,6 +7,7 @@
 
 package io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket;
 
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -102,6 +103,19 @@ public class BitbucketUpdateFileScmApiErrorHandlerTest extends GitSyncTestBase {
       bitbucketUpdateFileScmApiErrorHandler.handleError(405, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmUnexpectedException.class, ex);
+      assertThat(exception).isNotNull();
+      assertThat(exception.getMessage()).isEqualTo(errorMessage);
+    }
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testHandleErrorWhenRateLimitCode() {
+    try {
+      bitbucketUpdateFileScmApiErrorHandler.handleError(429, errorMessage, ErrorMetadata.builder().build());
+    } catch (Exception ex) {
+      WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
       assertThat(exception.getMessage()).isEqualTo(errorMessage);
     }

@@ -167,7 +167,7 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
                                             .build();
 
         tfPlanEncryptedRecord = (EncryptedRecordData) encryptDecryptHelper.encryptFile(
-            planFile, planName, planTaskParameters.getPlanSecretManager(), planDelegateFile);
+            planFile, planTaskParameters.getPlanName(), planTaskParameters.getPlanSecretManager(), planDelegateFile);
         planLogCallback.saveExecutionLog("Terraform plan command successfully encrypted.\n");
 
         stateFileId = taskService.uploadStateFile(terragruntContext.getTerragruntWorkingDirectory(),

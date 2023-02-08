@@ -37,6 +37,7 @@ java_binary(
         "//idp-service/contracts:module",
         "//idp-service/service/src/main/java/io/harness/idp/config:module",
         "//idp-service/service/src/main/java/io/harness/idp/secret:module",
+        "//idp-service/service/src/main/java/io/harness/idp/status:module",
         "@maven//:com_github_dirkraft_dropwizard_file_assets_dropwizard_file_assets",
         "@maven//:com_google_inject_guice",
     ],
@@ -56,6 +57,8 @@ java_library(
     deps = [
         "module",
         "//990-commons-test:module",
+        "//idp-service/contracts:module",
+        "//idp-service/service/src/main/java/io/harness/idp/status:module",
     ],
 )
 

@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.artifactsource.ArtifactSource;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
-import io.harness.cdng.artifact.steps.ArtifactStepParameters;
+import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.infra.InfraUseFromStage;

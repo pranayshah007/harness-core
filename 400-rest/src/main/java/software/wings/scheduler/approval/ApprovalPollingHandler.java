@@ -54,6 +54,7 @@ public class ApprovalPollingHandler extends IteratorPumpModeHandler implements H
    */
   public static final Duration TARGET_INTERVAL = ofMinutes(1);
   public static final Duration PUMP_INTERVAL = ofSeconds(10);
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(1);
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private JiraHelperService jiraHelperService;
@@ -73,12 +74,29 @@ public class ApprovalPollingHandler extends IteratorPumpModeHandler implements H
                            .clazz(ApprovalPollingJobEntity.class)
                            .fieldName(ApprovalPollingJobEntityKeys.nextIteration)
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofMinutes(1))
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                            .handler(this)
                            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
                            .schedulingType(REGULAR)
                            .persistenceProvider(persistenceProvider)
                            .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<ApprovalPollingJobEntity, MorphiaFilterExpander<ApprovalPollingJobEntity>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       ApprovalPollingHandler.class,
+                       MongoPersistenceIterator
+                           .<ApprovalPollingJobEntity, MorphiaFilterExpander<ApprovalPollingJobEntity>>builder()
+                           .clazz(ApprovalPollingJobEntity.class)
+                           .fieldName(ApprovalPollingJobEntityKeys.nextIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override

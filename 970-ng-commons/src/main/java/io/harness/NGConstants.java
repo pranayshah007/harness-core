@@ -37,8 +37,11 @@ public class NGConstants {
   public static final String ACCOUNT_BASIC_ROLE = "_account_basic";
   public static final String ORGANIZATION_ADMIN_ROLE = "_organization_admin";
   public static final String ORGANIZATION_VIEWER_ROLE = "_organization_viewer";
+  public static final String ORGANIZATION_BASIC_ROLE = "_organization_basic";
   public static final String PROJECT_ADMIN_ROLE = "_project_admin";
   public static final String PROJECT_VIEWER_ROLE = "_project_viewer";
+
+  public static final String PROJECT_BASIC_ROLE = "_project_basic";
   public static final String ENTITY_REFERENCE_LOG_PREFIX = "ENTITY_REFERENCE :";
   public static final String HARNESS_BLUE = "#0063F7";
   public static final String STRING_CONNECTOR = ":";

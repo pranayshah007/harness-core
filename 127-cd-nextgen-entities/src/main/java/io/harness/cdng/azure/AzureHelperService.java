@@ -26,6 +26,7 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.common.NGExpressionUtils;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -51,6 +52,7 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
@@ -100,6 +102,11 @@ public class AzureHelperService {
   @VisibleForTesting static final int defaultTimeoutInSecs = 30;
 
   public AzureConnectorDTO getConnector(IdentifierRef azureConnectorRef) {
+    if (azureConnectorRef.getIdentifier() != null
+        && NGExpressionUtils.isRuntimeField(azureConnectorRef.getIdentifier())) {
+      throw new InvalidIdentifierRefException(
+          "Azure Connector is required to fetch this field. You can make this field Runtime input otherwise.");
+    }
     Optional<ConnectorResponseDTO> connectorDTO =
         connectorService.get(azureConnectorRef.getAccountIdentifier(), azureConnectorRef.getOrgIdentifier(),
             azureConnectorRef.getProjectIdentifier(), azureConnectorRef.getIdentifier());

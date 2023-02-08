@@ -66,6 +66,7 @@ import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetR
 import io.harness.pms.pipeline.MoveConfigOperationType;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
 
@@ -98,6 +99,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Mock ValidateAndMergeHelper validateAndMergeHelper;
   @Mock GitSyncSdkService gitSyncSdkService;
   @Mock InputSetsApiUtils inputSetsApiUtils;
+  @Mock PMSExecutionService executionService;
 
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_IDENTIFIER = "orgId";
@@ -133,8 +135,8 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    inputSetResourcePMSImpl = new InputSetResourcePMSImpl(
-        pmsInputSetService, pipelineService, gitSyncSdkService, validateAndMergeHelper, inputSetsApiUtils);
+    inputSetResourcePMSImpl = new InputSetResourcePMSImpl(pmsInputSetService, pipelineService, gitSyncSdkService,
+        validateAndMergeHelper, inputSetsApiUtils, executionService);
 
     String inputSetFilename = "inputSet1.yml";
     inputSetYaml = readFile(inputSetFilename);
@@ -664,8 +666,8 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testGetMergeInputSetForRerun() {
     doReturn("mergedYaml")
-        .when(validateAndMergeHelper)
-        .mergeInputSetIntoPipelineForRerun(
+        .when(executionService)
+        .mergeRuntimeInputIntoPipelineForRerun(
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "plan", "", "", Collections.emptyList());
     ResponseDTO<MergeInputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getMergeInputSetForRerun(ACCOUNT_ID,
         ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "", "", null,

@@ -58,6 +58,7 @@ public class GoogleFunctionDeployCommandTaskHandler extends GoogleFunctionComman
 
     GcpGoogleFunctionInfraConfig googleFunctionInfraConfig =
         (GcpGoogleFunctionInfraConfig) googleFunctionDeployRequest.getGoogleFunctionInfraConfig();
+
     LogCallback executionLogCallback = new NGDelegateLogCallback(
         iLogStreamingTaskClient, GoogleFunctionsCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
     try {
@@ -66,7 +67,6 @@ public class GoogleFunctionDeployCommandTaskHandler extends GoogleFunctionComman
           googleFunctionDeployRequest.getGoogleFunctionDeployManifestContent(),
           googleFunctionDeployRequest.getUpdateFieldMaskContent(),
           googleFunctionDeployRequest.getGoogleFunctionArtifactConfig(), true, executionLogCallback);
-
       GoogleFunction googleFunction =
           googleFunctionCommandTaskHelper.getGoogleFunction(function, googleFunctionInfraConfig, executionLogCallback);
       executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);

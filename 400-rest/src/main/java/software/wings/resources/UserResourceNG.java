@@ -12,6 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.security.dto.PrincipalType.USER;
 
+import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_MANAGEMENT;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -46,6 +48,7 @@ import io.harness.user.remote.UserFilterNG;
 
 import software.wings.beans.User;
 import software.wings.beans.UserInvite;
+import software.wings.security.annotations.AuthRule;
 import software.wings.security.authentication.TwoFactorAuthenticationManager;
 import software.wings.security.authentication.TwoFactorAuthenticationMechanism;
 import software.wings.security.authentication.TwoFactorAuthenticationSettings;
@@ -455,6 +458,15 @@ public class UserResourceNG {
   disableTwoFactorAuth(@QueryParam("emailId") String emailId) {
     return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(
         twoFactorAuthenticationManager.disableTwoFactorAuthentication(userService.getUserByEmail(emailId)))));
+  }
+
+  @GET
+  @Path("reset-two-factor-auth/{userId}")
+  @ApiOperation(value = "Resend email for two factor authorization", nickname = "resetTwoFactorAuth")
+  @AuthRule(permissionType = USER_PERMISSION_MANAGEMENT)
+  public RestResponse<Boolean> reset2fa(
+      @PathParam("userId") @NotEmpty String userId, @QueryParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse<>(twoFactorAuthenticationManager.sendTwoFactorAuthenticationResetEmail(userId));
   }
 
   @PUT

@@ -8,13 +8,18 @@
 package io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BHAVYA;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HintException;
+import io.harness.exception.ScmBadRequestException;
+import io.harness.exception.WingsException;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.BitbucketListBranchesScmApiErrorHandler;
@@ -30,6 +35,8 @@ import org.mockito.MockitoAnnotations;
 public class BitbucketListBranchesScmApiErrorHandlerTest extends GitSyncTestBase {
   @Inject BitbucketListBranchesScmApiErrorHandler bitbucketListBranchesScmApiErrorHandler;
 
+  private static final String errorMessage = "errorMessage";
+
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
@@ -43,5 +50,18 @@ public class BitbucketListBranchesScmApiErrorHandlerTest extends GitSyncTestBase
                            -> bitbucketListBranchesScmApiErrorHandler.handleError(
                                401, "Not Authorised", ErrorMetadata.builder().build()))
         .isInstanceOf(HintException.class);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testHandleErrorWhenRateLimitCode() {
+    try {
+      bitbucketListBranchesScmApiErrorHandler.handleError(429, errorMessage, ErrorMetadata.builder().build());
+    } catch (Exception ex) {
+      WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
+      assertThat(exception).isNotNull();
+      assertThat(exception.getMessage()).isEqualTo(errorMessage);
+    }
   }
 }

@@ -9,6 +9,7 @@ package io.harness.delegate.beans;
 
 import static java.time.Duration.ofDays;
 
+import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -39,6 +40,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Data
 @Builder
 @StoreIn(DbAliases.HARNESS)
+@SecondaryStoreIn(DbAliases.DMS)
 @Entity(value = "delegateTokens", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "DelegateTokenKeys")
 @OwnedBy(HarnessTeam.DEL)

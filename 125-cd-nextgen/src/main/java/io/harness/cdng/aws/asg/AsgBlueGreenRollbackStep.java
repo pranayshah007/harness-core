@@ -129,7 +129,7 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
 
     final String accountId = AmbianceUtils.getAccountId(ambiance);
     if (EmptyPredicate.isEmpty(asgBlueGreenDeployStepParameters.getAsgBlueGreenDeployFnq())) {
-      return skipTaskRequest(ambiance, ASG_BLUE_GREEN_DEPLOY_STEP_MISSING);
+      return skipTaskRequest(ASG_BLUE_GREEN_DEPLOY_STEP_MISSING);
     }
 
     OptionalSweepingOutput asgBlueGreenPrepareRollbackDataOptional =
@@ -142,7 +142,7 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
             + OutcomeExpressionConstants.ASG_BLUE_GREEN_DEPLOY_OUTCOME));
 
     if (!asgBlueGreenPrepareRollbackDataOptional.isFound() || !asgBlueGreenDeployOptional.isFound()) {
-      return skipTaskRequest(ambiance, ASG_BLUE_GREEN_DEPLOY_STEP_MISSING);
+      return skipTaskRequest(ASG_BLUE_GREEN_DEPLOY_STEP_MISSING);
     }
 
     AsgBlueGreenPrepareRollbackDataOutcome asgBlueGreenPrepareRollbackDataOutcome =
@@ -185,7 +185,7 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
             .asgLoadBalancerConfig(asgLoadBalancerConfig)
             .prodAsgName(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgName())
             .prodAsgManifestsDataForRollback(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgManifestDataForRollback())
-            .stageAsgName(asgBlueGreenDeployOutcome.getProdAutoScalingGroupContainer().getAutoScalingGroupName())
+            .stageAsgName(asgBlueGreenDeployOutcome.getStageAutoScalingGroupContainer().getAutoScalingGroupName())
             .stageAsgManifestsDataForRollback(
                 asgBlueGreenPrepareRollbackDataOutcome.getStageAsgManifestDataForRollback())
             .servicesSwapped(trafficShifted)
@@ -203,7 +203,7 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
     return StepElementParameters.class;
   }
 
-  private TaskRequest skipTaskRequest(Ambiance ambiance, String message) {
+  private TaskRequest skipTaskRequest(String message) {
     return TaskRequest.newBuilder()
         .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(message).build())
         .build();

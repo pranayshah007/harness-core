@@ -28,15 +28,17 @@ public class AutoScalingGroupContainerToServerInstanceInfoMapper {
       AutoScalingGroupContainer autoScalingGroupContainer, String infraStructureKey, String region,
       String executionStrategy, String asgNameWithoutSuffix, Boolean production) {
     List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
-    List<AutoScalingGroupInstance> autoScalingGroupInstanceList =
-        autoScalingGroupContainer.getAutoScalingGroupInstanceList();
+    if (autoScalingGroupContainer != null) {
+      List<AutoScalingGroupInstance> autoScalingGroupInstanceList =
+          autoScalingGroupContainer.getAutoScalingGroupInstanceList();
 
-    if (CollectionUtils.isNotEmpty(autoScalingGroupInstanceList)) {
-      serverInstanceInfoList = autoScalingGroupInstanceList.stream()
-                                   .map(autoScalingGroupInstance
-                                       -> toServerInstanceInfo(autoScalingGroupInstance, infraStructureKey, region,
-                                           executionStrategy, asgNameWithoutSuffix, production))
-                                   .collect(Collectors.toList());
+      if (CollectionUtils.isNotEmpty(autoScalingGroupInstanceList)) {
+        serverInstanceInfoList = autoScalingGroupInstanceList.stream()
+                                     .map(autoScalingGroupInstance
+                                         -> toServerInstanceInfo(autoScalingGroupInstance, infraStructureKey, region,
+                                             executionStrategy, asgNameWithoutSuffix, production))
+                                     .collect(Collectors.toList());
+      }
     }
     return serverInstanceInfoList;
   }

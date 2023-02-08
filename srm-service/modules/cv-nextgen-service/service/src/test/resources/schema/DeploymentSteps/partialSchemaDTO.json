@@ -11,9 +11,10 @@
       },
       "failureStrategies" : {
         "oneOf" : [ {
-          "$ref" : "#/definitions/cvng/ParameterFieldListFailureStrategyConfig"
-        }, {
-          "type" : "array"
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/cvng/FailureStrategyConfig"
+          }
         }, {
           "type" : "string",
           "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
@@ -22,11 +23,11 @@
       },
       "identifier" : {
         "type" : "string",
-        "pattern" : "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+        "pattern" : "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
       },
       "name" : {
         "type" : "string",
-        "pattern" : "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+        "pattern" : "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
       },
       "strategy" : {
         "$ref" : "#/definitions/cvng/StrategyConfig"
@@ -206,9 +207,10 @@
             },
             "failureStrategies" : {
               "oneOf" : [ {
-                "$ref" : "#/definitions/cvng/ParameterFieldListFailureStrategyConfig"
-              }, {
-                "type" : "array"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/definitions/cvng/FailureStrategyConfig"
+                }
               }, {
                 "type" : "string",
                 "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
@@ -217,11 +219,11 @@
             },
             "identifier" : {
               "type" : "string",
-              "pattern" : "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+              "pattern" : "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
             },
             "name" : {
               "type" : "string",
-              "pattern" : "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+              "pattern" : "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
             },
             "strategy" : {
               "$ref" : "#/definitions/cvng/StrategyConfig"
@@ -597,45 +599,6 @@
             },
             "value" : {
               "type" : "object"
-            }
-          },
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "ParameterFieldListFailureStrategyConfig" : {
-          "type" : "object",
-          "properties" : {
-            "defaultValue" : {
-              "type" : "array",
-              "items" : {
-                "$ref" : "#/definitions/cvng/FailureStrategyConfig"
-              }
-            },
-            "executionInput" : {
-              "type" : "boolean"
-            },
-            "expression" : {
-              "type" : "boolean"
-            },
-            "expressionValue" : {
-              "type" : "string"
-            },
-            "inputSetValidator" : {
-              "$ref" : "#/definitions/cvng/InputSetValidator"
-            },
-            "jsonResponseField" : {
-              "type" : "boolean"
-            },
-            "responseField" : {
-              "type" : "string"
-            },
-            "typeString" : {
-              "type" : "boolean"
-            },
-            "value" : {
-              "type" : "array",
-              "items" : {
-                "$ref" : "#/definitions/cvng/FailureStrategyConfig"
-              }
             }
           },
           "$schema" : "http://json-schema.org/draft-07/schema#"
