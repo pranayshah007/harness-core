@@ -195,8 +195,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   private List<UserRepoResponse> getReposForHarnessCode(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, ScmConnector scmConnector) {
     try {
-      List<CodeRepoResponse> codeRepos =
-          SafeHttpCall.executeWithExceptions(codeResourceClient.listRepos(accountIdentifier));
+      List<CodeRepoResponse> codeRepos = SafeHttpCall.executeWithExceptions(
+          codeResourceClient.listRepos(accountIdentifier, orgIdentifier, projectIdentifier, accountIdentifier));
       ArrayList userRepoResponses = new ArrayList();
       for (CodeRepoResponse userRepo : codeRepos) {
         userRepoResponses.add(UserRepoResponse.builder().namespace(userRepo.getPath()).name(userRepo.getUid()).build());
