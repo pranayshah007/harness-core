@@ -20,7 +20,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(PIPELINE)
 @Value
@@ -31,11 +30,14 @@ import org.hibernate.validator.constraints.NotEmpty;
 @ApiModel("MergeInputSetRequest")
 @Schema(name = "MergeInputSetRequest", description = "Contains list of Input Set references and Stage Ids")
 public class MergeInputSetRequestDTOPMS {
-  @Schema(description = "List of Input Set References to be merged") @NotEmpty List<String> inputSetReferences;
+  @Schema(description = "List of Input Set References to be merged") List<String> inputSetReferences;
   @Schema(
       description =
           "This is a boolean value that indicates if the response must contain the YAML for the merged Pipeline. The default value is False.")
   boolean withMergedPipelineYaml;
   @Schema(description = "List of Stage Ids. Input Sets corresponding to these Ids will be merged.")
   List<String> stageIdentifiers;
+  @Schema(description =
+              "Runtime Input Yaml needed to be merged into the result of the merged Yaml of the inputSetReferences")
+  String lastYamlToMerge;
 }

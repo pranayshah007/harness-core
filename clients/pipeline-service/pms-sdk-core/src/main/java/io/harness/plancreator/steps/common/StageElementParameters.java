@@ -8,11 +8,11 @@
 package io.harness.plancreator.steps.common;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
@@ -22,6 +22,7 @@ import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
+import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -43,10 +44,11 @@ public class StageElementParameters implements StepParameters {
   ParameterField<String> description;
 
   ParameterField<String> skipCondition;
-  StageWhenCondition when;
+  ParameterField<StageWhenCondition> when;
 
+  @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {runtime, list})
+  @YamlSchemaTypes(value = {runtime})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;
   @SkipAutoEvaluation ParameterField<Map<String, Object>> variables;
   Map<String, String> tags;

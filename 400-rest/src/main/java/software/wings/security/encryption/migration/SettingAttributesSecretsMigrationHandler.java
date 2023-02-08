@@ -64,6 +64,8 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class SettingAttributesSecretsMigrationHandler
     extends IteratorPumpModeHandler implements Handler<SettingAttribute> {
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofHours(1);
+
   @Inject private AccountService accountService;
   @Inject private WingsPersistence wingsPersistence;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
@@ -80,13 +82,30 @@ public class SettingAttributesSecretsMigrationHandler
                            .clazz(SettingAttribute.class)
                            .fieldName(SettingAttributeKeys.nextSecretMigrationIteration)
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofHours(1))
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                            .handler(this)
                            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
                            .filterExpander(this::createQuery)
                            .schedulingType(REGULAR)
                            .persistenceProvider(persistenceProvider)
                            .redistribute(true));
+  }
+
+  @Override
+  public void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<SettingAttribute, MorphiaFilterExpander<SettingAttribute>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       SettingAttribute.class,
+                       MongoPersistenceIterator.<SettingAttribute, MorphiaFilterExpander<SettingAttribute>>builder()
+                           .clazz(SettingAttribute.class)
+                           .fieldName(SettingAttributeKeys.nextSecretMigrationIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .filterExpander(this::createQuery)
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override

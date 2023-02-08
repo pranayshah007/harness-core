@@ -75,4 +75,8 @@ public interface PMSExecutionService {
   long getCountOfExecutions(Criteria criteria);
 
   ExecutionDataResponseDTO getExecutionData(String planExecutionId);
+
+  String mergeRuntimeInputIntoPipelineForRerun(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String planExecutionId, String pipelineBranch, String pipelineRepoID,
+      List<String> stageIdentifiers);
 }

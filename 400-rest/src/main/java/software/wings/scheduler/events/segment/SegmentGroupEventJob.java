@@ -39,6 +39,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class SegmentGroupEventJob extends IteratorPumpModeHandler implements Handler<SegmentGroupEventJobContext> {
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(35);
+
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private AccountChangeHandler accountChangeHandler;
   @Inject private AccountService accountService;
@@ -55,11 +57,28 @@ public class SegmentGroupEventJob extends IteratorPumpModeHandler implements Han
                     .clazz(SegmentGroupEventJobContext.class)
                     .fieldName(SegmentGroupEventJobContextKeys.nextIteration)
                     .targetInterval(targetInterval)
-                    .acceptableNoAlertDelay(ofMinutes(35))
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                     .handler(this)
                     .schedulingType(REGULAR)
                     .persistenceProvider(persistenceProvider)
                     .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator =
+        (MongoPersistenceIterator<SegmentGroupEventJobContext, MorphiaFilterExpander<SegmentGroupEventJobContext>>)
+            persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                SegmentGroupEventJob.class,
+                MongoPersistenceIterator
+                    .<SegmentGroupEventJobContext, MorphiaFilterExpander<SegmentGroupEventJobContext>>builder()
+                    .clazz(SegmentGroupEventJobContext.class)
+                    .fieldName(SegmentGroupEventJobContextKeys.nextIteration)
+                    .targetInterval(targetInterval)
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                    .handler(this)
+                    .persistenceProvider(persistenceProvider));
   }
 
   @Override

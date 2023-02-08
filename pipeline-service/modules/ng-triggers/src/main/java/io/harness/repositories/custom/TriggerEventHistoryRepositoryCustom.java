@@ -22,4 +22,6 @@ public interface TriggerEventHistoryRepositoryCustom {
   List<TriggerEventHistory> findAll(Criteria criteria);
   Page<TriggerEventHistory> findAll(Criteria criteria, Pageable pageable);
   List<TriggerEventHistory> findAllActivationTimestampsInRange(Criteria criteria);
+
+  void deleteBatch(Criteria criteria);
 }

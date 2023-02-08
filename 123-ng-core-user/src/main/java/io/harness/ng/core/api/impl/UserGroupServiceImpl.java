@@ -311,7 +311,8 @@ public class UserGroupServiceImpl implements UserGroupService {
     return userGroupRepository.countByAccountIdentifierAndDeletedIsFalse(accountIdentifier);
   }
 
-  private List<UserGroup> getPermittedUserGroups(List<UserGroup> userGroups) {
+  @Override
+  public List<UserGroup> getPermittedUserGroups(List<UserGroup> userGroups) {
     if (isEmpty(userGroups)) {
       return Collections.emptyList();
     }
@@ -401,15 +402,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     if (isNotEmpty(userGroupFilterDTO.getUserIdentifierFilter())) {
       criteria.and(UserGroupKeys.users).in(userGroupFilterDTO.getUserIdentifierFilter());
     }
-    List<UserGroup> userGroups = userGroupRepository.findAll(criteria, Pageable.unpaged()).getContent();
-    if (accessControlClient.hasAccess(
-            ResourceScope.of(userGroupFilterDTO.getAccountIdentifier(), userGroupFilterDTO.getOrgIdentifier(),
-                userGroupFilterDTO.getProjectIdentifier()),
-            Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION)) {
-      return userGroups;
-    } else {
-      return getPermittedUserGroups(userGroups);
-    }
+    return userGroupRepository.findAll(criteria, Pageable.unpaged()).getContent();
   }
 
   public PageResponse<UserMetadataDTO> listUsersInUserGroup(

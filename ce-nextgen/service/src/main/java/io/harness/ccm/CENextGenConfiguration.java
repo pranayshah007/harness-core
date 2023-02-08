@@ -110,6 +110,7 @@ public class CENextGenConfiguration extends Configuration {
   @JsonProperty("eventsFramework") @ConfigSecret private EventsFrameworkConfiguration eventsFrameworkConfiguration;
   @JsonProperty("timescaledb") @ConfigSecret private TimeScaleDBConfig timeScaleDBConfig;
   @JsonProperty("clickHouseConfig") @ConfigSecret private ClickHouseConfig clickHouseConfig;
+  @JsonProperty("icClickHouseEnabled") private boolean isClickHouseEnabled;
 
   @JsonProperty(value = "gcpConfig") private GcpConfig gcpConfig;
   @JsonProperty(value = "ceAzureSetupConfig") @ConfigSecret private CEAzureSetupConfig ceAzureSetupConfig;

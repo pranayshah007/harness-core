@@ -110,12 +110,17 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       Failsafe.with(retryPolicy).run(() -> {
         if (level.getStepType().getStepCategory() == StepCategory.STAGE && isFinalStatus(status)) {
           // TODO: Once Robust Cleanup implementation is done shift this after response from delegate is received.
-          CIExecutionMetadata ciExecutionMetadata =
-              queueExecutionUtils.deleteActiveExecutionRecord(ambiance.getStageExecutionId());
-          if (StringUtils.isNotBlank(ciExecutionMetadata.getQueueId())) {
-            // ack the request so that its not processed again.
-            queueClient.ack(accountId, ciExecutionMetadata.getQueueId());
+          try {
+            CIExecutionMetadata ciExecutionMetadata =
+                queueExecutionUtils.deleteActiveExecutionRecord(ambiance.getStageExecutionId());
+            if (ciExecutionMetadata != null && StringUtils.isNotBlank(ciExecutionMetadata.getQueueId())) {
+              // ack the request so that its not processed again.
+              queueClient.ack(accountId, ciExecutionMetadata.getQueueId());
+            }
+          } catch (Exception ex) {
+            log.info("failed to remove execution record from db", ex);
           }
+
           CICleanupTaskParams ciCleanupTaskParams = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
 
           log.info("Received event with status {} to clean planExecutionId {}, stage {}", status,

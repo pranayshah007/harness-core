@@ -1601,6 +1601,7 @@
 19879:io.harness.delegate.beans.connector.gcpsecretmanagerconnector.GcpSecretManagerValidationParams
 20001:io.harness.delegate.task.shell.ShellScriptApprovalTaskParameters
 20002:io.harness.delegate.task.http.HttpTaskParameters
+20003:io.harness.beans.HttpCertificate
 20100:io.harness.ng.core.environment.beans.EnvironmentType
 20101:io.harness.ng.core.account.DefaultExperience
 20102:io.harness.ng.core.user.UserMembershipUpdateMechanism

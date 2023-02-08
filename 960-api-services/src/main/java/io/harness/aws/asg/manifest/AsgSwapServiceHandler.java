@@ -35,9 +35,8 @@ public class AsgSwapServiceHandler extends AsgManifestHandler<PutScalingPolicyRe
   public AsgManifestHandlerChainState upsert(AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
     AsgSwapServiceManifestRequest asgSwapServiceManifestRequest = (AsgSwapServiceManifestRequest) manifestRequest;
     asgSdkManager.info("Swapping target groups & updating tags");
-    swapTargetGroups(((AsgSwapServiceManifestRequest) manifestRequest).getRegion(),
-        ((AsgSwapServiceManifestRequest) manifestRequest).getAsgLoadBalancerConfig(),
-        ((AsgSwapServiceManifestRequest) manifestRequest).getAwsInternalConfig());
+    swapTargetGroups(asgSwapServiceManifestRequest.getRegion(),
+        asgSwapServiceManifestRequest.getAsgLoadBalancerConfig(), asgSwapServiceManifestRequest.getAwsInternalConfig());
 
     // logic to update tags of asg
     asgSdkManager.info("Updating tags of the autoscaling groups");

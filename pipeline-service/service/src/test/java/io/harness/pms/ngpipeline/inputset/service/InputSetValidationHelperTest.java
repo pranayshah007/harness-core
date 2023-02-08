@@ -123,7 +123,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
         .when(pipelineService)
         .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     String yaml = "inputSet:\n"
-        + "  identifier: abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghij";
+        + "  identifier: abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijhijdsalksdajsdnanfnoaniondna12213123034r78978987879897jkklsa";
     InputSetEntity inputSetEntity = InputSetEntity.builder()
                                         .accountId(accountId)
                                         .orgIdentifier(orgId)
@@ -133,7 +133,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
                                         .inputSetEntityType(InputSetEntityType.INPUT_SET)
                                         .build();
     assertThatThrownBy(() -> InputSetValidationHelper.validateInputSet(null, inputSetEntity, false))
-        .hasMessage("Input Set identifier length cannot be more that 63 characters.");
+        .hasMessage("Input Set identifier length cannot be more that 127 characters.");
   }
 
   @Test

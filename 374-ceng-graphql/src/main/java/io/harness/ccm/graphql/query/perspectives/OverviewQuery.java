@@ -12,6 +12,8 @@ import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.bigQuery.BigQueryService;
+import io.harness.ccm.clickHouse.ClickHouseService;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.perspectives.PerspectiveTimeSeriesHelper;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
@@ -22,19 +24,28 @@ import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
 import io.harness.ccm.views.graphql.QLCEViewTimeFilter;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
+import io.harness.ccm.views.helper.ClickHouseQueryResponseHelper;
+import io.harness.ccm.views.service.impl.ClickHouseViewsBillingServiceImpl;
+import io.harness.timescaledb.DBUtils;
 
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.TableResult;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import io.leangen.graphql.annotations.GraphQLArgument;
 import io.leangen.graphql.annotations.GraphQLEnvironment;
 import io.leangen.graphql.annotations.GraphQLQuery;
 import io.leangen.graphql.execution.ResolutionEnvironment;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -47,6 +58,11 @@ public class OverviewQuery {
   @Inject BigQueryHelper bigQueryHelper;
   @Inject PerspectiveTimeSeriesHelper perspectiveTimeSeriesHelper;
   @Inject ViewsQueryBuilder viewsQueryBuilder;
+  @Inject ClickHouseViewsBillingServiceImpl clickHouseViewsBillingService;
+  @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
+  @Inject ClickHouseService clickHouseService;
+  @Inject @Nullable @Named("clickHouseConfig") ClickHouseConfig clickHouseConfig;
+  @Inject ClickHouseQueryResponseHelper clickHouseQueryResponseHelper;
 
   @GraphQLQuery(name = "overviewTimeSeriesStats", description = "Table for perspective")
   public PerspectiveTimeSeriesData overviewTimeSeriesStats(
@@ -63,18 +79,35 @@ public class OverviewQuery {
                                                .map(QLCEViewFilterWrapper::getTimeFilter)
                                                .collect(Collectors.toList());
 
-    TableResult result;
-    SelectQuery query = viewsQueryBuilder.getCostByProvidersOverviewQuery(
-        timeFilters, groupBy, aggregateFunction, cloudProviderTableName);
-    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
-    try {
-      result = bigQuery.query(queryConfig);
-    } catch (InterruptedException e) {
-      log.error("Failed to get overviewTimeSeriesStats. {}", e);
-      Thread.currentThread().interrupt();
+    if (!isClickHouseEnabled) {
+      TableResult result;
+      SelectQuery query = viewsQueryBuilder.getCostByProvidersOverviewQuery(
+          timeFilters, groupBy, aggregateFunction, cloudProviderTableName);
+      QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+      try {
+        result = bigQuery.query(queryConfig);
+      } catch (InterruptedException e) {
+        log.error("Failed to get overviewTimeSeriesStats. {}", e);
+        Thread.currentThread().interrupt();
+        return null;
+      }
+      return perspectiveTimeSeriesHelper.fetch(result, timePeriod, groupBy);
+    } else {
+      ResultSet resultSet = null;
+      cloudProviderTableName = "ccm.unifiedTable";
+      SelectQuery query = viewsQueryBuilder.getCostByProvidersOverviewQuery(
+          timeFilters, groupBy, aggregateFunction, cloudProviderTableName);
+      try (Connection connection = clickHouseService.getConnection(clickHouseConfig);
+           Statement statement = connection.createStatement()) {
+        resultSet = statement.executeQuery(query.toString());
+        return clickHouseQueryResponseHelper.convertToTimeSeriesData(
+            resultSet, timePeriod, null, null, null, groupBy, null, true);
+      } catch (SQLException e) {
+        log.error("Failed to getTrendStatsData. {}", e.toString());
+      } finally {
+        DBUtils.close(resultSet);
+      }
       return null;
     }
-
-    return perspectiveTimeSeriesHelper.fetch(result, timePeriod, groupBy);
   }
 }

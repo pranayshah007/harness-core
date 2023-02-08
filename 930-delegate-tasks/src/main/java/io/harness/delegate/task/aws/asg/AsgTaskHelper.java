@@ -79,22 +79,26 @@ public class AsgTaskHelper {
   }
 
   public AutoScalingGroupContainer mapToAutoScalingGroupContainer(AutoScalingGroup autoScalingGroup) {
-    return AutoScalingGroupContainer.builder()
-        .autoScalingGroupName(autoScalingGroup.getAutoScalingGroupName())
-        .launchTemplateName(autoScalingGroup.getLaunchTemplate().getLaunchTemplateName())
-        .launchTemplateVersion(autoScalingGroup.getLaunchTemplate().getVersion())
-        .autoScalingGroupInstanceList(
-            autoScalingGroup.getInstances()
-                .stream()
-                .map(instance
-                    -> AutoScalingGroupInstance.builder()
-                           .autoScalingGroupName(autoScalingGroup.getAutoScalingGroupName())
-                           .instanceId(instance.getInstanceId())
-                           .instanceType(instance.getInstanceType())
-                           .launchTemplateVersion(autoScalingGroup.getLaunchTemplate().getVersion())
-                           .build())
-                .collect(Collectors.toList()))
-        .build();
+    if (autoScalingGroup != null) {
+      return AutoScalingGroupContainer.builder()
+          .autoScalingGroupName(autoScalingGroup.getAutoScalingGroupName())
+          .launchTemplateName(autoScalingGroup.getLaunchTemplate().getLaunchTemplateName())
+          .launchTemplateVersion(autoScalingGroup.getLaunchTemplate().getVersion())
+          .autoScalingGroupInstanceList(
+              autoScalingGroup.getInstances()
+                  .stream()
+                  .map(instance
+                      -> AutoScalingGroupInstance.builder()
+                             .autoScalingGroupName(autoScalingGroup.getAutoScalingGroupName())
+                             .instanceId(instance.getInstanceId())
+                             .instanceType(instance.getInstanceType())
+                             .launchTemplateVersion(autoScalingGroup.getLaunchTemplate().getVersion())
+                             .build())
+                  .collect(Collectors.toList()))
+          .build();
+    } else {
+      return AutoScalingGroupContainer.builder().build();
+    }
   }
 
   public AsgSdkManager getAsgSdkManager(AsgCommandRequest asgCommandRequest, LogCallback logCallback) {
@@ -168,58 +172,66 @@ public class AsgTaskHelper {
     AsgSdkManager asgSdkManager = getInternalAsgSdkManager(asgInfraConfig);
     String asgNameWithoutSuffix = deploymentReleaseData.getAsgNameWithoutSuffix();
     String executionStrategy = deploymentReleaseData.getExecutionStrategy();
+
     if (executionStrategy.equals(EXEC_STRATEGY_CANARY)) {
       String canaryAsgName = format("%s__%s", asgNameWithoutSuffix, CANARY_SUFFIX);
       AutoScalingGroup autoScalingGroup = asgSdkManager.getASG(canaryAsgName);
-      if (autoScalingGroup != null) {
-        AutoScalingGroupContainer autoScalingGroupContainer = mapToAutoScalingGroupContainer(autoScalingGroup);
-        if (autoScalingGroupContainer != null) {
-          return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(autoScalingGroupContainer,
-              asgInfraConfig.getInfraStructureKey(), asgInfraConfig.getRegion(), executionStrategy,
-              asgNameWithoutSuffix, null);
-        }
-      }
-    } else if (executionStrategy.equals(EXEC_STRATEGY_BLUEGREEN)) {
+      AutoScalingGroupContainer autoScalingGroupContainer = mapToAutoScalingGroupContainer(autoScalingGroup);
+      return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(autoScalingGroupContainer,
+          asgInfraConfig.getInfraStructureKey(), asgInfraConfig.getRegion(), executionStrategy, asgNameWithoutSuffix,
+          null);
+    }
+
+    else if (executionStrategy.equals(EXEC_STRATEGY_BLUEGREEN)) {
       String asgOne = asgNameWithoutSuffix + VERSION_DELIMITER + 1;
       String asgTwo = asgNameWithoutSuffix + VERSION_DELIMITER + 2;
       String blueAsg = asgTwo;
       String greenAsg = asgOne;
-      String asgOneColour = asgSdkManager.describeBGTags(asgOne);
-      if (asgOneColour == BG_BLUE) {
-        blueAsg = asgOne;
-        greenAsg = asgTwo;
+      AutoScalingGroup autoScalingGroupOne = asgSdkManager.getASG(asgOne);
+      AutoScalingGroup autoScalingGroupTwo = asgSdkManager.getASG(asgTwo);
+      if (autoScalingGroupOne != null && autoScalingGroupTwo == null) {
+        String asgOneColour = asgSdkManager.describeBGTags(asgOne);
+        if (asgOneColour == BG_BLUE) {
+          blueAsg = asgOne;
+          greenAsg = asgTwo;
+        }
+      } else if (autoScalingGroupOne == null && autoScalingGroupTwo != null) {
+        String asgTwoColour = asgSdkManager.describeBGTags(asgTwo);
+        if (asgTwoColour == BG_GREEN) {
+          blueAsg = asgOne;
+          greenAsg = asgTwo;
+        }
+      } else if (autoScalingGroupOne != null && autoScalingGroupTwo != null) {
+        String asgOneColour = asgSdkManager.describeBGTags(asgOne);
+        if (asgOneColour == BG_BLUE) {
+          blueAsg = asgOne;
+          greenAsg = asgTwo;
+        }
       }
+
       List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
+
       AutoScalingGroup autoScalingGroupBlue = asgSdkManager.getASG(blueAsg);
-      if (autoScalingGroupBlue != null) {
-        AutoScalingGroupContainer autoScalingGroupContainer = mapToAutoScalingGroupContainer(autoScalingGroupBlue);
-        if (autoScalingGroupContainer != null) {
-          serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
-              autoScalingGroupContainer, asgInfraConfig.getInfraStructureKey(), asgInfraConfig.getRegion(),
-              executionStrategy, asgNameWithoutSuffix, true));
-        }
-      }
+      AutoScalingGroupContainer autoScalingGroupContainerBlue = mapToAutoScalingGroupContainer(autoScalingGroupBlue);
+      serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          autoScalingGroupContainerBlue, asgInfraConfig.getInfraStructureKey(), asgInfraConfig.getRegion(),
+          executionStrategy, asgNameWithoutSuffix, true));
+
       AutoScalingGroup autoScalingGroupGreen = asgSdkManager.getASG(greenAsg);
-      if (autoScalingGroupGreen != null) {
-        AutoScalingGroupContainer autoScalingGroupContainer = mapToAutoScalingGroupContainer(autoScalingGroupGreen);
-        if (autoScalingGroupContainer != null) {
-          serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
-              autoScalingGroupContainer, asgInfraConfig.getInfraStructureKey(), asgInfraConfig.getRegion(),
-              executionStrategy, asgNameWithoutSuffix, false));
-        }
-      }
+      AutoScalingGroupContainer autoScalingGroupContainerGreen = mapToAutoScalingGroupContainer(autoScalingGroupGreen);
+      serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          autoScalingGroupContainerGreen, asgInfraConfig.getInfraStructureKey(), asgInfraConfig.getRegion(),
+          executionStrategy, asgNameWithoutSuffix, false));
+
       return serverInstanceInfoList;
-    } else {
-      AutoScalingGroup autoScalingGroup = asgSdkManager.getASG(asgNameWithoutSuffix);
-      if (autoScalingGroup != null) {
-        AutoScalingGroupContainer autoScalingGroupContainer = mapToAutoScalingGroupContainer(autoScalingGroup);
-        if (autoScalingGroupContainer != null) {
-          return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(autoScalingGroupContainer,
-              asgInfraConfig.getInfraStructureKey(), asgInfraConfig.getRegion(), executionStrategy,
-              asgNameWithoutSuffix, null);
-        }
-      }
     }
-    return new ArrayList<>();
+
+    else {
+      AutoScalingGroup autoScalingGroup = asgSdkManager.getASG(asgNameWithoutSuffix);
+      AutoScalingGroupContainer autoScalingGroupContainer = mapToAutoScalingGroupContainer(autoScalingGroup);
+      return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(autoScalingGroupContainer,
+          asgInfraConfig.getInfraStructureKey(), asgInfraConfig.getRegion(), executionStrategy, asgNameWithoutSuffix,
+          null);
+    }
   }
 }

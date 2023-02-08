@@ -8,11 +8,13 @@
 package io.harness.plancreator.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.plancreator.policy.PolicyConfig;
@@ -21,6 +23,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.when.beans.StepWhenCondition;
+import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.core.VariableExpression;
 
@@ -54,7 +57,9 @@ public abstract class AbstractStepNode {
   @NotNull @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) String name;
   String description;
 
-  StepWhenCondition when;
+  @ApiModelProperty(dataType = SwaggerConstants.STEP_WHEN_CLASSPATH)
+  @YamlSchemaTypes(value = {runtime})
+  ParameterField<StepWhenCondition> when;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

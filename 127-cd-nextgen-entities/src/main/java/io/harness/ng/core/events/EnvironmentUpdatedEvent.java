@@ -21,6 +21,7 @@ import io.harness.ng.core.AccountScope;
 import io.harness.ng.core.OrgScope;
 import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
+import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.ResourceScope;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
@@ -118,6 +119,7 @@ public class EnvironmentUpdatedEvent implements Event {
     Map<String, String> labels = new HashMap<>();
     labels.put(STATUS, status.name());
     labels.put(RESOURCE_TYPE, resourceType.name());
+    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, resourceName());
     if (resourceType.equals(ResourceType.SERVICE_OVERRIDE)) {
       labels.put(SERVICE_OVERRIDE_NAME, resourceName());
     } else if (resourceType.equals(ResourceType.INFRASTRUCTURE)) {
