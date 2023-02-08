@@ -17,8 +17,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeleteRequest;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResponse;
@@ -50,6 +52,7 @@ import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -71,6 +74,7 @@ public class AsgCanaryDeleteStep extends CdTaskExecutable<AsgCommandResponse> {
   @Inject private AsgStepCommonHelper asgStepCommonHelper;
   @Inject private AccountService accountService;
   @Inject private StepHelper stepHelper;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -117,11 +121,17 @@ public class AsgCanaryDeleteStep extends CdTaskExecutable<AsgCommandResponse> {
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_CANARY_DELETE_OUTCOME,
           asgCanaryDeleteOutcome, StepOutcomeGroup.STEP.name());
 
+      List<ServerInstanceInfo> serverInstanceInfos =
+          asgStepCommonHelper.getServerInstanceInfos(asgCanaryDeleteResponse, null, null);
+      StepResponse.StepOutcome stepOutcome =
+          instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
+
       stepResponse = stepResponseBuilder.status(Status.SUCCEEDED)
                          .stepOutcome(StepResponse.StepOutcome.builder()
                                           .name(OutcomeExpressionConstants.OUTPUT)
                                           .outcome(asgCanaryDeleteOutcome)
                                           .build())
+                         .stepOutcome(stepOutcome)
                          .build();
     }
     return stepResponse;
