@@ -77,7 +77,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PL)
 public class GcpKmsEncryptor implements KmsEncryptor {
-  private static final String ENV_VARIABLE_WORKLOAD_IDENTITY = "USE_WORKLOAD_IDENTITY";
+  private static final String ENV_VARIABLE_USE_GCP_KMS_SERVICE_ACCOUNT = "USE_GCP_KMS_SERVICE_ACCOUNT";
   private static final int DEFAULT_GCP_KMS_TIMEOUT = 20;
   private final int NUM_OF_RETRIES = 3;
   private final TimeLimiter timeLimiter;
@@ -276,8 +276,8 @@ public class GcpKmsEncryptor implements KmsEncryptor {
   }
 
   private KeyManagementServiceClient getClient(GcpKmsConfig gcpKmsConfig) {
-    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv(ENV_VARIABLE_WORKLOAD_IDENTITY));
-    if (usingWorkloadIdentity && gcpKmsConfig.isGlobalKms()) {
+    boolean useGcpKmsServiceAccount = Boolean.parseBoolean(System.getenv(ENV_VARIABLE_USE_GCP_KMS_SERVICE_ACCOUNT));
+    if (useGcpKmsServiceAccount && gcpKmsConfig.isGlobalKms()) {
       try {
         log.info("[WI]: Using workload identity for GCP KMS");
         KeyManagementServiceClient keyManagementServiceClient = KeyManagementServiceClient.create();
