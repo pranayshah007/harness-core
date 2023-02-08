@@ -27,6 +27,7 @@ public class EntityIdentifierValidator implements ConstraintValidator<EntityIden
   // Start with: Alphabets, characters or Underscore
   // Chars Allowed : Alphanumeric, Underscore, $
   public static final Pattern IDENTIFIER_PATTERN = Pattern.compile("^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$");
+  public Pattern identifierPattern;
   public static final Set<String> NOT_ALLOWED_WORDS =
       Stream
           .of("or", "and", "eq", "ne", "lt", "gt", "le", "ge", "div", "mod", "not", "null", "true", "false", "new",
@@ -34,11 +35,15 @@ public class EntityIdentifierValidator implements ConstraintValidator<EntityIden
           .collect(Collectors.toCollection(HashSet::new));
   private boolean allowBlank;
   private boolean allowScoped;
+  private int maxLength;
 
   @Override
   public void initialize(EntityIdentifier constraintAnnotation) {
+    maxLength = constraintAnnotation.maxLength();
     allowBlank = constraintAnnotation.allowBlank();
     allowScoped = constraintAnnotation.allowScoped();
+    String patternString = String.format("^[a-zA-Z_][0-9a-zA-Z_$]{0,%s}$", maxLength - 1);
+    identifierPattern = Pattern.compile(patternString);
   }
 
   @Override
@@ -62,8 +67,9 @@ public class EntityIdentifierValidator implements ConstraintValidator<EntityIden
       context.disableDefaultConstraintViolation();
       context
           .buildConstraintViolationWithTemplate(
-              "can be 128 characters long and can only contain alphanumeric, underscore and $ characters,"
-              + " and not start with a number or $")
+              String.format("can be %s characters long and can only contain alphanumeric, underscore and $ characters,"
+                      + " and not start with a number or $",
+                  maxLength))
           .addConstraintViolation();
       return false;
     }
@@ -78,7 +84,7 @@ public class EntityIdentifierValidator implements ConstraintValidator<EntityIden
 
   @VisibleForTesting
   boolean matchesIdentifierPattern(String identifier) {
-    return IDENTIFIER_PATTERN.matcher(identifier).matches();
+    return identifierPattern.matcher(identifier).matches();
   }
 
   @VisibleForTesting

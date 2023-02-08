@@ -179,6 +179,11 @@ public class EntityIdentifierValidatorTest extends CategoryTest {
     }
 
     @Override
+    public int maxLength() {
+      return 128;
+    }
+
+    @Override
     public Class<? extends Annotation> annotationType() {
       return EntityIdentifier.class;
     }
