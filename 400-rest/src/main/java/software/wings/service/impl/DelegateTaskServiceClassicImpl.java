@@ -1658,8 +1658,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       DelegateTask delegateTask =
           delegateTaskQuery.asList().stream().filter(task -> task.getTaskDataV2().isAsync()).findFirst().orElse(null);
       if (delegateTask != null) {
-        try (AutoLogContext ignore3 = new TaskLogContext(delegateTaskId, delegateTask.getData().getTaskType(),
-                 TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
+        try (AutoLogContext ignore3 = new TaskLogContext(delegateTaskId, delegateTask.getTaskDataV2().getTaskType(),
+                 TaskType.valueOf(delegateTask.getTaskDataV2().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
           errorMessage =
               "Task expired. " + assignDelegateService.getActiveDelegateAssignmentErrorMessage(EXPIRED, delegateTask);
           delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_EXPIRED);
