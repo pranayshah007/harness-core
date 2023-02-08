@@ -44,10 +44,7 @@ public class StepGroupStepParameters implements StepParameters {
   String name;
   ParameterField<String> skipCondition;
   ParameterField<StepWhenCondition> when;
-  @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
-  @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {runtime})
-  ParameterField<List<FailureStrategyConfig>> failureStrategies;
+  List<FailureStrategyConfig> failureStrategies;
 
   String childNodeID;
 
@@ -60,7 +57,7 @@ public class StepGroupStepParameters implements StepParameters {
         .name(config.getName())
         .skipCondition(config.getSkipCondition())
         .when(config.getWhen())
-        .failureStrategies(config.getFailureStrategies())
+        .failureStrategies(config.getFailureStrategies() != null ? config.getFailureStrategies().getValue() : null)
         .childNodeID(childNodeID)
         .build();
   }

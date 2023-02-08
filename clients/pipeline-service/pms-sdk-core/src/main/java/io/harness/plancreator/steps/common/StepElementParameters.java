@@ -43,10 +43,7 @@ public class StepElementParameters implements StepParameters {
   String name;
   String description;
   ParameterField<String> timeout;
-  @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
-  @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {runtime})
-  ParameterField<List<FailureStrategyConfig>> failureStrategies;
+  List<FailureStrategyConfig> failureStrategies;
 
   ParameterField<String> skipCondition;
   ParameterField<StepWhenCondition> when;
