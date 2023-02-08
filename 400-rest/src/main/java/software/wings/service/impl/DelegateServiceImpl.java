@@ -1019,6 +1019,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
     setUnset(updateOperations, DelegateKeys.heartbeatAsObject, delegate.isHeartbeatAsObject());
     setUnset(updateOperations, DelegateKeys.mtls, delegate.isMtls());
+    setUnset(updateOperations, DelegateKeys.disconnected, false);
 
     return updateOperations;
   }
