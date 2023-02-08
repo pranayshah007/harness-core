@@ -30,6 +30,7 @@ import io.harness.PipelineServiceTestHelper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
@@ -74,6 +75,7 @@ public class PipelineEntityCRUDStreamListenerTest extends CategoryTest {
   @Mock private InterruptService interruptService;
   @Mock private GraphGenerationService graphGenerationService;
   @Mock private NodeExecutionService nodeExecutionService;
+  @Mock private PlanExecutionService planExecutionService;
   @InjectMocks PipelineEntityCRUDStreamListener pipelineEntityCRUDStreamListener;
 
   @Before
@@ -237,6 +239,8 @@ public class PipelineEntityCRUDStreamListenerTest extends CategoryTest {
     verify(graphGenerationService, times(2)).deleteAllGraphMetadataForGivenExecutionIds(any());
     // Verify nodeExecutions and its metadata delete
     verify(nodeExecutionService, times(100)).deleteAllNodeExecutionAndMetadata(any());
+    // Verify planExecutions and its metadata delete
+    verify(planExecutionService, times(2)).deleteAllPlanExecutionAndMetadata(any());
   }
 
   @Test
@@ -296,6 +300,8 @@ public class PipelineEntityCRUDStreamListenerTest extends CategoryTest {
     verify(graphGenerationService, times(1)).deleteAllGraphMetadataForGivenExecutionIds(any());
     // Verify nodeExecutions and its metadata delete
     verify(nodeExecutionService, times(40)).deleteAllNodeExecutionAndMetadata(any());
+    // Verify planExecutions and its metadata delete
+    verify(planExecutionService, times(1)).deleteAllPlanExecutionAndMetadata(any());
   }
 
   @Test

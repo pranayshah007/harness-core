@@ -41,8 +41,7 @@ public class DebeziumUtils {
         debeziumController.stopDebeziumController();
       } else if (!success) {
         resetOffset(JsonUtils.asObject(redisConfigJson, RedisConfig.class), redisKey);
-        log.error(
-            "Offset reset for key: {} because of exception: {}, at {}", redisKey, error, System.currentTimeMillis());
+        log.error(String.format("Offset reset for key: %s at %s", redisKey, System.currentTimeMillis()), error);
       }
     };
   }

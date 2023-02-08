@@ -21,6 +21,7 @@ import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.ExecutionStatus.STARTING;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.ExecutionStatus.WAITING;
+import static io.harness.beans.FeatureName.SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.ANSHUL;
@@ -61,11 +62,13 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.RandomUtils.nextInt;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -113,6 +116,7 @@ import software.wings.sm.StateMachineTestBase.StateSync;
 import software.wings.sm.states.EnvRollbackState;
 import software.wings.sm.states.ForkState;
 import software.wings.sm.states.ForkState.ForkStateExecutionData;
+import software.wings.sm.states.ShellScriptState;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -1408,6 +1412,72 @@ public class StateMachineExecutorTest extends WingsBaseTest {
       assertThat(result).isNotNull();
     } finally {
       ReflectionUtils.setObjectField(injectorField, stateMachineExecutor, null);
+    }
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldMapEntries() {
+    List<Map<String, String>> templateVariables = new ArrayList<>();
+    templateVariables.add(
+        Map.of("className", "software.wings.beans.Variable", "name", "BENDER_BRANCH_NAME", "value", "master"));
+    templateVariables.add(
+        Map.of("className", "software.wings.beans.Variable", "name", "SWITCH_CLOUD", "value", "true"));
+
+    final State target = new ShellScriptState("TestState");
+    final Map<String, Object> source = new HashMap<>();
+    source.put("templateVariables", templateVariables);
+    source.put("parentId", generateUuid());
+    source.put("rollback", true);
+
+    stateMachineExecutor.mapEntries(source, target, ACCOUNT_ID);
+
+    assertThat(target).isNotNull();
+    assertThat(target.getParentId()).isEqualTo(source.get("parentId"));
+    assertThat(target.isRollback()).isTrue();
+    assertThat(target.getTemplateVariables()).hasSize(2);
+    assertThat(target.getTemplateVariables().get(0).getName()).isEqualTo("BENDER_BRANCH_NAME");
+    assertThat(target.getTemplateVariables().get(0).getValue()).isEqualTo("master");
+    assertThat(target.getTemplateVariables().get(1).getName()).isEqualTo("SWITCH_CLOUD");
+    assertThat(target.getTemplateVariables().get(1).getValue()).isEqualTo("true");
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldMapEntriesThrowException() {
+    when(featureFlagService.isNotEnabled(SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE, ACCOUNT_ID)).thenReturn(true);
+
+    final State target = new ShellScriptState("TestState");
+    final Map<String, Object> source = new HashMap<>();
+    source.put("parentId", generateUuid());
+    source.put("rollback", true);
+
+    try (MockedStatic<MapperUtils> mapper = mockStatic(MapperUtils.class)) {
+      List<ErrorMessage> messages = Collections.singletonList(new ErrorMessage(""));
+      mapper.when(() -> MapperUtils.mapObject(Mockito.anyMap(), eq(target))).thenThrow(new MappingException(messages));
+
+      assertThrows(MappingException.class, () -> stateMachineExecutor.mapEntries(source, target, ACCOUNT_ID));
+    }
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldMapEntriesDoNotThrowException() {
+    when(featureFlagService.isNotEnabled(SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE, ACCOUNT_ID)).thenReturn(false);
+
+    final State target = new ShellScriptState("TestState");
+    final Map<String, Object> source = new HashMap<>();
+    source.put("parentId", generateUuid());
+    source.put("rollback", true);
+
+    try (MockedStatic<MapperUtils> mapper = mockStatic(MapperUtils.class)) {
+      List<ErrorMessage> messages = Collections.singletonList(new ErrorMessage(""));
+      mapper.when(() -> MapperUtils.mapObject(Mockito.anyMap(), eq(target))).thenThrow(new MappingException(messages));
+
+      stateMachineExecutor.mapEntries(source, target, ACCOUNT_ID);
     }
   }
 }

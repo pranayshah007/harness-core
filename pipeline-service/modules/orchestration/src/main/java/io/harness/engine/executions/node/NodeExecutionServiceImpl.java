@@ -14,6 +14,7 @@ import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
 import static io.harness.pms.contracts.execution.Status.ERRORED;
 import static io.harness.pms.contracts.execution.Status.SKIPPED;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.springdata.SpringDataMongoUtils.returnNewOptions;
 
 import static org.springframework.data.domain.Sort.by;
@@ -30,7 +31,6 @@ import io.harness.engine.observers.NodeExecutionStartObserver;
 import io.harness.engine.observers.NodeStartInfo;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.engine.observers.NodeUpdateInfo;
-import io.harness.engine.observers.NodeUpdateObserver;
 import io.harness.event.OrchestrationLogConfiguration;
 import io.harness.event.OrchestrationLogPublisher;
 import io.harness.exception.InvalidRequestException;
@@ -54,6 +54,7 @@ import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.springdata.PersistenceModule;
 import io.harness.springdata.TransactionHelper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -76,6 +77,7 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
 import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Sort;
@@ -89,7 +91,7 @@ import org.springframework.data.util.CloseableIterator;
 @Slf4j
 @OwnedBy(PIPELINE)
 public class NodeExecutionServiceImpl implements NodeExecutionService {
-  private static final int MAX_BATCH_SIZE = 1000;
+  private static final int MAX_BATCH_SIZE = PersistenceModule.MAX_BATCH_SIZE;
 
   private static final Set<String> GRAPH_FIELDS = Set.of(NodeExecutionKeys.mode, NodeExecutionKeys.progressData,
       NodeExecutionKeys.unitProgresses, NodeExecutionKeys.executableResponses, NodeExecutionKeys.interruptHistories,
@@ -104,7 +106,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   @Getter private final Subject<NodeStatusUpdateObserver> nodeStatusUpdateSubject = new Subject<>();
   @Getter private final Subject<NodeExecutionStartObserver> nodeExecutionStartSubject = new Subject<>();
-  @Getter private final Subject<NodeUpdateObserver> nodeUpdateObserverSubject = new Subject<>();
   @Getter private final Subject<NodeExecutionDeleteObserver> nodeDeleteObserverSubject = new Subject<>();
 
   @Override
@@ -434,8 +435,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       }
       return updated;
     });
-    nodeUpdateObserverSubject.fireInform(
-        NodeUpdateObserver::onNodeUpdate, NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).build());
     return updatedNodeExecution;
   }
 
@@ -560,29 +559,49 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Override
   public void deleteAllNodeExecutionAndMetadata(String planExecutionId) {
     // Fetches all nodeExecutions from analytics for given planExecutionId
-    List<NodeExecution> batchNodeExecutionSet = new LinkedList<>();
+    List<NodeExecution> batchNodeExecutionList = new LinkedList<>();
+    Set<String> nodeExecutionsIdsToDelete = new HashSet<>();
     try (CloseableIterator<NodeExecution> iterator =
              fetchNodeExecutionsFromAnalytics(planExecutionId, NodeProjectionUtils.fieldsForNodeExecutionDelete)) {
       while (iterator.hasNext()) {
-        batchNodeExecutionSet.add(iterator.next());
-        if (batchNodeExecutionSet.size() >= MAX_BATCH_SIZE) {
-          deleteNodeExecutionsAndMetadataInternal(batchNodeExecutionSet);
-          batchNodeExecutionSet.clear();
+        NodeExecution next = iterator.next();
+        nodeExecutionsIdsToDelete.add(next.getUuid());
+        batchNodeExecutionList.add(next);
+        if (batchNodeExecutionList.size() >= MAX_BATCH_SIZE) {
+          deleteNodeExecutionsMetadataInternal(batchNodeExecutionList);
+          batchNodeExecutionList.clear();
         }
       }
     }
-    if (EmptyPredicate.isNotEmpty(batchNodeExecutionSet)) {
-      deleteNodeExecutionsAndMetadataInternal(batchNodeExecutionSet);
+    if (EmptyPredicate.isNotEmpty(batchNodeExecutionList)) {
+      deleteNodeExecutionsMetadataInternal(batchNodeExecutionList);
     }
+    // At end delete all nodeExecutions
+    deleteNodeExecutionsInternal(nodeExecutionsIdsToDelete);
   }
 
   /**
-   * Deletes all nodeExecutions and its related metadata once we have the nodeExecutionToDelete data we collected
+   * Deletes all nodeExecutions metadata
+   *
    * @param nodeExecutionsToDelete
    */
-  private void deleteNodeExecutionsAndMetadataInternal(List<NodeExecution> nodeExecutionsToDelete) {
-    // Delete example - WaitInstances, resourceRestraintInstances, timeoutInstanceIds, etc
+  private void deleteNodeExecutionsMetadataInternal(List<NodeExecution> nodeExecutionsToDelete) {
+    // Delete nodeExecutionMetadata example - WaitInstances, resourceRestraintInstances, timeoutInstanceIds, etc
     nodeDeleteObserverSubject.fireInform(NodeExecutionDeleteObserver::onNodesDelete, nodeExecutionsToDelete);
+  }
+
+  /**
+   * Deletes all nodeExecutions for given ids
+   * This method assumes the nodeExecutions will be in batch thus caller needs to handle it
+   * @param batchNodeExecutionIds
+   */
+  private void deleteNodeExecutionsInternal(Set<String> batchNodeExecutionIds) {
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      // Uses - id index
+      Query query = query(where(NodeExecutionKeys.id).in(batchNodeExecutionIds));
+      mongoTemplate.remove(query, NodeExecution.class);
+      return true;
+    });
   }
 
   /**

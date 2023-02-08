@@ -34,6 +34,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.NodeType;
@@ -89,6 +90,12 @@ public class RetryExecuteHelperTest extends CategoryTest {
   String projectId = "proj";
   String pipelineId = "pipeline";
   String planExecId = "plan";
+
+  String branch = "branch";
+
+  String repoName = "repoName";
+
+  String filepath = "filepath";
 
   private final long HR_IN_MS = 60 * 60 * 1000;
   private final long DAY_IN_MS = 24 * HR_IN_MS;
@@ -930,6 +937,13 @@ public class RetryExecuteHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testValidateRetryWithPipelineDeleted() {
+    doReturn(PipelineExecutionSummaryEntity.builder()
+                 .isLatestExecution(true)
+                 .createdAt(System.currentTimeMillis() - DAY_IN_MS)
+                 .entityGitDetails(buildEntityGitDetails())
+                 .build())
+        .when(executionService)
+        .getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecId, false);
     doReturn(Optional.empty()).when(pipelineService).getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId);
     assertThat(retryInfo.isResumable()).isFalse();
@@ -1069,6 +1083,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
     doReturn(PipelineExecutionSummaryEntity.builder()
                  .isLatestExecution(true)
                  .createdAt(System.currentTimeMillis() - DAY_IN_MS)
+                 .entityGitDetails(buildEntityGitDetails())
                  .build())
         .when(executionService)
         .getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecId, false);
@@ -1085,5 +1100,9 @@ public class RetryExecuteHelperTest extends CategoryTest {
 
     RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId);
     assertThat(retryInfo.isResumable()).isTrue();
+  }
+
+  private EntityGitDetails buildEntityGitDetails() {
+    return EntityGitDetails.builder().branch(branch).repoName(repoName).filePath(filepath).build();
   }
 }

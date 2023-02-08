@@ -26,6 +26,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGEntitiesTestBase;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.dto.InfrastructureInputsMergedResponseDto;
 import io.harness.ng.core.infrastructure.dto.NoInputMergeInputAction;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
@@ -251,6 +252,12 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThatThrownBy(() -> infrastructureEntityService.update(updateInfraRequest))
         .isInstanceOf(InvalidRequestException.class);
     assertThat(updatedInfraResponse.getDeploymentType()).isNotEqualTo(ServiceDefinitionType.KUBERNETES);
+
+    // adding test for immutable infra type
+    updateInfraRequest.setType(InfrastructureType.ASG);
+    assertThatThrownBy(() -> infrastructureEntityService.update(updateInfraRequest))
+        .isInstanceOf(InvalidRequestException.class);
+    assertThat(updatedInfraResponse.getType()).isNotEqualTo(InfrastructureType.ASG);
 
     // Upsert operations
     InfrastructureEntity upsertInfraRequest = InfrastructureEntity.builder()

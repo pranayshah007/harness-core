@@ -6,6 +6,7 @@
  */
 package io.harness.cvng.downtime.services.api;
 
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
@@ -16,6 +17,7 @@ import io.harness.cvng.downtime.beans.DowntimeListView;
 import io.harness.cvng.downtime.beans.DowntimeResponse;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.entities.Downtime;
+import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
@@ -25,6 +27,8 @@ public interface DowntimeService extends DeleteEntityByHandler<Downtime> {
   DowntimeResponse create(ProjectParams projectParams, DowntimeDTO downtimeDTO);
 
   DowntimeResponse get(ProjectParams projectParams, String identifier);
+
+  List<MonitoredServiceDetail> getAssociatedMonitoredServices(ProjectParams projectParams, String identifier);
 
   Downtime getEntity(ProjectParams projectParams, String identifier);
   DowntimeResponse update(ProjectParams projectParams, String identifier, DowntimeDTO downtimeDTO);

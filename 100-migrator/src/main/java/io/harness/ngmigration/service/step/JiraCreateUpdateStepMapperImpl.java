@@ -124,14 +124,17 @@ public class JiraCreateUpdateStepMapperImpl extends StepMapper {
   private JiraUpdateStepNode buildUpdate(JiraCreateUpdate state) {
     JiraUpdateStepNode stepNode = new JiraUpdateStepNode();
     baseSetup(state, stepNode);
-    JiraUpdateStepInfo stepInfo =
-        JiraUpdateStepInfo.builder()
-            .connectorRef(RUNTIME_INPUT)
-            .issueKey(ParameterField.createValueField(state.getIssueId()))
-            .transitionTo(TransitionTo.builder().status(ParameterField.createValueField(state.getStatus())).build())
-            .fields(getFields(state))
-            .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
-            .build();
+    TransitionTo transitionTo = null;
+    if (StringUtils.isNotBlank(state.getStatus())) {
+      transitionTo = TransitionTo.builder().status(ParameterField.createValueField(state.getStatus())).build();
+    }
+    JiraUpdateStepInfo stepInfo = JiraUpdateStepInfo.builder()
+                                      .connectorRef(RUNTIME_INPUT)
+                                      .issueKey(ParameterField.createValueField(state.getIssueId()))
+                                      .transitionTo(transitionTo)
+                                      .fields(getFields(state))
+                                      .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
+                                      .build();
     stepNode.setJiraUpdateStepInfo(stepInfo);
     return stepNode;
   }

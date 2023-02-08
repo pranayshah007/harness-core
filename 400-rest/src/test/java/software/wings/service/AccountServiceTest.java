@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HANTANG;
 import static io.harness.rule.OwnerRule.JOHANNES;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.LAZAR;
 import static io.harness.rule.OwnerRule.MEHUL;
 import static io.harness.rule.OwnerRule.MOHIT;
@@ -46,6 +47,7 @@ import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Matchers.any;
@@ -1016,6 +1018,18 @@ public class AccountServiceTest extends WingsBaseTest {
     account = accountService.get(account.getUuid());
     assertThat(account.getAccountName()).isEqualTo(newAccountName);
     assertThat(account.getCompanyName()).isEqualTo(companyName);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void test_updateAccountName_withInvalidAccountName() {
+    String companyName = "CompanyName 1";
+    Account account = saveAccount(companyName);
+    String newAccountName = "<html><h1>HTML Injection:</h1></html>";
+    assertThatThrownBy(() -> accountService.updateAccountName(account.getUuid(), newAccountName, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Account or Company Name '<html><h1>HTML Injection:</h1></html>' contains illegal characters");
   }
 
   @Test
