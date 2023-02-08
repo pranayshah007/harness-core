@@ -78,7 +78,7 @@ public class DelegateGroup implements PersistentEntity, UuidAware {
 
   @FdTtlIndex private Date validUntil;
 
-  @EntityIdentifier private String identifier;
+  @EntityIdentifier(maxLength = 38) private String identifier;
 
   private long upgraderLastUpdated;
 
