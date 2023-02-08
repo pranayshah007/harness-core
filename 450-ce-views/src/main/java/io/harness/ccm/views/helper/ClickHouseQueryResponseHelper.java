@@ -235,6 +235,7 @@ public class ClickHouseQueryResponseHelper {
     List<String> fields = new ArrayList<>(fieldToDataTypeMapping.keySet());
     log.info("GridQueryLog: fieldToDataTypeMapping {}", fieldToDataTypeMapping);
     String fieldName = viewParametersHelper.getEntityGroupByFieldName(groupBy);
+    String fieldId = viewParametersHelper.getEntityGroupByFieldId(groupBy);
     boolean isInstanceDetailsData = fields.contains(INSTANCE_ID);
     List<QLCEViewEntityStatsDataPoint> entityStatsDataPoints = new ArrayList<>();
     Set<String> instanceTypes = new HashSet<>();
@@ -243,6 +244,7 @@ public class ClickHouseQueryResponseHelper {
       ClusterDataBuilder clusterDataBuilder = ClusterData.builder();
       Double cost = null;
       String name = DEFAULT_GRID_ENTRY_NAME;
+      String nameForGroupByField = DEFAULT_GRID_ENTRY_NAME;
       String entityId = DEFAULT_STRING_VALUE;
       String pricingSource = DEFAULT_STRING_VALUE;
 
@@ -257,7 +259,7 @@ public class ClickHouseQueryResponseHelper {
           if (builderField != null) {
             builderField.setAccessible(true);
             if (builderField.getType().equals(String.class)) {
-              builderField.set(clusterDataBuilder, fetchStringValue(resultSet, field));
+              builderField.set(clusterDataBuilder, fetchStringValue(resultSet, field, fieldName));
             } else {
               builderField.set(clusterDataBuilder, fetchNumericValue(resultSet, field, skipRoundOff));
             }
@@ -280,14 +282,17 @@ public class ClickHouseQueryResponseHelper {
         } catch (Exception e) {
           log.error("Exception in convertToEntityStatsDataForCluster: {}", e.toString());
         }
-
-        if (fieldToDataTypeMapping.get(field).equalsIgnoreCase(STRING)) {
-          name = fetchStringValue(resultSet, field);
+        log.info("Group by fields: {}", fieldName);
+        if (fieldToDataTypeMapping.get(field).toUpperCase(Locale.ROOT).contains(STRING)) {
+          name = fetchStringValue(resultSet, field, fieldName);
           entityId = getUpdatedId(entityId, name);
+          if (field.equalsIgnoreCase(fieldId)) {
+            nameForGroupByField = name;
+          }
         }
       }
       clusterDataBuilder.id(entityId);
-      clusterDataBuilder.name(name);
+      clusterDataBuilder.name(nameForGroupByField);
       ClusterData clusterData = clusterDataBuilder.build();
       // Calculating efficiency score
       if (cost != null && cost > 0 && clusterData.getIdleCost() != null && clusterData.getUnallocatedCost() != null) {
@@ -306,11 +311,11 @@ public class ClickHouseQueryResponseHelper {
       dataPointBuilder.clusterData(clusterDataBuilder.build());
       dataPointBuilder.isClusterPerspective(true);
       dataPointBuilder.id(entityId);
-      dataPointBuilder.name(name);
+      dataPointBuilder.name(nameForGroupByField);
       dataPointBuilder.pricingSource(pricingSource);
       entityStatsDataPoints.add(dataPointBuilder.build());
     }
-
+    log.info("GridQueryLog: entityStatsDataPoints final {}", entityStatsDataPoints);
     if (isInstanceDetailsData && !isUsedByTimeSeriesStats) {
       return QLCEViewGridData.builder()
           .data(instanceDetailsHelper.getInstanceDetails(
@@ -831,7 +836,9 @@ public class ClickHouseQueryResponseHelper {
   public String fetchStringValue(ResultSet resultSet, String field, String fieldName) throws SQLException {
     String value = resultSet.getString(field);
     if (value != null) {
-      return value;
+      if (!value.isEmpty()) {
+        return value;
+      }
     }
     return fieldName;
   }

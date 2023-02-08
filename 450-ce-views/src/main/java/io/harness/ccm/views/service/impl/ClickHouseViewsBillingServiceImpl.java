@@ -12,6 +12,7 @@ import static io.harness.ccm.commons.constants.DataTypeConstants.DATETIME;
 import static io.harness.ccm.commons.constants.DataTypeConstants.FLOAT64;
 import static io.harness.ccm.commons.constants.DataTypeConstants.STRING;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
@@ -45,6 +46,8 @@ import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.graphql.EfficiencyScoreStats;
 import io.harness.ccm.views.graphql.QLCEViewAggregateOperation;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
+import io.harness.ccm.views.graphql.QLCEViewDataPoint;
+import io.harness.ccm.views.graphql.QLCEViewDataPoint.QLCEViewDataPointBuilder;
 import io.harness.ccm.views.graphql.QLCEViewEntityStatsDataPoint;
 import io.harness.ccm.views.graphql.QLCEViewFieldInput;
 import io.harness.ccm.views.graphql.QLCEViewFilter;
@@ -54,6 +57,7 @@ import io.harness.ccm.views.graphql.QLCEViewGroupBy;
 import io.harness.ccm.views.graphql.QLCEViewMetadataFilter;
 import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
 import io.harness.ccm.views.graphql.QLCEViewTimeFilter;
+import io.harness.ccm.views.graphql.QLCEViewTimeSeriesData;
 import io.harness.ccm.views.graphql.QLCEViewTrendData;
 import io.harness.ccm.views.graphql.QLCEViewTrendInfo;
 import io.harness.ccm.views.graphql.ViewCostData;
@@ -386,6 +390,82 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
       DBUtils.close(resultSet);
     }
     return null;
+  }
+
+  public List<QLCEViewTimeSeriesData> getClickHouseTimeSeriesStatsNgForReport(List<QLCEViewFilterWrapper> filters,
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort,
+      Integer limit, ViewQueryParams queryParams) {
+    String cloudProviderTableName = CLICKHOUSE_UNIFIED_TABLE;
+    QLCEViewGridData gridData = null;
+    List<QLCEViewGroupBy> groupByExcludingGroupByTime =
+        groupBy.stream().filter(g -> g.getEntityGroupBy() != null).collect(Collectors.toList());
+
+    ViewQueryParams queryParamsForGrid =
+        viewsQueryHelper.buildQueryParams(queryParams.getAccountId(), false, true, queryParams.isClusterQuery(), false);
+    gridData = getEntityStatsDataPointsNg(
+        filters, groupByExcludingGroupByTime, aggregateFunction, sort, limit, 0, queryParamsForGrid);
+
+    SelectQuery query = viewBillingServiceHelper.getQuery(
+        viewBillingServiceHelper.getModifiedFiltersForTimeSeriesStats(filters, gridData, groupByExcludingGroupByTime),
+        groupBy, aggregateFunction, sort, cloudProviderTableName, queryParams);
+    ResultSet resultSet = null;
+    try (Connection connection = clickHouseService.getConnection(clickHouseConfig);
+         Statement statement = connection.createStatement()) {
+      log.info("ChartQueryLog query: {}", query.toString());
+      resultSet = statement.executeQuery(query.toString());
+      return convertToQLViewTimeSeriesData(resultSet, queryParams.getAccountId(), groupBy);
+    } catch (SQLException e) {
+      log.error("Failed to getTimeSeriesStatsNg. {}", e.toString());
+    } finally {
+      DBUtils.close(resultSet);
+    }
+    return null;
+  }
+
+  private List<QLCEViewTimeSeriesData> convertToQLViewTimeSeriesData(
+      ResultSet resultSet, String accountId, List<QLCEViewGroupBy> groupBy) {
+    String fieldName = viewParametersHelper.getEntityGroupByFieldName(groupBy);
+    Map<Long, List<QLCEViewDataPoint>> timeSeriesDataPointsMap = new HashMap<>();
+    Set<String> awsAccounts = new HashSet<>();
+    int totalColumns = clickHouseQueryResponseHelper.getTotalColumnsCount(resultSet);
+    try {
+      while (resultSet != null && resultSet.next()) {
+        QLCEViewDataPointBuilder billingDataPointBuilder = QLCEViewDataPoint.builder();
+        Long startTimeTruncatedTimestamp = null;
+        double value = 0.0;
+        int columnIndex = 1;
+        while (columnIndex <= totalColumns) {
+          String columnName = resultSet.getMetaData().getColumnName(columnIndex);
+          String columnType = resultSet.getMetaData().getColumnTypeName(columnIndex);
+          if (columnType.toUpperCase(Locale.ROOT).contains(STRING)) {
+            String stringValue = clickHouseQueryResponseHelper.fetchStringValue(resultSet, columnName, fieldName);
+            if (AWS_ACCOUNT_FIELD_ID.equalsIgnoreCase(columnName)) {
+              awsAccounts.add(stringValue);
+            }
+            billingDataPointBuilder.name(stringValue).id(stringValue);
+          } else if (columnType.toUpperCase(Locale.ROOT).contains(DATETIME)
+              || columnType.toUpperCase(Locale.ROOT).contains(DATE)) {
+            startTimeTruncatedTimestamp = clickHouseQueryResponseHelper.fetchTimestampValue(resultSet, columnName);
+          } else if (columnType.toUpperCase(Locale.ROOT).contains(FLOAT64)) {
+            value += clickHouseQueryResponseHelper.fetchNumericValue(resultSet, columnName);
+          }
+          columnIndex++;
+        }
+
+        billingDataPointBuilder.value(value);
+        List<QLCEViewDataPoint> dataPoints = new ArrayList<>();
+        if (timeSeriesDataPointsMap.containsKey(startTimeTruncatedTimestamp)) {
+          dataPoints = timeSeriesDataPointsMap.get(startTimeTruncatedTimestamp);
+        }
+        dataPoints.add(billingDataPointBuilder.build());
+        timeSeriesDataPointsMap.put(startTimeTruncatedTimestamp, dataPoints);
+      }
+    } catch (SQLException e) {
+      log.error("Failed to build chart for scheduled report");
+    }
+
+    return viewBillingServiceHelper.convertTimeSeriesPointsMapToList(
+        viewBillingServiceHelper.modifyTimeSeriesDataPointsMap(timeSeriesDataPointsMap, awsAccounts, accountId));
   }
 
   // ----------------------------------------------------------------------------------------------------------------

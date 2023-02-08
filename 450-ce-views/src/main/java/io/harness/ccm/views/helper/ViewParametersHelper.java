@@ -747,6 +747,18 @@ public class ViewParametersHelper {
     return entityGroupByFieldName;
   }
 
+  public String getEntityGroupByFieldId(final List<QLCEViewGroupBy> groupBy) {
+    String entityGroupByFieldName = OTHERS;
+    final Optional<String> groupByFieldId = groupBy.stream()
+                                                .filter(entry -> Objects.nonNull(entry.getEntityGroupBy()))
+                                                .map(entry -> entry.getEntityGroupBy().getFieldId())
+                                                .findFirst();
+    if (groupByFieldId.isPresent()) {
+      entityGroupByFieldName = groupByFieldId.get();
+    }
+    return entityGroupByFieldName;
+  }
+
   // ----------------------------------------------------------------------------------------------------------------
   // Methods used to determine table to be used
   // ----------------------------------------------------------------------------------------------------------------
