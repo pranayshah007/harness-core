@@ -259,6 +259,21 @@ public class NGSecretManagerMigration {
     return connectorDTO;
   }
 
+  public ConnectorDTO createGlobalGcpKmsSM(
+      String accountIdentifier, String orgIdentifier, String projIdentifier, boolean isAccountDefault) {
+    SecretManagerConfigDTO globalSecretManagerConfigDTO =
+        getGlobalGcpKmsSMFromCG(accountIdentifier, orgIdentifier, projIdentifier);
+    Scope secretScope = getSecretScope(orgIdentifier, projIdentifier);
+    ConnectorDTO connectorDTO = getConnectorRequestDTO(null, globalSecretManagerConfigDTO, secretScope,
+        accountIdentifier, projIdentifier, orgIdentifier, isAccountDefault, false);
+    if (isAccountDefault) {
+      connectorDTO.getConnectorInfo().setName(
+          getDefaultHarnessSecretManagerName(globalSecretManagerConfigDTO.getEncryptionType()));
+    }
+    connectorService.create(connectorDTO, accountIdentifier, ChangeType.NONE);
+    return connectorDTO;
+  }
+
   private LocalConfigDTO createLocalConnector(String accountIdentifier, String uuid) {
     return LocalConfigDTO.builder()
         .accountIdentifier(accountIdentifier)
@@ -341,6 +356,20 @@ public class NGSecretManagerMigration {
       String accountIdentifier, String orgIdentifier, String projIdentifier) {
     if (null == this.cgGlobal) {
       this.cgGlobal = ngSecretManagerService.getGlobalSecretManager(accountIdentifier);
+    }
+    SecretManagerConfigDTO globalSecretManager = this.cgGlobal;
+    globalSecretManager.setIdentifier(HARNESS_SECRET_MANAGER_IDENTIFIER);
+    globalSecretManager.setName(getDefaultHarnessSecretManagerName(globalSecretManager.getEncryptionType()));
+    globalSecretManager.setProjectIdentifier(projIdentifier);
+    globalSecretManager.setOrgIdentifier(orgIdentifier);
+    globalSecretManager.setDefault(true);
+    return globalSecretManager;
+  }
+
+  private SecretManagerConfigDTO getGlobalGcpKmsSMFromCG(
+      String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    if (null == this.cgGlobal) {
+      this.cgGlobal = ngSecretManagerService.getGlobalSecretManagerFromCG(accountIdentifier);
     }
     SecretManagerConfigDTO globalSecretManager = this.cgGlobal;
     globalSecretManager.setIdentifier(HARNESS_SECRET_MANAGER_IDENTIFIER);

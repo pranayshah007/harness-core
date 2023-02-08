@@ -38,5 +38,7 @@ public interface NGSecretManagerService {
 
   SecretManagerConfigDTO getGlobalSecretManager(String accountIdentifier);
 
+  SecretManagerConfigDTO getGlobalSecretManagerFromCG(String accountIdentifier);
+
   SecretManagerMetadataDTO getMetadata(String accountIdentifier, SecretManagerMetadataRequestDTO requestDTO);
 }
