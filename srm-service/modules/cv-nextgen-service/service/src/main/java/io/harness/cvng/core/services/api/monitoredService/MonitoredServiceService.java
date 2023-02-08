@@ -51,6 +51,8 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   List<MonitoredServiceResponse> get(ProjectParams projectParams, Set<String> identifier);
 
   List<MonitoredServiceDetail> getMonitoredServiceDetails(ProjectParams projectParams, Set<String> identifier);
+
+  List<MonitoredServiceDetail> getAllMonitoredServiceDetails(ProjectParams projectParams);
   List<MonitoredServiceResponse> get(String accountId, Set<String> identifier);
   MonitoredServiceResponse get(ProjectParams projectParams, String identifier);
   MonitoredServiceResponse getApplicationMonitoredServiceResponse(ServiceEnvironmentParams serviceEnvironmentParams);

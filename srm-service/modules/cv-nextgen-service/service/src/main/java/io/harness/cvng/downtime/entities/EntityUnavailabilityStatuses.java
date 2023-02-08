@@ -10,8 +10,10 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.downtime.beans.EntitiesRule;
 import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
+import io.harness.data.validator.EntityIdentifier;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -47,16 +49,18 @@ import lombok.experimental.FieldNameConstants;
 @OwnedBy(HarnessTeam.CV)
 public class EntityUnavailabilityStatuses implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware {
   @Id private String uuid;
-  @NotNull String accountId;
-  String orgIdentifier;
-  String projectIdentifier;
-  private String entityIdentifier;
-  private EntityType entityType;
-  private long startTime;
-  private long endTime;
-  private EntityUnavailabilityStatus status;
-  private long createdAt;
-  private long lastUpdatedAt;
+  @NotNull @EntityIdentifier String accountId;
+  @NotNull @EntityIdentifier String orgIdentifier;
+  @NotNull @EntityIdentifier String projectIdentifier;
+  @NotNull @EntityIdentifier private String entityIdentifier;
+  @NotNull @EntityIdentifier private EntityType entityType;
+  @NotNull private long startTime;
+  @NotNull private long endTime;
+  @NotNull private EntityUnavailabilityStatus status;
+  @NotNull private long createdAt;
+  @NotNull private long lastUpdatedAt;
+
+  @NotNull EntitiesRule entitiesRule;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

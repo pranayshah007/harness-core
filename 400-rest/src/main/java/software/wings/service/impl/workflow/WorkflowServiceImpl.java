@@ -4018,7 +4018,10 @@ public class WorkflowServiceImpl implements WorkflowService {
     // Do we need checks for isServiceTemplatized or isInfraDefinitionTemplatized
 
     DeploymentType deploymentType = null;
-    Service service = serviceResourceService.get(appId, serviceId, false);
+    Service service = null;
+    if (serviceId != null) {
+      service = serviceResourceService.get(appId, serviceId, false);
+    }
 
     if (service != null) {
       deploymentType = service.getDeploymentType();

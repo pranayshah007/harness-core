@@ -433,6 +433,11 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
             metricsForThisAnalysis.put(UUIDGenerator.generateUuid(), metricsAnalysis);
           }
           if (Objects.nonNull(metricsAnalysis)) {
+            if (Objects.isNull(metricsAnalysis.getTransactionGroup())) {
+              // Only applicable where the metric is neither custom nor default-metric-pack metric, ie dashboard based
+              // metrics. eg Datadog , GCP
+              metricsAnalysis.setTransactionGroup(transactionGroup);
+            }
             Optional<String> deeplinkURL = deeplinkURLService.buildDeeplinkURLFromCVConfig(
                 cvConfig, metricIdentifier, testDataTimeRange.getStartTime(), testDataTimeRange.getEndTime());
             deeplinkURL.ifPresent(metricsAnalysis::setDeeplinkURL);
