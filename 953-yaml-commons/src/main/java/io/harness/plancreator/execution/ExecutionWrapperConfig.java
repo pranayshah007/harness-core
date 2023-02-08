@@ -34,4 +34,5 @@ public class ExecutionWrapperConfig {
   @ApiModelProperty(dataType = "io.harness.plancreator.steps.StepElementConfig") JsonNode step;
   @ApiModelProperty(dataType = "io.harness.plancreator.steps.ParallelStepElementConfig") JsonNode parallel;
   @ApiModelProperty(dataType = "io.harness.plancreator.steps.StepGroupElementConfig") JsonNode stepGroup;
+  JsonNode group;
 }

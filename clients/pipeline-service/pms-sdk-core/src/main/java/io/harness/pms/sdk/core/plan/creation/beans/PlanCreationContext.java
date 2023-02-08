@@ -183,12 +183,16 @@ public class PlanCreationContext implements AsyncCreatorContext {
       YamlField stepField = yamlNode.getField(YAMLFieldNameConstants.STEP);
       YamlField stepGroupField = yamlNode.getField(YAMLFieldNameConstants.STEP_GROUP);
       YamlField parallelStepField = yamlNode.getField(YAMLFieldNameConstants.PARALLEL);
+      YamlField groupStepField = yamlNode.getField("group");
+
       if (stepField != null) {
         stepFields.add(stepField);
       } else if (stepGroupField != null) {
         stepFields.add(stepGroupField);
       } else if (parallelStepField != null) {
         stepFields.add(parallelStepField);
+      } else if (groupStepField != null) {
+        stepFields.add(groupStepField);
       }
     });
     return stepFields;
