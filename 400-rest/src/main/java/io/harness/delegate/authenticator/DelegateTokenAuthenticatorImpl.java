@@ -18,6 +18,8 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.manage.GlobalContextManager.initGlobalContextGuard;
 import static io.harness.manage.GlobalContextManager.upsertGlobalContextRecord;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_AUTH_1_ACCOUNT_KEY;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_AUTH_2_ACCOUNT_KEY;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_CACHE_HIT;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_CACHE_MISS;
 
@@ -190,6 +192,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
 
     // First try to validate token with accountKey.
     if (validateDelegateAuth2TokenWithAccountKey(accountId, tokenString)) {
+      delegateMetricsService.recordDelegateMetricsPerAccount(accountId, DELEGATE_AUTH_2_ACCOUNT_KEY);
       return;
     }
 
@@ -275,6 +278,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       throw new InvalidRequestException("Access denied", USER_ADMIN);
     }
     decryptDelegateToken(encryptedJWT, accountKey);
+    delegateMetricsService.recordDelegateMetricsPerAccount(accountId, DELEGATE_AUTH_1_ACCOUNT_KEY);
   }
 
   private boolean decryptJWTDelegateToken(String accountId, DelegateTokenStatus status, EncryptedJWT encryptedJWT,

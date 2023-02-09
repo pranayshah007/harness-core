@@ -58,6 +58,11 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
 
   public static final String DELEGATE_JWT_CACHE_HIT = "delegate_auth_cache_hit";
   public static final String DELEGATE_JWT_CACHE_MISS = "delegate_auth_cache_miss";
+
+  public static final String DELEGATE_AUTH_1_ACCOUNT_KEY = "delegate_auth_one_using_account_key";
+
+  public static final String DELEGATE_AUTH_2_ACCOUNT_KEY = "delegate_auth_two_using_account_key";
+
   public static final String SECRETS_CACHE_HITS = "delegate_secret_cache_hit";
   public static final String SECRETS_CACHE_LOOKUPS = "delegate_secret_cache_lookups";
   public static final String SECRETS_CACHE_INSERTS = "delegate_secret_cache_inserts";
