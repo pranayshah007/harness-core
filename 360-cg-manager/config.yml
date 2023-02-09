@@ -681,11 +681,11 @@ eventListenersCountConfig:
 
 delegateQueueServiceConfig:
     queueServiceConfig:
-      baseUrl: http://localhost:9091/
+      baseUrl:  https://del.pr.harness.io/del-4200/queue-service/
       connectTimeOutSeconds: 15
       readTimeOutSeconds: 15
     topic: "delegate-service"
-    enableQueueAndDequeue: false
+    enableQueueAndDequeue: true
 
 iteratorsConfig:
   resourceConstraintBackupIteratorConfig:
