@@ -13,6 +13,10 @@ import io.harness.idp.config.resource.ConfigManagerResource;
 import io.harness.idp.config.resources.ConfigManagerResourceImpl;
 import io.harness.idp.config.service.AppConfigService;
 import io.harness.idp.config.service.AppConfigServiceImpl;
+import io.harness.idp.namespace.resource.NamespaceResource;
+import io.harness.idp.namespace.resources.NamespaceResourceImpl;
+import io.harness.idp.namespace.service.NamespaceService;
+import io.harness.idp.namespace.service.NamespaceServiceImpl;
 import io.harness.idp.secret.resource.SecretManagerResource;
 import io.harness.idp.secret.resources.SecretManagerResourceImpl;
 import io.harness.idp.secret.service.EnvironmentVariableService;
@@ -120,8 +124,12 @@ public class IDPModule extends AbstractModule {
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
     bind(AppConfigService.class).to(AppConfigServiceImpl.class);
     bind(EnvironmentVariableService.class).to(EnvironmentVariableServiceImpl.class);
+    bind(NamespaceService.class).to(NamespaceServiceImpl.class);
     bind(ConfigManagerResource.class).to(ConfigManagerResourceImpl.class);
     bind(SecretManagerResource.class).to(SecretManagerResourceImpl.class);
+    bind(NamespaceResource.class).to(NamespaceResourceImpl.class);
+
+//    bind(NamespaceRepository.class).to(NamespaceRepositoryCustomImpl.class);
   }
 
   @Provides

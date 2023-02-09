@@ -38,6 +38,7 @@ public class IDPConfiguration extends Configuration {
   private LogStreamingServiceConfiguration logStreamingServiceConfig;
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
   public static final String HEALTH_PACKAGE = "io.harness.idp.health.resource";
+  public static final String NAMESPACE_PACKAGE = "io.harness.idp.namespace.resource";
 
   public List<String> getDbAliases() {
     List<String> dbAliases = new ArrayList<>();
@@ -51,7 +52,7 @@ public class IDPConfiguration extends Configuration {
     return HarnessReflections.get()
         .getTypesAnnotatedWith(Path.class)
         .stream()
-        .filter(klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), HEALTH_PACKAGE))
+        .filter(klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), HEALTH_PACKAGE, NAMESPACE_PACKAGE))
         .collect(Collectors.toSet());
   }
 }
