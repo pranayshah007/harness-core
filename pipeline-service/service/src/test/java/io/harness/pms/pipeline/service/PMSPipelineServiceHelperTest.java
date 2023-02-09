@@ -266,7 +266,7 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
                                                             .build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity, false, false);
+        .resolveTemplateRefsInPipeline(pipelineEntity, true, false);
 
     Mockito.when(pipelineValidationService.validateYamlAndGovernanceRules(any(), any(), any(), any(), any(), any()))
         .thenReturn(PipelineValidationResponse.builder()
@@ -419,7 +419,7 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
                                                             .build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity, false, false);
+        .resolveTemplateRefsInPipeline(pipelineEntity, true, false);
 
     Mockito.when(pipelineValidationService.validateYamlAndGovernanceRules(any(), any(), any(), any(), any(), any()))
         .thenReturn(PipelineValidationResponse.builder()
