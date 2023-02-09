@@ -102,7 +102,7 @@ public class StepGroupStepTest extends NGCommonUtilitiesTestBase {
     assertThat(stepGroupStepParameters.getIdentifier()).isEqualTo("identifier");
     assertThat(stepGroupStepParameters.getChildNodeID()).isEqualTo(CHILD_ID);
     assertThat(stepGroupStepParameters.getSkipCondition().getValue()).isEqualTo("skipConfition");
-    assertThat(stepGroupStepParameters.getFailureStrategies().getValue()).isNotEmpty();
+    assertThat(stepGroupStepParameters.getFailureStrategies()).isNotEmpty();
     assertThat(stepGroupStepParameters.getWhen()).isNotNull();
   }
 }
