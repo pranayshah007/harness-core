@@ -21,8 +21,6 @@ import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import software.wings.sm.states.FilePathAssertionEntry;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;

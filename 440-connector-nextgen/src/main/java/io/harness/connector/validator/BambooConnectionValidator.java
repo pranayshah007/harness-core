@@ -12,7 +12,6 @@ import static software.wings.beans.TaskType.BAMBOO_CONNECTIVITY_TEST_TASK;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
-import io.harness.delegate.beans.connector.bamboo.BambooAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.bamboo.BambooConnectionTaskResponse;
 import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
 import io.harness.delegate.beans.connector.bamboo.BambooTestConnectionTaskParams;
