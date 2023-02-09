@@ -146,6 +146,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           ciLogServiceUtils.closeLogStream(AmbianceUtils.getAccountId(ambiance), logKey, true, true);
           // Now Delete the build from db while cleanup is happening. \
         }
+        log.info("Not Calling Cleanup as status is {} for stageExecutionID {}", status, ambiance.getStageExecutionId());
       });
     } catch (Exception ex) {
       log.error("Failed to send cleanup call for node {}", level.getRuntimeId(), ex);
