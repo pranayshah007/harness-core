@@ -19,8 +19,7 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.IOException;
@@ -54,6 +53,7 @@ public class WebhookResourceTest extends CvNextGenTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testHandleCustomChangeWebhookRequest() throws IOException {
+    ObjectMapper objectMapper = new ObjectMapper();
     Response response =
         RESOURCES.client()
             .target("http://localhost:9998/webhook/custom-change")
@@ -63,8 +63,8 @@ public class WebhookResourceTest extends CvNextGenTestBase {
             .queryParam("monitoredServiceIdentifier", "monitoredServiceId")
             .queryParam("changeSourceIdentifier", "changeSourceId")
             .request(MediaType.APPLICATION_JSON_TYPE)
-            .post(Entity.json(Resources.toString(
-                WebhookResourceTest.class.getResource("/webhook/custom_change_webhook_payload.json"), Charsets.UTF_8)));
+            .header("X-Api-Key", "test")
+            .post(Entity.json(objectMapper.writeValueAsString(builderFactory.getCustomChangeWebhookPayload().build())));
 
     assertThat(response.getStatus()).isEqualTo(204);
   }

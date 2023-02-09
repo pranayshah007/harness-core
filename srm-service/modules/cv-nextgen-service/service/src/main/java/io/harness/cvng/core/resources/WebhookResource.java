@@ -19,8 +19,8 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -28,7 +28,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
-import retrofit2.http.Body;
 
 @Api("webhook")
 @Path("webhook")
@@ -57,8 +56,8 @@ public class WebhookResource {
       @NotNull @QueryParam("orgIdentifier") String orgIdentifier,
       @NotNull @QueryParam("projectIdentifier") String projectIdentifier,
       @NotNull @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
-      @NotNull @QueryParam("changeSourceIdentifier") String changeSourceIdentifier,
-      @Body @Valid CustomChangeWebhookPayload customChangeWebhookPayload, @Context HttpHeaders httpHeaders) {
+      @NotNull @QueryParam("changeSourceIdentifier") String changeSourceIdentifier, @Context HttpHeaders httpHeaders) {
+    CustomChangeWebhookPayload customChangeWebhookPayload = null;
     ProjectParams projectParams = ProjectParams.builder()
                                       .projectIdentifier(projectIdentifier)
                                       .orgIdentifier(orgIdentifier)
