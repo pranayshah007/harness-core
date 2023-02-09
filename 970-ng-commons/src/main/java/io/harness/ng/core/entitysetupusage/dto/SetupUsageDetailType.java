@@ -28,7 +28,8 @@ public enum SetupUsageDetailType {
   ENTITY_REFERRED_BY_INFRA,
 
   TEMPLATE_REFERRED_BY_CONNECTOR,
-  PIPELINE_REFERED_BY_PIPELINES;
+  PIPELINE_REFERED_BY_PIPELINES,
+  INFRASTRUCTURE_REFERRED_BY_PIPELINE;
 
   public static boolean isReferredByPipeline(String setupUsageDetailType) {
     SetupUsageDetailType type = SetupUsageDetailType.valueOf(setupUsageDetailType);
@@ -41,6 +42,7 @@ public enum SetupUsageDetailType {
       case TEMPLATE_REFERRED_BY_PIPELINE:
       case FILES_REFERED_BY_PIPELINE:
       case PIPELINE_REFERED_BY_PIPELINES:
+      case INFRASTRUCTURE_REFERRED_BY_PIPELINE:
         return true;
       default:
         return false;
@@ -64,6 +66,8 @@ public enum SetupUsageDetailType {
       return FILES_REFERED_BY_PIPELINE;
     } else if (EntityTypeProtoEnum.PIPELINES.name().equals(entityTypeProtoEnumName)) {
       return PIPELINE_REFERED_BY_PIPELINES;
+    } else if (EntityTypeProtoEnum.INFRASTRUCTURE.name().equals(entityTypeProtoEnumName)) {
+      return SetupUsageDetailType.INFRASTRUCTURE_REFERRED_BY_PIPELINE;
     }
     return null;
   }
