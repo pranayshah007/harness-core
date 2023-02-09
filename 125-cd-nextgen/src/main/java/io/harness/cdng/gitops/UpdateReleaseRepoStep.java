@@ -155,6 +155,7 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
               .connectorInfoDTO(
                   cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance))
               .filesToVariablesMap(filesToVariablesMap)
+              .prTitle(gitOpsSpecParams.prTitle.getValue())
               .build();
 
       final TaskData taskData = TaskData.builder()

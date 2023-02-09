@@ -38,6 +38,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.JsonUtils;
+import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -127,7 +128,7 @@ public class ConnectorUtils {
                                                  connectorRef.getIdentifier(), connectorRef.getScope()),
             USER);
       } else {
-        throw new CIStageExecutionException(
+        throw new ContainerStepExecutionException(
             format("Failed to find connector for identifier: [%s] with scope: [%s] with error: %s",
                 connectorRef.getIdentifier(), connectorRef.getScope(), errorCode));
       }

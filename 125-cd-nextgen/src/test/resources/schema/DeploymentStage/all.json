@@ -16215,6 +16215,9 @@
                 }
               ]
             },
+            "prTitle": {
+              "type": "string"
+            },
             "stringMap": {
               "$ref": "#/definitions/ParameterFieldMapStringString"
             },

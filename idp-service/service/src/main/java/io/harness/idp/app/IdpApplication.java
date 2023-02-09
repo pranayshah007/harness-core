@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @OwnedBy(IDP)
-public class IDPApplication extends Application<IDPConfiguration> {
+public class IdpApplication extends Application<IdpConfiguration> {
   private final MetricRegistry metricRegistry = new MetricRegistry();
 
   /**
@@ -56,7 +56,7 @@ public class IDPApplication extends Application<IDPConfiguration> {
       MaintenanceController.forceMaintenance(true);
     }));
 
-    new IDPApplication().run(args);
+    new IdpApplication().run(args);
   }
 
   @Override
@@ -65,7 +65,7 @@ public class IDPApplication extends Application<IDPConfiguration> {
   }
 
   @Override
-  public void initialize(Bootstrap<IDPConfiguration> bootstrap) {
+  public void initialize(Bootstrap<IdpConfiguration> bootstrap) {
     initializeLogging();
     log.info("bootstrapping ...");
     bootstrap.addCommand(new InspectCommand<>(this));
@@ -80,7 +80,7 @@ public class IDPApplication extends Application<IDPConfiguration> {
   }
 
   @Override
-  public void run(final IDPConfiguration configuration, Environment environment) throws Exception {
+  public void run(final IdpConfiguration configuration, Environment environment) throws Exception {
     log.info("Starting app ...");
     log.info("Entering startup maintenance mode");
     MaintenanceController.forceMaintenance(true);
@@ -89,7 +89,7 @@ public class IDPApplication extends Application<IDPConfiguration> {
         20, 1000, 500L, TimeUnit.MILLISECONDS, new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
 
     List<Module> modules = new ArrayList<>();
-    modules.add(new IDPModule(configuration));
+    modules.add(new IdpModule(configuration));
     Injector injector = Guice.createInjector(modules);
     registerHealthChecksManager(environment, injector);
     registerQueueListeners(injector);

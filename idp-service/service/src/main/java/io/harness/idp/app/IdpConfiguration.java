@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
-public class IDPConfiguration extends Configuration {
+public class IdpConfiguration extends Configuration {
   @Setter @JsonProperty("mongo") private MongoConfig mongoConfig;
   @JsonProperty("eventsFramework") private EventsFrameworkConfiguration eventsFrameworkConfiguration;
   @JsonProperty("logStreamingServiceConfig")

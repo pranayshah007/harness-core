@@ -18,7 +18,7 @@ import io.harness.morphia.MorphiaRegistrarHelperPut;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.IDP)
-public class IDPServiceMorphiaRegistrar implements MorphiaRegistrar {
+public class IdpServiceMorphiaRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
     set.add(AppConfig.class);

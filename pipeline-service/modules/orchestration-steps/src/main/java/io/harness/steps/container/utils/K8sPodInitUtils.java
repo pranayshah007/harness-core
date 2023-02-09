@@ -139,6 +139,9 @@ public class K8sPodInitUtils {
   private String getK8PodIdentifier(String identifier) {
     StringBuilder sb = new StringBuilder(15);
     for (char c : identifier.toCharArray()) {
+      if (c == '_') {
+        continue;
+      }
       if (isAsciiAlphanumeric(c)) {
         sb.append(toLowerCase(c));
       }
