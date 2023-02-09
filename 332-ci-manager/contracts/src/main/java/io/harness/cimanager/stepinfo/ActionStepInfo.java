@@ -9,6 +9,8 @@ package io.harness.beans.steps.stepinfo;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
@@ -32,6 +34,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.beans.ConstructorProperties;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.Max;
@@ -74,10 +77,15 @@ public class ActionStepInfo implements CIStepInfo, WithConnectorRef {
   @YamlSchemaTypes(value = {string})
   private ParameterField<Map<String, String>> env;
 
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
+  ParameterField<List<String>> outputs;
+
   @Builder
-  @ConstructorProperties({"identifier", "name", "retry", "uses", "with", "env"})
+  @ConstructorProperties({"identifier", "name", "retry", "uses", "with", "env", "outputs"})
   public ActionStepInfo(String identifier, String name, Integer retry, ParameterField<String> uses,
-      ParameterField<Map<String, String>> with, ParameterField<Map<String, String>> env) {
+      ParameterField<Map<String, String>> with, ParameterField<Map<String, String>> env,
+      ParameterField<List<String>> outputs) {
     this.identifier = identifier;
     this.name = name;
     this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
@@ -85,6 +93,7 @@ public class ActionStepInfo implements CIStepInfo, WithConnectorRef {
     this.uses = uses;
     this.with = with;
     this.env = env;
+    this.outputs = outputs;
   }
 
   @Override
