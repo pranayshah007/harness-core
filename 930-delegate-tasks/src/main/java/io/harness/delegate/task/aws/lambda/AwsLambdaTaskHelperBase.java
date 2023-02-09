@@ -8,7 +8,6 @@
 package io.harness.delegate.task.aws.lambda;
 
 import com.amazonaws.services.lambda.model.GetFunctionResult;
-import com.google.cloud.functions.v2.Function;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -43,9 +42,9 @@ public class AwsLambdaTaskHelperBase {
     AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig =
         (AwsLambdaFunctionsInfraConfig) deploymentReleaseData.getAwsLambdaInfraConfig();
     awsLambdaInfraConfigHelper.decryptInfraConfig(awsLambdaFunctionsInfraConfig);
-    AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO();
+    AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO());
     AwsLambdaFunctionWithActiveVersions awsLambdaFunctionWithActiveVersions =
-              awsLambdaCommandTaskHelper.getAwsLambdaFunctionWithActiveVersions(awsLambdaFunctionsInfraConfig.getRegion(), awsInternalConfig, deploymentReleaseData.getFunction();
+              awsLambdaCommandTaskHelper.getAwsLambdaFunctionWithActiveVersions(awsLambdaFunctionsInfraConfig.getRegion(), awsInternalConfig, deploymentReleaseData.getFunction());
       return AwsLambdaToServerInstanceInfoMapper.toServerInstanceInfoList(awsLambdaFunctionWithActiveVersions,
               awsLambdaFunctionsInfraConfig.getRegion(),
               awsLambdaFunctionsInfraConfig.getInfraStructureKey());

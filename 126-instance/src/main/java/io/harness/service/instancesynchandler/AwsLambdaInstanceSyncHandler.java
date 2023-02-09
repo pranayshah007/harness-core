@@ -56,7 +56,6 @@ public class AwsLambdaInstanceSyncHandler extends AbstractInstanceSyncHandler {
     }
     AwsLambdaInstanceInfoDTO awsLambdaInstanceInfoDTO = (AwsLambdaInstanceInfoDTO) instanceInfoDTO;
     return AwsLambdaInfrastructureDetails.builder()
-        .project(awsLambdaInstanceInfoDTO.getProject())
         .region(awsLambdaInstanceInfoDTO.getRegion())
         .build();
   }
@@ -82,7 +81,7 @@ public class AwsLambdaInstanceSyncHandler extends AbstractInstanceSyncHandler {
     return AwsLambdaDeploymentInfoDTO.builder()
         .functionName(awsLambdaServerInstanceInfo.getFunctionName())
         .region(awsLambdaServerInstanceInfo.getRegion())
-        .infraStructureKey(awsLambdaServerInstanceInfo.getInfraStructureKey())
+        .infraStructureKey(awsLambdaServerInstanceInfo.getInfrastructureKey())
         .build();
   }
 
@@ -99,12 +98,12 @@ public class AwsLambdaInstanceSyncHandler extends AbstractInstanceSyncHandler {
     return AwsLambdaInstanceInfoDTO.builder()
         .functionName(awsLambdaServerInstanceInfo.getFunctionName())
         .region(awsLambdaServerInstanceInfo.getRegion())
-        .revision(awsLambdaServerInstanceInfo.getRevision())
+        .version(awsLambdaServerInstanceInfo.getVersion())
         .source(awsLambdaServerInstanceInfo.getSource())
         .updatedTime(awsLambdaServerInstanceInfo.getUpdatedTime())
         .memorySize(awsLambdaServerInstanceInfo.getMemorySize())
-        .runTime(awsLambdaServerInstanceInfo.getRunTime())
-        .infraStructureKey(awsLambdaServerInstanceInfo.getInfraStructureKey())
+        .runTime(awsLambdaServerInstanceInfo.getRuntime())
+        .infraStructureKey(awsLambdaServerInstanceInfo.getInfrastructureKey())
         .build();
   }
 }

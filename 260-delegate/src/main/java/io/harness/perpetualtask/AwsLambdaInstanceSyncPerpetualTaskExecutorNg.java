@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.delegate.beans.instancesync.AwsLambdaInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.GoogleFunctionInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.task.aws.lambda.AwsLambdaDeploymentReleaseData;
@@ -69,7 +70,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNg implements PerpetualTa
                                                        .flatMap(Collection::stream)
                                                        .collect(Collectors.toList());
 
-    log.info("Google Cloud Function sync nInstances: {}, task id: {}",
+    log.info("Aws Lambda Function sync nInstances: {}, task id: {}",
         isEmpty(serverInstanceInfos) ? 0 : serverInstanceInfos.size(), taskId);
 
     String instanceSyncResponseMsg = publishInstanceSyncResult(taskId, taskParams.getAccountId(), serverInstanceInfos);
@@ -106,8 +107,8 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNg implements PerpetualTa
 
   private String publishInstanceSyncResult(
       PerpetualTaskId taskId, String accountId, List<ServerInstanceInfo> serverInstanceInfos) {
-    GoogleFunctionInstanceSyncPerpetualTaskResponse instanceSyncResponse =
-        GoogleFunctionInstanceSyncPerpetualTaskResponse.builder()
+    AwsLambdaInstanceSyncPerpetualTaskResponse instanceSyncResponse =
+            AwsLambdaInstanceSyncPerpetualTaskResponse.builder()
             .serverInstanceDetails(serverInstanceInfos)
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .build();
@@ -115,7 +116,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNg implements PerpetualTa
       execute(delegateAgentManagerClient.processInstanceSyncNGResult(taskId.getId(), accountId, instanceSyncResponse));
     } catch (Exception e) {
       String errorMsg =
-          format("Failed to publish Google Cloud Functions instance sync result PerpetualTaskId [%s], accountId [%s]",
+          format("Failed to publish Aws Lambda Functions instance sync result PerpetualTaskId [%s], accountId [%s]",
               taskId.getId(), accountId);
       log.error(errorMsg + ", serverInstanceInfos: {}", serverInstanceInfos, e);
       return errorMsg;

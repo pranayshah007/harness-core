@@ -27,6 +27,7 @@ import java.util.Set;
 public class AwsLambdaServerInstanceInfo extends ServerInstanceInfo {
   private String functionName;
   private String version;
+  private String region;
   private Set<String> aliases;
   private Set<Tag> tags;
   private String functionArn;

@@ -28,7 +28,6 @@ public class AwsLambdaInfrastructureOutcome extends InfrastructureOutcomeAbstrac
   @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;
   String connectorRef;
-  String project;
   String region;
 
   @Override

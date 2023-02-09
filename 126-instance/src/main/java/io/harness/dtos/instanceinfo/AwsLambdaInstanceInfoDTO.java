@@ -16,6 +16,7 @@ import lombok.EqualsAndHashCode;
 import software.wings.beans.Tag;
 
 import javax.validation.constraints.NotNull;
+import java.util.Date;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -27,8 +28,8 @@ public class AwsLambdaInstanceInfoDTO extends InstanceInfoDTO {
   @NotNull private String region;
 
   private String source;
-  private long updatedTime;
-  private String memorySize;
+  private Date updatedTime;
+  private Integer memorySize;
   private String runTime;
 
   private String infraStructureKey;

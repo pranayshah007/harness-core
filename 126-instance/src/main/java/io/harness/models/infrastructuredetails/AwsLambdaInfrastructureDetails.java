@@ -16,6 +16,5 @@ import lombok.Value;
 @Value
 @Builder
 public class AwsLambdaInfrastructureDetails extends InfrastructureDetails {
-  String project;
   String region;
 }

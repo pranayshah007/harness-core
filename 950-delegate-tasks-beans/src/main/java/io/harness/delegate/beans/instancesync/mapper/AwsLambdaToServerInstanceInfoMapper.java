@@ -49,6 +49,7 @@ public class AwsLambdaToServerInstanceInfoMapper {
       AwsLambdaFunction awsLambdaFunction, String region, String infraStructureKey) {
     return AwsLambdaServerInstanceInfo.builder()
         .functionName(awsLambdaFunction.getFunctionName())
+            .region(region)
         .version(awsLambdaFunction.getVersion())
             .tags(MapUtils.emptyIfNull(awsLambdaFunction.getTags())
                     .entrySet()
