@@ -25,7 +25,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
@@ -239,8 +241,8 @@ public class DiscoveryService {
   }
 
   public StreamingOutput exportYamlFilesAsZip(MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {
-    List<NGYamlFile> ngYamlFiles = migrateEntity(inputDTO, discoveryResult);
-    return createZip(ngYamlFiles);
+    YamlGenerationDetails generationDetails = migrateEntity(inputDTO, discoveryResult);
+    return createZip(generationDetails.getYamlFileList());
   }
 
   public StreamingOutput createZip(List<NGYamlFile> yamlFiles) {
@@ -257,7 +259,7 @@ public class DiscoveryService {
     };
   }
 
-  private List<NGYamlFile> migrateEntity(MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {
+  private YamlGenerationDetails migrateEntity(MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {
     Map<CgEntityId, NGYamlFile> migratedEntities = new HashMap<>();
     Map<CgEntityId, Set<CgEntityId>> leafTracker = discoveryResult.getLinks().entrySet().stream().collect(
         Collectors.toMap(Entry::getKey, e -> Sets.newHashSet(e.getValue())));
@@ -266,11 +268,14 @@ public class DiscoveryService {
   }
 
   public SaveSummaryDTO migrateEntity(String auth, MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {
-    List<NGYamlFile> ngYamlFiles = migrateEntity(inputDTO, discoveryResult);
-    return createEntities(auth, inputDTO, ngYamlFiles);
+    YamlGenerationDetails generationDetails = migrateEntity(inputDTO, discoveryResult);
+    return createEntities(auth, inputDTO, generationDetails);
   }
 
-  private SaveSummaryDTO createEntities(String auth, MigrationInputDTO inputDTO, List<NGYamlFile> ngYamlFiles) {
+  private SaveSummaryDTO createEntities(
+      String auth, MigrationInputDTO inputDTO, YamlGenerationDetails generationDetails) {
+    List<NGYamlFile> ngYamlFiles = generationDetails.getYamlFileList();
+    List<NGSkipDetail> skipDetails = generationDetails.getSkipDetails();
     NGClient ngClient = MigratorUtility.getRestClient(ngClientConfig, NGClient.class);
     PmsClient pmsClient = MigratorUtility.getRestClient(pipelineServiceClientConfig, PmsClient.class);
     TemplateClient templateClient = MigratorUtility.getRestClient(templateServiceClientConfig, TemplateClient.class);
@@ -279,6 +284,7 @@ public class DiscoveryService {
     SaveSummaryDTO summaryDTO = SaveSummaryDTO.builder()
                                     .errors(new ArrayList<>())
                                     .stats(new HashMap<>())
+                                    .skipDetails(skipDetails)
                                     .alreadyMigratedDetails(new ArrayList<>())
                                     .successfullyMigratedDetails(new ArrayList<>())
                                     .build();
@@ -373,13 +379,14 @@ public class DiscoveryService {
     }
   }
 
-  private List<NGYamlFile> getAllYamlFiles(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  private YamlGenerationDetails getAllYamlFiles(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       Map<CgEntityId, Set<CgEntityId>> leafTracker) {
     if (!leafTracker.containsKey(entityId)) {
-      return new ArrayList<>();
+      return null;
     }
     List<NGYamlFile> files = new ArrayList<>();
+    List<NGSkipDetail> skipDetails = new ArrayList<>();
 
     // Load all migrated entities for the CG entities before actual migration
     for (CgEntityId cgEntityId : entities.keySet()) {
@@ -399,10 +406,13 @@ public class DiscoveryService {
                                         .filter(cgEntityId -> ENVIRONMENT.equals(cgEntityId.getType()))
                                         .collect(Collectors.toList());
     for (CgEntityId entry : environments) {
-      List<NGYamlFile> currentEntity = migrationFactory.getMethod(entry.getType())
-                                           .getYaml(inputDTO, entityId, entities, graph, entry, migratedEntities);
-      if (isNotEmpty(currentEntity)) {
-        files.addAll(currentEntity);
+      YamlGenerationDetails details = migrationFactory.getMethod(entry.getType())
+                                          .getYamls(inputDTO, entityId, entities, graph, entry, migratedEntities);
+      if (details != null && isNotEmpty(details.getYamlFileList())) {
+        files.addAll(details.getYamlFileList());
+      }
+      if (details != null && isNotEmpty(details.getSkipDetails())) {
+        skipDetails.addAll(details.getSkipDetails());
       }
     }
 
@@ -412,16 +422,19 @@ public class DiscoveryService {
         if (ENVIRONMENT.equals(entry.getType())) {
           continue;
         }
-        List<NGYamlFile> currentEntity = migrationFactory.getMethod(entry.getType())
-                                             .getYaml(inputDTO, entityId, entities, graph, entry, migratedEntities);
-        if (isNotEmpty(currentEntity)) {
-          files.addAll(currentEntity);
+        YamlGenerationDetails details = migrationFactory.getMethod(entry.getType())
+                                            .getYamls(inputDTO, entityId, entities, graph, entry, migratedEntities);
+        if (details != null && isNotEmpty(details.getYamlFileList())) {
+          files.addAll(details.getYamlFileList());
+        }
+        if (details != null && isNotEmpty(details.getSkipDetails())) {
+          skipDetails.addAll(details.getSkipDetails());
         }
       }
       removeLeafNodes(leafTracker);
     }
 
-    return files;
+    return YamlGenerationDetails.builder().yamlFileList(files).skipDetails(skipDetails).build();
   }
 
   private MutableGraph getGraphViz(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph) {

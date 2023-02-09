@@ -12,14 +12,18 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static java.time.Duration.ofSeconds;
 
+import io.harness.ci.states.V1.InitializeTaskStepV2;
+import io.harness.hsqs.client.api.HsqsClientService;
+import io.harness.hsqs.client.model.AckRequest;
+import io.harness.hsqs.client.model.DequeueRequest;
 import io.harness.hsqs.client.model.DequeueResponse;
+import io.harness.hsqs.client.model.UnAckRequest;
+import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import io.dropwizard.lifecycle.Managed;
-import java.io.IOException;
-import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,10 +34,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CIExecutionPoller implements Managed {
   @Inject CIInitTaskMessageProcessor ciInitTaskMessageProcessor;
-  @Inject QueueClient queueClient;
+  @Inject HsqsClientService hsqsClientService;
+  @Inject InitializeTaskStepV2 initializeTaskStepV2;
+  @Inject AsyncWaitEngine asyncWaitEngine;
   private AtomicBoolean shouldStop = new AtomicBoolean(false);
   private static final int WAIT_TIME_IN_SECONDS = 5;
-  private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
+  private final String moduleName = "ci";
+  private final int batchSize = 5;
 
   @Override
   public void start() {
@@ -68,12 +75,19 @@ public class CIExecutionPoller implements Managed {
   }
 
   @VisibleForTesting
-  void pollAndProcessMessages() throws IOException {
-    List<DequeueResponse> messages = queueClient.dequeue();
-    if (messages != null) {
+  void pollAndProcessMessages() {
+    try {
+      List<DequeueResponse> messages = hsqsClientService.dequeue(DequeueRequest.builder()
+                                                                     .batchSize(batchSize)
+                                                                     .consumerName(moduleName)
+                                                                     .topic(moduleName)
+                                                                     .maxWaitDuration(100)
+                                                                     .build());
       for (DequeueResponse message : messages) {
         processMessage(message);
       }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -81,12 +95,22 @@ public class CIExecutionPoller implements Managed {
   public void stop() throws Exception {}
 
   private void processMessage(DequeueResponse message) {
+    log.info("Read message with message id {} from hsqs", message.getItemId());
     ProcessMessageResponse processMessageResponse = ciInitTaskMessageProcessor.processMessage(message);
     try {
       if (processMessageResponse.getSuccess()) {
-        queueClient.ack(processMessageResponse.getAccountId(), message.getItemId());
+        hsqsClientService.ack(AckRequest.builder()
+                                  .itemID(message.getItemId())
+                                  .topic(moduleName)
+                                  .subTopic(processMessageResponse.getAccountId())
+                                  .build());
       } else {
-        queueClient.unack(processMessageResponse.getAccountId(), message.getItemId());
+        UnAckRequest unAckRequest = UnAckRequest.builder()
+                                        .itemID(message.getItemId())
+                                        .topic(moduleName)
+                                        .subTopic(processMessageResponse.getAccountId())
+                                        .build();
+        hsqsClientService.unack(unAckRequest);
       }
     } catch (Exception ex) {
       log.error("got error in calling hsqs client for message id: {}", message.getItemId(), ex);

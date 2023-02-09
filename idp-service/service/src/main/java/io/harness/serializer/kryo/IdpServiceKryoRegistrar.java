@@ -14,7 +14,7 @@ import io.harness.serializer.KryoRegistrar;
 import com.esotericsoftware.kryo.Kryo;
 
 @OwnedBy(HarnessTeam.IDP)
-public class IDPServiceKryoRegistrar implements KryoRegistrar {
+public class IdpServiceKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {}
 }

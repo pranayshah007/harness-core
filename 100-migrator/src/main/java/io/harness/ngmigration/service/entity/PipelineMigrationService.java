@@ -23,8 +23,10 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
@@ -174,15 +176,16 @@ public class PipelineMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     if (EmptyPredicate.isNotEmpty(inputDTO.getDefaults()) && inputDTO.getDefaults().containsKey(PIPELINE)
         && inputDTO.getDefaults().get(PIPELINE).isSkipMigration()) {
-      return new ArrayList<>();
+      return null;
     }
     Pipeline pipeline = (Pipeline) entities.get(entityId).getEntity();
     if (EmptyPredicate.isEmpty(pipeline.getPipelineStages())) {
-      return new ArrayList<>();
+      // TODO: @deepakputhraya
+      return null;
     }
 
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, pipeline.getName());
@@ -200,21 +203,32 @@ public class PipelineMigrationService extends NgMigrationService {
         if (StateType.ENV_STATE.name().equals(stageElement.getType())) {
           String workflowId = (String) stageElement.getProperties().get("workflowId");
           if (isNotEmpty(workflowId)) {
+            NGSkipDetail skipDetail = getSkipDetailForWorkflowStage(pipeline, stageElement, migratedEntities);
+            if (skipDetail != null) {
+              return YamlGenerationDetails.builder().skipDetails(Collections.singletonList(skipDetail)).build();
+            }
             stage = buildWorkflowStage(pipeline.getAccountId(), stageElement, migratedEntities);
           }
         } else {
-          stage = buildApprovalStage(stageElement, migratedEntities);
+          stage = buildApprovalStage(stageElement);
         }
         // If the stage cannot be migrated then we skip building the pipeline.
         if (stage == null) {
-          return new ArrayList<>();
+          // TODO @Deepakputhraya
+          return null;
         }
         ngStages.add(stage);
       }
     }
 
     if (EmptyPredicate.isEmpty(ngStages)) {
-      return new ArrayList<>();
+      return YamlGenerationDetails.builder()
+          .skipDetails(Collections.singletonList(NGSkipDetail.builder()
+                                                     .reason("The constructed pipeline had no stages")
+                                                     .cgBasicInfo(pipeline.getCgBasicInfo())
+                                                     .type(PIPELINE)
+                                                     .build()))
+          .build();
     }
 
     List<NGYamlFile> files = new ArrayList<>();
@@ -241,11 +255,10 @@ public class PipelineMigrationService extends NgMigrationService {
             .build();
     files.add(ngYamlFile);
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
-    return files;
+    return YamlGenerationDetails.builder().yamlFileList(files).build();
   }
 
-  private StageElementWrapperConfig buildApprovalStage(
-      PipelineStageElement stageElement, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  private StageElementWrapperConfig buildApprovalStage(PipelineStageElement stageElement) {
     AbstractStepNode stepNode = approvalStepMapper.getSpec(stageElement);
     ExecutionWrapperConfig stepWrapper =
         ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(stepNode)).build();
@@ -259,6 +272,33 @@ public class PipelineMigrationService extends NgMigrationService {
             .build());
 
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(approvalStageNode)).build();
+  }
+
+  private NGSkipDetail getSkipDetailForWorkflowStage(
+      Pipeline pipeline, PipelineStageElement stageElement, Map<CgEntityId, NGYamlFile> migratedEntities) {
+    // TODO: Handle Skip condition
+    String workflowId = stageElement.getProperties().get("workflowId").toString();
+    // Throw error if the stage is using canary or multi WFs.
+    NGYamlFile wfTemplate = migratedEntities.get(CgEntityId.builder().id(workflowId).type(WORKFLOW).build());
+    if (wfTemplate == null) {
+      log.warn("The workflow was not migrated, aborting pipeline migration {}", workflowId);
+      return NGSkipDetail.builder()
+          .reason("The workflow used as a stage was not migrated")
+          .cgBasicInfo(pipeline.getCgBasicInfo())
+          .type(PIPELINE)
+          .build();
+    }
+
+    NGTemplateConfig wfTemplateConfig = (NGTemplateConfig) wfTemplate.getYaml();
+    if (TemplateEntityType.PIPELINE_TEMPLATE.equals(wfTemplateConfig.getTemplateInfoConfig().getType())) {
+      log.warn("Cannot link a multi-service WFs as they are created as pipeline templates");
+      return NGSkipDetail.builder()
+          .reason("A multi-service workflow is linked to this pipeline.")
+          .cgBasicInfo(pipeline.getCgBasicInfo())
+          .type(PIPELINE)
+          .build();
+    }
+    return null;
   }
 
   private StageElementWrapperConfig buildWorkflowStage(

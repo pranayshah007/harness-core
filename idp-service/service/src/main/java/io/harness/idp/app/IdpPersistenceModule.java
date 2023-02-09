@@ -22,10 +22,10 @@ import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(HarnessTeam.IDP)
-public class IDPPersistenceModule extends SpringPersistenceModule {
+public class IdpPersistenceModule extends SpringPersistenceModule {
   @Override
   protected Class<?>[] getConfigClasses() {
-    List<Class<?>> resultClasses = Lists.newArrayList(ImmutableList.of(IDPPersistenceConfig.class));
+    List<Class<?>> resultClasses = Lists.newArrayList(ImmutableList.of(IdpPersistenceConfig.class));
     Class<?>[] resultClassesArray = new Class<?>[ resultClasses.size() ];
     return resultClasses.toArray(resultClassesArray);
   }

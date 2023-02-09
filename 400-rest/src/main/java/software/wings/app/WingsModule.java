@@ -162,13 +162,13 @@ import io.harness.governance.pipeline.service.evaluators.OnWorkflow;
 import io.harness.governance.pipeline.service.evaluators.PipelineStatusEvaluator;
 import io.harness.governance.pipeline.service.evaluators.WorkflowStatusEvaluator;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
-import io.harness.hsqs.client.HsqsServiceClient;
+import io.harness.hsqs.client.HsqsClient;
 import io.harness.instancesync.InstanceSyncResourceClientModule;
 import io.harness.instancesyncmonitoring.module.InstanceSyncMonitoringModule;
 import io.harness.invites.NgInviteClientModule;
-import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesContainerServiceImpl;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.licensing.remote.admin.AdminLicenseHttpClientModule;
 import io.harness.limits.LimitCheckerFactory;
@@ -1516,7 +1516,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(K8sWatchTaskService.class).to(K8sWatchTaskServiceImpl.class);
     bind(HelmChartService.class).to(HelmChartServiceImpl.class);
     bind(LogStreamingServiceRestClient.class).toProvider(LogStreamingServiceClientFactory.class);
-    bind(HsqsServiceClient.class).toProvider(HQueueServiceClientFactory.class);
+    bind(HsqsClient.class).toProvider(HQueueServiceClientFactory.class);
     bind(IInstanceReconService.class).to(InstanceReconServiceImpl.class);
 
     // audit service

@@ -33,6 +33,8 @@ ENV JAVA_HOME=/opt/java/openjdk/
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 
 ARG TARGETARCH=amd64
+ARG BASEURL=https://app.harness.io/public/shared/delegates
+ARG DELEGATEVERSION=73807
 
 RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/kubectl/v1.24.3/kubectl https://app.harness.io/public/shared/tools/kubectl/release/v1.24.3/bin/linux/$TARGETARCH/kubectl \
@@ -68,7 +70,7 @@ ENV PATH=/opt/harness-delegate/client-tools/chartmuseum/v0.15.0/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/tf-config-inspect/v1.1/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/kustomize/v4.5.4/:$PATH
 
-COPY ./delegate.jar ./delegate.jar
+RUN curl -s -L -o delegate.jar $BASEURL/$DELEGATEVERSION/delegate.jar
 
 USER 1001
 

@@ -55,13 +55,13 @@ import org.springframework.guice.annotation.GuiceModule;
     includeFilters = @ComponentScan.Filter(HarnessRepo.class), mongoTemplateRef = "primary")
 @EnableMongoAuditing
 @OwnedBy(HarnessTeam.PL)
-public class IDPPersistenceConfig extends AbstractMongoClientConfiguration {
+public class IdpPersistenceConfig extends AbstractMongoClientConfiguration {
   protected final Injector injector;
   protected final List<Class<? extends Converter<?, ?>>> springConverters;
   protected final MongoConfig mongoConfig;
   protected final MongoClient mongoClient;
 
-  public IDPPersistenceConfig(Injector injector, List<Class<? extends Converter<?, ?>>> springConverters) {
+  public IdpPersistenceConfig(Injector injector, List<Class<? extends Converter<?, ?>>> springConverters) {
     this.injector = injector;
     this.springConverters = springConverters;
     this.mongoClient = injector.getInstance(Key.get(MongoClient.class, Names.named("primaryMongoClient")));

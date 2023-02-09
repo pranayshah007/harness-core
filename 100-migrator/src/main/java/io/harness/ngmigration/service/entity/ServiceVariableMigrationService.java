@@ -26,6 +26,7 @@ import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
@@ -145,14 +146,14 @@ public class ServiceVariableMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     ServiceVariable serviceVariable = (ServiceVariable) entities.get(entityId).getEntity();
     MigratorExpressionUtils.render(serviceVariable, inputDTO.getCustomExpressions());
     List<NGYamlFile> files = new ArrayList<>();
 
     if (!doReferenceExists(migratedEntities, serviceVariable.getEnvId(), serviceVariable.getServiceId())) {
-      return files;
+      return YamlGenerationDetails.builder().yamlFileList(files).build();
     }
 
     NGYamlFile yamlFile = getBlankServiceOverride(inputDTO, migratedEntities, serviceVariable.getEnvId(),
@@ -175,7 +176,7 @@ public class ServiceVariableMigrationService extends NgMigrationService {
       files.add(yamlFile);
       migratedEntities.putIfAbsent(entityId, yamlFile);
     }
-    return files;
+    return YamlGenerationDetails.builder().yamlFileList(files).build();
   }
 
   public static NGYamlFile findExistingOverride(Map<CgEntityId, CgEntityNode> entities,
