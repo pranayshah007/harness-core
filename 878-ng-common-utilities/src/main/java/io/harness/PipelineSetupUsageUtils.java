@@ -7,8 +7,10 @@
 
 package io.harness;
 
+import io.harness.beans.EntityReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.NGExpressionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -46,9 +48,9 @@ public class PipelineSetupUsageUtils {
 
     List<EntityDetail> entityDetails = new ArrayList<>();
     for (EntitySetupUsageDTO referredUsage : allReferredUsages) {
-      IdentifierRef ref = (IdentifierRef) referredUsage.getReferredEntity().getEntityRef();
+      EntityReference ref = referredUsage.getReferredEntity().getEntityRef();
       Map<String, String> metadata = ref.getMetadata();
-      if (metadata == null) {
+      if (EmptyPredicate.isEmpty(metadata)) {
         continue;
       }
       String fqn = metadata.get(PreFlightCheckMetadata.FQN);
