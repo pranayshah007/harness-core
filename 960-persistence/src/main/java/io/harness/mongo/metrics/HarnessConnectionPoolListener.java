@@ -18,8 +18,6 @@ import com.mongodb.event.ConnectionCheckedOutEvent;
 import com.mongodb.event.ConnectionPoolClosedEvent;
 import com.mongodb.event.ConnectionPoolListener;
 import com.mongodb.event.ConnectionPoolOpenedEvent;
-import com.mongodb.event.ConnectionPoolWaitQueueEnteredEvent;
-import com.mongodb.event.ConnectionPoolWaitQueueExitedEvent;
 import com.mongodb.event.ConnectionRemovedEvent;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -52,22 +50,6 @@ public class HarnessConnectionPoolListener implements ConnectionPoolListener {
     HarnessConnectionPoolStatistics statistics = getStatistics(event.getConnectionId());
     if (statistics != null) {
       statistics.connectionCheckedIn(event);
-    }
-  }
-
-  @Override
-  public void waitQueueEntered(final ConnectionPoolWaitQueueEnteredEvent event) {
-    HarnessConnectionPoolStatistics statistics = getStatistics(event.getServerId());
-    if (statistics != null) {
-      statistics.waitQueueEntered(event);
-    }
-  }
-
-  @Override
-  public void waitQueueExited(final ConnectionPoolWaitQueueExitedEvent event) {
-    HarnessConnectionPoolStatistics statistics = getStatistics(event.getServerId());
-    if (statistics != null) {
-      statistics.waitQueueExited(event);
     }
   }
 

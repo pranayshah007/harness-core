@@ -70,6 +70,23 @@ public class UserServiceHelperTest extends WingsBaseTest {
   @Test
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
+  public void testIfUserPartOfPendingDeletedAccount() {
+    Account account = anAccount().withUuid(ACCOUNT_ID).build();
+    wingsPersistence.save(account);
+    User user1 = User.Builder.anUser()
+                     .uuid(UUIDGenerator.generateUuid())
+                     .pendingAccounts(Collections.singletonList(account))
+                     .email("abc@harness.io")
+                     .name("abc")
+                     .build();
+    wingsPersistence.save(user1);
+    boolean result = userServiceHelper.isUserPartOfDeletedAccount(user1, ACCOUNT_ID);
+    assertThat(result).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
   public void testIsUserActiveInNG() {
     when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
     MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);

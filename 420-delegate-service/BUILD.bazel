@@ -94,7 +94,7 @@ java_library(
         "@maven//:org_glassfish_jersey_test_framework_jersey_test_framework_core",
         "@maven//:org_glassfish_jersey_test_framework_providers_jersey_test_framework_provider_inmemory",
         "@maven//:org_mockito_mockito_core",
-        "@maven//:org_mongodb_mongo_java_driver",
+        "@maven//:org_mongodb_mongodb_driver_core",
         "@maven//:org_reflections_reflections",
         "@maven//:org_slf4j_slf4j_api",
     ],

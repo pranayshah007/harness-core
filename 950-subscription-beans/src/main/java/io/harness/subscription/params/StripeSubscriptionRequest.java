@@ -7,19 +7,19 @@
 
 package io.harness.subscription.params;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class ItemParams {
-  private String priceId;
-  private Long quantity;
-  private String lookupKey;
-
-  public ItemParams(String priceId, Long quantity, String lookupKey) {
-    this.priceId = priceId;
-    this.quantity = quantity;
-    this.lookupKey = lookupKey;
-  }
+public class StripeSubscriptionRequest {
+  private String accountIdentifier;
+  private String subscriptionId;
+  private String customerEmail;
+  private String customerId;
+  private String paymentMethodId;
+  private String moduleType;
+  private String paymentFrequency;
+  private List<StripeItemRequest> items;
 }

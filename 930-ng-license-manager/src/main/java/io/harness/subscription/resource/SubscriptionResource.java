@@ -24,13 +24,13 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
 import io.harness.subscription.dto.CustomerDTO;
 import io.harness.subscription.dto.CustomerDetailDTO;
-import io.harness.subscription.dto.FfSubscriptionDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
 import io.harness.subscription.dto.PaymentMethodCollectionDTO;
 import io.harness.subscription.dto.PriceCollectionDTO;
 import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
+import io.harness.subscription.params.SubscriptionRequest;
 import io.harness.subscription.params.UsageKey;
 import io.harness.subscription.services.SubscriptionService;
 
@@ -129,8 +129,8 @@ public class SubscriptionResource {
   }
 
   @POST
-  @ApiOperation(value = "Creates a feature flag subscription", nickname = "createFfSubscription")
-  @Operation(operationId = "createFfSubscription", summary = "Creates a feature flag subscription",
+  @ApiOperation(value = "Creates a subscription", nickname = "createSubscription")
+  @Operation(operationId = "createSubscription", summary = "Creates a subscription",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -138,31 +138,13 @@ public class SubscriptionResource {
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
   public ResponseDTO<SubscriptionDetailDTO>
-  createFfSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+  createSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
           required = true, description = "This is the details of the Subscription Request.") @NotNull
-      @Valid FfSubscriptionDTO subscriptionDTO) {
-    return ResponseDTO.newResponse(subscriptionService.createFfSubscription(accountIdentifier, subscriptionDTO));
+      @Valid SubscriptionRequest subscriptionRequest) {
+    return ResponseDTO.newResponse(subscriptionService.createSubscription(accountIdentifier, subscriptionRequest));
   }
-
-  //  @POST
-  //  @ApiOperation(value = "Creates a subscription", nickname = "createSubscription")
-  //  @Operation(operationId = "createSubscription", summary = "Creates a subscription",
-  //      responses =
-  //      {
-  //        @io.swagger.v3.oas.annotations.responses.
-  //        ApiResponse(responseCode = "default", description = "Returns subscription details")
-  //      })
-  //  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
-  //  public ResponseDTO<SubscriptionDetailDTO>
-  //  createSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-  //                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-  //      @io.swagger.v3.oas.annotations.parameters.RequestBody(
-  //          required = true, description = "This is the details of the Subscription Request.") @NotNull
-  //      @Valid SubscriptionDTO subscriptionDTO) {
-  //    return ResponseDTO.newResponse(subscriptionService.createSubscription(accountIdentifier, subscriptionDTO));
-  //  }
 
   @PUT
   @Path("/{subscriptionId}")

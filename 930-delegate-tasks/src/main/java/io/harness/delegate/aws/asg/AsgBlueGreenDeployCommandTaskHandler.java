@@ -172,11 +172,7 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
     // Chain factory code to handle each manifest one by one in a chain
     AsgManifestHandlerChainState chainState =
         AsgManifestHandlerChainFactory.builder()
-            .initialChainState(AsgManifestHandlerChainState.builder()
-                                   .asgName(asgName)
-                                   .executionStrategy("BG")
-                                   .targetGroupArnList(targetGroupArnList)
-                                   .build())
+            .initialChainState(AsgManifestHandlerChainState.builder().asgName(asgName).build())
             .asgSdkManager(asgSdkManager)
             .build()
             .addHandler(AsgLaunchTemplate,

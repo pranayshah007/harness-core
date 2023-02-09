@@ -31,7 +31,7 @@ public class CvStepParametersUtils {
     stepBuilder.failureStrategies(
         stepNode.getFailureStrategies() != null ? stepNode.getFailureStrategies().getValue() : null);
     stepBuilder.timeout(ParameterField.createValueField(TimeoutUtils.getTimeoutString(stepNode.getTimeout())));
-    stepBuilder.when(stepNode.getWhen());
+    stepBuilder.when(stepNode.getWhen() != null ? stepNode.getWhen().getValue() : null);
     stepBuilder.type(stepNode.getType());
     stepBuilder.uuid(stepNode.getUuid());
     stepBuilder.enforce(stepNode.getEnforce());

@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.environment.services.impl;
 
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.TATHAGAT;
@@ -21,6 +22,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -29,6 +32,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGEntitiesTestBase;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.eventsframework.api.Producer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.ng.core.EntityDetail;
@@ -40,12 +44,15 @@ import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.UpsertOptions;
+import io.harness.repositories.environment.spring.EnvironmentRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.PageUtils;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -68,6 +75,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(HarnessTeam.CDC)
 @RunWith(Parameterized.class)
@@ -75,7 +83,11 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private InfrastructureEntityService infrastructureEntityService;
   @Mock private ClusterService clusterService;
   @Mock EntitySetupUsageService entitySetupUsageService;
-  @Inject @InjectMocks private EnvironmentServiceImpl environmentService;
+  @Mock Producer producer;
+  @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
+  @Inject private EnvironmentRepository environmentRepository;
+  @Inject private OutboxService outboxService;
+  @InjectMocks private EnvironmentServiceImpl environmentService;
 
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "ORG_ID";
@@ -89,7 +101,10 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
 
   @Before
   public void setup() {
+    Reflect.on(environmentService).set("transactionTemplate", transactionTemplate);
     Reflect.on(environmentService).set("entitySetupUsageService", entitySetupUsageService);
+    Reflect.on(environmentService).set("environmentRepository", environmentRepository);
+    Reflect.on(environmentService).set("outboxService", outboxService);
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(new PageImpl<>(Collections.emptyList()));
   }
@@ -229,6 +244,7 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
         environmentService.get("ACCOUNT_ID", "ORG_ID_1", null, e3.getIdentifier(), false);
     assertThat(environment3).isPresent();
     assertThat(environment3.get().getIdentifier()).isEqualTo(e3.getIdentifier());
+    verify(producer, times(5)).send(any());
   }
 
   @Test

@@ -34,6 +34,7 @@ import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErro
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.gitaware.dto.FetchRemoteEntityRequest;
 import io.harness.gitaware.dto.GetFileGitContextRequestParams;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.merger.YamlConfig;
@@ -52,7 +53,6 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.services.NGTemplateServiceHelper;
-import io.harness.template.services.TemplateGitXService;
 import io.harness.template.utils.TemplateUtils;
 import io.harness.template.yaml.TemplateYamlFacade;
 import io.harness.template.yaml.TemplateYamlUtils;
@@ -88,8 +88,8 @@ import lombok.extern.slf4j.Slf4j;
 public class TemplateMergeServiceHelper {
   private static final int MAX_DEPTH = 10;
   private NGTemplateServiceHelper templateServiceHelper;
-  private TemplateGitXService templateGitXService;
   private TemplateYamlFacade templateYamlFacade;
+  private GitAwareEntityHelper gitAwareEntityHelper;
 
   // Gets the Template Entity linked to a YAML
   public TemplateEntityGetResponse getLinkedTemplateEntity(String accountId, String orgId, String projectId,
@@ -430,7 +430,7 @@ public class TemplateMergeServiceHelper {
 
   private FetchRemoteEntityRequest buildFetchRemoteEntityRequest(
       Scope scope, TemplateEntity savedEntity, boolean loadFromCache) {
-    String branchName = templateGitXService.getWorkingBranch(savedEntity.getRepoURL());
+    String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepoURL());
 
     GetFileGitContextRequestParams getFileGitContextRequestParams =
         buildGitContextRequestParams(savedEntity, branchName, loadFromCache);

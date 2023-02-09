@@ -11,9 +11,12 @@ java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
     resources = [],
-    visibility = ["//visibility:private"],
+    visibility = ["//idp-service:__subpackages__"],
     deps = [
+        "//:lombok",
         "//953-events-api:module",
+        "//953-events-api/src/main/proto:953_events_api_java_proto",
+        "@maven//:com_google_inject_guice",
     ],
 )
 

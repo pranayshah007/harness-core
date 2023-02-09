@@ -13,7 +13,6 @@ import static io.harness.beans.DelegateTask.Status.ERROR;
 import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.beans.DelegateTask.Status.runningStatuses;
-import static io.harness.beans.FeatureName.DEL_SECRET_EVALUATION_VERBOSE_LOGGING;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -125,7 +124,6 @@ import io.harness.reflection.ReflectionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionConfig;
-import io.harness.selection.log.DelegateSelectionLogTaskMetadata;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateCallbackRegistry;
@@ -627,13 +625,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
         // Added temporarily to help to identifying tasks whose task setup abstractions need to be fixed
         verifyTaskSetupAbstractions(task);
-        if (task.isSelectionLogsTrackingEnabled()) {
-          persistence.save(DelegateSelectionLogTaskMetadata.builder()
-                               .taskId(task.getUuid())
-                               .accountId(task.getAccountId())
-                               .setupAbstractions(task.getSetupAbstractions())
-                               .build());
-        }
         task.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
         saveDelegateTask(task, task.getAccountId());
         delegateSelectionLogsService.logBroadcastToDelegate(Sets.newHashSet(task.getBroadcastToDelegateIds()), task);
@@ -740,13 +731,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
         // Added temporarily to help to identifying tasks whose task setup abstractions need to be fixed
         verifyTaskSetupAbstractions(task);
-        if (task.isSelectionLogsTrackingEnabled()) {
-          persistence.save(DelegateSelectionLogTaskMetadata.builder()
-                               .taskId(task.getUuid())
-                               .accountId(task.getAccountId())
-                               .setupAbstractions(task.getSetupAbstractions())
-                               .build());
-        }
 
         task.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
         saveDelegateTask(task, task.getAccountId());
@@ -1467,12 +1451,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       if (isNotEmpty(sweepingOutputSecretFunctor.getEvaluatedSecrets())) {
         secrets.addAll(sweepingOutputSecretFunctor.getEvaluatedSecrets());
       }
-    }
-
-    if (featureFlagService.isEnabled(DEL_SECRET_EVALUATION_VERBOSE_LOGGING, accountID)) {
-      ArrayList<String> secretUuids = new ArrayList<>();
-      secretDetails.forEach((key, value) -> { secretUuids.add(key); });
-      log.info("SecretDetails being sent in DelegateTaskPackage {} ", secretUuids.toString());
     }
 
     delegateTaskPackageBuilder.encryptionConfigs(encryptionConfigs);

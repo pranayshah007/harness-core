@@ -305,19 +305,20 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   public void testCreateTextSearchQuery() {
     // testing query as our test MongoServer doesn't support text search:
     // https://github.com/bwaldvogel/mongo-java-server
-    Query<Activity> activityQuery = changeEventService.createTextSearchQuery(Instant.ofEpochSecond(100),
-        Instant.ofEpochSecond(400), "searchText", Arrays.asList(ChangeCategory.DEPLOYMENT, ChangeCategory.ALERTS),
+    Query<Activity> activityQuery = changeEventService.createTextSearchQuery(Instant.parse("2023-01-31T00:00:00.00Z"),
+        Instant.parse("2023-01-31T10:00:00.00Z"), "searchText",
+        Arrays.asList(ChangeCategory.DEPLOYMENT, ChangeCategory.ALERTS),
         Arrays.asList(ChangeSourceType.HARNESS_CD, ChangeSourceType.KUBERNETES));
 
     assertThat(activityQuery.toString())
         .isEqualTo(
-            "{ {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": 400000}}}, {\"eventTime\": {\"$gte\": {\"$date\": 100000}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\"]}}]}  }");
+            "{ {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": \"2023-01-31T10:00:00Z\"}}}, {\"eventTime\": {\"$gte\": {\"$date\": \"2023-01-31T00:00:00Z\"}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\"]}}]}  }");
 
     activityQuery = changeEventService.createTextSearchQuery(
-        Instant.ofEpochSecond(100), Instant.ofEpochSecond(400), "searchText", null, null);
+        Instant.parse("2023-01-31T00:00:00.00Z"), Instant.parse("2023-01-31T10:00:00.00Z"), "searchText", null, null);
     assertThat(activityQuery.toString())
         .isEqualTo(
-            "{ {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": 400000}}}, {\"eventTime\": {\"$gte\": {\"$date\": 100000}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\", \"PAGER_DUTY\", \"KUBERNETES\", \"HARNESS_CD_CURRENT_GEN\", \"FEATURE_FLAG\", \"CUSTOM_DEPLOY\", \"CUSTOM_INCIDENT\", \"CUSTOM_INFRA\", \"CUSTOM_FF\"]}}]}  }");
+            "{ {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": \"2023-01-31T10:00:00Z\"}}}, {\"eventTime\": {\"$gte\": {\"$date\": \"2023-01-31T00:00:00Z\"}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\", \"PAGER_DUTY\", \"KUBERNETES\", \"HARNESS_CD_CURRENT_GEN\", \"FEATURE_FLAG\", \"CUSTOM_DEPLOY\", \"CUSTOM_INCIDENT\", \"CUSTOM_INFRA\", \"CUSTOM_FF\"]}}]}  }");
   }
 
   @Test
