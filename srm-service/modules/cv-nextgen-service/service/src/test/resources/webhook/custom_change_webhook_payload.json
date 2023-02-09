@@ -1,0 +1,11 @@
+{
+  "user": "user@harness.io",
+  "startTime": 1674823746000,
+  "endTime": 1674823746000,
+  "eventIdentifier": "eventIdentifier",
+  "eventDetail": {
+    "description": "Test description",
+    "externalLinkToEntity": "urlString",
+    "name": "name"
+  }
+}
