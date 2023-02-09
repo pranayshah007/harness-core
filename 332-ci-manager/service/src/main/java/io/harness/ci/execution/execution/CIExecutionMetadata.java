@@ -46,9 +46,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = true)
 public class CIExecutionMetadata {
   @Wither @Id @dev.morphia.annotations.Id String uuid;
-  @FdIndex String accountId;
+  String accountId;
   OSType buildType;
   String stageExecutionId;
+  String queueId;
   Infrastructure.Type infraType;
   @Builder.Default
   @FdTtlIndex
@@ -60,6 +61,11 @@ public class CIExecutionMetadata {
                  .name("accountIdAndBuildType")
                  .field(CIExecutionMetadataKeys.accountId)
                  .field(CIExecutionMetadataKeys.buildType)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("stageExecutionIdAndAccountId")
+                 .field(CIExecutionMetadataKeys.stageExecutionId)
+                 .field(CIExecutionMetadataKeys.accountId)
                  .build())
         .build();
   }
