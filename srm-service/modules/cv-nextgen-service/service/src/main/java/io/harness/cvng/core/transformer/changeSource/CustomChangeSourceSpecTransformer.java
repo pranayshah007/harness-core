@@ -22,7 +22,7 @@ public class CustomChangeSourceSpecTransformer
   @Inject WebhookConfigService webhookConfigService;
 
   private final static String webhookSamplePayload =
-      "{ \"eventIdentifier\": \"<string>\" (optional), \"name\": \"demo\", \"user\": \"demo@harness.io\", \"startTime\": timeInMs, \"endTime\": timeInMs, \"eventDetails\": { \"description\": \"<String>\", \"changeEventDetailsLink\": \"urlString\" (optional), \"externalLinkToEntity\": \"urlString\" (optional) } }";
+      "{ \"eventIdentifier\": \"<string>\" (optional), \"name\": \"demo\", \"user\": \"demo@harness.io\", \"startTime\": timeInMs, \"endTime\": timeInMs, \"eventDetail\": { \"description\": \"<String>\", \"changeEventDetailsLink\": \"urlString\" (optional), \"externalLinkToEntity\": \"urlString\" (optional) } }";
 
   @Override
   public CustomChangeSource getEntity(MonitoredServiceParams monitoredServiceParams, ChangeSourceDTO changeSourceDTO) {

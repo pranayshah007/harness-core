@@ -14,7 +14,7 @@ java_library(
         "//:lombok",
         "//970-ng-commons/src/main/java/io/harness/metrics:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
-        "@maven//:org_mongodb_mongo_java_driver",
+        "@maven//:org_mongodb_mongodb_driver_core",
     ],
 )
 

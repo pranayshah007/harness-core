@@ -44,7 +44,8 @@ public enum AuthorizationServiceHeader {
   CHAOS_SERVICE("ChaosService"),
   CODE("Code"),
   IACM_MANAGER("IACMManager"),
-  MIGRATOR("MigratorService");
+  MIGRATOR("MigratorService"),
+  IDP_SERVICE("IDPService");
 
   private final String serviceId;
 

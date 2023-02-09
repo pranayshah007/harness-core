@@ -175,11 +175,8 @@ delegateProfiles {"name": "uniqueName", "unique": true} {"accountId": 1, "name":
 delegateProfiles {"name": "unique_identification", "unique": true} {"accountId": 1, "owner": 1, "identifier": 1}
 delegateScopes {"name": "createdAt_1", "background": true} {"createdAt": 1}
 delegateScopes {"name": "uniqueName", "unique": true} {"accountId": 1, "name": 1}
-delegateSelectionLogRecords {"name": "selectionLogsGroup", "background": true} {"accountId": 1, "taskId": 1, "message": 1, "groupId": 1}
+delegateSelectionLogRecords {"name": "selectionLogs", "background": true} {"accountId": 1, "taskId": 1, "message": 1}
 delegateSelectionLogRecords {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-delegateSelectionLogTaskMetadata {"name": "accountId_1", "background": true} {"accountId": 1}
-delegateSelectionLogTaskMetadata {"name": "taskId_1", "unique": true} {"taskId": 1}
-delegateSelectionLogTaskMetadata {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 delegateSequenceConfig {"name": "appId_1", "background": true} {"appId": 1}
 delegateSequenceConfig {"name": "createdAt_1", "background": true} {"createdAt": 1}
 delegateSequenceConfig {"name": "uniqueDelegateSequenceIdx", "unique": true} {"accountId": 1, "hostName": 1, "sequenceNum": 1}

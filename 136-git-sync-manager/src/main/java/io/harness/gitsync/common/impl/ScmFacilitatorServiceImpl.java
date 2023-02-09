@@ -1009,7 +1009,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         (requestIdentifier, scmGetFileByBranchRequestDTO) -> {
           uniqueFileRequests.add(requestIdentifier.getIdentifier());
         });
-    log.info(String.format(
-        "getBatchFilesByBranch request size %d and filePaths %s", uniqueFileRequests.size(), uniqueFileRequests));
+    log.info(String.format("getBatchFilesByBranch request size %d and entity request list %s",
+        uniqueFileRequests.size(), uniqueFileRequests));
   }
 }

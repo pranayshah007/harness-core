@@ -5,15 +5,8 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.events;
+package io.harness.events.consumers;
 
-import io.harness.eventsframework.consumer.Message;
-import io.harness.ng.core.event.MessageListener;
-
-public class SecretCRUDListener implements MessageListener {
-  // TODO: Need to add a binding for this.
-  @Override
-  public boolean handleMessage(Message message) {
-    return false;
-  }
+public interface IdpRedisConsumer extends Runnable {
+  void shutDown();
 }

@@ -242,7 +242,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
             .count()
             .as(InstanceSyncConstants.COUNT);
     return secondaryMongoTemplate.aggregate(
-        newAggregation(matchStage, groupEnvId), Instance.class, EnvBuildInstanceCount.class);
+        newAggregation(matchStage, groupEnvId, EnvBuildInstanceCount.getProjection()), Instance.class,
+        EnvBuildInstanceCount.class);
   }
 
   @Override
@@ -267,7 +268,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                     .count()
                                     .as(InstanceSyncConstants.COUNT);
     return secondaryMongoTemplate.aggregate(
-        newAggregation(matchStage, groupEnvId), Instance.class, ActiveServiceInstanceInfo.class);
+        newAggregation(matchStage, groupEnvId, ActiveServiceInstanceInfo.getProjection()), Instance.class,
+        ActiveServiceInstanceInfo.class);
   }
 
   @Override
@@ -287,7 +289,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                     .count()
                                     .as(InstanceSyncConstants.COUNT);
     return secondaryMongoTemplate.aggregate(
-        newAggregation(matchStage, groupEnvId), Instance.class, ActiveServiceInstanceInfoV2.class);
+        newAggregation(matchStage, groupEnvId, ActiveServiceInstanceInfoV2.getProjection()), Instance.class,
+        ActiveServiceInstanceInfoV2.class);
   }
 
   @Override
@@ -357,7 +360,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
             .count()
             .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(
-        newAggregation(matchStage, groupClusterEnvId), INSTANCE_NG_COLLECTION, ActiveServiceInstanceInfo.class);
+        newAggregation(matchStage, groupClusterEnvId, ActiveServiceInstanceInfo.getProjection()),
+        INSTANCE_NG_COLLECTION, ActiveServiceInstanceInfo.class);
   }
 
   @Override
@@ -379,7 +383,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                            .count()
                                            .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(
-        newAggregation(matchStage, groupClusterEnvId), INSTANCE_NG_COLLECTION, ActiveServiceInstanceInfoV2.class);
+        newAggregation(matchStage, groupClusterEnvId, ActiveServiceInstanceInfoV2.getProjection()),
+        INSTANCE_NG_COLLECTION, ActiveServiceInstanceInfoV2.class);
   }
 
   @Override
@@ -399,7 +404,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                         .count()
                                         .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(
-        newAggregation(matchStage, groupOperation), INSTANCE_NG_COLLECTION, EnvironmentInstanceCountModel.class);
+        newAggregation(matchStage, groupOperation, EnvironmentInstanceCountModel.getProjection()),
+        INSTANCE_NG_COLLECTION, EnvironmentInstanceCountModel.class);
   }
 
   @Override
@@ -562,17 +568,9 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     GroupOperation groupEnvId =
         group(InstanceKeys.serviceIdentifier, InstanceKeys.envType).count().as(InstanceSyncConstants.COUNT);
 
-    ProjectionOperation projection =
-        Aggregation.project()
-            .andExpression(InstanceSyncConstants.ID + "." + InstanceSyncConstants.ENV_TYPE)
-            .as(InstanceSyncConstants.ENV_TYPE)
-            .andExpression(InstanceSyncConstants.ID + "." + InstanceSyncConstants.SERVICE_ID)
-            .as(InstanceSyncConstants.SERVICE_ID)
-            .andExpression(InstanceSyncConstants.COUNT)
-            .as(InstanceSyncConstants.COUNT);
-
     return secondaryMongoTemplate.aggregate(
-        newAggregation(matchStage, groupEnvId, projection), Instance.class, CountByServiceIdAndEnvType.class);
+        newAggregation(matchStage, groupEnvId, CountByServiceIdAndEnvType.getProjection()), Instance.class,
+        CountByServiceIdAndEnvType.class);
   }
 
   /*

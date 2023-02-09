@@ -7,19 +7,21 @@
 
 package io.harness.subscription.params;
 
+import io.harness.ModuleType;
+import io.harness.subscription.dto.CustomerDTO;
+
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class SubscriptionParams {
+public class SubscriptionRequest {
   private String accountIdentifier;
-  private String subscriptionId;
-  private String customerEmail;
-  private String customerId;
-  private String paymentMethodId;
-  private String moduleType;
+  private ModuleType moduleType;
+  private List<SubscriptionItemRequest> items;
   private String paymentFrequency;
-  private List<ItemParams> items;
+  private String edition;
+  private boolean premiumSupport;
+  private CustomerDTO customer;
 }

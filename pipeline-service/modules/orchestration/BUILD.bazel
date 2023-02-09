@@ -32,7 +32,7 @@ shared_dependencies = [
     "@maven//:javax_validation_validation_api",
     "@maven//:org_apache_commons_commons_lang3",
     "@maven//:org_hibernate_validator_hibernate_validator",
-    "@maven//:org_mongodb_mongo_java_driver",
+    "@maven//:org_mongodb_mongodb_driver_core",
     "@maven//:dev_morphia_morphia_core",
     "@maven//:org_slf4j_slf4j_api",
     "@maven//:org_springframework_data_spring_data_commons",

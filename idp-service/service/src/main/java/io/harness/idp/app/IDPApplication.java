@@ -11,8 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.IDP;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.events.consumers.EntityCrudStreamConsumer;
+import io.harness.events.consumers.IdpEventConsumerController;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;
+import io.harness.metrics.service.api.MetricService;
 import io.harness.persistence.HPersistence;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
@@ -89,8 +92,20 @@ public class IDPApplication extends Application<IDPConfiguration> {
     modules.add(new IDPModule(configuration));
     Injector injector = Guice.createInjector(modules);
     registerHealthChecksManager(environment, injector);
+    registerQueueListeners(injector);
+    initMetrics(injector);
     log.info("Starting app done");
     log.info("IDP Service is running on JRE: {}", System.getProperty("java.version"));
+  }
+
+  private void registerQueueListeners(Injector injector) {
+    log.info("Initializing queue listeners...");
+    IdpEventConsumerController controller = injector.getInstance(IdpEventConsumerController.class);
+    controller.register(injector.getInstance(EntityCrudStreamConsumer.class), 1);
+  }
+
+  private void initMetrics(Injector injector) {
+    injector.getInstance(MetricService.class).initializeMetrics();
   }
 
   private void registerHealthChecksManager(Environment environment, Injector injector) {

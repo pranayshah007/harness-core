@@ -301,9 +301,9 @@ public class CgInstanceSyncServiceV2 {
             instanceSyncHandler.processInstanceSyncResponseFromPerpetualTask(infraMapping, delegateResponse);
           }
         } catch (NoInstancesException e) {
-          log.error(e.getMessage());
+          log.warn(e.getMessage());
           taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
-          return;
+          continue;
         }
         taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
       }

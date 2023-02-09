@@ -54,11 +54,10 @@ public class ContainerRunStepHelper {
   @Inject OutcomeService outcomeService;
   @Inject ContainerExecutionConfig containerExecutionConfig;
 
-  public TaskData getRunStepTask(
-      Ambiance ambiance, ContainerStepInfo containerStepInfo, String accountId, String logKey, long timeout) {
+  public TaskData getRunStepTask(Ambiance ambiance, ContainerStepInfo containerStepInfo, String accountId,
+      String logKey, long timeout, String parkedTaskId) {
     String identifier = containerStepInfo.getIdentifier();
 
-    String parkedTaskId = containerDelegateTaskHelper.queueParkedDelegateTask(ambiance, timeout, accountId);
     UnitStep unitStep = serializeStepWithStepParameters(containerStepInfo, getPort(ambiance, identifier), parkedTaskId,
         logKey, identifier, accountId, containerStepInfo.getName(), timeout);
     LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome = (LiteEnginePodDetailsOutcome) outcomeService.resolve(
@@ -78,9 +77,7 @@ public class ContainerRunStepHelper {
             .isLocal(containerExecutionConfig.isLocal())
             .delegateSvcEndpoint(containerExecutionConfig.getDelegateServiceEndpointVariableValue())
             .build();
-    TaskData liteEngineTask = containerDelegateTaskHelper.getDelegateTaskDataForExecuteStep(ambiance, timeout, params);
-    log.info("Created parked task {} and lite engine task for  step {}", parkedTaskId, identifier);
-    return liteEngineTask;
+    return containerDelegateTaskHelper.getDelegateTaskDataForExecuteStep(ambiance, timeout, params);
   }
 
   private UnitStep serializeStepWithStepParameters(ContainerStepInfo runStepInfo, Integer port, String callbackId,

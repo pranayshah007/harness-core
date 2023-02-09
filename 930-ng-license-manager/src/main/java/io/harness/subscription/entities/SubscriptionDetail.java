@@ -41,6 +41,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("subscriptionDetails")
 @Persistent
 public class SubscriptionDetail implements PersistentEntity, NGAccountAccess {
+  public static final String INCOMPLETE = "incomplete";
+
   @Id @dev.morphia.annotations.Id protected String id;
   @Trimmed @NotEmpty protected String accountIdentifier;
   @NotEmpty protected ModuleType moduleType;
@@ -69,7 +71,7 @@ public class SubscriptionDetail implements PersistentEntity, NGAccountAccess {
   //  }
 
   public boolean isIncomplete() {
-    return "incomplete".equalsIgnoreCase(status);
+    return INCOMPLETE.equalsIgnoreCase(status);
   }
   public boolean isActive() {
     return "active".equalsIgnoreCase(status);
