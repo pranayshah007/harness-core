@@ -4365,6 +4365,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "runTaskRequestDefinition"
+          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [
@@ -16214,6 +16217,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "prTitle": {
+              "type": "string"
             },
             "stringMap": {
               "$ref": "#/definitions/ParameterFieldMapStringString"

@@ -5,18 +5,23 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.k8s;
+package io.harness.ngmigration.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.k8s.model.HelmVersion;
 
-@OwnedBy(HarnessTeam.CDP)
-public interface K8sGlobalConfigService {
-  String getKubectlPath(boolean useNewKubectlVersion);
-  String getGoTemplateClientPath();
-  String getHelmPath(HelmVersion helmVersion);
-  String getChartMuseumPath(boolean useLatestVersion);
-  String getOcPath();
-  String getKustomizePath(boolean useLatestVersion);
+import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@OwnedBy(HarnessTeam.CDC)
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class YamlGenerationDetails {
+  List<NGYamlFile> yamlFileList;
+  List<NGSkipDetail> skipDetails;
 }

@@ -21,6 +21,7 @@ import io.harness.ngmigration.beans.CustomSecretRequestWrapper;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
@@ -168,7 +169,7 @@ public class SecretMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     EncryptedData encryptedData = (EncryptedData) entities.get(entityId).getEntity();
     List<NGYamlFile> files = new ArrayList<>();
@@ -179,7 +180,8 @@ public class SecretMigrationService extends NgMigrationService {
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
     SecretDTOV2Builder secretDTOV2Builder = secretFactory.getSecret(encryptedData, entities, migratedEntities);
     if (secretDTOV2Builder == null) {
-      return files;
+      // TODO: @deepakputhraya
+      return YamlGenerationDetails.builder().yamlFileList(files).build();
     }
     SecretDTOV2 secretDTOV2 = secretDTOV2Builder.projectIdentifier(projectIdentifier)
                                   .orgIdentifier(orgIdentifier)
@@ -210,8 +212,7 @@ public class SecretMigrationService extends NgMigrationService {
 
     // TODO: make it more obvious that migratedEntities needs to be updated by having compile-time check
     migratedEntities.putIfAbsent(entityId, yamlFile);
-
-    return files;
+    return YamlGenerationDetails.builder().yamlFileList(files).build();
   }
 
   @Override

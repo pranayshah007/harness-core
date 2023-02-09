@@ -26,6 +26,7 @@ import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
@@ -94,11 +95,14 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     EcsServiceSpecification serviceSpecification = (EcsServiceSpecification) entities.get(entityId).getEntity();
     NGYamlFile yamlFile = getYamlFile(serviceSpecification, inputDTO, entities);
-    return yamlFile != null ? Collections.singletonList(yamlFile) : Collections.emptyList();
+    if (yamlFile == null) {
+      return null;
+    }
+    return YamlGenerationDetails.builder().yamlFileList(Collections.singletonList(yamlFile)).build();
   }
 
   private NGYamlFile getYamlFile(EcsServiceSpecification serviceSpecification, MigrationInputDTO inputDTO,

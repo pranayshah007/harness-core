@@ -23,9 +23,11 @@ import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.WorkflowSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -176,11 +178,11 @@ public class WorkflowMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     if (isNotEmpty(inputDTO.getDefaults()) && inputDTO.getDefaults().containsKey(WORKFLOW)
         && inputDTO.getDefaults().get(WORKFLOW).isSkipMigration()) {
-      return Collections.emptyList();
+      return null;
     }
     Workflow workflow = (Workflow) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, workflow.getName());
@@ -193,16 +195,44 @@ public class WorkflowMigrationService extends NgMigrationService {
     WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
     List<GraphNode> steps = workflowHandler.getSteps(workflow);
     // We will skip migration if any of the steps are unsupported
-    if (EmptyPredicate.isEmpty(steps)
-        || steps.stream()
-               .map(step -> stepMapperFactory.getStepMapper(step.getType()).stepSupportStatus(step))
-               .anyMatch(WorkflowStepSupportStatus.UNSUPPORTED::equals)) {
-      return Collections.emptyList();
+    if (EmptyPredicate.isEmpty(steps)) {
+      return YamlGenerationDetails.builder()
+          .skipDetails(Collections.singletonList(NGSkipDetail.builder()
+                                                     .type(entityId.getType())
+                                                     .cgBasicInfo(workflow.getCgBasicInfo())
+                                                     .reason("The workflow has no steps")
+                                                     .build()))
+          .build();
+    }
+    List<GraphNode> unsupportedSteps = steps.stream()
+                                           .filter(step
+                                               -> stepMapperFactory.getStepMapper(step.getType())
+                                                      .stepSupportStatus(step)
+                                                      .equals(WorkflowStepSupportStatus.UNSUPPORTED))
+                                           .collect(Collectors.toList());
+    if (EmptyPredicate.isNotEmpty(unsupportedSteps)) {
+      return YamlGenerationDetails.builder()
+          .skipDetails(Collections.singletonList(
+              NGSkipDetail.builder()
+                  .type(entityId.getType())
+                  .cgBasicInfo(workflow.getCgBasicInfo())
+                  .reason(String.format("The workflow has unsupported steps types -> %s",
+                      unsupportedSteps.stream().map(GraphNode::getType).distinct().collect(Collectors.joining(", "))))
+                  .build()))
+          .build();
     }
 
     JsonNode templateSpec = workflowHandler.getTemplateSpec(entities, migratedEntities, workflow);
     if (templateSpec == null) {
-      return Collections.emptyList();
+      return YamlGenerationDetails.builder()
+          .skipDetails(Collections.singletonList(
+              NGSkipDetail.builder()
+                  .type(entityId.getType())
+                  .cgBasicInfo(workflow.getCgBasicInfo())
+                  .reason(
+                      "We could not generate a template/pipeline for the workflow. It could be because the workflow has steps that are no longer required in NG(e.g: Artifact Collection). For further assistance please reach out to Harness")
+                  .build()))
+          .build();
     }
 
     List<NGYamlFile> files = new ArrayList<>();
@@ -242,7 +272,7 @@ public class WorkflowMigrationService extends NgMigrationService {
             .build();
     files.add(ngYamlFile);
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
-    return files;
+    return YamlGenerationDetails.builder().yamlFileList(files).build();
   }
 
   @Override

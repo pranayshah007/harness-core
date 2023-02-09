@@ -22,11 +22,10 @@ import io.harness.hsqs.client.model.UnAckResponse;
 import java.util.List;
 import retrofit2.Call;
 import retrofit2.http.Body;
-import retrofit2.http.Header;
 import retrofit2.http.POST;
 
 @OwnedBy(PIPELINE)
-public interface HsqsServiceClient {
+public interface HsqsClient {
   String V1_ENDPOINT = "v1/";
 
   @POST(V1_ENDPOINT + "queue/") Call<EnqueueResponse> enqueue(@Body EnqueueRequest enqueueRequest);

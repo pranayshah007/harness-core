@@ -199,7 +199,8 @@ public class CgInstanceSyncServiceV2 {
   public void processInstanceSyncResult(String perpetualTaskId, CgInstanceSyncResponse result) {
     log.info("Got the result. Starting to process. Perpetual Task Id: [{}] and response [{}]", perpetualTaskId, result);
 
-    if (!result.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
+    if (!result.getExecutionStatus().isEmpty()
+        && !result.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
       log.error("Instance Sync failed for perpetual task: [{}] and response [{}], with error: [{}]", perpetualTaskId,
           result, result.getErrorMessage());
 
@@ -293,17 +294,15 @@ public class CgInstanceSyncServiceV2 {
             releasesToDelete.add(cgReleaseIdentifiers);
           }
         }
-        try {
-          for (InstanceSyncData instanceSyncData : instancesPerTask.get(taskDetailsId)) {
-            DelegateResponseData delegateResponse =
-                (DelegateResponseData) kryoSerializer.asObject(instanceSyncData.getTaskResponse().toByteArray());
 
+        for (InstanceSyncData instanceSyncData : instancesPerTask.get(taskDetailsId)) {
+          DelegateResponseData delegateResponse =
+              (DelegateResponseData) kryoSerializer.asObject(instanceSyncData.getTaskResponse().toByteArray());
+          try {
             instanceSyncHandler.processInstanceSyncResponseFromPerpetualTask(infraMapping, delegateResponse);
+          } catch (NoInstancesException e) {
+            // No Action Required
           }
-        } catch (NoInstancesException e) {
-          log.warn(e.getMessage());
-          taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
-          continue;
         }
         taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
       }

@@ -11,17 +11,17 @@ import static io.harness.annotations.dev.HarnessTeam.IDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.morphia.MorphiaRegistrar;
-import io.harness.serializer.kryo.IDPServiceKryoRegistrar;
-import io.harness.serializer.morphia.IDPServiceMorphiaRegistrar;
+import io.harness.serializer.kryo.IdpServiceKryoRegistrar;
+import io.harness.serializer.morphia.IdpServiceMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableSet;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(IDP)
-public class IDPServiceRegistrars {
+public class IdpServiceRegistrars {
   public static final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =
-      ImmutableSet.<Class<? extends KryoRegistrar>>builder().add(IDPServiceKryoRegistrar.class).build();
+      ImmutableSet.<Class<? extends KryoRegistrar>>builder().add(IdpServiceKryoRegistrar.class).build();
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
-      ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().add(IDPServiceMorphiaRegistrar.class).build();
+      ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().add(IdpServiceMorphiaRegistrar.class).build();
 }

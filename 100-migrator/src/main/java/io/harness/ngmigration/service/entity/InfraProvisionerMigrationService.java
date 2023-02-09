@@ -26,6 +26,7 @@ import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.InfraProvisionerSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -146,7 +147,7 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     List<NGYamlFile> result = new ArrayList<>();
     InfrastructureProvisioner provisioner = (InfrastructureProvisioner) entities.get(entityId).getEntity();
@@ -162,7 +163,7 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
       }
     }
 
-    return result;
+    return YamlGenerationDetails.builder().yamlFileList(result).build();
   }
 
   @Override

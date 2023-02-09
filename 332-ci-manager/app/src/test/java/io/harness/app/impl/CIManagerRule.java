@@ -20,7 +20,6 @@ import io.harness.app.CIManagerConfiguration;
 import io.harness.app.CIManagerServiceModule;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.beans.entities.IACMServiceConfig;
-import io.harness.beans.execution.QueueServiceClient;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -36,6 +35,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.sdk.PmsSdkConfiguration;
@@ -176,11 +176,12 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
             .ciExecutionServiceConfig(
                 CIExecutionServiceConfig.builder()
                     .addonImageTag("v1.4-alpha")
-                    .queueServiceClient(
-                        QueueServiceClient.builder()
-                            .queueServiceConfig(
+                    .queueServiceClientConfig(
+                        QueueServiceClientConfig.builder()
+                            .httpClientConfig(
                                 ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build())
-                            .authToken("tokrn")
+                            .queueServiceSecret("tokrn")
+                            .envNamespace("localhost")
                             .build())
                     .defaultCPULimit(200)
                     .defaultInternalImageConnector("account.harnessimage")

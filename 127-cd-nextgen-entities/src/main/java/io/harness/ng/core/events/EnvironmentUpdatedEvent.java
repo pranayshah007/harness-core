@@ -54,7 +54,7 @@ public class EnvironmentUpdatedEvent implements Event {
   private Environment newEnvironment;
   private Environment oldEnvironment;
 
-  public enum Status { CREATED, UPDATED, UPSERTED, DELETED }
+  public enum Status { CREATED, UPDATED, UPSERTED, DELETED, FORCE_DELETED }
 
   public enum ResourceType { SERVICE_OVERRIDE, INFRASTRUCTURE, ENVIRONMENT }
 

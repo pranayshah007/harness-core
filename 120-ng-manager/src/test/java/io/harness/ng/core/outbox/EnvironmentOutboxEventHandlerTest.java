@@ -56,22 +56,26 @@ import io.harness.security.dto.UserPrincipal;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
-@OwnedBy(HarnessTeam.PIPELINE)
-public class EnvironmentEventHandlerTest extends CategoryTest {
+@OwnedBy(HarnessTeam.CDC)
+@RunWith(JUnitParamsRunner.class)
+public class EnvironmentOutboxEventHandlerTest extends CategoryTest {
   private ObjectMapper objectMapper;
   private AuditClientService auditClientService;
-  private EnvironmentEventHandler environmentEventHandler;
+  private EnvironmentOutboxEventHandler environmentOutboxEventHandler;
 
   @Before
   public void setup() {
     objectMapper = NG_DEFAULT_OBJECT_MAPPER;
     auditClientService = mock(AuditClientService.class);
-    environmentEventHandler = spy(new EnvironmentEventHandler(auditClientService));
+    environmentOutboxEventHandler = spy(new EnvironmentOutboxEventHandler(auditClientService));
   }
 
   @Test
@@ -117,7 +121,7 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
     String newYaml = getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment));
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
-    environmentEventHandler.handle(outboxEvent);
+    environmentOutboxEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, identifier, auditEntry, outboxEvent);
@@ -168,7 +172,7 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
     String oldYaml = getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment));
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
-    environmentEventHandler.handle(outboxEvent);
+    environmentOutboxEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, identifier, auditEntry, outboxEvent);
@@ -230,7 +234,7 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
     String oldYaml = getYamlString(EnvironmentMapper.toNGEnvironmentConfig(oldEnvironment));
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
-    environmentEventHandler.handle(outboxEvent);
+    environmentOutboxEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, identifier, auditEntry, outboxEvent);
@@ -288,7 +292,7 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
     String newYaml = newServiceOverridesEntity.getYaml();
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
-    environmentEventHandler.handle(outboxEvent);
+    environmentOutboxEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
@@ -348,7 +352,7 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
     String oldYaml = oldServiceOverridesEntity.getYaml();
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
-    environmentEventHandler.handle(outboxEvent);
+    environmentOutboxEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
@@ -416,7 +420,7 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
     String oldYaml = oldServiceOverridesEntity.getYaml();
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
-    environmentEventHandler.handle(outboxEvent);
+    environmentOutboxEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
@@ -476,7 +480,7 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
     String newYaml = newInfrastructure.getYaml();
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
-    environmentEventHandler.handle(outboxEvent);
+    environmentOutboxEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
@@ -545,7 +549,7 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
     String oldYaml = oldInfrastructure.getYaml();
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
-    environmentEventHandler.handle(outboxEvent);
+    environmentOutboxEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
@@ -559,7 +563,8 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
-  public void testUpdateEnvDeleteInfrastructure() throws JsonProcessingException {
+  @Parameters({"DELETED", "FORCE_DELETED"})
+  public void testUpdateEnvDeleteInfrastructure(EnvironmentUpdatedEvent.Status status) throws JsonProcessingException {
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
@@ -579,7 +584,7 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
             .orgIdentifier(orgIdentifier)
             .projectIdentifier(projectIdentifier)
             .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
-            .status(DELETED)
+            .status(status)
             .oldInfrastructureEntity(oldInfrastructure)
             .build();
 
@@ -605,13 +610,13 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
     String oldYaml = oldInfrastructure.getYaml();
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
-    environmentEventHandler.handle(outboxEvent);
+    environmentOutboxEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
     assertEquals(identifier, auditEntry.getResource().getLabels().get(INFRASTRUCTURE_ID));
-    assertEquals(DELETED.name(), auditEntry.getResource().getLabels().get(STATUS));
+    assertEquals(status.name(), auditEntry.getResource().getLabels().get(STATUS));
     assertEquals(oldYaml, auditEntry.getOldYaml());
   }
 
@@ -658,7 +663,7 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
     String newYaml = getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment));
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
-    environmentEventHandler.handle(outboxEvent);
+    environmentOutboxEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, identifier, auditEntry, outboxEvent);

@@ -29,7 +29,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.queue.QueueController;
-import io.harness.serializer.IDPServiceRegistrars;
+import io.harness.serializer.IdpServiceRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.threading.ThreadPool;
 import io.harness.version.VersionModule;
@@ -53,9 +53,9 @@ import org.springframework.core.convert.converter.Converter;
 
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
-public class IDPModule extends AbstractModule {
-  private final IDPConfiguration appConfig;
-  public IDPModule(IDPConfiguration appConfig) {
+public class IdpModule extends AbstractModule {
+  private final IdpConfiguration appConfig;
+  public IdpModule(IdpConfiguration appConfig) {
     this.appConfig = appConfig;
   }
 
@@ -63,13 +63,13 @@ public class IDPModule extends AbstractModule {
   protected void configure() {
     registerRequiredBindings();
     install(VersionModule.getInstance());
-    install(new IDPPersistenceModule());
+    install(new IdpPersistenceModule());
     install(new AbstractMongoModule() {
       @Provides
       @Singleton
       Set<Class<? extends KryoRegistrar>> kryoRegistrars() {
         return ImmutableSet.<Class<? extends KryoRegistrar>>builder()
-            .addAll(IDPServiceRegistrars.kryoRegistrars)
+            .addAll(IdpServiceRegistrars.kryoRegistrars)
             .build();
       }
 
@@ -77,7 +77,7 @@ public class IDPModule extends AbstractModule {
       @Singleton
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
         return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
-            .addAll(IDPServiceRegistrars.morphiaRegistrars)
+            .addAll(IdpServiceRegistrars.morphiaRegistrars)
             .build();
       }
 
@@ -131,7 +131,7 @@ public class IDPModule extends AbstractModule {
       }
     });
 
-    bind(IDPConfiguration.class).toInstance(appConfig);
+    bind(IdpConfiguration.class).toInstance(appConfig);
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
     // serve health checks. If it's being used for other tasks also, max pool size should be increased.
     bind(ExecutorService.class)
