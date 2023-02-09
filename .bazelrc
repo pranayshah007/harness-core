@@ -1,1 +1,5 @@
 import bazelrc.local
+
+build --action_env=jfrog_password="${jfrog_password}"
+run  --action_env=jfrog_password="${jfrog_password}"
+test  --action_env=jfrog_password="${jfrog_password}"
