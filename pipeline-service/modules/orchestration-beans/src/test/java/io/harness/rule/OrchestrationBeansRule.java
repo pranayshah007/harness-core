@@ -8,14 +8,12 @@
 package io.harness.rule;
 
 import io.harness.OrchestrationBeansModule;
-import io.harness.factory.ClosingFactory;
-import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
-import io.harness.govern.ServersModule;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
 import io.harness.queue.QueueController;
+import io.harness.runners.ModuleListProvider;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.OrchestrationBeansRegistrars;
@@ -27,35 +25,22 @@ import io.harness.threading.ExecutorModule;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
-import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import dev.morphia.converters.TypeConverter;
-import java.io.Closeable;
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.rules.MethodRule;
-import org.junit.runners.model.FrameworkMethod;
-import org.junit.runners.model.Statement;
 
 @Slf4j
-public class OrchestrationBeansRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin {
-  ClosingFactory closingFactory;
-
-  public OrchestrationBeansRule(ClosingFactory closingFactory) {
-    this.closingFactory = closingFactory;
-  }
-
+public class OrchestrationBeansRule implements ModuleListProvider {
   @Override
-  public List<Module> modules(List<Annotation> annotations) throws Exception {
+  public List<Module> modules() {
     ExecutorModule.getInstance().setExecutorService(new CurrentThreadExecutor());
 
     List<Module> modules = new ArrayList<>();
-    modules.add(new ClosingFactoryModule(closingFactory));
     modules.add(KryoModule.getInstance());
     modules.add(new ProviderModule() {
       @Provides
@@ -83,7 +68,13 @@ public class OrchestrationBeansRule implements MethodRule, InjectorRuleMixin, Mo
             .build();
       }
     });
-    modules.add(mongoTypeModule(annotations));
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      MongoRuleMixin.MongoType provideMongoType() {
+        return MongoRuleMixin.MongoType.FAKE;
+      }
+    });
     modules.add(new AbstractModule() {
       @Override
       protected void configure() {
@@ -110,21 +101,5 @@ public class OrchestrationBeansRule implements MethodRule, InjectorRuleMixin, Mo
     modules.add(TestMongoModule.getInstance());
     modules.add(OrchestrationBeansModule.getInstance());
     return modules;
-  }
-
-  @Override
-  public void initialize(Injector injector, List<Module> modules) {
-    for (Module module : modules) {
-      if (module instanceof ServersModule) {
-        for (Closeable server : ((ServersModule) module).servers(injector)) {
-          closingFactory.addServer(server);
-        }
-      }
-    }
-  }
-
-  @Override
-  public Statement apply(Statement statement, FrameworkMethod frameworkMethod, Object target) {
-    return applyInjector(log, statement, frameworkMethod, target);
   }
 }

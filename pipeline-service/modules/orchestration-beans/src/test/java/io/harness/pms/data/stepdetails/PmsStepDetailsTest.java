@@ -15,15 +15,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.rule.OrchestrationBeansRule;
 import io.harness.rule.Owner;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @OwnedBy(PIPELINE)
+@RunWith(GuiceRunner.class)
+@ModuleProvider(OrchestrationBeansRule.class)
 public class PmsStepDetailsTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)

@@ -19,13 +19,19 @@ import io.harness.pms.sdk.core.data.StepTransput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.steps.io.ResolvedRefInput;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
+import io.harness.rule.OrchestrationBeansRule;
 import io.harness.rule.Owner;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 import io.harness.utils.DummyOutcome;
 
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
+@RunWith(GuiceRunner.class)
+@ModuleProvider(OrchestrationBeansRule.class)
 public class StepInputPackageTest extends OrchestrationBeansTestBase {
   io.harness.pms.sdk.core.steps.io.StepInputPackage inputPackage =
       StepInputPackage.builder()
@@ -42,6 +48,7 @@ public class StepInputPackageTest extends OrchestrationBeansTestBase {
                      .transput(new DummyOutcome("name3"))
                      .build())
           .build();
+
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)

@@ -18,11 +18,17 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.PlanNodeProto;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.rule.OrchestrationBeansRule;
 import io.harness.rule.Owner;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
+@RunWith(GuiceRunner.class)
+@ModuleProvider(OrchestrationBeansRule.class)
 public class PlanTest extends OrchestrationBeansTestBase {
   private static final String PLAN_ID = generateUuid();
   private static final String DUMMY_NODE_1_ID = generateUuid();
