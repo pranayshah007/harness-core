@@ -21,6 +21,4 @@ import org.redisson.api.RLocalCachedMap;
 public interface DelegateRedissonCacheManager {
   <K, V> RLocalCachedMap<K, V> getCache(
       String cacheName, Class<K> keyType, Class<V> valueType, LocalCachedMapOptions<K, V> localCachedMapOptions);
-
-  <K, V> RLocalCachedMap<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType, String keyPrefix);
 }

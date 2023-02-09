@@ -39,11 +39,4 @@ public class DelegateRedissonCacheManagerImpl implements DelegateRedissonCacheMa
       String cacheName, Class<K> keyType, Class<V> valueType, LocalCachedMapOptions<K, V> localCachedMapOptions) {
     return redissonClient.getLocalCachedMap(cacheName, new RedissonKryoCodec(), localCachedMapOptions);
   }
-
-  @Override
-  public <K, V> RLocalCachedMap<K, V> getCache(
-      String cacheName, Class<K> keyType, Class<V> valueType, String keyPrefix) {
-    // TBD: Implement in future
-    return null;
-  }
 }
