@@ -10,8 +10,6 @@ package io.harness.delegate.beans.connector.bamboo;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
-import io.harness.delegate.beans.connector.jenkins.JenkinsConstant;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;

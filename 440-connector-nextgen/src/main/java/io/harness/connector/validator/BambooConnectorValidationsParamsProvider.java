@@ -17,8 +17,6 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
 import io.harness.delegate.beans.connector.bamboo.BambooValidationParams;
-import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
-import io.harness.delegate.beans.connector.jenkins.JenkinsValidationParams;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import com.google.inject.Inject;

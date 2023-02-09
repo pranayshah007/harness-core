@@ -12,6 +12,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.bamboo.dtos.BambooPlanKeysDTO;
 import io.harness.cdng.artifact.resources.bamboo.mappers.BambooResourceMapper;
@@ -193,7 +194,7 @@ public class BambooResourceServiceImpl implements BambooResourceService {
                                                         .artifactTaskType(artifactTaskType)
                                                         .attributes(bambooArtifactDelegateRequest)
                                                         .build();
-    DelegateTaskRequest.DelegateTaskRequestBuilder delegateTaskRequestBuilder =
+    DelegateTaskRequestBuilder delegateTaskRequestBuilder =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(NGTaskType.BAMBOO_ARTIFACT_TASK_NG.name())
