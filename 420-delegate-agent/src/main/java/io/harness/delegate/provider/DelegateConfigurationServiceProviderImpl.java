@@ -7,7 +7,7 @@
 
 package io.harness.delegate.provider;
 
-import io.harness.delegate.DelegateConfigurationServiceProvider;
+import io.harness.secrets.serviceproviders.DelegateConfigurationServiceProvider;
 import io.harness.delegate.configuration.DelegateConfiguration;
 
 import com.google.inject.Inject;

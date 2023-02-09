@@ -8,7 +8,7 @@
 package io.harness.delegate.executor.serviceproviders;
 
 import com.google.inject.Singleton;
-import io.harness.delegate.DelegateConfigurationServiceProvider;
+import io.harness.secrets.serviceproviders.DelegateConfigurationServiceProvider;
 
 @Singleton
 public class DelegateAccountIdProvider implements DelegateConfigurationServiceProvider {

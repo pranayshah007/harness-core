@@ -7,8 +7,8 @@
 
 package io.harness.secrets;
 
-import io.harness.delegate.DelegateConfigurationServiceProvider;
-import io.harness.delegate.DelegatePropertiesServiceProvider;
+import io.harness.secrets.serviceproviders.DelegateConfigurationServiceProvider;
+import io.harness.secrets.serviceproviders.DelegatePropertiesServiceProvider;
 import io.harness.managerclient.AccountPreference;
 import io.harness.managerclient.AccountPreferenceQuery;
 import io.harness.managerclient.GetDelegatePropertiesRequest;
@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
-public class SecretsDelegateCacheHelperServiceImpl implements SecretsDelegateCacheHelperService {
+public class SecretsDelegateCacheHelperServiceImpl implements io.harness.secrets.SecretsDelegateCacheHelperService {
   @Inject private DelegateConfigurationServiceProvider delegateConfigurationServiceProvider;
   @Inject private DelegatePropertiesServiceProvider delegatePropertiesServiceProvider;
 

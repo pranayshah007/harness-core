@@ -7,7 +7,7 @@
 
 package io.harness.delegate.provider;
 
-import io.harness.delegate.DelegatePropertiesServiceProvider;
+import io.harness.secrets.serviceproviders.DelegatePropertiesServiceProvider;
 import io.harness.delegate.service.DelegatePropertyService;
 import io.harness.managerclient.GetDelegatePropertiesRequest;
 import io.harness.managerclient.GetDelegatePropertiesResponse;

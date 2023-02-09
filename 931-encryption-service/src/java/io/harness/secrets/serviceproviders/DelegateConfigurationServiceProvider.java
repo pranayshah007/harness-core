@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate;
+package io.harness.secrets.serviceproviders;
 
 public interface DelegateConfigurationServiceProvider {
   String getAccount();

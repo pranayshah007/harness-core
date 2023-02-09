@@ -8,8 +8,8 @@
 package io.harness.delegate.executor.serviceproviders;
 
 import com.google.inject.AbstractModule;
-import io.harness.delegate.DelegateConfigurationServiceProvider;
-import io.harness.delegate.DelegatePropertiesServiceProvider;
+import io.harness.secrets.serviceproviders.DelegateConfigurationServiceProvider;
+import io.harness.secrets.serviceproviders.DelegatePropertiesServiceProvider;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import software.wings.delegatetasks.DelegateLogService;
 

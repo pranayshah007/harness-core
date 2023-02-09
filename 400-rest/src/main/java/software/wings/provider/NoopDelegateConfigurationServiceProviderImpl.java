@@ -7,7 +7,7 @@
 
 package software.wings.provider;
 
-import io.harness.delegate.DelegateConfigurationServiceProvider;
+import io.harness.secrets.serviceproviders.DelegateConfigurationServiceProvider;
 
 public class NoopDelegateConfigurationServiceProviderImpl implements DelegateConfigurationServiceProvider {
   @Override

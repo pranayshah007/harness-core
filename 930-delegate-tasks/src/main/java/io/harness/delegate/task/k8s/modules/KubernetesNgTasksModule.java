@@ -122,23 +122,17 @@ public class KubernetesNgTasksModule extends AbstractModule {
     }
 
     private void registerK8sNgBindings() {
-        // K8sTaskNG --> ManifestDelegateConfigHelper
         bind(SecretsDelegateCacheService.class).to(SecretsDelegateCacheServiceImpl.class);
         bind(EncryptionService.class).to(EncryptionServiceImpl.class);
         bind(SecretDecryptionService.class).to(SecretDecryptionServiceImpl.class);
         bind(DecryptionHelper.class).to(DecryptionHelperDelegate.class);
         bind(SecretsDelegateCacheHelperService.class).to(SecretsDelegateCacheHelperServiceImpl.class);
 
-        // K8sTaskNG --> K8sGlobalConfigService
         bind(K8sGlobalConfigService.class).to(K8sGlobalConfigServiceImpl.class);
 
-        // K8sTaskNG --> ContainerDeploymentDelegateBaseHelper --> KubernetesContainerServiceImpl
         bind(KubernetesContainerService.class).to(KubernetesContainerServiceImpl.class);
         bind(Clock.class).toInstance(Clock.systemUTC());
-        // K8sTaskNG --> ContainerDeploymentDelegateBaseHelper --> K8sYamlToDelegateDTOMapper
-        // K8sTaskNG --> ContainerDeploymentDelegateBaseHelper --> SecretDecryptionService
 
-        // K8sTaskNG --> ContainerDeploymentDelegateBaseHelper --> AzureAsyncTaskHelper
         bind(AzureAuthorizationClient.class).to(AzureAuthorizationClientImpl.class);
         bind(AzureComputeClient.class).to(AzureComputeClientImpl.class);
         bind(AzureContainerRegistryClient.class).to(AzureContainerRegistryClientImpl.class);
