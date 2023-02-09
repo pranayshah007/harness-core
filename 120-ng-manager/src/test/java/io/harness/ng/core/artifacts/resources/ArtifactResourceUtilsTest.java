@@ -56,6 +56,7 @@ import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -69,6 +70,7 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -604,11 +606,18 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   public void testGetBuildDetailsV2Custom() {
     // spy for ArtifactResourceUtils
     ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
-    CustomArtifactConfig customArtifactConfig = CustomArtifactConfig.builder()
-                                                    .identifier("test")
-                                                    .primaryArtifact(true)
-                                                    .version(ParameterField.createValueField("build-x"))
-                                                    .build();
+
+    List<TaskSelectorYaml> delegateSelectorsValue = new ArrayList<>();
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("abc");
+    delegateSelectorsValue.add(taskSelectorYaml);
+
+    CustomArtifactConfig customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .version(ParameterField.createValueField("build-x"))
+            .delegateSelectors(ParameterField.<List<TaskSelectorYaml>>builder().value(delegateSelectorsValue).build())
+            .build();
 
     doReturn(customArtifactConfig)
         .when(spyartifactResourceUtils)

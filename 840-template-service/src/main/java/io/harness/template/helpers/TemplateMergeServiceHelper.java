@@ -34,6 +34,7 @@ import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErro
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.gitaware.dto.FetchRemoteEntityRequest;
 import io.harness.gitaware.dto.GetFileGitContextRequestParams;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.merger.YamlConfig;
@@ -52,7 +53,6 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.services.NGTemplateServiceHelper;
-import io.harness.template.services.TemplateGitXService;
 import io.harness.template.utils.TemplateUtils;
 import io.harness.template.yaml.TemplateYamlFacade;
 import io.harness.template.yaml.TemplateYamlUtils;
@@ -88,8 +88,8 @@ import lombok.extern.slf4j.Slf4j;
 public class TemplateMergeServiceHelper {
   private static final int MAX_DEPTH = 10;
   private NGTemplateServiceHelper templateServiceHelper;
-  private TemplateGitXService templateGitXService;
   private TemplateYamlFacade templateYamlFacade;
+  private GitAwareEntityHelper gitAwareEntityHelper;
 
   // Gets the Template Entity linked to a YAML
   public TemplateEntityGetResponse getLinkedTemplateEntity(String accountId, String orgId, String projectId,
@@ -337,11 +337,6 @@ public class TemplateMergeServiceHelper {
   Map<String, GetTemplateEntityRequest> prepareBatchGetTemplatesRequest(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, Map<String, YamlNode> templatesToGet, boolean loadFromCache) {
     Map<String, GetTemplateEntityRequest> getBatchRequest = new HashMap<>();
-    Scope scope = Scope.builder()
-                      .accountIdentifier(accountIdentifier)
-                      .orgIdentifier(orgIdentifier)
-                      .projectIdentifier(projectIdentifier)
-                      .build();
     for (Map.Entry<String, YamlNode> entry : templatesToGet.entrySet()) {
       JsonNode yaml = entry.getValue().getCurrJsonNode();
       TemplateUniqueIdentifier templateUniqueIdentifier = parseYamlAndGetTemplateIdentifierAndVersion(yaml);
@@ -349,8 +344,13 @@ public class TemplateMergeServiceHelper {
       IdentifierRef templateIdentifierRef = TemplateUtils.getIdentifierRef(
           accountIdentifier, orgIdentifier, projectIdentifier, templateUniqueIdentifier.getTemplateIdentifier());
 
+      Scope templateScope = Scope.builder()
+                                .projectIdentifier(templateIdentifierRef.getProjectIdentifier())
+                                .accountIdentifier(templateIdentifierRef.getAccountIdentifier())
+                                .orgIdentifier(templateIdentifierRef.getOrgIdentifier())
+                                .build();
       GetTemplateEntityRequest request = GetTemplateEntityRequest.builder()
-                                             .scope(scope)
+                                             .scope(templateScope)
                                              .templateIdentifier(templateIdentifierRef.getIdentifier())
                                              .version(templateUniqueIdentifier.getVersionLabel())
                                              .loadFromCache(loadFromCache)
@@ -430,7 +430,7 @@ public class TemplateMergeServiceHelper {
 
   private FetchRemoteEntityRequest buildFetchRemoteEntityRequest(
       Scope scope, TemplateEntity savedEntity, boolean loadFromCache) {
-    String branchName = templateGitXService.getWorkingBranch(savedEntity.getRepoURL());
+    String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepoURL());
 
     GetFileGitContextRequestParams getFileGitContextRequestParams =
         buildGitContextRequestParams(savedEntity, branchName, loadFromCache);

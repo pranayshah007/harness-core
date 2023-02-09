@@ -181,6 +181,7 @@ public class ManifestOutcomeMapper {
         .store(k8sManifest.getStoreConfig())
         .valuesPaths(k8sManifest.getValuesPaths())
         .skipResourceVersioning(k8sManifest.getSkipResourceVersioning())
+        .enableDeclarativeRollback(k8sManifest.getEnableDeclarativeRollback())
         .build();
   }
 
@@ -236,6 +237,7 @@ public class ManifestOutcomeMapper {
         .helmVersion(helmChartManifest.getHelmVersion())
         .valuesPaths(helmChartManifest.getValuesPaths())
         .skipResourceVersioning(helmChartManifest.getSkipResourceVersioning())
+        .enableDeclarativeRollback(helmChartManifest.getEnableDeclarativeRollback())
         .commandFlags(helmChartManifest.getCommandFlags())
         .subChartName(helmChartManifest.getSubChartName())
         .build();
@@ -247,6 +249,7 @@ public class ManifestOutcomeMapper {
         .identifier(kustomizeManifest.getIdentifier())
         .store(kustomizeManifest.getStoreConfig())
         .skipResourceVersioning(kustomizeManifest.getSkipResourceVersioning())
+        .enableDeclarativeRollback(kustomizeManifest.getEnableDeclarativeRollback())
         .pluginPath(kustomizeManifest.getPluginPath())
         .patchesPaths(kustomizeManifest.getPatchesPaths())
         .overlayConfiguration(kustomizeManifest.getOverlayConfiguration())
@@ -269,6 +272,7 @@ public class ManifestOutcomeMapper {
         .identifier(openshiftManifest.getIdentifier())
         .store(openshiftManifest.getStoreConfig())
         .skipResourceVersioning(openshiftManifest.getSkipResourceVersioning())
+        .enableDeclarativeRollback(openshiftManifest.getEnableDeclarativeRollback())
         .paramsPaths(openshiftManifest.getParamsPaths())
         .build();
   }

@@ -28,7 +28,7 @@ java_library(
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_google_guava_guava",
         "@maven//:org_apache_commons_commons_lang3",
-        "@maven//:org_mongodb_mongo_java_driver",
+        "@maven//:org_mongodb_mongodb_driver_core",
         "@maven//:org_slf4j_slf4j_api",
     ],
 )

@@ -8,11 +8,10 @@ package io.harness.cvng.downtime.services.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.cvng.core.beans.monitoredService.HistoricalTrend;
-import io.harness.cvng.core.beans.monitoredService.MonitoredServiceListItemDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.entities.MonitoredService.MonitoredServiceKeys;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.downtime.beans.AffectedEntity;
 import io.harness.cvng.downtime.beans.DowntimeDTO;
@@ -25,12 +24,15 @@ import io.harness.cvng.downtime.beans.DowntimeSpecDTO;
 import io.harness.cvng.downtime.beans.DowntimeStatus;
 import io.harness.cvng.downtime.beans.DowntimeStatusDetails;
 import io.harness.cvng.downtime.beans.DowntimeType;
+import io.harness.cvng.downtime.beans.EntitiesRule;
 import io.harness.cvng.downtime.beans.EntityDetails;
+import io.harness.cvng.downtime.beans.EntityIdentifiersRule;
 import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec;
 import io.harness.cvng.downtime.beans.OnetimeDowntimeType;
 import io.harness.cvng.downtime.beans.RecurringDowntimeSpec;
+import io.harness.cvng.downtime.beans.RuleType;
 import io.harness.cvng.downtime.entities.Downtime;
 import io.harness.cvng.downtime.entities.Downtime.DowntimeDetails;
 import io.harness.cvng.downtime.entities.Downtime.DowntimeKeys;
@@ -41,6 +43,7 @@ import io.harness.cvng.downtime.utils.DowntimeUtils;
 import io.harness.cvng.events.downtime.DowntimeCreateEvent;
 import io.harness.cvng.events.downtime.DowntimeDeleteEvent;
 import io.harness.cvng.events.downtime.DowntimeUpdateEvent;
+import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
@@ -62,6 +65,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -130,11 +134,44 @@ public class DowntimeServiceImpl implements DowntimeService {
   @Override
   public List<MonitoredServiceDetail> getAssociatedMonitoredServices(ProjectParams projectParams, String identifier) {
     Downtime downtime = getEntity(projectParams, identifier);
-    Set<String> monitoredServiceIdentifiers = downtime.getEntityRefs()
-                                                  .stream()
-                                                  .map(entityDetails -> entityDetails.getEntityRef())
-                                                  .collect(Collectors.toSet());
-    return monitoredServiceService.getMonitoredServiceDetails(projectParams, monitoredServiceIdentifiers);
+    if (downtime.getEntitiesRule().getType().equals(RuleType.IDENTFIERS)) {
+      Set<String> monitoredServiceIdentifiers = ((EntityIdentifiersRule) downtime.getEntitiesRule())
+                                                    .getEntityIdentifiers()
+                                                    .stream()
+                                                    .map(EntityDetails::getEntityRef)
+                                                    .collect(Collectors.toSet());
+      return monitoredServiceService.getMonitoredServiceDetails(projectParams, monitoredServiceIdentifiers);
+    } else {
+      return monitoredServiceService.getAllMonitoredServiceDetails(projectParams);
+    }
+  }
+
+  @Override
+  public PageResponse<MSDropdownResponse> getDowntimeAssociatedMonitoredServices(
+      ProjectParams projectParams, PageParams pageParams) {
+    List<Downtime> downtimes = get(projectParams);
+    List<MonitoredServiceDetail> monitoredServiceDetails;
+    List<Downtime> allMonitoredServicesAssociatedDowntime =
+        downtimes.stream()
+            .filter(downtime -> downtime.getEntitiesRule().getType().equals(RuleType.ALL))
+            .collect(Collectors.toList());
+    if (!allMonitoredServicesAssociatedDowntime.isEmpty()) {
+      monitoredServiceDetails = monitoredServiceService.getAllMonitoredServiceDetails(projectParams);
+    } else {
+      Set<String> monitoredServiceIdentifiers = new HashSet<>();
+      downtimes.forEach(downtime
+          -> monitoredServiceIdentifiers.addAll(((EntityIdentifiersRule) downtime.getEntitiesRule())
+                                                    .getEntityIdentifiers()
+                                                    .stream()
+                                                    .map(EntityDetails::getEntityRef)
+                                                    .collect(Collectors.toSet())));
+      monitoredServiceDetails =
+          monitoredServiceService.getMonitoredServiceDetails(projectParams, monitoredServiceIdentifiers);
+    }
+    List<MSDropdownResponse> msDropdownResponseList =
+        monitoredServiceDetails.stream().map(this::getMSDropdownResponse).collect(Collectors.toList());
+
+    return PageUtils.offsetAndLimit(msDropdownResponseList, pageParams.getPage(), pageParams.getSize());
   }
 
   @Override
@@ -364,32 +401,18 @@ public class DowntimeServiceImpl implements DowntimeService {
             .collect(Collectors.toList());
     Set<String> downtimeIdentifiers =
         pastDowntimeInstances.stream().map(EntityUnavailabilityStatusesDTO::getEntityId).collect(Collectors.toSet());
-    List<Downtime> downtimeList = get(projectParams, downtimeIdentifiers);
+    List<Downtime> downtimes = get(projectParams, downtimeIdentifiers);
     if (!isEmpty(filter.getSearchFilter())) {
-      downtimeList = filterDowntimes(downtimeList, filter.getSearchFilter());
+      downtimes = filterDowntimes(downtimes, filter.getSearchFilter());
     }
     if (filter.getMonitoredServiceIdentifier() != null) {
-      downtimeList = filterDowntimesOnMonitoredService(downtimeList, filter.getMonitoredServiceIdentifier());
+      downtimes = filterDowntimesOnMonitoredService(downtimes, filter.getMonitoredServiceIdentifier());
     }
 
     Map<String, Downtime> identifierToDowntimeMap =
-        downtimeList.stream().collect(Collectors.toMap(Downtime::getIdentifier, downtime -> downtime));
+        downtimes.stream().collect(Collectors.toMap(Downtime::getIdentifier, downtime -> downtime));
 
-    Set<String> monitoredServicesIdentifiers = downtimeList.stream()
-                                                   .map(Downtime::getEntityRefs)
-                                                   .flatMap(List::stream)
-                                                   .map(EntityDetails::getEntityRef)
-                                                   .collect(Collectors.toSet());
-    List<MonitoredServiceResponse> monitoredServiceResponses =
-        monitoredServiceService.get(projectParams, monitoredServicesIdentifiers);
-    Map<String, AffectedEntity> identifierAffectedEntityMap =
-        monitoredServiceResponses.stream().collect(Collectors.toMap(monitoredServiceResponse
-            -> monitoredServiceResponse.getMonitoredServiceDTO().getIdentifier(),
-            monitoredServiceResponse
-            -> AffectedEntity.builder()
-                   .envRef(monitoredServiceResponse.getMonitoredServiceDTO().getEnvironmentRef())
-                   .serviceRef(monitoredServiceResponse.getMonitoredServiceDTO().getServiceRef())
-                   .build()));
+    Map<String, AffectedEntity> identifierAffectedEntityMap = getIdentifierAffectedEntityMap(projectParams, downtimes);
 
     List<DowntimeHistoryView> downtimeHistoryViews = getDowntimeHistoryViewFromPastInstances(
         pastDowntimeInstances, identifierToDowntimeMap, identifierAffectedEntityMap);
@@ -409,15 +432,26 @@ public class DowntimeServiceImpl implements DowntimeService {
                    .identifier(instance.getEntityId())
                    .startTime(instance.getStartTime())
                    .endTime(instance.getEndTime())
+                   .spec(getDowntimeSpecDTO(identifierToDowntimeMap.get(instance.getEntityId()).getType(),
+                       identifierToDowntimeMap.get(instance.getEntityId()).getDowntimeDetails(),
+                       identifierToDowntimeMap.get(instance.getEntityId()).getTimezone()))
                    .duration(
                        DowntimeUtils.getDowntimeDurationFromSeconds(instance.getEndTime() - instance.getStartTime()))
-                   .affectedEntities(
-                       identifierToDowntimeMap.get(instance.getEntityId())
-                           .getEntityRefs()
-                           .stream()
-                           .map(entityDetails
-                               -> monitoredServiceIdentifierAffectedEntityMap.get(entityDetails.getEntityRef()))
-                           .collect(Collectors.toList()))
+                   .affectedEntities(identifierToDowntimeMap.get(instance.getEntityId())
+                                         .getEntitiesRule()
+                                         .getType()
+                                         .equals(RuleType.IDENTFIERS)
+                           ? ((EntityIdentifiersRule) identifierToDowntimeMap.get(instance.getEntityId())
+                                   .getEntitiesRule())
+                                 .getEntityIdentifiers()
+                                 .stream()
+                                 .map(entityDetails
+                                     -> monitoredServiceIdentifierAffectedEntityMap.get(entityDetails.getEntityRef()))
+                                 .collect(Collectors.toList())
+                           : Collections.singletonList(identifierToDowntimeMap.get(instance.getEntityId())
+                                                           .getEntitiesRule()
+                                                           .getAffectedEntity()
+                                                           .get()))
                    .build())
         .collect(Collectors.toList());
   }
@@ -436,24 +470,31 @@ public class DowntimeServiceImpl implements DowntimeService {
     if (filter.getMonitoredServiceIdentifier() != null) {
       downtimes = filterDowntimesOnMonitoredService(downtimes, filter.getMonitoredServiceIdentifier());
     }
-    Set<String> monitoredServicesIdentifiers = downtimes.stream()
-                                                   .map(Downtime::getEntityRefs)
-                                                   .flatMap(List::stream)
-                                                   .map(EntityDetails::getEntityRef)
-                                                   .collect(Collectors.toSet());
-    List<MonitoredServiceResponse> monitoredServiceResponses =
-        monitoredServiceService.get(projectParams, monitoredServicesIdentifiers);
-    Map<String, AffectedEntity> identifierAffectedEntityMap =
-        monitoredServiceResponses.stream().collect(Collectors.toMap(monitoredServiceResponse
-            -> monitoredServiceResponse.getMonitoredServiceDTO().getIdentifier(),
-            monitoredServiceResponse
-            -> AffectedEntity.builder()
-                   .envRef(monitoredServiceResponse.getMonitoredServiceDTO().getEnvironmentRef())
-                   .serviceRef(monitoredServiceResponse.getMonitoredServiceDTO().getServiceRef())
-                   .build()));
+    Map<String, AffectedEntity> identifierAffectedEntityMap = getIdentifierAffectedEntityMap(projectParams, downtimes);
     List<DowntimeListView> downtimeListViews =
         getDowntimeListViewFromDowntime(projectParams, downtimes, identifierAffectedEntityMap);
     return PageUtils.offsetAndLimit(downtimeListViews, offset, pageSize);
+  }
+
+  private Map<String, AffectedEntity> getIdentifierAffectedEntityMap(
+      ProjectParams projectParams, List<Downtime> downtimes) {
+    Set<String> monitoredServicesIdentifiers =
+        downtimes.stream()
+            .filter(downtime -> downtime.getEntitiesRule().getType().equals(RuleType.IDENTFIERS))
+            .map(downtime -> ((EntityIdentifiersRule) downtime.getEntitiesRule()).getEntityIdentifiers())
+            .flatMap(List::stream)
+            .map(EntityDetails::getEntityRef)
+            .collect(Collectors.toSet());
+    List<MonitoredServiceDetail> monitoredServiceDetails =
+        monitoredServiceService.getMonitoredServiceDetails(projectParams, monitoredServicesIdentifiers);
+    return monitoredServiceDetails.stream().collect(Collectors.toMap(monitoredServiceDetail
+        -> monitoredServiceDetail.getMonitoredServiceIdentifier(),
+        monitoredServiceDetail
+        -> AffectedEntity.builder()
+               .monitoredServiceIdentifier(monitoredServiceDetail.getMonitoredServiceIdentifier())
+               .envName(monitoredServiceDetail.getEnvironmentName())
+               .serviceName(monitoredServiceDetail.getServiceName())
+               .build()));
   }
 
   private List<Downtime> get(ProjectParams projectParams) {
@@ -486,12 +527,9 @@ public class DowntimeServiceImpl implements DowntimeService {
       List<Downtime> downtimes, Set<String> monitoredServiceIdentifiers) {
     return downtimes.stream()
         .filter(downtime
-            -> downtime.getEntityRefs()
-                   .stream()
-                   .map(EntityDetails::getEntityRef)
-                   .collect(Collectors.toList())
-                   .stream()
-                   .anyMatch(monitoredServiceIdentifiers::contains))
+            -> monitoredServiceIdentifiers.stream().anyMatch(monitoredServiceIdentifier
+                -> downtime.getEntitiesRule().isPresent(
+                    Collections.singletonMap(MonitoredServiceKeys.identifier, monitoredServiceIdentifier))))
         .collect(Collectors.toList());
   }
 
@@ -529,7 +567,7 @@ public class DowntimeServiceImpl implements DowntimeService {
         .description(downtime.getDescription())
         .tags(TagMapper.convertToMap(downtime.getTags()))
         .enabled(downtime.isEnabled())
-        .entityRefs(downtime.getEntityRefs())
+        .entitiesRule(downtime.getEntitiesRule())
         .spec(getDowntimeSpecDTO(downtime.getType(), downtime.getDowntimeDetails(), downtime.getTimezone()))
         .build();
   }
@@ -549,7 +587,7 @@ public class DowntimeServiceImpl implements DowntimeService {
         .type(downtimeDTO.getSpec().getType())
         .timezone(downtimeDTO.getSpec().getSpec().getTimezone())
         .enabled(downtimeDTO.isEnabled())
-        .entityRefs(downtimeDTO.getEntityRefs())
+        .entitiesRule(downtimeDTO.getEntitiesRule())
         .downtimeDetails(getDowntimeDetails(downtimeDTO.getSpec()))
         .build();
   }
@@ -583,11 +621,13 @@ public class DowntimeServiceImpl implements DowntimeService {
                                          : DowntimeStatus.ACTIVE)
                                  .build()
                            : null)
-                   .affectedEntities(
-                       downtime.getEntityRefs()
-                           .stream()
-                           .map(entityDetails -> identifierAffectedEntityMap.get(entityDetails.getEntityRef()))
-                           .collect(Collectors.toList()))
+                   .affectedEntities(downtime.getEntitiesRule().getType().equals(RuleType.IDENTFIERS)
+                           ? ((EntityIdentifiersRule) downtime.getEntitiesRule())
+                                 .getEntityIdentifiers()
+                                 .stream()
+                                 .map(entityDetails -> identifierAffectedEntityMap.get(entityDetails.getEntityRef()))
+                                 .collect(Collectors.toList())
+                           : Collections.singletonList(downtime.getEntitiesRule().getAffectedEntity().get()))
                    .lastModified(
                        DowntimeListView.LastModified.builder()
                            .lastModifiedAt(downtime.getLastUpdatedAt())
@@ -607,7 +647,7 @@ public class DowntimeServiceImpl implements DowntimeService {
     if (downtimeDTO.getTags() != null) {
       updateOperations.set(DowntimeKeys.tags, downtimeDTO.getTags());
     }
-    updateOperations.set(DowntimeKeys.entityRefs, downtimeDTO.getEntityRefs());
+    updateOperations.set(DowntimeKeys.entitiesRule, downtimeDTO.getEntitiesRule());
     updateOperations.set(DowntimeKeys.category, downtimeDTO.getCategory());
     updateOperations.set(DowntimeKeys.description, downtimeDTO.getDescription());
     updateOperations.set(DowntimeKeys.enabled, downtimeDTO.isEnabled());
@@ -627,14 +667,14 @@ public class DowntimeServiceImpl implements DowntimeService {
           projectParams.getProjectIdentifier()));
     }
     validateEndTime(downtimeDTO.getSpec());
-    validateReferredMonitoredServices(projectParams, downtimeDTO.getEntityRefs());
+    validateReferredMonitoredServices(projectParams, downtimeDTO.getEntitiesRule());
   }
 
   private void validateUpdate(ProjectParams projectParams, String identifier, DowntimeDTO downtimeDTO) {
     Preconditions.checkArgument(identifier.equals(downtimeDTO.getIdentifier()),
         String.format("Identifier %s does not match with path identifier %s", downtimeDTO.getIdentifier(), identifier));
     validateEndTime(downtimeDTO.getSpec());
-    validateReferredMonitoredServices(projectParams, downtimeDTO.getEntityRefs());
+    validateReferredMonitoredServices(projectParams, downtimeDTO.getEntitiesRule());
   }
 
   private void validateNotAllowedFieldsChanges(DowntimeDTO existingDowntimeDTO, DowntimeDTO newDowntimeDTO) {
@@ -642,31 +682,34 @@ public class DowntimeServiceImpl implements DowntimeService {
       throw new InvalidRequestException("Scope of Downtime can't be changed");
     }
   }
-  private void validateReferredMonitoredServices(ProjectParams projectParams, List<EntityDetails> entityDetails) {
-    Set<String> entityRefs = entityDetails.stream().map(EntityDetails::getEntityRef).collect(Collectors.toSet());
-    if (entityRefs.size() != entityDetails.size()) {
-      throw new InvalidRequestException("Duplicate Monitored services added");
-    }
-    if (entityRefs.isEmpty()) {
-      throw new InvalidRequestException("No Monitored services added");
-    }
-    List<MonitoredServiceResponse> monitoredServices = monitoredServiceService.get(projectParams, entityRefs);
-    if (monitoredServices.size() != entityRefs.size()) {
-      List<String> entityRefFromMonitoredServices =
-          monitoredServices.stream()
-              .map(monitoredServiceResponse -> monitoredServiceResponse.getMonitoredServiceDTO().getIdentifier())
-              .collect(Collectors.toList());
-      List<String> incorrectEntityRefs = new ArrayList<>();
-      for (String entityRef : entityRefs) {
-        if (!entityRefFromMonitoredServices.contains(entityRef)) {
-          incorrectEntityRefs.add(entityRef);
-        }
+  private void validateReferredMonitoredServices(ProjectParams projectParams, EntitiesRule entitiesRule) {
+    if (entitiesRule.getType().equals(RuleType.IDENTFIERS)) {
+      List<EntityDetails> entityDetails = ((EntityIdentifiersRule) entitiesRule).getEntityIdentifiers();
+      Set<String> entityRefs = entityDetails.stream().map(EntityDetails::getEntityRef).collect(Collectors.toSet());
+      if (entityRefs.size() != entityDetails.size()) {
+        throw new InvalidRequestException("Duplicate Monitored services added");
       }
-      throw new InvalidRequestException(
-          String.format("Monitored Service%s %s for account %s, org %s, and project %s are not present.",
-              incorrectEntityRefs.size() > 1 ? "s" : "", String.join(", ", incorrectEntityRefs),
-              projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
-              projectParams.getProjectIdentifier()));
+      if (entityRefs.isEmpty()) {
+        throw new InvalidRequestException("No Monitored services added");
+      }
+      List<MonitoredServiceResponse> monitoredServices = monitoredServiceService.get(projectParams, entityRefs);
+      if (monitoredServices.size() != entityRefs.size()) {
+        List<String> entityRefFromMonitoredServices =
+            monitoredServices.stream()
+                .map(monitoredServiceResponse -> monitoredServiceResponse.getMonitoredServiceDTO().getIdentifier())
+                .collect(Collectors.toList());
+        List<String> incorrectEntityRefs = new ArrayList<>();
+        for (String entityRef : entityRefs) {
+          if (!entityRefFromMonitoredServices.contains(entityRef)) {
+            incorrectEntityRefs.add(entityRef);
+          }
+        }
+        throw new InvalidRequestException(
+            String.format("Monitored Service%s %s for account %s, org %s, and project %s are not present.",
+                incorrectEntityRefs.size() > 1 ? "s" : "", String.join(", ", incorrectEntityRefs),
+                projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+                projectParams.getProjectIdentifier()));
+      }
     }
   }
   private void validateEndTime(DowntimeSpecDTO downtimeSpecDTO) {
@@ -687,6 +730,15 @@ public class DowntimeServiceImpl implements DowntimeService {
     if (endInstant != null && now.plus(allowedDuration).isBefore(endInstant)) {
       throw new InvalidArgumentsException("EndTime can't be more than 3 years from now.");
     }
+  }
+
+  private MSDropdownResponse getMSDropdownResponse(MonitoredServiceDetail monitoredServiceDetail) {
+    return MSDropdownResponse.builder()
+        .identifier(monitoredServiceDetail.getMonitoredServiceIdentifier())
+        .name(monitoredServiceDetail.getMonitoredServiceName())
+        .serviceRef(monitoredServiceDetail.getServiceIdentifier())
+        .environmentRef(monitoredServiceDetail.getEnvironmentIdentifier())
+        .build();
   }
 
   @Value

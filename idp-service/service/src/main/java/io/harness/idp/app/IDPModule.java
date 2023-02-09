@@ -9,6 +9,7 @@ package io.harness.idp.app;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.events.EventsFrameworkModule;
 import io.harness.idp.config.resource.ConfigManagerResource;
 import io.harness.idp.config.resources.ConfigManagerResourceImpl;
 import io.harness.idp.config.service.AppConfigService;
@@ -19,6 +20,7 @@ import io.harness.idp.secret.service.EnvironmentVariableService;
 import io.harness.idp.secret.service.EnvironmentVariableServiceImpl;
 import io.harness.idp.status.resource.IDPStatusResource;
 import io.harness.idp.status.resources.IDPStatusResourceImpl;
+import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
@@ -26,6 +28,7 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.queue.QueueController;
 import io.harness.serializer.IDPServiceRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.threading.ThreadPool;
@@ -107,6 +110,24 @@ public class IDPModule extends AbstractModule {
       @Named("morphiaClasses")
       Map<Class, String> morphiaCustomCollectionNames() {
         return ImmutableMap.<Class, String>builder().build();
+      }
+    });
+    install(new MetricsModule());
+    install(new EventsFrameworkModule(appConfig.getEventsFrameworkConfiguration()));
+    install(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(QueueController.class).toInstance(new QueueController() {
+          @Override
+          public boolean isPrimary() {
+            return true;
+          }
+
+          @Override
+          public boolean isNotPrimary() {
+            return false;
+          }
+        });
       }
     });
 

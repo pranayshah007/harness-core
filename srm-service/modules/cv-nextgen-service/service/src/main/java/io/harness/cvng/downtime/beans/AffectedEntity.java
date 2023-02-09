@@ -14,6 +14,8 @@ import lombok.experimental.SuperBuilder;
 @Value
 @SuperBuilder
 public class AffectedEntity {
-  @NotNull String serviceRef;
-  @NotNull String envRef;
+  @NotNull String serviceName;
+  @NotNull String envName;
+
+  @NotNull String monitoredServiceIdentifier;
 }

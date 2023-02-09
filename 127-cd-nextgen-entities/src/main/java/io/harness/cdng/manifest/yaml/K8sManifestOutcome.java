@@ -36,6 +36,7 @@ public class K8sManifestOutcome implements ManifestOutcome {
   String type = ManifestType.K8Manifest;
   StoreConfig store;
   ParameterField<Boolean> skipResourceVersioning;
+  ParameterField<Boolean> enableDeclarativeRollback;
   ParameterField<List<String>> valuesPaths;
 
   public ParameterField<List<String>> getValuesPaths() {

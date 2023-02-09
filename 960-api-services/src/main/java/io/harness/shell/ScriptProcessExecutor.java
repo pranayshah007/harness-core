@@ -331,6 +331,8 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
           saveExecutionLog("IOException:" + e, ERROR);
         }
       }
+
+      validateExportedVariables(envVariablesMap);
       executionDataBuilder.sweepingOutputEnvVariables(envVariablesMap);
 
       commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;

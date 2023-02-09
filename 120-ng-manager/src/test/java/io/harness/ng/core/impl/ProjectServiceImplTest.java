@@ -75,7 +75,6 @@ import io.harness.security.dto.UserPrincipal;
 import io.harness.telemetry.helpers.ProjectInstrumentationHelper;
 
 import io.dropwizard.jersey.validation.JerseyViolationException;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -331,9 +330,7 @@ public class ProjectServiceImplTest extends CategoryTest {
     Aggregation aggregation = aggregationArgumentCaptor.getValue();
     assertNotNull(aggregation);
 
-    Field f = aggregation.getClass().getDeclaredField("operations");
-    f.setAccessible(true);
-    List<AggregationOperation> operations = (List<AggregationOperation>) f.get(aggregation);
+    List<AggregationOperation> operations = aggregation.getPipeline().getOperations();
     assertEquals(4, operations.size());
     assertEquals(MatchOperation.class, operations.get(0).getClass());
     assertEquals(SortOperation.class, operations.get(1).getClass());

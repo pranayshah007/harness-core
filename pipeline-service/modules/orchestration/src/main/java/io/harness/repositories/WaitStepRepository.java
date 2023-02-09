@@ -14,10 +14,18 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.wait.WaitStepInstance;
 
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.data.repository.CrudRepository;
 
 @OwnedBy(PIPELINE)
 @HarnessRepo
 public interface WaitStepRepository extends CrudRepository<WaitStepInstance, String>, ExecutionInputRepositoryCustom {
   Optional<WaitStepInstance> findByNodeExecutionId(String nodeExecutionId);
+
+  /**
+   * Deletes WaitStepInstance for given nodeExecutionIds
+   * Uses - nodeExecutionId_1 index
+   * @param nodeExecutionIds
+   */
+  void deleteAllByNodeExecutionIdIn(Set<String> nodeExecutionIds);
 }

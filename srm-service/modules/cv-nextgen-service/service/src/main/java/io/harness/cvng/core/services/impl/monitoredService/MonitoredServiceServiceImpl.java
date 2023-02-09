@@ -150,6 +150,7 @@ import com.mongodb.DuplicateKeyException;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
+import io.fabric8.utils.Lists;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
@@ -571,6 +572,22 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             .field(MonitoredServiceKeys.identifier)
             .in(identifier)
             .asList();
+    return getMonitoredServiceDetails(projectParams, monitoredServices);
+  }
+
+  @Override
+  public List<MonitoredServiceDetail> getAllMonitoredServiceDetails(ProjectParams projectParams) {
+    List<MonitoredService> monitoredServices =
+        hPersistence.createQuery(MonitoredService.class)
+            .filter(MonitoredServiceKeys.accountId, projectParams.getAccountIdentifier())
+            .filter(MonitoredServiceKeys.orgIdentifier, projectParams.getOrgIdentifier())
+            .filter(MonitoredServiceKeys.projectIdentifier, projectParams.getProjectIdentifier())
+            .asList();
+    return getMonitoredServiceDetails(projectParams, monitoredServices);
+  }
+
+  private List<MonitoredServiceDetail> getMonitoredServiceDetails(
+      ProjectParams projectParams, List<MonitoredService> monitoredServices) {
     List<MonitoredServiceDetail> monitoredServiceDetails = new ArrayList<>();
     Set<String> environmentIdentifiers = new HashSet<>();
     Set<String> serviceIdentifiers = new HashSet<>();
@@ -868,7 +885,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             .filter(MonitoredServiceKeys.accountId, projectParams.getAccountIdentifier())
             .filter(MonitoredServiceKeys.orgIdentifier, projectParams.getOrgIdentifier())
             .filter(MonitoredServiceKeys.projectIdentifier, projectParams.getProjectIdentifier());
-    if (environmentIdentifiers != null && !environmentIdentifiers.isEmpty()) {
+    if (!Lists.isNullOrEmpty(environmentIdentifiers)) {
       query = query.field(MonitoredServiceKeys.environmentIdentifierList).hasAnyOf(environmentIdentifiers);
     }
     return query.asList();

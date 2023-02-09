@@ -215,8 +215,6 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
             long correctValidUntil = createdAt + retentionData;
             // if the correct valid until is in the future lets update and bail
             if (correctValidUntil >= now) {
-              log.warn("Updating entity in gcp datastore is expensive. "
-                  + "Make sure you have the right validUntil at first place");
               Entity updatedEntity = Entity.newBuilder(datastore.get(entity.getKey()))
                                          .set(AccountDataRetentionEntity.VALID_UNTIL_KEY, correctValidUntil)
                                          .build();

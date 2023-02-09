@@ -97,6 +97,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
@@ -420,13 +421,6 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     populateGitFetchFilesConfigListWithValuesPaths(gitFetchFilesConfigList, gitStoreConfig, manifestOutcome,
         connectorDTO, ambiance, manifestOutcome.getIdentifier(), false, overridePaths);
     return gitFetchFilesConfigList;
-  }
-
-  private List<GitFetchFilesConfig> mapK8sOrHelmValuesManifestToGitFetchFileConfig(
-      ValuesManifestOutcome valuesManifestOutcome, Ambiance ambiance, ManifestOutcome k8sManifestOutcome) {
-    String validationMessage = format("Values YAML with Id [%s]", valuesManifestOutcome.getIdentifier());
-    return getValuesGitFetchFilesConfig(ambiance, valuesManifestOutcome.getIdentifier(),
-        valuesManifestOutcome.getStore(), validationMessage, k8sManifestOutcome);
   }
 
   public void resolveManifestsConfigExpressions(Ambiance ambiance, List<ManifestConfigWrapper> manifestConfigWrappers) {
@@ -908,28 +902,48 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   public boolean getSkipResourceVersioning(ManifestOutcome manifestOutcome) {
     switch (manifestOutcome.getType()) {
       case ManifestType.K8Manifest:
-        K8sManifestOutcome k8sManifestOutcome = (K8sManifestOutcome) manifestOutcome;
-        return CDStepHelper.getParameterFieldBooleanValue(k8sManifestOutcome.getSkipResourceVersioning(),
-            K8sManifestOutcomeKeys.skipResourceVersioning, k8sManifestOutcome);
-
+        return getBooleanParameterValue(((K8sManifestOutcome) manifestOutcome).getSkipResourceVersioning(),
+            K8sManifestOutcomeKeys.skipResourceVersioning, manifestOutcome);
       case ManifestType.HelmChart:
-        HelmChartManifestOutcome helmChartManifestOutcome = (HelmChartManifestOutcome) manifestOutcome;
-        return CDStepHelper.getParameterFieldBooleanValue(helmChartManifestOutcome.getSkipResourceVersioning(),
-            HelmChartManifestOutcomeKeys.skipResourceVersioning, helmChartManifestOutcome);
-
+        return getBooleanParameterValue(((HelmChartManifestOutcome) manifestOutcome).getSkipResourceVersioning(),
+            HelmChartManifestOutcomeKeys.skipResourceVersioning, manifestOutcome);
       case ManifestType.Kustomize:
-        KustomizeManifestOutcome kustomizeManifestOutcome = (KustomizeManifestOutcome) manifestOutcome;
-        return CDStepHelper.getParameterFieldBooleanValue(kustomizeManifestOutcome.getSkipResourceVersioning(),
-            KustomizeManifestOutcomeKeys.skipResourceVersioning, kustomizeManifestOutcome);
-
+        return getBooleanParameterValue(((KustomizeManifestOutcome) manifestOutcome).getSkipResourceVersioning(),
+            KustomizeManifestOutcomeKeys.skipResourceVersioning, manifestOutcome);
       case ManifestType.OpenshiftTemplate:
-        OpenshiftManifestOutcome openshiftManifestOutcome = (OpenshiftManifestOutcome) manifestOutcome;
-        return CDStepHelper.getParameterFieldBooleanValue(openshiftManifestOutcome.getSkipResourceVersioning(),
-            OpenshiftManifestOutcomeKeys.skipResourceVersioning, openshiftManifestOutcome);
-
+        return getBooleanParameterValue(((OpenshiftManifestOutcome) manifestOutcome).getSkipResourceVersioning(),
+            OpenshiftManifestOutcomeKeys.skipResourceVersioning, manifestOutcome);
       default:
         return false;
     }
+  }
+
+  public boolean isDeclarativeRollbackEnabled(ManifestOutcome manifestOutcome) {
+    if (manifestOutcome == null) {
+      return false;
+    }
+
+    switch (manifestOutcome.getType()) {
+      case ManifestType.K8Manifest:
+        return getBooleanParameterValue(((K8sManifestOutcome) manifestOutcome).getEnableDeclarativeRollback(),
+            K8sManifestOutcomeKeys.enableDeclarativeRollback, manifestOutcome);
+      case ManifestType.HelmChart:
+        return getBooleanParameterValue(((HelmChartManifestOutcome) manifestOutcome).getEnableDeclarativeRollback(),
+            HelmChartManifestOutcomeKeys.enableDeclarativeRollback, manifestOutcome);
+      case ManifestType.Kustomize:
+        return getBooleanParameterValue(((KustomizeManifestOutcome) manifestOutcome).getEnableDeclarativeRollback(),
+            KustomizeManifestOutcomeKeys.enableDeclarativeRollback, manifestOutcome);
+      case ManifestType.OpenshiftTemplate:
+        return getBooleanParameterValue(((OpenshiftManifestOutcome) manifestOutcome).getEnableDeclarativeRollback(),
+            OpenshiftManifestOutcomeKeys.enableDeclarativeRollback, manifestOutcome);
+      default:
+        return false;
+    }
+  }
+
+  public static boolean getBooleanParameterValue(
+      ParameterField<Boolean> fieldValue, String fieldName, ManifestOutcome manifestOutcome) {
+    return CDStepHelper.getParameterFieldBooleanValue(fieldValue, fieldName, manifestOutcome);
   }
 
   public StepResponse handleTaskException(

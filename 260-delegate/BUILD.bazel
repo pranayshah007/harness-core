@@ -72,7 +72,7 @@ springboot(
         "//conditions:default": "io.harness.delegate.app.DelegateApplication",
     }),
     deps_exclude = [
-        "@maven//:org_mongodb_mongo_java_driver",
+        "@maven//:org_mongodb_mongodb_driver_core",
         "@maven//:org_mongodb_mongodb_driver_sync",
         "@maven//:org_mongodb_mongodb_driver_legacy",
     ],
@@ -314,7 +314,7 @@ java_library(
         "@maven//:com_nimbusds_lang_tag",
         "@maven//:com_nimbusds_nimbus_jose_jwt",
         "@maven//:com_nimbusds_oauth2_oidc_sdk",
-        "@maven//:com_novemberain_quartz_mongodb_harness_mongo_ssl",
+        "@maven//:com_novemberain_quartz_mongodb",
         "@maven//:com_offbytwo_jenkins_jenkins_client",
         "@maven//:com_openpojo_openpojo",
         "@maven//:com_palominolabs_metrics_metrics_guice",

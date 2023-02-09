@@ -204,10 +204,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     String sourcePipelineEntityYaml = sourcePipelineEntity.getYaml();
 
     String destYaml;
+    String pipelineName = null;
     String sourcePipelineVersion = sourcePipelineEntity.getHarnessVersion();
     switch (sourcePipelineVersion) {
       case PipelineVersion.V1:
         destYaml = pipelineCloneHelper.updatePipelineMetadataInSourceYamlV1(clonePipelineDTO, sourcePipelineEntityYaml);
+        pipelineName = clonePipelineDTO.getDestinationConfig().getPipelineName();
         break;
       default:
         destYaml = pipelineCloneHelper.updatePipelineMetadataInSourceYaml(
@@ -215,7 +217,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
     PipelineEntity destPipelineEntity =
         PMSPipelineDtoMapper.toPipelineEntity(accountId, clonePipelineDTO.getDestinationConfig().getOrgIdentifier(),
-            clonePipelineDTO.getDestinationConfig().getProjectIdentifier(), destYaml, false, sourcePipelineVersion);
+            clonePipelineDTO.getDestinationConfig().getProjectIdentifier(), pipelineName, destYaml, false,
+            sourcePipelineVersion);
 
     PipelineCRUDResult pipelineCRUDResult = validateAndCreatePipeline(destPipelineEntity, false);
     GovernanceMetadata destGovernanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
@@ -615,8 +618,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     String pipelineVersion = pipelineVersion(accountId, importedPipelineYAML);
     PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadata(orgIdentifier, projectIdentifier,
         pipelineIdentifier, pipelineImportRequest, importedPipelineYAML, pipelineVersion);
-    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
-        accountId, orgIdentifier, projectIdentifier, importedPipelineYAML, false, pipelineVersion);
+    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgIdentifier, projectIdentifier,
+        pipelineImportRequest.getPipelineName(), importedPipelineYAML, false, pipelineVersion);
     pipelineEntity.setRepoURL(repoUrl);
 
     try {

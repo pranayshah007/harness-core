@@ -47,7 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
-public class EnvironmentEventHandler implements OutboxEventHandler {
+public class EnvironmentOutboxEventHandler implements OutboxEventHandler {
   private final ObjectMapper objectMapper;
   private final AuditClientService auditClientService;
 
@@ -56,7 +56,7 @@ public class EnvironmentEventHandler implements OutboxEventHandler {
   private static final String EMPTY_YAML = "";
 
   @Inject
-  EnvironmentEventHandler(AuditClientService auditClientService) {
+  EnvironmentOutboxEventHandler(AuditClientService auditClientService) {
     this.auditClientService = auditClientService;
     this.objectMapper = NG_DEFAULT_OBJECT_MAPPER;
   }

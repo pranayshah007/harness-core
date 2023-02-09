@@ -61,10 +61,10 @@ public interface UserClient {
   String UPDATE_USER_API = "ng/user/user";
   String CREATE_USER_VIA_INVITE = "ng/user/invites/create-user";
   String CHECK_USER_LIMIT = "ng/user/limit-check";
-
   String USER_TWO_FACTOR_AUTH_SETTINGS = "ng/user/two-factor-auth/{auth-mechanism}";
   String USER_ENABLE_TWO_FACTOR_AUTH = "ng/user/enable-two-factor-auth";
   String USER_DISABLE_TWO_FACTOR_AUTH = "ng/user/disable-two-factor-auth";
+  String USER_RESET_TWO_FACTOR_AUTH = "ng/user/reset-two-factor-auth/{userId}";
   String USER_UNLOCK = "ng/user/unlock-user";
   String ALL_PROJECTS_ACCESSIBLE_TO_USER_API = "ng/user/all-projects";
 
@@ -150,6 +150,10 @@ public interface UserClient {
 
   @PUT(USER_DISABLE_TWO_FACTOR_AUTH)
   Call<RestResponse<Optional<UserInfo>>> disableUserTwoFactorAuth(@Query(value = "emailId") String emailId);
+
+  @GET(USER_RESET_TWO_FACTOR_AUTH)
+  Call<RestResponse<Boolean>> sendTwoFactorAuthenticationResetEmail(
+      @Path(value = "userId") String userId, @Query("accountId") String accountId);
 
   @GET(USERS_API + "/user-password-present")
   Call<RestResponse<Boolean>> isUserPasswordSet(@Query("accountId") String accountId, @Query("emailId") String emailId);

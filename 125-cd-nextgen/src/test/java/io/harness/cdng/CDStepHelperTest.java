@@ -72,6 +72,7 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionType
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
@@ -1076,6 +1077,46 @@ public class CDStepHelperTest extends CategoryTest {
     assertThat(gitStoreDelegateConfig.getGitConfigDTO()).isInstanceOf(GitConfigDTO.class);
     GitConfigDTO gitConfigDTO = (GitConfigDTO) gitStoreDelegateConfig.getGitConfigDTO();
     assertThat(gitConfigDTO.getUrl()).isEqualTo("http://localhost/_git/parent-repo/module");
+    assertThat(gitConfigDTO.getGitConnectionType()).isEqualTo(GitConnectionType.REPO);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void shouldGetAzureRepoStoreDelegateConfigSSHAuth() {
+    List<String> paths = asList("path/to");
+    GitStoreConfig gitStoreConfig = AzureRepoStore.builder()
+                                        .repoName(ParameterField.createValueField("parent-repo/module"))
+                                        .paths(ParameterField.createValueField(paths))
+                                        .build();
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().build();
+    SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
+    List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
+    AzureRepoConnectorDTO azureRepoConnectorDTO =
+        AzureRepoConnectorDTO.builder()
+            .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
+            .url("git@github.com:localhost")
+            .authentication(
+                AzureRepoAuthenticationDTO.builder()
+                    .authType(GitAuthType.SSH)
+                    .credentials(
+                        AzureRepoSshCredentialsDTO.builder().sshKeyRef(SecretRefData.builder().build()).build())
+                    .build())
+            .build();
+    connectorInfoDTO.setConnectorConfig(azureRepoConnectorDTO);
+
+    doReturn(false).when(cdFeatureFlagHelper).isEnabled(any(), eq(OPTIMIZED_GIT_FETCH_FILES));
+    doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
+    doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
+
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
+        gitStoreConfig, connectorInfoDTO, K8sManifestOutcome.builder().build(), paths, ambiance);
+
+    assertThat(gitStoreDelegateConfig).isNotNull();
+    assertThat(gitStoreDelegateConfig.isOptimizedFilesFetch()).isFalse();
+    assertThat(gitStoreDelegateConfig.getGitConfigDTO()).isInstanceOf(GitConfigDTO.class);
+    GitConfigDTO gitConfigDTO = (GitConfigDTO) gitStoreDelegateConfig.getGitConfigDTO();
+    assertThat(gitConfigDTO.getUrl()).isEqualTo("git@github.com:localhost/parent-repo/module");
     assertThat(gitConfigDTO.getGitConnectionType()).isEqualTo(GitConnectionType.REPO);
   }
 

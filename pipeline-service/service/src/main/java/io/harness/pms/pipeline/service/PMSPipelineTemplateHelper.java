@@ -146,8 +146,8 @@ public class PMSPipelineTemplateHelper {
         accountId, orgId, projectId, null, null, null, TemplateReferenceRequestDTO.builder().yaml(yaml).build()));
   }
 
-  public RefreshResponseDTO getRefreshedYaml(
-      String accountId, String orgId, String projectId, String yaml, PipelineEntity pipelineEntity) {
+  public RefreshResponseDTO getRefreshedYaml(String accountId, String orgId, String projectId, String yaml,
+      PipelineEntity pipelineEntity, String loadFromCache) {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(yaml).build();
     if (gitEntityInfo != null) {
@@ -155,15 +155,15 @@ public class PMSPipelineTemplateHelper {
           gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
           gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
           pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
-          pipelineEntity.getProjectIdentifier(), refreshRequest));
+          pipelineEntity.getProjectIdentifier(), loadFromCache, refreshRequest));
     }
 
     return NGRestUtils.getResponse(templateResourceClient.getRefreshedYaml(
-        accountId, orgId, projectId, null, null, null, null, null, null, null, null, refreshRequest));
+        accountId, orgId, projectId, null, null, null, null, null, null, null, null, loadFromCache, refreshRequest));
   }
 
-  public ValidateTemplateInputsResponseDTO validateTemplateInputsForGivenYaml(
-      String accountId, String orgId, String projectId, String yaml, PipelineEntity pipelineEntity) {
+  public ValidateTemplateInputsResponseDTO validateTemplateInputsForGivenYaml(String accountId, String orgId,
+      String projectId, String yaml, PipelineEntity pipelineEntity, String loadFromCache) {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(yaml).build();
     long start = System.currentTimeMillis();
@@ -173,10 +173,10 @@ public class PMSPipelineTemplateHelper {
             projectId, gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
             gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
             pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
-            pipelineEntity.getProjectIdentifier(), refreshRequest));
+            pipelineEntity.getProjectIdentifier(), loadFromCache, refreshRequest));
       }
       return NGRestUtils.getResponse(templateResourceClient.validateTemplateInputsForGivenYaml(
-          accountId, orgId, projectId, null, null, null, null, null, null, null, null, refreshRequest));
+          accountId, orgId, projectId, null, null, null, null, null, null, null, null, loadFromCache, refreshRequest));
     } finally {
       log.info(
           "[PMS_PipelineTemplate] validating template inputs for given yaml took {}ms for projectId {}, orgId {}, accountId {}",
@@ -184,8 +184,8 @@ public class PMSPipelineTemplateHelper {
     }
   }
 
-  public YamlFullRefreshResponseDTO refreshAllTemplatesForYaml(
-      String accountId, String orgId, String projectId, String yaml, PipelineEntity pipelineEntity) {
+  public YamlFullRefreshResponseDTO refreshAllTemplatesForYaml(String accountId, String orgId, String projectId,
+      String yaml, PipelineEntity pipelineEntity, String loadFromCache) {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(yaml).build();
     if (gitEntityInfo != null) {
@@ -193,11 +193,11 @@ public class PMSPipelineTemplateHelper {
           gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
           gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
           pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
-          pipelineEntity.getProjectIdentifier(), refreshRequest));
+          pipelineEntity.getProjectIdentifier(), loadFromCache, refreshRequest));
     }
 
     return NGRestUtils.getResponse(templateResourceClient.refreshAllTemplatesForYaml(
-        accountId, orgId, projectId, null, null, null, null, null, null, null, null, refreshRequest));
+        accountId, orgId, projectId, null, null, null, null, null, null, null, null, loadFromCache, refreshRequest));
   }
 
   public HashSet<String> getTemplatesModuleInfo(TemplateMergeResponseDTO templateMergeResponseDTO) {
