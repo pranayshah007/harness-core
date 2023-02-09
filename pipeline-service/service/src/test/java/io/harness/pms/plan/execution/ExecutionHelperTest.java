@@ -15,7 +15,6 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
-import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,7 +30,6 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.OrchestrationService;
@@ -71,7 +69,6 @@ import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
-import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
@@ -114,7 +111,6 @@ public class ExecutionHelperTest extends CategoryTest {
   @Mock PlanExecutionMetadataService planExecutionMetadataService;
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
   @Mock PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
-  @Mock PmsFeatureFlagHelper featureFlagService;
 
   String accountId = "accountId";
   String orgId = "orgId";
@@ -661,38 +657,6 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThatThrownBy(
         () -> executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities(inputSetYaml, pipelineEntity))
         .isInstanceOf(InvalidRequestException.class);
-  }
-
-  @Test
-  @Owner(developers = UTKARSH_CHOUBEY)
-  @Category(UnitTests.class)
-  public void testGetPipelineYamlAndValidateWhenOPAFFisOff() throws IOException {
-    String yamlWithTempRef = "pipeline:\n"
-        + "  name: \"ww\"\n"
-        + "  template:\n"
-        + "    templateRef: \"new_pipeline_template_name\"\n"
-        + "    versionLabel: \"v1\"\n"
-        + "  tags: {}\n";
-    PipelineEntity pipelineEntity = PipelineEntity.builder()
-                                        .accountId(accountId)
-                                        .orgIdentifier(orgId)
-                                        .projectIdentifier(projectId)
-                                        .identifier(pipelineId)
-                                        .yaml(yamlWithTempRef)
-                                        .build();
-    when(featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE))
-        .thenReturn(false);
-    TemplateMergeResponseDTO templateMergeResponse =
-        TemplateMergeResponseDTO.builder().mergedPipelineYaml(yamlWithTempRef).build();
-
-    doReturn(templateMergeResponse)
-        .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-            pipelineEntity.getProjectIdentifier(), yamlWithTempRef, true, false, BOOLEAN_FALSE_VALUE);
-    TemplateMergeResponseDTO templateMergeResponseDTO =
-        executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities("", pipelineEntity);
-    assertThat(templateMergeResponseDTO.getMergedPipelineYaml())
-        .isEqualTo(templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef());
   }
 
   @Test

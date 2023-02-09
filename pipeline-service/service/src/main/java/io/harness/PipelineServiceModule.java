@@ -306,6 +306,8 @@ public class PipelineServiceModule extends AbstractModule {
             .licenseClientServiceSecret(configuration.getNgManagerServiceSecret())
             .licenseClientConfig(configuration.getNgManagerServiceHttpClientConfig())
             .licenseClientId(PIPELINE_SERVICE.getServiceId())
+            .isPolicyGovernanceEnabled(
+                configuration.getIsPolicyGovernanceEnabled() != null && configuration.getIsPolicyGovernanceEnabled())
             .build()));
     install(OrchestrationStepsModule.getInstance(configuration.getOrchestrationStepConfig()));
     install(OrchestrationVisualizationModule.getInstance(configuration.getEventsFrameworkConfiguration(),

@@ -17,7 +17,6 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 import io.harness.ModuleType;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
@@ -55,7 +54,6 @@ import io.harness.pms.pipeline.PipelineEntityUtils;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.PipelineMetadataV2;
-import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.yaml.PipelineVersion;
@@ -66,7 +64,6 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.serializer.JsonUtils;
 import io.harness.telemetry.TelemetryReporter;
-import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -96,9 +93,7 @@ public class PMSPipelineServiceHelper {
   @Inject private final FilterService filterService;
   @Inject private final FilterCreatorMergeService filterCreatorMergeService;
   @Inject private final PipelineValidationService pipelineValidationService;
-  @Inject private final PipelineGovernanceService pipelineGovernanceService;
   @Inject private final PMSPipelineTemplateHelper pipelineTemplateHelper;
-  @Inject private final PmsFeatureFlagService pmsFeatureFlagService;
   @Inject private final TelemetryReporter telemetryReporter;
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private final PMSPipelineRepository pmsPipelineRepository;
@@ -340,11 +335,9 @@ public class PMSPipelineServiceHelper {
       case PipelineVersion.V1:
         return GovernanceMetadata.newBuilder().setDeny(false).build();
       case PipelineVersion.V0:
-        boolean getMergedTemplateWithTemplateReferences =
-            pmsFeatureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE);
         // Apply all the templateRefs(if any) then check for schema validation.
-        TemplateMergeResponseDTO templateMergeResponseDTO = pipelineTemplateHelper.resolveTemplateRefsInPipeline(
-            pipelineEntity, getMergedTemplateWithTemplateReferences, loadFromCache);
+        TemplateMergeResponseDTO templateMergeResponseDTO =
+            pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, true, loadFromCache);
         // Add Template Module Info temporarily to Pipeline Entity
         pipelineEntity.setTemplateModules(pipelineTemplateHelper.getTemplatesModuleInfo(templateMergeResponseDTO));
         return validateYaml(pipelineEntity, templateMergeResponseDTO, throwExceptionIfGovernanceRulesFails)

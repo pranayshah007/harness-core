@@ -9,7 +9,6 @@ package io.harness.engine;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.governance.GovernanceMetadata;
@@ -22,7 +21,6 @@ import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -33,7 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class GovernanceServiceImpl implements GovernanceService {
-  private final PmsFeatureFlagService pmsFeatureFlagService;
   private final OpaServiceClient opaServiceClient;
 
   @Override
@@ -48,13 +45,6 @@ public class GovernanceServiceImpl implements GovernanceService {
     }
     long startTs = System.currentTimeMillis();
     try {
-      if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
-        return GovernanceMetadata.newBuilder()
-            .setDeny(false)
-            .setMessage(
-                String.format("FF: [%s] is disabled for account: [%s]", FeatureName.OPA_PIPELINE_GOVERNANCE, accountId))
-            .build();
-      }
       log.info("Initiating policy check for pipeline with expanded JSON:\n" + expandedJson);
 
       PipelineOpaEvaluationContext context;

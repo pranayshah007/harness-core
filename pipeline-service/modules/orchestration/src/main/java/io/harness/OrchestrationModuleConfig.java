@@ -54,4 +54,5 @@ public class OrchestrationModuleConfig {
   ServiceHttpClientConfig licenseClientConfig;
   String licenseClientServiceSecret;
   String licenseClientId;
+  boolean isPolicyGovernanceEnabled;
 }

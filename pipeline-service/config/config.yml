@@ -257,6 +257,8 @@ opaClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+isPolicyGovernanceEnabled: ${IS_POLICY_GOVERNANCE_ENABLED:-false}
+
 iteratorsConfig:
   webhook:
     threadPoolCount: 2

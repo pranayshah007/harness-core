@@ -9,7 +9,6 @@ package io.harness.pms.pipeline.governance.service;
 
 import static io.harness.pms.contracts.governance.ExpansionPlacementStrategy.APPEND;
 
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.GovernanceService;
 import io.harness.exception.InvalidRequestException;
@@ -31,7 +30,6 @@ import io.harness.pms.utils.PipelineYamlHelper;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.JsonUtils;
-import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -48,7 +46,6 @@ import lombok.extern.slf4j.Slf4j;
 public class PipelineGovernanceServiceImpl implements PipelineGovernanceService {
   @Inject private final JsonExpander jsonExpander;
   @Inject private final ExpansionRequestsExtractor expansionRequestsExtractor;
-  @Inject PmsFeatureFlagService pmsFeatureFlagService;
   @Inject private final PmsGitSyncHelper gitSyncHelper;
 
   @Inject private final GovernanceService governanceService;
@@ -56,9 +53,6 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
   @Override
   public GovernanceMetadata validateGovernanceRules(
       String accountId, String orgIdentifier, String projectIdentifier, String yamlWithResolvedTemplates) {
-    if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
-      return GovernanceMetadata.newBuilder().setDeny(false).build();
-    }
     String expandedPipelineJSON = fetchExpandedPipelineJSONFromYaml(
         accountId, orgIdentifier, projectIdentifier, yamlWithResolvedTemplates, false);
     return governanceService.evaluateGovernancePolicies(expandedPipelineJSON, accountId, orgIdentifier,
@@ -91,9 +85,6 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
         return pipelineYaml;
       default:
         break;
-    }
-    if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
-      return pipelineYaml;
     }
     long start = System.currentTimeMillis();
     ExpansionRequestMetadata expansionRequestMetadata =

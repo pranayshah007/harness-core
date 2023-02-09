@@ -16,7 +16,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.contracts.governance.ExpansionResponseBatch;
@@ -26,7 +25,6 @@ import io.harness.pms.governance.ExpansionRequest;
 import io.harness.pms.governance.ExpansionRequestsExtractor;
 import io.harness.pms.governance.JsonExpander;
 import io.harness.rule.Owner;
-import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.protobuf.ByteString;
 import java.util.Collections;
@@ -43,7 +41,6 @@ public class PipelineGovernanceServiceImplTest extends CategoryTest {
   String orgIdentifier = "org";
   String projectIdentifier = "project";
 
-  @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @Mock private PmsGitSyncHelper gitSyncHelper;
   @Mock private ExpansionRequestsExtractor expansionRequestsExtractor;
   @Mock private JsonExpander jsonExpander;
@@ -59,7 +56,6 @@ public class PipelineGovernanceServiceImplTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testFetchExpandedPipelineJSONFromYaml() {
-    doReturn(true).when(pmsFeatureFlagService).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
     String dummyYaml = "\"don't really need a proper yaml cuz only testing the flow\"";
     ByteString randomByteString = ByteString.copyFromUtf8("sss");
     ExpansionRequestMetadata expansionRequestMetadata = ExpansionRequestMetadata.newBuilder()
@@ -81,14 +77,6 @@ public class PipelineGovernanceServiceImplTest extends CategoryTest {
     doReturn(dummyResponseSet).when(jsonExpander).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);
     pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
         accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml, false);
-    verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();
-    verify(expansionRequestsExtractor, times(1)).fetchExpansionRequests(dummyYaml);
-    verify(jsonExpander, times(1)).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);
-
-    doReturn(false).when(pmsFeatureFlagService).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
-    String noExp = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
-        accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml, false);
-    assertThat(noExp).isEqualTo(dummyYaml);
     verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();
     verify(expansionRequestsExtractor, times(1)).fetchExpansionRequests(dummyYaml);
     verify(jsonExpander, times(1)).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);

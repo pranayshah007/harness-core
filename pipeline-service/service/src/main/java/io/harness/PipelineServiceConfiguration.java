@@ -170,6 +170,7 @@ public class PipelineServiceConfiguration extends Configuration {
   private boolean shouldDeployWithGitSync;
   private GitSdkConfiguration gitSdkConfiguration;
   private DelegatePollingConfig delegatePollingConfig;
+  private Boolean isPolicyGovernanceEnabled;
 
   public PipelineServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();

@@ -19,6 +19,7 @@ import io.harness.cache.HarnessCacheManager;
 import io.harness.delay.AbstractOrchestrationDelayModule;
 import io.harness.engine.GovernanceService;
 import io.harness.engine.GovernanceServiceImpl;
+import io.harness.engine.NoopGovernanceServiceImpl;
 import io.harness.engine.NoopTaskExecutor;
 import io.harness.engine.OrchestrationService;
 import io.harness.engine.OrchestrationServiceImpl;
@@ -158,7 +159,11 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
     bind(InterruptService.class).to(InterruptServiceImpl.class).in(Singleton.class);
     bind(OrchestrationService.class).to(OrchestrationServiceImpl.class).in(Singleton.class);
     bind(PlanExecutionMetadataService.class).to(PlanExecutionMetadataServiceImpl.class).in(Singleton.class);
-    bind(GovernanceService.class).to(GovernanceServiceImpl.class).in(Singleton.class);
+    if (config.isPolicyGovernanceEnabled()) {
+      bind(GovernanceService.class).to(GovernanceServiceImpl.class).in(Singleton.class);
+    } else {
+      bind(GovernanceService.class).to(NoopGovernanceServiceImpl.class).in(Singleton.class);
+    }
 
     MapBinder<TaskCategory, TaskExecutor> taskExecutorMap =
         MapBinder.newMapBinder(binder(), TaskCategory.class, TaskExecutor.class);
