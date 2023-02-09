@@ -8,7 +8,7 @@
 package io.harness.idp.app;
 
 import static io.harness.annotations.dev.HarnessTeam.IDP;
-import static io.harness.idp.app.IDPConfiguration.HARNESS_RESOURCE_CLASSES;
+import static io.harness.idp.app.IdpConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import io.harness.annotations.dev.OwnedBy;
