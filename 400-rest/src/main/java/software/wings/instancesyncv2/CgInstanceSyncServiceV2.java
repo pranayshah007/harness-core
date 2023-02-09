@@ -293,17 +293,15 @@ public class CgInstanceSyncServiceV2 {
             releasesToDelete.add(cgReleaseIdentifiers);
           }
         }
-        try {
-          for (InstanceSyncData instanceSyncData : instancesPerTask.get(taskDetailsId)) {
-            DelegateResponseData delegateResponse =
-                (DelegateResponseData) kryoSerializer.asObject(instanceSyncData.getTaskResponse().toByteArray());
 
+        for (InstanceSyncData instanceSyncData : instancesPerTask.get(taskDetailsId)) {
+          DelegateResponseData delegateResponse =
+              (DelegateResponseData) kryoSerializer.asObject(instanceSyncData.getTaskResponse().toByteArray());
+          try {
             instanceSyncHandler.processInstanceSyncResponseFromPerpetualTask(infraMapping, delegateResponse);
+          } catch (NoInstancesException e) {
+            // No Action is required
           }
-        } catch (NoInstancesException e) {
-          log.error(e.getMessage());
-          taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
-          return;
         }
         taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
       }
