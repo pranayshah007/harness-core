@@ -56,7 +56,6 @@ public class BambooArtifactDelegateRequest implements ArtifactSourceDelegateRequ
   private String buildDisplayName;
   private String buildFullDisplayName;
   private String description;
-  private List<FilePathAssertionEntry> filePathAssertionMap;
 
   public Set<String> getDelegateSelectors() {
     Set<String> combinedDelegateSelectors = new HashSet<>();

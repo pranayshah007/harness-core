@@ -15,6 +15,7 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionMetadataKeys;
+import io.harness.exception.runtime.BambooServerRuntimeException;
 import io.harness.exception.runtime.JenkinsServerRuntimeException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -67,31 +68,9 @@ public class BambooArtifactTaskHelper {
           artifactTaskResponse = getSuccessTaskResponse(bambooArtifactTaskHandler.getArtifactPaths(attributes));
           saveLogs(executionLogCallback, "Get the Bamboo Job " + registryUrl);
           break;
-
-          //                case GET_JOB_PARAMETERS:
-          //                    saveLogs(executionLogCallback, "Get the Jenkins Job");
-          //                    artifactTaskResponse =
-          //                    getSuccessTaskResponse(jenkinsArtifactTaskHandler.getJobWithParamters(attributes));
-          //                    saveLogs(executionLogCallback, "Get the Jenkins Job " + registryUrl);
-          //                    break;
-          //                case JENKINS_BUILD:
-          //                    saveLogs(executionLogCallback, "Trigger the Jenkins Builds");
-          //                    artifactTaskResponse =
-          //                            getSuccessTaskResponse(jenkinsArtifactTaskHandler.triggerBuild(attributes,
-          //                            executionLogCallback));
-          //                    saveLogs(executionLogCallback, "Trigger the Jenkins Builds " + registryUrl);
-          //                    break;
-          //                case JENKINS_POLL_TASK:
-          //                    saveLogs(executionLogCallback, "Get the Jenkins poll task");
-          //                    artifactTaskResponse =
-          //                            getSuccessTaskResponse(jenkinsArtifactTaskHandler.pollTask(attributes,
-          //                            executionLogCallback));
-          //                    saveLogs(executionLogCallback, "Get the Jenkins poll task " + registryUrl);
-          //                    break;
         default:
-          saveLogs(executionLogCallback,
-              "No corresponding Jenkins artifact task type [{}]: " + artifactTaskParameters.toString());
-          log.error("No corresponding Jenkins artifact task type [{}]", artifactTaskParameters.toString());
+          saveLogs(executionLogCallback, "No corresponding Jenkins artifact task type [{}]: " + artifactTaskParameters);
+          log.error("No corresponding Jenkins artifact task type [{}]", artifactTaskParameters);
           return ArtifactTaskResponse.builder()
               .commandExecutionStatus(CommandExecutionStatus.FAILURE)
               .errorMessage("There is no Jenkins artifact task type impl defined for - "
@@ -99,7 +78,7 @@ public class BambooArtifactTaskHelper {
               .errorCode(ErrorCode.INVALID_ARGUMENT)
               .build();
       }
-    } catch (JenkinsServerRuntimeException ex) {
+    } catch (BambooServerRuntimeException ex) {
       if (GlobalContextManager.get(MdcGlobalContextData.MDC_ID) == null) {
         MdcGlobalContextData mdcGlobalContextData = MdcGlobalContextData.builder().map(new HashMap<>()).build();
         GlobalContextManager.upsertGlobalContextRecord(mdcGlobalContextData);

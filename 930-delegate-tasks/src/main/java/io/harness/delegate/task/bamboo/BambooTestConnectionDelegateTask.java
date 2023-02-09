@@ -24,7 +24,6 @@ import java.util.function.Consumer;
 import org.apache.commons.lang3.NotImplementedException;
 
 public class BambooTestConnectionDelegateTask extends AbstractDelegateRunnableTask {
-  private static final String EMPTY_STR = "";
   @Inject private BambooValidationHandler bambooValidationHandler;
 
   public BambooTestConnectionDelegateTask(DelegateTaskPackage delegateTaskPackage,

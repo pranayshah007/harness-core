@@ -28,8 +28,6 @@ public class BambooConnectionValidator extends AbstractConnectorValidator {
   public <T extends ConnectorConfigDTO> TaskParameters getTaskParameters(
       T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     BambooConnectorDTO bambooConnectorDTO = (BambooConnectorDTO) connectorConfig;
-    BambooAuthCredentialsDTO bambooAuthCredentialsDTO =
-        bambooConnectorDTO.getAuth() != null ? bambooConnectorDTO.getAuth().getCredentials() : null;
     return BambooTestConnectionTaskParams.builder()
         .bambooConnectorDTO(bambooConnectorDTO)
         .encryptionDetails(

@@ -25,7 +25,7 @@ import com.google.inject.Singleton;
 public class BambooEntityToDTO implements ConnectorEntityToDTOMapper<BambooConnectorDTO, BambooConnector> {
   @Override
   public BambooConnectorDTO createConnectorDTO(BambooConnector bambooConnector) {
-    BambooAuthenticationDTO bambooAuthenticationDTO = null;
+    BambooAuthenticationDTO bambooAuthenticationDTO = BambooAuthenticationDTO.builder().build();
     if (bambooConnector.getAuthType() == BambooAuthType.USER_PASSWORD) {
       BambooUserNamePasswordAuthentication bambooCredentials =
           (BambooUserNamePasswordAuthentication) bambooConnector.getBambooAuthentication();

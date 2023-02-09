@@ -32,7 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 public class BambooArtifactTaskHandler extends DelegateArtifactTaskHandler<BambooArtifactDelegateRequest> {
   private final SecretDecryptionService secretDecryptionService;
   @Inject private BambooBuildService bambooBuildService;
-  //@Inject @Named("bambooExecutor") private ExecutorService bambooExecutor;
 
   @Override
   public ArtifactTaskExecutionResponse validateArtifactServer(BambooArtifactDelegateRequest attributesRequest) {
@@ -69,11 +68,6 @@ public class BambooArtifactTaskHandler extends DelegateArtifactTaskHandler<Bambo
   }
 
   public ArtifactTaskExecutionResponse getPlans(BambooArtifactDelegateRequest attributesRequest) {
-    ArtifactStreamAttributes artifactStreamAttributes = ArtifactStreamAttributes.builder()
-                                                            .jobName(attributesRequest.getPlanKey())
-                                                            .artifactPaths(attributesRequest.getArtifactPaths())
-                                                            .artifactStreamType(ArtifactStreamType.BAMBOO.name())
-                                                            .build();
     Map<String, String> plans = bambooBuildService.getPlans(
         BambooRequestResponseMapper.toBambooConfig(attributesRequest), attributesRequest.getEncryptedDataDetails());
     return ArtifactTaskExecutionResponse.builder().plans(plans).build();
