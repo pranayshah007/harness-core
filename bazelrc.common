@@ -49,3 +49,8 @@ coverage --experimental_strict_java_deps=off
 coverage --cache_test_results=yes
 coverage --test_output=summary
 coverage --build_runfile_links
+
+# env variable value set
+build --action_env=jfrog_password="${jfrog_password}"
+run  --action_env=jfrog_password="${jfrog_password}"
+test  --action_env=jfrog_password="${jfrog_password}"
