@@ -13,17 +13,17 @@ import io.harness.util.InstanceSyncKey;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import software.wings.beans.Tag;
 
 import javax.validation.constraints.NotNull;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = true)
 public class AwsLambdaInstanceInfoDTO extends InstanceInfoDTO {
-  @NotNull private String revision;
   @NotNull private String functionName;
-  @NotNull private String project;
   @NotNull private String region;
 
   private String source;
@@ -32,6 +32,12 @@ public class AwsLambdaInstanceInfoDTO extends InstanceInfoDTO {
   private String runTime;
 
   private String infraStructureKey;
+  private String version;
+  private Set<String> aliases;
+  private Set<Tag> tags;
+  private String functionArn;
+  private String description;
+  private String handler;
 
   @Override
   public String prepareInstanceKey() {
@@ -39,7 +45,7 @@ public class AwsLambdaInstanceInfoDTO extends InstanceInfoDTO {
         .clazz(AwsLambdaInstanceInfoDTO.class)
         .part(infraStructureKey)
         .part(functionName)
-        .part(revision)
+        .part(version)
         .build()
         .toString();
   }
@@ -56,6 +62,6 @@ public class AwsLambdaInstanceInfoDTO extends InstanceInfoDTO {
 
   @Override
   public String getType() {
-    return "GoogleCloudFunctions";
+    return "AwsLambdaFunctions";
   }
 }

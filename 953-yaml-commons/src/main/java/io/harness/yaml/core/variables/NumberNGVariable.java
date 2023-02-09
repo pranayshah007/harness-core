@@ -22,6 +22,7 @@ import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -60,6 +61,7 @@ public class NumberNGVariable implements NGVariable {
   @VariableExpression(skipVariableExpression = true) @JsonProperty("default") Double defaultValue;
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
+  @JsonIgnore
   @Override
   public ParameterField<?> getCurrentValue() {
     return ParameterField.isNull(value)

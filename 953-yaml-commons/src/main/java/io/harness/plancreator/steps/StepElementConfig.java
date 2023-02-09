@@ -76,7 +76,9 @@ public class StepElementConfig {
   @ApiModelProperty(hidden = true)
   ParameterField<String> skipCondition;
 
-  StepWhenCondition when;
+  @ApiModelProperty(dataType = SwaggerConstants.STEP_WHEN_CLASSPATH)
+  @YamlSchemaTypes(value = {runtime})
+  ParameterField<StepWhenCondition> when;
 
   @NotNull String type;
   @JsonProperty("spec")
@@ -90,7 +92,7 @@ public class StepElementConfig {
   @Builder
   public StepElementConfig(String uuid, String identifier, String name, String description,
       ParameterField<Timeout> timeout, ParameterField<List<FailureStrategyConfig>> failureStrategies, String type,
-      StepSpecType stepSpecType, ParameterField<String> skipCondition, StepWhenCondition when,
+      StepSpecType stepSpecType, ParameterField<String> skipCondition, ParameterField<StepWhenCondition> when,
       ParameterField<List<String>> delegateSelectors) {
     this.uuid = uuid;
     this.identifier = identifier;

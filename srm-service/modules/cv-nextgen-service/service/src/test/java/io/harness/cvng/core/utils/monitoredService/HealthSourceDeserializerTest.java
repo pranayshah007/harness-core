@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.TimeSeriesThresholdType;
@@ -21,20 +22,12 @@ import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
 import io.harness.cvng.core.beans.RiskCategory;
 import io.harness.cvng.core.beans.RiskProfile;
-import io.harness.cvng.core.beans.healthsource.HealthSourceParamsDTO;
-import io.harness.cvng.core.beans.healthsource.QueryDefinition;
-import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
-import io.harness.cvng.core.beans.monitoredService.MetricThreshold;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.ELKHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDeserializer;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceVersion;
-import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.PrometheusHealthSourceSpec;
-import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.IgnoreMetricThresholdSpec;
-import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
-import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdCriteriaType;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
 
@@ -52,8 +45,12 @@ import org.junit.experimental.categories.Category;
 public class HealthSourceDeserializerTest extends CvNextGenTestBase {
   @Inject HealthSourceDeserializer healthSourceDeserializer;
 
+  private BuilderFactory builderFactory;
+
   @Before
-  public void setup() {}
+  public void setup() {
+    builderFactory = BuilderFactory.getDefault();
+  }
 
   @Test
   @Owner(developers = ANSUMAN)
@@ -167,18 +164,7 @@ public class HealthSourceDeserializerTest extends CvNextGenTestBase {
             .identifier("Sumologic_Log_Local")
             .name("Sumologic Log Local")
             .version(HealthSourceVersion.V2)
-            .spec(NextGenHealthSourceSpec.builder()
-                      .healthSourceParams(HealthSourceParamsDTO.builder().build())
-                      .dataSourceType(DataSourceType.SUMOLOGIC_LOG)
-                      .queryDefinitions(
-                          List.of(QueryDefinition.builder()
-                                      .name("sample_log_name")
-                                      .identifier("sample_identifier")
-                                      .groupName("default_group")
-                                      .query("_sourceCategory=windows/performance")
-                                      .queryParams(QueryParamsDTO.builder().serviceInstanceField("_sourceHost").build())
-                                      .build()))
-                      .connectorRef("account.sumologic_try_2")
+            .spec(builderFactory.createNextGenHealthSourceSpecLogs("sample_identifier", DataSourceType.SUMOLOGIC_LOG)
                       .build())
             .build();
 
@@ -188,43 +174,9 @@ public class HealthSourceDeserializerTest extends CvNextGenTestBase {
             .identifier("sumologic_metric_sample")
             .name("sumologic metric sample")
             .version(HealthSourceVersion.V2)
-            .spec(
-                NextGenHealthSourceSpec.builder()
-                    .healthSourceParams(HealthSourceParamsDTO.builder().build())
-                    .dataSourceType(DataSourceType.SUMOLOGIC_METRICS)
-                    .queryDefinitions(List.of(
-                        QueryDefinition.builder()
-                            .name("sample_metric_name")
-                            .identifier("sample_identifier")
-                            .groupName("sample_group")
-                            .query("metric=Mem_UsedPercent")
-                            .liveMonitoringEnabled(false)
-                            .continuousVerificationEnabled(true)
-                            .sliEnabled(false)
-                            .riskProfile(RiskProfile.builder()
-                                             .riskCategory(RiskCategory.PERFORMANCE_OTHER)
-                                             .thresholdTypes(List.of(TimeSeriesThresholdType.ACT_WHEN_LOWER))
-                                             .build())
-                            .queryParams(QueryParamsDTO.builder().serviceInstanceField("_sourceHost").build())
-                            .metricThresholds(List.of(MetricThreshold.builder()
-                                                          .metricName("sample_metric_name")
-                                                          .metricIdentifier("sample_identifier")
-                                                          .metricType("string")
-                                                          .groupName("sample_group")
-                                                          .type(MetricThresholdActionType.IGNORE)
-                                                          .spec(IgnoreMetricThresholdSpec.builder().build())
-                                                          .criteria(MetricThreshold.MetricThresholdCriteria.builder()
-                                                                        .type(MetricThresholdCriteriaType.ABSOLUTE)
-                                                                        .spec(MetricThreshold.MetricThresholdCriteria
-                                                                                  .MetricThresholdCriteriaSpec.builder()
-                                                                                  .greaterThan(0d)
-                                                                                  .lessThan(0d)
-                                                                                  .build())
-                                                                        .build())
-                                                          .build()))
-                            .build()))
-                    .connectorRef("account.sumologic_try_2")
-                    .build())
+            .spec(builderFactory
+                      .createNextGenHealthSourceSpecMetric("sample_identifier", DataSourceType.SUMOLOGIC_METRICS)
+                      .build())
             .build();
     assertThat(sumologicLogHealthSource).isEqualTo(logHealthSourceDeserialized);
     assertThat(sumologicMetricsHealthSource).isEqualTo(metricHealthSourceDeserialized);

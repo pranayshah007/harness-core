@@ -12,17 +12,22 @@ import io.harness.annotations.dev.OwnedBy;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import software.wings.beans.Tag;
 
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.CDP)
 public class AwsLambdaDeploymentInfo extends DeploymentInfo {
-  @NotNull private String revision;
+  @NotNull private String version;
   @NotNull private String functionName;
-  @NotNull private String project;
   @NotNull private String region;
   @NotNull private String infraStructureKey;
+  @NotNull private String functionArn;
+  @NotNull private List<String> aliases;
+  @NotNull private List<Tag> tags;
+  @NotNull private String artifactId;
 }

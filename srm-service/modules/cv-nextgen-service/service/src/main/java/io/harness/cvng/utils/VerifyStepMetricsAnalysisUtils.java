@@ -50,11 +50,6 @@ import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 
-import java.net.URISyntaxException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -64,7 +59,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.http.client.utils.URIBuilder;
 
 public class VerifyStepMetricsAnalysisUtils {
   private static final long MILLIS_IN_MINUTE = 60000;
@@ -393,30 +387,11 @@ public class VerifyStepMetricsAnalysisUtils {
         .filter(cvConfig -> isTransactionGroupIncluded(requestedTransactionGroups, cvConfig))
         .collect(Collectors.toList());
   }
-
-  public static String setDeeplinkURLWithRange(DeploymentTimeSeriesAnalysis timeSeriesAnalysis, String deepLinkURL) {
-    LocalDateTime endTime = timeSeriesAnalysis.getEndTime().atZone(ZoneId.systemDefault()).toLocalDateTime();
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_FORMAT_STRING);
-    long diffMinutes = timeSeriesAnalysis.getStartTime().until(
-        timeSeriesAnalysis.getEndTime(), ChronoUnit.MINUTES); // this is a diff in min
-    String rangeInput = Math.max(diffMinutes, 1) + "m";
-    URIBuilder uriBuilder;
-    try {
-      uriBuilder = new URIBuilder(deepLinkURL);
-      uriBuilder.addParameter("g0.range_input", rangeInput); // eg. 10s or 10m or 1h
-      uriBuilder.addParameter("g0.g0.end_input", endTime.format(formatter)); // eg. YYYY-MM-DD HH:MM
-      return uriBuilder.build().toString();
-    } catch (URISyntaxException ignored) {
-    }
-    return null;
-  }
-
   public static HealthSource getHealthSourceFromCVConfig(MetricCVConfig<? extends AnalysisInfo> metricCVConfig) {
     return HealthSource.builder()
         .identifier(metricCVConfig.getFullyQualifiedIdentifier())
         .name(metricCVConfig.getMonitoringSourceName())
-        .type(MonitoredServiceDataSourceType.dataSourceTypeMonitoredServiceDataSourceTypeMap.get(
-            metricCVConfig.getType()))
+        .type(MonitoredServiceDataSourceType.getMonitoredServiceDataSourceType(metricCVConfig.getType()))
         .providerType(ProviderType.METRICS)
         .build();
   }
@@ -520,6 +495,5 @@ public class VerifyStepMetricsAnalysisUtils {
               .thenComparing(node -> ((AnalysedDeploymentTestDataNode) node).getNodeIdentifier()));
     }
   }
-
   private VerifyStepMetricsAnalysisUtils() {}
 }

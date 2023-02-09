@@ -16,6 +16,7 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ProjectPathParams;
@@ -26,6 +27,7 @@ import io.harness.cvng.downtime.beans.DowntimeHistoryView;
 import io.harness.cvng.downtime.beans.DowntimeListView;
 import io.harness.cvng.downtime.beans.DowntimeResponse;
 import io.harness.cvng.downtime.services.api.DowntimeService;
+import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rest.RestResponse;
@@ -37,6 +39,7 @@ import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Parameter;
+import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
@@ -111,6 +114,23 @@ public class DowntimeProjectLevelResource {
   public RestResponse<DowntimeResponse> getDowntime(@Valid @BeanParam ResourcePathParams resourcePathParams) {
     ProjectParams projectParams = fromResourcePathParams(resourcePathParams);
     return new RestResponse<>(downtimeService.get(projectParams, resourcePathParams.getIdentifier()));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @Path("/monitored-services/{identifier}")
+  @ApiOperation(value = "get associated Monitored Services", nickname = "getDowntimeAssociatedMonitoredServices")
+  /*  @Operation(operationId = "getDowntimeAssociatedMonitoredServices", summary = "Get Downtime Associated Monitored
+     Services", responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Get Downtime
+     Associated Monitored Services")
+     })*/
+  @NGAccessControlCheck(resourceType = DOWNTIME, permission = VIEW_PERMISSION)
+  public RestResponse<List<MonitoredServiceDetail>> getAssociatedMonitoredServices(
+      @Valid @BeanParam ResourcePathParams resourcePathParams) {
+    ProjectParams projectParams = fromResourcePathParams(resourcePathParams);
+    return new RestResponse<>(
+        downtimeService.getAssociatedMonitoredServices(projectParams, resourcePathParams.getIdentifier()));
   }
 
   @PUT

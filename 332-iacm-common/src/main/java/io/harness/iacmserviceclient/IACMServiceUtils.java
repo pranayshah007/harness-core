@@ -7,6 +7,8 @@
 
 package io.harness.iacmserviceclient;
 
+import static org.joda.time.Minutes.minutes;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.entities.Execution;
@@ -18,10 +20,12 @@ import io.harness.exception.GeneralException;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.security.JWTTokenServiceUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.inject.Inject;
@@ -51,8 +55,9 @@ public class IACMServiceUtils {
 
   public Stack getIACMStackInfo(String org, String projectId, String accountId, String stackID) {
     log.info("Initiating token request to IACM service: {}", this.iacmServiceConfig.getBaseUrl());
-    String globalToken = this.iacmServiceConfig.getGlobalToken();
-    Call<JsonObject> connectorCall = iacmServiceClient.getStackInfo(org, projectId, stackID, globalToken, accountId);
+    Call<JsonObject> connectorCall =
+        iacmServiceClient.getStackInfo(org, projectId, stackID, generateJWTToken(), accountId);
+
     Response<JsonObject> response;
 
     try {
@@ -125,8 +130,8 @@ public class IACMServiceUtils {
 
   public StackVariables[] getIacmStackEnvs(String org, String projectId, String accountId, String stackID) {
     log.info("Initiating request to IACM service for env retrieval: {}", this.iacmServiceConfig.getBaseUrl());
-    Call<JsonArray> connectorCall = iacmServiceClient.getStackVariables(
-        org, projectId, stackID, this.iacmServiceConfig.getGlobalToken(), accountId);
+    Call<JsonArray> connectorCall =
+        iacmServiceClient.getStackVariables(org, projectId, stackID, generateJWTToken(), accountId);
     Response<JsonArray> response;
 
     try {
@@ -168,19 +173,16 @@ public class IACMServiceUtils {
 
   public String GetTerraformEndpointsData(Ambiance ambiance, String stackId) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    TerraformEndpointsData tfEndpointsData =
-        TerraformEndpointsData.builder()
-            .org_id(ngAccess.getOrgIdentifier())
-            .base_url(iacmServiceConfig.getExternalUrl())
-            .account_id(ngAccess.getAccountIdentifier())
-            .pipeline_execution_id(ambiance.getPlanExecutionId())
-            .pipeline_stage_execution_id(ambiance.getStageExecutionId())
-            .project_id(ngAccess.getProjectIdentifier())
-            .stack_id(stackId)
-            //            .token(getIACMServiceToken(ngAccess.getAccountIdentifier())) //TODO: When we have a token
-            //            generation in place, use this one
-            .token("TODO TOKEN")
-            .build();
+    TerraformEndpointsData tfEndpointsData = TerraformEndpointsData.builder()
+                                                 .org_id(ngAccess.getOrgIdentifier())
+                                                 .base_url(iacmServiceConfig.getExternalUrl())
+                                                 .account_id(ngAccess.getAccountIdentifier())
+                                                 .pipeline_execution_id(ambiance.getPlanExecutionId())
+                                                 .pipeline_stage_execution_id(ambiance.getStageExecutionId())
+                                                 .project_id(ngAccess.getProjectIdentifier())
+                                                 .stack_id(stackId)
+                                                 .token(generateJWTToken())
+                                                 .build();
     ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
     try {
       return ow.writeValueAsString(tfEndpointsData);
@@ -200,14 +202,13 @@ public class IACMServiceUtils {
                               .project(ngAccess.getProjectIdentifier())
                               .stack(stackId)
                               .pipeline_execution_id(ambiance.getPlanExecutionId())
-                              .pipeline(ambiance.getPlanId())
+                              .pipeline(ambiance.getMetadata().getPipelineIdentifier())
                               .pipeline_stage_id(ambiance.getStageExecutionId())
                               .action(action)
                               .build();
 
-    Call<JsonObject> connectorCall =
-        iacmServiceClient.postIACMExecution(ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), execution,
-            this.iacmServiceConfig.getGlobalToken(), ngAccess.getAccountIdentifier());
+    Call<JsonObject> connectorCall = iacmServiceClient.postIACMExecution(ngAccess.getOrgIdentifier(),
+        ngAccess.getProjectIdentifier(), execution, generateJWTToken(), ngAccess.getAccountIdentifier());
     Response<JsonObject> response;
 
     try {
@@ -230,5 +231,10 @@ public class IACMServiceUtils {
           String.format("Could not parse body for the execution response = %s, message = %s, response = %s",
               response.code(), response.message(), response.errorBody() == null ? "null" : errorBody));
     }
+  }
+
+  private String generateJWTToken() {
+    return JWTTokenServiceUtils.generateJWTToken(ImmutableMap.of("type", "APIKey", "name", "IACM"),
+        minutes(120).toStandardDuration().getMillis(), iacmServiceConfig.getGlobalToken());
   }
 }

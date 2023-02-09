@@ -41,7 +41,13 @@
         "enum" : [ "Verify" ]
       },
       "when" : {
-        "$ref" : "#/definitions/cvng/StepWhenCondition"
+        "oneOf" : [ {
+          "$ref" : "#/definitions/cvng/StepWhenCondition"
+        }, {
+          "type" : "string",
+          "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+          "minLength" : 1
+        } ]
       }
     },
     "$schema" : "http://json-schema.org/draft-07/schema#",
@@ -237,7 +243,13 @@
               "enum" : [ "Verify" ]
             },
             "when" : {
-              "$ref" : "#/definitions/cvng/StepWhenCondition"
+              "oneOf" : [ {
+                "$ref" : "#/definitions/cvng/StepWhenCondition"
+              }, {
+                "type" : "string",
+                "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                "minLength" : 1
+              } ]
             }
           },
           "$schema" : "http://json-schema.org/draft-07/schema#",

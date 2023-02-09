@@ -7,13 +7,17 @@
 
 package io.harness.delegate.task.aws.lambda;
 
+import com.amazonaws.services.lambda.model.GetFunctionResult;
 import com.google.cloud.functions.v2.Function;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.mapper.AwsLambdaToServerInstanceInfoMapper;
 import io.harness.delegate.beans.instancesync.mapper.GoogleFunctionToServerInstanceInfoMapper;
+import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.googlefunction.GoogleFunctionCommandTaskHelper;
 import io.harness.delegate.task.googlefunction.GoogleFunctionDeploymentReleaseData;
 import io.harness.delegate.task.googlefunction.GoogleFunctionInfraConfigHelper;
@@ -31,24 +35,19 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 @Slf4j
 @OwnedBy(CDP)
 public class AwsLambdaTaskHelperBase {
-  @Inject private GoogleFunctionInfraConfigHelper googleFunctionInfraConfigHelper;
-  @Inject private GoogleFunctionCommandTaskHelper googleFunctionCommandTaskHelper;
-  public List<ServerInstanceInfo> getGoogleFunctionServerInstanceInfo(
-      GoogleFunctionDeploymentReleaseData deploymentReleaseData) throws InvalidProtocolBufferException {
-    GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig =
-        (GcpGoogleFunctionInfraConfig) deploymentReleaseData.getGoogleFunctionInfraConfig();
-    googleFunctionInfraConfigHelper.decryptInfraConfig(gcpGoogleFunctionInfraConfig);
-    Optional<Function> optionalFunction = googleFunctionCommandTaskHelper.getFunction(
-        deploymentReleaseData.getFunction(), gcpGoogleFunctionInfraConfig.getGcpConnectorDTO(),
-        gcpGoogleFunctionInfraConfig.getProject(), gcpGoogleFunctionInfraConfig.getRegion());
-    if (optionalFunction.isPresent()) {
-      Function function = optionalFunction.get();
-      GoogleFunction googleFunction =
-          googleFunctionCommandTaskHelper.getGoogleFunction(function, gcpGoogleFunctionInfraConfig, null);
-      return GoogleFunctionToServerInstanceInfoMapper.toServerInstanceInfoList(googleFunction,
-          gcpGoogleFunctionInfraConfig.getProject(), gcpGoogleFunctionInfraConfig.getRegion(),
-          gcpGoogleFunctionInfraConfig.getInfraStructureKey());
-    }
-    return new ArrayList<>();
+  @Inject private AwsLambdaInfraConfigHelper awsLambdaInfraConfigHelper;
+  @Inject private AwsLambdaCommandTaskHelper awsLambdaCommandTaskHelper;
+  @Inject private AwsNgConfigMapper awsNgConfigMapper;
+  public List<ServerInstanceInfo> getAwsLambdaServerInstanceInfo(
+      AwsLambdaDeploymentReleaseData deploymentReleaseData) {
+    AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig =
+        (AwsLambdaFunctionsInfraConfig) deploymentReleaseData.getAwsLambdaInfraConfig();
+    awsLambdaInfraConfigHelper.decryptInfraConfig(awsLambdaFunctionsInfraConfig);
+    AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO();
+    AwsLambdaFunctionWithActiveVersions awsLambdaFunctionWithActiveVersions =
+              awsLambdaCommandTaskHelper.getAwsLambdaFunctionWithActiveVersions(awsLambdaFunctionsInfraConfig.getRegion(), awsInternalConfig, deploymentReleaseData.getFunction();
+      return AwsLambdaToServerInstanceInfoMapper.toServerInstanceInfoList(awsLambdaFunctionWithActiveVersions,
+              awsLambdaFunctionsInfraConfig.getRegion(),
+              awsLambdaFunctionsInfraConfig.getInfraStructureKey());
   }
 }

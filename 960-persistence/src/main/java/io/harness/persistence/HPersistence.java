@@ -134,14 +134,19 @@ public interface HPersistence extends HealthMonitor {
   }
 
   default Optional<Store> getSecondaryStore(Class cls) {
-    return Optional.ofNullable(getSecondaryClassStores().computeIfAbsent(cls,
+    // using default_store as a marker so that we don't have to compute secondaryStore on each query
+    Store secondaryStore = getSecondaryClassStores().computeIfAbsent(cls,
         klass
         -> Arrays.stream(cls.getDeclaredAnnotations())
                .filter(annotation -> annotation.annotationType().equals(SecondaryStoreIn.class))
                .map(annotation -> ((SecondaryStoreIn) annotation).value())
                .map(name -> Store.builder().name(name).build())
                .findFirst()
-               .orElse(null)));
+               .orElse(DEFAULT_STORE));
+    if (secondaryStore != DEFAULT_STORE) {
+      return Optional.of(secondaryStore);
+    }
+    return Optional.empty();
   }
 
   /**

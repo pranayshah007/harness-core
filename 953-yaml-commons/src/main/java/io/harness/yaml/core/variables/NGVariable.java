@@ -13,6 +13,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.walktree.visitor.Visitable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -29,5 +30,6 @@ public interface NGVariable extends Visitable {
   String getName();
   String getDescription();
   boolean isRequired();
-  @ApiModelProperty(hidden = true) ParameterField<?> getCurrentValue();
+
+  @JsonIgnore @ApiModelProperty(hidden = true) ParameterField<?> getCurrentValue();
 }

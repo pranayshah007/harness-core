@@ -14,6 +14,10 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import software.wings.beans.Tag;
+
+import java.util.Date;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 @JsonTypeName("AwsLambdaServerInstanceInfo")
@@ -21,15 +25,20 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 public class AwsLambdaServerInstanceInfo extends ServerInstanceInfo {
-  private String revision;
   private String functionName;
-  private String project;
-  private String region;
-
+  private String version;
+  private Set<String> aliases;
+  private Set<Tag> tags;
+  private String functionArn;
+  private String description;
+  private String runtime;
+  private String handler;
+  private String infrastructureKey;
   private String source;
-  private long updatedTime;
-  private String memorySize;
-  private String runTime;
+  private Date updatedTime;
+  private Integer memorySize;
 
-  private String infraStructureKey;
+  // todo
+  private int invocationsCount;
+  private int errorsCount;
 }

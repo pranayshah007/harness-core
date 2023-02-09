@@ -230,11 +230,11 @@ public class ConnectorResource {
       @Parameter(description = "Filter Connectors by Source Category. Available Source Categories are "
               + "CLOUD_PROVIDER, SECRET_MANAGER, CLOUD_COST, ARTIFACTORY, CODE_REPO,  "
               + "MONITORING and TICKETING") @QueryParam(SOURCE_CATEGORY_KEY) ConnectorCategory sourceCategory,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @QueryParam("version") String version, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
-    return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(
-        page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, type, category, sourceCategory)));
+    return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(page, size, accountIdentifier, orgIdentifier,
+        projectIdentifier, searchTerm, type, category, sourceCategory, version)));
   }
 
   @POST

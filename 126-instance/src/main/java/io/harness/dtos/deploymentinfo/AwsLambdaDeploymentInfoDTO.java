@@ -29,6 +29,7 @@ public class AwsLambdaDeploymentInfoDTO extends DeploymentInfoDTO {
   @NotNull private String functionName;
   @NotNull private String region;
   @NotNull private String infraStructureKey;
+  @NotNull private String version;
 
   @Override
   public String getType() {

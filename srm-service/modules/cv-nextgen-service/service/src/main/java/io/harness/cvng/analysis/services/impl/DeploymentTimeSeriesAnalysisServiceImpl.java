@@ -23,7 +23,6 @@ import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.parseControlN
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.parseTestNodeIdentifiersFromDeploymentTimeSeriesAnalysis;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.populateRawMetricDataInMetricAnalysis;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.populateTimestampsForNormalisedData;
-import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.setDeeplinkURLWithRange;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.sortMetricsAnalysisResults;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -55,10 +54,10 @@ import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricCVConfig;
 import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
-import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
+import io.harness.cvng.core.services.DeeplinkURLService;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.CVNGObjectUtils;
@@ -67,7 +66,6 @@ import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.PageUtils;
@@ -79,7 +77,6 @@ import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import dev.morphia.query.Sort;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -98,16 +95,15 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.utils.URIBuilder;
 
 public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSeriesAnalysisService {
   public static final int DEFAULT_PAGE_SIZE = 10;
-  private static final String STEP_INPUT_IN_SECONDS = "60";
   @Inject private HPersistence hPersistence;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private NextGenService nextGenService;
   @Inject private TimeSeriesRecordService timeSeriesRecordService;
+  @Inject private DeeplinkURLService deeplinkURLService;
 
   @Override
   public void save(DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis) {
@@ -399,7 +395,6 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
       if (isCustomMetricPackBasedCvConfig && areMetricsFromCVConfigFilteredOut(metricsForThisAnalysis)) {
         continue;
       }
-
       Map<String, MetricsAnalysis> metricAnalysisDefinitionsForDefaultMetrics =
           getMetricAnalysesFromMetricDefinitions(cvConfig);
 
@@ -438,12 +433,9 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
             metricsForThisAnalysis.put(UUIDGenerator.generateUuid(), metricsAnalysis);
           }
           if (Objects.nonNull(metricsAnalysis)) {
-            // Setting timeranges for the deeplink URL
-            if (StringUtils.isNotEmpty(metricsAnalysis.getDeeplinkURL())) {
-              String deeplinkURLWithRange =
-                  setDeeplinkURLWithRange(timeSeriesAnalysis, metricsAnalysis.getDeeplinkURL());
-              metricsAnalysis.setDeeplinkURL(deeplinkURLWithRange);
-            }
+            Optional<String> deeplinkURL = deeplinkURLService.buildDeeplinkURLFromCVConfig(
+                cvConfig, metricIdentifier, testDataTimeRange.getStartTime(), testDataTimeRange.getEndTime());
+            deeplinkURL.ifPresent(metricsAnalysis::setDeeplinkURL);
             metricsAnalysis.setAnalysisResult(analysisResult);
             metricsAnalysis.setTestDataNodes(getFilteredAnalysedTestDataNodes(
                 transactionMetricHostData, deploymentTimeSeriesAnalysisFilter, metricsAnalysis.getThresholds()));
@@ -498,14 +490,15 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
         .getMetrics()
         .stream()
         .filter(MetricDefinition::isIncluded)
-        .map(metricDefinition
-            -> MetricsAnalysis.builder()
-                   .metricName(metricDefinition.getName())
-                   .metricIdentifier(metricDefinition.getIdentifier())
-                   .healthSource(healthSource)
-                   .metricType(getMetricTypeFromCvConfigAndMetricDefinition(metricCVConfig, metricDefinition))
-                   .thresholds(getThresholdsFromDefinition(metricDefinition))
-                   .build())
+        .map(metricDefinition -> {
+          return MetricsAnalysis.builder()
+              .metricName(metricDefinition.getName())
+              .metricIdentifier(metricDefinition.getIdentifier())
+              .healthSource(healthSource)
+              .metricType(getMetricTypeFromCvConfigAndMetricDefinition(metricCVConfig, metricDefinition))
+              .thresholds(getThresholdsFromDefinition(metricDefinition))
+              .build();
+        })
         .collect(
             Collectors.toMap(MetricsAnalysis::getMetricIdentifier, metricsAnalysis -> metricsAnalysis, (u, v) -> v));
   }
@@ -518,51 +511,19 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
         .stream()
         .filter(VerifyStepMetricsAnalysisUtils::isDeploymentVerificationEnabledForThisMetric)
         .map(metricInfo -> {
-          MetricsAnalysis metricsAnalysis =
-              MetricsAnalysis.builder()
-                  .metricName(metricInfo.getMetricName())
-                  .metricIdentifier(metricInfo.getIdentifier())
-                  .healthSource(healthSource)
-                  .transactionGroup(transactionGroup)
-                  .metricType(getMetricTypeFromCvConfigAndMetricDefinition(
-                      metricCVConfig, metricDefinitions.get(metricInfo.getIdentifier())))
-                  .thresholds(getThresholdsFromDefinition(metricDefinitions.get(metricInfo.getIdentifier())))
-                  .analysisResult(AnalysisResult.NO_ANALYSIS)
-                  .build();
-
-          Optional<String> deeplinkURL = buildDeepLinkURL(metricCVConfig, metricInfo);
-          deeplinkURL.ifPresent(metricsAnalysis::setDeeplinkURL);
-
-          return metricsAnalysis;
+          return MetricsAnalysis.builder()
+              .metricName(metricInfo.getMetricName())
+              .metricIdentifier(metricInfo.getIdentifier())
+              .healthSource(healthSource)
+              .transactionGroup(transactionGroup)
+              .metricType(getMetricTypeFromCvConfigAndMetricDefinition(
+                  metricCVConfig, metricDefinitions.get(metricInfo.getIdentifier())))
+              .thresholds(getThresholdsFromDefinition(metricDefinitions.get(metricInfo.getIdentifier())))
+              .analysisResult(AnalysisResult.NO_ANALYSIS)
+              .build();
         })
         .collect(Collectors.toList());
   }
-
-  private Optional<String> buildDeepLinkURL(MetricCVConfig metricCVConfig, AnalysisInfo metric) {
-    Optional<String> deeplinkURL = Optional.empty();
-    if (metric instanceof PrometheusCVConfig.MetricInfo) {
-      PrometheusCVConfig prometheusCVConfig = (PrometheusCVConfig) metricCVConfig;
-      PrometheusCVConfig.MetricInfo metricInfo = (PrometheusCVConfig.MetricInfo) metric;
-      Optional<ConnectorInfoDTO> connectorInfoDTO =
-          nextGenService.get(prometheusCVConfig.getAccountId(), prometheusCVConfig.getConnectorIdentifier(),
-              prometheusCVConfig.getOrgIdentifier(), prometheusCVConfig.getProjectIdentifier());
-      if (connectorInfoDTO.isPresent()) {
-        PrometheusConnectorDTO connectorConfigDTO =
-            (PrometheusConnectorDTO) connectorInfoDTO.get().getConnectorConfig();
-
-        try {
-          URIBuilder uriBuilder;
-          uriBuilder = new URIBuilder(connectorConfigDTO.getUrl() + "/graph");
-          uriBuilder.addParameter("g0.step_input", STEP_INPUT_IN_SECONDS);
-          uriBuilder.addParameter("g0.expr", metricInfo.getQuery());
-          deeplinkURL = Optional.ofNullable(uriBuilder.build().toString());
-        } catch (URISyntaxException ignored) {
-        }
-      }
-    }
-    return deeplinkURL;
-  }
-
   private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getControlNodesRawData(
       AppliedDeploymentAnalysisType appliedDeploymentAnalysisType, VerificationJobInstance verificationJobInstance,
       String verificationTaskId, DeploymentTimeSeriesAnalysis timeSeriesAnalysis, Optional<TimeRange> timeRange) {

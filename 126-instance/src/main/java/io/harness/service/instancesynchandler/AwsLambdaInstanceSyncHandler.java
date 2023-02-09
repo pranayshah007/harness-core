@@ -80,9 +80,7 @@ public class AwsLambdaInstanceSyncHandler extends AbstractInstanceSyncHandler {
         (AwsLambdaServerInstanceInfo) serverInstanceInfoList.get(0);
 
     return AwsLambdaDeploymentInfoDTO.builder()
-        .revision(awsLambdaServerInstanceInfo.getRevision())
         .functionName(awsLambdaServerInstanceInfo.getFunctionName())
-        .project(awsLambdaServerInstanceInfo.getProject())
         .region(awsLambdaServerInstanceInfo.getRegion())
         .infraStructureKey(awsLambdaServerInstanceInfo.getInfraStructureKey())
         .build();
@@ -100,7 +98,6 @@ public class AwsLambdaInstanceSyncHandler extends AbstractInstanceSyncHandler {
 
     return AwsLambdaInstanceInfoDTO.builder()
         .functionName(awsLambdaServerInstanceInfo.getFunctionName())
-        .project(awsLambdaServerInstanceInfo.getProject())
         .region(awsLambdaServerInstanceInfo.getRegion())
         .revision(awsLambdaServerInstanceInfo.getRevision())
         .source(awsLambdaServerInstanceInfo.getSource())

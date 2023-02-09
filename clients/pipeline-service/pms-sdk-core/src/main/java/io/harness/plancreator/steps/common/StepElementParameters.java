@@ -49,7 +49,7 @@ public class StepElementParameters implements StepParameters {
   ParameterField<List<FailureStrategyConfig>> failureStrategies;
 
   ParameterField<String> skipCondition;
-  StepWhenCondition when;
+  ParameterField<StepWhenCondition> when;
 
   String type;
   SpecParameters spec;

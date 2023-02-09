@@ -20,19 +20,17 @@ import lombok.experimental.UtilityClass;
 public class AwsLambdaDeploymentInfoMapper {
   public AwsLambdaDeploymentInfoDTO toDTO(AwsLambdaDeploymentInfo awsLambdaDeploymentInfo) {
     return AwsLambdaDeploymentInfoDTO.builder()
-        .revision(awsLambdaDeploymentInfo.getRevision())
         .functionName(awsLambdaDeploymentInfo.getFunctionName())
-        .project(awsLambdaDeploymentInfo.getProject())
         .region(awsLambdaDeploymentInfo.getRegion())
         .infraStructureKey(awsLambdaDeploymentInfo.getInfraStructureKey())
+            .version(awsLambdaDeploymentInfo.getVersion())
         .build();
   }
 
   public AwsLambdaDeploymentInfo toEntity(AwsLambdaDeploymentInfoDTO awsLambdaDeploymentInfoDTO) {
     return AwsLambdaDeploymentInfo.builder()
-        .revision(awsLambdaDeploymentInfoDTO.getRevision())
+        .version(awsLambdaDeploymentInfoDTO.getVersion())
         .functionName(awsLambdaDeploymentInfoDTO.getFunctionName())
-        .project(awsLambdaDeploymentInfoDTO.getProject())
         .region(awsLambdaDeploymentInfoDTO.getRegion())
         .infraStructureKey(awsLambdaDeploymentInfoDTO.getInfraStructureKey())
         .build();

@@ -20,9 +20,7 @@ import lombok.experimental.UtilityClass;
 public class AwsLambdaInstanceInfoMapper {
   public AwsLambdaInstanceInfoDTO toDTO(AwsLambdaInstanceInfo awsLambdaInstanceInfo) {
     return AwsLambdaInstanceInfoDTO.builder()
-        .revision(awsLambdaInstanceInfo.getRevision())
         .functionName(awsLambdaInstanceInfo.getFunctionName())
-        .project(awsLambdaInstanceInfo.getProject())
         .region(awsLambdaInstanceInfo.getRegion())
         .source(awsLambdaInstanceInfo.getSource())
         .updatedTime(awsLambdaInstanceInfo.getUpdatedTime())

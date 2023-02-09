@@ -7,49 +7,61 @@
 
 package io.harness.delegate.beans.instancesync.mapper;
 
+import com.google.common.collect.ImmutableSet;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.AwsLambdaServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.GoogleFunctionServerInstanceInfo;
+import io.harness.delegate.task.aws.lambda.AwsLambdaFunction;
+import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionWithActiveVersions;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import software.wings.beans.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toSet;
+import static org.apache.commons.collections4.ListUtils.emptyIfNull;
+
 @UtilityClass
 @OwnedBy(HarnessTeam.CDP)
 public class AwsLambdaToServerInstanceInfoMapper {
   public List<ServerInstanceInfo> toServerInstanceInfoList(
-      GoogleFunction googleFunction, String project, String region, String infraStructureKey) {
+          AwsLambdaFunctionWithActiveVersions awsLambdaFunctionWithActiveVersions, String region, String infraStructureKey) {
     List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
 
-    if (CollectionUtils.isNotEmpty(googleFunction.getActiveCloudRunRevisions())) {
-      serverInstanceInfoList = googleFunction.getActiveCloudRunRevisions()
+    if (CollectionUtils.isNotEmpty(awsLambdaFunctionWithActiveVersions.getVersions())) {
+      serverInstanceInfoList = awsLambdaFunctionWithActiveVersions.getVersions()
                                    .stream()
-                                   .map(googleCloudRunRevision
-                                       -> toServerInstanceInfo(googleFunction, googleCloudRunRevision.getRevision(),
-                                           project, region, infraStructureKey))
+                                   .map(version
+                                       -> toServerInstanceInfo(AwsLambdaFunction.from(awsLambdaFunctionWithActiveVersions, version), region, infraStructureKey))
                                    .collect(Collectors.toList());
     }
-
     return serverInstanceInfoList;
   }
 
   public ServerInstanceInfo toServerInstanceInfo(
-      GoogleFunction googleFunction, String revision, String project, String region, String infraStructureKey) {
-    return GoogleFunctionServerInstanceInfo.builder()
-        .functionName(googleFunction.getFunctionName())
-        .project(project)
-        .region(region)
-        .revision(revision)
-        .source(googleFunction.getSource())
-        .updatedTime(googleFunction.getUpdatedTime())
-        .memorySize(googleFunction.getCloudRunService().getMemory())
-        .runTime(googleFunction.getRuntime())
-        .infraStructureKey(infraStructureKey)
+      AwsLambdaFunction awsLambdaFunction, String region, String infraStructureKey) {
+    return AwsLambdaServerInstanceInfo.builder()
+        .functionName(awsLambdaFunction.getFunctionName())
+        .version(awsLambdaFunction.getVersion())
+            .tags(MapUtils.emptyIfNull(awsLambdaFunction.getTags())
+                    .entrySet()
+                    .stream()
+                    .map(entry -> Tag.builder().key(entry.getKey()).value(entry.getValue()).build())
+                    .collect(toSet()))
+            .aliases(ImmutableSet.copyOf(emptyIfNull(awsLambdaFunction.getAliases())))
+                    .runtime(awsLambdaFunction.getRuntime())
+            .handler(awsLambdaFunction.getHandler())
+        .infrastructureKey(infraStructureKey)
+            .memorySize(awsLambdaFunction.getMemorySize())
+            .updatedTime(awsLambdaFunction.getLastModified())
+            .description(awsLambdaFunction.getDescription())
         .build();
   }
 }

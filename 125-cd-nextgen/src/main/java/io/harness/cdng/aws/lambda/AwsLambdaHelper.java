@@ -17,8 +17,17 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.mapper.AwsLambdaToServerInstanceInfoMapper;
+import io.harness.delegate.beans.instancesync.mapper.GoogleFunctionToServerInstanceInfoMapper;
+import io.harness.delegate.task.aws.lambda.AwsLambdaFunction;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
+import io.harness.delegate.task.aws.lambda.response.AwsLambdaCommandResponse;
+import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
+import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionCommandResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -36,6 +45,8 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -59,12 +70,12 @@ public class AwsLambdaHelper extends CDStepHelper {
       boolean isChainEnd) {
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {awsLambdaCommandRequest})
-                            .taskType(TaskType.AWS_LAMBDA_COMMAND_TASK_NG.name())
+                            .taskType(TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG.name())
                             .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
                             .async(true)
                             .build();
     String taskName =
-        TaskType.AWS_LAMBDA_COMMAND_TASK_NG.getDisplayName() + " : " + awsLambdaCommandRequest.getCommandName();
+        TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG.getDisplayName() + " : " + awsLambdaCommandRequest.getCommandName();
     AwsLambdaSpecParameters awsLambdaSpecParameters = (AwsLambdaSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
         referenceFalseKryoSerializer, awsLambdaSpecParameters.getCommandUnits(), taskName,
@@ -91,5 +102,16 @@ public class AwsLambdaHelper extends CDStepHelper {
       throw new InvalidRequestException("Aws Lambda Manifest is mandatory.", USER);
     }
     return awsLambdaManifests.get(0);
+  }
+
+  public List<ServerInstanceInfo> getServerInstanceInfo(AwsLambdaCommandResponse awsLambdaCommandResponse,
+                                                        AwsLambdaInfraConfig awsLambdaInfraConfig, String infrastructureKey) {
+    List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
+    AwsLambdaFunction awsLambdaFunction = awsLambdaCommandResponse.getAwsLambdaFunction();
+    if (awsLambdaFunction != null) {
+      serverInstanceInfoList.add(AwsLambdaToServerInstanceInfoMapper.toServerInstanceInfo(awsLambdaFunction,
+              ((AwsLambdaFunctionsInfraConfig) awsLambdaInfraConfig).getRegion(), infrastructureKey));
+    }
+    return serverInstanceInfoList;
   }
 }

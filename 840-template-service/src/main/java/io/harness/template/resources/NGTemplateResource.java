@@ -31,6 +31,7 @@ import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitImportInfoDTO;
+import io.harness.gitaware.helper.TemplateMoveConfigRequestDTO;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
@@ -70,6 +71,7 @@ import io.harness.template.beans.TemplateFilterProperties;
 import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.beans.TemplateImportSaveResponse;
 import io.harness.template.beans.TemplateListRepoResponse;
+import io.harness.template.beans.TemplateMoveConfigResponse;
 import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
@@ -945,5 +947,29 @@ public class NGTemplateResource {
     TemplateListRepoResponse templateListRepoResponse = templateService.getListOfRepos(
         accountIdentifier, orgIdentifier, projectIdentifier, includeAllTemplatesAccessibleAtScope);
     return ResponseDTO.newResponse(templateListRepoResponse);
+  }
+
+  @POST
+  @Path("/move-config/{templateIdentifier}")
+  @ApiOperation(value = "Move Template YAML from inline to remote", nickname = "moveTemplateConfigs")
+  @Operation(operationId = "moveTemplateConfigs", summary = "Move Template YAML from inline to remote",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Fetches Template YAML from Harness DB and creates a remote entity")
+      })
+  public ResponseDTO<TemplateMoveConfigResponse>
+  moveConfig(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                 NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
+          "templateIdentifier") @ResourceIdentifier String templateIdentifier,
+      @BeanParam TemplateMoveConfigRequestDTO templateMoveConfigRequestDTO) {
+    TemplateMoveConfigResponse templateMoveConfigResponse = templateService.moveTemplateStoreTypeConfig(
+        accountId, orgId, projectId, templateIdentifier, templateMoveConfigRequestDTO);
+    return ResponseDTO.newResponse(templateMoveConfigResponse);
   }
 }

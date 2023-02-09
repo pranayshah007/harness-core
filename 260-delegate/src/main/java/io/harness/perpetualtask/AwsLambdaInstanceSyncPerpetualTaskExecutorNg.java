@@ -16,6 +16,7 @@ import io.harness.delegate.beans.instancesync.GoogleFunctionInstanceSyncPerpetua
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.task.aws.lambda.AwsLambdaDeploymentReleaseData;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaTaskHelperBase;
 import io.harness.delegate.task.googlefunction.GoogleFunctionDeploymentReleaseData;
 import io.harness.delegate.task.googlefunction.GoogleFunctionTaskHelperBase;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionInfraConfig;
@@ -47,7 +48,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNg implements PerpetualTa
   private static final String SUCCESS_RESPONSE_MSG = "success";
   @Inject private KryoSerializer kryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private GoogleFunctionTaskHelperBase googleFunctionTaskHelperBase;
+  @Inject private AwsLambdaTaskHelperBase awsLambdaTaskHelperBase;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -78,7 +79,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNg implements PerpetualTa
   private List<ServerInstanceInfo> getServerInstanceInfoList(
       AwsLambdaDeploymentReleaseData deploymentReleaseData) {
     try {
-      return googleFunctionTaskHelperBase.getGoogleFunctionServerInstanceInfo(deploymentReleaseData);
+      return awsLambdaTaskHelperBase.getAwsLambdaServerInstanceInfo(deploymentReleaseData);
     } catch (Exception ex) {
       log.warn("Unable to get google cloud function server instance", ex);
       return Collections.emptyList();

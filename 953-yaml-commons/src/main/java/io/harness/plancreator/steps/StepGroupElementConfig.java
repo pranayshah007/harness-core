@@ -67,7 +67,10 @@ public class StepGroupElementConfig {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   ParameterField<String> skipCondition;
-  @VariableExpression StepWhenCondition when;
+  @ApiModelProperty(dataType = SwaggerConstants.STEP_WHEN_CLASSPATH)
+  @VariableExpression
+  @YamlSchemaTypes(value = {runtime})
+  ParameterField<StepWhenCondition> when;
 
   @VariableExpression(skipVariableExpression = true) TemplateLinkConfig template;
 

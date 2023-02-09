@@ -20,7 +20,8 @@ import lombok.Getter;
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   SPG_UI_ALLOW_ENCODING_FOR_JENKINS_ARTIFACT("Enables correct encoding for jenkins artifact", HarnessTeam.SPG),
-
+  SPG_HTTP_STEP_CERTIFICATE("Allow enforce SSL/TLS certificate in HTTP step", HarnessTeam.SPG),
+  SPG_ALLOW_GET_BUILD_SYNC("Allow get builds sync from gcs", HarnessTeam.SPG),
   SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE("Enables refresh pipeline when trigger "
           + "continue pipeline execution",
       HarnessTeam.SPG),
@@ -31,7 +32,6 @@ public enum FeatureName {
   SPG_ENABLE_NOTIFICATION_RULES("Enables notification rules and approvals notifications by usergroup", HarnessTeam.SPG),
   SPG_ENABLE_VALIDATION_WORKFLOW_PIPELINE_STAGE(
       "Enables validation of dot on pipeline and workflow name", HarnessTeam.SPG),
-  SPG_NG_GITHUB_WEBHOOK_AUTHENTICATION("Enables authentication for GitHub webhook triggers in NG", HarnessTeam.SPG),
   SPG_ALLOW_DISABLE_TRIGGERS("Allow disabling triggers at application level for CG", HarnessTeam.SPG),
   SPG_ALLOW_UI_JIRA_CUSTOM_DATETIME_FIELD("Enables backend parse custom field time of jira as the UI", HarnessTeam.SPG),
   SPG_ALLOW_TEMPLATE_ON_NEXUS_ARTIFACT(
@@ -615,7 +615,11 @@ public enum FeatureName {
   CDS_AWS_NATIVE_LAMBDA("This flag is to enable the AWS Native Lambda Deployments for users. "
           + "This flag only works with Service and Environments v2",
       HarnessTeam.CDP),
-  CI_PIPELINE_VARIABLES_IN_STEPS("For enabling pipeline variables as env variables in CI steps", HarnessTeam.CI);
+  CI_PIPELINE_VARIABLES_IN_STEPS("For enabling pipeline variables as env variables in CI steps", HarnessTeam.CI),
+  CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS(
+      "Do not add quotes to strings when a user reconciles a template, pipeline", HarnessTeam.CDC, Scope.GLOBAL),
+  SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE(
+      "To silent ignore org.modelmapper.MappingException inside state machine executor", HarnessTeam.SPG);
 
   @Deprecated
   FeatureName() {

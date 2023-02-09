@@ -31,6 +31,7 @@ import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilt
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
+import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 
@@ -49,6 +50,7 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   boolean delete(ProjectParams projectParams, String identifier);
   List<MonitoredServiceResponse> get(ProjectParams projectParams, Set<String> identifier);
 
+  List<MonitoredServiceDetail> getMonitoredServiceDetails(ProjectParams projectParams, Set<String> identifier);
   List<MonitoredServiceResponse> get(String accountId, Set<String> identifier);
   MonitoredServiceResponse get(ProjectParams projectParams, String identifier);
   MonitoredServiceResponse getApplicationMonitoredServiceResponse(ServiceEnvironmentParams serviceEnvironmentParams);
@@ -70,7 +72,7 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
 
   List<MonitoredService> listWithFilter(@NonNull ProjectParams projectParams, List<String> identifiers, String filter);
 
-  PageResponse<MonitoredServiceListItemDTO> list(ProjectParams projectParams, String environmentIdentifiers,
+  PageResponse<MonitoredServiceListItemDTO> list(ProjectParams projectParams, List<String> environmentIdentifiers,
       Integer offset, Integer pageSize, String filter, boolean servicesAtRiskFilter);
 
   List<EnvironmentResponse> listEnvironments(String accountId, String orgIdentifier, String projectIdentifier);

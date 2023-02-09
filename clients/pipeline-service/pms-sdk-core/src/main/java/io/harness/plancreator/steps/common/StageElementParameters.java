@@ -44,7 +44,7 @@ public class StageElementParameters implements StepParameters {
   ParameterField<String> description;
 
   ParameterField<String> skipCondition;
-  StageWhenCondition when;
+  ParameterField<StageWhenCondition> when;
 
   @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)

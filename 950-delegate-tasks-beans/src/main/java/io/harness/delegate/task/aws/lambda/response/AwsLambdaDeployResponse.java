@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.aws.lambda.AwsLambdaFunction;
 import io.harness.logging.CommandExecutionStatus;
 
 import lombok.Builder;
@@ -25,6 +26,7 @@ public class AwsLambdaDeployResponse implements AwsLambdaCommandResponse {
   @NonFinal UnitProgressData unitProgressData;
   CommandExecutionStatus commandExecutionStatus;
   String errorMessage;
+  AwsLambdaFunction awsLambdaFunction;
 
   @Override
   public void setDelegateMetaInfo(DelegateMetaInfo metaInfo) {
