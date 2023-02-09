@@ -12,6 +12,7 @@ import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
 import io.harness.serializer.JsonUtils;
 
+import com.mongodb.MongoCommandException;
 import io.debezium.engine.DebeziumEngine;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +40,9 @@ public class DebeziumUtils {
       if (error instanceof InvalidRequestException && error.getMessage().equals("Snapshot completed")) {
         log.info("Snapshot Completed for collection {}, stopping debezium controller..", collection);
         debeziumController.stopDebeziumController();
-      } else if (!success) {
+      } else if (!success && error.getCause() != null && error.getCause().getCause() != null
+          && error.getCause().getCause() instanceof MongoCommandException
+          && ((MongoCommandException) error.getCause().getCause()).getCode() == 286) {
         resetOffset(JsonUtils.asObject(redisConfigJson, RedisConfig.class), redisKey);
         log.error(String.format("Offset reset for key: %s because of exception: %s, at %s", redisKey, error,
                       System.currentTimeMillis()),
