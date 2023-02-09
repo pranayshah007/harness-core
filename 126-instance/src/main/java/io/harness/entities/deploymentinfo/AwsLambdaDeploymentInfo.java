@@ -15,7 +15,9 @@ import lombok.EqualsAndHashCode;
 import software.wings.beans.Tag;
 
 import javax.validation.constraints.NotNull;
+import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @Builder
@@ -26,8 +28,14 @@ public class AwsLambdaDeploymentInfo extends DeploymentInfo {
   @NotNull private String functionName;
   @NotNull private String region;
   @NotNull private String infraStructureKey;
-  @NotNull private String functionArn;
-  @NotNull private List<String> aliases;
-  @NotNull private List<Tag> tags;
-  @NotNull private String artifactId;
+  private String functionArn;
+  private Set<String> aliases;
+  private Set<Tag> tags;
+  private String artifactId;
+  private String description;
+  private String runtime;
+  private String handler;
+  private String source;
+  private Date updatedTime;
+  private Integer memorySize;
 }

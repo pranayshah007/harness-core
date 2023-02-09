@@ -12,23 +12,32 @@ import io.harness.annotations.dev.OwnedBy;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import software.wings.beans.Tag;
 
 import javax.validation.constraints.NotNull;
+import java.util.Date;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = true)
 public class AwsLambdaInstanceInfo extends InstanceInfo {
-  @NotNull private String revision;
+  @NotNull private String version;
   @NotNull private String functionName;
   @NotNull private String project;
   @NotNull private String region;
 
   private String source;
-  private long updatedTime;
-  private String memorySize;
+  private Date updatedTime;
+  private Integer memorySize;
   private String runTime;
+
+  private Set<String> aliases;
+  private Set<Tag> tags;
+  private String functionArn;
+  private String description;
+  private String handler;
 
   private String infraStructureKey;
 }

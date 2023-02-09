@@ -27,6 +27,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.UnexpectedException;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.InstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.aws.AsgInstanceSyncPerpetualTaskHandler;
+import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.aws.AwsLambdaInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.aws.AwsSshWinrmInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.azure.AzureSshWinrmInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.azure.AzureWebAppInstanceSyncPerpetualTaskHandler;
@@ -61,7 +62,7 @@ public final class InstanceSyncPerpetualTaskServiceRegister {
   private final TasInstanceSyncPerpetualTaskHandler tasInstanceSyncPerpetualTaskHandler;
   private final AsgInstanceSyncPerpetualTaskHandler asgInstanceSyncPerpetualTaskHandler;
   private final GoogleFunctionInstanceSyncPerpetualTaskHandler googleFunctionInstanceSyncPerpetualTaskHandler;
-  private final GoogleFunctionInstanceSyncPerpetualTaskHandler googleFunctionInstanceSyncPerpetualTaskHandler;
+  private final AwsLambdaInstanceSyncPerpetualTaskHandler awsLambdaInstanceSyncPerpetualTaskHandler;
 
   public InstanceSyncPerpetualTaskHandler getInstanceSyncPerpetualService(String perpetualTaskType) {
     switch (perpetualTaskType) {
@@ -92,7 +93,7 @@ public final class InstanceSyncPerpetualTaskServiceRegister {
       case GOOGLE_CLOUD_FUNCTION_INSTANCE_SYNC_NG:
         return googleFunctionInstanceSyncPerpetualTaskHandler;
       case AWS_LAMBDA_INSTANCE_SYNC_NG:
-        return googleFunctionInstanceSyncPerpetualTaskHandler;
+        return awsLambdaInstanceSyncPerpetualTaskHandler;
       default:
         throw new UnexpectedException(
             "No instance sync service registered for perpetual task type: " + perpetualTaskType);

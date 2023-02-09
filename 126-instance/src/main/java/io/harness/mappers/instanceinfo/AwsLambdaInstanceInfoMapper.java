@@ -23,24 +23,34 @@ public class AwsLambdaInstanceInfoMapper {
         .functionName(awsLambdaInstanceInfo.getFunctionName())
         .region(awsLambdaInstanceInfo.getRegion())
         .source(awsLambdaInstanceInfo.getSource())
+            .version(awsLambdaInstanceInfo.getVersion())
         .updatedTime(awsLambdaInstanceInfo.getUpdatedTime())
         .memorySize(awsLambdaInstanceInfo.getMemorySize())
         .runTime(awsLambdaInstanceInfo.getRunTime())
         .infraStructureKey(awsLambdaInstanceInfo.getInfraStructureKey())
+            .tags(awsLambdaInstanceInfo.getTags())
+            .aliases(awsLambdaInstanceInfo.getAliases())
+            .description(awsLambdaInstanceInfo.getDescription())
+            .functionArn(awsLambdaInstanceInfo.getFunctionArn())
+            .handler(awsLambdaInstanceInfo.getHandler())
         .build();
   }
 
   public AwsLambdaInstanceInfo toEntity(AwsLambdaInstanceInfoDTO awsLambdaInstanceInfoDTO) {
     return AwsLambdaInstanceInfo.builder()
         .functionName(awsLambdaInstanceInfoDTO.getFunctionName())
-        .project(awsLambdaInstanceInfoDTO.getProject())
         .region(awsLambdaInstanceInfoDTO.getRegion())
-        .revision(awsLambdaInstanceInfoDTO.getRevision())
+        .version(awsLambdaInstanceInfoDTO.getVersion())
         .source(awsLambdaInstanceInfoDTO.getSource())
         .updatedTime(awsLambdaInstanceInfoDTO.getUpdatedTime())
         .memorySize(awsLambdaInstanceInfoDTO.getMemorySize())
         .runTime(awsLambdaInstanceInfoDTO.getRunTime())
         .infraStructureKey(awsLambdaInstanceInfoDTO.getInfraStructureKey())
+            .tags(awsLambdaInstanceInfoDTO.getTags())
+            .aliases(awsLambdaInstanceInfoDTO.getAliases())
+            .description(awsLambdaInstanceInfoDTO.getDescription())
+            .functionArn(awsLambdaInstanceInfoDTO.getFunctionArn())
+            .handler(awsLambdaInstanceInfoDTO.getHandler())
         .build();
   }
 }

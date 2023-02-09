@@ -15,8 +15,12 @@ import io.harness.util.InstanceSyncKey;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import software.wings.beans.Tag;
 
 import javax.validation.constraints.NotNull;
+
+import java.util.Date;
+import java.util.Set;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
@@ -30,6 +34,17 @@ public class AwsLambdaDeploymentInfoDTO extends DeploymentInfoDTO {
   @NotNull private String region;
   @NotNull private String infraStructureKey;
   @NotNull private String version;
+
+  private Set<String> aliases;
+  private Set<Tag> tags;
+  private String functionArn;
+  private String description;
+  private String runtime;
+  private String handler;
+  private String source;
+  private Date updatedTime;
+  private Integer memorySize;
+  private String artifactId;
 
   @Override
   public String getType() {
