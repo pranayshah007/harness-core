@@ -8,16 +8,17 @@
 package io.harness.ng.core.yaml;
 
 import io.harness.utils.YamlPipelineUtils;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @Singleton
 public final class CDYamlFacade {
-  @Inject private NGFeatureFlagHelperService featureFlagHelperService;
+  private boolean minimizeQuotes = false;
 
   public String writeYamlString(Object value) {
+    if (minimizeQuotes) {
+      return CDYamlUtils.writeYamlString(value);
+    }
     return YamlPipelineUtils.writeYamlString(value);
   }
 }

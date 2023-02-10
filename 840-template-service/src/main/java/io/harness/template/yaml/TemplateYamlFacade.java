@@ -9,18 +9,19 @@ package io.harness.template.yaml;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 public final class TemplateYamlFacade {
-  @Inject private NGTemplateFeatureFlagHelperService featureFlagHelperService;
+  private final boolean minimizeQuotes = false;
 
   public String writeYamlString(Object value) {
+    if (minimizeQuotes) {
+      return TemplateYamlUtils.writeYamlString(value);
+    }
     return YamlPipelineUtils.writeYamlString(value);
   }
 }

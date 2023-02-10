@@ -21,7 +21,6 @@ import io.harness.NgManagerTestBase;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.customdeployment.helper.CustomDeploymentEntitySetupHelper;
 import io.harness.cdng.gitops.service.ClusterService;
@@ -44,7 +43,6 @@ import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
 import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
@@ -76,7 +74,6 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
   @Mock TransactionTemplate transactionTemplate;
   @Mock OutboxService outboxService;
   @Mock ServiceOverrideService serviceOverrideService;
-  @Mock private NGFeatureFlagHelperService featureFlagHelperService;
   CDYamlFacade cdYamlFacade = new CDYamlFacade();
   @Mock ServiceEntitySetupUsageHelper entitySetupUsageHelper;
   @Mock ClusterService clusterService;
@@ -100,8 +97,7 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService,
         serviceEntityService, accountClient, settingsClient));
 
-    doReturn(true).when(featureFlagHelperService).isEnabled("", FeatureName.CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS);
-    on(cdYamlFacade).set("featureFlagHelperService", featureFlagHelperService);
+    on(cdYamlFacade).set("minimizeQuotes", true);
 
     environmentRefreshHelper = spy(new EnvironmentRefreshHelper(
         environmentService, infrastructureEntityService, serviceOverrideService, cdYamlFacade));
@@ -140,7 +136,6 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
 
     String refreshedYaml =
         refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
-    assertThat(refreshedYaml).isNotNull().isNotEmpty();
     assertThat(refreshedYaml).isEqualTo(pipelineYmlWithService);
   }
 
@@ -157,7 +152,6 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
 
     String refreshedYaml =
         refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
-    assertThat(refreshedYaml).isNotNull().isNotEmpty();
     assertThat(refreshedYaml).isEqualTo(pipelineYmlWithService);
   }
 
@@ -174,7 +168,6 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
 
     String refreshedYaml =
         refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
-    assertThat(refreshedYaml).isNotNull().isNotEmpty();
     assertThat(refreshedYaml).isEqualTo(readFile("pipeline-with-single-service-refreshed.yaml"));
   }
 
@@ -187,7 +180,6 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
 
     String refreshedYaml =
         refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
-    assertThat(refreshedYaml).isNotNull();
     assertThat(refreshedYaml).isEqualTo(readFile("pipeline-with-svc-runtime-serviceInputs-fixed-refreshed.yaml"));
   }
 
@@ -204,7 +196,6 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
 
     String refreshedYaml =
         refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
-    assertThat(refreshedYaml).isNotNull();
     assertThat(refreshedYaml).isEqualTo(readFile("pipeline-with-primaryRef-fixed-source-runtime-refreshed.yaml"));
   }
 
@@ -221,7 +212,6 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
 
     String refreshedYaml =
         refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
-    assertThat(refreshedYaml).isNotNull();
     assertThat(refreshedYaml).isEqualTo(readFile("pipeline-with-single-service-refreshed-with-no-serviceInputs.yaml"));
   }
 
@@ -237,7 +227,6 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
 
     String refreshedYaml =
         refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
-    assertThat(refreshedYaml).isNotNull();
     assertThat(refreshedYaml)
         .isEqualTo(readFile("env/refresh-pipeline-with-env-ref-runtime-and-envInputs-infraDefs-fixed.yaml"));
   }
@@ -254,7 +243,6 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
 
     String refreshedYaml =
         refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
-    assertThat(refreshedYaml).isNotNull();
     assertThat(refreshedYaml).isEqualTo(readFile("env/pipeline-with-envRef-envInputs-infraDefs-runtime.yaml"));
   }
 
@@ -276,7 +264,6 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
 
     String refreshedYaml =
         refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
-    assertThat(refreshedYaml).isNotNull();
     assertThat(refreshedYaml).isEqualTo(readFile("env/refresh-pipeline-with-fixed-envRef-incorrect-envInputs.yaml"));
   }
 
@@ -298,7 +285,6 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
 
     String refreshedYaml =
         refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
-    assertThat(refreshedYaml).isNotNull();
     assertThat(refreshedYaml)
         .isEqualTo(readFile("env/refresh-pipeline-with-env-ref-fixed-and-infraDefs-incorrect.yaml"));
   }
@@ -318,7 +304,6 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
 
     String refreshedYaml = refreshInputsHelper.refreshInputs(
         ACCOUNT_ID, ORG_ID, PROJECT_ID, templateWithInfraFixed, resolvedTemplateWithInfraFixed);
-    assertThat(refreshedYaml).isNotNull();
     assertThat(refreshedYaml).isEqualTo(readFile("env/refresh-pipTemplate-with-infra-fixed.yaml"));
   }
 }

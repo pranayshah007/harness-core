@@ -22,7 +22,6 @@ import static org.mockito.Mockito.when;
 import io.harness.TemplateServiceTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -78,11 +77,12 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
     on(inputsValidator).set("ngManagerReconcileClient", ngManagerReconcileClient);
     on(templateInputsValidator).set("inputsValidator", inputsValidator);
     on(templateYamlFacade).set("featureFlagHelperService", featureFlagHelperService);
+    on(templateYamlFacade).set("minimizeQuotes", true);
     on(inputsValidator).set("templateYamlFacade", templateYamlFacade);
 
-    doReturn(true)
-        .when(featureFlagHelperService)
-        .isFeatureFlagEnabled("", FeatureName.CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS);
+    //    doReturn(true)
+    //        .when(featureFlagHelperService)
+    //        .isFeatureFlagEnabled("", FeatureName.CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS);
 
     // default behaviour of validation
     Call<ResponseDTO<InputsValidationResponse>> ngManagerReconcileCall = mock(Call.class);

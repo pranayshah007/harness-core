@@ -46,7 +46,6 @@ import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
 import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -85,7 +84,6 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
   @Mock NGSettingsClient settingsClient;
 
   @Mock HPersistence hPersistence;
-  @Mock NGFeatureFlagHelperService featureFlagHelperService;
   CDYamlFacade cdYamlFacade = new CDYamlFacade();
   ServiceEntityServiceImpl serviceEntityService;
   EnvironmentServiceImpl environmentService;
@@ -108,7 +106,6 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     on(inputsValidationHelper).set("entityFetchHelper", entityFetchHelper);
     on(inputsValidationHelper).set("environmentRefreshHelper", environmentRefreshHelper);
     on(inputsValidationHelper).set("cdYamlFacade", cdYamlFacade);
-    on(cdYamlFacade).set("featureFlagHelperService", featureFlagHelperService);
   }
 
   private String readFile(String filename) {

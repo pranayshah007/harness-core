@@ -13,7 +13,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -60,10 +59,8 @@ public class EnvironmentRefreshHelperTest extends CategoryTest {
   public void setUp() throws Exception {
     mocks = MockitoAnnotations.openMocks(this);
 
-    doReturn(true).when(featureFlagHelperService).isEnabled("", FeatureName.CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS);
-
-    Reflect.on(cdYamlFacade).set("featureFlagHelperService", featureFlagHelperService);
     Reflect.on(refreshHelper).set("cdYamlFacade", cdYamlFacade);
+    Reflect.on(cdYamlFacade).set("minimizeQuotes", true);
   }
 
   @After

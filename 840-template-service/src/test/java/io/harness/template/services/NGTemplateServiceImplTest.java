@@ -36,7 +36,6 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.encryption.Scope;
@@ -187,10 +186,11 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     on(templateMergeServiceHelper).set("templateYamlFacade", templateYamlFacade);
     on(templateMergeService).set("templateYamlFacade", templateYamlFacade);
     on(templateYamlFacade).set("featureFlagHelperService", featureFlagHelperService);
+    on(templateYamlFacade).set("minimizeQuotes", true);
 
-    doReturn(true)
-        .when(featureFlagHelperService)
-        .isFeatureFlagEnabled("", FeatureName.CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS);
+    //    doReturn(true)
+    //        .when(featureFlagHelperService)
+    //        .isFeatureFlagEnabled("", FeatureName.CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS);
 
     doNothing().when(enforcementClientService).checkAvailability(any(), any());
     entity = TemplateEntity.builder()
