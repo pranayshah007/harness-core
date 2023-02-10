@@ -185,12 +185,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     on(templateService).set("templateMergeService", templateMergeService);
     on(templateMergeServiceHelper).set("templateYamlFacade", templateYamlFacade);
     on(templateMergeService).set("templateYamlFacade", templateYamlFacade);
-    on(templateYamlFacade).set("featureFlagHelperService", featureFlagHelperService);
     on(templateYamlFacade).set("minimizeQuotes", true);
-
-    //    doReturn(true)
-    //        .when(featureFlagHelperService)
-    //        .isFeatureFlagEnabled("", FeatureName.CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS);
 
     doNothing().when(enforcementClientService).checkAvailability(any(), any());
     entity = TemplateEntity.builder()
