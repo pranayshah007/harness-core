@@ -9,12 +9,7 @@ package io.harness.ci.buildstate;
 
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
-import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
-import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
-import static io.harness.delegate.beans.connector.ConnectorType.GIT;
-import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
-import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
+import static io.harness.delegate.beans.connector.ConnectorType.*;
 import static io.harness.delegate.beans.connector.azureconnector.AzureCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.exception.WingsException.USER;
 
@@ -84,6 +79,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
+import io.harness.delegate.beans.connector.scm.harnesscode.HarnessCodeConnectorDTO;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidArgumentsException;
@@ -291,6 +287,7 @@ public class ConnectorUtils {
       case BITBUCKET:
       case CODECOMMIT:
       case AZURE_REPO:
+      case HARNESS_CODE:
         connectorDetails = getGitConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
         break;
       case GCP:
@@ -493,6 +490,8 @@ public class ConnectorUtils {
       return buildAwsCodeCommitConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
     } else if (connectorDTO.getConnectorInfo().getConnectorType() == GIT) {
       return buildGitConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
+    } else if (connectorDTO.getConnectorInfo().getConnectorType() == HARNESS_CODE) {
+      return buildHarnessCodeConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
     } else {
       throw new CIStageExecutionException(
           "Unsupported git connector " + connectorDTO.getConnectorInfo().getConnectorType());
@@ -657,6 +656,13 @@ public class ConnectorUtils {
         -> encryptedDataDetails.addAll(secretManagerClientService.getEncryptionDetails(ngAccess, decryptableEntity)));
     connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails);
     return connectorDetailsBuilder.build();
+  }
+
+  private ConnectorDetails buildHarnessCodeConnectorDetails(
+      NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
+    HarnessCodeConnectorDTO harnessCodeConnectorDTO =
+        (HarnessCodeConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig();
+    return connectorDetailsBuilder.executeOnDelegate(harnessCodeConnectorDTO.getExecuteOnDelegate()).build();
   }
 
   private ConnectorDetails buildGitConnectorDetails(
