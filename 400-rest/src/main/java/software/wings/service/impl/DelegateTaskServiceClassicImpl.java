@@ -1977,8 +1977,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       return;
     }
 
-    if (featureFlagService.isEnabled(QUEUE_CI_EXECUTIONS, accountId)
-        && !delegateTaskQueueService.isResourceAvailableToAssignTask(delegateTask)) {
+    if (!delegateTaskQueueService.isResourceAvailableToAssignTask(delegateTask)) {
       delegateTaskQueueService.enqueue(delegateTask);
     } else {
       persistence.save(delegateTask);
