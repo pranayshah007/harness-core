@@ -765,7 +765,7 @@ io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithou
 io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepInfo
 io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepNode
 io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepParameters
-io.harness.cdng.aws.lambda.AwsLambdaStepExceptionPassThroughData
+io.harness.cdng.aws.lambda.AwsLambdaStepPassThroughData
 io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome
 io.harness.cdng.service.beans.AwsLambdaServiceSpec
 io.harness.cdng.manifest.yaml.kinds.AwsLambdaDefinitionManifest
@@ -773,3 +773,4 @@ io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome
 io.harness.cdng.infra.beans.AwsLambdaInfrastructureOutcome
 io.harness.cdng.infra.yaml.AwsLambdaInfrastructure
 io.harness.cdng.infra.beans.AwsLambdaInfrastructureMapping
+io.harness.cdng.aws.lambda.AwsLambdaStepExceptionPassThroughData

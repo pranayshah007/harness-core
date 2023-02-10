@@ -10,14 +10,18 @@ package io.harness.cdng.aws.lambda.deploy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.aws.lambda.AwsLambdaHelper;
-import io.harness.cdng.aws.lambda.AwsLambdaStepExceptionPassThroughData;
 import io.harness.cdng.aws.lambda.AwsLambdaStepExecutor;
+import io.harness.cdng.aws.lambda.AwsLambdaStepPassThroughData;
+import io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
+import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -58,25 +62,49 @@ public class AwsLambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac 
       StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
       throws Exception {
     log.info("Calling executeNextLink");
-    return TaskChainResponse.builder().build();
+    return awsLambdaHelper.executeNextLink(ambiance, stepParameters, passThroughData, responseSupplier);
   }
 
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
-    return StepResponse.builder().build();
+    log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
+    AwsLambdaStepPassThroughData awsLambdaStepPassThroughData = (AwsLambdaStepPassThroughData) passThroughData;
+    AwsLambdaDeployResponse awsLambdaDeployResponse;
+
+    try {
+      awsLambdaDeployResponse = (AwsLambdaDeployResponse) responseDataSupplier.get();
+    } catch (Exception e) {
+      log.error("Error while processing AWS Lambda Function response: {}", e.getCause(), e);
+      return awsLambdaHelper.handleStepFailureException(ambiance, awsLambdaStepPassThroughData, e);
+    }
+    StepResponse.StepResponseBuilder stepResponseBuilder =
+        StepResponse.builder().unitProgressList(awsLambdaDeployResponse.getUnitProgressData().getUnitProgresses());
+    if (awsLambdaDeployResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+      return AwsLambdaHelper.getFailureResponseBuilder(awsLambdaDeployResponse, stepResponseBuilder).build();
+    }
+
+    AwsLambdaStepOutcome awsLambdaStepOutcome =
+        awsLambdaHelper.getAwsLambdaStepOutcome(awsLambdaDeployResponse.getAwsLambda());
+
+    return StepResponse.builder()
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.OUTPUT)
+                         .outcome(awsLambdaStepOutcome)
+                         .build())
+        .build();
   }
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return TaskChainResponse.builder().build();
+    return awsLambdaHelper.startChainLink(ambiance, stepParameters);
   }
 
   @Override
   public TaskChainResponse executeTask(Ambiance ambiance, StepElementParameters stepParameters,
-      AwsLambdaStepExceptionPassThroughData awsLambdaStepExceptionPassThroughData, UnitProgressData unitProgressData) {
-    InfrastructureOutcome infrastructureOutcome = awsLambdaStepExceptionPassThroughData.getInfrastructureOutcome();
+      AwsLambdaStepPassThroughData awsLambdaStepPassThroughData, UnitProgressData unitProgressData) {
+    InfrastructureOutcome infrastructureOutcome = awsLambdaStepPassThroughData.getInfrastructureOutcome();
 
     AwsLambdaDeployRequest awsLambdaDeployRequest =
         AwsLambdaDeployRequest.builder()
@@ -84,9 +112,10 @@ public class AwsLambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac 
             .commandName(AWS_LAMBDA_DEPLOY_COMMAND_NAME)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .awsLambdaFunctionsInfraConfig(awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance))
+            .awsLambdaDeployManifestContent(awsLambdaStepPassThroughData.getManifestContent())
             .build();
 
     return awsLambdaHelper.queueTask(
-        stepParameters, awsLambdaDeployRequest, ambiance, awsLambdaStepExceptionPassThroughData, true);
+        stepParameters, awsLambdaDeployRequest, ambiance, awsLambdaStepPassThroughData, true);
   }
 }

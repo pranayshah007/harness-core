@@ -17,5 +17,11 @@ public enum AwsLambdaCommandUnitConstants {
     public String toString() {
       return "Deploy";
     }
-  }
+  },
+  fetchManifests {
+    @Override
+    public String toString() {
+      return "Fetch Manifests";
+    }
+  },
 }

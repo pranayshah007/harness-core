@@ -24,7 +24,6 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("awslambdaStepOutcome")
 @JsonTypeName("awslambdaStepOutcome")
 @RecasterAlias("io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome")
-
 public class AwsLambdaStepOutcome implements Outcome, ExecutionSweepingOutput {
   String functionName;
   String runtime;

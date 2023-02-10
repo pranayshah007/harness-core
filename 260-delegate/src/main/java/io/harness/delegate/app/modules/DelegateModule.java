@@ -234,6 +234,7 @@ import io.harness.delegate.task.aws.asg.AsgCanaryDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackTaskNG;
+import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTask;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.appservice.webapp.AzureWebAppTaskNG;
@@ -2138,6 +2139,9 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_COMMAND_TASK).toInstance(GoogleFunctionCommandTask.class);
     mapBinder.addBinding(TaskType.GCP_PROJECTS_TASK_NG).toInstance(GcpProjectTask.class);
     mapBinder.addBinding(TaskType.GCS_BUCKETS_TASK_NG).toInstance(GcsBucketPerProjectTask.class);
+
+    // AWS Lambda
+    mapBinder.addBinding(TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG).toInstance(AwsLambdaCommandTask.class);
   }
 
   private void registerSecretManagementBindings() {

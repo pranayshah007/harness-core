@@ -18,5 +18,5 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 @OwnedBy(CDP)
 public interface AwsLambdaStepExecutor {
   TaskChainResponse executeTask(Ambiance ambiance, StepElementParameters stepParameters,
-      AwsLambdaStepExceptionPassThroughData awsLambdaStepExceptionPassThroughData, UnitProgressData unitProgressData);
+      AwsLambdaStepPassThroughData awsLambdaStepPassThroughData, UnitProgressData unitProgressData);
 }
