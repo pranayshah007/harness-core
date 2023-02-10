@@ -71,6 +71,8 @@ import com.amazonaws.services.ecr.AmazonECRClient;
 import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.ecr.model.AmazonECRException;
 import com.amazonaws.services.ecr.model.BatchGetImageRequest;
+import com.amazonaws.services.ecr.model.DescribeImagesRequest;
+import com.amazonaws.services.ecr.model.DescribeImagesResult;
 import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
 import com.amazonaws.services.ecr.model.DescribeRepositoriesResult;
 import com.amazonaws.services.ecr.model.Image;
@@ -166,6 +168,12 @@ public class AwsApiHelperService {
       AwsInternalConfig awsConfig, String region, ListImagesRequest listImagesRequest) {
     return getAmazonEcrClient(awsConfig, region).listImages(listImagesRequest);
   }
+
+  public DescribeImagesResult describeEcrImages(
+      AwsInternalConfig awsConfig, String region, DescribeImagesRequest describeImagesRequest) {
+    return getAmazonEcrClient(awsConfig, region).describeImages(describeImagesRequest);
+  }
+
   public DescribeRepositoriesResult listRepositories(
       AwsInternalConfig awsConfig, DescribeRepositoriesRequest describeRepositoriesRequest, String region) {
     try {
@@ -500,6 +508,7 @@ public class AwsApiHelperService {
                     .withAcceptedMediaTypes("application/vnd.docker.distribution.manifest.v1+json")))
         .flatMap(batchGetImageResult -> batchGetImageResult.getImages().stream())
         .map(Image::getImageManifest)
+        .filter(imageManifest -> (JsonUtils.asObject(imageManifest, HashMap.class).get("history")) != null)
         .flatMap(imageManifest
             -> ((List<Map<String, Object>>) JsonUtils.asObject(imageManifest, HashMap.class).get("history"))
                    .stream()

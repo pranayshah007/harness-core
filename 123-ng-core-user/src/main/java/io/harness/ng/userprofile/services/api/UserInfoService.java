@@ -22,6 +22,7 @@ public interface UserInfoService {
   TwoFactorAuthSettingsInfo getTwoFactorAuthSettingsInfo(TwoFactorAuthMechanismInfo twoFactorAuthMechanismInfo);
   UserInfo updateTwoFactorAuthInfo(TwoFactorAuthSettingsInfo authSettingsInfo);
   UserInfo disableTFA();
+  Boolean sendTwoFactorAuthenticationResetEmail(String userId, String accountId);
   PasswordChangeResponse changeUserPassword(PasswordChangeDTO passwordChangeDTO);
   UserInfo unlockUser(String userId, String accountId);
 }

@@ -138,6 +138,27 @@ public class SshEntityHelperTest extends CategoryTest {
       + "      - ec2-52-201-252-114.compute-1.amazonaws.com\n"
       + "  allowSimultaneousDeployments: false";
 
+  public static final String infraWithExpressionsSshCredentialsYaml = ""
+      + "infrastructureDefinition:\n"
+      + "  name: PDC infra\n"
+      + "  identifier: PDCInfra\n"
+      + "  description: \"\"\n"
+      + "  tags: {}\n"
+      + "  orgIdentifier: SSH_Organization\n"
+      + "  projectIdentifier: SSHProject\n"
+      + "  environmentRef: ProdValid\n"
+      + "  deploymentType: Ssh\n"
+      + "  type: Pdc\n"
+      + "  spec:\n"
+      + "    credentialsRef: <+input>\n"
+      + "    hostFilter:\n"
+      + "      type: All\n"
+      + "      spec: {}\n"
+      + "    hosts:\n"
+      + "      - ec2-52-201-252-114.compute-1.amazonaws.com\n"
+      + "      - ec2-54-167-41-15.compute-1.amazonaws.com\n"
+      + "  allowSimultaneousDeployments: false";
+
   @Mock private SecretNGManagerClient secretManagerClient;
   @Mock private ConnectorService connectorService;
   @Mock private SshKeySpecDTOHelper sshKeySpecDTOHelper;
@@ -673,6 +694,30 @@ public class SshEntityHelperTest extends CategoryTest {
 
     helper.validateInfrastructureYaml(infrastructureEntity);
     verify(secretManagerClient, times(1)).getSecret("sshCredentials", accountId, null, null);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlSshCredentialsWithExpression() throws IOException {
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .deploymentType(ServiceDefinitionType.SSH)
+                                                    .accountId(accountId)
+                                                    .orgIdentifier(orgId)
+                                                    .projectIdentifier(projectId)
+                                                    .yaml(infraWithExpressionsSshCredentialsYaml)
+                                                    .build();
+
+    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
+    ResponseDTO<SecretResponseWrapper> responseDTO =
+        ResponseDTO.newResponse(SecretResponseWrapper.builder()
+                                    .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
+                                    .build());
+    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
+    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), any(), any());
+
+    helper.validateInfrastructureYaml(infrastructureEntity);
+    verify(secretManagerClient, times(0)).getSecret("sshCredentials", accountId, null, null);
   }
 
   @Test

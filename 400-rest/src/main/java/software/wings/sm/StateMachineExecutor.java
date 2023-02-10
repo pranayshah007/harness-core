@@ -188,6 +188,8 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.modelmapper.MappingException;
 
 /**
  * Class responsible for executing state machine.
@@ -718,13 +720,7 @@ public class StateMachineExecutor implements StateInspectionListener {
     log.info("startStateExecution for State {} of type {}", currentState.getName(), currentState.getStateType());
 
     if (stateExecutionInstance.getStateParams() != null) {
-      try {
-        MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
-      } catch (org.modelmapper.MappingException e) {
-        log.error(String.format("Got model mapping exception during mapping the stateParams %s [currentState=%s]",
-                      stateExecutionInstance.getStateParams(), currentState),
-            e);
-      }
+      mapObject(stateExecutionInstance.getStateParams(), currentState, context.getAccountId());
     }
     injector.injectMembers(currentState);
     return currentState;
@@ -1752,6 +1748,8 @@ public class StateMachineExecutor implements StateInspectionListener {
           ? context.getStateExecutionData().getErrorMsg()
           : errorMsgBuilder.toString();
 
+      // NOT CHANGED TO REDUCE THE BLAST RATIO.
+      // WHEN MAPPING FAIL HERE IT HANGS THE ABORT OPERATION, ALREADY SILENCED BECAUSE THAT.
       try {
         if (stateExecutionInstance.getStateParams() != null) {
           MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
@@ -2674,7 +2672,7 @@ public class StateMachineExecutor implements StateInspectionListener {
     }
   }
 
-  private static class SmExecutionAsyncResumer implements Runnable {
+  private class SmExecutionAsyncResumer implements Runnable {
     private ExecutionContextImpl context;
     private StateMachineExecutor stateMachineExecutor;
     private State state;
@@ -2746,7 +2744,7 @@ public class StateMachineExecutor implements StateInspectionListener {
 
         StateExecutionInstance stateExecutionInstance = context.getStateExecutionInstance();
         if (stateExecutionInstance.getStateParams() != null) {
-          MapperUtils.mapObject(stateExecutionInstance.getStateParams(), state);
+          mapObject(stateExecutionInstance.getStateParams(), state, context.getAccountId());
         }
         ExecutionResponse executionResponse = state.handleAsyncResponse(context, response);
         stateMachineExecutor.handleResponse(context, executionResponse);
@@ -2771,6 +2769,44 @@ public class StateMachineExecutor implements StateInspectionListener {
         }
       } catch (Exception ex) {
         log.warn("Failed to extract delegate metadata", ex);
+      }
+    }
+  }
+
+  /**
+   * Maps source to target.
+   */
+  private void mapObject(Map<String, Object> source, State target, String accountId) {
+    //
+    // WE ARE UNABLE TO RCA TO A CORNER CASE DURING MAP OPERATION. THE METHOD THROW THE ERROR Converter
+    // org.modelmapper.internal.converter.CollectionConverter@354aaffe failed to convert com.mongodb.BasicDBList to
+    // java.util.List. WE CHOOSE TO ITERATE THE SOURCE AND TRY TO MAP EACH ELEMENT TO THE SAME TARGET, USING THIS
+    // STRATEGY WHEN THE ISSUE COMEs AGAIN WE WILL HAVE MORE DETAILS.
+    //
+    try {
+      MapperUtils.mapObject(source, target);
+    } catch (MappingException e) {
+      log.error(String.format("Got model mapping exception during map the stateParams <%s> to state <%s>", source,
+          ToStringBuilder.reflectionToString(target)));
+
+      // ITERATE THE SOURCE ELEMENTS AND MAP TO THE SAME TARGET
+      mapEntries(source, target, accountId);
+    }
+  }
+
+  @VisibleForTesting
+  void mapEntries(Map<String, Object> source, State target, String accountId) {
+    for (Map.Entry<String, Object> entry : source.entrySet()) {
+      try {
+        MapperUtils.mapObject(Map.of(entry.getKey(), entry.getValue()), target);
+
+      } catch (MappingException e1) {
+        log.error(String.format("Failure on entry <%s> to the same target", entry), e1);
+
+        // IF IGNORE FF IS ENABLED, LOG AND KEEP THE EXECUTION.
+        if (featureFlagService.isNotEnabled(FeatureName.SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE, accountId)) {
+          throw e1;
+        }
       }
     }
   }

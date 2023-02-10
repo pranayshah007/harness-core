@@ -10,6 +10,7 @@ package software.wings.service.impl;
 import static io.harness.beans.EnvironmentType.PROD;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.JENNY;
+import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.BROADCASTING_DELEGATES;
 import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.CAN_NOT_ASSIGN_CG_NG_TASK_GROUP;
@@ -21,6 +22,8 @@ import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.CAN_N
 import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.ELIGIBLE_DELEGATES;
 import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.NO_ELIGIBLE_DELEGATES;
 
+import static java.time.Duration.of;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -36,6 +39,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
 import io.harness.delegate.beans.executioncapability.CapabilityType;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
@@ -45,7 +49,6 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.selection.log.DelegateSelectionLog;
 import io.harness.selection.log.DelegateSelectionLog.DelegateSelectionLogKeys;
-import io.harness.selection.log.DelegateSelectionLogTaskMetadata;
 import io.harness.threading.Concurrent;
 
 import software.wings.WingsBaseTest;
@@ -57,6 +60,7 @@ import software.wings.dl.WingsPersistence;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -100,8 +104,7 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
     DelegateTask task =
         DelegateTask.builder().uuid(taskId).accountId(accountId).selectionLogsTrackingEnabled(true).build();
     delegateSelectionLogsService.logNoEligibleDelegatesToExecuteTask(task);
-    List<DelegateSelectionLogParams> delegateSelectionLogParams =
-        delegateSelectionLogsService.fetchTaskSelectionLogs(accountId, taskId);
+    List<DelegateSelectionLogParams> delegateSelectionLogParams = fetchSelectionLogs(accountId, taskId);
 
     assertThat(delegateSelectionLogParams).isNotEmpty();
     assertThat(delegateSelectionLogParams.size()).isEqualTo(1);
@@ -121,8 +124,7 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
     DelegateTask task =
         DelegateTask.builder().uuid(taskId).accountId(accountId).selectionLogsTrackingEnabled(true).build();
     delegateSelectionLogsService.logEligibleDelegatesToExecuteTask(delegateIds, task, false);
-    List<DelegateSelectionLogParams> delegateSelectionLogParams =
-        delegateSelectionLogsService.fetchTaskSelectionLogs(accountId, taskId);
+    List<DelegateSelectionLogParams> delegateSelectionLogParams = fetchSelectionLogs(accountId, taskId);
 
     assertThat(delegateSelectionLogParams).isNotEmpty();
     assertThat(delegateSelectionLogParams.size()).isEqualTo(1);
@@ -164,8 +166,7 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
                             .build();
 
     delegateSelectionLogsService.logDelegateTaskInfo(task);
-    List<DelegateSelectionLogParams> delegateSelectionLogParams =
-        delegateSelectionLogsService.fetchTaskSelectionLogs(accountId, taskId);
+    List<DelegateSelectionLogParams> delegateSelectionLogParams = fetchSelectionLogs(accountId, taskId);
 
     assertThat(delegateSelectionLogParams).isNotEmpty();
     assertThat(delegateSelectionLogParams.size()).isEqualTo(1);
@@ -209,8 +210,8 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
                                 asList(HttpConnectionExecutionCapability.builder().url("https://google.com").build()))
                             .build();
     delegateSelectionLogsService.logDelegateTaskInfo(task);
-    List<DelegateSelectionLogParams> delegateSelectionLogParams =
-        delegateSelectionLogsService.fetchTaskSelectionLogs(accountId, taskId);
+    delegateSelectionLogsService.purgeSelectionLogs();
+    List<DelegateSelectionLogParams> delegateSelectionLogParams = fetchSelectionLogs(accountId, taskId);
     assertThat(delegateSelectionLogParams).isNotEmpty();
     assertThat(delegateSelectionLogParams.get(0).getMessage()).isEqualTo("[Capability reach URL: https://google.com ]");
   }
@@ -252,8 +253,7 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
     DelegateTask task =
         DelegateTask.builder().uuid(taskId).selectionLogsTrackingEnabled(true).accountId(accountId).build();
     delegateSelectionLogsService.logNonSelectedDelegates(task, nonSelected);
-    List<DelegateSelectionLogParams> delegateSelectionLogParams =
-        delegateSelectionLogsService.fetchTaskSelectionLogs(accountId, taskId);
+    List<DelegateSelectionLogParams> delegateSelectionLogParams = fetchSelectionLogs(accountId, taskId);
 
     assertThat(delegateSelectionLogParams).isNotEmpty();
     assertThat(delegateSelectionLogParams.size()).isEqualTo(4);
@@ -284,8 +284,7 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
     DelegateTask task =
         DelegateTask.builder().uuid(taskId).accountId(accountId).selectionLogsTrackingEnabled(true).build();
     delegateSelectionLogsService.logBroadcastToDelegate(Sets.newHashSet(delegateId), task);
-    List<DelegateSelectionLogParams> delegateSelectionLogParams =
-        delegateSelectionLogsService.fetchTaskSelectionLogs(accountId, taskId);
+    List<DelegateSelectionLogParams> delegateSelectionLogParams = fetchSelectionLogs(accountId, taskId);
     assertThat(delegateSelectionLogParams).isNotEmpty();
     assertThat(delegateSelectionLogParams.size()).isEqualTo(1);
     assertThat(delegateSelectionLogParams.get(0).getConclusion()).isEqualTo(BROADCAST);
@@ -306,44 +305,6 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
-  public void shouldSaveSelectionLog() {
-    DelegateSelectionLog selectionLog = DelegateSelectionLog.builder()
-                                            .accountId(generateUuid())
-                                            .taskId(generateUuid())
-                                            .uuid(generateUuid())
-                                            .message("ffenabled")
-                                            .groupId(generateUuid())
-                                            .build();
-
-    DelegateSelectionLogTaskMetadata taskMetadata = DelegateSelectionLogTaskMetadata.builder()
-                                                        .uuid(generateUuid())
-                                                        .taskId(generateUuid())
-                                                        .accountId(generateUuid())
-                                                        .setupAbstractions(obtainTaskSetupAbstractions())
-                                                        .build();
-
-    delegateSelectionLogsService.save(selectionLog);
-
-    assertThat(wingsPersistence.get(DelegateSelectionLog.class, selectionLog.getUuid())).isNotNull();
-
-    persistence.save(taskMetadata);
-
-    DelegateSelectionLogTaskMetadata savedTaskMetadata =
-        wingsPersistence.get(DelegateSelectionLogTaskMetadata.class, taskMetadata.getUuid());
-
-    assertThat(savedTaskMetadata).isNotNull();
-    assertThat(savedTaskMetadata.getSetupAbstractions()).isNotNull();
-    assertThat(savedTaskMetadata.getSetupAbstractions().get(Cd1SetupFields.APPLICATION))
-        .isEqualTo(taskMetadata.getSetupAbstractions().get(Cd1SetupFields.APPLICATION));
-    assertThat(savedTaskMetadata.getSetupAbstractions().get(Cd1SetupFields.SERVICE))
-        .isEqualTo(taskMetadata.getSetupAbstractions().get(Cd1SetupFields.SERVICE));
-    assertThat(savedTaskMetadata.getSetupAbstractions().get(Cd1SetupFields.ENVIRONMENT))
-        .isEqualTo(taskMetadata.getSetupAbstractions().get(Cd1SetupFields.ENVIRONMENT));
-  }
-
-  @Test
-  @Owner(developers = JENNY)
-  @Category(UnitTests.class)
   public void shouldSaveDuplicates() {
     String taskId = generateUuid();
     String accountId = generateUuid();
@@ -355,6 +316,7 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
       delegateSelectionLogs.forEach(delegateSelectionLog -> delegateSelectionLogsService.save(delegateSelectionLog));
     });
 
+    fetchSelectionLogs(accountId, taskId);
     assertThat(wingsPersistence.createQuery(DelegateSelectionLog.class)
                    .filter(DelegateSelectionLogKeys.taskId, taskId)
                    .filter(DelegateSelectionLogKeys.accountId, accountId)
@@ -377,8 +339,7 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
                             .selectionLogsTrackingEnabled(true)
                             .build();
     delegateSelectionLogsService.logNoEligibleDelegatesToExecuteTask(task);
-    List<DelegateSelectionLogParams> delegateSelectionLogParams =
-        delegateSelectionLogsService.fetchTaskSelectionLogs(accountId, taskId);
+    List<DelegateSelectionLogParams> delegateSelectionLogParams = fetchSelectionLogs(accountId, taskId);
     assertThat(delegateSelectionLogParams).isNotEmpty();
     assertThat(delegateSelectionLogParams.size()).isEqualTo(1);
     assertThat(delegateSelectionLogParams.get(0).getConclusion()).isEqualTo(REJECTED);
@@ -430,5 +391,18 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
                                              .build();
 
     return Arrays.asList(selectionLog1, selectionLog2);
+  }
+
+  private List<DelegateSelectionLogParams> fetchSelectionLogs(String accountId, String taskId) {
+    List<DelegateSelectionLogParams> delegateSelectionLogParams = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      delegateSelectionLogParams = delegateSelectionLogsService.fetchTaskSelectionLogs(accountId, taskId);
+      if (EmptyPredicate.isNotEmpty(delegateSelectionLogParams)) {
+        return delegateSelectionLogParams;
+      }
+      sleep(of(1, SECONDS));
+    }
+
+    return delegateSelectionLogParams;
   }
 }

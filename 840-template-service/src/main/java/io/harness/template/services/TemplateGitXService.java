@@ -15,8 +15,6 @@ import io.harness.template.entity.TemplateEntity;
 
 @OwnedBy(HarnessTeam.PL)
 public interface TemplateGitXService {
-  String getWorkingBranch(String entityRepoURL);
-
   boolean isNewGitXEnabledAndIsRemoteEntity(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo);
 
   boolean isNewGitXEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier);

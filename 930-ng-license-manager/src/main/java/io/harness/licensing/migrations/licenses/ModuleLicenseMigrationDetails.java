@@ -30,6 +30,7 @@ public class ModuleLicenseMigrationDetails implements MigrationDetails {
   public List<Pair<Integer, Class<? extends NGMigration>>> getMigrations() {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, ModuleLicenseMigration.class))
+        .add(Pair.of(2, LocalDevAdminAccountCDLicenseMigration.class))
         .build();
   }
 }

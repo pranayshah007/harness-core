@@ -368,9 +368,19 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
   private boolean forceDeleteInternal(String accountId, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = getEnvironmentsEqualityCriteria(accountId, orgIdentifier, projectIdentifier);
+    List<String> environments =
+        environmentRepository.getEnvironmentIdentifiers(accountId, orgIdentifier, projectIdentifier);
+    if (isEmpty(environments)) {
+      return true;
+    }
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       boolean deleted = environmentRepository.delete(criteria);
-      if (!deleted) {
+      if (deleted) {
+        for (String environmentId : environments) {
+          publishEvent(accountId, orgIdentifier, projectIdentifier, environmentId,
+              EventsFrameworkMetadataConstants.DELETE_ACTION);
+        }
+      } else {
         throw new InvalidRequestException(getScopedErrorMessageForCascadeDeletion(orgIdentifier, projectIdentifier));
       }
       return true;
@@ -737,6 +747,11 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     } catch (Exception ex) {
       throw new InvalidRequestException("Error occurred while merging old and new environment inputs", ex);
     }
+  }
+
+  public List<String> getEnvironmentIdentifiers(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return environmentRepository.getEnvironmentIdentifiers(accountIdentifier, orgIdentifier, projectIdentifier);
   }
   private boolean isForceDeleteEnabled(String accountIdentifier) {
     boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);

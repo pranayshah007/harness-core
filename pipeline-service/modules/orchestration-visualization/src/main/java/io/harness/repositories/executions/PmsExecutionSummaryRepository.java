@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 @HarnessRepo
@@ -28,4 +29,11 @@ public interface PmsExecutionSummaryRepository
       String orgIdentifier, String projectIdentifier, String planExecutionId, boolean notPipelineDeleted);
 
   Optional<PipelineExecutionSummaryEntity> findByPlanExecutionId(String planExecutionId);
+
+  /**
+   * Delete all PipelineExecutionSummaryEntity for given planExecutionIds
+   * Uses - planExecutionId_idx index
+   * @param planExecutionIds
+   */
+  void deleteAllByPlanExecutionIdIn(Set<String> planExecutionIds);
 }

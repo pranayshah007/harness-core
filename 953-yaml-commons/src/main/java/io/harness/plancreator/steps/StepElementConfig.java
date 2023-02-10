@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
+import io.harness.plancreator.policy.PolicyConfig;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -65,6 +66,7 @@ public class StepElementConfig {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN)
   ParameterField<Timeout> timeout;
+  @VariableExpression(skipVariableExpression = true) PolicyConfig enforce;
   @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
   @YamlSchemaTypes(value = {runtime})
@@ -93,7 +95,7 @@ public class StepElementConfig {
   public StepElementConfig(String uuid, String identifier, String name, String description,
       ParameterField<Timeout> timeout, ParameterField<List<FailureStrategyConfig>> failureStrategies, String type,
       StepSpecType stepSpecType, ParameterField<String> skipCondition, ParameterField<StepWhenCondition> when,
-      ParameterField<List<String>> delegateSelectors) {
+      ParameterField<List<String>> delegateSelectors, PolicyConfig enforce) {
     this.uuid = uuid;
     this.identifier = identifier;
     this.name = name;
@@ -105,5 +107,6 @@ public class StepElementConfig {
     this.skipCondition = skipCondition;
     this.delegateSelectors = delegateSelectors;
     this.when = when;
+    this.enforce = enforce;
   }
 }

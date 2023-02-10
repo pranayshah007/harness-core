@@ -19,12 +19,14 @@ import io.harness.cvng.core.entities.NextGenMetricInfo;
 import io.harness.data.structure.EmptyPredicate;
 
 import com.google.common.base.Preconditions;
+import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Singleton
 public class NextGenMetricSourceSpecTransformer
     implements CVConfigToHealthSourceTransformer<NextGenMetricCVConfig, NextGenHealthSourceSpec> {
   @Override

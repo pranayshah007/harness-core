@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -41,6 +42,7 @@ public class TasSwapRollbackBaseStepInfo {
   @JsonIgnore String tasCanarySetupFqn;
   @JsonIgnore String tasResizeFqn;
 
+  @NotNull
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @YamlSchemaTypes({string})

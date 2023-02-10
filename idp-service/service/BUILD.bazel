@@ -22,7 +22,7 @@ java_binary(
         "src/main/java/**/*.java",
     ]),
     data = [":resource"],
-    main_class = "io.harness.idp.app.IDPApplication",
+    main_class = "io.harness.idp.app.IdpApplication",
     visibility = ["//visibility:private"],
     deps = [
         "//:lombok",

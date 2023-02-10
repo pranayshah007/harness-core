@@ -131,7 +131,7 @@ public class InstanceStatsCollectorJob implements Job {
       Account account = accountService.get(accountId);
       if (account == null || account.getLicenseInfo() == null || account.getLicenseInfo().getAccountStatus() == null
           || shouldSkipStatsCollection(account.getLicenseInfo(), account.getUuid())) {
-        log.info("Skipping instance stats since the account is not active / not found");
+        log.info("Skipping instance stats since the account is not active / not found, accountId: {}", accountId);
       } else {
         log.info("Running instance stats collector job");
         executorService.submit(() -> {

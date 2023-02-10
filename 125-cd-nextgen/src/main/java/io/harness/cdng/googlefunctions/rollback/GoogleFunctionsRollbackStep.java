@@ -20,9 +20,7 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
 import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionRollbackRequest;
 import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionCommandResponse;
@@ -44,7 +42,6 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -79,16 +76,8 @@ public class GoogleFunctionsRollbackStep extends CdTaskExecutable<GoogleFunction
 
       StepResponseBuilder stepResponseBuilder = StepResponse.builder().unitProgressList(
           googleFunctionRollbackResponse.getUnitProgressData().getUnitProgresses());
-      InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
-          ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-      GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig =
-          (GcpGoogleFunctionInfraConfig) googleFunctionsHelper.getInfraConfig(infrastructureOutcome, ambiance);
-      List<ServerInstanceInfo> serverInstanceInfoList = googleFunctionsHelper.getServerInstanceInfo(
-          googleFunctionRollbackResponse, gcpGoogleFunctionInfraConfig, infrastructureOutcome.getInfrastructureKey());
-      StepResponse.StepOutcome stepOutcome =
-          instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
-      stepResponseBuilder.stepOutcome(stepOutcome);
-      stepResponse = googleFunctionsHelper.generateStepResponse(googleFunctionRollbackResponse, stepResponseBuilder);
+      stepResponse =
+          googleFunctionsHelper.generateStepResponse(googleFunctionRollbackResponse, stepResponseBuilder, ambiance);
     } catch (Exception e) {
       log.error("Error while processing google function rollback response: {}", ExceptionUtils.getMessage(e), e);
       throw e;
@@ -131,6 +120,7 @@ public class GoogleFunctionsRollbackStep extends CdTaskExecutable<GoogleFunction
             .googleFunctionAsString(googleFunctionPrepareRollbackOutcome.getCloudFunctionAsString())
             .isFirstDeployment(googleFunctionPrepareRollbackOutcome.isFirstDeployment())
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
+            .googleFunctionDeployManifestContent(googleFunctionPrepareRollbackOutcome.getManifestContent())
             .build();
 
     return googleFunctionsHelper

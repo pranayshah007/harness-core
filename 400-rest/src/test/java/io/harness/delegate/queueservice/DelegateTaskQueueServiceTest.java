@@ -20,7 +20,7 @@ import io.harness.delegate.beans.Delegate.DelegateBuilder;
 import io.harness.delegate.beans.DelegateCapacity;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.TaskData;
-import io.harness.hsqs.client.HsqsServiceClient;
+import io.harness.hsqs.client.HsqsClient;
 import io.harness.hsqs.client.model.AckResponse;
 import io.harness.persistence.HPersistence;
 import io.harness.queueservice.DelegateTaskDequeue;
@@ -59,7 +59,7 @@ public class DelegateTaskQueueServiceTest extends WingsBaseTest {
   @Inject @InjectMocks private FilterByDelegateCapacity filterByDelegateCapacity;
   @Inject private DelegateCapacityManagementService delegateCapacityManagementService;
   @Mock private DelegateCache delegateCache;
-  @Mock private HsqsServiceClient hsqsServiceClient;
+  @Mock private HsqsClient hsqsServiceClient;
   @Inject private HPersistence persistence;
 
   @Test

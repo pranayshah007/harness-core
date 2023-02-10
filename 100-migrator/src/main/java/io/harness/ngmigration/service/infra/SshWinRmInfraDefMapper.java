@@ -16,6 +16,8 @@ import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
 import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
+import io.harness.cdng.infra.beans.host.AllHostsFilter;
+import io.harness.cdng.infra.beans.host.HostFilter;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure.PdcInfrastructureBuilder;
@@ -23,6 +25,7 @@ import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure.SshWinRmAwsInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -187,6 +190,7 @@ public class SshWinRmInfraDefMapper implements InfraDefMapper {
       builder.hostAttributes(ParameterField.createValueField(hostAttrs));
     }
 
+    builder.hostFilter(HostFilter.builder().type(HostFilterType.ALL).spec(AllHostsFilter.builder().build()).build());
     return builder.build();
   }
 

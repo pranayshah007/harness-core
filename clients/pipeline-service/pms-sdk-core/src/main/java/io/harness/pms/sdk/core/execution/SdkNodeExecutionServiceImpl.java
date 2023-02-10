@@ -30,6 +30,7 @@ import io.harness.pms.contracts.execution.events.SuspendChainRequest;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.contracts.plan.NodeExecutionEventType;
+import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
 import io.harness.pms.sdk.core.execution.async.AsyncProgressData;
 import io.harness.pms.sdk.core.response.publishers.SdkResponseEventPublisher;
@@ -94,9 +95,10 @@ public class SdkNodeExecutionServiceImpl implements SdkNodeExecutionService {
 
   @Override
   public void resumeNodeExecution(Ambiance ambiance, Map<String, ResponseData> response, boolean asyncError) {
-    Map<String, ByteString> responseBytes = responseDataMapper.toResponseDataProto(response);
+    Map<String, ResponseDataProto> responseDataBytes = responseDataMapper.toResponseDataProtoV2(response);
+
     ResumeNodeExecutionRequest resumeNodeExecutionRequest =
-        ResumeNodeExecutionRequest.newBuilder().putAllResponse(responseBytes).setAsyncError(asyncError).build();
+        ResumeNodeExecutionRequest.newBuilder().putAllResponseData(responseDataBytes).setAsyncError(asyncError).build();
     SdkResponseEventProto sdkResponseEvent = SdkResponseEventProto.newBuilder()
                                                  .setSdkResponseEventType(SdkResponseEventType.RESUME_NODE_EXECUTION)
                                                  .setResumeNodeExecutionRequest(resumeNodeExecutionRequest)

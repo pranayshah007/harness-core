@@ -21,7 +21,6 @@ import static java.util.stream.StreamSupport.stream;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.ChecksumType;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.FileMetadata;
 import io.harness.file.HarnessFile;
@@ -170,14 +169,12 @@ public class MongoFileServiceImpl implements FileService {
         getOrCreateGridFSBucket(fileBucket.representationName()).find(Filters.eq("_id", new ObjectId(fileId)));
     GridFSFile gridFSFile = gridFSFiles.first();
     if (gridFSFile != null) {
-      Document metadata = gridFSFile.getExtraElements();
+      Document metadata = gridFSFile.getMetadata();
       if (metadata == null) {
         fileMetadata = FileMetadata.builder()
                            .fileName(gridFSFile.getFilename())
                            .fileUuid(fileId)
                            .fileLength(gridFSFile.getLength())
-                           .checksumType(ChecksumType.MD5)
-                           .checksum(gridFSFile.getMD5())
                            .build();
       } else {
         Map<String, Object> nonNullMetadata = new HashMap<>();
@@ -189,8 +186,6 @@ public class MongoFileServiceImpl implements FileService {
                            .fileName(gridFSFile.getFilename())
                            .fileUuid(fileId)
                            .fileLength(gridFSFile.getLength())
-                           .checksumType(ChecksumType.MD5)
-                           .checksum(gridFSFile.getMD5())
                            .mimeType(metadata.getString("contentType"))
                            .metadata(nonNullMetadata)
                            .build();

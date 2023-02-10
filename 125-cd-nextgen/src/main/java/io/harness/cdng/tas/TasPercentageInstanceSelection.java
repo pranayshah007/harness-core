@@ -20,6 +20,7 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -34,5 +35,5 @@ public class TasPercentageInstanceSelection implements TasInstanceSelectionBase 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
-  @YamlSchemaTypes({string, number}) ParameterField<String> value;
+  @NotNull @YamlSchemaTypes({string, number}) ParameterField<String> value;
 }

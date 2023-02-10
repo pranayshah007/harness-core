@@ -20,6 +20,7 @@ import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
@@ -46,7 +47,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -94,7 +94,7 @@ public abstract class NgMigrationService {
     return null;
   }
 
-  public abstract List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public abstract YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities);
 
   public boolean canMigrate(CgEntityId id, CgEntityId root, boolean canMigrateAll) {
@@ -116,7 +116,7 @@ public abstract class NgMigrationService {
             .build();
     if (mappingExist) {
       try {
-        YamlDTO yamlDTO = getNGEntity(ngEntityDetail, inputDTO.getAccountIdentifier());
+        YamlDTO yamlDTO = getNGEntity(cgEntityNode, ngEntityDetail, inputDTO.getAccountIdentifier());
         if (yamlDTO == null) {
           return null;
         }
@@ -130,13 +130,14 @@ public abstract class NgMigrationService {
     return null;
   }
 
-  public List<NGYamlFile> getYaml(MigrationInputDTO inputDTO, CgEntityId root, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails getYamls(MigrationInputDTO inputDTO, CgEntityId root,
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId,
+      Map<CgEntityId, NGYamlFile> migratedEntities) {
     if (!isNGEntityExists() || !canMigrate(entityId, root, inputDTO.isMigrateReferencedEntities())) {
-      return new ArrayList<>();
+      return null;
     }
     if (migratedEntities.containsKey(entityId)) {
-      return new ArrayList<>();
+      return null;
     }
     return generateYaml(inputDTO, entities, graph, entityId, migratedEntities);
   }
@@ -160,7 +161,8 @@ public abstract class NgMigrationService {
         .build();
   }
 
-  protected abstract YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier);
+  protected abstract YamlDTO getNGEntity(
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier);
 
   protected abstract boolean isNGEntityExists();
 

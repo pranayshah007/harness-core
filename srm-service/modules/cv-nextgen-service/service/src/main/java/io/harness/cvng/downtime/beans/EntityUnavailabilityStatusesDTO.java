@@ -35,4 +35,5 @@ public class EntityUnavailabilityStatusesDTO {
   @ApiModelProperty(required = true) @NotNull private long startTime;
   @ApiModelProperty(required = true) @NotNull private long endTime;
   @ApiModelProperty(required = true) @NotNull private EntityUnavailabilityStatus status;
+  @ApiModelProperty(required = true) @NotNull private EntitiesRule entitiesRule;
 }

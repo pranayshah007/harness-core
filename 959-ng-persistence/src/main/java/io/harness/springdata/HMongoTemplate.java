@@ -30,7 +30,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
 import org.springframework.data.mongodb.core.DocumentCallbackHandler;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -44,7 +44,7 @@ import org.springframework.data.mongodb.core.convert.MongoConverter;
 import org.springframework.data.mongodb.core.mapreduce.MapReduceOptions;
 import org.springframework.data.mongodb.core.mapreduce.MapReduceResults;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.mongodb.core.query.UpdateDefinition;
 import org.springframework.data.util.CloseableIterator;
 import org.springframework.lang.Nullable;
 
@@ -66,7 +66,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
 
   @Getter private final Subject<NgTracer> tracerSubject = new Subject<>();
 
-  public HMongoTemplate(MongoDbFactory mongoDbFactory, MongoConverter mongoConverter, MongoConfig mongoConfig) {
+  public HMongoTemplate(MongoDatabaseFactory mongoDbFactory, MongoConverter mongoConverter, MongoConfig mongoConfig) {
     super(mongoDbFactory, mongoConverter);
     this.traceMode = mongoConfig.getTraceMode();
     this.maxOperationInMillis = mongoConfig.getMaxOperationTimeInMillis();
@@ -74,7 +74,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
 
   @Nullable
   @Override
-  public <T> T findAndModify(Query query, Update update, Class<T> entityClass) {
+  public <T> T findAndModify(Query query, UpdateDefinition update, Class<T> entityClass) {
     traceQuery(query, entityClass);
     return retry(
         () -> findAndModify(query, update, new FindAndModifyOptions(), entityClass, getCollectionName(entityClass)));
@@ -82,14 +82,14 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
 
   @Nullable
   @Override
-  public <T> T findAndModify(Query query, Update update, FindAndModifyOptions options, Class<T> entityClass) {
+  public <T> T findAndModify(Query query, UpdateDefinition update, FindAndModifyOptions options, Class<T> entityClass) {
     traceQuery(query, entityClass);
     return retry(() -> findAndModify(query, update, options, entityClass, getCollectionName(entityClass)));
   }
 
   @Override
   public <T> T findAndModify(
-      Query query, Update update, FindAndModifyOptions options, Class<T> entityClass, String collectionName) {
+      Query query, UpdateDefinition update, FindAndModifyOptions options, Class<T> entityClass, String collectionName) {
     try {
       traceQuery(query, entityClass);
       if (query.getMeta().getMaxTimeMsec() == null) {

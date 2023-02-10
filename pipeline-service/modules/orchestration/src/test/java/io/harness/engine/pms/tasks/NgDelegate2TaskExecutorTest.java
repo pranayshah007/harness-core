@@ -20,7 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import io.harness.OrchestrationTestBase;
+import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallbackToken;
@@ -59,7 +59,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({DelegateServiceGrpc.DelegateServiceBlockingStub.class})
 @PowerMockIgnore({"javax.security.*", "javax.net.*"})
-public class NgDelegate2TaskExecutorTest extends OrchestrationTestBase {
+public class NgDelegate2TaskExecutorTest extends CategoryTest {
   @Mock private DelegateServiceGrpc.DelegateServiceBlockingStub delegateServiceBlockingStub;
   @Mock private DelegateSyncService delegateSyncService;
   @Mock private DelegateAsyncService delegateAsyncService;
