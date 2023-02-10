@@ -13,11 +13,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.ConnectorTestRule;
 import io.harness.connector.ConnectorsTestBase;
 import io.harness.connector.expression.HostFilterFunctor;
 import io.harness.delegate.beans.connector.pdcconnector.HostDTO;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 
 import com.google.common.collect.Maps;
 import java.util.Map;
@@ -26,9 +29,12 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @OwnedBy(CDP)
 @Slf4j
+@RunWith(GuiceRunner.class)
+@ModuleProvider(ConnectorTestRule.class)
 public class HostFilterFunctorTest extends ConnectorsTestBase {
   private HostFilterFunctor hostFilterFunctor;
 

@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Random;
 
 public interface MongoRuleMixin {
-  enum MongoType { REAL, FAKE }
+  enum MongoType { @Deprecated REAL, FAKE }
 
   default Module mongoTypeModule(List<Annotation> annotations) {
     return new ProviderModule() {

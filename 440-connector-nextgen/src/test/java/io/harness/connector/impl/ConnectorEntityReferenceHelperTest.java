@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorTestRule;
 import io.harness.connector.ConnectorsTestBase;
 import io.harness.connector.utils.TemplateDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -32,6 +33,8 @@ import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
 import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO;
 import io.harness.rule.Owner;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 
 import com.google.protobuf.StringValue;
 import java.util.ArrayList;
@@ -41,11 +44,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
+@RunWith(GuiceRunner.class)
+@ModuleProvider(ConnectorTestRule.class)
 public class ConnectorEntityReferenceHelperTest extends ConnectorsTestBase {
   @Mock IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   @Mock SecretRefInputValidationHelper secretRefInputValidationHelper;
@@ -69,6 +75,7 @@ public class ConnectorEntityReferenceHelperTest extends ConnectorsTestBase {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
   }
+
   @Test
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)

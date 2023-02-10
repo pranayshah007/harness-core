@@ -22,6 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.ConnectorTestRule;
 import io.harness.connector.ConnectorsTestBase;
 import io.harness.connector.entities.embedded.azureconnector.AzureConfig;
 import io.harness.connector.entities.embedded.azureconnector.AzureManualCredential;
@@ -37,6 +38,8 @@ import io.harness.encryption.SecretRefData;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 
 import com.google.inject.Inject;
 import java.util.Optional;
@@ -46,12 +49,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(CDP)
 @Slf4j
+@RunWith(GuiceRunner.class)
+@ModuleProvider(ConnectorTestRule.class)
 public class AzureConnectorTest extends ConnectorsTestBase {
   @Mock SecretRefInputValidationHelper secretRefInputValidationHelper;
   @Mock ConnectorRepository connectorRepository;

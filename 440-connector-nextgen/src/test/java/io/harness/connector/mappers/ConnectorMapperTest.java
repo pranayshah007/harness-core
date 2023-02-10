@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorTestRule;
 import io.harness.connector.ConnectorsTestBase;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.utils.DockerConnectorTestHelper;
@@ -22,6 +23,8 @@ import io.harness.encryption.Scope;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
@@ -30,7 +33,10 @@ import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
+@RunWith(GuiceRunner.class)
+@ModuleProvider(ConnectorTestRule.class)
 public class ConnectorMapperTest extends ConnectorsTestBase {
   @Inject ConnectorMapper connectorMapper;
   private static final String accountIdentifier = "accountIdentifier";
