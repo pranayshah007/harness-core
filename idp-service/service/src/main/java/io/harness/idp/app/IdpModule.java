@@ -7,6 +7,8 @@
 
 package io.harness.idp.app;
 
+import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.events.EventsFrameworkModule;
@@ -30,6 +32,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.queue.QueueController;
+import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.serializer.IdpServiceRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.spec.server.idp.v1.EnvironmentSecretApi;
@@ -132,6 +135,8 @@ public class IdpModule extends AbstractModule {
         });
       }
     });
+    install(new SecretNGManagerClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
 
     bind(IdpConfiguration.class).toInstance(appConfig);
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
