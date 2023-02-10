@@ -10,6 +10,7 @@ package io.harness.ci;
 import io.harness.CIBeansModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.nodes.ActionStepNode;
 import io.harness.beans.steps.nodes.ArtifactoryUploadNode;
@@ -103,8 +104,7 @@ public class CIExecutionServiceModule extends AbstractModule {
   protected void configure() {
     install(CIBeansModule.getInstance());
     install(new io.harness.hsqs.client.HsqsServiceClientModule(
-        ciExecutionServiceConfig.getQueueServiceClient().getQueueServiceConfig(),
-        ciExecutionServiceConfig.getQueueServiceClient().getAuthToken(), "Bearer"));
+        ciExecutionServiceConfig.getQueueServiceClientConfig(), AuthorizationServiceHeader.BEARER.getServiceId()));
     bind(ExecutorService.class)
         .annotatedWith(Names.named("ciRatelimitHandlerExecutor"))
         .toInstance(ThreadPool.create(

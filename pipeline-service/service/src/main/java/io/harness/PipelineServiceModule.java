@@ -371,8 +371,7 @@ public class PipelineServiceModule extends AbstractModule {
     });
     install(new VariableClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
-    install(new HsqsServiceClientModule(this.configuration.getQueueServiceClientConfig(),
-        this.configuration.getQueueServiceSecret(), BEARER.getServiceId()));
+    install(new HsqsServiceClientModule(this.configuration.getQueueServiceClientConfig(), BEARER.getServiceId()));
 
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(PMSOutboxEventHandler.class);

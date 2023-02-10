@@ -85,7 +85,8 @@ public class S3UploadStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.spec.region",
             "pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.description",
             "pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.spec.sourcePath",
-            "pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.name");
+            "pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.name",
+            "pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -97,7 +98,6 @@ public class S3UploadStepVariableCreatorTest extends CategoryTest {
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.type",
             "pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.identifier",
-            "pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.when",
             "pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.startTs",
             "pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.endTs");
 

@@ -7,13 +7,13 @@
 
 package io.harness.cvng.core.services.impl;
 
+import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataCollectionInfo;
 import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.cvng.beans.DataCollectionRequestType;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.SyncDataCollectionRequest;
-import io.harness.cvng.beans.elk.ELKIndexCollectionRequest;
 import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.beans.healthsource.HealthSourceParamValue;
@@ -24,24 +24,26 @@ import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsResponse;
 import io.harness.cvng.core.beans.healthsource.LogRecord;
 import io.harness.cvng.core.beans.healthsource.LogRecordsResponse;
 import io.harness.cvng.core.beans.healthsource.MetricRecordsResponse;
-import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
 import io.harness.cvng.core.beans.healthsource.QueryRecordsRequest;
 import io.harness.cvng.core.beans.healthsource.TimeSeries;
 import io.harness.cvng.core.beans.healthsource.TimeSeriesDataPoint;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricPack;
+import io.harness.cvng.core.entities.NextGenLogCVConfig;
+import io.harness.cvng.core.entities.NextGenMetricCVConfig;
+import io.harness.cvng.core.entities.NextGenMetricInfo;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.DataCollectionInfoMapper;
 import io.harness.cvng.core.services.api.HealthSourceOnboardingService;
 import io.harness.cvng.core.services.api.MetricPackService;
+import io.harness.cvng.core.services.api.NextGenHealthSourceHelper;
 import io.harness.cvng.core.services.api.OnboardingService;
-import io.harness.cvng.core.utils.HealthSourceOnboardMappingUtils;
 import io.harness.cvng.exception.NotImplementedForHealthSourceException;
+import io.harness.cvng.models.VerificationType;
 import io.harness.datacollection.entity.LogDataRecord;
 import io.harness.datacollection.entity.TimeSeriesRecord;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
-import io.harness.health.HealthService;
 import io.harness.ng.core.CorrelationContext;
 import io.harness.serializer.JsonUtils;
 
@@ -53,24 +55,27 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboardingService {
+  private static final String ONBOARDING_PREFIX = "onboarding_";
+  private static final String SAMPLE_METRIC_INDENTIFIER = ONBOARDING_PREFIX + "sample_metric";
+  private static final String DEFAULT_GROUP = ONBOARDING_PREFIX + "default_group";
+  private static final String MONITORED_SERVICE_IDENTIFIER = ONBOARDING_PREFIX + "monitored_service";
+  private static final String QUERY_NAME = ONBOARDING_PREFIX + "query_name";
   @Inject private OnboardingService onboardingService;
 
   @Inject private MetricPackService metricPackService;
 
   @Inject private Map<DataSourceType, DataCollectionInfoMapper> dataSourceTypeDataCollectionInfoMapperMap;
 
-  @Inject private HealthService healthService;
+  @Inject private Map<DataSourceType, NextGenHealthSourceHelper> dataSourceTypeNextGenHelperMapBinder;
 
   @Override
   public HealthSourceRecordsResponse fetchSampleRawRecordsForHealthSource(
       HealthSourceRecordsRequest healthSourceRecordsRequest, ProjectParams projectParams) {
-    DataCollectionRequest<?> request =
-        HealthSourceOnboardMappingUtils.getDataCollectionRequest(healthSourceRecordsRequest);
-
+    NextGenHealthSourceHelper nextGenHealthSourceHelper =
+        dataSourceTypeNextGenHelperMapBinder.get(healthSourceRecordsRequest.getProviderType());
+    DataCollectionRequest<?> request = nextGenHealthSourceHelper.getDataCollectionRequest(healthSourceRecordsRequest);
     OnboardingRequestDTO onboardingRequestDTO =
         OnboardingRequestDTO.builder()
             .dataCollectionRequest(request)
@@ -136,22 +141,37 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
     String orgIdentifier = projectParams.getOrgIdentifier();
     String projectIdentifier = projectParams.getProjectIdentifier();
     CVConfig cvConfig;
-    List<MetricPack> metricPacks = metricPackService.getMetricPacks(
-        accountIdentifier, orgIdentifier, projectIdentifier, queryRecordsRequest.getProviderType());
-    metricPackService.populateDataCollectionDsl(queryRecordsRequest.getProviderType(), metricPacks.get(0));
-    if (queryRecordsRequest.getProviderType() == DataSourceType.SUMOLOGIC_METRICS) {
-      cvConfig =
-          HealthSourceOnboardMappingUtils.getCvConfigForNextGenMetric(queryRecordsRequest, projectParams, metricPacks);
+    DataSourceType providerType = queryRecordsRequest.getProviderType();
+    List<MetricPack> metricPacks =
+        metricPackService.getMetricPacks(accountIdentifier, orgIdentifier, projectIdentifier, providerType);
+    metricPackService.populateDataCollectionDsl(providerType, metricPacks.get(0));
+    if (providerType.isNextGenSpec() && providerType.getVerificationType() == VerificationType.TIME_SERIES) {
+      cvConfig = NextGenMetricCVConfig.builder()
+                     .accountId(projectParams.getAccountIdentifier())
+                     .orgIdentifier(projectParams.getOrgIdentifier())
+                     .projectIdentifier(projectParams.getProjectIdentifier())
+                     .dataSourceType(queryRecordsRequest.getProviderType())
+                     .groupName(DEFAULT_GROUP)
+                     .monitoredServiceIdentifier(MONITORED_SERVICE_IDENTIFIER)
+                     .connectorIdentifier(queryRecordsRequest.getConnectorIdentifier())
+                     .category(CVMonitoringCategory.PERFORMANCE)
+                     .metricInfos(Collections.singletonList(
+                         NextGenMetricInfo.builder()
+                             .query(queryRecordsRequest.getQuery().trim())
+                             .identifier(SAMPLE_METRIC_INDENTIFIER)
+                             .metricName(SAMPLE_METRIC_INDENTIFIER)
+                             .queryParams(queryRecordsRequest.getHealthSourceQueryParams().getQueryParamsEntity())
+                             .build()))
+                     .metricPack(metricPacks.get(0))
+                     .build();
     } else {
       throw new NotImplementedForHealthSourceException("Not Implemented for health source provider.");
     }
 
     DataCollectionInfoMapper<DataCollectionInfo<ConnectorConfigDTO>, CVConfig> dataCollectionInfoMapper =
-        dataSourceTypeDataCollectionInfoMapperMap.get(queryRecordsRequest.getProviderType());
-
+        dataSourceTypeDataCollectionInfoMapperMap.get(providerType);
     DataCollectionInfo<ConnectorConfigDTO> dataCollectionInfo =
         dataCollectionInfoMapper.toDataCollectionInfo(cvConfig, VerificationTask.TaskType.SLI);
-
     dataCollectionInfo.setCollectHostData(false);
     return dataCollectionInfo;
   }
@@ -197,67 +217,38 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
   public HealthSourceParamValuesResponse fetchHealthSourceParamValues(
       HealthSourceParamValuesRequest healthSourceParamValuesRequest, ProjectParams projectParams) {
     healthSourceParamValuesRequest.validate();
-    HealthSourceParamValuesResponse healthSourceParamValuesResponse = HealthSourceParamValuesResponse.builder().build();
-    if (healthSourceParamValuesRequest.getProviderType() == MonitoredServiceDataSourceType.ELASTICSEARCH) {
-      healthSourceParamValuesResponse = getHealthSourceParamValuesResponseForElasticSearch(
-          healthSourceParamValuesRequest, projectParams, healthSourceParamValuesResponse);
-    }
-    return healthSourceParamValuesResponse;
+    DataSourceType dataSourceType =
+        MonitoredServiceDataSourceType.getDataSourceType(healthSourceParamValuesRequest.getProviderType());
+    NextGenHealthSourceHelper nextGenHealthSourceHelper = dataSourceTypeNextGenHelperMapBinder.get(dataSourceType);
+    List<HealthSourceParamValue> healthSourceParamValues =
+        nextGenHealthSourceHelper.fetchHealthSourceParamValues(healthSourceParamValuesRequest, projectParams);
+    return HealthSourceParamValuesResponse.builder()
+        .paramName(healthSourceParamValuesRequest.getParamName())
+        .paramValues(healthSourceParamValues)
+        .build();
   }
-
-  private HealthSourceParamValuesResponse getHealthSourceParamValuesResponseForElasticSearch(
-      HealthSourceParamValuesRequest healthSourceParamValuesRequest, ProjectParams projectParams,
-      HealthSourceParamValuesResponse healthSourceParamValuesResponse) {
-    if (QueryParamsDTO.QueryParamKeys.index.equals(healthSourceParamValuesRequest.getParamName())) {
-      DataCollectionRequest request = ELKIndexCollectionRequest.builder().build();
-      OnboardingRequestDTO onboardingRequestDTO =
-          OnboardingRequestDTO.builder()
-              .dataCollectionRequest(request)
-              .connectorIdentifier(healthSourceParamValuesRequest.getConnectorIdentifier())
-              .accountId(projectParams.getAccountIdentifier())
-              .tracingId(CorrelationContext.getCorrelationId())
-              .orgIdentifier(projectParams.getOrgIdentifier())
-              .projectIdentifier(projectParams.getProjectIdentifier())
-              .build();
-
-      OnboardingResponseDTO response =
-          onboardingService.getOnboardingResponse(projectParams.getAccountIdentifier(), onboardingRequestDTO);
-      List<String> indices = JsonUtils.asList(JsonUtils.asJson(response.getResult()), new TypeReference<>() {});
-      List<HealthSourceParamValue> healthSourceParamValues =
-          Optional.of(indices)
-              .orElse(Collections.emptyList())
-              .stream()
-              .map(index -> HealthSourceParamValue.builder().name(index).value(index).build())
-              .collect(Collectors.toList());
-      healthSourceParamValuesResponse = HealthSourceParamValuesResponse.builder()
-                                            .paramName(healthSourceParamValuesRequest.getParamName())
-                                            .paramValues(healthSourceParamValues)
-                                            .build();
-    } else if (QueryParamsDTO.QueryParamKeys.timeStampFormat.equals(healthSourceParamValuesRequest.getParamName())) {
-      List<HealthSourceParamValue> healthSourceParamValues =
-          healthService.getTimeStampFormats()
-              .stream()
-              .map(timeStampFormat
-                  -> HealthSourceParamValue.builder().name(timeStampFormat).value(timeStampFormat).build())
-              .collect(Collectors.toList());
-      healthSourceParamValuesResponse = HealthSourceParamValuesResponse.builder()
-                                            .paramName(healthSourceParamValuesRequest.getParamName())
-                                            .paramValues(healthSourceParamValues)
-                                            .build();
-    }
-    return healthSourceParamValuesResponse;
-  }
-
   private DataCollectionInfo<ConnectorConfigDTO> getDataCollectionInfoForLog(
       QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams) {
     CVConfig cvConfig;
-    if (queryRecordsRequest.getProviderType().isNextGenSpec()) {
-      cvConfig = HealthSourceOnboardMappingUtils.getCVConfigForNextGenLog(queryRecordsRequest, projectParams);
+    DataSourceType providerType = queryRecordsRequest.getProviderType();
+    if (providerType.isNextGenSpec() && providerType.getVerificationType() == VerificationType.LOG) {
+      cvConfig = NextGenLogCVConfig.builder()
+                     .orgIdentifier(projectParams.getOrgIdentifier())
+                     .projectIdentifier(projectParams.getProjectIdentifier())
+                     .dataSourceType(queryRecordsRequest.getProviderType())
+                     .accountId(projectParams.getAccountIdentifier())
+                     .monitoredServiceIdentifier(MONITORED_SERVICE_IDENTIFIER)
+                     .queryParams(queryRecordsRequest.getHealthSourceQueryParams().getQueryParamsEntity())
+                     .healthSourceParams(queryRecordsRequest.getHealthSourceParams().getHealthSourceParamsEntity())
+                     .query(queryRecordsRequest.getQuery().trim())
+                     .queryName(QUERY_NAME)
+                     .connectorIdentifier(queryRecordsRequest.getConnectorIdentifier())
+                     .build();
     } else {
       throw new NotImplementedForHealthSourceException("Not Implemented for health source provider.");
     }
     DataCollectionInfoMapper<DataCollectionInfo<ConnectorConfigDTO>, CVConfig> dataCollectionInfoMapper =
-        dataSourceTypeDataCollectionInfoMapperMap.get(queryRecordsRequest.getProviderType());
+        dataSourceTypeDataCollectionInfoMapperMap.get(providerType);
     return dataCollectionInfoMapper.toDataCollectionInfo(cvConfig, VerificationTask.TaskType.DEPLOYMENT);
   }
 }

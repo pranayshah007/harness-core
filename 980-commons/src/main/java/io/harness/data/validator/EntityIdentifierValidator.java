@@ -26,6 +26,7 @@ import javax.validation.ConstraintValidatorContext;
 public class EntityIdentifierValidator implements ConstraintValidator<EntityIdentifier, String> {
   // Start with: Alphabets, characters or Underscore
   // Chars Allowed : Alphanumeric, Underscore, $
+  public static final Pattern IDENTIFIER_PATTERN = Pattern.compile("^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$");
   public Pattern identifierPattern;
   public static final Set<String> NOT_ALLOWED_WORDS =
       Stream

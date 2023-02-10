@@ -24,6 +24,7 @@ import io.harness.walktree.visitor.entityreference.EntityReferenceExtractor;
 import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -68,7 +69,9 @@ public class HarnessStoreVisitorHelper implements EntityReferenceExtractor {
   public Set<EntityDetailProtoDTO> getEntityDetailsProtoDTO(ParameterField<List<String>> valuesFiles,
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Map<String, Object> contextMap,
       String overridePathFieldName) {
-    List<String> files = ParameterFieldHelper.getParameterFieldListValue(valuesFiles, false);
+    List<String> files = ParameterFieldHelper.getParameterFieldValue(valuesFiles) instanceof List
+        ? ParameterFieldHelper.getParameterFieldListValue(valuesFiles, false)
+        : Collections.emptyList();
     Set<EntityDetailProtoDTO> result = new HashSet<>(files.size());
     files.forEach(scopedFilePath -> {
       FileReference fileReference =

@@ -60,6 +60,7 @@ public class ServerlessAwsLambdaDeployStepVariableCreatorTest extends CategoryTe
             "pipeline.stages.Serverless_Aws_Lambda.spec.execution.steps.serverless_aws_lambda_deploy_step.timeout",
             "pipeline.stages.Serverless_Aws_Lambda.spec.execution.steps.serverless_aws_lambda_deploy_step.spec.delegateSelectors",
             "pipeline.stages.Serverless_Aws_Lambda.spec.execution.steps.serverless_aws_lambda_deploy_step.name",
-            "pipeline.stages.Serverless_Aws_Lambda.spec.execution.steps.serverless_aws_lambda_deploy_step.spec.commandOptions");
+            "pipeline.stages.Serverless_Aws_Lambda.spec.execution.steps.serverless_aws_lambda_deploy_step.spec.commandOptions",
+            "pipeline.stages.Serverless_Aws_Lambda.spec.execution.steps.serverless_aws_lambda_deploy_step.when");
   }
 }

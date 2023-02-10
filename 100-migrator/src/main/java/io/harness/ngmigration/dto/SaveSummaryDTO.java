@@ -10,6 +10,7 @@ package io.harness.ngmigration.dto;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigrationTrackRespPayload;
+import io.harness.ngmigration.beans.NGSkipDetail;
 
 import software.wings.ngmigration.NGMigrationEntityType;
 
@@ -30,4 +31,5 @@ public class SaveSummaryDTO extends MigrationTrackRespPayload {
   private List<ImportError> errors;
   private List<MigratedDetails> alreadyMigratedDetails;
   private List<MigratedDetails> successfullyMigratedDetails;
+  private List<NGSkipDetail> skipDetails;
 }

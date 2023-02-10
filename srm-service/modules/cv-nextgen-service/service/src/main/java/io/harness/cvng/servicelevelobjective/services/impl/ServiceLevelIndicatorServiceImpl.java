@@ -36,6 +36,10 @@ import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.utils.DateTimeUtils;
+import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
+import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseRequest;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
@@ -103,6 +107,8 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
   @Inject private CompositeSLOService compositeSLOService;
 
   @Inject private SLIRecordService sliRecordService;
+
+  @Inject private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
   @Override
   public SLIOnboardingGraphs getOnboardingGraphs(ProjectParams projectParams, String monitoredServiceIdentifier,
       ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String tracingId) {
@@ -494,5 +500,25 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                             .filter(ServiceLevelIndicatorKeys.monitoredServiceIdentifier, monitoredServiceIdentifier),
         hPersistence.createUpdateOperations(ServiceLevelIndicator.class)
             .set(ServiceLevelIndicatorKeys.enabled, isEnabled));
+  }
+
+  @Override
+  public void enqueueDataCollectionFailureInstanceAndTriggerAnalysis(
+      String verificationTaskId, Instant startTime, Instant endTime, ServiceLevelIndicator serviceLevelIndicator) {
+    entityUnavailabilityStatusesService.create(ProjectParams.builder()
+                                                   .accountIdentifier(serviceLevelIndicator.getAccountId())
+                                                   .orgIdentifier(serviceLevelIndicator.getOrgIdentifier())
+                                                   .projectIdentifier(serviceLevelIndicator.getProjectIdentifier())
+                                                   .build(),
+        Collections.singletonList(EntityUnavailabilityStatusesDTO.builder()
+                                      .orgIdentifier(serviceLevelIndicator.getOrgIdentifier())
+                                      .projectIdentifier(serviceLevelIndicator.getProjectIdentifier())
+                                      .entityType(EntityType.SLO)
+                                      .entityId(serviceLevelIndicator.getUuid())
+                                      .status(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)
+                                      .startTime(startTime.getEpochSecond())
+                                      .endTime(endTime.getEpochSecond())
+                                      .build()));
+    orchestrationService.queueAnalysis(verificationTaskId, startTime, endTime);
   }
 }

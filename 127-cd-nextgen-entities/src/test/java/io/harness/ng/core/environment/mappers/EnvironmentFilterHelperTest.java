@@ -284,6 +284,6 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
     // 1 criteria for org/project
     assertThat(criteriaObj.toJson())
         .isEqualTo(
-            "{\"accountId\": \"accountIdentifier\", \"deleted\": false, \"$and\": [{\"$or\": [{\"orgIdentifier\": null, \"projectIdentifier\": null}]}, {\"$or\": [{\"name\": {\"$regex\": \"qa\", \"$options\": \"i\"}}]}]}");
+            "{\"accountId\": \"accountIdentifier\", \"deleted\": false, \"$and\": [{\"$or\": [{\"orgIdentifier\": null, \"projectIdentifier\": null}]}, {\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"qa\", \"options\": \"i\"}}}]}]}");
   }
 }

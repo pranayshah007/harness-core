@@ -29,8 +29,10 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ngmigration.beans.CustomSecretRequestWrapper;
 import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.ConnectorSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -160,7 +162,7 @@ public class ConnectorMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     SettingAttribute settingAttribute = (SettingAttribute) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, settingAttribute.getName());
@@ -206,11 +208,18 @@ public class ConnectorMigrationService extends NgMigrationService {
                        .ngEntityDetail(ngEntityDetail)
                        .cgBasicInfo(settingAttribute.getCgBasicInfo())
                        .build();
-        return files;
+        return YamlGenerationDetails.builder().yamlFileList(files).build();
       }
       ConnectorType connectorType = connectorImpl.getConnectorType(settingAttribute);
       if (connectorType == null) {
-        return Collections.emptyList();
+        // TODO: @deepakputhraya
+        return YamlGenerationDetails.builder()
+            .skipDetails(Collections.singletonList(NGSkipDetail.builder()
+                                                       .reason("Unsupported/Unrecognized connector in NG")
+                                                       .cgBasicInfo(settingAttribute.getCgBasicInfo())
+                                                       .type(entityId.getType())
+                                                       .build()))
+            .build();
       }
       yamlFile = NGYamlFile.builder()
                      .type(CONNECTOR)
@@ -231,7 +240,7 @@ public class ConnectorMigrationService extends NgMigrationService {
                      .ngEntityDetail(ngEntityDetail)
                      .cgBasicInfo(settingAttribute.getCgBasicInfo())
                      .build();
-      return files;
+      return YamlGenerationDetails.builder().yamlFileList(files).build();
     } finally {
       if (yamlFile != null) {
         files.add(yamlFile);

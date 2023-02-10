@@ -21,6 +21,7 @@ import io.harness.visitor.helpers.variables.StringVariableVisitorHelper;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.yaml.core.VariableExpression;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -63,6 +64,7 @@ public class StringNGVariable implements NGVariable {
   @ApiModelProperty(hidden = true)
   String uuid;
 
+  @JsonIgnore
   @Override
   public ParameterField<?> getCurrentValue() {
     return ParameterField.isNull(value)

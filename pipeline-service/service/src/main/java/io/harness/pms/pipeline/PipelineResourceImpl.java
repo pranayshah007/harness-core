@@ -28,7 +28,7 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperD
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitImportInfoDTO;
-import io.harness.gitaware.helper.MoveConfigRequestDTO;
+import io.harness.gitaware.helper.PipelineMoveConfigRequestDTO;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -111,8 +111,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       String pipelineName, String pipelineDescription, Boolean isDraft, GitEntityCreateInfoDTO gitEntityCreateInfo,
       @NotNull String yaml) {
     String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
-    PipelineEntity pipelineEntity =
-        PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml, isDraft, pipelineVersion);
+    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
+        accountId, orgId, projectId, pipelineName, yaml, isDraft, pipelineVersion);
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
 
@@ -127,8 +127,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       String pipelineName, String pipelineDescription, Boolean isDraft, GitEntityCreateInfoDTO gitEntityCreateInfo,
       @NotNull String yaml) {
     String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
-    PipelineEntity pipelineEntity =
-        PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml, isDraft, pipelineVersion);
+    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
+        accountId, orgId, projectId, pipelineName, yaml, isDraft, pipelineVersion);
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
     PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndCreatePipeline(pipelineEntity, false);
@@ -272,7 +272,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
     PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
-        accountId, orgId, projectId, pipelineId, yaml, ifMatch, isDraft, pipelineVersion);
+        accountId, orgId, projectId, pipelineId, pipelineName, yaml, ifMatch, isDraft, pipelineVersion);
     PipelineCRUDResult pipelineCRUDResult =
         pmsPipelineService.validateAndUpdatePipeline(withVersion, ChangeType.MODIFY, true);
     PipelineEntity updatedEntity = pipelineCRUDResult.getPipelineEntity();
@@ -288,7 +288,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
     PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
-        accountId, orgId, projectId, pipelineId, yaml, ifMatch, isDraft, pipelineVersion);
+        accountId, orgId, projectId, pipelineId, pipelineName, yaml, ifMatch, isDraft, pipelineVersion);
     PipelineCRUDResult pipelineCRUDResult =
         pmsPipelineService.validateAndUpdatePipeline(withVersion, ChangeType.MODIFY, false);
     GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
@@ -507,22 +507,22 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
 
   @Override
   public ResponseDTO<MoveConfigResponse> moveConfig(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, MoveConfigRequestDTO moveConfigRequestDTO) {
-    if (!pipelineIdentifier.equals(moveConfigRequestDTO.getPipelineIdentifier())) {
+      String projectIdentifier, String pipelineIdentifier, PipelineMoveConfigRequestDTO pipelineMoveConfigRequestDTO) {
+    if (!pipelineIdentifier.equals(pipelineMoveConfigRequestDTO.getPipelineIdentifier())) {
       throw new InvalidRequestException("Identifiers given in path param and request body don't match.");
     }
     PipelineCRUDResult pipelineCRUDResult =
         pmsPipelineService.moveConfig(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier,
             MoveConfigOperationDTO.builder()
-                .repoName(moveConfigRequestDTO.getRepoName())
-                .branch(moveConfigRequestDTO.getBranch())
+                .repoName(pipelineMoveConfigRequestDTO.getRepoName())
+                .branch(pipelineMoveConfigRequestDTO.getBranch())
                 .moveConfigOperationType(io.harness.gitaware.helper.MoveConfigOperationType.getMoveConfigType(
-                    moveConfigRequestDTO.getMoveConfigOperationType()))
-                .connectorRef(moveConfigRequestDTO.getConnectorRef())
-                .baseBranch(moveConfigRequestDTO.getBaseBranch())
-                .commitMessage(moveConfigRequestDTO.getCommitMsg())
-                .isNewBranch(moveConfigRequestDTO.getIsNewBranch())
-                .filePath(moveConfigRequestDTO.getFilePath())
+                    pipelineMoveConfigRequestDTO.getMoveConfigOperationType()))
+                .connectorRef(pipelineMoveConfigRequestDTO.getConnectorRef())
+                .baseBranch(pipelineMoveConfigRequestDTO.getBaseBranch())
+                .commitMessage(pipelineMoveConfigRequestDTO.getCommitMsg())
+                .isNewBranch(pipelineMoveConfigRequestDTO.getIsNewBranch())
+                .filePath(pipelineMoveConfigRequestDTO.getFilePath())
                 .build());
     PipelineEntity pipelineEntity = pipelineCRUDResult.getPipelineEntity();
     return ResponseDTO.newResponse(

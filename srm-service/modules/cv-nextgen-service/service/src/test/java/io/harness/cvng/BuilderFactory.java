@@ -88,7 +88,11 @@ import io.harness.cvng.core.beans.CustomHealthMetricDefinition;
 import io.harness.cvng.core.beans.CustomHealthRequestDefinition;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.HealthSourceQueryType;
+import io.harness.cvng.core.beans.RiskCategory;
 import io.harness.cvng.core.beans.RiskProfile;
+import io.harness.cvng.core.beans.healthsource.HealthSourceParamsDTO;
+import io.harness.cvng.core.beans.healthsource.QueryDefinition;
+import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO.ChangeSourceDTOBuilder;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
@@ -107,7 +111,12 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CustomHealthS
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CustomHealthSourceMetricSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricResponseMapping;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec.NextGenHealthSourceSpecBuilder;
+import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.IgnoreMetricThresholdSpec;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricCustomThresholdActions;
+import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
+import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdCriteriaType;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
@@ -178,6 +187,7 @@ import io.harness.cvng.downtime.beans.DowntimeScope;
 import io.harness.cvng.downtime.beans.DowntimeSpecDTO;
 import io.harness.cvng.downtime.beans.DowntimeType;
 import io.harness.cvng.downtime.beans.EntityDetails;
+import io.harness.cvng.downtime.beans.EntityIdentifiersRule;
 import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
@@ -437,6 +447,62 @@ public class BuilderFactory {
           { add(TimeSeriesMetricPackDTO.builder().identifier(cvMonitoringCategory.getDisplayName()).build()); }
         })
         .build();
+  }
+
+  public NextGenHealthSourceSpecBuilder createNextGenHealthSourceSpecMetric(
+      String identifier, DataSourceType dataSourceType) {
+    return NextGenHealthSourceSpec.builder()
+        .healthSourceParams(HealthSourceParamsDTO.builder().build())
+        .dataSourceType(DataSourceType.SUMOLOGIC_METRICS)
+        .queryDefinitions(List.of(
+            QueryDefinition.builder()
+                .name("sample_metric_name")
+                .identifier(identifier)
+                .groupName("sample_group")
+                .query("metric=Mem_UsedPercent")
+                .liveMonitoringEnabled(false)
+                .continuousVerificationEnabled(true)
+                .sliEnabled(false)
+                .riskProfile(RiskProfile.builder()
+                                 .riskCategory(RiskCategory.PERFORMANCE_OTHER)
+                                 .thresholdTypes(List.of(TimeSeriesThresholdType.ACT_WHEN_LOWER))
+                                 .build())
+                .queryParams(QueryParamsDTO.builder().serviceInstanceField("_sourceHost").build())
+                .metricThresholds(List.of(
+                    io.harness.cvng.core.beans.monitoredService.MetricThreshold.builder()
+                        .metricName("sample_metric_name")
+                        .metricIdentifier("sample_identifier")
+                        .metricType("string")
+                        .groupName("sample_group")
+                        .type(MetricThresholdActionType.IGNORE)
+                        .spec(IgnoreMetricThresholdSpec.builder().build())
+                        .criteria(io.harness.cvng.core.beans.monitoredService.MetricThreshold.MetricThresholdCriteria
+                                      .builder()
+                                      .type(MetricThresholdCriteriaType.ABSOLUTE)
+                                      .spec(io.harness.cvng.core.beans.monitoredService.MetricThreshold
+                                                .MetricThresholdCriteria.MetricThresholdCriteriaSpec.builder()
+                                                .greaterThan(0d)
+                                                .lessThan(0d)
+                                                .build())
+                                      .build())
+                        .build()))
+                .build()))
+        .connectorRef("account.sumologic_try_2");
+  }
+
+  public NextGenHealthSourceSpecBuilder createNextGenHealthSourceSpecLogs(
+      String identifier, DataSourceType dataSourceType) {
+    return NextGenHealthSourceSpec.builder()
+        .healthSourceParams(HealthSourceParamsDTO.builder().build())
+        .dataSourceType(dataSourceType)
+        .queryDefinitions(List.of(QueryDefinition.builder()
+                                      .name("sample_log_name")
+                                      .identifier(identifier)
+                                      .groupName("default_group")
+                                      .query("_sourceCategory=windows/performance")
+                                      .queryParams(QueryParamsDTO.builder().serviceInstanceField("_sourceHost").build())
+                                      .build()))
+        .connectorRef("account.sumologic_try_2");
   }
 
   public CVNGStepInfoBuilder cvngStepInfoBuilder() {
@@ -1796,8 +1862,11 @@ public class BuilderFactory {
         .enabled(true)
         .tags(new HashMap<>())
         .scope(DowntimeScope.PROJECT)
-        .entityRefs(Collections.singletonList(
-            EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+        .entitiesRule(
+            EntityIdentifiersRule.builder()
+                .entityIdentifiers(Collections.singletonList(
+                    EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+                .build())
         .spec(DowntimeSpecDTO.builder()
                   .type(DowntimeType.ONE_TIME)
                   .spec(OnetimeDowntimeSpec.builder()
@@ -1828,8 +1897,11 @@ public class BuilderFactory {
         .enabled(true)
         .tags(new HashMap<>())
         .scope(DowntimeScope.PROJECT)
-        .entityRefs(Collections.singletonList(
-            EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+        .entitiesRule(
+            EntityIdentifiersRule.builder()
+                .entityIdentifiers(Collections.singletonList(
+                    EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+                .build())
         .spec(DowntimeSpecDTO.builder()
                   .type(DowntimeType.ONE_TIME)
                   .spec(OnetimeDowntimeSpec.builder()
@@ -1855,8 +1927,11 @@ public class BuilderFactory {
         .enabled(true)
         .tags(new HashMap<>())
         .scope(DowntimeScope.PROJECT)
-        .entityRefs(Collections.singletonList(
-            EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+        .entitiesRule(
+            EntityIdentifiersRule.builder()
+                .entityIdentifiers(Collections.singletonList(
+                    EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+                .build())
         .spec(DowntimeSpecDTO.builder()
                   .type(DowntimeType.RECURRING)
                   .spec(RecurringDowntimeSpec.builder()

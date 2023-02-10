@@ -161,6 +161,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       PipelineEntity createdEntity;
       PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
       createdEntity = pipelineCRUDResult.getPipelineEntity();
+      try {
+        pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(
+            createdEntity, GitAwareContextHelper.getBranchInRequest(), governanceMetadata, Action.CRUD);
+      } catch (Exception e) {
+        log.error("Unable to save validation event for Pipeline: " + e.getMessage(), e);
+      }
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(createdEntity).build();
     } catch (IOException ex) {
       log.error(format(INVALID_YAML_IN_NODE, YamlUtils.getErrorNodePartialFQN(ex)), ex);
@@ -204,10 +210,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     String sourcePipelineEntityYaml = sourcePipelineEntity.getYaml();
 
     String destYaml;
+    String pipelineName = null;
     String sourcePipelineVersion = sourcePipelineEntity.getHarnessVersion();
     switch (sourcePipelineVersion) {
       case PipelineVersion.V1:
         destYaml = pipelineCloneHelper.updatePipelineMetadataInSourceYamlV1(clonePipelineDTO, sourcePipelineEntityYaml);
+        pipelineName = clonePipelineDTO.getDestinationConfig().getPipelineName();
         break;
       default:
         destYaml = pipelineCloneHelper.updatePipelineMetadataInSourceYaml(
@@ -215,7 +223,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
     PipelineEntity destPipelineEntity =
         PMSPipelineDtoMapper.toPipelineEntity(accountId, clonePipelineDTO.getDestinationConfig().getOrgIdentifier(),
-            clonePipelineDTO.getDestinationConfig().getProjectIdentifier(), destYaml, false, sourcePipelineVersion);
+            clonePipelineDTO.getDestinationConfig().getProjectIdentifier(), pipelineName, destYaml, false,
+            sourcePipelineVersion);
 
     PipelineCRUDResult pipelineCRUDResult = validateAndCreatePipeline(destPipelineEntity, false);
     GovernanceMetadata destGovernanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
@@ -390,6 +399,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
     }
     PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
+    try {
+      pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(
+          updatedEntity, GitAwareContextHelper.getBranchInRequest(), governanceMetadata, Action.CRUD);
+    } catch (Exception e) {
+      log.error("Unable to save validation event for Pipeline: " + e.getMessage(), e);
+    }
     return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(updatedEntity).build();
   }
 
@@ -615,8 +630,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     String pipelineVersion = pipelineVersion(accountId, importedPipelineYAML);
     PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadata(orgIdentifier, projectIdentifier,
         pipelineIdentifier, pipelineImportRequest, importedPipelineYAML, pipelineVersion);
-    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
-        accountId, orgIdentifier, projectIdentifier, importedPipelineYAML, false, pipelineVersion);
+    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgIdentifier, projectIdentifier,
+        pipelineImportRequest.getPipelineName(), importedPipelineYAML, false, pipelineVersion);
     pipelineEntity.setRepoURL(repoUrl);
 
     try {

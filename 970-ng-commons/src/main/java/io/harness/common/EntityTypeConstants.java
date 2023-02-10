@@ -213,4 +213,6 @@ public interface EntityTypeConstants {
   String ASG_BLUE_GREEN_SWAP_SERVICE_STEP = "AsgBlueGreenSwapService";
 
   String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
+
+  String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
 }

@@ -21,6 +21,7 @@ import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.TemplateSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -144,7 +145,7 @@ public class TemplateMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     Template template = (Template) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, template.getName());
@@ -184,9 +185,9 @@ public class TemplateMigrationService extends NgMigrationService {
               .build();
       files.add(ngYamlFile);
       migratedEntities.putIfAbsent(entityId, ngYamlFile);
-      return files;
+      return YamlGenerationDetails.builder().yamlFileList(files).build();
     }
-    return new ArrayList<>();
+    return null;
   }
 
   private JsonNode getSpec(JsonNode configSpec, Template template) {

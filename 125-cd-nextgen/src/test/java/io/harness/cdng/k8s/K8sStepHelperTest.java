@@ -22,6 +22,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.KUBERNETES_CLUST
 import static io.harness.delegate.beans.connector.ConnectorType.OCI_HELM_REPO;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
@@ -31,6 +32,7 @@ import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -552,6 +554,39 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(result).isFalse();
 
     result = k8sStepHelper.getSkipResourceVersioning(ValuesManifestOutcome.builder().build());
+    assertThat(result).isFalse();
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testShouldReturnEnableDeclarativeRollback() {
+    boolean result = k8sStepHelper.isDeclarativeRollbackEnabled(
+        K8sManifestOutcome.builder().enableDeclarativeRollback(ParameterField.createValueField(true)).build());
+    assertThat(result).isTrue();
+    result = k8sStepHelper.isDeclarativeRollbackEnabled(
+        K8sManifestOutcome.builder().enableDeclarativeRollback(ParameterField.createValueField(false)).build());
+    assertThat(result).isFalse();
+    result = k8sStepHelper.isDeclarativeRollbackEnabled(
+        HelmChartManifestOutcome.builder().enableDeclarativeRollback(ParameterField.createValueField(true)).build());
+    assertThat(result).isTrue();
+    result = k8sStepHelper.isDeclarativeRollbackEnabled(
+        HelmChartManifestOutcome.builder().enableDeclarativeRollback(ParameterField.createValueField(false)).build());
+    assertThat(result).isFalse();
+    result = k8sStepHelper.isDeclarativeRollbackEnabled(
+        KustomizeManifestOutcome.builder().enableDeclarativeRollback(ParameterField.createValueField(true)).build());
+    assertThat(result).isTrue();
+    result = k8sStepHelper.isDeclarativeRollbackEnabled(
+        KustomizeManifestOutcome.builder().enableDeclarativeRollback(ParameterField.createValueField(false)).build());
+    assertThat(result).isFalse();
+    result = k8sStepHelper.isDeclarativeRollbackEnabled(
+        OpenshiftManifestOutcome.builder().enableDeclarativeRollback(ParameterField.createValueField(true)).build());
+    assertThat(result).isTrue();
+    result = k8sStepHelper.isDeclarativeRollbackEnabled(
+        OpenshiftManifestOutcome.builder().enableDeclarativeRollback(ParameterField.createValueField(false)).build());
+    assertThat(result).isFalse();
+
+    result = k8sStepHelper.isDeclarativeRollbackEnabled(ValuesManifestOutcome.builder().build());
     assertThat(result).isFalse();
   }
 
@@ -3081,7 +3116,8 @@ public class K8sStepHelperTest extends CategoryTest {
 
     assertThat(response.getPassThroughData()).isInstanceOf(StepExceptionPassThroughData.class);
     StepExceptionPassThroughData stepExceptionData = (StepExceptionPassThroughData) response.getPassThroughData();
-    assertThat(stepExceptionData.getErrorMessage()).isEqualTo(ExceptionUtils.getMessage(thrownException));
+    assertThat(stepExceptionData.getErrorMessage())
+        .isEqualTo(format("Error while fetching values yaml: %s", ExceptionUtils.getMessage(thrownException)));
     List<UnitProgress> unitProgresses = stepExceptionData.getUnitProgressData().getUnitProgresses();
     assertThat(unitProgresses).hasSize(2);
     assertThat(unitProgresses.get(0).getEndTime()).isNotZero();

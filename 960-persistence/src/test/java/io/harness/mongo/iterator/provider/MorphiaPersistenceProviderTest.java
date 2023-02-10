@@ -39,8 +39,7 @@ public class MorphiaPersistenceProviderTest extends PersistenceTestBase {
         persistenceProvider.createQuery(5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations, null, false)
             .toString()
             .replace(" ", ""))
-        .isEqualTo(
-            "{{\"$or\":[{\"nextIterations\":{\"$lt\":{\"$numberLong\":\"5\"}}},{\"nextIterations\":{\"$exists\":false}}]}}");
+        .isEqualTo("{{\"$or\":[{\"nextIterations\":{\"$lt\":5}},{\"nextIterations\":{\"$exists\":false}}]}}");
   }
 
   @Test
@@ -60,7 +59,7 @@ public class MorphiaPersistenceProviderTest extends PersistenceTestBase {
             .toString()
             .replace(" ", ""))
         .isEqualTo(
-            "{{\"name\":\"foo\",\"$or\":[{\"nextIterations\":{\"$lt\":{\"$numberLong\":\"5\"}}},{\"nextIterations\":{\"$exists\":false}}]}}");
+            "{{\"name\":\"foo\",\"$or\":[{\"nextIterations\":{\"$lt\":5}},{\"nextIterations\":{\"$exists\":false}}]}}");
   }
 
   @Test
@@ -76,12 +75,15 @@ public class MorphiaPersistenceProviderTest extends PersistenceTestBase {
 
     assertThat(query.toString().replace(" ", ""))
         .isEqualTo("{{\"$and\":[{\"name\":{\"$exists\":true}},{\"name\":\"foo\"}]}}");
-    assertThat(
+
+    final String stringQuery =
         persistenceProvider
             .createQuery(5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander, false)
             .toString()
-            .replace(" ", ""))
+            .replace(" ", "");
+
+    assertThat(stringQuery)
         .isEqualTo(
-            "{{\"$and\":[{\"name\":{\"$exists\":true}},{\"name\":\"foo\"}],\"$or\":[{\"nextIterations\":{\"$lt\":{\"$numberLong\":\"5\"}}},{\"nextIterations\":{\"$exists\":false}}]}}");
+            "{{\"$and\":[{\"name\":{\"$exists\":true}},{\"name\":\"foo\"}],\"$or\":[{\"nextIterations\":{\"$lt\":5}},{\"nextIterations\":{\"$exists\":false}}]}}");
   }
 }

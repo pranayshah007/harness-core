@@ -16,6 +16,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -125,11 +126,12 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgStoreManifestsContent(asgStepExecutorParams.getAsgStoreManifestsContent())
-            .skipMatching(Boolean.TRUE.equals(asgSpecParameters.getSkipMatching().getValue()))
+            .skipMatching(ParameterFieldHelper.getBooleanParameterFieldValue(asgSpecParameters.getSkipMatching()))
             .useAlreadyRunningInstances(
-                Boolean.TRUE.equals(asgSpecParameters.getUseAlreadyRunningInstances().getValue()))
-            .instanceWarmup(asgSpecParameters.getInstanceWarmup().getValue())
-            .minimumHealthyPercentage(asgSpecParameters.getMinimumHealthyPercentage().getValue())
+                ParameterFieldHelper.getBooleanParameterFieldValue(asgSpecParameters.getUseAlreadyRunningInstances()))
+            .instanceWarmup(ParameterFieldHelper.getIntegerParameterFieldValue(asgSpecParameters.getInstanceWarmup()))
+            .minimumHealthyPercentage(
+                ParameterFieldHelper.getIntegerParameterFieldValue(asgSpecParameters.getMinimumHealthyPercentage()))
             .amiImageId(amiImageId)
             .build();
 

@@ -36,6 +36,8 @@ import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.validation.async.beans.Action;
+import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
@@ -59,6 +61,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private GitSyncSdkService gitSyncSdkService;
   @Mock private PMSPipelineRepository pipelineRepository;
   @Mock private EntitySetupUsageClient entitySetupUsageClient;
+  @Mock private PipelineAsyncValidationService pipelineAsyncValidationService;
 
   String accountIdentifier = "acc";
   String orgIdentifier = "org";
@@ -71,7 +74,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     pipelineService = new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper,
         pmsPipelineTemplateHelper, null, null, gitSyncSdkService, null, null, null,
-        new NoopPipelineSettingServiceImpl(), entitySetupUsageClient, null);
+        new NoopPipelineSettingServiceImpl(), entitySetupUsageClient, pipelineAsyncValidationService);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)
@@ -108,6 +111,9 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     assertThat(pipelineEntity).isEqualTo(pipelineEntitySaved);
     verify(pipelineServiceHelper, times(1))
         .sendPipelineSaveTelemetryEvent(pipelineEntitySaved, "creating new pipeline");
+    verify(pipelineAsyncValidationService, times(1))
+        .createRecordForSuccessfulSyncValidation(
+            pipelineEntitySaved, null, GovernanceMetadata.newBuilder().build(), Action.CRUD);
   }
 
   @Test

@@ -14,6 +14,7 @@ import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CvNextGenTestBase;
@@ -25,17 +26,19 @@ import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
-import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityFilterService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityInstancesHandlerService;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,7 +46,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class SLIDataUnavailabilityFilterServiceImplTest extends CvNextGenTestBase {
-  @Inject SLIDataUnavailabilityFilterService sliDataUnavailabilityFilterService;
+  @Inject SLIDataUnavailabilityInstancesHandlerService sliDataUnavailabilityFilterService;
 
   @Mock EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
 
@@ -58,6 +61,9 @@ public class SLIDataUnavailabilityFilterServiceImplTest extends CvNextGenTestBas
     MockitoAnnotations.initMocks(this);
     builderFactory = BuilderFactory.getDefault();
     clock = CVNGTestConstants.FIXED_TIME_FOR_TESTS;
+    FieldUtils.writeField(sliDataUnavailabilityFilterService, "entityUnavailabilityStatusesService",
+        entityUnavailabilityStatusesService, true);
+    FieldUtils.writeField(sliDataUnavailabilityFilterService, "downtimeService", downtimeService, true);
   }
 
   @Test
@@ -73,19 +79,16 @@ public class SLIDataUnavailabilityFilterServiceImplTest extends CvNextGenTestBas
         builderFactory.getSLOEntityUnavailabilityStatusesDTO();
     List<EntityUnavailabilityStatusesDTO> statusesDTOS =
         List.of(downtimeEntityUnavailabilityStatusesDTO, sloEntityUnavailabilityStatusesDTO);
-    doReturn(statusesDTOS)
-        .when(entityUnavailabilityStatusesService)
-        .getAllInstances(builderFactory.getProjectParams(), startTime.getEpochSecond(),
-            startTime.getEpochSecond() + Duration.ofMinutes(10).toSeconds());
+    doReturn(statusesDTOS).when(entityUnavailabilityStatusesService).getAllInstances(any(), any(), any());
     doReturn(Collections.singletonList(downtimeEntityUnavailabilityStatusesDTO))
         .when(downtimeService)
-        .filterDowntimeInstancesOnMonitoredService(builderFactory.getProjectParams(), statusesDTOS, "msIdentifier");
-    List<SLIRecordParam> updatedSliRecordParams =
-        sliDataUnavailabilityFilterService.filterSLIRecordsToSkip(sliRecordParams, builderFactory.getProjectParams(),
-            startTime.getEpochSecond(), startTime.getEpochSecond() + Duration.ofMinutes(10).toSeconds(), "msIdentifier",
-            sloEntityUnavailabilityStatusesDTO.getEntityId());
+        .filterDowntimeInstancesOnMonitoredService(any(), any(), any());
+    List<SLIRecordParam> updatedSliRecordParams = sliDataUnavailabilityFilterService.filterSLIRecordsToSkip(
+        sliRecordParams, builderFactory.getProjectParams(), startTime, startTime.plus(10, ChronoUnit.MINUTES),
+        "msIdentifier", sloEntityUnavailabilityStatusesDTO.getEntityId());
     assertThat(updatedSliRecordParams.size()).isEqualTo(10);
     assertThat(updatedSliRecordParams.get(9).getSliState()).isEqualTo(SKIP_DATA);
+    assertThat(updatedSliRecordParams.get(8).getSliState()).isEqualTo(SKIP_DATA);
   }
 
   private List<SLIRecordParam> getSLIRecordParam(Instant startTime, List<SLIState> sliStates) {

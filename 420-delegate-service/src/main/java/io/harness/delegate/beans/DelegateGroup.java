@@ -49,6 +49,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateGroup implements PersistentEntity, UuidAware {
   public static final Duration TTL = ofDays(7);
+  // Custom limit for delegate-name as 63 characters because kubernetes component name can be at most 63 characters.
+  public static final int MAX_LENGTH_SUPPORTED_BY_DELEGATE = 63;
 
   @Id @NotNull private String uuid;
 
@@ -78,7 +80,7 @@ public class DelegateGroup implements PersistentEntity, UuidAware {
 
   @FdTtlIndex private Date validUntil;
 
-  @EntityIdentifier private String identifier;
+  @EntityIdentifier(maxLength = MAX_LENGTH_SUPPORTED_BY_DELEGATE) private String identifier;
 
   private long upgraderLastUpdated;
 

@@ -33,8 +33,10 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.InfraDefSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -202,7 +204,7 @@ public class InfraMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     InfrastructureDefinition infra = (InfrastructureDefinition) entities.get(entityId).getEntity();
     MigratorExpressionUtils.render(infra, inputDTO.getCustomExpressions());
@@ -224,7 +226,13 @@ public class InfraMigrationService extends NgMigrationService {
         infraDefMapper.getSpec(inputDTO, infra, migratedEntities, entities, elastigroupConfigurations);
     if (infraSpec == null) {
       log.error(String.format("We could not migrate the infra %s", infra.getUuid()));
-      return Collections.emptyList();
+      return YamlGenerationDetails.builder()
+          .skipDetails(Collections.singletonList(NGSkipDetail.builder()
+                                                     .type(entityId.getType())
+                                                     .cgBasicInfo(infra.getCgBasicInfo())
+                                                     .reason("Unknown infra type or Failed to migrate the infra")
+                                                     .build()))
+          .build();
     }
     InfrastructureConfig infrastructureConfig =
         InfrastructureConfig.builder()
@@ -263,7 +271,7 @@ public class InfraMigrationService extends NgMigrationService {
             .build();
     files.add(ngYamlFile);
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
-    return files;
+    return YamlGenerationDetails.builder().yamlFileList(files).build();
   }
 
   @Override

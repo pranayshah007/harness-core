@@ -18,7 +18,11 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import io.harness.account.AccountClient;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.license.CILicenseService;
 import io.harness.ci.validation.CIAccountValidationServiceImpl;
+import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseType;
+import io.harness.licensing.beans.summary.CILicenseSummaryDTO;
 import io.harness.ng.core.account.AccountTrustLevel;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.rest.RestResponse;
@@ -40,7 +44,8 @@ public class CIAccountValidationServiceTest extends CIExecutionTestBase {
   @InjectMocks CIAccountValidationServiceImpl accountValidationService;
   @Mock UserClient userClient;
   @Mock AccountClient accountClient;
-
+  @Mock CILicenseService ciLicenseService;
+  static final String accountId = "ACCOUNT_ID";
   @Before
   public void setup() {
     initMocks(this);
@@ -64,7 +69,7 @@ public class CIAccountValidationServiceTest extends CIExecutionTestBase {
     when(userClient.listUsersEmails(any(String.class))).thenReturn(userEmailsCall);
     when(accountClient.getAccountTrustLevel(any(String.class))).thenReturn(accountTrustLevelCall);
 
-    assertThat(accountValidationService.isAccountValidForExecution("ACCOUNT_ID")).isTrue();
+    assertThat(accountValidationService.isAccountValidForExecution(accountId)).isTrue();
   }
 
   @Test
@@ -79,14 +84,39 @@ public class CIAccountValidationServiceTest extends CIExecutionTestBase {
     userInfos.add(userInfo);
 
     when(accountTrustLevelCall.execute()).thenReturn(Response.success(new RestResponse<>(AccountTrustLevel.NEW_USER)));
-
+    when(ciLicenseService.getLicenseSummary(any(String.class)))
+        .thenReturn(CILicenseSummaryDTO.builder().licenseType(LicenseType.TRIAL).edition(Edition.FREE).build());
     when(accountClient.getAccountTrustLevel(any(String.class))).thenReturn(accountTrustLevelCall);
 
     boolean isValid = false;
     try {
-      isValid = accountValidationService.isAccountValidForExecution("ACCOUNT_ID");
+      isValid = accountValidationService.isAccountValidForExecution(accountId);
     } catch (Exception e) {
     }
-    assertThat(isValid).isFalse();
+    assertThat(isValid).isTrue();
+  }
+
+  @Test
+  @Owner(developers = HEN)
+  @Category(UnitTests.class)
+  public void testAccountValidationForInvalidDomainWithPayingStatus() throws IOException {
+    Call<RestResponse<List<UserInfo>>> userEmailsCall = mock(Call.class);
+    Call<RestResponse<Integer>> accountTrustLevelCall = mock(Call.class);
+
+    UserInfo userInfo = UserInfo.builder().email("test@xyz.com").build();
+    ArrayList<UserInfo> userInfos = new ArrayList<UserInfo>();
+    userInfos.add(userInfo);
+
+    when(accountTrustLevelCall.execute()).thenReturn(Response.success(new RestResponse<>(AccountTrustLevel.NEW_USER)));
+    when(ciLicenseService.getLicenseSummary(any(String.class)))
+        .thenReturn(CILicenseSummaryDTO.builder().licenseType(LicenseType.PAID).edition(Edition.FREE).build());
+    when(accountClient.getAccountTrustLevel(any(String.class))).thenReturn(accountTrustLevelCall);
+
+    boolean isValid = false;
+    try {
+      isValid = accountValidationService.isAccountValidForExecution(accountId);
+    } catch (Exception e) {
+    }
+    assertThat(isValid).isTrue();
   }
 }

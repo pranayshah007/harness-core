@@ -14,10 +14,18 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.PlanExecutionMetadata;
 
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.data.repository.CrudRepository;
 
 @OwnedBy(PIPELINE)
 @HarnessRepo
 public interface PlanExecutionMetadataRepository extends CrudRepository<PlanExecutionMetadata, String> {
   Optional<PlanExecutionMetadata> findByPlanExecutionId(String planExecutionId);
+
+  /**
+   * Delete all PlanExecutionMetadata for given planExecutionIds
+   * Uses - planExecutionId_idx index
+   * @param planExecutionIds
+   */
+  void deleteAllByPlanExecutionIdIn(Set<String> planExecutionIds);
 }

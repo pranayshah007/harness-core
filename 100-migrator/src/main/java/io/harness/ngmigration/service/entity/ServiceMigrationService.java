@@ -41,8 +41,10 @@ import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.ServiceSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -273,7 +275,7 @@ public class ServiceMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     Service service = (Service) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, service.getName());
@@ -323,7 +325,13 @@ public class ServiceMigrationService extends NgMigrationService {
         ServiceV2Factory.getService2Mapper(service).getServiceDefinition(inputDTO, entities, graph, service,
             migratedEntities, manifestConfigWrapperList, configFileWrapperList, startupScriptConfigurations);
     if (serviceDefinition == null) {
-      return Collections.emptyList();
+      return YamlGenerationDetails.builder()
+          .skipDetails(Collections.singletonList(NGSkipDetail.builder()
+                                                     .reason("Unsupported Service")
+                                                     .cgBasicInfo(service.getCgBasicInfo())
+                                                     .type(entityId.getType())
+                                                     .build()))
+          .build();
     }
 
     NGServiceConfig serviceYaml = NGServiceConfig.builder()
@@ -349,7 +357,7 @@ public class ServiceMigrationService extends NgMigrationService {
                                 .cgBasicInfo(service.getCgBasicInfo())
                                 .build();
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
-    return Collections.singletonList(ngYamlFile);
+    return YamlGenerationDetails.builder().yamlFileList(Collections.singletonList(ngYamlFile)).build();
   }
 
   @Override

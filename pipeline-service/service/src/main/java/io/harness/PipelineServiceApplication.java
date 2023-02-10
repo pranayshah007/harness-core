@@ -49,6 +49,8 @@ import io.harness.engine.timeouts.TimeoutInstanceRemover;
 import io.harness.event.OrchestrationEndGraphHandler;
 import io.harness.event.OrchestrationLogPublisher;
 import io.harness.event.OrchestrationStartEventHandler;
+import io.harness.event.PipelineExecutionSummaryDeleteObserver;
+import io.harness.event.PlanExecutionMetadataDeleteObserver;
 import io.harness.exception.GeneralException;
 import io.harness.execution.consumers.InitiateNodeEventRedisConsumer;
 import io.harness.execution.consumers.SdkResponseEventRedisConsumer;
@@ -502,6 +504,13 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         injector.getInstance(Key.get(PipelineStatusUpdateEventHandler.class)));
     planExecutionService.getPlanStatusUpdateSubject().register(
         injector.getInstance(Key.get(OrchestrationLogPublisher.class)));
+
+    // Register PlanExecutionDeleteObserver
+    planExecutionService.getPlanExecutionDeleteObserverSubject().register(
+        injector.getInstance(Key.get(PlanExecutionMetadataDeleteObserver.class)));
+    // Register PlanExecutionDeleteObserver
+    planExecutionService.getPlanExecutionDeleteObserverSubject().register(
+        injector.getInstance(Key.get(PipelineExecutionSummaryDeleteObserver.class)));
 
     PlanExecutionStrategy planExecutionStrategy = injector.getInstance(Key.get(PlanExecutionStrategy.class));
     // StartObservers

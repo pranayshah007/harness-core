@@ -150,6 +150,8 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   Clock clock;
   ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse;
 
+  MonitoredServiceDTO monitoredServiceDTO;
+
   @Before
   public void setup() throws IllegalAccessException, ParseException {
     MockitoAnnotations.initMocks(this);
@@ -176,13 +178,13 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                         .projectIdentifier(projectIdentifier)
                         .build();
 
-    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
-                                                  .identifier("service1_env1")
-                                                  .name("monitored service 1")
-                                                  .sources(MonitoredServiceDTO.Sources.builder().build())
-                                                  .serviceRef("service1")
-                                                  .environmentRef("env1")
-                                                  .build();
+    monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
+                              .identifier("service1_env1")
+                              .name("monitored service 1")
+                              .sources(MonitoredServiceDTO.Sources.builder().build())
+                              .serviceRef("service1")
+                              .environmentRef("env1")
+                              .build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
 
     simpleServiceLevelObjectiveDTO1 =
@@ -2013,11 +2015,14 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
     sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
+    compositeSLODTO.setOrgIdentifier(projectParamsTest.getOrgIdentifier());
+    compositeSLODTO.setProjectIdentifier(projectParamsTest.getProjectIdentifier());
+    mockServiceLevelObjectiveService.create(projectParamsTest, compositeSLODTO);
     mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
     mockServiceLevelObjectiveService.deleteByProjectIdentifier(AbstractServiceLevelObjective.class,
         projectParamsTest.getAccountIdentifier(), projectParamsTest.getOrgIdentifier(),
         projectParamsTest.getProjectIdentifier());
-    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any());
   }
 
   @Test
@@ -2041,9 +2046,12 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
+    compositeSLODTO.setOrgIdentifier(projectParamsTest.getOrgIdentifier());
+    compositeSLODTO.setProjectIdentifier(projectParamsTest.getProjectIdentifier());
+    mockServiceLevelObjectiveService.create(projectParamsTest, compositeSLODTO);
     mockServiceLevelObjectiveService.deleteByOrgIdentifier(AbstractServiceLevelObjective.class,
         projectParamsTest.getAccountIdentifier(), projectParamsTest.getOrgIdentifier());
-    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any());
   }
 
   @Test
@@ -2064,12 +2072,15 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.create(projectParamsTest.getAccountIdentifier(), monitoredServiceDTO);
     ServiceLevelObjectiveV2Service mockServiceLevelObjectiveService = spy(serviceLevelObjectiveV2Service);
     mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
+    compositeSLODTO.setOrgIdentifier(projectParamsTest.getOrgIdentifier());
+    compositeSLODTO.setProjectIdentifier(projectParamsTest.getProjectIdentifier());
+    mockServiceLevelObjectiveService.create(projectParamsTest, compositeSLODTO);
     sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
     mockServiceLevelObjectiveService.deleteByAccountIdentifier(
         AbstractServiceLevelObjective.class, projectParamsTest.getAccountIdentifier());
-    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any());
   }
 
   @Test
@@ -2083,6 +2094,23 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
 
     assertThat(serviceLevelObjectiveV2Service.getAllSLOs(projectParams)).hasSize(4);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetSImpleSLOsByMonitoredServiceIdentifier() {
+    createMonitoredService();
+    ServiceLevelObjectiveV2DTO sloDTO =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id3").build();
+    sloDTO.setUserJourneyRefs(Arrays.asList("Uid4", "Uid2"));
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    assertThat(serviceLevelObjectiveV2Service.getByMonitoredServiceIdentifiers(
+                   projectParams, Collections.singleton(monitoredServiceDTO.getIdentifier())))
+        .hasSize(2);
+    assertThat(serviceLevelObjectiveV2Service.getByMonitoredServiceIdentifiers(
+                   projectParams, Collections.singleton(builderFactory.getContext().getMonitoredServiceIdentifier())))
+        .hasSize(1);
   }
 
   @Test

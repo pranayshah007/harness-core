@@ -14,19 +14,23 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = OnetimeDowntimeSpec.class, name = "Onetime")
   , @JsonSubTypes.Type(value = RecurringDowntimeSpec.class, name = "Recurring"),
 })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = DOWNTIME_SPEC_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
+@EqualsAndHashCode()
 public abstract class DowntimeSpec {
   @ApiModelProperty(required = true) @NotNull String timezone;
   @ApiModelProperty(required = true) @NotNull long startTime;

@@ -28,9 +28,9 @@ public class MigrationTemplateUtils {
   public JsonNode getTemplateInputs(NGYamlFile wfTemplate, String accountIdentifier) {
     NgEntityDetail ngEntityDetail = wfTemplate.getNgEntityDetail();
     try {
-      String response = NGRestUtils.getResponse(
-          templateResourceClient.getTemplateInputsYaml(ngEntityDetail.getIdentifier(), accountIdentifier,
-              ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier(), null, false));
+      String response =
+          NGRestUtils.getResponse(templateResourceClient.getTemplateInputsYaml(ngEntityDetail.getIdentifier(),
+              accountIdentifier, ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier(), "", false));
       if (response == null || StringUtils.isBlank(response)) {
         return null;
       }

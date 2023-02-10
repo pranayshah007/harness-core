@@ -7,6 +7,8 @@
 
 package io.harness.pms.plan.execution.service;
 
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrency.ConcurrentChildInstance;
@@ -37,6 +39,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -255,6 +258,18 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     Query query = new Query(criteria);
     query.fields().include(PlanExecutionSummaryKeys.planExecutionId);
     return pmsExecutionSummaryRepository.fetchExecutionSummaryEntityFromAnalytics(query);
+  }
+
+  @Override
+  public void deleteAllSummaryForGivenPlanExecutionIds(Set<String> planExecutionIds) {
+    if (EmptyPredicate.isEmpty(planExecutionIds)) {
+      return;
+    }
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      // Uses - id index
+      pmsExecutionSummaryRepository.deleteAllByPlanExecutionIdIn(planExecutionIds);
+      return true;
+    });
   }
 
   /**

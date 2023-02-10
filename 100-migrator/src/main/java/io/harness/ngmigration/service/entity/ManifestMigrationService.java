@@ -32,6 +32,7 @@ import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.AppManifestSummary;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -151,7 +152,7 @@ public class ManifestMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     ApplicationManifest applicationManifest = (ApplicationManifest) entities.get(entityId).getEntity();
     List<NGYamlFile> yamlFiles = getYamlFilesForManifest(applicationManifest, inputDTO, entities);
@@ -178,9 +179,9 @@ public class ManifestMigrationService extends NgMigrationService {
       if (EmptyPredicate.isNotEmpty(manifestConfigWrapperList)) {
         serviceOverrideInfoConfig.getManifests().addAll(manifestConfigWrapperList);
       }
-      return yamlFiles;
+      return YamlGenerationDetails.builder().yamlFileList(yamlFiles).build();
     }
-    return yamlFiles;
+    return YamlGenerationDetails.builder().yamlFileList(yamlFiles).build();
   }
 
   private List<NGYamlFile> getYamlFilesForManifest(

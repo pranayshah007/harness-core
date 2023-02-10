@@ -21,6 +21,7 @@ enum GitProvider {
   STASH = 5;
   CODECOMMIT = 6;
   AZURE = 7;
+  HARNESS = 8;
 }
 
 enum Action {
@@ -273,6 +274,27 @@ message AzureProvider {
   string project = 3;
 }
 
+message HarnessAccessToken {
+  string access_token = 1;
+  string account = 2;
+  string organization = 3;
+  string project = 4;
+}
+
+message HarnessJWT {
+  string token = 1;
+  string account = 2;
+  string organization = 3;
+  string project = 4;
+}
+
+message HarnessProvider {
+  oneof provider {
+    HarnessJWT harness_jwt = 1;
+    HarnessAccessToken harness_access_token = 2;
+  }
+}
+
 message Provider {
   oneof hook {
     GithubProvider github = 1;
@@ -282,6 +304,7 @@ message Provider {
     BitbucketServerProvider bitbucket_server = 5;
     CodecommitProvider codecommit = 6;
     AzureProvider azure = 11;
+    HarnessProvider harness = 12;
   }
   string endpoint = 7;
   bool skipVerify = 8;
@@ -634,6 +657,18 @@ enum AzureWebhookEvent {
   AZURE_PULL_REQUEST_ISSUE_COMMENT = 4;
 }
 
+enum HarnessWebhookEvent {
+  HARNESS_CREATE = 0;
+  HARNESS_DELETE = 1;
+  HARNESS_DEPLOYMENT = 2;
+  HARNESS_ISSUE = 3;
+  HARNESS_ISSUE_COMMENT = 4;
+  HARNESS_PULL_REQUEST = 5;
+  HARNESS_PULL_REQUEST_REVIEW = 6;
+  HARNESS_PUSH = 7;
+  HARNESS_RELEASE = 8;
+}
+
 message GithubWebhookEvents {
   repeated GithubWebhookEvent events = 1;
 }
@@ -653,6 +688,10 @@ message BitbucketServerWebhookEvents {
 message AzureWebhookEvents {
   // Azure only allows one event type per hook
   repeated AzureWebhookEvent events = 1;
+}
+
+message HarnessWebhookEvents {
+  HarnessWebhookEvent event = 1;
 }
 
 message NativeEvents {

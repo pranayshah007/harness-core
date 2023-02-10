@@ -34,6 +34,7 @@ import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.downtime.beans.DowntimeDTO;
 import io.harness.cvng.downtime.beans.EntityDetails;
+import io.harness.cvng.downtime.beans.EntityIdentifiersRule;
 import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
@@ -1220,8 +1221,11 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     long endTime = startTime + Duration.ofDays(365).toSeconds();
 
     DowntimeDTO downtimeDTO = builderFactory.getRecurringDowntimeDTO();
-    downtimeDTO.setEntityRefs(
-        Collections.singletonList(EntityDetails.builder().entityRef(monitoredServiceIdentifier).enabled(true).build()));
+    downtimeDTO.setEntitiesRule(
+        EntityIdentifiersRule.builder()
+            .entityIdentifiers(Collections.singletonList(
+                EntityDetails.builder().entityRef(monitoredServiceIdentifier).enabled(true).build()))
+            .build());
     downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
 
     List<UnavailabilityInstancesResponse> unavailabilityInstancesResponses =
@@ -1298,13 +1302,19 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     long endTime = startTime + Duration.ofDays(365).toSeconds();
 
     DowntimeDTO downtimeDTO = builderFactory.getRecurringDowntimeDTO();
-    downtimeDTO.setEntityRefs(
-        Collections.singletonList(EntityDetails.builder().entityRef(monitoredServiceIdentifier).enabled(true).build()));
+    downtimeDTO.setEntitiesRule(
+        EntityIdentifiersRule.builder()
+            .entityIdentifiers(Collections.singletonList(
+                EntityDetails.builder().entityRef(monitoredServiceIdentifier).enabled(true).build()))
+            .build());
     downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
 
     downtimeDTO = builderFactory.getOnetimeDurationBasedDowntimeDTO();
-    downtimeDTO.setEntityRefs(Collections.singletonList(
-        EntityDetails.builder().entityRef(monitoredServiceIdentifier + "1").enabled(true).build()));
+    downtimeDTO.setEntitiesRule(
+        EntityIdentifiersRule.builder()
+            .entityIdentifiers(Collections.singletonList(
+                EntityDetails.builder().entityRef(monitoredServiceIdentifier).enabled(true).build()))
+            .build());
     downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
 
     List<UnavailabilityInstancesResponse> unavailabilityInstancesResponses =

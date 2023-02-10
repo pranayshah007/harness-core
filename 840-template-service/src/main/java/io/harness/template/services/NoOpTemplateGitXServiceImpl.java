@@ -13,11 +13,6 @@ import io.harness.template.entity.TemplateEntity;
 
 public class NoOpTemplateGitXServiceImpl implements TemplateGitXService {
   @Override
-  public String getWorkingBranch(String entityRepoURL) {
-    return "";
-  }
-
-  @Override
   public boolean isNewGitXEnabledAndIsRemoteEntity(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
     return false;
   }
