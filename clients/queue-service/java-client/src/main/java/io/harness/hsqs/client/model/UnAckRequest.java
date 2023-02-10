@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.With;
 
 /**
  * UnAckRequest Object used for block listing subTopic from processing or marking a message processing is failed
@@ -27,7 +28,7 @@ public class UnAckRequest {
 
   String subTopic;
 
-  String topic;
+  @With String topic;
 
   Integer type;
 }

@@ -20,8 +20,11 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS2_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.AMAZONS3;
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.ARTIFACTORY_REGISTRY;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.AZURE_ARTIFACTS;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.JENKINS;
+import static io.harness.logging.CommandExecutionStatus.FAILURE;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.RISHABH;
 
 import static java.lang.String.format;
@@ -49,10 +52,13 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GithubPackagesArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
@@ -61,6 +67,9 @@ import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.k8s.K8sEntityHelper;
+import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
+import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
+import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
@@ -68,12 +77,15 @@ import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GitLabStore;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.GithubStore;
+import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.OciHelmChartConfig;
 import io.harness.cdng.manifest.yaml.TasManifestOutcome;
 import io.harness.cdng.manifest.yaml.VarsManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -105,6 +117,10 @@ import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
+import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthenticationDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
@@ -120,13 +136,18 @@ import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationTy
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
 import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
+import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
+import io.harness.delegate.task.git.GitFetchResponse;
+import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.manifests.request.CustomManifestFetchConfig;
 import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParams;
+import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;
+import io.harness.delegate.task.pcf.artifact.ArtifactoryTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AwsS3TasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AzureDevOpsTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.CustomArtifactTasRequestDetails;
@@ -137,16 +158,20 @@ import io.harness.delegate.task.pcf.artifact.TasArtifactType;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.request.TasManifestsPackage;
+import io.harness.delegate.task.pcf.response.CfBasicSetupResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.encryption.SecretRefData;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.service.FileStoreService;
+import io.harness.git.model.FetchFilesResult;
+import io.harness.git.model.GitFile;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.manifest.CustomManifestSource;
+import io.harness.manifest.CustomSourceFile;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.filestore.FileUsage;
 import io.harness.pcf.CfCommandUnitConstants;
@@ -161,6 +186,7 @@ import io.harness.pms.data.OrchestrationRefType;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.execution.invokers.StrategyHelper;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -170,9 +196,13 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.StepHelper;
+import io.harness.supplier.ThrowingSupplier;
+import io.harness.tasks.ResponseData;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -267,10 +297,14 @@ public class TasStepHelperTest extends CategoryTest {
       + "\n"
       + "\n"
       + "cf login\n"
+      + "cat ${service.manifest}/manifest.yml\n"
+      + "cat ${service.manifest.repoRoot}/pcf-app1/vars.yml\n"
       + "\n"
       + "## Get apps\n"
       + "cf apps";
   public static String COMMAND_SCRIPT_WITHOUT_COMMENTS = "cf login\n"
+      + "cat ${service.manifest}/manifest.yml\n"
+      + "cat ${service.manifest.repoRoot}/pcf-app1/vars.yml\n"
       + "cf apps";
   public static String MANIFEST_YML_WITH_ROUTES = "applications:\n"
       + "- name: test-tas\n"
@@ -822,6 +856,77 @@ public class TasStepHelperTest extends CategoryTest {
     assertThat(containerArtifactConfig.getEncryptedDataDetails()).isEmpty();
     verify(secretManagerClientService, never()).getEncryptionDetails(any(), any());
   }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetPrimaryArtifactConfigGCR() {
+    final GcrArtifactOutcome gcrArtifactOutcome = GcrArtifactOutcome.builder()
+                                                      .type(ArtifactSourceConstants.GCR_NAME)
+                                                      .connectorRef("gcr")
+                                                      .image("harness")
+                                                      .tag("test")
+                                                      .registryHostname("us.gcr.io")
+                                                      .build();
+    GcpConnectorCredentialDTO connectorCredentialDTO =
+        GcpConnectorCredentialDTO.builder()
+            .config(GcpManualDetailsDTO.builder()
+                        .secretKeyRef(SecretRefData.builder().identifier("secret").build())
+                        .build())
+            .gcpCredentialType(GcpCredentialType.MANUAL_CREDENTIALS)
+            .build();
+    GcpConnectorDTO gcpConnectorDTO = GcpConnectorDTO.builder().credential(connectorCredentialDTO).build();
+    final ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().connectorConfig(gcpConnectorDTO).build();
+
+    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("gcr", ambiance);
+
+    TasArtifactConfig tasArtifactConfig = tasStepHelper.getPrimaryArtifactConfig(ambiance, gcrArtifactOutcome);
+    assertThat(tasArtifactConfig.getArtifactType()).isEqualTo(TasArtifactType.CONTAINER);
+    TasContainerArtifactConfig containerArtifactConfig = (TasContainerArtifactConfig) tasArtifactConfig;
+    assertThat(containerArtifactConfig.getConnectorConfig()).isEqualTo(gcpConnectorDTO);
+    assertThat(containerArtifactConfig.getImage()).isEqualTo("harness");
+    assertThat(containerArtifactConfig.getTag()).isEqualTo("test");
+    assertThat(containerArtifactConfig.getRegistryHostname()).isEqualTo("us.gcr.io");
+    assertThat(containerArtifactConfig.getRegistryType()).isEqualTo(TasArtifactRegistryType.GCR);
+    assertThat(containerArtifactConfig.getEncryptedDataDetails()).isEmpty();
+    verify(secretManagerClientService, times(1)).getEncryptionDetails(any(), any());
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetPrimaryArtifactConfigGoogleArtifactRegistry() {
+    final GarArtifactOutcome garArtifactOutcome = GarArtifactOutcome.builder()
+                                                      .type(ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME)
+                                                      .connectorRef("googleArtifactRegistry")
+                                                      .image("harness")
+                                                      .version("test")
+                                                      .registryHostname("us.gar.io")
+                                                      .build();
+    GcpConnectorCredentialDTO connectorCredentialDTO =
+        GcpConnectorCredentialDTO.builder()
+            .config(GcpManualDetailsDTO.builder()
+                        .secretKeyRef(SecretRefData.builder().identifier("secret").build())
+                        .build())
+            .gcpCredentialType(GcpCredentialType.MANUAL_CREDENTIALS)
+            .build();
+    GcpConnectorDTO gcpConnectorDTO = GcpConnectorDTO.builder().credential(connectorCredentialDTO).build();
+    final ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().connectorConfig(gcpConnectorDTO).build();
+
+    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("googleArtifactRegistry", ambiance);
+
+    TasArtifactConfig tasArtifactConfig = tasStepHelper.getPrimaryArtifactConfig(ambiance, garArtifactOutcome);
+    assertThat(tasArtifactConfig.getArtifactType()).isEqualTo(TasArtifactType.CONTAINER);
+    TasContainerArtifactConfig containerArtifactConfig = (TasContainerArtifactConfig) tasArtifactConfig;
+    assertThat(containerArtifactConfig.getConnectorConfig()).isEqualTo(gcpConnectorDTO);
+    assertThat(containerArtifactConfig.getImage()).isEqualTo("harness");
+    assertThat(containerArtifactConfig.getTag()).isEqualTo("test");
+    assertThat(containerArtifactConfig.getRegistryHostname()).isEqualTo("us.gar.io");
+    assertThat(containerArtifactConfig.getRegistryType()).isEqualTo(TasArtifactRegistryType.GAR);
+    assertThat(containerArtifactConfig.getEncryptedDataDetails()).isEmpty();
+    verify(secretManagerClientService, times(1)).getEncryptionDetails(any(), any());
+  }
+
   @Test
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
@@ -909,6 +1014,51 @@ public class TasStepHelperTest extends CategoryTest {
   @Test
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
+  public void testGetPrimaryArtifactConfigArtifactoryPackage() {
+    final ArtifactoryGenericArtifactOutcome artifactoryGenericArtifactOutcome =
+        ArtifactoryGenericArtifactOutcome.builder()
+            .connectorRef("artifactory")
+            .repositoryName("harness")
+            .repositoryFormat("generic")
+            .artifactPath("/tmp")
+            .type(ARTIFACTORY_REGISTRY_NAME)
+            .build();
+    final ArtifactoryUsernamePasswordAuthDTO usernamePasswordAuthDTO =
+        ArtifactoryUsernamePasswordAuthDTO.builder().build();
+    final ArtifactoryConnectorDTO artifactoryConnectorDTO = ArtifactoryConnectorDTO.builder()
+                                                                .auth(ArtifactoryAuthenticationDTO.builder()
+                                                                          .authType(ArtifactoryAuthType.USER_PASSWORD)
+                                                                          .credentials(usernamePasswordAuthDTO)
+                                                                          .build())
+                                                                .build();
+    final ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                                  .connectorType(ConnectorType.ARTIFACTORY)
+                                                  .connectorConfig(artifactoryConnectorDTO)
+                                                  .build();
+    final List<EncryptedDataDetail> encryptedDataDetails = singletonList(EncryptedDataDetail.builder().build());
+
+    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("artifactory", ambiance);
+    doReturn(encryptedDataDetails)
+        .when(secretManagerClientService)
+        .getEncryptionDetails(any(NGAccess.class), eq(usernamePasswordAuthDTO));
+
+    TasArtifactConfig tasArtifactConfig =
+        tasStepHelper.getPrimaryArtifactConfig(ambiance, artifactoryGenericArtifactOutcome);
+    assertThat(tasArtifactConfig.getArtifactType()).isEqualTo(TasArtifactType.PACKAGE);
+    TasPackageArtifactConfig packageArtifactConfig = (TasPackageArtifactConfig) tasArtifactConfig;
+    ArtifactoryTasArtifactRequestDetails artifactoryTasArtifactRequestDetails =
+        (ArtifactoryTasArtifactRequestDetails) packageArtifactConfig.getArtifactDetails();
+    assertThat(packageArtifactConfig.getConnectorConfig()).isEqualTo(artifactoryConnectorDTO);
+    assertThat(artifactoryTasArtifactRequestDetails.getRepository()).isEqualTo("harness");
+    assertThat(artifactoryTasArtifactRequestDetails.getRepositoryFormat()).isEqualTo("generic");
+    assertThat(artifactoryTasArtifactRequestDetails.getArtifactPaths()).isEqualTo(asList("/tmp"));
+    assertThat(packageArtifactConfig.getSourceType()).isEqualTo(ARTIFACTORY_REGISTRY);
+    assertThat(packageArtifactConfig.getEncryptedDataDetails()).isEqualTo(encryptedDataDetails);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
   public void testGetPrimaryPackageArtifactConfigAwsS3() {
     final S3ArtifactOutcome s3ArtifactOutcome = S3ArtifactOutcome.builder()
                                                     .connectorRef("s3awsconnector")
@@ -945,6 +1095,7 @@ public class TasStepHelperTest extends CategoryTest {
     assertThat(packageArtifactConfig.getSourceType()).isEqualTo(AMAZONS3);
     assertThat(packageArtifactConfig.getEncryptedDataDetails()).isEqualTo(encryptedDataDetails);
   }
+
   private NexusArtifactOutcome getNexusArtifactOutcome(Map<String, String> metadata, String repositoryFormat) {
     return NexusArtifactOutcome.builder()
         .repositoryFormat(repositoryFormat)
@@ -1252,7 +1403,7 @@ public class TasStepHelperTest extends CategoryTest {
             getGitStore("master", asList("path/to/varsOverride1.yml", "path/to/varsOverride2.yml"), "git-connector"),
             "varsOverride"));
     StepElementParameters stepElementParameters =
-        StepElementParameters.builder().spec(TasBasicAppSetupStepParameters.infoBuilder().build()).build();
+        StepElementParameters.builder().spec(TasBGAppSetupStepParameters.infoBuilder().build()).build();
     OptionalOutcome manifestsOutcome =
         OptionalOutcome.builder().found(true).outcome(new ManifestsOutcome(manifestOutcomeMap)).build();
     doReturn(manifestsOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(manifests));
@@ -1308,12 +1459,18 @@ public class TasStepHelperTest extends CategoryTest {
         getTasManifestOutcome(0, getGitStore("master", asList("path/to/tas/manifest/tasManifest.yml"), "git-connector"),
             "tas", asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"),
             "path/to/tas/manifest/autoscalar.yml"),
+        "autoscalar",
+        getAutoScalarManifestOutcome(
+            1, getCustomRemoteStoreConfig(extractionScript, "path/to/tas/manifest/autoscalar.yaml"), "autoscalar"),
         "tasOverride",
-        getTasManifestOutcome(1, harnessStore, "tasOverride",
-            asList("path/to/tasOverride/manifest/vars1.yml", "path/to/tasOverride/manifest/vars2.yml"), null),
+        getTasManifestOutcome(2, harnessStore, "tasOverride",
+            asList("path/to/tasOverride/manifest/vars1.yml", "path/to/tasOverride/manifest/vars2.yml"),
+            "path/to/tas/manifest/autoscalarPath2.yml"),
         "varsOverride",
-        getVarsManifestOutcome(
-            2, getCustomRemoteStoreConfig(extractionScript, "folderPath/vars.yaml"), "varsOverride"));
+        getVarsManifestOutcome(3, getCustomRemoteStoreConfig(extractionScript, "folderPath/vars.yaml"), "varsOverride"),
+        "autoscalarOverride",
+        getAutoScalarManifestOutcome(
+            4, getCustomRemoteStoreConfig(extractionScript, "folderPath/autoscalar.yaml"), "autoscalarOverride"));
     StepElementParameters stepElementParameters =
         StepElementParameters.builder()
             .spec(TasBasicAppSetupStepParameters.infoBuilder()
@@ -1340,27 +1497,31 @@ public class TasStepHelperTest extends CategoryTest {
     assertThat(tasStepPassThroughData.getVarsManifestOutcomeList().get(0))
         .isEqualTo(manifestOutcomeMap.get("varsOverride"));
     assertThat(tasStepPassThroughData.getShouldExecuteGitStoreFetch()).isFalse();
-    assertThat(tasStepPassThroughData.getLocalStoreFileMapContents().containsKey("1")).isTrue();
-    assertThat(tasStepPassThroughData.getLocalStoreFileMapContents().get("1"))
+    assertThat(tasStepPassThroughData.getLocalStoreFileMapContents().containsKey("2")).isTrue();
+    assertThat(tasStepPassThroughData.getLocalStoreFileMapContents().get("2"))
         .isEqualTo(
             asList(getTasManifestFileContents(TAS_MANIFEST.toString(), "org:/path/to/tas/manifests", MANIFEST_YML),
                 getTasManifestFileContents(TAS_VARS.toString(), "path/to/tasOverride/manifest/vars1.yml", VARS_YML_1)));
     assertThat(tasStepPassThroughData.getShouldExecuteCustomFetch()).isTrue();
     assertThat(tasStepPassThroughData.getShouldExecuteHarnessStoreFetch()).isTrue();
-    assertThat(tasStepPassThroughData.getAutoScalerManifestOutcome()).isNull();
+    assertThat(tasStepPassThroughData.getTasManifestOutcome()).isNotNull();
+    assertThat(tasStepPassThroughData.getTasManifestOutcome())
+        .isEqualTo(getTasManifestOutcome(2, harnessStore, "tasOverride",
+            asList("path/to/tasOverride/manifest/vars1.yml", "path/to/tasOverride/manifest/vars2.yml"), null));
+    assertThat(tasStepPassThroughData.getAutoScalerManifestOutcome()).isNotNull();
+    assertThat(tasStepPassThroughData.getAutoScalerManifestOutcome())
+        .isEqualTo(manifestOutcomeMap.get("autoscalarOverride"));
     ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
     verify(kryoSerializer, times(1)).asDeflatedBytes(argumentCaptor.capture());
     TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(CustomManifestValuesFetchParams.class);
     CustomManifestValuesFetchParams customManifestValuesFetchRequest = (CustomManifestValuesFetchParams) taskParameters;
 
-    assertThat(customManifestValuesFetchRequest.getFetchFilesList().size()).isEqualTo(1);
-    assertThat(customManifestValuesFetchRequest.getFetchFilesList().get(0).getCustomManifestSource().getAccountId())
-        .isEqualTo("test-account");
-    assertThat(customManifestValuesFetchRequest.getFetchFilesList().get(0).getCustomManifestSource().getScript())
-        .isEqualTo(extractionScript);
-    assertThat(customManifestValuesFetchRequest.getFetchFilesList().get(0).getCustomManifestSource().getFilePaths())
-        .isEqualTo(asList("folderPath/vars.yaml"));
+    assertThat(customManifestValuesFetchRequest.getFetchFilesList().size()).isEqualTo(2);
+    assertCustomManifestConfig(customManifestValuesFetchRequest.getFetchFilesList().get(1).getCustomManifestSource(),
+        "test-account", extractionScript, asList("folderPath/vars.yaml"));
+    assertCustomManifestConfig(customManifestValuesFetchRequest.getFetchFilesList().get(0).getCustomManifestSource(),
+        "test-account", extractionScript, asList("folderPath/autoscalar.yaml"));
   }
 
   @Test
@@ -1374,7 +1535,7 @@ public class TasStepHelperTest extends CategoryTest {
             "path/to/tas/manifest/autoscalar.yml"));
     StepElementParameters stepElementParameters =
         StepElementParameters.builder()
-            .spec(TasBasicAppSetupStepParameters.infoBuilder()
+            .spec(TasCanaryAppSetupStepParameters.infoBuilder()
                       .delegateSelectors(ParameterField.createValueField(List.of(new TaskSelectorYaml("selector-1"))))
                       .existingVersionToKeep(ParameterField.createValueField("3"))
                       .build())
@@ -1409,6 +1570,414 @@ public class TasStepHelperTest extends CategoryTest {
         "test-account", null, asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"));
     assertCustomManifestConfig(customManifestValuesFetchRequest.getFetchFilesList().get(2).getCustomManifestSource(),
         "test-account", null, asList("path/to/tas/manifest/autoscalar.yml"));
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testCommandStepShouldPrepareTasCustomManifestWithTasManifestOverrideHarnessStore() {
+    List<String> files = asList("org:/path/to/tas/manifests/script.sh");
+    HarnessStore harnessStore = HarnessStore.builder().files(ParameterField.createValueField(files)).build();
+    String extractionScript = "git clone something.git";
+    Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("tas",
+        getTasManifestOutcome(0, getCustomRemoteStoreConfig(extractionScript, "folderPath/manifest.yaml"), "tas",
+            asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"),
+            "path/to/tas/manifest/autoscalar.yml"));
+    StepElementParameters stepElementParameters =
+        StepElementParameters.builder()
+            .spec(TasCommandStepParameters.infoBuilder()
+                      .delegateSelectors(ParameterField.createValueField(List.of(new TaskSelectorYaml("selector-1"))))
+                      .script(
+                          TasCommandScript.builder()
+                              .store(
+                                  StoreConfigWrapper.builder().spec(harnessStore).type(StoreConfigType.HARNESS).build())
+                              .build())
+                      .build())
+            .build();
+    doReturn(Optional.of(getFileStoreNode("path/to/tas/manifests/script.sh", "manifest.yaml", COMMAND_SCRIPT)))
+        .doReturn(Optional.of(getFolderStoreNode("/path/to/tas/manifests", "manifests")))
+        .when(fileStoreService)
+        .getWithChildrenByPath(any(), any(), any(), any(), eq(true));
+    OptionalOutcome manifestsOutcome =
+        OptionalOutcome.builder().found(true).outcome(new ManifestsOutcome(manifestOutcomeMap)).build();
+    doReturn(manifestsOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(manifests));
+
+    TaskChainResponse taskChainResponse =
+        tasStepHelper.startChainLinkForCommandStep(tasStepExecutor, ambiance, stepElementParameters);
+    assertThat(taskChainResponse).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(TasStepPassThroughData.class);
+    TasStepPassThroughData tasStepPassThroughData = (TasStepPassThroughData) taskChainResponse.getPassThroughData();
+    assertThat(tasStepPassThroughData.getVarsManifestOutcomeList()).isEmpty();
+    assertThat(tasStepPassThroughData.getRawScript()).isEqualTo(COMMAND_SCRIPT_WITHOUT_COMMENTS);
+    assertThat(tasStepPassThroughData.getPathsFromScript()).isEqualTo(asList("/manifest.yml", "/pcf-app1/vars.yml"));
+    assertThat(tasStepPassThroughData.getRepoRoot()).isEqualTo("/");
+    assertThat(tasStepPassThroughData.getShouldExecuteGitStoreFetch()).isFalse();
+    assertThat(tasStepPassThroughData.getShouldExecuteCustomFetch()).isTrue();
+    assertThat(tasStepPassThroughData.getShouldExecuteHarnessStoreFetch()).isFalse();
+    assertThat(tasStepPassThroughData.getAutoScalerManifestOutcome()).isNull();
+    ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
+    verify(kryoSerializer, times(1)).asDeflatedBytes(argumentCaptor.capture());
+    TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
+    assertThat(taskParameters).isInstanceOf(CustomManifestValuesFetchParams.class);
+    CustomManifestValuesFetchParams customManifestValuesFetchRequest = (CustomManifestValuesFetchParams) taskParameters;
+
+    assertCustomManifestConfig(customManifestValuesFetchRequest.getCustomManifestSource(), "test-account",
+        extractionScript, asList("folderPath/manifest.yaml"));
+    assertThat(customManifestValuesFetchRequest.getFetchFilesList().size()).isEqualTo(3);
+    assertCustomManifestConfig(customManifestValuesFetchRequest.getFetchFilesList().get(0).getCustomManifestSource(),
+        "test-account", extractionScript, asList("folderPath/manifest.yaml"));
+    assertCustomManifestConfig(customManifestValuesFetchRequest.getFetchFilesList().get(1).getCustomManifestSource(),
+        "test-account", null, asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"));
+    assertCustomManifestConfig(customManifestValuesFetchRequest.getFetchFilesList().get(2).getCustomManifestSource(),
+        "test-account", null, asList("path/to/tas/manifest/autoscalar.yml"));
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testCommandStepShouldPrepareTasCustomManifestWithTasManifestOverrideInline() {
+    InlineStoreConfig inlineStoreConfig =
+        InlineStoreConfig.builder().content(ParameterField.createValueField(COMMAND_SCRIPT)).build();
+    Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("tas",
+        getTasManifestOutcome(0, getGitStore("master", asList("path/to/tas/manifest/tasManifest.yml"), "git-connector"),
+            "tas", asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"),
+            "path/to/tas/manifest/autoscalar.yml"));
+    doReturn(
+        Optional.of(ConnectorResponseDTO.builder()
+                        .connector(ConnectorInfoDTO.builder()
+                                       .connectorConfig(
+                                           GitConfigDTO.builder().gitAuthType(GitAuthType.HTTP).url("SOME_URL").build())
+                                       .name("test")
+                                       .build())
+                        .build()))
+        .when(connectorService)
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
+    StepElementParameters stepElementParameters =
+        StepElementParameters.builder()
+            .spec(TasCommandStepParameters.infoBuilder()
+                      .delegateSelectors(ParameterField.createValueField(List.of(new TaskSelectorYaml("selector-1"))))
+                      .script(TasCommandScript.builder()
+                                  .store(StoreConfigWrapper.builder()
+                                             .spec(inlineStoreConfig)
+                                             .type(StoreConfigType.INLINE)
+                                             .build())
+                                  .build())
+                      .build())
+            .build();
+    OptionalOutcome manifestsOutcome =
+        OptionalOutcome.builder().found(true).outcome(new ManifestsOutcome(manifestOutcomeMap)).build();
+    doReturn(manifestsOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(manifests));
+
+    TaskChainResponse taskChainResponse =
+        tasStepHelper.startChainLinkForCommandStep(tasStepExecutor, ambiance, stepElementParameters);
+    assertThat(taskChainResponse).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(TasStepPassThroughData.class);
+    TasStepPassThroughData tasStepPassThroughData = (TasStepPassThroughData) taskChainResponse.getPassThroughData();
+    assertThat(tasStepPassThroughData.getVarsManifestOutcomeList()).isEmpty();
+    assertThat(tasStepPassThroughData.getRawScript()).isEqualTo(COMMAND_SCRIPT_WITHOUT_COMMENTS);
+    assertThat(tasStepPassThroughData.getPathsFromScript()).isEqualTo(asList("/manifest.yml", "/pcf-app1/vars.yml"));
+    assertThat(tasStepPassThroughData.getRepoRoot()).isEqualTo("/");
+    assertThat(tasStepPassThroughData.getShouldExecuteGitStoreFetch()).isTrue();
+    assertThat(tasStepPassThroughData.getShouldExecuteCustomFetch()).isFalse();
+    assertThat(tasStepPassThroughData.getShouldExecuteHarnessStoreFetch()).isFalse();
+    assertThat(tasStepPassThroughData.getAutoScalerManifestOutcome()).isNull();
+    ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
+    verify(kryoSerializer, times(4)).asDeflatedBytes(argumentCaptor.capture());
+    TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
+    assertThat(taskParameters).isInstanceOf(GitFetchRequest.class);
+    GitFetchRequest gitFetchRequest = (GitFetchRequest) taskParameters;
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs()).isNotEmpty();
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs().size()).isEqualTo(3);
+    assertGitConfig(gitFetchRequest.getGitFetchFilesConfigs().get(0), 2,
+        asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"));
+    assertGitConfig(gitFetchRequest.getGitFetchFilesConfigs().get(1), 1, asList("path/to/tas/manifest/autoscalar.yml"));
+    assertGitConfig(
+        gitFetchRequest.getGitFetchFilesConfigs().get(2), 1, asList("path/to/tas/manifest/tasManifest.yml"));
+    assertThat(argumentCaptor.getAllValues().get(1)).isInstanceOf(GitConnectionNGCapability.class);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void shouldHandleCustomManifestFetchResponseWithPrepareGit() throws Exception {
+    StepElementParameters stepElementParams =
+        StepElementParameters.builder().spec(TasCanaryAppSetupStepParameters.infoBuilder().build()).build();
+    StoreConfig store = CustomRemoteStoreConfig.builder().build();
+    TasManifestOutcome tasManifestOutcome = TasManifestOutcome.builder().identifier("id").store(store).build();
+    Map<String, List<TasManifestFileContents>> localStoreFileMapContents = new HashMap<>();
+    localStoreFileMapContents.put(
+        "1", asList(TasManifestFileContents.builder().fileContent(VARS_YML_1).filePath("path/to/vars.yaml").build()));
+    Map<String, Collection<CustomSourceFile>> valuesFilesContentMap = new HashMap<>();
+    valuesFilesContentMap.put(
+        "0", asList(CustomSourceFile.builder().fileContent(MANIFEST_YML).filePath("path/to/manifest.yaml").build()));
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
+    CustomManifestValuesFetchResponse customManifestValuesFetchResponse =
+        CustomManifestValuesFetchResponse.builder()
+            .valuesFilesContentMap(valuesFilesContentMap)
+            .zippedManifestFileId("zip")
+            .commandExecutionStatus(SUCCESS)
+            .unitProgressData(unitProgressData)
+            .build();
+    Map<String, ResponseData> responseDataMap =
+        ImmutableMap.of("custom-manifest-values-fetch-response", customManifestValuesFetchResponse);
+    ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+    doReturn(
+        Optional.of(ConnectorResponseDTO.builder()
+                        .connector(ConnectorInfoDTO.builder()
+                                       .connectorConfig(
+                                           GitConfigDTO.builder().gitAuthType(GitAuthType.HTTP).url("SOME_URL").build())
+                                       .name("test")
+                                       .build())
+                        .build()))
+        .when(connectorService)
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
+    TasStepPassThroughData passThroughData =
+        TasStepPassThroughData.builder()
+            .tasManifestOutcome(tasManifestOutcome)
+            .shouldOpenFetchFilesStream(true)
+            .shouldExecuteGitStoreFetch(true)
+            .varsManifestOutcomeList(new ArrayList<>())
+            .autoScalerManifestOutcome(getAutoScalarManifestOutcome(
+                1, getGitStore("master", asList("path/to/autoScalar.yml"), "git-connector"), "autoScalarOverride"))
+            .maxManifestOrder(1)
+            .localStoreFileMapContents(localStoreFileMapContents)
+            .build();
+    TaskChainResponse taskChainResponse = tasStepHelper.executeNextLink(
+        tasStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
+    assertThat(taskChainResponse).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(TasStepPassThroughData.class);
+    TasStepPassThroughData tasStepPassThroughData = (TasStepPassThroughData) taskChainResponse.getPassThroughData();
+    assertThat(tasStepPassThroughData.getCustomFetchContent()).isEqualTo(valuesFilesContentMap);
+    assertThat(tasStepPassThroughData.getLocalStoreFileMapContents()).isEqualTo(localStoreFileMapContents);
+    ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
+    verify(kryoSerializer, times(2)).asDeflatedBytes(argumentCaptor.capture());
+    TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
+    assertThat(taskParameters).isInstanceOf(GitFetchRequest.class);
+    GitFetchRequest gitFetchRequest = (GitFetchRequest) taskParameters;
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs()).isNotEmpty();
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs().size()).isEqualTo(1);
+    assertGitConfig(gitFetchRequest.getGitFetchFilesConfigs().get(0), 1, asList("path/to/autoScalar.yml"));
+    assertThat(argumentCaptor.getAllValues().get(1)).isInstanceOf(GitConnectionNGCapability.class);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void shouldHandleCustomManifestFetchResponse() throws Exception {
+    StepElementParameters stepElementParams =
+        StepElementParameters.builder().spec(TasBasicAppSetupStepParameters.infoBuilder().build()).build();
+
+    StoreConfig store = CustomRemoteStoreConfig.builder().build();
+    TasManifestOutcome tasManifestOutcome = TasManifestOutcome.builder().order(0).identifier("id").store(store).build();
+    Map<String, List<TasManifestFileContents>> localStoreFileMapContents = new HashMap<>();
+    localStoreFileMapContents.put(
+        "1", asList(TasManifestFileContents.builder().fileContent(VARS_YML_1).filePath("path/to/vars.yaml").build()));
+    Map<String, Collection<CustomSourceFile>> valuesFilesContentMap = new HashMap<>();
+    valuesFilesContentMap.put(
+        "0", asList(CustomSourceFile.builder().fileContent(MANIFEST_YML).filePath("path/to/manifest.yaml").build()));
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
+    CustomManifestValuesFetchResponse customManifestValuesFetchResponse =
+        CustomManifestValuesFetchResponse.builder()
+            .valuesFilesContentMap(valuesFilesContentMap)
+            .zippedManifestFileId("zip")
+            .commandExecutionStatus(SUCCESS)
+            .unitProgressData(unitProgressData)
+            .build();
+    Map<String, String> allFilesFetched =
+        Map.of("path/to/manifest.yaml", MANIFEST_YML, "path/to/vars.yaml", VARS_YML_1);
+    Map<String, ResponseData> responseDataMap =
+        ImmutableMap.of("custom-manifest-values-fetch-response", customManifestValuesFetchResponse);
+    ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+
+    TasStepPassThroughData passThroughData = TasStepPassThroughData.builder()
+                                                 .tasManifestOutcome(tasManifestOutcome)
+                                                 .shouldOpenFetchFilesStream(true)
+                                                 .maxManifestOrder(1)
+                                                 .localStoreFileMapContents(localStoreFileMapContents)
+                                                 .build();
+    tasStepHelper.executeNextLink(tasStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
+
+    verify(tasStepExecutor, times(1))
+        .executeTasTask(eq(tasManifestOutcome), eq(ambiance), eq(stepElementParams),
+            eq(TasExecutionPassThroughData.builder()
+                    .applicationName("test-tas")
+                    .lastActiveUnitProgressData(null)
+                    .zippedManifestId("zip")
+                    .tasManifestsPackage(TasManifestsPackage.builder()
+                                             .manifestYml(MANIFEST_YML)
+                                             .variableYmls(asList(VARS_YML_1))
+                                             .build())
+                    .unresolvedTasManifestsPackage(TasManifestsPackage.builder()
+                                                       .manifestYml(MANIFEST_YML)
+                                                       .variableYmls(asList(VARS_YML_1))
+                                                       .build())
+                    .desiredCountInFinalYaml(3)
+                    .allFilesFetched(allFilesFetched)
+                    .build()),
+            eq(false), any());
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void shouldHandleCustomManifestFetchResponseFailure() throws Exception {
+    StepElementParameters stepElementParams =
+        StepElementParameters.builder().spec(TasBasicAppSetupStepParameters.infoBuilder().build()).build();
+
+    StoreConfig store = CustomRemoteStoreConfig.builder().build();
+    TasManifestOutcome tasManifestOutcome = TasManifestOutcome.builder().order(0).identifier("id").store(store).build();
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
+    CustomManifestValuesFetchResponse customManifestValuesFetchResponse = CustomManifestValuesFetchResponse.builder()
+                                                                              .errorMessage("failed to fetch files")
+                                                                              .commandExecutionStatus(FAILURE)
+                                                                              .unitProgressData(unitProgressData)
+                                                                              .build();
+    Map<String, ResponseData> responseDataMap =
+        ImmutableMap.of("custom-manifest-values-fetch-response", customManifestValuesFetchResponse);
+    ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+
+    TasStepPassThroughData passThroughData = TasStepPassThroughData.builder()
+                                                 .tasManifestOutcome(tasManifestOutcome)
+                                                 .shouldOpenFetchFilesStream(true)
+                                                 .maxManifestOrder(1)
+                                                 .build();
+    TaskChainResponse taskChainResponse = tasStepHelper.executeNextLink(
+        tasStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(CustomFetchResponsePassThroughData.class);
+    assertThat(taskChainResponse.isChainEnd()).isTrue();
+    CustomFetchResponsePassThroughData customFetchResponsePassThroughData =
+        (CustomFetchResponsePassThroughData) taskChainResponse.getPassThroughData();
+    assertThat(customFetchResponsePassThroughData.getErrorMsg()).isEqualTo("failed to fetch files");
+    assertThat(customFetchResponsePassThroughData.getUnitProgressData()).isEqualTo(unitProgressData);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void shouldHandleCustomGitLocalManifestFetchResponseFail() throws Exception {
+    StepElementParameters stepElementParams =
+        StepElementParameters.builder().spec(TasBasicAppSetupStepParameters.infoBuilder().build()).build();
+
+    StoreConfig store = CustomRemoteStoreConfig.builder().build();
+    TasManifestOutcome tasManifestOutcome = TasManifestOutcome.builder().order(0).identifier("id").store(store).build();
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
+    GitFetchResponse gitFetchResponse = GitFetchResponse.builder()
+                                            .errorMessage("failed to fetch files")
+                                            .taskStatus(TaskStatus.FAILURE)
+                                            .unitProgressData(unitProgressData)
+                                            .build();
+    Map<String, ResponseData> responseDataMap = ImmutableMap.of("git-fetch-response", gitFetchResponse);
+    ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+
+    TasStepPassThroughData passThroughData = TasStepPassThroughData.builder()
+                                                 .tasManifestOutcome(tasManifestOutcome)
+                                                 .shouldOpenFetchFilesStream(true)
+                                                 .maxManifestOrder(1)
+                                                 .build();
+    TaskChainResponse taskChainResponse = tasStepHelper.executeNextLink(
+        tasStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(GitFetchResponsePassThroughData.class);
+    assertThat(taskChainResponse.isChainEnd()).isTrue();
+    GitFetchResponsePassThroughData gitFetchResponsePassThroughData =
+        (GitFetchResponsePassThroughData) taskChainResponse.getPassThroughData();
+    assertThat(gitFetchResponsePassThroughData.getErrorMsg()).isEqualTo("failed to fetch files");
+    assertThat(gitFetchResponsePassThroughData.getUnitProgressData()).isEqualTo(unitProgressData);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void executeNextLinkFailResponse() throws Exception {
+    StepElementParameters stepElementParams =
+        StepElementParameters.builder().spec(TasBasicAppSetupStepParameters.infoBuilder().build()).build();
+
+    StoreConfig store = CustomRemoteStoreConfig.builder().build();
+    TasManifestOutcome tasManifestOutcome = TasManifestOutcome.builder().order(0).identifier("id").store(store).build();
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
+    Map<String, ResponseData> responseDataMap =
+        ImmutableMap.of("task-fetch-response", CfBasicSetupResponseNG.builder().build());
+    ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+
+    TasStepPassThroughData passThroughData = TasStepPassThroughData.builder()
+                                                 .tasManifestOutcome(tasManifestOutcome)
+                                                 .shouldOpenFetchFilesStream(true)
+                                                 .maxManifestOrder(1)
+                                                 .build();
+    TaskChainResponse taskChainResponse = tasStepHelper.executeNextLink(
+        tasStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(StepExceptionPassThroughData.class);
+    assertThat(taskChainResponse.getPassThroughData())
+        .isEqualTo(StepExceptionPassThroughData.builder()
+                       .errorMessage("Failed to execute TAS step")
+                       .unitProgressData(cdStepHelper.completeUnitProgressData(
+                           unitProgressData, ambiance, "Failed to execute TAS step"))
+                       .build());
+    assertThat(taskChainResponse.isChainEnd()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void shouldHandleCustomGitLocalManifestFetchResponse() throws Exception {
+    StepElementParameters stepElementParams =
+        StepElementParameters.builder().spec(TasBasicAppSetupStepParameters.infoBuilder().build()).build();
+
+    Map<String, FetchFilesResult> filesFromMultipleRepo = new HashMap<>();
+    filesFromMultipleRepo.put("2",
+        FetchFilesResult.builder()
+            .files(asList(GitFile.builder().fileContent(AUTOSCALAR_YML).filePath("path/to/autoscaler.yaml").build()))
+            .build());
+
+    StoreConfig store = CustomRemoteStoreConfig.builder().build();
+    TasManifestOutcome tasManifestOutcome = TasManifestOutcome.builder().order(0).identifier("id").store(store).build();
+    Map<String, List<TasManifestFileContents>> localStoreFileMapContents = new HashMap<>();
+    localStoreFileMapContents.put(
+        "1", asList(TasManifestFileContents.builder().fileContent(VARS_YML_1).filePath("path/to/vars.yaml").build()));
+    Map<String, Collection<CustomSourceFile>> valuesFilesContentMap = new HashMap<>();
+    valuesFilesContentMap.put(
+        "0", asList(CustomSourceFile.builder().fileContent(MANIFEST_YML).filePath("path/to/manifest.yaml").build()));
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
+    Map<String, String> allFilesFetched = Map.of("path/to/manifest.yaml", MANIFEST_YML, "path/to/vars.yaml", VARS_YML_1,
+        "path/to/autoscaler.yaml", AUTOSCALAR_YML);
+    GitFetchResponse gitFetchResponse = GitFetchResponse.builder()
+                                            .filesFromMultipleRepo(filesFromMultipleRepo)
+                                            .taskStatus(TaskStatus.SUCCESS)
+                                            .unitProgressData(unitProgressData)
+                                            .build();
+    Map<String, ResponseData> responseDataMap = ImmutableMap.of("git-fetch-response", gitFetchResponse);
+    ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+
+    TasStepPassThroughData passThroughData = TasStepPassThroughData.builder()
+                                                 .tasManifestOutcome(tasManifestOutcome)
+                                                 .shouldOpenFetchFilesStream(true)
+                                                 .maxManifestOrder(2)
+                                                 .localStoreFileMapContents(localStoreFileMapContents)
+                                                 .customFetchContent(valuesFilesContentMap)
+                                                 .build();
+    tasStepHelper.executeNextLink(tasStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
+
+    verify(tasStepExecutor, times(1))
+        .executeTasTask(eq(tasManifestOutcome), eq(ambiance), eq(stepElementParams),
+            eq(TasExecutionPassThroughData.builder()
+                    .applicationName("test-tas")
+                    .lastActiveUnitProgressData(null)
+                    .tasManifestsPackage(TasManifestsPackage.builder()
+                                             .manifestYml(MANIFEST_YML)
+                                             .variableYmls(asList(VARS_YML_1))
+                                             .autoscalarManifestYml(AUTOSCALAR_YML)
+                                             .build())
+                    .unresolvedTasManifestsPackage(TasManifestsPackage.builder()
+                                                       .manifestYml(MANIFEST_YML)
+                                                       .variableYmls(asList(VARS_YML_1))
+                                                       .autoscalarManifestYml(AUTOSCALAR_YML)
+                                                       .build())
+                    .desiredCountInFinalYaml(3)
+                    .allFilesFetched(allFilesFetched)
+                    .build()),
+            eq(true), any());
   }
 
   private void assertGitConfig(

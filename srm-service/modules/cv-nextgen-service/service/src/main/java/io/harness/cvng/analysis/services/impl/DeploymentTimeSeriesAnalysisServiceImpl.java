@@ -11,6 +11,7 @@ import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.LOAD_TEST_BAS
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.LOAD_TEST_CURRENT_NODE_IDENTIFIER;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.areMetricsFromCVConfigFilteredOut;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.convertTimeSeriesRecordDtosListToMap;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.filterUnhealthyMetricsAnalyses;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getFilteredAnalysedTestDataNodes;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getFilteredMetricCVConfigs;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getHealthSourceFromCVConfig;
@@ -433,16 +434,21 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
             metricsForThisAnalysis.put(UUIDGenerator.generateUuid(), metricsAnalysis);
           }
           if (Objects.nonNull(metricsAnalysis)) {
+            if (Objects.isNull(metricsAnalysis.getTransactionGroup())) {
+              // Only applicable where the metric is neither custom nor default-metric-pack metric, ie dashboard based
+              // metrics. eg Datadog , GCP
+              metricsAnalysis.setTransactionGroup(transactionGroup);
+            }
             Optional<String> deeplinkURL = deeplinkURLService.buildDeeplinkURLFromCVConfig(
                 cvConfig, metricIdentifier, testDataTimeRange.getStartTime(), testDataTimeRange.getEndTime());
             deeplinkURL.ifPresent(metricsAnalysis::setDeeplinkURL);
             metricsAnalysis.setAnalysisResult(analysisResult);
             metricsAnalysis.setTestDataNodes(getFilteredAnalysedTestDataNodes(
                 transactionMetricHostData, deploymentTimeSeriesAnalysisFilter, metricsAnalysis.getThresholds()));
+            populateTimestampsForNormalisedData(metricsAnalysis, controlDataTimeRange, testDataTimeRange);
             populateRawMetricDataInMetricAnalysis(appliedDeploymentAnalysisType,
                 controlNodesRawData.getOrDefault(metricIdentifier, Collections.emptyMap()),
                 testNodesRawData.getOrDefault(metricIdentifier, Collections.emptyMap()), metricsAnalysis);
-            populateTimestampsForNormalisedData(metricsAnalysis, controlDataTimeRange, testDataTimeRange);
           }
         } else {
           metricsForThisAnalysis.remove(metricIdentifier);
@@ -451,6 +457,9 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
     }
     List<MetricsAnalysis> metricsAnalyses = new ArrayList<>();
     for (Map<String, MetricsAnalysis> map : mapOfCvConfigIdAndFilteredMetrics.values()) {
+      if (deploymentTimeSeriesAnalysisFilter.isAnomalousMetricsOnly()) {
+        map = filterUnhealthyMetricsAnalyses(map);
+      }
       metricsAnalyses.addAll(map.values());
     }
     sortMetricsAnalysisResults(metricsAnalyses);

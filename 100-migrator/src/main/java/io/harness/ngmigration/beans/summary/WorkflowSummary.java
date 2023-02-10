@@ -9,6 +9,7 @@ package io.harness.ngmigration.beans.summary;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ngmigration.beans.StepTypeSummary;
 
 import java.util.Map;
 import java.util.Set;
@@ -26,12 +27,15 @@ public class WorkflowSummary extends BaseSummary {
   Map<String, Long> stepTypeSummary;
   Set<String> expressions;
 
+  Map<String, StepTypeSummary> stepsSummary;
+
   @Builder
-  public WorkflowSummary(
-      int count, Map<String, Long> typeSummary, Map<String, Long> stepTypeSummary, Set<String> expressions) {
+  public WorkflowSummary(int count, Map<String, Long> typeSummary, Map<String, Long> stepTypeSummary,
+      Set<String> expressions, Map<String, StepTypeSummary> stepsSummary) {
     super(count);
     this.typeSummary = typeSummary;
     this.stepTypeSummary = stepTypeSummary;
     this.expressions = expressions;
+    this.stepsSummary = stepsSummary;
   }
 }

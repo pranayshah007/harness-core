@@ -40,6 +40,7 @@ import static software.wings.beans.RoleType.PROD_SUPPORT;
 import static software.wings.beans.SystemCatalog.CatalogType.APPSTACK;
 import static software.wings.persistence.AppContainer.Builder.anAppContainer;
 
+import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofDays;
 import static java.time.Duration.ofHours;
@@ -148,6 +149,8 @@ import software.wings.helpers.ext.account.DeleteAccountHelper;
 import software.wings.licensing.LicenseService;
 import software.wings.persistence.AppContainer;
 import software.wings.persistence.mail.EmailData;
+import software.wings.scheduler.AccountJobProperties;
+import software.wings.scheduler.AccountJobType;
 import software.wings.scheduler.AlertCheckJob;
 import software.wings.scheduler.InstanceStatsCollectorJob;
 import software.wings.scheduler.LdapGroupSyncJobHelper;
@@ -180,6 +183,7 @@ import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.account.AccountCrudObserver;
 import software.wings.service.intfc.account.AccountLicenseObserver;
 import software.wings.service.intfc.compliance.GovernanceConfigService;
+import software.wings.service.intfc.instance.stats.collector.StatsCollector;
 import software.wings.service.intfc.template.TemplateGalleryService;
 import software.wings.service.intfc.verification.CVConfigurationService;
 import software.wings.verification.CVConfiguration;
@@ -202,6 +206,8 @@ import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -293,6 +299,7 @@ public class AccountServiceImpl implements AccountService {
   @Inject private CgCdLicenseUsageService cgCdLicenseUsageService;
   @Inject private DelegateVersionService delegateVersionService;
   @Inject private OutboxService outboxService;
+  @Inject private StatsCollector statsCollector;
 
   @Inject @Named("BackgroundJobScheduler") private PersistentScheduler jobScheduler;
   @Inject private GovernanceFeature governanceFeature;
@@ -365,8 +372,7 @@ public class AccountServiceImpl implements AccountService {
               .setData(AccountEntityChangeDTO.newBuilder().setAccountId(accountId).build().toByteString())
               .build());
     } catch (Exception ex) {
-      log.error(
-          String.format("Failed to publish account %s event for accountId %s via event framework.", action, accountId));
+      log.error(format("Failed to publish account %s event for accountId %s via event framework.", action, accountId));
     }
   }
 
@@ -698,7 +704,7 @@ public class AccountServiceImpl implements AccountService {
       count++;
     }
     throw new GeneralException(
-        String.format("Failed to generate unique Account Name for initial accountName=%s", accountName));
+        format("Failed to generate unique Account Name for initial accountName=%s", accountName));
   }
 
   /**
@@ -1273,6 +1279,40 @@ public class AccountServiceImpl implements AccountService {
     return setAccountStatusInternal(account, AccountStatus.ACTIVE);
   }
 
+  @Override
+  public void scheduleAccountLevelJobs(
+      String targetAccountId, List<AccountJobType> jobTypes, AccountJobProperties jobProperties) {
+    if (jobTypes.contains(AccountJobType.ALERT)) {
+      log.info("Start adding AlertCheckJob for account {}", targetAccountId);
+      AlertCheckJob.delete(jobScheduler, targetAccountId);
+      AlertCheckJob.add(jobScheduler, targetAccountId);
+      log.info("AlertCheckJob is added successfully for account {}", targetAccountId);
+    }
+
+    if (jobTypes.contains(AccountJobType.INSTANCE)) {
+      if (jobProperties != null && jobProperties.getInstanceStatsSnapshotTimeDaysAgo() >= 0) {
+        long instanceStatsSnapshotTime =
+            Instant.now().minus(Period.ofDays(jobProperties.getInstanceStatsSnapshotTimeDaysAgo())).toEpochMilli();
+        boolean statsCreated = statsCollector.createStatsAtIfMissing(targetAccountId, instanceStatsSnapshotTime);
+        if (!statsCreated) {
+          throw new InvalidRequestException(format("Failed to create instance stats for account, %s", targetAccountId));
+        }
+      }
+
+      log.info("Start adding InstanceStatsCollectorJob for account {}", targetAccountId);
+      InstanceStatsCollectorJob.delete(jobScheduler, targetAccountId);
+      InstanceStatsCollectorJob.add(jobScheduler, targetAccountId);
+      log.info("InstanceStatsCollectorJob is added successfully for account {}", targetAccountId);
+    }
+
+    if (jobTypes.contains(AccountJobType.LIMIT_VICINITY)) {
+      log.info("LimitVicinityCheckerJob is added successfully for account {}", targetAccountId);
+      LimitVicinityCheckerJob.delete(jobScheduler, targetAccountId);
+      LimitVicinityCheckerJob.add(jobScheduler, targetAccountId);
+      log.info("LimitVicinityCheckerJob is added successfully for account {}", targetAccountId);
+    }
+  }
+
   private void updateMigratedToClusterUrl(Account account, String migratedToClusterUrl) {
     if (isNotEmpty(migratedToClusterUrl)) {
       wingsPersistence.update(account,
@@ -1527,7 +1567,7 @@ public class AccountServiceImpl implements AccountService {
     try {
       featureName = FeatureName.valueOf(featureFlagName);
     } catch (IllegalArgumentException ex) {
-      String errMsg = String.format("Invalid feature flag name received: %s", featureFlagName);
+      String errMsg = format("Invalid feature flag name received: %s", featureFlagName);
       log.error(errMsg, ex);
       throw new InvalidRequestException(errMsg);
     }

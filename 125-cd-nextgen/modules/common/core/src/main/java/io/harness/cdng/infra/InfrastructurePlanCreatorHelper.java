@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
@@ -160,6 +161,12 @@ public class InfrastructurePlanCreatorHelper {
         AsgInfrastructure asgInfrastructure = (AsgInfrastructure) infrastructure;
         asgInfrastructure.setInfraName(infraName);
         asgInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.AWS_SAM:
+        AwsSamInfrastructure awsSamInfrastructure = (AwsSamInfrastructure) infrastructure;
+        awsSamInfrastructure.setInfraName(infraName);
+        awsSamInfrastructure.setInfraIdentifier(infraIdentifier);
         return;
 
       case InfrastructureKind.AWS_LAMBDA:

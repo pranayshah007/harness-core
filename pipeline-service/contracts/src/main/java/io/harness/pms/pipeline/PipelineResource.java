@@ -654,7 +654,7 @@ public interface PipelineResource {
           NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
 
-  @POST
+  @GET
   @Path("validate/{uuid}")
   @Hidden
   @ApiOperation(value = "Get Pipeline validation event data", nickname = "getPipelineValidateResult")

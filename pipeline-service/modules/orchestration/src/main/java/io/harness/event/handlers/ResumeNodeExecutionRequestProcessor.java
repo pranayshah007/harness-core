@@ -9,6 +9,7 @@ package io.harness.event.handlers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.pms.contracts.execution.events.ResumeNodeExecutionRequest;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
@@ -28,10 +29,14 @@ public class ResumeNodeExecutionRequestProcessor implements SdkResponseProcessor
   public void handleEvent(SdkResponseEventProto event) {
     ResumeNodeExecutionRequest request = event.getResumeNodeExecutionRequest();
     Map<String, ResponseDataProto> responseDataProtoMap = new HashMap<>();
-    request.getResponseMap().forEach(
-        (k, v)
-            -> responseDataProtoMap.put(
-                k, ResponseDataProto.newBuilder().setResponse(v).setUsingKryoWithoutReference(false).build()));
+    if (EmptyPredicate.isNotEmpty(request.getResponseMap())) {
+      request.getResponseMap().forEach(
+          (k, v)
+              -> responseDataProtoMap.put(
+                  k, ResponseDataProto.newBuilder().setResponse(v).setUsingKryoWithoutReference(false).build()));
+    } else {
+      request.getResponseDataMap().forEach((k, v) -> responseDataProtoMap.put(k, v));
+    }
     engine.resumeNodeExecution(event.getAmbiance(), responseDataProtoMap, request.getAsyncError());
   }
 }

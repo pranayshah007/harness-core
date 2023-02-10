@@ -37,7 +37,18 @@ public class EngineExpressionServiceImpl implements EngineExpressionService {
 
   @Override
   public Object evaluateExpression(Ambiance ambiance, String expression) {
-    String json = pmsEngineExpressionService.evaluateExpression(ambiance, expression);
+    return evaluateExpression(ambiance, expression, null);
+  }
+
+  @Override
+  public Object evaluateExpression(Ambiance ambiance, String expression, ExpressionMode mode) {
+    String json;
+    if (mode != null && mode != ExpressionMode.UNKNOWN_MODE && mode != ExpressionMode.UNRECOGNIZED) {
+      json = pmsEngineExpressionService.evaluateExpression(
+          ambiance, expression, ExpressionModeMapper.fromExpressionModeProto(mode));
+    } else {
+      json = pmsEngineExpressionService.evaluateExpression(ambiance, expression);
+    }
     Object result;
     try {
       result = RecastOrchestrationUtils.fromJson(json, Object.class);

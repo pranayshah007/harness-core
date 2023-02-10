@@ -186,6 +186,7 @@ import io.harness.cvng.downtime.beans.DowntimeScope;
 import io.harness.cvng.downtime.beans.DowntimeSpecDTO;
 import io.harness.cvng.downtime.beans.DowntimeType;
 import io.harness.cvng.downtime.beans.EntityDetails;
+import io.harness.cvng.downtime.beans.EntityIdentifiersRule;
 import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
@@ -1855,8 +1856,11 @@ public class BuilderFactory {
         .enabled(true)
         .tags(new HashMap<>())
         .scope(DowntimeScope.PROJECT)
-        .entityRefs(Collections.singletonList(
-            EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+        .entitiesRule(
+            EntityIdentifiersRule.builder()
+                .entityIdentifiers(Collections.singletonList(
+                    EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+                .build())
         .spec(DowntimeSpecDTO.builder()
                   .type(DowntimeType.ONE_TIME)
                   .spec(OnetimeDowntimeSpec.builder()
@@ -1887,8 +1891,11 @@ public class BuilderFactory {
         .enabled(true)
         .tags(new HashMap<>())
         .scope(DowntimeScope.PROJECT)
-        .entityRefs(Collections.singletonList(
-            EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+        .entitiesRule(
+            EntityIdentifiersRule.builder()
+                .entityIdentifiers(Collections.singletonList(
+                    EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+                .build())
         .spec(DowntimeSpecDTO.builder()
                   .type(DowntimeType.ONE_TIME)
                   .spec(OnetimeDowntimeSpec.builder()
@@ -1914,8 +1921,11 @@ public class BuilderFactory {
         .enabled(true)
         .tags(new HashMap<>())
         .scope(DowntimeScope.PROJECT)
-        .entityRefs(Collections.singletonList(
-            EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+        .entitiesRule(
+            EntityIdentifiersRule.builder()
+                .entityIdentifiers(Collections.singletonList(
+                    EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+                .build())
         .spec(DowntimeSpecDTO.builder()
                   .type(DowntimeType.RECURRING)
                   .spec(RecurringDowntimeSpec.builder()

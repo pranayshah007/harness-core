@@ -119,7 +119,7 @@ if [[ "" != "$ENABLE_AUDIT" ]]; then
 fi
 
 if [[ "" != "$ENABLE_DEBUG_API" ]]; then
-  export ENABLE_DEBUG_API; yq -i '.enableDebugAPI=env($ENABLE_DEBUG_API)' $CONFIG_FILE
+  export ENABLE_DEBUG_API; yq -i '.enableDebugAPI=env(ENABLE_DEBUG_API)' $CONFIG_FILE
 fi
 
 

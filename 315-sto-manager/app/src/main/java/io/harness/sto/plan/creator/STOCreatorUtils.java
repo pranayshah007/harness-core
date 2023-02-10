@@ -29,7 +29,6 @@ public class STOCreatorUtils {
   public Set<String> getSupportedStepsV2() {
     SortedSet<String> steps = new TreeSet<>();
     steps.add("liteEngineTask");
-    steps.add("GitClone");
     steps.add("Plugin");
     steps.add("Security");
     steps.add("Run");

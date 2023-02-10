@@ -51,7 +51,14 @@ public class EngineExpressionGrpcServiceImpl extends EngineExpressionProtoServic
   @Override
   public void evaluateExpression(
       ExpressionEvaluateBlobRequest request, StreamObserver<ExpressionEvaluateBlobResponse> responseObserver) {
-    String value = pmsEngineExpressionService.evaluateExpression(request.getAmbiance(), request.getExpression());
+    final String value;
+    if (request.getExpressionMode() != ExpressionMode.UNKNOWN_MODE
+        && request.getExpressionMode() != ExpressionMode.UNRECOGNIZED) {
+      value = pmsEngineExpressionService.evaluateExpression(request.getAmbiance(), request.getExpression(),
+          ExpressionModeMapper.fromExpressionModeProto(request.getExpressionMode()));
+    } else {
+      value = pmsEngineExpressionService.evaluateExpression(request.getAmbiance(), request.getExpression());
+    }
     responseObserver.onNext(ExpressionEvaluateBlobResponse.newBuilder().setValue(value).build());
     responseObserver.onCompleted();
   }

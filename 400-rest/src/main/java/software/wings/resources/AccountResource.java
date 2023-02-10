@@ -61,6 +61,8 @@ import software.wings.beans.TechStack;
 import software.wings.beans.User;
 import software.wings.features.api.FeatureService;
 import software.wings.licensing.LicenseService;
+import software.wings.scheduler.AccountJobProperties;
+import software.wings.scheduler.AccountJobType;
 import software.wings.scheduler.ServiceInstanceUsageCheckerJob;
 import software.wings.security.UserThreadLocal;
 import software.wings.security.annotations.ApiKeyAuthorized;
@@ -83,12 +85,14 @@ import com.google.inject.name.Named;
 import io.dropwizard.jersey.PATCH;
 import io.swagger.annotations.Api;
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -760,6 +764,28 @@ public class AccountResource {
       return RestResponse.Builder.aRestResponse()
           .withResponseMessages(
               Lists.newArrayList(ResponseMessage.builder().message("User not allowed to reset cache").build()))
+          .build();
+    }
+  }
+
+  @POST
+  @Path("{accountId}/schedule-jobs")
+  public RestResponse<Boolean> scheduleAccountLevelJobs(@PathParam("accountId") String accountId,
+      @NotNull @QueryParam("targetAccountId") String targetAccountId,
+      @NotNull @QueryParam("jobTypes") List<AccountJobType> jobTypes,
+      @RequestBody @Valid @Parameter(description = "Properties of account jobs") AccountJobProperties jobProperties) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      accountService.scheduleAccountLevelJobs(targetAccountId, jobTypes, jobProperties);
+      return new RestResponse<>(Boolean.TRUE);
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to schedule jobs").build()))
           .build();
     }
   }

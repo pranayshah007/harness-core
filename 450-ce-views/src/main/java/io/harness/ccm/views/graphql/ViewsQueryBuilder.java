@@ -654,16 +654,19 @@ public class ViewsQueryBuilder {
         case AZURE:
         case CLUSTER:
         case COMMON:
-          query.addAliasedColumn(
-              new CustomSql(String.format(DISTINCT, viewFieldInput.getFieldId())), viewFieldInput.getFieldId());
+          query.addAliasedColumn(new CustomSql(String.format(
+                                     DISTINCT, getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId()))),
+              viewFieldInput.getFieldId());
           if (AWS_ACCOUNT_FIELD.equals(viewFieldInput.getFieldName()) && filter.getValues().length != 1) {
             // Skipping the first string for InCondition that client is passing in the search filter
             // Considering only the AWS account Ids
-            query.addCondition(ComboCondition.or(new InCondition(new CustomSql(viewFieldInput.getFieldId()),
-                                                     Arrays.stream(filter.getValues()).skip(1).toArray(Object[] ::new)),
-                getSearchCondition(viewFieldInput.getFieldId(), searchString)));
+            query.addCondition(ComboCondition.or(
+                new InCondition(new CustomSql(getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId())),
+                    Arrays.stream(filter.getValues()).skip(1).toArray(Object[] ::new)),
+                getSearchCondition(getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId()), searchString)));
           } else {
-            query.addCondition(getSearchCondition(viewFieldInput.getFieldId(), searchString));
+            query.addCondition(
+                getSearchCondition(getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId()), searchString));
           }
           sortKey = viewFieldInput.getFieldId();
           break;
@@ -1176,11 +1179,6 @@ public class ViewsQueryBuilder {
             Converter.toCustomColumnSqlObject(new CustomExpression(timeBucket).setDisableParens(true),
                 ViewsMetaDataFields.TIME_GRANULARITY.getFieldName()));
       }
-
-      String timeBucket = getGroupByTimeQueryWithDateTrunc(groupByTime, startTimeColumnName);
-      selectQuery.addCustomColumns(
-          Converter.toCustomColumnSqlObject(new CustomExpression(timeBucket).setDisableParens(true),
-              ViewsMetaDataFields.TIME_GRANULARITY.getFieldName()));
     } else {
       if (isTimeInEpochMillis) {
         selectQuery.addCustomColumns(Converter.toCustomColumnSqlObject(
@@ -1463,7 +1461,6 @@ public class ViewsQueryBuilder {
   }
 
   private Condition getCondition(QLCEInExpressionFilter filter) {
-    log.info("In fields expression fields: {}", filter.getFields());
     Condition condition = new InCondition(Converter.toCustomColumnSqlObject(new InFieldsExpression(filter.getFields())),
         Converter.toCustomColumnSqlObject(new InValuesExpression(filter.getValues())));
     if (Objects.nonNull(filter.getNullValueField())) {
@@ -1668,7 +1665,6 @@ public class ViewsQueryBuilder {
 
   public String getColumnNameForField(String tableIdentifier, String field) {
     String key = String.format(ViewFieldUtils.COLUMN_MAPPING_KEY, tableIdentifier, field.toLowerCase(Locale.ROOT));
-    log.info("Converted column : {}", key);
     if (ViewFieldUtils.getClickHouseColumnMapping().containsKey(key)) {
       return ViewFieldUtils.getClickHouseColumnMapping().get(key);
     }

@@ -929,8 +929,8 @@ public class AuthHandler {
   }
 
   private Map<String, List<Base>> getAppIdWorkflowMap(String accountId) {
-    List<Workflow> list =
-        workflowService.list(accountId, Arrays.asList("_id", "appId", "envId", "templatized", "templateExpressions"));
+    List<Workflow> list = workflowService.list(
+        accountId, Arrays.asList("_id", "appId", "envId", "templatized", "templateExpressions"), Workflow.RBAC_INDEX);
     return list.stream().collect(Collectors.groupingBy(Base::getAppId));
   }
 

@@ -71,9 +71,11 @@ import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.utils.IdentifierRefHelper;
@@ -408,7 +410,7 @@ public class ArtifactStepHelper {
 
   private List<EncryptedDataDetail> getGithubEncryptedDetails(
       GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
-    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    List<EncryptedDataDetail> encryptedDataDetails;
 
     if (githubConnectorDTO.getApiAccess() != null) {
       encryptedDataDetails = getGithubEncryptionDetails(githubConnectorDTO, ngAccess);
@@ -421,7 +423,7 @@ public class ArtifactStepHelper {
 
   private List<EncryptedDataDetail> getGithubEncryptionDetails(
       GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
-    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    List<EncryptedDataDetail> encryptedDataDetails;
 
     GithubApiAccessDTO githubApiAccessDTO = githubConnectorDTO.getApiAccess();
 
@@ -674,8 +676,8 @@ public class ArtifactStepHelper {
 
     YamlField serviceSpecField = serviceDefField.getNode().getField(YamlTypes.SERVICE_SPEC);
     if (serviceSpecField == null) {
-      throw new InvalidRequestException(String.format(
-          "Invalid Service being referred as spec inside serviceDefinition section is not there in Service"));
+      throw new InvalidRequestException(
+          "Invalid Service being referred as spec inside serviceDefinition section is not there in Service");
     }
 
     YamlField artifactsField = serviceSpecField.getNode().getField(YamlTypes.ARTIFACT_LIST_CONFIG);
@@ -712,7 +714,7 @@ public class ArtifactStepHelper {
           primaryNode.remove(YamlTypes.IDENTIFIER);
         }
       } else {
-        primaryArtifactRefValue = cdExpressionResolver.renderExpression(ambiance, primaryArtifactRefValue);
+        primaryArtifactRefValue = resolvePrimaryArtifactRef(ambiance, primaryArtifactRefValue);
         if (NGExpressionUtils.isRuntimeOrExpressionField(primaryArtifactRefValue)) {
           throw new InvalidRequestException("Primary artifact ref cannot be runtime or expression inside service");
         }
@@ -734,5 +736,19 @@ public class ArtifactStepHelper {
       }
     }
     return yamlField;
+  }
+
+  private String resolvePrimaryArtifactRef(Ambiance ambiance, String primaryArtifactRefValue) {
+    // handle primaryArtifactRef with input set validators nginx.allowedValues(nginx,http)
+    final ParameterField<String> primaryArtifactRefParameterField =
+        RuntimeInputValuesValidator.getInputSetParameterField(primaryArtifactRefValue);
+    if (primaryArtifactRefParameterField != null) {
+      if (primaryArtifactRefParameterField.isExpression()) {
+        primaryArtifactRefValue = cdExpressionResolver.renderExpression(ambiance, primaryArtifactRefValue);
+      } else {
+        primaryArtifactRefValue = primaryArtifactRefParameterField.getValue();
+      }
+    }
+    return primaryArtifactRefValue;
   }
 }

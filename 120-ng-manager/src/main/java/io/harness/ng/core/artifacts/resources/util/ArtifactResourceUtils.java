@@ -749,17 +749,17 @@ public class ArtifactResourceUtils {
             script = customScriptInlineSource.getScript().fetchFinalValue().toString();
           }
         }
-        if (customScriptInfo.getInputs() != null && isEmpty(customScriptInfo.getInputs())) {
+        if (isEmpty(customScriptInfo.getInputs())) {
           inputs = customArtifactConfig.getInputs();
         }
-        if (customScriptInfo.getDelegateSelector() != null && isEmpty(customScriptInfo.getDelegateSelector())) {
+        if (isEmpty(customScriptInfo.getDelegateSelector())) {
           delegateSelector =
               (List<io.harness.plancreator.steps.TaskSelectorYaml>) customArtifactConfig.getDelegateSelectors()
                   .fetchFinalValue();
         }
       }
 
-      if (isEmpty(script) || script.equalsIgnoreCase("<+input>")) {
+      if (isEmpty(script) || NGExpressionUtils.isRuntimeField(script)) {
         return Collections.emptyList();
       }
 

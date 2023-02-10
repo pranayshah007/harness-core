@@ -1119,6 +1119,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
                                         .name(TEMPLATE_IDENTIFIER)
                                         .versionLabel(TEMPLATE_VERSION_LABEL)
                                         .templateScope(Scope.PROJECT)
+                                        .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
                                         .yaml(yaml)
                                         .build();
     ngTemplateService.create(templateEntity, true, "");
@@ -1151,6 +1152,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
                                         .templateScope(Scope.PROJECT)
                                         .storeType(StoreType.INLINE)
                                         .deleted(false)
+                                        .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
                                         .yaml(yaml)
                                         .build();
     templateService.create(templateEntity, true, "");

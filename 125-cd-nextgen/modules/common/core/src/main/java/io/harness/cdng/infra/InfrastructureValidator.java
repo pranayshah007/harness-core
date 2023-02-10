@@ -16,6 +16,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
@@ -101,6 +102,10 @@ public class InfrastructureValidator {
 
       case InfrastructureKind.ASG:
         validateAsgInfrastructure((AsgInfrastructure) infrastructure);
+        break;
+
+      case InfrastructureKind.AWS_SAM:
+        validateAwsSamInfrastructure((AwsSamInfrastructure) infrastructure);
         break;
 
       case InfrastructureKind.AWS_LAMBDA:
@@ -263,6 +268,15 @@ public class InfrastructureValidator {
     }
     if (!hasValueOrExpression(infrastructure.getCluster())) {
       throw new InvalidArgumentsException(Pair.of("cluster", CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+    if (!hasValueOrExpression(infrastructure.getRegion())) {
+      throw new InvalidArgumentsException(Pair.of(AWS_REGION, CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+  }
+
+  private void validateAwsSamInfrastructure(AwsSamInfrastructure infrastructure) {
+    if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
+      throw new InvalidArgumentsException(Pair.of("connectorRef", CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getRegion())) {
       throw new InvalidArgumentsException(Pair.of(AWS_REGION, CANNOT_BE_EMPTY_ERROR_MSG));

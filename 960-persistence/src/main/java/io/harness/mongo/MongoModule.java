@@ -126,8 +126,7 @@ public class MongoModule extends AbstractModule {
         MongoClientOptions.builder(primaryMongoClientOptions)
             .readPreference(mongoConfig.getReadPreference())
             .addConnectionPoolListener(harnessConnectionPoolListener)
-            .applicationName("primary_mongo_client")
-            .description("primary_mongo_client"));
+            .applicationName("primary_mongo_client"));
     return new MongoClient(uri);
   }
 
@@ -172,8 +171,7 @@ public class MongoModule extends AbstractModule {
     MongoClientURI clientUri = new MongoClientURI(uri,
         MongoClientOptions.builder(getDefaultMongoClientOptions(mongoConfig))
             .addConnectionPoolListener(harnessConnectionPoolListener)
-            .applicationName("mongo_client_" + name)
-            .description("mongo_client_" + name));
+            .applicationName("mongo_client_" + name));
     MongoClient mongoClient = new MongoClient(clientUri);
 
     AdvancedDatastore datastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, clientUri.getDatabase());
@@ -330,8 +328,7 @@ public class MongoModule extends AbstractModule {
         MongoClientOptions.builder(MongoModule.getDefaultMongoClientOptions(mongoConfig))
             .readPreference(readPreference)
             .addConnectionPoolListener(harnessConnectionPoolListener)
-            .applicationName("analytics_mongo_client")
-            .description("analytics_mongo_client"));
+            .applicationName("analytics_mongo_client"));
 
     MongoClient mongoClient = new MongoClient(uri);
     AdvancedDatastore analyticalDataStore = (AdvancedDatastore) morphia.createDatastore(mongoClient, uri.getDatabase());
@@ -348,8 +345,7 @@ public class MongoModule extends AbstractModule {
     MongoClientURI uri;
     MongoClientOptions.Builder builder = MongoClientOptions.builder(getDefaultMongoClientOptions(mongoConfig))
                                              .addConnectionPoolListener(harnessConnectionPoolListener)
-                                             .applicationName("locks_mongo_client")
-                                             .description("locks_mongo_client");
+                                             .applicationName("locks_mongo_client");
     if (isNotEmpty(mongoConfig.getLocksUri())) {
       uri = new MongoClientURI(mongoConfig.getLocksUri(), builder);
     } else {

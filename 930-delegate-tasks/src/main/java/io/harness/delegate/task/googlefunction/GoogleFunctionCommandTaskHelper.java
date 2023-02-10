@@ -41,10 +41,13 @@ import io.harness.googlefunctions.GoogleCloudFunctionClient;
 import io.harness.googlefunctions.GoogleCloudRunClient;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import io.harness.serializer.JsonUtils;
+import io.harness.serializer.YamlUtils;
 import io.harness.threading.Morpheus;
 
 import software.wings.beans.LogColor;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.longrunning.OperationFuture;
 import com.google.api.gax.longrunning.OperationSnapshot;
@@ -91,6 +94,7 @@ import org.apache.commons.lang3.StringUtils;
 public class GoogleFunctionCommandTaskHelper {
   @Inject private GoogleCloudFunctionClient googleCloudFunctionClient;
   @Inject private GoogleCloudRunClient googleCloudRunClient;
+  private YamlUtils yamlUtils = new YamlUtils();
   private static final int MAXIMUM_STEADY_STATE_CHECK_API_CALL = 300;
   private static final String CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION = "%s-harness-temp-version";
 
@@ -106,8 +110,12 @@ public class GoogleFunctionCommandTaskHelper {
     String functionName = getFunctionName(googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion(),
         createFunctionRequestBuilder.getFunction().getName());
 
+    // set parent
     createFunctionRequestBuilder.setParent(
         getFunctionParent(googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion()));
+
+    // set function id
+    createFunctionRequestBuilder.setFunctionId(createFunctionRequestBuilder.getFunction().getName());
 
     Function.Builder functionBuilder = createFunctionRequestBuilder.getFunctionBuilder();
     BuildConfig.Builder buildConfigBuilder = functionBuilder.getBuildConfigBuilder();
@@ -276,6 +284,7 @@ public class GoogleFunctionCommandTaskHelper {
       currentApiCall++;
       GetFunctionRequest getFunctionRequest = GetFunctionRequest.newBuilder().setName(functionName).build();
       try {
+        logCallback.saveExecutionLog(format("Function deletion in progress: %s", color(functionName, LogColor.Yellow)));
         function = googleCloudFunctionClient.getFunction(
             getFunctionRequest, getGcpInternalConfig(gcpConnectorDTO, region, project));
         if (function.getState() == Function.State.DELETING) {
@@ -283,9 +292,12 @@ public class GoogleFunctionCommandTaskHelper {
               format("Function deletion in progress: %s", color(function.getName(), LogColor.Yellow)));
         }
         Morpheus.sleep(ofSeconds(10));
-      } catch (NotFoundException e) {
-        logCallback.saveExecutionLog(color(format("Deleted Function successfully...%n%n"), LogColor.Green));
-        return;
+      } catch (Exception e) {
+        if (e.getCause() instanceof NotFoundException) {
+          logCallback.saveExecutionLog(color(format("Deleted Function successfully...%n%n"), LogColor.Green));
+          return;
+        }
+        throw e;
       }
     } while (currentApiCall < MAXIMUM_STEADY_STATE_CHECK_API_CALL);
   }
@@ -377,10 +389,13 @@ public class GoogleFunctionCommandTaskHelper {
     GetFunctionRequest getFunctionRequest = GetFunctionRequest.newBuilder().setName(functionName).build();
     try {
       googleCloudFunctionClient.getFunction(getFunctionRequest, getGcpInternalConfig(gcpConnectorDTO, region, project));
-    } catch (NotFoundException e) {
-      logCallback.saveExecutionLog(
-          format("Skipping function: %s deletion as it doesn't exist", getResourceName(functionName)));
-      return;
+    } catch (Exception e) {
+      if (e.getCause() instanceof NotFoundException) {
+        logCallback.saveExecutionLog(
+            format("Skipping function: %s deletion as it doesn't exist", getResourceName(functionName)));
+        return;
+      }
+      throw e;
     }
     DeleteFunctionRequest deleteFunctionRequest = DeleteFunctionRequest.newBuilder().setName(functionName).build();
     logCallback.saveExecutionLog(format("Deleting function: %s", getResourceName(functionName)));
@@ -530,7 +545,9 @@ public class GoogleFunctionCommandTaskHelper {
 
   public void parseStringContentAsClassBuilder(String content, Message.Builder builder, String type) {
     try {
-      JsonFormat.parser().ignoringUnknownFields().merge(content, builder);
+      JsonNode jsonNode = yamlUtils.read(content, JsonNode.class);
+      String jsonContent = JsonUtils.asJson(jsonNode);
+      JsonFormat.parser().ignoringUnknownFields().merge(jsonContent, builder);
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       if ("createFunctionRequest".equals(type)) {

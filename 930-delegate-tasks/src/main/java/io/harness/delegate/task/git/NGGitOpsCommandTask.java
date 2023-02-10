@@ -305,8 +305,10 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       logCallback.saveExecutionLog(sb.toString(), INFO);
       logCallback = markDoneAndStartNew(logCallback, CreatePR, commandUnitsProgress);
 
+      String prTitle = (StringUtils.isEmpty(gitOpsTaskParams.getPrTitle())) ? PR_TITLE : gitOpsTaskParams.getPrTitle();
+
       CreatePRResponse createPRResponse =
-          createPullRequest(scmConnector, newBranch, baseBranch, PR_TITLE, gitOpsTaskParams.getAccountId());
+          createPullRequest(scmConnector, newBranch, baseBranch, prTitle, gitOpsTaskParams.getAccountId());
 
       String prLink = getPRLink(createPRResponse.getNumber(), scmConnector, scmConnector.getConnectorType());
 

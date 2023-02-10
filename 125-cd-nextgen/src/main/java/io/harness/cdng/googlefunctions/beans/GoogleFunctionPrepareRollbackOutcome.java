@@ -28,4 +28,5 @@ public class GoogleFunctionPrepareRollbackOutcome implements Outcome, ExecutionS
   boolean isFirstDeployment;
   String cloudRunServiceAsString;
   String cloudFunctionAsString;
+  String manifestContent;
 }

@@ -2,10 +2,6 @@ name: NextGen Manager Mongo Metrics
 identifier: ngManagerMongoMetrics
 metricGroup: ngManagerMongoMetricsGroup
 metrics:
-  - metricName: nextgen_manager_mongodb_wait_queue_size
-    metricDefinition: Wait Queue Size
-    type: LastValue
-    unit: count
   - metricName: nextgen_manager_mongodb_connection_pool_max_size
     metricDefinition: Connection Pool Max Size
     type: LastValue

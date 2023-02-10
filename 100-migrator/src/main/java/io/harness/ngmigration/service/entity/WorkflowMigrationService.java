@@ -21,11 +21,15 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.StepTypeSummary;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.WorkflowSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -39,6 +43,12 @@ import io.harness.ngmigration.service.step.StepMapperFactory;
 import io.harness.ngmigration.service.workflow.WorkflowHandler;
 import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.plancreator.pipeline.PipelineConfig;
+import io.harness.plancreator.pipeline.PipelineInfoConfig;
+import io.harness.plancreator.stages.StageElementWrapperConfig;
+import io.harness.pms.governance.PipelineSaveResponse;
+import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
@@ -63,6 +73,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -88,25 +99,38 @@ public class WorkflowMigrationService extends NgMigrationService {
   @Inject private StepMapperFactory stepMapperFactory;
   @Inject private WorkflowHandlerFactory workflowHandlerFactory;
   @Inject private TemplateResourceClient templateResourceClient;
+  @Inject private PipelineServiceClient pipelineServiceClient;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
     CgBasicInfo basicInfo = yamlFile.getCgBasicInfo();
-    NGTemplateInfoConfig templateInfoConfig = ((NGTemplateConfig) yamlFile.getYaml()).getTemplateInfoConfig();
+    String orgIdentifier;
+    String projectIdentifier;
+    String identifier;
+    if (yamlFile.getYaml() instanceof PipelineConfig) {
+      PipelineInfoConfig pipelineConfig = ((PipelineConfig) yamlFile.getYaml()).getPipelineInfoConfig();
+      orgIdentifier = pipelineConfig.getOrgIdentifier();
+      projectIdentifier = pipelineConfig.getProjectIdentifier();
+      identifier = pipelineConfig.getIdentifier();
+    } else {
+      NGTemplateInfoConfig templateInfoConfig = ((NGTemplateConfig) yamlFile.getYaml()).getTemplateInfoConfig();
+      orgIdentifier = templateInfoConfig.getOrgIdentifier();
+      projectIdentifier = templateInfoConfig.getProjectIdentifier();
+      identifier = templateInfoConfig.getIdentifier();
+    }
+
     return MigratedEntityMapping.builder()
         .appId(basicInfo.getAppId())
         .accountId(basicInfo.getAccountId())
         .cgEntityId(basicInfo.getId())
         .entityType(WORKFLOW.name())
         .accountIdentifier(basicInfo.getAccountId())
-        .orgIdentifier(templateInfoConfig.getOrgIdentifier())
-        .projectIdentifier(templateInfoConfig.getProjectIdentifier())
-        .identifier(templateInfoConfig.getIdentifier())
-        .scope(MigratorMappingService.getScope(
-            templateInfoConfig.getOrgIdentifier(), templateInfoConfig.getProjectIdentifier()))
-        .fullyQualifiedIdentifier(MigratorMappingService.getFullyQualifiedIdentifier(basicInfo.getAccountId(),
-            templateInfoConfig.getOrgIdentifier(), templateInfoConfig.getProjectIdentifier(),
-            templateInfoConfig.getIdentifier()))
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .identifier(identifier)
+        .scope(MigratorMappingService.getScope(orgIdentifier, projectIdentifier))
+        .fullyQualifiedIdentifier(MigratorMappingService.getFullyQualifiedIdentifier(
+            basicInfo.getAccountId(), orgIdentifier, projectIdentifier, identifier))
         .build();
   }
 
@@ -119,14 +143,22 @@ public class WorkflowMigrationService extends NgMigrationService {
         entities.stream()
             .map(entity -> (Workflow) entity.getEntity())
             .collect(groupingBy(entity -> entity.getOrchestration().getOrchestrationWorkflowType().name(), counting()));
-    Map<String, Long> summaryByStepTyp = entities.stream()
-                                             .flatMap(entity -> {
-                                               Workflow workflow = (Workflow) entity.getEntity();
-                                               WorkflowHandler workflowHandler =
-                                                   workflowHandlerFactory.getWorkflowHandler(workflow);
-                                               return workflowHandler.getSteps(workflow).stream();
-                                             })
-                                             .collect(groupingBy(GraphNode::getType, counting()));
+    Map<String, Long> summaryByStepType = entities.stream()
+                                              .flatMap(entity -> {
+                                                Workflow workflow = (Workflow) entity.getEntity();
+                                                WorkflowHandler workflowHandler =
+                                                    workflowHandlerFactory.getWorkflowHandler(workflow);
+                                                return workflowHandler.getSteps(workflow).stream();
+                                              })
+                                              .collect(groupingBy(GraphNode::getType, counting()));
+    Map<String, StepTypeSummary> stepTypeSummaryMap = new HashMap<>();
+    summaryByStepType.forEach((key, value) -> {
+      stepTypeSummaryMap.put(key,
+          StepTypeSummary.builder()
+              .count(value)
+              .status(stepMapperFactory.getStepMapper(key).stepSupportStatus(GraphNode.builder().build()))
+              .build());
+    });
     Set<String> expressions =
         entities.stream()
             .flatMap(entity -> {
@@ -140,7 +172,8 @@ public class WorkflowMigrationService extends NgMigrationService {
     return WorkflowSummary.builder()
         .count(entities.size())
         .typeSummary(summaryByType)
-        .stepTypeSummary(summaryByStepTyp)
+        .stepTypeSummary(summaryByStepType)
+        .stepsSummary(stepTypeSummaryMap)
         .expressions(expressions)
         .build();
   }
@@ -176,11 +209,11 @@ public class WorkflowMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     if (isNotEmpty(inputDTO.getDefaults()) && inputDTO.getDefaults().containsKey(WORKFLOW)
         && inputDTO.getDefaults().get(WORKFLOW).isSkipMigration()) {
-      return Collections.emptyList();
+      return null;
     }
     Workflow workflow = (Workflow) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, workflow.getName());
@@ -193,20 +226,34 @@ public class WorkflowMigrationService extends NgMigrationService {
     WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
     List<GraphNode> steps = workflowHandler.getSteps(workflow);
     // We will skip migration if any of the steps are unsupported
-    if (EmptyPredicate.isEmpty(steps)
-        || steps.stream()
-               .map(step -> stepMapperFactory.getStepMapper(step.getType()).stepSupportStatus(step))
-               .anyMatch(WorkflowStepSupportStatus.UNSUPPORTED::equals)) {
-      return Collections.emptyList();
+    if (EmptyPredicate.isEmpty(steps)) {
+      return YamlGenerationDetails.builder()
+          .skipDetails(Collections.singletonList(NGSkipDetail.builder()
+                                                     .type(entityId.getType())
+                                                     .cgBasicInfo(workflow.getCgBasicInfo())
+                                                     .reason("The workflow has no steps")
+                                                     .build()))
+          .build();
     }
-
-    JsonNode templateSpec = workflowHandler.getTemplateSpec(entities, migratedEntities, workflow);
-    if (templateSpec == null) {
-      return Collections.emptyList();
+    List<GraphNode> unsupportedSteps = steps.stream()
+                                           .filter(step
+                                               -> stepMapperFactory.getStepMapper(step.getType())
+                                                      .stepSupportStatus(step)
+                                                      .equals(WorkflowStepSupportStatus.UNSUPPORTED))
+                                           .collect(Collectors.toList());
+    if (EmptyPredicate.isNotEmpty(unsupportedSteps)) {
+      return YamlGenerationDetails.builder()
+          .skipDetails(Collections.singletonList(
+              NGSkipDetail.builder()
+                  .type(entityId.getType())
+                  .cgBasicInfo(workflow.getCgBasicInfo())
+                  .reason(String.format("The workflow has unsupported steps types -> %s",
+                      unsupportedSteps.stream().map(GraphNode::getType).distinct().collect(Collectors.joining(", "))))
+                  .build()))
+          .build();
     }
 
     List<NGYamlFile> files = new ArrayList<>();
-
     if (isNotEmpty(steps)) {
       List<NGYamlFile> additionalYamlFiles =
           steps.stream()
@@ -217,32 +264,62 @@ public class WorkflowMigrationService extends NgMigrationService {
       files.addAll(additionalYamlFiles);
     }
 
-    NGYamlFile ngYamlFile =
-        NGYamlFile.builder()
-            .type(WORKFLOW)
-            .filename("workflows/" + name + ".yaml")
-            .yaml(NGTemplateConfig.builder()
-                      .templateInfoConfig(NGTemplateInfoConfig.builder()
-                                              .type(workflowHandler.getTemplateType(workflow))
-                                              .identifier(identifier)
-                                              .name(name)
-                                              .description(ParameterField.createValueField(description))
-                                              .projectIdentifier(projectIdentifier)
-                                              .orgIdentifier(orgIdentifier)
-                                              .versionLabel(VERSION)
-                                              .spec(templateSpec)
-                                              .build())
-                      .build())
-            .ngEntityDetail(NgEntityDetail.builder()
-                                .identifier(identifier)
-                                .orgIdentifier(orgIdentifier)
-                                .projectIdentifier(projectIdentifier)
-                                .build())
-            .cgBasicInfo(workflow.getCgBasicInfo())
+    TemplateEntityType templateType = workflowHandler.getTemplateType(workflow);
+    YamlDTO yamlDTO;
+    if (templateType == TemplateEntityType.PIPELINE_TEMPLATE) {
+      List<StageElementWrapperConfig> stages = workflowHandler.asStages(entities, migratedEntities, workflow);
+      yamlDTO = PipelineConfig.builder()
+                    .pipelineInfoConfig(PipelineInfoConfig.builder()
+                                            .identifier(identifier)
+                                            .name(name)
+                                            .description(ParameterField.createValueField(description))
+                                            .projectIdentifier(projectIdentifier)
+                                            .orgIdentifier(orgIdentifier)
+                                            .stages(stages)
+                                            .allowStageExecutions(true)
+                                            .build())
+                    .build();
+    } else {
+      JsonNode templateSpec = workflowHandler.getTemplateSpec(entities, migratedEntities, workflow);
+      if (templateSpec == null) {
+        return YamlGenerationDetails.builder()
+            .skipDetails(Collections.singletonList(
+                NGSkipDetail.builder()
+                    .type(entityId.getType())
+                    .cgBasicInfo(workflow.getCgBasicInfo())
+                    .reason(
+                        "We could not generate a template/pipeline for the workflow. It could be because the workflow has steps that are no longer required in NG(e.g: Artifact Collection). For further assistance please reach out to Harness")
+                    .build()))
             .build();
+      }
+      yamlDTO = NGTemplateConfig.builder()
+                    .templateInfoConfig(NGTemplateInfoConfig.builder()
+                                            .type(templateType)
+                                            .identifier(identifier)
+                                            .name(name)
+                                            .description(ParameterField.createValueField(description))
+                                            .projectIdentifier(projectIdentifier)
+                                            .orgIdentifier(orgIdentifier)
+                                            .versionLabel(VERSION)
+                                            .spec(templateSpec)
+                                            .build())
+                    .build();
+    }
+
+    NGYamlFile ngYamlFile = NGYamlFile.builder()
+                                .type(WORKFLOW)
+                                .filename("workflows/" + name + ".yaml")
+                                .yaml(yamlDTO)
+                                .ngEntityDetail(NgEntityDetail.builder()
+                                                    .identifier(identifier)
+                                                    .orgIdentifier(orgIdentifier)
+                                                    .projectIdentifier(projectIdentifier)
+                                                    .build())
+                                .cgBasicInfo(workflow.getCgBasicInfo())
+                                .build();
     files.add(ngYamlFile);
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
-    return files;
+    return YamlGenerationDetails.builder().yamlFileList(files).build();
   }
 
   @Override
@@ -257,29 +334,58 @@ public class WorkflowMigrationService extends NgMigrationService {
           .build();
     }
     String yaml = YamlUtils.write(yamlFile.getYaml());
-    Response<ResponseDTO<TemplateWrapperResponseDTO>> resp =
-        templateClient
-            .createTemplate(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                inputDTO.getProjectIdentifier(), RequestBody.create(MediaType.parse("application/yaml"), yaml))
-            .execute();
-    log.info("Workflow creation Response details {} {}", resp.code(), resp.message());
-    if (resp.code() >= 400) {
-      log.info("The WF template is \n - {}", yaml);
+    if (yamlFile.getYaml() instanceof PipelineConfig) {
+      Response<ResponseDTO<PipelineSaveResponse>> resp =
+          pmsClient
+              .createPipeline(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
+                  inputDTO.getProjectIdentifier(),
+                  RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())))
+              .execute();
+      log.info("Workflow as pipeline creation Response details {} {}", resp.code(), resp.message());
+      if (resp.code() >= 400) {
+        log.info("Workflows as pipeline template is \n - {}", yaml);
+      }
+      return handleResp(yamlFile, resp);
+    } else {
+      Response<ResponseDTO<TemplateWrapperResponseDTO>> resp =
+          templateClient
+              .createTemplate(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
+                  inputDTO.getProjectIdentifier(), RequestBody.create(MediaType.parse("application/yaml"), yaml))
+              .execute();
+      log.info("Workflow as template creation Response details {} {}", resp.code(), resp.message());
+      if (resp.code() >= 400) {
+        log.info("The WF template is \n - {}", yaml);
+      }
+      return handleResp(yamlFile, resp);
     }
-    return handleResp(yamlFile, resp);
   }
 
   @Override
-  protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
+    Workflow workflow = (Workflow) cgEntityNode.getEntity();
+    WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
+    TemplateEntityType templateType = workflowHandler.getTemplateType(workflow);
     try {
-      TemplateResponseDTO response = NGRestUtils.getResponse(templateResourceClient.get(ngEntityDetail.getIdentifier(),
-          accountIdentifier, ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier(), VERSION, false));
-      if (response == null || StringUtils.isBlank(response.getYaml())) {
-        return null;
+      // Make API call to pipeline service if pipeline else it will be to template service
+      if (templateType == TemplateEntityType.PIPELINE_TEMPLATE) {
+        PMSPipelineResponseDTO response = NGRestUtils.getResponse(
+            pipelineServiceClient.getPipelineByIdentifier(ngEntityDetail.getIdentifier(), accountIdentifier,
+                ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier(), null, null, false));
+        if (response == null || StringUtils.isBlank(response.getYamlPipeline())) {
+          return null;
+        }
+        return YamlUtils.read(response.getYamlPipeline(), PipelineConfig.class);
+      } else {
+        TemplateResponseDTO response =
+            NGRestUtils.getResponse(templateResourceClient.get(ngEntityDetail.getIdentifier(), accountIdentifier,
+                ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier(), VERSION, false));
+        if (response == null || StringUtils.isBlank(response.getYaml())) {
+          return null;
+        }
+        return YamlUtils.read(response.getYaml(), NGTemplateConfig.class);
       }
-      return YamlUtils.read(response.getYaml(), NGTemplateConfig.class);
     } catch (Exception ex) {
-      log.warn("Error when getting workflow templates - ", ex);
+      log.warn("Error when getting workflow - ", ex);
       return null;
     }
   }

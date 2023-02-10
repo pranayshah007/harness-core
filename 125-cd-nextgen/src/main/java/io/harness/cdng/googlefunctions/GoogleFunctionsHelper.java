@@ -24,6 +24,7 @@ import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.googlefunctions.beans.GoogleFunctionPrepareRollbackOutcome;
 import io.harness.cdng.googlefunctions.beans.GoogleFunctionStepOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
@@ -103,6 +104,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private GoogleFunctionsEntityHelper googleFunctionsEntityHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private InstanceInfoService instanceInfoService;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   private final String GOOGLE_FUNCTION_PREPARE_ROLLBACK_COMMAND_NAME = "PrepareRollbackCloudFunction";
@@ -169,6 +171,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
             .cloudFunctionAsString(googleFunctionPrepareRollbackResponse.getCloudFunctionAsString())
             .cloudRunServiceAsString(googleFunctionPrepareRollbackResponse.getCloudRunServiceAsString())
             .isFirstDeployment(googleFunctionPrepareRollbackResponse.isFirstDeployment())
+            .manifestContent(googleFunctionsStepPassThroughData.getManifestContent())
             .build();
     executionSweepingOutputService.consume(ambiance,
         OutcomeExpressionConstants.GOOGLE_FUNCTION_PREPARE_ROLLBACK_OUTCOME, googleFunctionPrepareRollbackOutcome,
@@ -251,11 +254,21 @@ public class GoogleFunctionsHelper extends CDStepHelper {
         .build();
   }
 
-  public StepResponse generateStepResponse(
-      GoogleFunctionCommandResponse googleFunctionCommandResponse, StepResponseBuilder stepResponseBuilder) {
+  public StepResponse generateStepResponse(GoogleFunctionCommandResponse googleFunctionCommandResponse,
+      StepResponseBuilder stepResponseBuilder, Ambiance ambiance) {
     if (googleFunctionCommandResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       return getFailureResponseBuilder(googleFunctionCommandResponse, stepResponseBuilder).build();
     } else {
+      if (googleFunctionCommandResponse.getFunction() == null) {
+        return stepResponseBuilder.status(Status.SUCCEEDED).build();
+      }
+      InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+          ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+      GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig =
+          (GcpGoogleFunctionInfraConfig) getInfraConfig(infrastructureOutcome, ambiance);
+      List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfo(
+          googleFunctionCommandResponse, gcpGoogleFunctionInfraConfig, infrastructureOutcome.getInfrastructureKey());
+      instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
       GoogleFunctionStepOutcome googleFunctionStepOutcome =
           getGoogleFunctionStepOutcome(googleFunctionCommandResponse.getFunction());
 

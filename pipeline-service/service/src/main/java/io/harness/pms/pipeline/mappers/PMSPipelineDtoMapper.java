@@ -133,14 +133,22 @@ public class PMSPipelineDtoMapper {
     }
   }
 
-  public PipelineEntity toSimplifiedPipelineEntity(String accountId, String orgId, String projectId, String yaml) {
+  public PipelineEntity toSimplifiedPipelineEntity(
+      String accountId, String orgId, String projectId, String pipelineId, String pipelineName, String yaml) {
     try {
       PipelineYaml pipelineYaml = YamlUtils.read(yaml, PipelineYaml.class);
-      if (EmptyPredicate.isEmpty(pipelineYaml.getName())) {
+      // give priority to yaml name
+      if (EmptyPredicate.isNotEmpty(pipelineYaml.getName())) {
+        pipelineName = pipelineYaml.getName();
+      }
+      if (isEmpty(pipelineName)) {
         throw new InvalidRequestException("Pipeline name cannot be empty");
       }
-      String pipelineIdentifier = IdentifierGeneratorUtils.getId(pipelineYaml.getName());
-      if (NGExpressionUtils.matchesInputSetPattern(pipelineIdentifier)) {
+
+      if (isEmpty(pipelineId)) {
+        pipelineId = IdentifierGeneratorUtils.getId(pipelineName);
+      }
+      if (NGExpressionUtils.matchesInputSetPattern(pipelineId)) {
         throw new InvalidRequestException("Pipeline identifier cannot be runtime input");
       }
       return PipelineEntity.builder()
@@ -148,8 +156,8 @@ public class PMSPipelineDtoMapper {
           .accountId(accountId)
           .orgIdentifier(orgId)
           .projectIdentifier(projectId)
-          .name(pipelineYaml.getName())
-          .identifier(pipelineIdentifier)
+          .name(pipelineName)
+          .identifier(pipelineId)
           .tags(TagMapper.convertToList(null))
           .build();
     } catch (IOException e) {
@@ -157,11 +165,30 @@ public class PMSPipelineDtoMapper {
     }
   }
 
-  public PipelineEntity toPipelineEntity(
-      String accountId, String orgId, String projectId, String yaml, Boolean isDraft, String pipelineVersion) {
+  public PipelineEntity toPipelineEntity(String accountId, String orgId, String projectId, String pipelineName,
+      String yaml, Boolean isDraft, String pipelineVersion) {
     PipelineEntity pipelineEntity;
+    // Use the pipeline name from api request only for V1 yaml
     if (pipelineVersion != null && !pipelineVersion.equals(PipelineVersion.V0)) {
-      pipelineEntity = toSimplifiedPipelineEntity(accountId, orgId, projectId, yaml);
+      // PipelineId is passed as null since it gets created using pipelineName
+      pipelineEntity = toSimplifiedPipelineEntity(accountId, orgId, projectId, null, pipelineName, yaml);
+    } else {
+      pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
+    }
+    if (isDraft == null) {
+      isDraft = false;
+    }
+    pipelineEntity.setIsDraft(isDraft);
+    pipelineEntity.setHarnessVersion(pipelineVersion);
+    return pipelineEntity;
+  }
+
+  public PipelineEntity toPipelineEntityWithPipelineId(String accountId, String orgId, String projectId,
+      String pipelineId, String pipelineName, String yaml, Boolean isDraft, String pipelineVersion) {
+    PipelineEntity pipelineEntity;
+    // Use pipelineId for V1 yaml only since we can't change it if name gets changed
+    if (pipelineVersion != null && !pipelineVersion.equals(PipelineVersion.V0)) {
+      pipelineEntity = toSimplifiedPipelineEntity(accountId, orgId, projectId, pipelineId, pipelineName, yaml);
     } else {
       pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
     }
@@ -245,8 +272,9 @@ public class PMSPipelineDtoMapper {
   }
 
   public PipelineEntity toPipelineEntityWithVersion(String accountId, String orgId, String projectId, String pipelineId,
-      String yaml, String ifMatch, Boolean isDraft, String pipelineVersion) {
-    PipelineEntity pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml, isDraft, pipelineVersion);
+      String pipelineName, String yaml, String ifMatch, Boolean isDraft, String pipelineVersion) {
+    PipelineEntity pipelineEntity = toPipelineEntityWithPipelineId(
+        accountId, orgId, projectId, pipelineId, pipelineName, yaml, isDraft, pipelineVersion);
     PipelineEntity withVersion = pipelineEntity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     if (!Objects.equals(pipelineId, withVersion.getIdentifier())) {
       throw new InvalidRequestException(String.format(
