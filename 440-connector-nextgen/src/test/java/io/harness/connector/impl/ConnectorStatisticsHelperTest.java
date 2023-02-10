@@ -18,7 +18,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorConnectivityDetails;
-import io.harness.connector.ConnectorTestRule;
 import io.harness.connector.ConnectorsTestBase;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.stats.ConnectorStatistics;
@@ -40,8 +39,6 @@ import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.runners.GuiceRunner;
-import io.harness.runners.ModuleProvider;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -50,14 +47,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(DX)
-@RunWith(GuiceRunner.class)
-@ModuleProvider(ConnectorTestRule.class)
 public class ConnectorStatisticsHelperTest extends ConnectorsTestBase {
   @Inject ConnectorRepository connectorRepository;
   @Inject NGSettingsClient settingsClient;

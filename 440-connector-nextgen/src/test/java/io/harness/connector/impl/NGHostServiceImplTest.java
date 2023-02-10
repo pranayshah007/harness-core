@@ -17,7 +17,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.connector.ConnectorTestRule;
 import io.harness.connector.ConnectorsTestBase;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -31,8 +30,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.runners.GuiceRunner;
-import io.harness.runners.ModuleProvider;
 
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -43,14 +40,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.springframework.data.domain.Page;
 
 @OwnedBy(CDP)
 @Slf4j
-@RunWith(GuiceRunner.class)
-@ModuleProvider(ConnectorTestRule.class)
 public class NGHostServiceImplTest extends ConnectorsTestBase {
   private static final String REGION = "region";
   private static final String WEST = "west";

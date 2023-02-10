@@ -14,11 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.connector.ConnectorTestRule;
 import io.harness.connector.ConnectorsTestBase;
 import io.harness.rule.Owner;
-import io.harness.runners.GuiceRunner;
-import io.harness.runners.ModuleProvider;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -26,12 +23,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 
 @OwnedBy(HarnessTeam.PL)
-@RunWith(GuiceRunner.class)
-@ModuleProvider(ConnectorTestRule.class)
 public class GoogleSecretManagerConnectorServiceImplTest extends ConnectorsTestBase {
   @Inject @InjectMocks GoogleSecretManagerConnectorServiceImpl googleSecretManagerConnectorService;
   private final List<String> gcpRegions =

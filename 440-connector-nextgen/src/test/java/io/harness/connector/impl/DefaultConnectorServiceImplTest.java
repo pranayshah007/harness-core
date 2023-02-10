@@ -35,7 +35,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
-import io.harness.connector.ConnectorTestRule;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.ConnectorsTestBase;
 import io.harness.connector.entities.Connector;
@@ -69,8 +68,6 @@ import io.harness.repositories.ConnectorRepository;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.runners.GuiceRunner;
-import io.harness.runners.ModuleProvider;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.google.inject.Inject;
@@ -86,7 +83,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -99,8 +95,6 @@ import retrofit2.Response;
 
 @OwnedBy(DX)
 @Slf4j
-@RunWith(GuiceRunner.class)
-@ModuleProvider(ConnectorTestRule.class)
 public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Mock KubernetesConnectionValidator kubernetesConnectionValidator;
   @Inject ConnectorRepository connectorRepository;

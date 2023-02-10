@@ -13,8 +13,6 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.runners.GuiceRunner;
-import io.harness.runners.ModuleProvider;
 import io.harness.testing.TestExecution;
 
 import com.google.inject.Inject;
@@ -22,11 +20,8 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 @Slf4j
-@RunWith(GuiceRunner.class)
-@ModuleProvider(ConnectorTestRule.class)
 public class ConnectorComponentTest extends ConnectorsTestBase {
   @Inject private Map<String, TestExecution> tests;
 

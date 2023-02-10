@@ -17,4 +17,5 @@ import org.mockito.junit.MockitoRule;
 public abstract class ConnectorsTestBase extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Rule public LifecycleRule lifecycleRule = new LifecycleRule();
+  @Rule public ConnectorTestRule connectorTestRule = new ConnectorTestRule(lifecycleRule.getClosingFactory());
 }

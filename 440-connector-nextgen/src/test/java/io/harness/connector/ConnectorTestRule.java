@@ -26,6 +26,7 @@ import io.harness.connector.services.ConnectorService;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.impl.noop.NoOpProducer;
+import io.harness.factory.ClosingFactory;
 import io.harness.ff.FeatureFlagService;
 import io.harness.gitsync.clients.YamlGitConfigClient;
 import io.harness.gitsync.persistance.GitAwarePersistence;
@@ -33,6 +34,7 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.persistance.testing.GitSyncablePersistenceTestModule;
 import io.harness.gitsync.persistance.testing.NoOpGitAwarePersistenceImpl;
 import io.harness.govern.ProviderModule;
+import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
@@ -52,7 +54,7 @@ import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
-import io.harness.runners.ModuleListProvider;
+import io.harness.rule.InjectorRuleMixin;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.serializer.ConnectorNextGenRegistrars;
@@ -74,6 +76,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -82,20 +85,31 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
 import io.dropwizard.jackson.Jackson;
+import java.io.Closeable;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.rules.MethodRule;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.Statement;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Slf4j
 @OwnedBy(DX)
-public class ConnectorTestRule implements ModuleListProvider {
+public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMixin {
+  ClosingFactory closingFactory;
+
+  public ConnectorTestRule(ClosingFactory closingFactory) {
+    this.closingFactory = closingFactory;
+  }
+
   @Override
-  public List<Module> modules() {
+  public List<Module> modules(List<Annotation> annotations) {
     List<Module> modules = new ArrayList<>();
     modules.add(new AbstractModule() {
       @Override
@@ -139,13 +153,7 @@ public class ConnectorTestRule implements ModuleListProvider {
         bind(EntitySetupUsageService.class).toInstance(mock(EntitySetupUsageService.class));
       }
     });
-    modules.add(new ProviderModule() {
-      @Provides
-      @Singleton
-      MongoRuleMixin.MongoType provideMongoType() {
-        return MongoRuleMixin.MongoType.FAKE;
-      }
-    });
+    modules.add(mongoTypeModule(annotations));
     modules.add(TestMongoModule.getInstance());
     modules.add(new GitSyncablePersistenceTestModule());
     modules.add(ConnectorModule.getInstance(
@@ -258,5 +266,21 @@ public class ConnectorTestRule implements ModuleListProvider {
       }
     });
     return modules;
+  }
+
+  @Override
+  public void initialize(Injector injector, List<Module> modules) {
+    for (Module module : modules) {
+      if (module instanceof ServersModule) {
+        for (Closeable server : ((ServersModule) module).servers(injector)) {
+          closingFactory.addServer(server);
+        }
+      }
+    }
+  }
+
+  @Override
+  public Statement apply(Statement base, FrameworkMethod method, Object target) {
+    return applyInjector(log, base, method, target);
   }
 }

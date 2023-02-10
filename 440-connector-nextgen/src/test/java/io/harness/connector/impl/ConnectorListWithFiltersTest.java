@@ -37,7 +37,6 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
-import io.harness.connector.ConnectorTestRule;
 import io.harness.connector.ConnectorsTestBase;
 import io.harness.connector.entities.embedded.awsconnector.AwsConfig.AwsConfigKeys;
 import io.harness.connector.entities.embedded.gcpconnector.GcpConfig.GcpConfigKeys;
@@ -79,8 +78,6 @@ import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.runners.GuiceRunner;
-import io.harness.runners.ModuleProvider;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -92,7 +89,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -103,8 +99,6 @@ import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(DX)
-@RunWith(GuiceRunner.class)
-@ModuleProvider(ConnectorTestRule.class)
 public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
   @Mock OrganizationService organizationService;
   @Mock ProjectService projectService;
