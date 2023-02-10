@@ -26,17 +26,23 @@ import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.opa.OpaService;
 import io.harness.ng.opa.entities.connector.OpaConnectorServiceImpl;
 import io.harness.rest.RestResponse;
+import io.harness.rule.NgManagerRule;
 import io.harness.rule.Owner;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 
 import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(PL)
+@RunWith(GuiceRunner.class)
+@ModuleProvider(NgManagerRule.class)
 public class OpaConnectorServiceImplTest extends NgManagerTestBase {
   @Mock private OpaService opaService;
   @Mock private AccountClient accountClient;

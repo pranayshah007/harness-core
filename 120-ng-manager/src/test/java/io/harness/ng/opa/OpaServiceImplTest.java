@@ -29,7 +29,9 @@ import io.harness.ng.opa.entities.connector.ConnectorOpaEvaluationContext;
 import io.harness.ng.opa.entities.secret.SecretOpaEvaluationContext;
 import io.harness.opaclient.OpaServiceClient;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
+import io.harness.rule.NgManagerRule;
 import io.harness.rule.Owner;
+import io.harness.runners.ModuleProvider;
 
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +49,7 @@ import retrofit2.Call;
 @RunWith(PowerMockRunner.class)
 @Slf4j
 @PrepareForTest({SafeHttpCall.class})
+@ModuleProvider(NgManagerRule.class)
 public class OpaServiceImplTest extends NgManagerTestBase {
   @Mock private OpaServiceClient opaServiceClient;
   @Mock private NextGenConfiguration nextGenConfiguration;

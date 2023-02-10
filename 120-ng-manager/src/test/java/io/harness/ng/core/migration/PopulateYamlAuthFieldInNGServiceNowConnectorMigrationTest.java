@@ -28,11 +28,15 @@ import io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePassw
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGServiceNowConnectorMigration;
 import io.harness.repositories.ConnectorRepository;
+import io.harness.rule.NgManagerRule;
 import io.harness.rule.Owner;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 
 import java.util.Collections;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -41,6 +45,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.CDC)
+@RunWith(GuiceRunner.class)
+@ModuleProvider(NgManagerRule.class)
 public class PopulateYamlAuthFieldInNGServiceNowConnectorMigrationTest extends NgManagerTestBase {
   @Mock private MongoTemplate mongoTemplate;
   @Mock private ConnectorRepository connectorRepository;

@@ -21,8 +21,11 @@ import io.harness.cdng.gitops.beans.GitOpsInstanceRequest;
 import io.harness.helper.GitOpsRequestDTOMapper;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
+import io.harness.rule.NgManagerRule;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,10 +35,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 @OwnedBy(GITOPS)
+@RunWith(GuiceRunner.class)
+@ModuleProvider(NgManagerRule.class)
 public class GitOpsInstanceSyncResourceTest extends NgManagerTestBase {
   String accountId = "accountId";
   String orgId = "orgId";

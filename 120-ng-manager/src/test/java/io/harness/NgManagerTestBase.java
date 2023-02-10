@@ -9,15 +9,19 @@ package io.harness;
 
 import io.harness.rule.LifecycleRule;
 import io.harness.rule.NgManagerRule;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Rule;
+import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 @Slf4j
+@RunWith(GuiceRunner.class)
+@ModuleProvider(NgManagerRule.class)
 public abstract class NgManagerTestBase extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Rule public LifecycleRule lifecycleRule = new LifecycleRule();
-  @Rule public NgManagerRule apiServiceRule = new NgManagerRule(lifecycleRule.getClosingFactory());
 }

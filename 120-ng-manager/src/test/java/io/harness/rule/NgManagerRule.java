@@ -8,7 +8,6 @@
 package io.harness.rule;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
 
 import static org.mockito.Mockito.mock;
@@ -18,10 +17,8 @@ import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
 import io.harness.connector.gitsync.ConnectorGitSyncHelper;
-import io.harness.factory.ClosingFactory;
 import io.harness.gitsync.branching.GitBranchingHelper;
 import io.harness.govern.ProviderModule;
-import io.harness.govern.ServersModule;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.NextGenConfiguration;
@@ -35,6 +32,7 @@ import io.harness.ng.userprofile.entities.SourceCodeManager.SourceCodeManagerMap
 import io.harness.oas.OASModule;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.serializer.json.PmsBeansJacksonModule;
+import io.harness.runners.ModuleListProvider;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
@@ -50,7 +48,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
-import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -59,32 +56,26 @@ import com.google.inject.name.Named;
 import dev.morphia.converters.TypeConverter;
 import io.dropwizard.jackson.Jackson;
 import io.serializer.HObjectMapper;
-import java.io.Closeable;
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.rules.MethodRule;
-import org.junit.runners.model.FrameworkMethod;
-import org.junit.runners.model.Statement;
 
 @OwnedBy(PL)
 @Slf4j
-public class NgManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin {
-  ClosingFactory closingFactory;
-
-  public NgManagerRule(ClosingFactory closingFactory) {
-    this.closingFactory = closingFactory;
-  }
-
-  @Override
-  public List<Module> modules(List<Annotation> annotations) {
+public class NgManagerRule implements ModuleListProvider {
+  public List<Module> modules() {
     ExecutorModule.getInstance().setExecutorService(new CurrentThreadExecutor());
     List<Module> modules = new ArrayList<>();
-    modules.add(mongoTypeModule(annotations));
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      MongoRuleMixin.MongoType provideMongoType() {
+        return MongoRuleMixin.MongoType.FAKE;
+      }
+    });
     modules.add(TestMongoModule.getInstance());
     modules.add(KryoModule.getInstance());
     modules.add(YamlSdkModule.getInstance());
@@ -112,11 +103,7 @@ public class NgManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
 
     CacheConfigBuilder cacheConfigBuilder =
         CacheConfig.builder().disabledCaches(new HashSet<>()).cacheNamespace("harness-cache");
-    if (annotations.stream().anyMatch(annotation -> annotation instanceof Cache)) {
-      cacheConfigBuilder.cacheBackend(CAFFEINE);
-    } else {
-      cacheConfigBuilder.cacheBackend(NOOP);
-    }
+    cacheConfigBuilder.cacheBackend(NOOP);
     CacheModule cacheModule = new CacheModule(cacheConfigBuilder.build());
     modules.add(cacheModule);
 
@@ -157,21 +144,5 @@ public class NgManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       }
     });
     return modules;
-  }
-
-  @Override
-  public void initialize(Injector injector, List<Module> modules) {
-    for (Module module : modules) {
-      if (module instanceof ServersModule) {
-        for (Closeable server : ((ServersModule) module).servers(injector)) {
-          closingFactory.addServer(server);
-        }
-      }
-    }
-  }
-
-  @Override
-  public Statement apply(Statement statement, FrameworkMethod frameworkMethod, Object target) {
-    return applyInjector(log, statement, frameworkMethod, target);
   }
 }

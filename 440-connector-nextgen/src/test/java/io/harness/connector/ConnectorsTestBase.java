@@ -9,11 +9,16 @@ package io.harness.connector;
 
 import io.harness.CategoryTest;
 import io.harness.rule.LifecycleRule;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 
 import org.junit.Rule;
+import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+@RunWith(GuiceRunner.class)
+@ModuleProvider(ConnectorTestRule.class)
 public abstract class ConnectorsTestBase extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Rule public LifecycleRule lifecycleRule = new LifecycleRule();

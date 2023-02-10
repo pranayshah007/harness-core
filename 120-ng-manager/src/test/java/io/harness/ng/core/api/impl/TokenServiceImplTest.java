@@ -48,7 +48,10 @@ import io.harness.ng.core.user.service.NgUserService;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ng.core.spring.TokenRepository;
+import io.harness.rule.NgManagerRule;
 import io.harness.rule.Owner;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;
@@ -68,10 +71,13 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
+@RunWith(GuiceRunner.class)
+@ModuleProvider(NgManagerRule.class)
 public class TokenServiceImplTest extends NgManagerTestBase {
   private TokenService tokenService;
   private TokenRepository tokenRepository;

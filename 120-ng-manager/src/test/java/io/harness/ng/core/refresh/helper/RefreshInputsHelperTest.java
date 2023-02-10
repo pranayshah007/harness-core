@@ -42,7 +42,10 @@ import io.harness.persistence.HPersistence;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
 import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
 import io.harness.repositories.service.spring.ServiceRepository;
+import io.harness.rule.NgManagerRule;
 import io.harness.rule.Owner;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
@@ -56,11 +59,14 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(HarnessTeam.CDC)
+@RunWith(GuiceRunner.class)
+@ModuleProvider(NgManagerRule.class)
 public class RefreshInputsHelperTest extends NgManagerTestBase {
   private static final String RESOURCE_PATH_PREFIX = "refresh/validate/";
   private static final String ACCOUNT_ID = "accountId";

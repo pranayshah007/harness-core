@@ -61,7 +61,9 @@ import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlNodeUtils;
+import io.harness.rule.NgManagerRule;
 import io.harness.rule.Owner;
+import io.harness.runners.ModuleProvider;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -88,6 +90,7 @@ import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
 @RunWith(JUnitParamsRunner.class)
+@ModuleProvider(NgManagerRule.class)
 public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @InjectMocks ArtifactResourceUtils artifactResourceUtils;
   @Mock PipelineServiceClient pipelineServiceClient;

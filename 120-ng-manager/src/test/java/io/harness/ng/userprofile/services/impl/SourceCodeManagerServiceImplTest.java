@@ -58,7 +58,10 @@ import io.harness.ng.userprofile.entities.SourceCodeManager;
 import io.harness.ng.userprofile.entities.SourceCodeManager.SourceCodeManagerMapper;
 import io.harness.ng.userprofile.services.api.SourceCodeManagerService;
 import io.harness.repositories.ng.userprofile.spring.SourceCodeManagerRepository;
+import io.harness.rule.NgManagerRule;
 import io.harness.rule.Owner;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.PrincipalType;
@@ -72,8 +75,11 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @OwnedBy(PL)
+@RunWith(GuiceRunner.class)
+@ModuleProvider(NgManagerRule.class)
 public class SourceCodeManagerServiceImplTest extends NgManagerTestBase {
   SourceCodeManagerService sourceCodeManagerService;
   @Inject private Map<SCMType, SourceCodeManagerMapper> scmMapBinder;

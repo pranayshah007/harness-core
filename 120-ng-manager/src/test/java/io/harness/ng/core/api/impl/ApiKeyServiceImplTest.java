@@ -33,7 +33,10 @@ import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.ApiKeyDTO;
 import io.harness.ng.core.entities.ApiKey;
 import io.harness.repositories.ng.core.spring.ApiKeyRepository;
+import io.harness.rule.NgManagerRule;
 import io.harness.rule.Owner;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 
 import io.fabric8.utils.Lists;
 import java.time.Instant;
@@ -45,9 +48,12 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
+@RunWith(GuiceRunner.class)
+@ModuleProvider(NgManagerRule.class)
 public class ApiKeyServiceImplTest extends NgManagerTestBase {
   private ApiKeyService apiKeyService;
   private ApiKeyRepository apiKeyRepository;

@@ -37,7 +37,10 @@ import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.rest.RestResponse;
+import io.harness.rule.NgManagerRule;
 import io.harness.rule.Owner;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimUser;
 import io.harness.serializer.JsonUtils;
@@ -59,11 +62,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import retrofit2.Call;
 
 @OwnedBy(PL)
 @Slf4j
+@RunWith(GuiceRunner.class)
+@ModuleProvider(NgManagerRule.class)
 public class NGScimUserServiceImplTest extends NgManagerTestBase {
   private NgUserService ngUserService;
 

@@ -38,7 +38,7 @@ public class GuiceRunner extends BlockJUnit4ClassRunner {
       throws InitializationError, IllegalAccessException, InstantiationException {
     final ModuleProvider annotation = klass.getAnnotation(ModuleProvider.class);
     if (annotation == null) {
-      final String message = String.format("Missing @GuiceModules annotation for unit test '%s'", klass.getName());
+      final String message = String.format("Missing @ModuleProvider annotation for unit test '%s'", klass.getName());
       throw new InitializationError(message);
     }
     ModuleListProvider moduleListProvider = annotation.value().newInstance();

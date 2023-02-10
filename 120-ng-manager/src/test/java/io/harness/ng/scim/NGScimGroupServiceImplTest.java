@@ -25,7 +25,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.service.NgUserService;
+import io.harness.rule.NgManagerRule;
 import io.harness.rule.Owner;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 import io.harness.scim.ScimGroup;
 import io.harness.scim.ScimListResponse;
 
@@ -33,8 +36,11 @@ import java.util.ArrayList;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @OwnedBy(PL)
+@RunWith(GuiceRunner.class)
+@ModuleProvider(NgManagerRule.class)
 public class NGScimGroupServiceImplTest extends NgManagerTestBase {
   private static final Integer MAX_RESULT_COUNT = 20;
 

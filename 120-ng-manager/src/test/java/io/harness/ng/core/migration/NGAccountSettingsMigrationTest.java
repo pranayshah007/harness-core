@@ -18,15 +18,21 @@ import io.harness.NgManagerTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
 import io.harness.ng.core.services.OrganizationService;
+import io.harness.rule.NgManagerRule;
 import io.harness.rule.Owner;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
+@RunWith(GuiceRunner.class)
+@ModuleProvider(NgManagerRule.class)
 public class NGAccountSettingsMigrationTest extends NgManagerTestBase {
   @Mock OrganizationService organizationService;
   @Mock NGAccountSettingService accountSettingService;
@@ -45,6 +51,7 @@ public class NGAccountSettingsMigrationTest extends NgManagerTestBase {
     accountSettingsMigration.migrate();
     verify(accountSettingService, times(3)).setUpDefaultAccountSettings(any());
   }
+
   @Test
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)

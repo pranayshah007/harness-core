@@ -31,7 +31,10 @@ import io.harness.ng.serviceaccounts.entities.ServiceAccount;
 import io.harness.ng.serviceaccounts.service.ServiceAccountDTOMapper;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.repositories.ng.serviceaccounts.ServiceAccountRepository;
+import io.harness.rule.NgManagerRule;
 import io.harness.rule.Owner;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 import io.harness.serviceaccount.ServiceAccountDTO;
 
 import io.dropwizard.jersey.validation.JerseyViolationException;
@@ -43,9 +46,12 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
+@RunWith(GuiceRunner.class)
+@ModuleProvider(NgManagerRule.class)
 public class ServiceAccountServiceImplTest extends NgManagerTestBase {
   private ServiceAccountService serviceAccountService;
   private ServiceAccountRepository serviceAccountRepository;

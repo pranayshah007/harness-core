@@ -43,8 +43,11 @@ import io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType;
 import io.harness.ng.core.entitysetupusage.entity.EntitySetupUsage;
 import io.harness.ng.core.entitysetupusage.helper.GitInfoPopulatorForConnector;
 import io.harness.ng.core.entitysetupusage.helper.SetupUsageGitInfoPopulator;
+import io.harness.rule.NgManagerRule;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 
 import com.google.protobuf.StringValue;
 import java.util.ArrayList;
@@ -55,11 +58,14 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 
 @OwnedBy(DX)
+@RunWith(GuiceRunner.class)
+@ModuleProvider(NgManagerRule.class)
 public class EntitySetupUsageEventDTOMapperTest extends NgManagerTestBase {
   private final String accountIdentifier = "accountIdentifier";
   private final String orgIdentifier = "orgIdentifier";

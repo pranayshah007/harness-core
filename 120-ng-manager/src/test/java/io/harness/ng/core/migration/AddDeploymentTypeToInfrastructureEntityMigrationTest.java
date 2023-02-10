@@ -18,13 +18,19 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.migration.background.AddDeploymentTypeToInfrastructureEntityMigration;
+import io.harness.rule.NgManagerRule;
 import io.harness.rule.Owner;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 
 @OwnedBy(HarnessTeam.CDC)
+@RunWith(GuiceRunner.class)
+@ModuleProvider(NgManagerRule.class)
 public class AddDeploymentTypeToInfrastructureEntityMigrationTest extends NgManagerTestBase {
   @InjectMocks AddDeploymentTypeToInfrastructureEntityMigration migration;
 

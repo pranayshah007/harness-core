@@ -42,7 +42,10 @@ import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
+import io.harness.rule.NgManagerRule;
 import io.harness.rule.Owner;
+import io.harness.runners.GuiceRunner;
+import io.harness.runners.ModuleProvider;
 import io.harness.service.instancedashboardservice.InstanceDashboardServiceImpl;
 
 import java.util.ArrayList;
@@ -55,11 +58,14 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
 @OwnedBy(HarnessTeam.CDC)
+@RunWith(GuiceRunner.class)
+@ModuleProvider(NgManagerRule.class)
 public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
   @InjectMocks private CDOverviewDashboardServiceImpl cdOverviewDashboardService;
   @Mock private InstanceDashboardServiceImpl instanceDashboardService;
