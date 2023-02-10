@@ -27,6 +27,8 @@ import io.harness.steps.cf.FeatureFlagStageStep;
 import io.harness.steps.cf.FlagConfigurationStep;
 import io.harness.steps.common.pipeline.PipelineSetupStep;
 import io.harness.steps.container.ContainerStep;
+import io.harness.steps.container.InitContainerStep;
+import io.harness.steps.container.execution.RunContainerStep;
 import io.harness.steps.customstage.CustomStageStep;
 import io.harness.steps.email.EmailStep;
 import io.harness.steps.group.GroupStepV1;
@@ -88,6 +90,8 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(WaitStep.STEP_TYPE, WaitStep.class);
     engineSteps.put(GroupStepV1.STEP_TYPE, GroupStepV1.class);
     engineSteps.put(ContainerStep.STEP_TYPE, ContainerStep.class);
+    engineSteps.put(InitContainerStep.STEP_TYPE, InitContainerStep.class);
+    engineSteps.put(RunContainerStep.STEP_TYPE, RunContainerStep.class);
 
     return engineSteps;
   }

@@ -38,6 +38,8 @@ public interface StepSpecTypeConstants {
   String EMAIL = "Email";
   String WAIT_STEP = "Wait";
   String CONTAINER_STEP = "Container";
+  String INIT_CONTAINER_STEP = "InitContainer";
+  String RUN_CONTAINER_STEP = "RunContainer";
 
   String APPROVAL_FACILITATOR = "APPROVAL_FACILITATOR";
   String RESOURCE_RESTRAINT_FACILITATOR_TYPE = "RESOURCE_RESTRAINT";
@@ -88,4 +90,14 @@ public interface StepSpecTypeConstants {
                                                   .build();
   StepType CONTAINER_STEP_TYPE =
       StepType.newBuilder().setType(StepSpecTypeConstants.CONTAINER_STEP).setStepCategory(StepCategory.STEP).build();
+
+  StepType INIT_CONTAINER_STEP_TYPE = StepType.newBuilder()
+                                          .setType(StepSpecTypeConstants.INIT_CONTAINER_STEP)
+                                          .setStepCategory(StepCategory.STEP)
+                                          .build();
+
+  StepType RUN_CONTAINER_STEP_TYPE = StepType.newBuilder()
+                                         .setType(StepSpecTypeConstants.RUN_CONTAINER_STEP)
+                                         .setStepCategory(StepCategory.STEP)
+                                         .build();
 }

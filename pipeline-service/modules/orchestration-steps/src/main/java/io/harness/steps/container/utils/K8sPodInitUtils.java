@@ -386,7 +386,7 @@ public class K8sPodInitUtils {
     OptionalSweepingOutput optionalSweepingOutput =
         executionSweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(key));
     if (!optionalSweepingOutput.isFound()) {
-      executionSweepingOutputResolver.consume(ambiance, key, value, StepCategory.STEP.name());
+      executionSweepingOutputResolver.consume(ambiance, key, value, StepCategory.STEP_GROUP.name());
     }
   }
 
