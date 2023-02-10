@@ -53,8 +53,11 @@ import io.harness.ccm.billing.preaggregated.PreAggregateBillingService;
 import io.harness.ccm.billing.preaggregated.PreAggregateBillingServiceImpl;
 import io.harness.ccm.budget.BudgetService;
 import io.harness.ccm.budget.BudgetServiceImpl;
+import io.harness.ccm.clickHouse.ClickHouseService;
+import io.harness.ccm.clickHouse.ClickHouseServiceImpl;
 import io.harness.ccm.cluster.ClusterRecordService;
 import io.harness.ccm.cluster.ClusterRecordServiceImpl;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.service.impl.EntityMetadataServiceImpl;
 import io.harness.ccm.commons.service.impl.InstanceDataServiceImpl;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
@@ -936,6 +939,13 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
   @Provides
   @Singleton
+  @Named("clickHouseConfig")
+  ClickHouseConfig clickHouseConfig() {
+    return ClickHouseConfig.builder().build();
+  }
+
+  @Provides
+  @Singleton
   @Named("isClickHouseEnabled")
   public boolean isClickHouseEnabled() {
     return false;
@@ -1444,6 +1454,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(NGGitService.class).to(NGGitServiceImpl.class);
     bind(GitClientV2.class).to(GitClientV2Impl.class);
     bind(PerpetualTaskScheduleService.class).to(PerpetualTaskScheduleServiceImpl.class);
+    bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
 
     bind(AnomalyService.class).to(AnomalyServiceImpl.class);
 

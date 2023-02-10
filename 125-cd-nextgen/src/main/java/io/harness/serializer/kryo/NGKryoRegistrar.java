@@ -45,6 +45,7 @@ import io.harness.cdng.infra.InfraSectionStepParameters;
 import io.harness.cdng.infra.InfraUseFromStage;
 import io.harness.cdng.infra.InfrastructureDef;
 import io.harness.cdng.infra.steps.InfraStepParameters;
+import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
 import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepInfo;
 import io.harness.cdng.k8s.DeleteResourcesWrapper;
@@ -268,5 +269,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(K8sDryRunManifestOutcome.class, 12646);
     kryo.register(TerraformCloudRunStepInfo.class, 12656);
     kryo.register(GoogleFunctionsInfrastructure.class, 12657);
+    kryo.register(AwsSamInfrastructure.class, 12658);
   }
 }

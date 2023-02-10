@@ -770,3 +770,6 @@ io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome
 io.harness.cdng.service.beans.AwsLambdaServiceSpec
 io.harness.cdng.manifest.yaml.kinds.AwsLambdaDefinitionManifest
 io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome
+io.harness.cdng.infra.beans.AwsSamInfrastructureOutcome
+io.harness.cdng.infra.yaml.AwsSamInfrastructure
+io.harness.cdng.infra.beans.AwsSamInfraMapping

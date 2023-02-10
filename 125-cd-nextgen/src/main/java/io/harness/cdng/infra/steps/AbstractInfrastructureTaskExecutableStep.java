@@ -32,6 +32,7 @@ import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
+import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
@@ -668,6 +669,22 @@ abstract class AbstractInfrastructureTaskExecutableStep {
           ConnectorType.AWS.name()));
     }
 
+    if (InfrastructureKind.ECS.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.AWS.name()));
+      }
+    }
+
+    if (InfrastructureKind.AWS_SAM.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.AWS.name()));
+      }
+    }
+
     saveExecutionLog(logCallback, color("Connector validated", Green));
   }
 
@@ -784,6 +801,11 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             (TanzuApplicationServiceInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(
             tasInfrastructure.getConnectorRef(), tasInfrastructure.getOrganization(), tasInfrastructure.getSpace());
+        break;
+      case InfrastructureKind.AWS_SAM:
+        AwsSamInfrastructure awsSamInfrastructure = (AwsSamInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(
+            awsSamInfrastructure.getConnectorRef(), awsSamInfrastructure.getRegion());
         break;
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));
