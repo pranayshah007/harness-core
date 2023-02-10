@@ -73,6 +73,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
              TaskType.valueOf(delegateTask.getTaskDataV2().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
       String topic = delegateQueueServiceConfig.getTopic();
       String task = referenceFalseKryoSerializer.asString(delegateTask);
+      log.info("DTQ: task serialized for {}, value : {}", delegateTask.getUuid(), task);
       EnqueueRequest enqueueRequest = EnqueueRequest.builder()
                                           .topic(topic)
                                           .payload(task)

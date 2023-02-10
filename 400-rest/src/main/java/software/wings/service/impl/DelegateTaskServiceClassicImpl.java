@@ -878,7 +878,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
              TaskType.valueOf(task.getTaskDataV2().getTaskType()).getTaskGroup().name(), OVERRIDE_NESTS);
          AutoLogContext ignore2 = new AccountLogContext(task.getAccountId(), OVERRIDE_ERROR)) {
       processDelegateTaskV2(task, QUEUED);
-      broadcastHelper.broadcastNewDelegateTaskAsyncV2(task);
     }
     return task.getUuid();
   }
@@ -1974,13 +1973,16 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     if (mainConfiguration.getQueueServiceConfig() != null
         && !mainConfiguration.getQueueServiceConfig().isEnableQueueAndDequeue()) {
       persistence.save(delegateTask);
+      broadcastHelper.broadcastNewDelegateTaskAsyncV2(delegateTask);
       return;
     }
 
     if (!delegateTaskQueueService.isResourceAvailableToAssignTask(delegateTask)) {
+      log.info("DTQ: start enqueue task {}", delegateTask.getUuid());
       delegateTaskQueueService.enqueue(delegateTask);
     } else {
       persistence.save(delegateTask);
+      broadcastHelper.broadcastNewDelegateTaskAsyncV2(delegateTask);
     }
   }
 
