@@ -251,7 +251,9 @@ public class CIPlanCreatorUtils {
     if (gitSyncBranchContext == null) {
       throw new InvalidRequestException("Git sync data cannot be null for remote pipeline");
     }
-    boolean connectorOverride = !ParameterField.isBlank(repository.getConnector());
+    boolean connectorOverride = !ParameterField.isBlank(repository.getConnector())
+        && !repository.getConnector().fetchFinalValue().equals(
+            ctx.getMetadata().getMetadata().getPipelineConnectorRef());
     ParameterField<String> repoName = !connectorOverride && ParameterField.isBlank(repository.getName())
         ? ParameterField.createValueField(gitSyncBranchContext.getGitBranchInfo().getRepoName())
         : repository.getName();
@@ -370,8 +372,8 @@ public class CIPlanCreatorUtils {
           connectorIdentifier);
       return Optional.of(defaultBranch);
     } catch (Exception ex) {
-      log.error(String.format("Cannot find default branch for connector: %s", connectorIdentifier));
-      throw ex;
+      throw new InvalidRequestException(
+          String.format("Cannot find default branch for connector: %s", connectorIdentifier));
     }
   }
 
