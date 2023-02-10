@@ -32,7 +32,8 @@ public enum InfrastructureType {
   @JsonProperty(InfrastructureKind.TAS) TAS(InfrastructureKind.TAS),
   @JsonProperty(InfrastructureKind.ASG) ASG(InfrastructureKind.ASG),
   @JsonProperty(InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS)
-  GOOGLE_CLOUD_FUNCTIONS(InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS);
+  GOOGLE_CLOUD_FUNCTIONS(InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS),
+  @JsonProperty(InfrastructureKind.AWS_SAM) AWS_SAM(InfrastructureKind.AWS_SAM);
 
   private final String displayName;
 
