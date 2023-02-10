@@ -81,9 +81,9 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(templateMergeService).set("templateMergeServiceHelper", templateMergeServiceHelper);
     on(templateMergeService).set("ngTemplateFeatureFlagHelperService", ngTemplateFeatureFlagHelperService);
-    on(templateYamlFacade).set("featureFlagHelperService", ngTemplateFeatureFlagHelperService);
     on(templateMergeService).set("templateYamlFacade", templateYamlFacade);
     on(templateMergeServiceHelper).set("templateYamlFacade", templateYamlFacade);
+    on(templateYamlFacade).set("minimizeQuotes", true);
 
     when(ngTemplateFeatureFlagHelperService.isFeatureFlagEnabled(any(), any())).thenReturn(false);
   }
