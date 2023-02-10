@@ -13,7 +13,7 @@ import com.google.inject.Singleton;
 
 @Singleton
 public final class CDYamlFacade {
-  private boolean minimizeQuotes = false;
+  private final boolean minimizeQuotes = false;
 
   public String writeYamlString(Object value) {
     if (minimizeQuotes) {
