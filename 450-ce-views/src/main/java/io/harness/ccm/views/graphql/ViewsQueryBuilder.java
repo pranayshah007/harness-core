@@ -1666,7 +1666,6 @@ public class ViewsQueryBuilder {
 
   public String getColumnNameForField(String tableIdentifier, String field) {
     String key = String.format(ViewFieldUtils.COLUMN_MAPPING_KEY, tableIdentifier, field.toLowerCase(Locale.ROOT));
-    log.info("Converted column : {}", key);
     if (ViewFieldUtils.getClickHouseColumnMapping().containsKey(key)) {
       return ViewFieldUtils.getClickHouseColumnMapping().get(key);
     }
