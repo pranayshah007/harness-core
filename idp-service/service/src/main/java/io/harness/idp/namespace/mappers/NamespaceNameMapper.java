@@ -13,14 +13,14 @@ public class NamespaceNameMapper {
     public NamespaceDTO toDTO(NamespaceName namespaceName) {
         return NamespaceDTO.builder()
                 .accountIdentifier(namespaceName.getAccountIdentifier())
-                .namespace(namespaceName.getNamespaceName())
+                .namespaceName(namespaceName.getNamespaceName())
                 .build();
     }
 
     public NamespaceName fromDTO(NamespaceDTO namespaceDTO) {
         return NamespaceName.builder()
                 .accountIdentifier(namespaceDTO.getAccountIdentifier())
-                .namespaceName(namespaceDTO.getNamespace())
+                .namespaceName(namespaceDTO.getNamespaceName())
                 .build();
     }
 }

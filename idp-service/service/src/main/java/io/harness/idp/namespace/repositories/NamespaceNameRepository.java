@@ -11,7 +11,7 @@ import java.util.Optional;
 
 @HarnessRepo
 @OwnedBy(HarnessTeam.IDP)
-public interface NamespaceRepository extends CrudRepository<NamespaceName, String>, NamespaceRepositoryCustom {
+public interface NamespaceNameRepository extends CrudRepository<NamespaceName, String>, NamespaceNameRepositoryCustom {
 
     Optional<NamespaceName> findByAccountIdentifier(String accountIdentifier);
 }

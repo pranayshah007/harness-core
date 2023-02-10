@@ -24,5 +24,5 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 @OwnedBy(HarnessTeam.IDP)
 public class NamespaceDTO {
     private String accountIdentifier;
-    private String namespace;
+    private String namespaceName;
 }

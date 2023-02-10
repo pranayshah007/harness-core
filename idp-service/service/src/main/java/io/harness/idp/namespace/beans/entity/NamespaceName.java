@@ -25,11 +25,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Persistent
 @OwnedBy(HarnessTeam.IDP)
 public class NamespaceName implements PersistentEntity {
-    @Id @org.mongodb.morphia.annotations.Id private String id;
+    @Id @org.mongodb.morphia.annotations.Id private String namespacetest;
     @FdUniqueIndex private String accountIdentifier;
     private String namespaceName;
-//    @CreatedDate Long createdAt;
-//    @LastModifiedDate Long lastModifiedAt;
-//    private boolean isDeleted;
-//    private long deletedAt;
+    @CreatedDate Long createdAt;
+    @LastModifiedDate Long lastModifiedAt;
+    private boolean isDeleted;
+    private long deletedAt;
 }

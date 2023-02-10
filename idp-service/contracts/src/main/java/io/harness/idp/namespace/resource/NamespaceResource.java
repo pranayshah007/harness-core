@@ -28,4 +28,11 @@ public interface NamespaceResource {
     @Path("/namespace")
     @ApiOperation(value = "Gets backstage NameSpace from accountID", nickname = "getBackstageAccountId")
     String getNamespace(@PathParam("accountId") @NotEmpty String accountId);
+
+
+    @POST
+    @Path("/namespace/{namespace}")
+    @ApiOperation(value = "Push AccountId namespace in DB", nickname = "pushNamespace")
+    String pushNamespace(@PathParam("accountId") @NotEmpty String accountId, @PathParam("namespace") @NotEmpty String namespace);
+
 }

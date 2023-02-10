@@ -13,6 +13,7 @@ import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.health.HealthService;
+import io.harness.idp.namespace.service.NamespaceNameService;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.persistence.HPersistence;
 import io.harness.threading.ExecutorModule;
@@ -90,6 +91,7 @@ public class IDPApplication extends Application<IDPConfiguration> {
     List<Module> modules = new ArrayList<>();
     modules.add(new IDPModule(configuration));
     Injector injector = Guice.createInjector(modules);
+    NamespaceNameService ns = injector.getInstance(NamespaceNameService.class);
     registerResources(environment, injector);
     registerHealthChecksManager(environment, injector);
     log.info("Starting app done");
