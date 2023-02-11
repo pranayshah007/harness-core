@@ -26,7 +26,6 @@ import io.harness.delegate.events.DelegateNgTokenCreateEvent;
 import io.harness.delegate.events.DelegateNgTokenRevokeEvent;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
-import io.harness.encryptors.KmsEncryptor;
 import io.harness.encryptors.clients.LocalEncryptor;
 import io.harness.exception.InvalidRequestException;
 import io.harness.outbox.api.OutboxService;
@@ -67,7 +66,6 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   private final OutboxService outboxService;
   private final DelegateCache delegateCache;
   @Inject private LocalEncryptor localEncryptor;
-  @Inject private KmsEncryptor kmsEncryptor;
   @Inject private LocalSecretManagerService localSecretManagerService;
 
   @Inject
