@@ -233,6 +233,7 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
                 .connectorDetails(connectorDetails)
                 .prNumber(String.valueOf(prNumber))
                 .sha(sha)
+                .ref(ref)
                 .owner(bitbucketConnectorDTO.getGitRepositoryDetails().getOrg())
                 .repo(bitbucketConnectorDTO.getGitRepositoryDetails().getName())
                 .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
