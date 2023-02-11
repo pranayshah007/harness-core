@@ -12,6 +12,7 @@ import io.harness.cistatus.StatusCreationResponse;
 import java.util.Map;
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.HTTP;
 import retrofit2.http.Header;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
@@ -36,7 +37,9 @@ public interface BitbucketRestClient {
       @Path("repositorySlug") String repo, @Path("pullRequestId") String pullRequestId,
       @Body Map<String, Object> parameters);
 
-  @POST("rest/branch-utils/1.0/projects/{projectKey}/repos/{repositorySlug}/branches")
-  Call<Object> deleteOnPremRef(@Header("Authorization") String authorization, @Path("projectKey") String projectKey,
+  @HTTP(method = "DELETE", path = "rest/branch-utils/1.0/projects/{projectKey}/repos/{repositorySlug}/branches",
+      hasBody = true)
+  Call<Object>
+  deleteOnPremRef(@Header("Authorization") String authorization, @Path("projectKey") String projectKey,
       @Path("repositorySlug") String repo, @Body Map<String, Object> parameters);
 }

@@ -123,10 +123,10 @@ public class BitbucketServiceImpl implements BitbucketService {
     return responseObj;
   }
 
-  private Object getErrorMessage(Response<Object> mergePRResponse) {
+  private Object getErrorMessage(Response<Object> response) {
     JSONObject errObject = null;
     try {
-      errObject = new JSONObject(mergePRResponse.errorBody().string());
+      errObject = new JSONObject(response.errorBody().string());
       return ((JSONObject) ((JSONArray) errObject.get("errors")).get(0)).get("message");
     } catch (Exception e) {
       log.error("Failed to get error message from merge response. Error {}", e.getMessage());
@@ -185,10 +185,13 @@ public class BitbucketServiceImpl implements BitbucketService {
 
       if (response.isSuccessful()) {
         return true;
+      } else {
+        log.error("Failed to delete ref for Bitbucket Server. URL {}, ref {}, Error {}",
+            bitbucketConfig.getBitbucketUrl(), ref, getErrorMessage(response));
       }
     } catch (Exception e) {
-      log.error(
-          "Failed to delete ref for Bitbucket Server. URL {} and ref {} ", bitbucketConfig.getBitbucketUrl(), ref, e);
+      log.error("Failed to delete ref for Bitbucket Server. URL {}, ref {}, Error {}",
+          bitbucketConfig.getBitbucketUrl(), ref, e);
     }
     return false;
   }
