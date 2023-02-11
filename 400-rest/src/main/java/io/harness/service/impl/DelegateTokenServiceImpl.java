@@ -19,8 +19,10 @@ import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenDetails.DelegateTokenDetailsBuilder;
 import io.harness.delegate.beans.DelegateTokenStatus;
+import io.harness.encryptors.clients.LocalEncryptor;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
+import io.harness.security.encryption.EncryptedRecord;
 import io.harness.service.intfc.DelegateTokenService;
 import io.harness.utils.Misc;
 
@@ -29,6 +31,7 @@ import software.wings.beans.Event;
 import software.wings.service.impl.AuditServiceHelper;
 import software.wings.service.intfc.account.AccountCrudObserver;
 import software.wings.service.intfc.ownership.OwnedByAccount;
+import software.wings.service.intfc.security.LocalSecretManagerService;
 
 import com.google.inject.Inject;
 import com.mongodb.DuplicateKeyException;
@@ -46,17 +49,24 @@ import org.apache.commons.lang3.StringUtils;
 public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCrudObserver, OwnedByAccount {
   @Inject private HPersistence persistence;
   @Inject private AuditServiceHelper auditServiceHelper;
+  @Inject private LocalEncryptor localEncryptor;
+  @Inject private LocalSecretManagerService localSecretManagerService;
 
   private static final String DEFAULT_TOKEN_NAME = "default";
 
   @Override
   public DelegateTokenDetails createDelegateToken(String accountId, String name) {
+    String token = Misc.generateSecretKey();
+    EncryptedRecord encryptedRecord =
+        localEncryptor.encryptSecret(accountId, token, localSecretManagerService.getEncryptionConfig(accountId));
+
     DelegateToken delegateToken = DelegateToken.builder()
                                       .accountId(accountId)
                                       .createdAt(System.currentTimeMillis())
                                       .name(name.trim())
                                       .status(DelegateTokenStatus.ACTIVE)
-                                      .value(Misc.generateSecretKey())
+                                      .value(token)
+                                      .encryptedToken(encryptedRecord)
                                       .build();
 
     try {
@@ -137,8 +147,11 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
                                       .field(DelegateTokenKeys.name)
                                       .equal(tokenName)
                                       .get();
+    // get decrypted value here
+    String decryptedValue = String.valueOf(localEncryptor.fetchSecretValue(
+        accountId, delegateToken.getEncryptedToken(), localSecretManagerService.getEncryptionConfig(accountId)));
 
-    return delegateToken != null ? delegateToken.getValue() : null;
+    return delegateToken != null ? decryptedValue : null;
   }
 
   @Override

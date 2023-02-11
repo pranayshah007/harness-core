@@ -26,15 +26,19 @@ import io.harness.delegate.events.DelegateNgTokenCreateEvent;
 import io.harness.delegate.events.DelegateNgTokenRevokeEvent;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
+import io.harness.encryptors.KmsEncryptor;
+import io.harness.encryptors.clients.LocalEncryptor;
 import io.harness.exception.InvalidRequestException;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.encryption.EncryptedRecord;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.utils.Misc;
 
 import software.wings.beans.Account;
 import software.wings.service.intfc.account.AccountCrudObserver;
+import software.wings.service.intfc.security.LocalSecretManagerService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -62,6 +66,9 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   private final HPersistence persistence;
   private final OutboxService outboxService;
   private final DelegateCache delegateCache;
+  @Inject private LocalEncryptor localEncryptor;
+  @Inject private KmsEncryptor kmsEncryptor;
+  @Inject private LocalSecretManagerService localSecretManagerService;
 
   @Inject
   public DelegateNgTokenServiceImpl(
@@ -73,13 +80,17 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
   @Override
   public DelegateTokenDetails createToken(String accountId, DelegateEntityOwner owner, String name) {
+    String token = decodeBase64ToString(Misc.generateSecretKey());
+    EncryptedRecord encryptedRecord =
+        localEncryptor.encryptSecret(accountId, token, localSecretManagerService.getEncryptionConfig(accountId));
     DelegateToken delegateToken = DelegateToken.builder()
                                       .accountId(accountId)
                                       .owner(owner)
                                       .name(name.trim())
                                       .isNg(true)
                                       .status(DelegateTokenStatus.ACTIVE)
-                                      .value(encodeBase64(Misc.generateSecretKey()))
+                                      .value(token)
+                                      .encryptedToken(encryptedRecord)
                                       .createdByNgUser(SourcePrincipalContextBuilder.getSourcePrincipal())
                                       .build();
 
@@ -146,11 +157,16 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   public String getDelegateTokenValue(String accountId, String name) {
     DelegateToken delegateToken = matchNameTokenQuery(accountId, name).get();
     if (delegateToken != null) {
-      if (delegateToken.isNg()) {
+      /*if (delegateToken.isNg()) {
         return decodeBase64ToString(delegateToken.getValue());
       } else {
         return delegateToken.getValue();
-      }
+      }*/
+      // get decrypted value here
+      String decryptedValue = String.valueOf(localEncryptor.fetchSecretValue(
+          accountId, delegateToken.getEncryptedToken(), localSecretManagerService.getEncryptionConfig(accountId)));
+
+      return delegateToken != null ? decryptedValue : null;
     }
     log.warn("Not able to find delegate token {} for account {} . Please verify manually.", name, accountId);
     return null;
