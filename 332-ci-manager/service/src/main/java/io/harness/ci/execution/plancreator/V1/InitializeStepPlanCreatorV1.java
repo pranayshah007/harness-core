@@ -19,6 +19,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
+import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreatorV2;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
@@ -69,6 +70,7 @@ public class InitializeStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<Initiali
                                     .infrastructure(infrastructure)
                                     .cloneCodebase(ParameterField.createValueField(codeBase != null))
                                     .serviceDependencies(ParameterField.createValueField(Collections.emptyList()))
+                                    .sharedPaths(CIPlanCreatorUtils.getSharedPaths(executionWrapperConfigs))
                                     .build())
             .ciCodebase(codeBase)
             .skipGitClone(codeBase == null)

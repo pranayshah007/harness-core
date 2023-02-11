@@ -23,6 +23,7 @@ import io.harness.beans.steps.TypeInfo;
 import io.harness.beans.yaml.extended.beans.PullPolicy;
 import io.harness.beans.yaml.extended.beans.Shell;
 import io.harness.beans.yaml.extended.reports.V1.Report;
+import io.harness.beans.yaml.extended.volumes.V1.MountVolume;
 import io.harness.beans.yaml.extended.volumes.V1.Volume;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -102,7 +103,7 @@ public class ScriptStepInfo extends CIAbstractStepInfo implements WithConnectorR
   public ScriptStepInfo(String uuid, ParameterField<String> run, ParameterField<List<String>> outputs,
       ParameterField<Map<String, String>> envs, ParameterField<List<Report>> reports, ParameterField<String> image,
       ContainerResource resources, ParameterField<Boolean> privileged, ParameterField<Integer> user, Shell shell,
-      PullPolicy pull, ParameterField<List<Volume>> volumes) {
+      PullPolicy pull, ParameterField<List<MountVolume>> volumes) {
     this.uuid = uuid;
     this.run = run;
     this.envs = envs;

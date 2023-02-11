@@ -27,6 +27,7 @@ import io.harness.beans.yaml.extended.beans.PullPolicy;
 import io.harness.beans.yaml.extended.beans.Shell;
 import io.harness.beans.yaml.extended.beans.Splitting;
 import io.harness.beans.yaml.extended.reports.V1.Report;
+import io.harness.beans.yaml.extended.volumes.V1.MountVolume;
 import io.harness.beans.yaml.extended.volumes.V1.Volume;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -131,7 +132,7 @@ public class TestStepInfo extends CIAbstractStepInfo {
   public TestStepInfo(String uuid, ParameterField<String> image, BuildTool uses, Map<String, JsonNode> with,
       ContainerResource resources, ParameterField<Map<String, String>> envs, ParameterField<List<String>> outputs,
       ParameterField<List<Report>> reports, ParameterField<Boolean> privileged, ParameterField<Integer> user,
-      PullPolicy pull, Shell shell, ParameterField<List<Volume>> volumes, Splitting splitting) {
+      PullPolicy pull, Shell shell, ParameterField<List<MountVolume>> volumes, Splitting splitting) {
     this.uuid = uuid;
     this.image = image;
     this.uses = uses;

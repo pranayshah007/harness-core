@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
 import io.harness.beans.yaml.extended.beans.PullPolicy;
+import io.harness.beans.yaml.extended.volumes.V1.MountVolume;
 import io.harness.beans.yaml.extended.volumes.V1.Volume;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -77,7 +78,7 @@ public class PluginStepInfoV1 extends CIAbstractStepInfo implements WithConnecto
   public PluginStepInfoV1(String uuid, ParameterField<Map<String, JsonNode>> with, ParameterField<String> image,
       ParameterField<String> uses, ContainerResource resources, Map<String, String> envs,
       ParameterField<Boolean> privileged, ParameterField<Integer> user, PullPolicy pull,
-      ParameterField<List<Volume>> volumes) {
+      ParameterField<List<MountVolume>> volumes) {
     this.uuid = uuid;
     this.with = with;
     this.image = image;

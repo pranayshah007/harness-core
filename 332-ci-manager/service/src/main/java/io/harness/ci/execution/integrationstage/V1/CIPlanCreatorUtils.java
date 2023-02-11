@@ -10,6 +10,7 @@ package io.harness.ci.integrationstage.V1;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.yaml.extended.ci.codebase.Build.builder;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.build.BuildStatusUpdateParameter;
@@ -30,6 +31,7 @@ import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.beans.yaml.extended.platform.V1.PlatformV1;
 import io.harness.beans.yaml.extended.runtime.V1.RuntimeV1;
 import io.harness.beans.yaml.extended.runtime.V1.VMRuntimeV1;
+import io.harness.beans.yaml.extended.volumes.V1.MountVolume;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.states.codebase.ScmGitRefManager;
@@ -53,10 +55,7 @@ import io.harness.pms.contracts.triggers.ParsedPayload;
 import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
-import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.*;
 import io.harness.serializer.KryoSerializer;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.Build.BuildBuilder;
@@ -75,9 +74,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -243,6 +240,30 @@ public class CIPlanCreatorUtils {
       default:
     }
     return true;
+  }
+
+  public static ParameterField<List<String>> getSharedPaths(List<ExecutionWrapperConfig> executionWrapperConfigs) {
+    List<List<MountVolume>> mountVolumesList = executionWrapperConfigs.stream()
+            .filter(e -> e.getStep() != null && e.getStep().has("spec") && e.getStep().get("spec").has("volumes")
+                    && e.getStep().get("spec").get("volumes").isArray())
+            .map(e -> {
+              ArrayNode volumesNode = ((ArrayNode) e.getStep().get("spec").get("volumes"));
+              List<MountVolume> volumes = new ArrayList<>();
+              for (Iterator<JsonNode> it = volumesNode.elements(); it.hasNext();) {
+                try {
+                  volumes.add(YamlUtils.read(it.next().toString(), MountVolume.class));
+                } catch (IOException ignored) {}
+              }
+              return volumes;
+            }).collect(Collectors.toList());
+
+    List<ParameterField<String>> volumes = new ArrayList<>();
+    mountVolumesList.forEach(l -> l.forEach(v -> volumes.add(v.getTarget())));
+    return ParameterField.createValueField(volumes.stream()
+        .filter(l -> !ParameterField.isBlank(l))
+        .map(l -> (String) l.fetchFinalValue())
+        .distinct()
+        .collect(Collectors.toList()));
   }
 
   private CodeBaseBuilder buildCodebaseForRemotePipeline(

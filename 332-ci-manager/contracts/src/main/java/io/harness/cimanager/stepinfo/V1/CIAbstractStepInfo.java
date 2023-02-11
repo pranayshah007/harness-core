@@ -13,6 +13,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.stepinfo.TestStepInfo;
+import io.harness.beans.yaml.extended.volumes.V1.MountVolume;
 import io.harness.beans.yaml.extended.volumes.V1.Volume;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -39,10 +40,20 @@ public abstract class CIAbstractStepInfo implements CIStepInfo {
     return this.resources;
   }
 
+//  @YamlSchemaTypes({runtime})
+//  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.volumes.V1.Volume", hidden = true)
+//  protected ParameterField<List<Volume>> volumes;
+//  public ParameterField<List<Volume>> getVolumes() {
+//    if (this.volumes.getValue() == null) {
+//      this.volumes.setValue(Collections.emptyList());
+//    }
+//    return this.volumes;
+//  }
+
   @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.volumes.V1.Volume", hidden = true)
-  protected ParameterField<List<Volume>> volumes;
-  public ParameterField<List<Volume>> getVolumes() {
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.volumes.V1.MountVolume", hidden = true)
+  protected ParameterField<List<MountVolume>> volumes;
+  public ParameterField<List<MountVolume>> getVolumes() {
     if (this.volumes.getValue() == null) {
       this.volumes.setValue(Collections.emptyList());
     }
