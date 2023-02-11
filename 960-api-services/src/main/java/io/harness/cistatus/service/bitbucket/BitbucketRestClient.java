@@ -25,4 +25,18 @@ public interface BitbucketRestClient {
   @POST("rest/build-status/1.0/commits/{commitId}/")
   Call<StatusCreationResponse> createOnPremStatus(@Header("Authorization") String authorization,
       @Path("commitId") String sha, @Body Map<String, Object> parameters);
+
+  @POST("2.0/repositories/{workspace}/{repo_slug}/pullrequests/{pull_request_id}/merge")
+  Call<Object> mergeSaaSPR(@Header("Authorization") String authorization, @Path("workspace") String workspace,
+      @Path("repo_slug") String repo, @Path("pull_request_id") String pullRequestId,
+      @Body Map<String, Object> parameters);
+
+  @POST("rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/pull-requests/{pullRequestId}/merge?version=0")
+  Call<Object> mergeOnPremPR(@Header("Authorization") String authorization, @Path("projectKey") String projectKey,
+      @Path("repositorySlug") String repo, @Path("pullRequestId") String pullRequestId,
+      @Body Map<String, Object> parameters);
+
+  @POST("rest/branch-utils/1.0/projects/{projectKey}/repos/{repositorySlug}/branches")
+  Call<Object> deleteOnPremRef(@Header("Authorization") String authorization, @Path("projectKey") String projectKey,
+      @Path("repositorySlug") String repo, @Body Map<String, Object> parameters);
 }

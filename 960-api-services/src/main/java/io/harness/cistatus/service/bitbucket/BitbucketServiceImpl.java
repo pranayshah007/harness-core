@@ -19,10 +19,14 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Singleton;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -31,6 +35,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Slf4j
 public class BitbucketServiceImpl implements BitbucketService {
   private static final String STATE = "state";
+  private static final String MERGED = "merged";
 
   @Override
   public boolean sendStatus(BitbucketConfig bitbucketConfig, String userName, String token,
@@ -65,6 +70,110 @@ public class BitbucketServiceImpl implements BitbucketService {
       throw new InvalidRequestException(
           format("Failed to send status for Bitbucket url %s and sha %s ", bitbucketConfig.getBitbucketUrl(), sha), e);
     }
+  }
+
+  @Override
+  public JSONObject mergePR(BitbucketConfig bitbucketConfig, String token, String userName, String org, String repoSlug,
+      String prNumber, boolean deleteSourceBranch, String ref, boolean isSaaS) {
+    String authToken = getHeaderWithCredentials(token, userName);
+    JSONObject responseObj;
+    if (isSaaS) {
+      responseObj = mergeSaaSPR(bitbucketConfig, authToken, org, repoSlug, prNumber, deleteSourceBranch);
+    } else {
+      responseObj = mergeOnPremPR(bitbucketConfig, authToken, org, repoSlug, prNumber, ref, deleteSourceBranch);
+    }
+    return responseObj;
+  }
+
+  private JSONObject mergeOnPremPR(BitbucketConfig bitbucketConfig, String authToken, String org, String repoSlug,
+      String prNumber, String ref, boolean deleteSourceBranch) {
+    JSONObject responseObj = new JSONObject();
+    Map<String, Object> parameters = new HashMap<>();
+    String url = bitbucketConfig.getBitbucketUrl();
+    try {
+      Response<Object> mergePRResponse = getBitbucketClient(bitbucketConfig, null)
+                                             .mergeOnPremPR(authToken, org, repoSlug, prNumber, parameters)
+                                             .execute();
+      if (mergePRResponse.isSuccessful()) {
+        responseObj.put("sha",
+            ((LinkedHashMap) ((LinkedHashMap) ((LinkedHashMap) mergePRResponse.body()).get("properties"))
+                    .get("mergeCommit"))
+                .get("id"));
+        responseObj.put(MERGED, true);
+        if (deleteSourceBranch) {
+          // if merge is successful, delete source branch
+          boolean isBranchDeleted = deleteRef(bitbucketConfig, authToken, org, repoSlug, ref);
+          if (!isBranchDeleted) {
+            log.error(
+                "Error encountered when deleting source branch {} of the pull request {}. URL {}", ref, prNumber, url);
+            // Not failing the merge for failure to delete source branch
+          }
+        }
+      } else {
+        log.error("Failed to merge PR for Bitbucket Server. URL {} and PR number {}. Response {} ", url, prNumber,
+            mergePRResponse.errorBody());
+        JSONObject errObject = new JSONObject(mergePRResponse.errorBody().string());
+        responseObj.put("error", ((JSONObject) ((JSONArray) errObject.get("errors")).get(0)).get("message"));
+        responseObj.put("code", mergePRResponse.code());
+        responseObj.put(MERGED, false);
+      }
+    } catch (Exception e) {
+      log.error("Failed to merge PR for Bitbucket Server. URL {} and PR number {} ", url, prNumber, e);
+      responseObj.put(MERGED, false);
+      responseObj.put("error", e.getMessage());
+    }
+    return responseObj;
+  }
+
+  private JSONObject mergeSaaSPR(BitbucketConfig bitbucketConfig, String authToken, String org, String repoSlug,
+      String prNumber, boolean deleteSourceBranch) {
+    JSONObject responseObj = new JSONObject();
+    Map<String, Object> parameters = new HashMap<>();
+    if (deleteSourceBranch) {
+      parameters.put("close_source_branch", true);
+    }
+    try {
+      Response<Object> mergePRResponse = getBitbucketClient(bitbucketConfig, null)
+                                             .mergeSaaSPR(authToken, org, repoSlug, prNumber, parameters)
+                                             .execute();
+      if (mergePRResponse.isSuccessful()) {
+        responseObj.put(
+            "sha", ((LinkedHashMap) ((LinkedHashMap) mergePRResponse.body()).get("merge_commit")).get("hash"));
+        responseObj.put(MERGED, true);
+      } else {
+        log.error("Failed to merge PR for Bitbucket Cloud. URL {} and PR number {}. Response {} ",
+            bitbucketConfig.getBitbucketUrl(), prNumber, mergePRResponse.errorBody());
+        JSONObject errObject = new JSONObject(mergePRResponse.errorBody().string());
+        responseObj.put("error", ((JSONObject) ((JSONArray) errObject.get("errors")).get(0)).get("message"));
+        responseObj.put("code", mergePRResponse.code());
+        responseObj.put(MERGED, false);
+      }
+    } catch (Exception e) {
+      log.error("Failed to merge PR for Bitbucket Cloud. URL {} and PR number {} ", bitbucketConfig.getBitbucketUrl(),
+          prNumber, e);
+      responseObj.put(MERGED, false);
+      responseObj.put("error", e.getMessage());
+    }
+    return responseObj;
+  }
+
+  @Override
+  public Boolean deleteRef(BitbucketConfig bitbucketConfig, String authToken, String org, String repoSlug, String ref) {
+    Map<String, Object> parameters = new HashMap<>();
+    parameters.put("name", ref);
+    parameters.put("dryRun", false);
+    try {
+      Response<Object> response =
+          getBitbucketClient(bitbucketConfig, null).deleteOnPremRef(authToken, org, repoSlug, parameters).execute();
+
+      if (response.isSuccessful()) {
+        return true;
+      }
+    } catch (Exception e) {
+      log.error(
+          "Failed to delete ref for Bitbucket Server. URL {} and ref {} ", bitbucketConfig.getBitbucketUrl(), ref, e);
+    }
+    return false;
   }
 
   @VisibleForTesting

@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.task.git;
+
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.git.model.ChangeType.MODIFY;
@@ -29,6 +30,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
@@ -43,15 +45,18 @@ import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.gitapi.client.impl.AzureRepoApiClient;
+import io.harness.delegate.task.gitapi.client.impl.BitbucketApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GithubApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GitlabApiClient;
 import io.harness.delegate.task.gitops.GitOpsTaskHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.git.GitClientHelper;
 import io.harness.git.model.CommitAndPushRequest;
 import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.git.model.GitFileChange;
+import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -102,6 +107,7 @@ import org.jose4j.lang.JoseException;
 public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   private static final String PR_TITLE = "Harness: Updating config overrides";
   private static final String COMMIT_MSG = "Updating Config files";
+  private static final String BITBUCKET_CLOUD_URL = "https://bitbucket.org/";
   @Inject private SecretDecryptionService secretDecryptionService;
   @Inject private ScmFetchFilesHelperNG scmFetchFilesHelper;
   @Inject private GitFetchFilesTaskHelper gitFetchFilesTaskHelper;
@@ -110,6 +116,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   @Inject private GithubApiClient githubApiClient;
   @Inject private GitlabApiClient gitlabApiClient;
   @Inject private AzureRepoApiClient azureRepoApiClient;
+  @Inject private BitbucketApiClient bitbucketApiClient;
   @Inject public GitOpsTaskHelper gitOpsTaskHelper;
 
   private Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -179,6 +186,9 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           break;
         case AZURE_REPO:
           responseData = (GitApiTaskResponse) azureRepoApiClient.mergePR(taskParams);
+          break;
+        case BITBUCKET:
+          responseData = (GitApiTaskResponse) bitbucketApiClient.mergePR(taskParams);
           break;
 
         default:
@@ -334,7 +344,6 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
   public String getPRLink(int prNumber, ScmConnector scmConnector, ConnectorType connectorType) {
     switch (connectorType) {
-      // TODO: BITBUCKET
       case GITHUB:
         GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) scmConnector;
         return "https://github.com"
@@ -347,8 +356,24 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       case GITLAB:
         GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) scmConnector;
         return gitlabConnectorDTO.getUrl() + "/merge_requests/" + prNumber;
+      case BITBUCKET:
+        return getBitbucketPRLink((BitbucketConnectorDTO) scmConnector, prNumber);
       default:
         return "";
+    }
+  }
+
+  private String getBitbucketPRLink(BitbucketConnectorDTO bitbucketConnectorDTO, int prNumber) {
+    String url = bitbucketConnectorDTO.getUrl();
+    GitRepositoryDTO gitRepo = bitbucketConnectorDTO.getGitRepositoryDetails();
+    String workspace = gitRepo.getOrg();
+    String repoSlug = gitRepo.getName();
+    if (GitClientHelper.isBitBucketSAAS(url)) {
+      return BITBUCKET_CLOUD_URL + workspace + "/" + repoSlug + "/pull-requests/" + prNumber;
+    } else {
+      String domain = GitClientHelper.getGitSCM(url);
+      return "https://" + domain + "/projects/" + workspace.toUpperCase() + "/repos/" + repoSlug + "/pull-requests/"
+          + prNumber;
     }
   }
 

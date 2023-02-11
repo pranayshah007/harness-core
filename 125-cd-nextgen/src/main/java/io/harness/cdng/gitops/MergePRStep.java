@@ -26,6 +26,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.gitapi.GitApiRequestType;
@@ -219,6 +220,21 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
                 .prNumber(String.valueOf(prNumber))
                 .slug(slug)
                 .sha(sha)
+                .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
+                    MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+                .build();
+        break;
+      case BITBUCKET:
+        BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
+        gitApiTaskParams =
+            GitApiTaskParams.builder()
+                .gitRepoType(GitRepoType.BITBUCKET)
+                .requestType(GitApiRequestType.MERGE_PR)
+                .connectorDetails(connectorDetails)
+                .prNumber(String.valueOf(prNumber))
+                .sha(sha)
+                .owner(bitbucketConnectorDTO.getGitRepositoryDetails().getOrg())
+                .repo(bitbucketConnectorDTO.getGitRepositoryDetails().getName())
                 .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
                     MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
                 .build();

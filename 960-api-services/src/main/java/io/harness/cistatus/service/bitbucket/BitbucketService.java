@@ -11,9 +11,15 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
 import java.util.Map;
+import org.json.JSONObject;
 
 public interface BitbucketService {
   boolean sendStatus(BitbucketConfig bitbucketConfig, String userName, String token,
       List<EncryptedDataDetail> encryptionDetails, String sha, String owner, String repo,
       Map<String, Object> bodyObjectMap);
+
+  JSONObject mergePR(BitbucketConfig bitbucketConfig, String token, String userName, String org, String name,
+      String prNumber, boolean deleteSourceBranch, String ref, boolean isSaaS);
+
+  Boolean deleteRef(BitbucketConfig bitbucketConfig, String token, String org, String name, String ref);
 }
