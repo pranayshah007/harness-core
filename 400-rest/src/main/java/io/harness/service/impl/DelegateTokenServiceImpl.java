@@ -74,8 +74,8 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
     } catch (DuplicateKeyException e) {
       throw new InvalidRequestException(format("Token with given name %s already exists for the account.", name));
     }
-    auditServiceHelper.reportForAuditingUsingAccountId(
-        delegateToken.getAccountId(), null, delegateToken, Event.Type.CREATE);
+    /*auditServiceHelper.reportForAuditingUsingAccountId(
+        delegateToken.getAccountId(), null, delegateToken, Event.Type.CREATE);*/
 
     return getDelegateTokenDetails(delegateToken, true);
   }
