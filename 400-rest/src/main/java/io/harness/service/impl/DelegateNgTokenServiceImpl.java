@@ -78,7 +78,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
   @Override
   public DelegateTokenDetails createToken(String accountId, DelegateEntityOwner owner, String name) {
-    String token = decodeBase64ToString(Misc.generateSecretKey());
+    String token = Misc.generateSecretKey();
     EncryptedRecord encryptedRecord =
         localEncryptor.encryptSecret(accountId, token, localSecretManagerService.getEncryptionConfig(accountId));
     DelegateToken delegateToken = DelegateToken.builder()
@@ -163,7 +163,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
       // get decrypted value here
       String decryptedValue = String.valueOf(localEncryptor.fetchSecretValue(
           accountId, delegateToken.getEncryptedToken(), localSecretManagerService.getEncryptionConfig(accountId)));
-
+      log.info("Decrypted value : {}", decryptedValue);
       return delegateToken != null ? decryptedValue : null;
     }
     log.warn("Not able to find delegate token {} for account {} . Please verify manually.", name, accountId);

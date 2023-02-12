@@ -148,8 +148,14 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
                                       .equal(tokenName)
                                       .get();
     // get decrypted value here
+    EncryptedRecord delegateTokenEncryptedRecord = delegateToken.getEncryptedToken();
+    if (delegateToken.getEncryptedToken() == null) {
+      delegateTokenEncryptedRecord = localEncryptor.encryptSecret(
+          accountId, delegateToken.getName(), localSecretManagerService.getEncryptionConfig(accountId));
+    }
+
     String decryptedValue = String.valueOf(localEncryptor.fetchSecretValue(
-        accountId, delegateToken.getEncryptedToken(), localSecretManagerService.getEncryptionConfig(accountId)));
+        accountId, delegateTokenEncryptedRecord, localSecretManagerService.getEncryptionConfig(accountId)));
 
     return delegateToken != null ? decryptedValue : null;
   }
