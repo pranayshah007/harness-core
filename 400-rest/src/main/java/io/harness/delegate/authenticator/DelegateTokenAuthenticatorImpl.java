@@ -203,11 +203,12 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
     try (HIterator<DelegateToken> iterator = new HIterator<>(query.fetch())) {
       while (iterator.hasNext()) {
         DelegateToken delegateToken = iterator.next();
+        String encryptedTokenValue = String.valueOf(delegateToken.getEncryptedToken().getEncryptedValue());
         try {
           if (delegateToken.isNg()) {
-            decryptDelegateAuthV2Token(accountId, tokenString, decodeBase64ToString(delegateToken.getValue()));
+            decryptDelegateAuthV2Token(accountId, tokenString, encryptedTokenValue);
           } else {
-            decryptDelegateAuthV2Token(accountId, tokenString, delegateToken.getValue());
+            decryptDelegateAuthV2Token(accountId, tokenString, encryptedTokenValue);
           }
           return;
         } catch (Exception e) {
