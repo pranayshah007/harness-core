@@ -31,6 +31,7 @@ import io.harness.context.GlobalContext;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenStatus;
+import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.utils.DelegateJWTCache;
 import io.harness.delegate.utils.DelegateJWTCacheValue;
 import io.harness.delegate.utils.DelegateTokenCacheHelper;
@@ -84,6 +85,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
   @Inject private DelegateJWTCache delegateJWTCache;
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private AgentMtlsVerifier agentMtlsVerifier;
+  @Inject private DelegateNgTokenService delegateNgTokenService;
 
   private final LoadingCache<String, String> keyCache =
       Caffeine.newBuilder()
@@ -204,11 +206,8 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       while (iterator.hasNext()) {
         DelegateToken delegateToken = iterator.next();
         try {
-          if (delegateToken.isNg()) {
-            decryptDelegateAuthV2Token(accountId, tokenString, decodeBase64ToString(delegateToken.getValue()));
-          } else {
-            decryptDelegateAuthV2Token(accountId, tokenString, delegateToken.getValue());
-          }
+          String token = delegateNgTokenService.decrypt(delegateToken);
+          decryptDelegateAuthV2Token(accountId, tokenString, token);
           return;
         } catch (Exception e) {
           log.debug("Fail to decrypt Delegate JWT using delegate token {} for the account {}", delegateToken.getName(),

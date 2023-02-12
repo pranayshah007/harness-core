@@ -19,10 +19,10 @@ import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenDetails.DelegateTokenDetailsBuilder;
 import io.harness.delegate.beans.DelegateTokenStatus;
+import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateTokenService;
-import io.harness.utils.Misc;
 
 import software.wings.beans.Account;
 import software.wings.beans.Event;
@@ -46,7 +46,7 @@ import org.apache.commons.lang3.StringUtils;
 public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCrudObserver, OwnedByAccount {
   @Inject private HPersistence persistence;
   @Inject private AuditServiceHelper auditServiceHelper;
-
+  @Inject private DelegateNgTokenService delegateNgTokenService;
   private static final String DEFAULT_TOKEN_NAME = "default";
 
   @Override
@@ -56,7 +56,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
                                       .createdAt(System.currentTimeMillis())
                                       .name(name.trim())
                                       .status(DelegateTokenStatus.ACTIVE)
-                                      .value(Misc.generateSecretKey())
+                                      .encryptedToken(delegateNgTokenService.encrypt(accountId))
                                       .build();
 
     try {
@@ -137,8 +137,10 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
                                       .field(DelegateTokenKeys.name)
                                       .equal(tokenName)
                                       .get();
-
-    return delegateToken != null ? delegateToken.getValue() : null;
+    if (delegateToken == null) {
+      throw new InvalidRequestException(format("Token not found .", tokenName));
+    }
+    return delegateNgTokenService.decrypt(delegateToken);
   }
 
   @Override

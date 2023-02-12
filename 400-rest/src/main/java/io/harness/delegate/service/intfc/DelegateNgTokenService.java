@@ -8,8 +8,10 @@
 package io.harness.delegate.service.intfc;
 
 import io.harness.delegate.beans.DelegateEntityOwner;
+import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
+import io.harness.security.encryption.EncryptedRecord;
 
 import software.wings.service.intfc.ownership.OwnedByAccount;
 
@@ -55,4 +57,10 @@ public interface DelegateNgTokenService extends OwnedByAccount {
   void deleteAllTokensOwnedByOrgAndProject(String accountId, DelegateEntityOwner owner);
 
   Map<String, Boolean> isDelegateTokenActive(String accountId, List<String> tokensNameList);
+
+  void upsertEncryptedTokenRecord(DelegateToken delegateToken);
+
+  EncryptedRecord encrypt(String accountId);
+
+  String decrypt(DelegateToken delegateToken);
 }
