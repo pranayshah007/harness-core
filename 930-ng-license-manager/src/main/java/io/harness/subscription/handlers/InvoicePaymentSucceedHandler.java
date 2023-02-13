@@ -72,7 +72,7 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
 
     List<ModuleType> moduleTypes = getModuleTypes(invoice);
 
-    moduleTypes.forEach(moduleType -> {
+    moduleTypes.forEach((ModuleType moduleType) -> {
       log.info(
           "synchronizing invoice {} under subscription {}, going to update license under account {} and moduleType {}",
           invoice.getId(), id, accountIdentifier, moduleType);
@@ -81,12 +81,10 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
           licenseService.getCurrentLicense(subscriptionDetail.getAccountIdentifier(), moduleType);
 
       if (existingLicense == null) {
-        // new subscription, create license
         ModuleLicense newLicense = generateLicense(invoice, moduleType, accountIdentifier);
         licenseService.createModuleLicense(newLicense);
       } else {
         log.info("Updating existing license {} via strip sync", existingLicense.getId());
-        // existing subscription, update license
         ModuleLicense updateLicense = generateLicense(invoice, moduleType, accountIdentifier);
         updateLicense.setId(existingLicense.getId());
         licenseService.updateModuleLicense(updateLicense);
@@ -103,7 +101,7 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
 
   private List<ModuleType> getModuleTypes(Invoice invoice) {
     List<ModuleType> moduleTypes = new ArrayList<>();
-    invoice.getLines().getData().stream().forEach(invoiceLineItem -> {
+    invoice.getLines().getData().stream().forEach((InvoiceLineItem invoiceLineItem) -> {
       String moduleType = getModuleType(invoiceLineItem);
       if (moduleType != null && moduleTypes.stream().noneMatch(m -> m.name().equals(moduleType))) {
         moduleTypes.add(ModuleType.fromString(moduleType));

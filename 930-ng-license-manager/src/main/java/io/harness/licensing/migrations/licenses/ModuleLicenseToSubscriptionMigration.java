@@ -49,8 +49,8 @@ public class ModuleLicenseToSubscriptionMigration implements NGMigration {
       try {
         mongoTemplate.updateFirst(fetchMatchingLicenseQuery, addSubscriptionIdUpdate, ModuleLicense.class);
       } catch (Exception ex) {
-        log.info("Failed to add subscriptionDetailsId to moduleLicense with accountId {} and moduleType {}.",
-            detail.get(ACCOUNT_ID), detail.get(MODULE_TYPE));
+        log.info("Failed to add subscriptionDetailsId to moduleLicense with accountId {} and moduleType {}. {} {}",
+            detail.get(ACCOUNT_ID), detail.get(MODULE_TYPE), ex.getMessage(), ex.getStackTrace());
       }
     }
 
@@ -61,7 +61,8 @@ public class ModuleLicenseToSubscriptionMigration implements NGMigration {
     try {
       mongoTemplate.updateMulti(new Query(), removeModuleTypeUpdate, SubscriptionDetail.class);
     } catch (Exception ex) {
-      log.info("Failed to remove moduleType from subscriptionDetails collection.");
+      log.info("Failed to remove moduleType from subscriptionDetails collection. {} {}", ex.getMessage(),
+          ex.getStackTrace());
     }
 
     log.info("Finished the module license migration");

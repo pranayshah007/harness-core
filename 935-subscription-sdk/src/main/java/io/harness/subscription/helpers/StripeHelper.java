@@ -7,7 +7,6 @@
 
 package io.harness.subscription.helpers;
 
-import com.stripe.model.Subscription;
 import io.harness.ModuleType;
 import io.harness.subscription.dto.CustomerDetailDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
@@ -21,6 +20,7 @@ import io.harness.subscription.params.SubscriptionItemRequest;
 import io.harness.subscription.params.SubscriptionRequest;
 
 import com.stripe.model.Price;
+import com.stripe.model.Subscription;
 import java.util.List;
 import java.util.Optional;
 

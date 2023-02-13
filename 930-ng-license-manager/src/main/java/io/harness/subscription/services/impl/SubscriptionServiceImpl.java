@@ -337,7 +337,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       subscriptionDetailRepository.deleteBySubscriptionId(subscriptionId);
     } else {
       List<StripeItemRequest> itemParams = new ArrayList<>();
-      items.forEach(subscriptionItem -> {
+      items.forEach((SubscriptionItem subscriptionItem) -> {
         itemParams.add(
             StripeItemRequest.Builder.newInstance().withPriceId(subscriptionItem.getPrice().getId()).build());
       });
