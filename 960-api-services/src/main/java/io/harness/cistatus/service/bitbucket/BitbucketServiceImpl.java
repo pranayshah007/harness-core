@@ -27,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.http.HttpStatus;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -34,11 +35,21 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Singleton
 @Slf4j
 public class BitbucketServiceImpl implements BitbucketService {
+  public static final String SHA = "sha";
+  public static final String MERGED = "merged";
+  public static final String ERROR = "error";
+  public static final String CODE = "code";
   private static final String STATE = "state";
-  private static final String MERGED = "merged";
-  private static final String ERROR = "error";
-  private static final String SHA = "sha";
   private static final String MESSAGE = "message";
+  private static final String ERRORS = "errors";
+  private static final String PROPERTIES = "properties";
+  private static final String ON_PREM_MERGE_COMMIT = "mergeCommit";
+  private static final String SAAS_MERGE_COMMIT = "merge_commit";
+  private static final String ID = "id";
+  private static final String NAME = "name";
+  private static final String DRY_RUN = "dryRun";
+  private static final String CLOSE_SOURCE_BRANCH = "close_source_branch";
+  private static final String HASH = "hash";
 
   @Override
   public boolean sendStatus(BitbucketConfig bitbucketConfig, String userName, String token,
@@ -113,13 +124,14 @@ public class BitbucketServiceImpl implements BitbucketService {
         log.error("Failed to merge PR for Bitbucket Server. URL {} and PR number {}. Response {} ", url, prNumber,
             mergePRResponse.errorBody());
         responseObj.put(ERROR, getOnPremErrorMessage(mergePRResponse));
-        responseObj.put("code", mergePRResponse.code());
+        responseObj.put(CODE, mergePRResponse.code());
         responseObj.put(MERGED, false);
       }
     } catch (Exception e) {
       log.error("Failed to merge PR for Bitbucket Server. URL {} and PR number {} ", url, prNumber, e);
       responseObj.put(MERGED, false);
       responseObj.put(ERROR, e.getMessage());
+      responseObj.put(CODE, HttpStatus.INTERNAL_SERVER_ERROR.value());
     }
     return responseObj;
   }
@@ -128,7 +140,7 @@ public class BitbucketServiceImpl implements BitbucketService {
     JSONObject errObject = null;
     try {
       errObject = new JSONObject(response.errorBody().string());
-      return ((JSONObject) ((JSONArray) errObject.get("errors")).get(0)).get(MESSAGE);
+      return ((JSONObject) ((JSONArray) errObject.get(ERRORS)).get(0)).get(MESSAGE);
     } catch (Exception e) {
       log.error("Failed to get error message from merge response. Error {}", e.getMessage());
       return "Failed to get error message from merge response";
@@ -147,9 +159,9 @@ public class BitbucketServiceImpl implements BitbucketService {
   }
 
   private Object getOnPremMergeCommit(Response<Object> mergePRResponse) {
-    return (
-        (LinkedHashMap) ((LinkedHashMap) ((LinkedHashMap) mergePRResponse.body()).get("properties")).get("mergeCommit"))
-        .get("id");
+    return ((LinkedHashMap) ((LinkedHashMap) ((LinkedHashMap) mergePRResponse.body()).get(PROPERTIES))
+                .get(ON_PREM_MERGE_COMMIT))
+        .get(ID);
   }
 
   private JSONObject mergeSaaSPR(BitbucketConfig bitbucketConfig, String authToken, String org, String repoSlug,
@@ -157,7 +169,7 @@ public class BitbucketServiceImpl implements BitbucketService {
     JSONObject responseObj = new JSONObject();
     Map<String, Object> parameters = new HashMap<>();
     if (deleteSourceBranch) {
-      parameters.put("close_source_branch", true);
+      parameters.put(CLOSE_SOURCE_BRANCH, true);
     }
     try {
       Response<Object> mergePRResponse = getBitbucketClient(bitbucketConfig, null)
@@ -170,7 +182,7 @@ public class BitbucketServiceImpl implements BitbucketService {
         log.error("Failed to merge PR for Bitbucket Cloud. URL {} and PR number {}. Response {} ",
             bitbucketConfig.getBitbucketUrl(), prNumber, mergePRResponse.errorBody());
         responseObj.put(ERROR, getSaaSErrorMessage(mergePRResponse));
-        responseObj.put("code", mergePRResponse.code());
+        responseObj.put(CODE, mergePRResponse.code());
         responseObj.put(MERGED, false);
       }
     } catch (Exception e) {
@@ -178,19 +190,20 @@ public class BitbucketServiceImpl implements BitbucketService {
           prNumber, e);
       responseObj.put(MERGED, false);
       responseObj.put(ERROR, e.getMessage());
+      responseObj.put(CODE, HttpStatus.INTERNAL_SERVER_ERROR.value());
     }
     return responseObj;
   }
 
   private Object getSaaSMergeCommit(Response<Object> mergePRResponse) {
-    return ((LinkedHashMap) ((LinkedHashMap) mergePRResponse.body()).get("merge_commit")).get("hash");
+    return ((LinkedHashMap) ((LinkedHashMap) mergePRResponse.body()).get(SAAS_MERGE_COMMIT)).get(HASH);
   }
 
   @Override
   public Boolean deleteRef(BitbucketConfig bitbucketConfig, String authToken, String org, String repoSlug, String ref) {
     Map<String, Object> parameters = new HashMap<>();
-    parameters.put("name", ref);
-    parameters.put("dryRun", false);
+    parameters.put(NAME, ref);
+    parameters.put(DRY_RUN, false);
     try {
       Response<Object> response =
           getBitbucketClient(bitbucketConfig, null).deleteOnPremRef(authToken, org, repoSlug, parameters).execute();

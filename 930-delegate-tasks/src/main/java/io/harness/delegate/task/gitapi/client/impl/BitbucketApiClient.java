@@ -13,6 +13,7 @@ import static java.lang.String.format;
 
 import io.harness.cistatus.service.bitbucket.BitbucketConfig;
 import io.harness.cistatus.service.bitbucket.BitbucketService;
+import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessType;
@@ -86,8 +87,8 @@ public class BitbucketApiClient implements GitApiClient {
   GitApiTaskResponseBuilder prepareResponse(String repoSlug, String prNumber, String sha, JSONObject mergePRResponse) {
     GitApiTaskResponseBuilder responseBuilder = GitApiTaskResponse.builder();
     if (mergePRResponse != null) {
-      if ((boolean) getValue(mergePRResponse, "merged")) {
-        Object mergeCommitSha = getValue(mergePRResponse, "sha");
+      if ((boolean) getValue(mergePRResponse, BitbucketServiceImpl.MERGED)) {
+        Object mergeCommitSha = getValue(mergePRResponse, BitbucketServiceImpl.SHA);
         responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .gitApiResult(GitApiMergePRTaskResponse.builder()
                               .sha(mergeCommitSha == null ? null : String.valueOf(mergeCommitSha))
@@ -95,7 +96,8 @@ public class BitbucketApiClient implements GitApiClient {
       } else {
         responseBuilder.commandExecutionStatus(FAILURE).errorMessage(
             format("Merging PR encountered a problem. SHA:%s Repo:%s PrNumber:%s Message:%s Code:%s", sha, repoSlug,
-                prNumber, getValue(mergePRResponse, "error"), getValue(mergePRResponse, "code")));
+                prNumber, getValue(mergePRResponse, BitbucketServiceImpl.ERROR),
+                getValue(mergePRResponse, BitbucketServiceImpl.CODE)));
       }
     } else {
       responseBuilder.commandExecutionStatus(FAILURE).errorMessage(
