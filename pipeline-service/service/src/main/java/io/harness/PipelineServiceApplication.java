@@ -348,7 +348,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     registerStores(appConfig, injector);
     registerEventListeners(injector);
     registerWaitEnginePublishers(injector);
-    registerScheduledJobs(injector, appConfig);
+//    registerScheduledJobs(injector, appConfig);
     registerCorsFilter(appConfig, environment);
     registerResources(environment, injector);
     registerJerseyProviders(environment, injector);
@@ -365,22 +365,22 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
 
     harnessMetricRegistry = injector.getInstance(HarnessMetricRegistry.class);
     PipelineServiceIteratorsConfig iteratorsConfig = appConfig.getIteratorsConfig();
-    injector.getInstance(TriggerWebhookExecutionService.class)
-        .registerIterators(iteratorsConfig.getTriggerWebhookConfig());
-    injector.getInstance(ScheduledTriggerHandler.class).registerIterators(iteratorsConfig.getScheduleTriggerConfig());
+//    injector.getInstance(TriggerWebhookExecutionService.class)
+//        .registerIterators(iteratorsConfig.getTriggerWebhookConfig());
+//    injector.getInstance(ScheduledTriggerHandler.class).registerIterators(iteratorsConfig.getScheduleTriggerConfig());
     injector.getInstance(TimeoutEngine.class)
         .createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
                                     .name("TimeoutEngine")
                                     .poolSize(iteratorsConfig.getTimeoutEngineConfig().getThreadPoolCount())
                                     .build(),
             Duration.ofSeconds(iteratorsConfig.getTimeoutEngineConfig().getTargetIntervalInSeconds()));
-    injector.getInstance(BarrierServiceImpl.class).registerIterators(iteratorsConfig.getBarrierConfig());
-    injector.getInstance(ApprovalInstanceHandler.class).registerIterators();
-    injector.getInstance(CustomApprovalInstanceHandler.class)
-        .registerIterators(iteratorsConfig.getApprovalInstanceConfig());
-    injector.getInstance(ResourceRestraintPersistenceMonitor.class)
-        .registerIterators(iteratorsConfig.getResourceRestraintConfig());
-    injector.getInstance(InterruptMonitor.class).registerIterators(iteratorsConfig.getInterruptMonitorConfig());
+//    injector.getInstance(BarrierServiceImpl.class).registerIterators(iteratorsConfig.getBarrierConfig());
+//    injector.getInstance(ApprovalInstanceHandler.class).registerIterators();
+//    injector.getInstance(CustomApprovalInstanceHandler.class)
+//        .registerIterators(iteratorsConfig.getApprovalInstanceConfig());
+//    injector.getInstance(ResourceRestraintPersistenceMonitor.class)
+//        .registerIterators(iteratorsConfig.getResourceRestraintConfig());
+//    injector.getInstance(InterruptMonitor.class).registerIterators(iteratorsConfig.getInterruptMonitorConfig());
     injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
 
     registerYamlSdk(injector);
