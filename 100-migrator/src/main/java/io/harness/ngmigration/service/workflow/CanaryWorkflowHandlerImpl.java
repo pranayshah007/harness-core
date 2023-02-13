@@ -22,7 +22,6 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 
 import software.wings.beans.CanaryOrchestrationWorkflow;
-import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
 import software.wings.ngmigration.CgEntityId;
@@ -32,7 +31,6 @@ import software.wings.service.impl.yaml.handler.workflow.CanaryWorkflowYamlHandl
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,14 +39,6 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
       Sets.newHashSet(BASIC, BLUE_GREEN, ROLLING);
 
   @Inject CanaryWorkflowYamlHandler canaryWorkflowYamlHandler;
-
-  @Override
-  public List<GraphNode> getSteps(Workflow workflow) {
-    CanaryOrchestrationWorkflow orchestrationWorkflow =
-        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
-    return getSteps(orchestrationWorkflow.getWorkflowPhases(), orchestrationWorkflow.getPreDeploymentSteps(),
-        orchestrationWorkflow.getPostDeploymentSteps());
-  }
 
   @Override
   public TemplateEntityType getTemplateType(Workflow workflow) {

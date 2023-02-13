@@ -37,7 +37,6 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactCo
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
-import io.harness.delegate.task.artifacts.bamboo.BambooArtifactTaskNG;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 import io.harness.logstreaming.NGLogCallback;

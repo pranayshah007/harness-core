@@ -40,6 +40,14 @@ import java.util.Map;
 public class AmiElastigroupInfraDefMapper implements InfraDefMapper {
   @Override
   public ServiceDefinitionType getServiceDefinition(InfrastructureDefinition infrastructureDefinition) {
+    if (infrastructureDefinition.getCloudProviderType() == AWS) {
+      AwsAmiInfrastructure awsAmiInfrastructure = (AwsAmiInfrastructure) infrastructureDefinition.getInfrastructure();
+      if (isNotEmpty(awsAmiInfrastructure.getSpotinstCloudProvider())) {
+        return ServiceDefinitionType.ELASTIGROUP;
+      } else {
+        return ServiceDefinitionType.ASG;
+      }
+    }
     return ServiceDefinitionType.ELASTIGROUP;
   }
 
@@ -58,7 +66,12 @@ public class AmiElastigroupInfraDefMapper implements InfraDefMapper {
   @Override
   public InfrastructureType getInfrastructureType(InfrastructureDefinition infrastructureDefinition) {
     if (infrastructureDefinition.getCloudProviderType() == AWS) {
-      return InfrastructureType.ELASTIGROUP;
+      AwsAmiInfrastructure awsAmiInfrastructure = (AwsAmiInfrastructure) infrastructureDefinition.getInfrastructure();
+      if (isNotEmpty(awsAmiInfrastructure.getSpotinstCloudProvider())) {
+        return InfrastructureType.ELASTIGROUP;
+      } else {
+        return InfrastructureType.ASG;
+      }
     }
     throw new InvalidRequestException("Unsupported Infra for Ecs deployment");
   }

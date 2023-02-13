@@ -10,6 +10,7 @@ package io.harness.connector.mappers.bamboo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.embedded.bamboo.BambooConnector;
+import io.harness.connector.entities.embedded.bamboo.BambooConnector.BambooConnectorBuilder;
 import io.harness.connector.entities.embedded.bamboo.BambooUserNamePasswordAuthentication;
 import io.harness.connector.mappers.ConnectorDTOToEntityMapper;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -27,7 +28,7 @@ public class BambooDTOToEntity implements ConnectorDTOToEntityMapper<BambooConne
   @Override
   public BambooConnector toConnectorEntity(BambooConnectorDTO configDTO) {
     BambooAuthType bambooAuthType = configDTO.getAuth().getAuthType();
-    BambooConnector.BambooConnectorBuilder bambooConnectorBuilder =
+    BambooConnectorBuilder bambooConnectorBuilder =
         BambooConnector.builder().url(StringUtils.trim(configDTO.getBambooUrl())).authType(bambooAuthType);
     if (bambooAuthType == BambooAuthType.USER_PASSWORD) {
       BambooUserNamePasswordDTO bambooUserNamePasswordDTO =

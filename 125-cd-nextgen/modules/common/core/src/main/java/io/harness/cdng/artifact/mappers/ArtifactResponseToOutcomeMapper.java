@@ -80,6 +80,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 @OwnedBy(CDC)
@@ -516,14 +517,13 @@ public class ArtifactResponseToOutcomeMapper {
   private ArtifactoryGenericArtifactOutcome getArtifactoryGenericArtifactOutcome(
       ArtifactoryRegistryArtifactConfig artifactConfig,
       ArtifactoryGenericArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
-    String artifactPath = useDelegateResponse ? artifactDelegateResponse.getArtifactPath()
-                                              : (ParameterField.isNull(artifactConfig.getArtifactPath()) ? null
-                                                      : ParameterField.isBlank(artifactConfig.getArtifactPathFilter())
-                                                      ? Paths
-                                                            .get(artifactConfig.getArtifactDirectory().getValue(),
-                                                                artifactConfig.getArtifactPath().getValue())
-                                                            .toString()
-                                                      : artifactConfig.getArtifactPath().getValue());
+    String artifactPath = useDelegateResponse
+        ? artifactDelegateResponse.getArtifactPath()
+        : (ParameterField.isNull(artifactConfig.getArtifactPath()) ? null
+                : ParameterField.isBlank(artifactConfig.getArtifactPathFilter())
+                ? getArtifactoryGenericArtifactPath(
+                    artifactConfig.getArtifactDirectory().getValue(), artifactConfig.getArtifactPath().getValue())
+                : artifactConfig.getArtifactPath().getValue());
 
     return ArtifactoryGenericArtifactOutcome.builder()
         .repositoryName(artifactConfig.getRepository().getValue())
@@ -541,6 +541,13 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .metadata(useDelegateResponse ? artifactDelegateResponse.getBuildDetails().getMetadata() : null)
         .build();
+  }
+
+  private String getArtifactoryGenericArtifactPath(String artifactDirectory, String artifactPath) {
+    if (StringUtils.isNotEmpty(artifactDirectory) && StringUtils.isNotEmpty(artifactPath)) {
+      return Paths.get(artifactDirectory, artifactPath).toString();
+    }
+    return null;
   }
 
   private CustomArtifactOutcome getCustomArtifactOutcome(CustomArtifactConfig artifactConfig) {

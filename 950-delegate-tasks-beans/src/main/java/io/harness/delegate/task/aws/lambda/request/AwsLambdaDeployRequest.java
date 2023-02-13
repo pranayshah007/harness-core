@@ -29,6 +29,9 @@ public class AwsLambdaDeployRequest implements AwsLambdaCommandRequest, NestedAn
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig;
+  @NonFinal @Expression(ALLOW_SECRETS) String awsLambdaDeployManifestContent;
+  String functionName;
+  String qualifier;
 
   @Override
   public AwsLambdaCommandTypeNG getAwsLambdaCommandType() {

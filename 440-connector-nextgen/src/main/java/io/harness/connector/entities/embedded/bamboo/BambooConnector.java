@@ -9,7 +9,6 @@ package io.harness.connector.entities.embedded.bamboo;
 
 import io.harness.annotations.StoreIn;
 import io.harness.connector.entities.Connector;
-import io.harness.connector.entities.embedded.jenkins.JenkinsAuthentication;
 import io.harness.delegate.beans.connector.bamboo.BambooAuthType;
 import io.harness.ng.DbAliases;
 

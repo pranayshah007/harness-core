@@ -10,6 +10,7 @@ package io.harness.ngtriggers.conditionchecker;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ngtriggers.conditionchecker.OperationEvaluator.CONTAINS_OPERATOR;
+import static io.harness.ngtriggers.conditionchecker.OperationEvaluator.DOES_NOT_CONTAIN_OPERATOR;
 import static io.harness.ngtriggers.conditionchecker.OperationEvaluator.ENDS_WITH_OPERATOR;
 import static io.harness.ngtriggers.conditionchecker.OperationEvaluator.EQUALS_OPERATOR;
 import static io.harness.ngtriggers.conditionchecker.OperationEvaluator.IN_OPERATOR;
@@ -56,6 +57,7 @@ public class ConditionEvaluator {
     evaluatorMap.put(IN_OPERATOR, new INOperatorEvaluator());
     evaluatorMap.put(NOT_IN_OPERATOR, new NotINOperatorEvaluator());
     evaluatorMap.put(CONTAINS_OPERATOR, new ContainsOperatorEvaluator());
+    evaluatorMap.put(DOES_NOT_CONTAIN_OPERATOR, new DoesNotContainOperatorEvaluator());
     evaluatorMap.put(STARTS_WITH_OPERATOR, new StartsWithOperatorEvaluator());
     evaluatorMap.put(ENDS_WITH_OPERATOR, new EndsWithOperatorEvaluator());
     evaluatorMap.put(REGEX_OPERATOR, new RegexOperatorEvaluator());
@@ -129,6 +131,22 @@ public class ConditionEvaluator {
       }
 
       return input.contains(standard);
+    }
+  }
+
+  static class DoesNotContainOperatorEvaluator implements OperationEvaluator {
+    @Override
+    public boolean evaluate(String input, String standard) {
+      // standard is missing, skipping evaluation
+      if (isBlank(standard)) {
+        return true;
+      }
+
+      if (isBlank(input)) {
+        return false;
+      }
+
+      return !input.contains(standard);
     }
   }
 

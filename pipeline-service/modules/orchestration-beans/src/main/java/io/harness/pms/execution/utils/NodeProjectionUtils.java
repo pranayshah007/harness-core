@@ -7,6 +7,9 @@
 
 package io.harness.pms.execution.utils;
 
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 
 import com.google.common.collect.Sets;
@@ -14,6 +17,7 @@ import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
+@OwnedBy(PIPELINE)
 public class NodeProjectionUtils {
   public static final Set<String> withId = Sets.newHashSet(NodeExecutionKeys.uuid);
 
@@ -87,7 +91,7 @@ public class NodeProjectionUtils {
       NodeExecutionKeys.name, NodeExecutionKeys.nodeId, NodeExecutionKeys.status, NodeExecutionKeys.executableResponses,
       NodeExecutionKeys.ambiance, NodeExecutionKeys.oldRetry, NodeExecutionKeys.planNode, NodeExecutionKeys.parentId);
 
-  public static final Set<String> fieldsForNodeExecutionDelete =
-      Sets.newHashSet(NodeExecutionKeys.timeoutInstanceIds, NodeExecutionKeys.adviserTimeoutInstanceIds,
-          NodeExecutionKeys.nodeId, NodeExecutionKeys.notifyId, NodeExecutionKeys.stepType);
+  public static final Set<String> fieldsForNodeExecutionDelete = Sets.newHashSet(NodeExecutionKeys.timeoutInstanceIds,
+      NodeExecutionKeys.adviserTimeoutInstanceIds, NodeExecutionKeys.nodeId, NodeExecutionKeys.notifyId,
+      NodeExecutionKeys.stepType, NodeExecutionKeys.executionInputConfigured);
 }

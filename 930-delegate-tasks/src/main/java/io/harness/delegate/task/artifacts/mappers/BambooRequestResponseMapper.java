@@ -25,22 +25,19 @@ public class BambooRequestResponseMapper {
   public BambooConfig toBambooConfig(BambooArtifactDelegateRequest request) {
     String password = "";
     String username = "";
-    String encryptedPassword = "";
-    String token = "";
     if (request.getBambooConnectorDTO().getAuth() != null
-        && request.getBambooConnectorDTO().getAuth().getCredentials() != null) {
-      if (request.getBambooConnectorDTO().getAuth().getAuthType().getDisplayName()
-          == JenkinsConstant.USERNAME_PASSWORD) {
-        BambooUserNamePasswordDTO credentials =
-            (BambooUserNamePasswordDTO) request.getBambooConnectorDTO().getAuth().getCredentials();
-        if (credentials.getPasswordRef() != null) {
-          password = EmptyPredicate.isNotEmpty(credentials.getPasswordRef().getDecryptedValue())
-              ? new String(credentials.getPasswordRef().getDecryptedValue())
-              : null;
-        }
-        username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
-            credentials.getUsername(), credentials.getUsernameRef());
+        && request.getBambooConnectorDTO().getAuth().getCredentials() != null
+        && request.getBambooConnectorDTO().getAuth().getAuthType().getDisplayName()
+            == JenkinsConstant.USERNAME_PASSWORD) {
+      BambooUserNamePasswordDTO credentials =
+          (BambooUserNamePasswordDTO) request.getBambooConnectorDTO().getAuth().getCredentials();
+      if (credentials.getPasswordRef() != null) {
+        password = EmptyPredicate.isNotEmpty(credentials.getPasswordRef().getDecryptedValue())
+            ? credentials.getPasswordRef().getDecryptedValue().toString()
+            : "";
       }
+      username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
+          credentials.getUsername(), credentials.getUsernameRef());
     }
     return BambooConfig.builder()
         .bambooUrl(request.getBambooConnectorDTO().getBambooUrl())

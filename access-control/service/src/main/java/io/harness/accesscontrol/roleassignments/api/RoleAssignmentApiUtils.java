@@ -214,6 +214,7 @@ public class RoleAssignmentApiUtils {
         .principalIdentifier(roleAssignment.getPrincipalIdentifier())
         .principalType(roleAssignment.getPrincipalType())
         .managed(roleAssignment.isManaged())
+        .internal(roleAssignment.isInternal())
         .disabled(roleAssignment.isDisabled())
         .createdAt(roleAssignment.getCreatedAt())
         .lastModifiedAt(roleAssignment.getLastModifiedAt())

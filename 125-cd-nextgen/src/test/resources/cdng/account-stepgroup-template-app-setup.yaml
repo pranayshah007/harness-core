@@ -7,40 +7,26 @@ template:
   spec:
     stageType: Deployment
     steps:
-      - parallel:
-          - step:
-              type: BGAppSetup
-              name: BG App Setup_1
-              identifier: BGAppSetup_1
-              spec:
-                tasInstanceCountType: FromManifest
-                existingVersionToKeep: 3
-              timeout: 10m
-          - stepGroup:
-              name: saas
-              identifier: saas
-              steps:
-                - parallel:
-                    - step:
-                        type: AppResize
-                        name: App Resize_1
-                        identifier: AppResize_1
+      - stepGroup:
+          name: stepgrp
+          identifier: stepgrp
+          steps:
+            - parallel:
+                - step:
+                    type: BGAppSetup
+                    name: BG App Setup_1
+                    identifier: BGAppSetup_1
+                    spec:
+                      tasInstanceCountType: FromManifest
+                      existingVersionToKeep: 3
+                    timeout: 10m
+                - step:
+                    type: AppResize
+                    name: App Resize_1
+                    identifier: AppResize_1
+                    spec:
+                      newAppInstances:
+                        type: Percentage
                         spec:
-                          newAppInstances:
-                            type: Percentage
-                            spec:
-                              value: "100"
-                        timeout: 10m
-                    - stepGroup:
-                        name: stp
-                        identifier: stp
-                        template:
-                          templateRef: org.orgStepGrpTemplate
-                          versionLabel: v1
-      - step:
-          type: SwapRoutes
-          name: Swap Routes_1
-          identifier: SwapRoutes_1
-          spec:
-            downSizeOldApplication: false
-          timeout: 10m
+                          value: "100"
+                    timeout: 10m

@@ -57,6 +57,6 @@ public class GoogleFunctionTaskHelperBaseTest extends CategoryTest {
 
     verify(googleFunctionCommandTaskHelper)
         .getFunction(deploymentReleaseData.getFunction(), gcpGoogleFunctionInfraConfig.getGcpConnectorDTO(),
-            gcpGoogleFunctionInfraConfig.getProject(), gcpGoogleFunctionInfraConfig.getRegion());
+            gcpGoogleFunctionInfraConfig.getProject(), gcpGoogleFunctionInfraConfig.getRegion(), null);
   }
 }

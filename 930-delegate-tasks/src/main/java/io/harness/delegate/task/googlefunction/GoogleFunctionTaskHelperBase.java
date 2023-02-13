@@ -37,7 +37,7 @@ public class GoogleFunctionTaskHelperBase {
     googleFunctionInfraConfigHelper.decryptInfraConfig(gcpGoogleFunctionInfraConfig);
     Optional<Function> optionalFunction = googleFunctionCommandTaskHelper.getFunction(
         deploymentReleaseData.getFunction(), gcpGoogleFunctionInfraConfig.getGcpConnectorDTO(),
-        gcpGoogleFunctionInfraConfig.getProject(), gcpGoogleFunctionInfraConfig.getRegion());
+        gcpGoogleFunctionInfraConfig.getProject(), gcpGoogleFunctionInfraConfig.getRegion(), null);
     if (optionalFunction.isPresent()) {
       Function function = optionalFunction.get();
       GoogleFunction googleFunction =

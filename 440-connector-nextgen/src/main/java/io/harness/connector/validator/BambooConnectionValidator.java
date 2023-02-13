@@ -11,9 +11,7 @@ import static software.wings.beans.TaskType.BAMBOO_CONNECTIVITY_TEST_TASK;
 
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
-import io.harness.connector.validator.AbstractConnectorValidator;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
-import io.harness.delegate.beans.connector.bamboo.BambooAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.bamboo.BambooConnectionTaskResponse;
 import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
 import io.harness.delegate.beans.connector.bamboo.BambooTestConnectionTaskParams;
@@ -29,8 +27,6 @@ public class BambooConnectionValidator extends AbstractConnectorValidator {
   public <T extends ConnectorConfigDTO> TaskParameters getTaskParameters(
       T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     BambooConnectorDTO bambooConnectorDTO = (BambooConnectorDTO) connectorConfig;
-    BambooAuthCredentialsDTO bambooAuthCredentialsDTO =
-        bambooConnectorDTO.getAuth() != null ? bambooConnectorDTO.getAuth().getCredentials() : null;
     return BambooTestConnectionTaskParams.builder()
         .bambooConnectorDTO(bambooConnectorDTO)
         .encryptionDetails(

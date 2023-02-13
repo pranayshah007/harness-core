@@ -20,9 +20,19 @@ import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
-import io.harness.cdng.artifact.outcome.*;
+import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
+import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
+import io.harness.cdng.artifact.outcome.BambooArtifactOutcome;
+import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GithubPackagesArtifactOutcome;
+import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
+import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.cdng.infra.beans.AsgInfraMapping;
+import io.harness.cdng.infra.beans.AwsSamInfraMapping;
 import io.harness.cdng.infra.beans.AzureWebAppInfraMapping;
 import io.harness.cdng.infra.beans.CustomDeploymentInfraMapping;
 import io.harness.cdng.infra.beans.EcsInfraMapping;
@@ -77,6 +87,7 @@ public class NGEntitiesMorphiaRegistrar implements MorphiaRegistrar {
     set.add(SshWinRmAzureInfraMapping.class);
     set.add(TanzuApplicationServiceInfraMapping.class);
     set.add(GoogleFunctionsInfraMapping.class);
+    set.add(AwsSamInfraMapping.class);
     set.add(ModuleVersionInfo.class);
     set.add(ScopeAware.class);
   }

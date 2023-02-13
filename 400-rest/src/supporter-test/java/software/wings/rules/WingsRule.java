@@ -26,6 +26,7 @@ import static org.mockito.Mockito.mock;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.NoopStatement;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
@@ -171,6 +172,9 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
     if (isIntegrationTest(target)) {
       return new NoopStatement();
     }
+    if (isIgnorePropertySetAndNotAlwaysRun(frameworkMethod)) {
+      return new NoopStatement();
+    }
     Statement wingsStatement = new Statement() {
       @Override
       public void evaluate() throws Throwable {
@@ -191,6 +195,11 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
     };
 
     return wingsStatement;
+  }
+
+  private boolean isIgnorePropertySetAndNotAlwaysRun(FrameworkMethod frameworkMethod) {
+    return frameworkMethod.getAnnotation(HarnessAlwaysRun.class) == null
+        && "true".equalsIgnoreCase(System.getenv("IGNORE_400_TESTS"));
   }
 
   protected boolean isIntegrationTest(Object target) {

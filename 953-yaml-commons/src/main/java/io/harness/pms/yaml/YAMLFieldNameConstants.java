@@ -39,6 +39,7 @@ public class YAMLFieldNameConstants {
   public final String FAILURE_STRATEGIES = "failureStrategies";
   public final String NAME = "name";
   public final String IDENTIFIER = "identifier";
+  public final String ID = "id";
   public final String DESCRIPTION = "description";
   public final String TAGS = "tags";
   public final String VARIABLES = "variables";

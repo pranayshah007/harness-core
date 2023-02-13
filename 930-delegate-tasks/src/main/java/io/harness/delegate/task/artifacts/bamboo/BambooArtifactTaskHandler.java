@@ -7,7 +7,6 @@
 
 package io.harness.delegate.task.artifacts.bamboo;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.time.Duration.ofSeconds;
@@ -26,13 +25,11 @@ import io.harness.security.encryption.SecretDecryptionService;
 import software.wings.beans.BambooConfig;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
-import software.wings.delegatetasks.BambooTask.BambooExecutionResponse;
 import software.wings.helpers.ext.bamboo.BambooService;
 import software.wings.helpers.ext.bamboo.Result;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.intfc.BambooBuildService;
 
-import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
@@ -85,11 +82,6 @@ public class BambooArtifactTaskHandler extends DelegateArtifactTaskHandler<Bambo
   }
 
   public ArtifactTaskExecutionResponse getPlans(BambooArtifactDelegateRequest attributesRequest) {
-    ArtifactStreamAttributes artifactStreamAttributes = ArtifactStreamAttributes.builder()
-                                                            .jobName(attributesRequest.getPlanKey())
-                                                            .artifactPaths(attributesRequest.getArtifactPaths())
-                                                            .artifactStreamType(ArtifactStreamType.BAMBOO.name())
-                                                            .build();
     Map<String, String> plans = bambooBuildService.getPlans(
         BambooRequestResponseMapper.toBambooConfig(attributesRequest), attributesRequest.getEncryptedDataDetails());
     return ArtifactTaskExecutionResponse.builder().plans(plans).build();

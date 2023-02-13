@@ -45,6 +45,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.DuplicateKeyException;
@@ -185,7 +186,7 @@ public class MongoPersistence implements HPersistence {
   public void isHealthy() {
     List<AdvancedDatastore> datastores = datastoreMap.values().stream().distinct().collect(toList());
     for (AdvancedDatastore datastore : datastores) {
-      datastore.getDB().getStats();
+      datastore.getDB().command(new BasicDBObject("dbStats", 1));
     }
   }
 

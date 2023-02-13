@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;

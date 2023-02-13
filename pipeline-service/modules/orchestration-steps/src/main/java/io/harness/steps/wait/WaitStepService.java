@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.wait.WaitStepInstance;
 
 import java.util.Optional;
+import java.util.Set;
 
 @OwnedBy(PIPELINE)
 public interface WaitStepService {
@@ -20,4 +21,11 @@ public interface WaitStepService {
   Optional<WaitStepInstance> findByNodeExecutionId(String nodeExecutionId);
   void markAsFailOrSuccess(String planExecutionId, String nodeExecutionId, WaitStepAction waitStepAction);
   WaitStepInstance getWaitStepExecutionDetails(String nodeExecutionId);
+
+  /**
+   * Delete all WaitStepInstance for given nodeExecutionIds
+   * Uses - nodeExecutionId_1 index
+   * @param nodeExecutionIds
+   */
+  void deleteWaitStepInstancesForGivenNodeExecutionIds(Set<String> nodeExecutionIds);
 }

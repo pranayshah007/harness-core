@@ -16,11 +16,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.harness.OrchestrationStepsTestBase;
+import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -28,6 +29,9 @@ import io.harness.distribution.constraint.Constraint;
 import io.harness.distribution.constraint.ConstraintId;
 import io.harness.distribution.constraint.Consumer;
 import io.harness.exception.InvalidRequestException;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -48,23 +52,30 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.Collections;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class ResourceRestraintStepTest extends OrchestrationStepsTestBase {
+public class ResourceRestraintStepTest extends CategoryTest {
+  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   private static final String RESOURCE_RESTRAINT_ID = generateUuid();
   private static final ParameterField<String> RESOURCE_UNIT =
       ParameterField.<String>builder().value(generateUuid()).build();
 
   @Mock private ResourceRestraintInstanceService resourceRestraintInstanceService;
   @Mock private ResourceRestraintService resourceRestraintService;
+  @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Mock private ILogStreamingStepClient iLogStreamingStepClient;
   @Inject @InjectMocks private ResourceRestraintStep resourceRestraintStep;
 
   @Before
   public void setUp() {
+    when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(iLogStreamingStepClient);
     ResourceRestraint resourceConstraint = ResourceRestraint.builder()
                                                .accountId(generateUuid())
                                                .capacity(1)

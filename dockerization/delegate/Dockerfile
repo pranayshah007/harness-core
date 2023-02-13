@@ -33,6 +33,8 @@ ENV JAVA_HOME=/opt/java/openjdk/
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 
 ARG TARGETARCH=amd64
+ARG BASEURL=https://app.harness.io/public/shared/delegates
+ARG DELEGATEVERSION
 
 RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/kubectl/v1.24.3/kubectl https://app.harness.io/public/shared/tools/kubectl/release/v1.24.3/bin/linux/$TARGETARCH/kubectl \
@@ -54,8 +56,8 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/oc/v4.2.16/oc https://app.harness.io/public/shared/tools/oc/release/v4.2.16/bin/linux/$TARGETARCH/oc \
   && mkdir -m 777 -p client-tools/kustomize/v4.5.4 \
   && curl -s -L -o client-tools/kustomize/v4.5.4/kustomize https://app.harness.io/public/shared/tools/kustomize/release/v4.5.4/bin/linux/$TARGETARCH/kustomize \
-  && mkdir -m 777 -p client-tools/scm/bf795ebf \
-  && curl -s -L -o client-tools/scm/bf795ebf/scm https://app.harness.io/public/shared/tools/scm/release/bf795ebf/bin/linux/$TARGETARCH/scm
+  && mkdir -m 777 -p client-tools/scm/c1ce9f00 \
+  && curl -s -L -o client-tools/scm/c1ce9f00/scm https://app.harness.io/public/shared/tools/scm/release/c1ce9f00/bin/linux/$TARGETARCH/scm
 
 RUN chmod -R 755 /opt/harness-delegate \
     && chgrp -R 0 /opt/harness-delegate  \
@@ -68,7 +70,7 @@ ENV PATH=/opt/harness-delegate/client-tools/chartmuseum/v0.15.0/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/tf-config-inspect/v1.1/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/kustomize/v4.5.4/:$PATH
 
-COPY ./delegate.jar ./delegate.jar
+RUN curl -s -L -o delegate.jar $BASEURL/$DELEGATEVERSION/delegate.jar
 
 USER 1001
 

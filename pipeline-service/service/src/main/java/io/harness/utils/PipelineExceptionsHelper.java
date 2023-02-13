@@ -9,7 +9,11 @@ package io.harness.utils;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ScmException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.sdk.EntityGitDetails;
 
 import lombok.experimental.UtilityClass;
 
@@ -24,5 +28,20 @@ public class PipelineExceptionsHelper {
       ex = ex.getCause();
     }
     return null;
+  }
+
+  public void setupEntityDetails(EntityGitDetails entityGitDetails) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (null != gitEntityInfo && null != entityGitDetails) {
+      if (EmptyPredicate.isNotEmpty(entityGitDetails.getRepoName())) {
+        gitEntityInfo.setRepoName(entityGitDetails.getRepoName());
+      }
+      if (EmptyPredicate.isNotEmpty(entityGitDetails.getBranch())) {
+        gitEntityInfo.setBranch(entityGitDetails.getBranch());
+      }
+      if (EmptyPredicate.isNotEmpty(entityGitDetails.getFilePath())) {
+        gitEntityInfo.setFilePath(entityGitDetails.getFilePath());
+      }
+    }
   }
 }

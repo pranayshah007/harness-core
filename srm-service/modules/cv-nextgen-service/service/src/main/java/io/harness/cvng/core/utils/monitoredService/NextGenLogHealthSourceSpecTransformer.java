@@ -7,15 +7,18 @@
 
 package io.harness.cvng.core.utils.monitoredService;
 
+import io.harness.cvng.core.beans.healthsource.HealthSourceParamsDTO;
 import io.harness.cvng.core.beans.healthsource.QueryDefinition;
 import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec;
 import io.harness.cvng.core.entities.NextGenLogCVConfig;
 
 import com.google.common.base.Preconditions;
+import com.google.inject.Singleton;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Singleton
 public class NextGenLogHealthSourceSpecTransformer
     implements CVConfigToHealthSourceTransformer<NextGenLogCVConfig, NextGenHealthSourceSpec> {
   @Override
@@ -25,6 +28,7 @@ public class NextGenLogHealthSourceSpecTransformer
         "ConnectorRef should be same for List of all configs.");
     return NextGenHealthSourceSpec.builder()
         .connectorRef(cvConfigs.get(0).getConnectorIdentifier())
+        .healthSourceParams(HealthSourceParamsDTO.getHealthSourceParamsDTO(cvConfigs.get(0).getHealthSourceParams()))
         .dataSourceType(cvConfigs.get(0).getType())
         .queryDefinitions(cvConfigs.stream()
                               .map((NextGenLogCVConfig cv)

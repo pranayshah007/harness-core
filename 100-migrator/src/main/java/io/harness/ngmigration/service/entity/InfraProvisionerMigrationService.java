@@ -26,6 +26,7 @@ import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.InfraProvisionerSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -38,6 +39,7 @@ import software.wings.beans.ARMInfrastructureProvisioner;
 import software.wings.beans.ARMSourceType;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.TerraformInfrastructureProvisioner;
+import software.wings.beans.TerragruntInfrastructureProvisioner;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
@@ -108,6 +110,23 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
         }
       }
     }
+    if (provisioner instanceof TerragruntInfrastructureProvisioner) {
+      TerragruntInfrastructureProvisioner terragruntInfrastructureProvisioner =
+          (TerragruntInfrastructureProvisioner) provisioner;
+      if (StringUtils.isNotBlank(terragruntInfrastructureProvisioner.getSourceRepoSettingId())) {
+        children.add(CgEntityId.builder()
+                         .type(CONNECTOR)
+                         .id(terragruntInfrastructureProvisioner.getSourceRepoSettingId())
+                         .build());
+      }
+      if (StringUtils.isNotBlank(terragruntInfrastructureProvisioner.getSecretManagerId())) {
+        children.add(CgEntityId.builder()
+                         .type(SECRET_MANAGER)
+                         .id(terragruntInfrastructureProvisioner.getSecretManagerId())
+                         .build());
+      }
+    }
+
     return DiscoveryNode.builder().children(children).entityNode(entityNode).build();
   }
 
@@ -128,7 +147,7 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     List<NGYamlFile> result = new ArrayList<>();
     InfrastructureProvisioner provisioner = (InfrastructureProvisioner) entities.get(entityId).getEntity();
@@ -144,11 +163,11 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
       }
     }
 
-    return result;
+    return YamlGenerationDetails.builder().yamlFileList(result).build();
   }
 
   @Override
-  protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     return null;
   }
 

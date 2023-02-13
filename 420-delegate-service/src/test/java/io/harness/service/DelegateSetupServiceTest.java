@@ -913,8 +913,8 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
     persistence.save(delegate);
 
     Set<String> tags = delegateSetupService.retrieveDelegateImplicitSelectors(delegate, false).keySet();
-    assertThat(tags.size()).isEqualTo(2);
-    assertThat(tags).containsExactlyInAnyOrder("group", "custom-tag");
+    assertThat(tags.size()).isEqualTo(3);
+    assertThat(tags).containsExactlyInAnyOrder("group", "custom-tag", "host");
   }
 
   @Test

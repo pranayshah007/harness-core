@@ -33,6 +33,8 @@ import software.wings.beans.Service;
 import software.wings.beans.SubdomainUrl;
 import software.wings.beans.TechStack;
 import software.wings.beans.User;
+import software.wings.scheduler.AccountJobProperties;
+import software.wings.scheduler.AccountJobType;
 import software.wings.security.authentication.AccountSettingsResponse;
 import software.wings.service.impl.analysis.CVEnabledService;
 
@@ -158,6 +160,16 @@ public interface AccountService {
    * but not update the account configurations.
    */
   boolean enableAccount(String accountId);
+
+  /**
+   *  Schedule account level jobs for target account
+   *
+   * @param targetAccountId target account id
+   * @param jobTypes job types
+   * @param jobProperties job properties
+   */
+  void scheduleAccountLevelJobs(
+      String targetAccountId, List<AccountJobType> jobTypes, AccountJobProperties jobProperties);
 
   /**
    * Once the account migration completed. All existing delegates belonging to this account will be redirected to the

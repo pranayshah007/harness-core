@@ -155,6 +155,7 @@ java_library(
         "//clients/ngsettings:module",
         "//clients/notification:module",
         "//clients/pipeline-service/pms-sdk:module",
+        "//clients/queue-service/java-client:module",
         "//pipeline-service/contracts:module",
         "//pipeline-service/modules/ng-triggers:module",
         "//pipeline-service/modules/orchestration:module",

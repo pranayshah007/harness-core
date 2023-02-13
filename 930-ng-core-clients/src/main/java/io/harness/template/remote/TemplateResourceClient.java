@@ -122,7 +122,7 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_ACCOUNT_IDENTIFIER) String parentEntityAccountIdentifier,
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_ORG_IDENTIFIER) String parentEntityOrgIdentifier,
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_PROJECT_IDENTIFIER) String parentEntityProjectIdentifier,
-      @Body RefreshRequestDTO refreshRequest);
+      @Header(value = "Load-From-Cache") String loadFromCache, @Body RefreshRequestDTO refreshRequest);
 
   @POST(TEMPLATE_REFRESH_ENDPOINT + "validate-template-inputs/internal")
   Call<ResponseDTO<ValidateTemplateInputsResponseDTO>> validateTemplateInputsForGivenYaml(
@@ -137,7 +137,7 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_ACCOUNT_IDENTIFIER) String parentEntityAccountIdentifier,
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_ORG_IDENTIFIER) String parentEntityOrgIdentifier,
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_PROJECT_IDENTIFIER) String parentEntityProjectIdentifier,
-      @Body RefreshRequestDTO refreshRequest);
+      @Header(value = "Load-From-Cache") String loadFromCache, @Body RefreshRequestDTO refreshRequest);
 
   @POST(TEMPLATE_REFRESH_ENDPOINT + "refresh-all/internal")
   Call<ResponseDTO<YamlFullRefreshResponseDTO>> refreshAllTemplatesForYaml(
@@ -152,7 +152,7 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_ACCOUNT_IDENTIFIER) String parentEntityAccountIdentifier,
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_ORG_IDENTIFIER) String parentEntityOrgIdentifier,
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_PROJECT_IDENTIFIER) String parentEntityProjectIdentifier,
-      @Body RefreshRequestDTO refreshRequest);
+      @Header(value = "Load-From-Cache") String loadFromCache, @Body RefreshRequestDTO refreshRequest);
 
   @Headers({"Content-Type: application/json", "Accept: application/json"})
   @POST("templates")

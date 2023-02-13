@@ -9,11 +9,14 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.ngmigration.service.step.arm.AzureCreateARMResourceStepMapperImpl;
 import io.harness.ngmigration.service.step.arm.AzureRollbackARMResourceStepMapperImpl;
+import io.harness.ngmigration.service.step.ecs.EcsServiceSetupStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupDeployStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupListenerRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupSetupStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupSwapRouteStepMapperImpl;
+import io.harness.ngmigration.service.step.helm.HelmDeployStepMapperImpl;
+import io.harness.ngmigration.service.step.helm.HelmRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sApplyStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sBlueGreenDeployStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sCanaryDeployStepMapperImpl;
@@ -26,6 +29,9 @@ import io.harness.ngmigration.service.step.terraform.TerraformApplyStepMapperImp
 import io.harness.ngmigration.service.step.terraform.TerraformDestroyStepMapperImpl;
 import io.harness.ngmigration.service.step.terraform.TerraformProvisionStepMapperImpl;
 import io.harness.ngmigration.service.step.terraform.TerraformRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.terragrunt.TerragruntDestroyStepMapperImpl;
+import io.harness.ngmigration.service.step.terragrunt.TerragruntProvisionStepMapperImpl;
+import io.harness.ngmigration.service.step.terragrunt.TerragruntRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.verification.ApmVerificationStepMapperImpl;
 import io.harness.ngmigration.service.step.verification.AppDynamicsStepMapperImpl;
 import io.harness.ngmigration.service.step.verification.BugsnagStepMapperImpl;
@@ -52,6 +58,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class StepMapperFactory {
+  @Inject EcsServiceSetupStepMapperImpl ecsServiceSetupStepMapper;
+  @Inject HelmDeployStepMapperImpl helmDeployStepMapper;
+  @Inject HelmRollbackStepMapperImpl helmRollbackStepMapper;
   @Inject CustomFetchInstancesStepMapperImpl customFetchInstancesStepMapper;
   @Inject ShellScriptStepMapperImpl shellScriptStepMapper;
   @Inject K8sRollingStepMapperImpl k8sRollingStepMapper;
@@ -74,6 +83,9 @@ public class StepMapperFactory {
   @Inject TerraformProvisionStepMapperImpl terraformProvisionStepMapper;
   @Inject TerraformDestroyStepMapperImpl terraformDestroyStepMapper;
   @Inject TerraformRollbackStepMapperImpl terraformRollbackStepMapper;
+  @Inject TerragruntProvisionStepMapperImpl terragruntProvisionStepMapper;
+  @Inject TerragruntDestroyStepMapperImpl terragruntDestroyStepMapper;
+  @Inject TerragruntRollbackStepMapperImpl terragruntRollbackStepMapper;
   @Inject ElastigroupSetupStepMapperImpl elastigroupSetupStepMapper;
   @Inject ElastigroupDeployStepMapperImpl elastigroupDeployStepMapper;
   @Inject ElastigroupListenerRollbackStepMapperImpl elastigroupListenerRollbackStepMapper;
@@ -105,6 +117,12 @@ public class StepMapperFactory {
 
   public StepMapper getStepMapper(String stepType) {
     switch (stepType) {
+      case "HELM_DEPLOY":
+        return helmDeployStepMapper;
+      case "HELM_ROLLBACK":
+        return helmRollbackStepMapper;
+      case "ECS_SERVICE_SETUP":
+        return ecsServiceSetupStepMapper;
       case "SHELL_SCRIPT":
         return shellScriptStepMapper;
       case "K8S_DEPLOYMENT_ROLLING":
@@ -189,6 +207,8 @@ public class StepMapperFactory {
       case "DC_NODE_SELECT":
       case "ARTIFACT_COLLECTION":
       case "ARTIFACT_CHECK":
+      case "ECS_STEADY_STATE_CHECK":
+      case "ECS_SERVICE_DEPLOY":
         return emptyStepMapper;
       case "SPOTINST_SETUP":
         return elastigroupSetupStepMapper;
@@ -206,6 +226,12 @@ public class StepMapperFactory {
         return azureRollbackARMResourceStepMapper;
       case "CUSTOM_DEPLOYMENT_FETCH_INSTANCES":
         return customFetchInstancesStepMapper;
+      case "TERRAGRUNT_PROVISION":
+        return terragruntProvisionStepMapper;
+      case "TERRAGRUNT_DESTROY":
+        return terragruntDestroyStepMapper;
+      case "TERRAGRUNT_ROLLBACK":
+        return terragruntRollbackStepMapper;
       default:
         return unsupportedStepMapper;
     }

@@ -9,11 +9,8 @@ package io.harness.cdng.artifact.resources.bamboo.mappers;
 
 import io.harness.cdng.artifact.resources.bamboo.dtos.BambooPlanKeysDTO;
 import io.harness.cdng.artifact.resources.bamboo.dtos.BambooPlanNames;
-import io.harness.cdng.artifact.resources.jenkins.dtos.JenkinsJobDetailsDTO;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 

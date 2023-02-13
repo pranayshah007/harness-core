@@ -16,7 +16,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
-import io.harness.serializer.IDPServiceRegistrars;
+import io.harness.serializer.IdpServiceRegistrars;
 import io.harness.serializer.KryoRegistrar;
 
 import com.google.common.collect.ImmutableMap;
@@ -57,7 +57,7 @@ public class InspectCommand<T extends io.dropwizard.Configuration> extends Confi
 
   @Override
   protected void run(Bootstrap<T> bootstrap, Namespace namespace, T configuration) throws Exception {
-    IDPConfiguration mainConfiguration = (IDPConfiguration) configuration;
+    IdpConfiguration mainConfiguration = (IdpConfiguration) configuration;
     mainConfiguration.setMongoConfig(
         mainConfiguration.getMongoConfig().toBuilder().indexManagerMode(IndexManager.Mode.INSPECT).build());
 
@@ -82,14 +82,14 @@ public class InspectCommand<T extends io.dropwizard.Configuration> extends Confi
       @Singleton
       public Set<Class<? extends KryoRegistrar>> kryoRegistrars() {
         return ImmutableSet.<Class<? extends KryoRegistrar>>builder()
-            .addAll(IDPServiceRegistrars.kryoRegistrars)
+            .addAll(IdpServiceRegistrars.kryoRegistrars)
             .build();
       }
       @Provides
       @Singleton
       public Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
         return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
-            .addAll(IDPServiceRegistrars.morphiaRegistrars)
+            .addAll(IdpServiceRegistrars.morphiaRegistrars)
             .build();
       }
 

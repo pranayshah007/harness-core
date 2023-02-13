@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.With;
 
 /**
  * DequeueRequest object for dequeuing a batch of request from the particular queue
@@ -22,10 +23,7 @@ import lombok.Value;
 @Builder
 public class DequeueRequest {
   Integer batchSize;
-
   String consumerName;
-
   Integer maxWaitDuration;
-
-  String topic;
+  @With String topic;
 }

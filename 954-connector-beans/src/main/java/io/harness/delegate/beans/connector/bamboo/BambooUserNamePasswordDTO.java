@@ -10,7 +10,6 @@ package io.harness.delegate.beans.connector.bamboo;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.jenkins.JenkinsAuthCredentialsDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
 import io.harness.validation.OneOfField;

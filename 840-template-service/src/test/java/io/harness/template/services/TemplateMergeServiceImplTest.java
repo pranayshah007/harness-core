@@ -36,7 +36,6 @@ import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
-import io.harness.template.yaml.TemplateYamlFacade;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -55,8 +54,6 @@ import org.mockito.Mock;
 @OwnedBy(HarnessTeam.CDC)
 public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks private TemplateMergeServiceImpl templateMergeService;
-
-  TemplateYamlFacade templateYamlFacade = new TemplateYamlFacade();
 
   @Mock private NGTemplateServiceHelper templateServiceHelper;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
@@ -81,9 +78,6 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(templateMergeService).set("templateMergeServiceHelper", templateMergeServiceHelper);
     on(templateMergeService).set("ngTemplateFeatureFlagHelperService", ngTemplateFeatureFlagHelperService);
-    on(templateYamlFacade).set("featureFlagHelperService", ngTemplateFeatureFlagHelperService);
-    on(templateMergeService).set("templateYamlFacade", templateYamlFacade);
-    on(templateMergeServiceHelper).set("templateYamlFacade", templateYamlFacade);
 
     when(ngTemplateFeatureFlagHelperService.isFeatureFlagEnabled(any(), any())).thenReturn(false);
   }
@@ -701,7 +695,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
         + "timeout: \"<+input>\"\n";
     TemplateRetainVariablesResponse templateRetainVariablesResponse =
         templateMergeService.mergeTemplateInputs(originalTemplateYaml, yamlToBeUpdated);
-    assertThat(templateRetainVariablesResponse.getMergedTemplateInputs()).isEmpty();
+    assertThat("").isEqualTo(templateRetainVariablesResponse.getMergedTemplateInputs());
   }
 
   @Test

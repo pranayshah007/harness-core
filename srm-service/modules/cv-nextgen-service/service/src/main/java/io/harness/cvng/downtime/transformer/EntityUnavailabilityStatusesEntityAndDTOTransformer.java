@@ -22,6 +22,7 @@ public class EntityUnavailabilityStatusesEntityAndDTOTransformer {
         .startTime(entityUnavailabilityStatusesDTO.getStartTime())
         .endTime(entityUnavailabilityStatusesDTO.getEndTime())
         .status(entityUnavailabilityStatusesDTO.getStatus())
+        .entitiesRule(entityUnavailabilityStatusesDTO.getEntitiesRule())
         .build();
   }
 
@@ -34,6 +35,7 @@ public class EntityUnavailabilityStatusesEntityAndDTOTransformer {
         .startTime(entityUnavailabilityStatuses.getStartTime())
         .endTime(entityUnavailabilityStatuses.getEndTime())
         .status(entityUnavailabilityStatuses.getStatus())
+        .entitiesRule(entityUnavailabilityStatuses.getEntitiesRule())
         .build();
   }
 }

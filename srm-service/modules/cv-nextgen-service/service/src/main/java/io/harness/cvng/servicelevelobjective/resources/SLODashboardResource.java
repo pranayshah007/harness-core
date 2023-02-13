@@ -14,6 +14,7 @@ import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectPathParams;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLOConsumptionBreakdown;
@@ -221,7 +222,8 @@ public class SLODashboardResource {
       @Parameter(description = CVConstants.SLO_PARAM_MESSAGE) @ApiParam(required = true) @NotNull @PathParam(
           "identifier") @ResourceIdentifier String identifier,
       @NotNull @Valid @QueryParam("startTime") Long startTime, @NotNull @Valid @QueryParam("endTime") Long endTime,
-      @Valid @BeanParam ProjectParams projectParams) {
+      @Valid @BeanParam ProjectPathParams projectPathParams) {
+    ProjectParams projectParams = ProjectParams.fromProjectPathParams(projectPathParams);
     return ResponseDTO.newResponse(
         sloDashboardService.getUnavailabilityInstances(projectParams, startTime, endTime, identifier));
   }

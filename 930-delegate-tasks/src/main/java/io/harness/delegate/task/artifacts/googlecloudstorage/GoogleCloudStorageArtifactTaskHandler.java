@@ -39,6 +39,9 @@ public class GoogleCloudStorageArtifactTaskHandler
   @Inject private GcsHelperService gcsHelperService;
   private final SecretDecryptionService secretDecryptionService;
 
+  private static final String INVALID_ARTIFACT_PATH_ERROR = "No artifact exist for the provided artifact path. "
+      + "Please ensure that artifact path is valid";
+
   @Override
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(
       GoogleCloudStorageArtifactDelegateRequest artifactDelegateRequest) {
@@ -55,7 +58,7 @@ public class GoogleCloudStorageArtifactTaskHandler
 
     List<BuildDetails> builds = gcsHelperService.listBuilds(gcsInternalConfig);
     if (builds.isEmpty()) {
-      throw new InvalidRequestException("No last successful build");
+      throw new InvalidRequestException(INVALID_ARTIFACT_PATH_ERROR);
     }
     BuildDetails expectedBuildDetail = new BuildDetails();
     for (BuildDetails buildDetail : builds) {
@@ -65,7 +68,7 @@ public class GoogleCloudStorageArtifactTaskHandler
       }
     }
     if (!artifactDelegateRequest.getArtifactPath().equals(expectedBuildDetail.getArtifactPath())) {
-      throw new InvalidRequestException("No build exist for the given file path.");
+      throw new InvalidRequestException(INVALID_ARTIFACT_PATH_ERROR);
     }
     return ArtifactTaskExecutionResponse.builder()
         .artifactDelegateResponse(GoogleCloudStorageRequestResponseMapper.toGoogleCloudStorageResponse(

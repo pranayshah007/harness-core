@@ -9,6 +9,7 @@ package io.harness.delegate.task.bamboo;
 
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.ConnectorValidationResult.ConnectorValidationResultBuilder;
 import io.harness.connector.task.ConnectorValidationHandler;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.bamboo.BambooValidationParams;
@@ -42,8 +43,7 @@ public class BambooValidationHandler implements ConnectorValidationHandler {
     ArtifactTaskResponse validationResponse =
         bambooArtifactTaskHelper.getArtifactCollectResponse(artifactTaskParameters);
     boolean isJenkinsCredentialsValid = false;
-    ConnectorValidationResult.ConnectorValidationResultBuilder validationResultBuilder =
-        ConnectorValidationResult.builder();
+    ConnectorValidationResultBuilder validationResultBuilder = ConnectorValidationResult.builder();
     if (validationResponse.getArtifactTaskExecutionResponse() != null) {
       isJenkinsCredentialsValid = validationResponse.getArtifactTaskExecutionResponse().isArtifactServerValid();
     }

@@ -12,7 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
-import static software.wings.beans.LogColor.Red;
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
@@ -36,6 +35,7 @@ import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.git.GitFetchFilesTaskHelper;
 import io.harness.delegate.task.git.GitFetchTaskHelper;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.exception.InvalidRequestException;
@@ -45,7 +45,6 @@ import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
-import io.harness.logging.LogLevel;
 import io.harness.secret.SecretSanitizerThreadLocal;
 
 import software.wings.beans.LogColor;
@@ -56,7 +55,6 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -70,6 +68,7 @@ import org.jose4j.lang.JoseException;
 public class GitTaskNG extends AbstractDelegateRunnableTask {
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private GitFetchTaskHelper gitFetchTaskHelper;
+  @Inject private GitFetchFilesTaskHelper gitFetchFilesTaskHelper;
 
   public GitTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -85,33 +84,46 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    GitTaskNGRequest gitTaskNGRequest = (GitTaskNGRequest) parameters;
+    LogCallback executionLogCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(),
+        gitTaskNGRequest.getCommandUnitName(), gitTaskNGRequest.isShouldOpenLogStream(), commandUnitsProgress);
     try {
-      GitTaskNGRequest gitTaskNGRequest = (GitTaskNGRequest) parameters;
-
       log.info("Running Git Fetch Task for activityId {}", gitTaskNGRequest.getActivityId());
-
-      LogCallback executionLogCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(),
-          gitTaskNGRequest.getCommandUnitName(), gitTaskNGRequest.isShouldOpenLogStream(), commandUnitsProgress);
 
       List<GitFetchFilesResult> gitFetchFilesResults = new ArrayList<>();
       if (CollectionUtils.isNotEmpty(gitTaskNGRequest.getGitRequestFileConfigs())) {
         for (GitRequestFileConfig gitRequestFileConfig : gitTaskNGRequest.getGitRequestFileConfigs()) {
-          FetchFilesResult fetchFilesResult =
-              fetchManifestFile(gitRequestFileConfig, executionLogCallback, gitTaskNGRequest.getAccountId());
-          GitFetchFilesResult gitFetchFilesResult =
-              GitFetchFilesResult.builder()
-                  .files(fetchFilesResult != null ? fetchFilesResult.getFiles() : Lists.newArrayList())
-                  .commitResult(fetchFilesResult != null ? fetchFilesResult.getCommitResult() : null)
-                  .manifestType(gitRequestFileConfig.getManifestType())
-                  .identifier(gitRequestFileConfig.getIdentifier())
-                  .build();
-          gitFetchFilesResults.add(gitFetchFilesResult);
+          try {
+            FetchFilesResult fetchFilesResult =
+                fetchManifestFile(gitRequestFileConfig, executionLogCallback, gitTaskNGRequest.getAccountId());
+            GitFetchFilesResult gitFetchFilesResult =
+                GitFetchFilesResult.builder()
+                    .files(fetchFilesResult.getFiles() != null ? fetchFilesResult.getFiles() : Lists.newArrayList())
+                    .commitResult(fetchFilesResult.getCommitResult())
+                    .manifestType(gitRequestFileConfig.getManifestType())
+                    .identifier(gitRequestFileConfig.getIdentifier())
+                    .build();
+            gitFetchFilesResults.add(gitFetchFilesResult);
+          } catch (Exception ex) {
+            String exceptionMsg = gitFetchFilesTaskHelper.extractErrorMessage(ex);
+            if (ex.getCause() instanceof NoSuchFileException && gitRequestFileConfig.isSucceedIfFileNotFound()) {
+              log.info("file not found. " + exceptionMsg, ex);
+              executionLogCallback.saveExecutionLog(color(
+                  format("No manifest file found with identifier: %s.", gitRequestFileConfig.getIdentifier()), White));
+              continue;
+            }
+            String msg = "Exception in processing GitFetchFilesTask. " + exceptionMsg;
+            log.error(msg, ex);
+            executionLogCallback.saveExecutionLog(msg, ERROR, CommandExecutionStatus.FAILURE);
+            throw ex;
+          }
         }
       }
       executionLogCallback.saveExecutionLog(
-          color(format("%nFetched all manifests successfully..%n"), LogColor.White, LogWeight.Bold), INFO,
-          CommandExecutionStatus.SUCCESS);
-
+          color(format("%nFetched all manifests successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
+      if (gitTaskNGRequest.isCloseLogStream()) {
+        executionLogCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+      }
       return GitTaskNGResponse.builder()
           .taskStatus(TaskStatus.SUCCESS)
           .gitFetchFilesResults(gitFetchFilesResults)
@@ -121,6 +133,7 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in Git Fetch Files Task", sanitizedException);
+      executionLogCallback.saveExecutionLog(sanitizedException.getMessage(), ERROR, CommandExecutionStatus.FAILURE);
       throw new TaskNGDataException(
           UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
     }
@@ -129,7 +142,7 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
   private FetchFilesResult fetchManifestFile(
       GitRequestFileConfig gitRequestFileConfig, LogCallback executionLogCallback, String accountId) throws Exception {
     executionLogCallback.saveExecutionLog(
-        color(format("Fetching %s config file with identifier: %s", gitRequestFileConfig.getManifestType(),
+        color(format("Fetching %s config file with identifier : %s", gitRequestFileConfig.getManifestType(),
                   gitRequestFileConfig.getIdentifier()),
             White, Bold));
     GitStoreDelegateConfig gitStoreDelegateConfig = gitRequestFileConfig.getGitStoreDelegateConfig();
@@ -152,42 +165,17 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
           gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
     }
     FetchFilesResult filesResult = null;
-    try {
-      if (isNotEmpty(gitStoreDelegateConfig.getPaths())) {
-        String filePath = gitRequestFileConfig.getGitStoreDelegateConfig().getPaths().get(0);
-
-        List<String> filePaths = Collections.singletonList(filePath);
-        gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, false);
-        try {
-          filesResult =
-              gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
-        } catch (Exception e) {
-          throw NestedExceptionUtils.hintWithExplanationException(
-              format(
-                  "Please checks files %s configured Manifest section in Harness Service are correct. Check if git credentials are correct.",
-                  filePaths),
-              format("Error while fetching files %s from Git repo %s", filePaths,
-                  gitRequestFileConfig.getGitStoreDelegateConfig().getGitConfigDTO().getUrl()),
-              e);
-        }
-      }
-      executionLogCallback.saveExecutionLog(
-          color(format("%nFetch Config File completed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
-      executionLogCallback.saveExecutionLog("Done..\n", LogLevel.INFO);
-    } catch (Exception ex) {
-      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
-      String msg = "Exception in processing GitFetchFilesTask. " + sanitizedException.getMessage();
-      if (sanitizedException.getCause() instanceof NoSuchFileException) {
-        log.error(msg, sanitizedException);
-        executionLogCallback.saveExecutionLog(
-            color(format("No manifest file found with identifier: %s.", gitRequestFileConfig.getIdentifier()), Red),
-            ERROR);
-      }
-      executionLogCallback.saveExecutionLog(msg, ERROR, CommandExecutionStatus.FAILURE);
-      throw sanitizedException;
+    List<String> filePaths = null;
+    if (isNotEmpty(gitStoreDelegateConfig.getPaths())) {
+      filePaths = gitRequestFileConfig.getGitStoreDelegateConfig().getPaths();
+      gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, false);
     }
-    checkIfFilesContentAreNotEmpty(
-        filesResult, gitRequestFileConfig.getGitStoreDelegateConfig().getGitConfigDTO().getUrl());
+    filesResult = gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+    if (!gitRequestFileConfig.isSucceedIfFileNotFound()) {
+      checkIfFilesContentAreNotEmpty(
+          filesResult, gitRequestFileConfig.getGitStoreDelegateConfig().getGitConfigDTO().getUrl());
+    }
+    gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(executionLogCallback, filesResult.getFiles(), false);
     return filesResult;
   }
 

@@ -11,8 +11,6 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 
-import software.wings.beans.BasicOrchestrationWorkflow;
-import software.wings.beans.GraphNode;
 import software.wings.beans.Workflow;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -20,18 +18,10 @@ import software.wings.service.impl.yaml.handler.workflow.BasicWorkflowYamlHandle
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
-import java.util.List;
 import java.util.Map;
 
 public class BasicWorkflowHandlerImpl extends WorkflowHandler {
   @Inject BasicWorkflowYamlHandler basicWorkflowYamlHandler;
-
-  @Override
-  public List<GraphNode> getSteps(Workflow workflow) {
-    BasicOrchestrationWorkflow orchestrationWorkflow = (BasicOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
-    return getSteps(orchestrationWorkflow.getWorkflowPhases(), orchestrationWorkflow.getPreDeploymentSteps(),
-        orchestrationWorkflow.getPostDeploymentSteps());
-  }
 
   @Override
   public boolean areSimilar(Workflow workflow1, Workflow workflow2) {

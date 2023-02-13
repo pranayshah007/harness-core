@@ -12,6 +12,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.bamboo.dtos.BambooPlanKeysDTO;
 import io.harness.cdng.artifact.resources.bamboo.mappers.BambooResourceMapper;
@@ -66,7 +67,8 @@ public class BambooResourceServiceImpl implements BambooResourceService {
   private final SecretManagerClientService secretManagerClientService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject ExceptionManager exceptionManager;
-  @VisibleForTesting static final int timeoutInSecs = 30;
+  @VisibleForTesting static final int TIME_OUT_IN_SECS = 30;
+  @VisibleForTesting static final String TASK_SETUP_ABSTRACTION = "owner";
 
   @Inject
   public BambooResourceServiceImpl(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService,
@@ -89,10 +91,12 @@ public class BambooResourceServiceImpl implements BambooResourceService {
           bambooRequest, ArtifactTaskType.GET_PLANS, baseNGAccess, "Bamboo Get Plans task failure due to error");
       return BambooResourceMapper.toBambooJobDetailsDTO(artifactTaskExecutionResponse);
     } catch (DelegateServiceDriverException ex) {
+      log.info(ex.getMessage());
       throw new HintException(
           String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
           new DelegateNotAvailableException(ex.getCause().getMessage(), WingsException.USER));
     } catch (ExplanationException e) {
+      log.info(e.getMessage());
       throw new HintException(
           HintException.HINT_DOCKER_HUB_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
     }
@@ -113,10 +117,12 @@ public class BambooResourceServiceImpl implements BambooResourceService {
           ArtifactTaskType.GET_ARTIFACT_PATH, baseNGAccess, "Bamboo Get Artifact Paths task failure due to error");
       return artifactTaskExecutionResponse.getArtifactPath();
     } catch (DelegateServiceDriverException ex) {
+      log.info(ex.getMessage());
       throw new HintException(
           String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
           new DelegateNotAvailableException(ex.getCause().getMessage(), WingsException.USER));
     } catch (ExplanationException e) {
+      log.info(e.getMessage());
       throw new HintException(
           HintException.HINT_DOCKER_HUB_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
     }
@@ -137,10 +143,12 @@ public class BambooResourceServiceImpl implements BambooResourceService {
           ArtifactTaskType.GET_BUILDS, baseNGAccess, "Bamboo Get Artifact Paths task failure due to error");
       return artifactTaskExecutionResponse.getBuildDetails();
     } catch (DelegateServiceDriverException ex) {
+      log.info(ex.getMessage());
       throw new HintException(
           String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
           new DelegateNotAvailableException(ex.getCause().getMessage(), WingsException.USER));
     } catch (ExplanationException e) {
+      log.info(e.getMessage());
       throw new HintException(
           HintException.HINT_DOCKER_HUB_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
     }
@@ -193,30 +201,32 @@ public class BambooResourceServiceImpl implements BambooResourceService {
                                                         .artifactTaskType(artifactTaskType)
                                                         .attributes(bambooArtifactDelegateRequest)
                                                         .build();
-    DelegateTaskRequest.DelegateTaskRequestBuilder delegateTaskRequestBuilder =
+    DelegateTaskRequestBuilder delegateTaskRequestBuilder =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(NGTaskType.BAMBOO_ARTIFACT_TASK_NG.name())
             .taskParameters(artifactTaskParameters)
-            .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
+            .executionTimeout(java.time.Duration.ofSeconds(TIME_OUT_IN_SECS))
             .taskSetupAbstraction("ng", "true")
             .taskSelectors(bambooArtifactDelegateRequest.getBambooConnectorDTO().getDelegateSelectors());
     if (EmptyPredicate.isEmpty(ngAccess.getOrgIdentifier())
         && EmptyPredicate.isEmpty(ngAccess.getProjectIdentifier())) {
-      delegateTaskRequestBuilder.taskSetupAbstraction("owner", ngAccess.getAccountIdentifier());
+      delegateTaskRequestBuilder.taskSetupAbstraction(TASK_SETUP_ABSTRACTION, ngAccess.getAccountIdentifier());
     } else if (EmptyPredicate.isEmpty(ngAccess.getProjectIdentifier())
         && EmptyPredicate.isNotEmpty(ngAccess.getOrgIdentifier())) {
       delegateTaskRequestBuilder.taskSetupAbstraction("orgIdentifier", ngAccess.getOrgIdentifier())
-          .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier());
+          .taskSetupAbstraction(TASK_SETUP_ABSTRACTION, ngAccess.getOrgIdentifier());
     } else {
       delegateTaskRequestBuilder.taskSetupAbstraction("orgIdentifier", ngAccess.getOrgIdentifier())
           .taskSetupAbstraction("projectIdentifier", ngAccess.getProjectIdentifier())
-          .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier());
+          .taskSetupAbstraction(
+              TASK_SETUP_ABSTRACTION, ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier());
     }
     final DelegateTaskRequest delegateTaskRequest = delegateTaskRequestBuilder.build();
     try {
       return delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
+      log.info(ex.getMessage());
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }
   }
@@ -226,13 +236,14 @@ public class BambooResourceServiceImpl implements BambooResourceService {
     if (responseData instanceof ErrorNotifyResponseData) {
       ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
       throw new ArtifactServerException(ifFailedMessage + " - " + errorNotifyResponseData.getErrorMessage());
-    } else if (responseData instanceof RemoteMethodReturnValueData) {
+    }
+    if (responseData instanceof RemoteMethodReturnValueData) {
       RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
       if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
         throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
       } else {
         throw new ArtifactServerException(
-            "Unexpected error during authentication to docker server " + remoteMethodReturnValueData.getReturnValue(),
+            "Unexpected error during authentication to bamboo server " + remoteMethodReturnValueData.getReturnValue(),
             USER);
       }
     }

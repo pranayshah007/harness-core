@@ -159,7 +159,7 @@ public class CIMiningPatternJob {
       return content;
 
     } catch (Exception e) {
-      log.error("Exception occurred while fetching file {} domains: ", fileName, e);
+      log.error("Exception occurred while fetching file {}", fileName, e);
       return null;
     }
   }

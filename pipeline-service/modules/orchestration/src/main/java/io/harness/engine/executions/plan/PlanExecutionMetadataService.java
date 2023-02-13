@@ -12,9 +12,17 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.PlanExecutionMetadata;
 
 import java.util.Optional;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PlanExecutionMetadataService {
   Optional<PlanExecutionMetadata> findByPlanExecutionId(String planExecutionId);
   PlanExecutionMetadata save(PlanExecutionMetadata planExecutionMetadata);
+
+  /**
+   * Delete all PlanExecutionMetadata for given planExecutionIds
+   * Uses - planExecutionId_idx index
+   * @param planExecutionIds
+   */
+  void deleteMetadataForGivenPlanExecutionIds(Set<String> planExecutionIds);
 }
