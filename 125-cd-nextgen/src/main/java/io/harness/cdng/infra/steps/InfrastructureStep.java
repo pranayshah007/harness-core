@@ -35,6 +35,7 @@ import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
+import io.harness.cdng.infra.yaml.AwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
@@ -413,6 +414,14 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       }
     }
 
+    if (InfrastructureKind.AWS_LAMBDA.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.AWS.name()));
+      }
+    }
+
     saveExecutionLogSafely(logCallback, color("Connector validated", Green));
   }
 
@@ -534,6 +543,12 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         AwsSamInfrastructure awsSamInfrastructure = (AwsSamInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(
             awsSamInfrastructure.getConnectorRef(), awsSamInfrastructure.getRegion());
+        break;
+
+      case InfrastructureKind.AWS_LAMBDA:
+        AwsLambdaInfrastructure awsLambdaInfrastructure = (AwsLambdaInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(
+            awsLambdaInfrastructure.getConnectorRef(), awsLambdaInfrastructure.getRegion());
         break;
 
       default:

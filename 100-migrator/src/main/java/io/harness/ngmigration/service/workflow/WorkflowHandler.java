@@ -187,6 +187,11 @@ public abstract class WorkflowHandler {
         true, true, INPUT_EXPRESSION, variable.getValue(), validator, true);
   }
 
+  public List<StageElementWrapperConfig> asStages(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
+    throw new NotImplementedException("Getting stages is only supported for multi service workflows right now");
+  }
+
   public abstract JsonNode getTemplateSpec(
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow);
 
@@ -221,19 +226,25 @@ public abstract class WorkflowHandler {
     return null;
   }
 
-  public abstract List<GraphNode> getSteps(Workflow workflow);
-
-  List<GraphNode> getSteps(
-      List<WorkflowPhase> phases, PhaseStep preDeploymentPhaseStep, PhaseStep postDeploymentPhaseStep) {
+  public List<GraphNode> getSteps(Workflow workflow) {
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
     List<GraphNode> stepYamls = new ArrayList<>();
+    PhaseStep postDeploymentPhaseStep = orchestrationWorkflow.getPostDeploymentSteps();
     if (postDeploymentPhaseStep != null && EmptyPredicate.isNotEmpty(postDeploymentPhaseStep.getSteps())) {
       stepYamls.addAll(postDeploymentPhaseStep.getSteps());
     }
+    PhaseStep preDeploymentPhaseStep = orchestrationWorkflow.getPreDeploymentSteps();
     if (preDeploymentPhaseStep != null && EmptyPredicate.isNotEmpty(preDeploymentPhaseStep.getSteps())) {
       stepYamls.addAll(preDeploymentPhaseStep.getSteps());
     }
+    List<WorkflowPhase> phases = orchestrationWorkflow.getWorkflowPhases();
     if (EmptyPredicate.isNotEmpty(phases)) {
       stepYamls.addAll(getStepsFromPhases(phases));
+    }
+    List<WorkflowPhase> rollbackPhases = getRollbackPhases(workflow);
+    if (EmptyPredicate.isNotEmpty(rollbackPhases)) {
+      stepYamls.addAll(getStepsFromPhases(rollbackPhases));
     }
     return stepYamls;
   }
@@ -686,7 +697,7 @@ public abstract class WorkflowHandler {
     return JsonPipelineUtils.asTree(templateSpec);
   }
 
-  JsonNode buildMultiStagePipelineTemplate(WorkflowMigrationContext context) {
+  List<StageElementWrapperConfig> getStagesForMultiServiceWorkflow(WorkflowMigrationContext context) {
     Workflow workflow = context.getWorkflow();
     PhaseStep prePhaseStep = getPreDeploymentPhase(workflow);
     List<WorkflowPhase> phases = getPhases(workflow);
@@ -726,9 +737,13 @@ public abstract class WorkflowHandler {
         stages.add(stage);
       }
     }
+    return stages;
+  }
 
+  JsonNode buildMultiStagePipelineTemplate(WorkflowMigrationContext context) {
+    List<StageElementWrapperConfig> stages = getStagesForMultiServiceWorkflow(context);
     PipelineInfoConfig pipelineInfoConfig =
-        PipelineInfoConfig.builder().stages(stages).variables(getVariables(workflow)).build();
+        PipelineInfoConfig.builder().stages(stages).variables(getVariables(context.getWorkflow())).build();
     return JsonPipelineUtils.asTree(pipelineInfoConfig);
   }
 }

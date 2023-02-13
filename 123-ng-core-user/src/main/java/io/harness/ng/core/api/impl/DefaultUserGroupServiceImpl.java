@@ -156,25 +156,33 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
   }
 
   private void createRoleAssignmentsForOrganization(
-      String userGroupIdentifier, Scope scope, boolean createAccountViewerRoleBinding) {
-    createRoleAssignment(userGroupIdentifier, scope, true, true, ORGANIZATION_BASIC_ROLE,
-        DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER);
-
-    if (createAccountViewerRoleBinding) {
-      createRoleAssignment(userGroupIdentifier, scope, false, false, ORGANIZATION_VIEWER_ROLE,
-          DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER);
-    }
+      String userGroupIdentifier, Scope scope, boolean createOrgViewerRoleBinding) {
+    createRoleAssignmentAtOrgOrProject(userGroupIdentifier, scope, createOrgViewerRoleBinding, ORGANIZATION_BASIC_ROLE,
+        DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER, ORGANIZATION_VIEWER_ROLE);
   }
 
   private void createRoleAssignmentForProject(
-      String userGroupIdentifier, Scope scope, boolean createAccountViewerRoleBinding) {
-    createRoleAssignment(
-        userGroupIdentifier, scope, true, true, PROJECT_BASIC_ROLE, DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
-    if (createAccountViewerRoleBinding) {
-      createRoleAssignment(userGroupIdentifier, scope, false, false, PROJECT_VIEWER_ROLE,
-          DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+      String userGroupIdentifier, Scope scope, boolean createProjectViewerRoleBinding) {
+    createRoleAssignmentAtOrgOrProject(userGroupIdentifier, scope, createProjectViewerRoleBinding, PROJECT_BASIC_ROLE,
+        DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER, PROJECT_VIEWER_ROLE);
+  }
+
+  private void createRoleAssignmentAtOrgOrProject(String userGroupIdentifier, Scope scope,
+      boolean createViewerRoleBinding, String basicRole, String defaultResourceGroupIdentifier,
+      String defaultViewerRole) {
+    boolean isOrgProjectBasicFeatureFlagEnabled = ngFeatureFlagHelperService.isEnabled(
+        scope.getAccountIdentifier(), FeatureName.PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS);
+    if (isOrgProjectBasicFeatureFlagEnabled) {
+      createRoleAssignment(userGroupIdentifier, scope, true, true, basicRole, defaultResourceGroupIdentifier);
+      if (createViewerRoleBinding) {
+        createRoleAssignment(
+            userGroupIdentifier, scope, false, false, defaultViewerRole, defaultResourceGroupIdentifier);
+      }
+    } else {
+      createRoleAssignment(userGroupIdentifier, scope, true, false, defaultViewerRole, defaultResourceGroupIdentifier);
     }
   }
+
   @VisibleForTesting
   protected void createRoleAssignment(String userGroupIdentifier, Scope scope, boolean managed, boolean internal,
       String roleIdentifier, String resourceGroupIdentifier) {
@@ -324,13 +332,19 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
   }
 
   private void createRoleAssignmentAtScope(Scope scope) {
+    boolean isOrgProjectBasicFeatureFlagEnabled = ngFeatureFlagHelperService.isEnabled(
+        scope.getAccountIdentifier(), FeatureName.PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS);
     Optional<List<RoleAssignmentResponseDTO>> optionalRoleAssignmentResponseDTO = getRoleAssignmentsAtScope(scope);
     if (optionalRoleAssignmentResponseDTO.isPresent() && isEmpty(optionalRoleAssignmentResponseDTO.get())) {
       String userGroupIdentifier = getUserGroupIdentifier(scope);
       if (isNotEmpty(scope.getProjectIdentifier())) {
-        createRoleAssignmentForProject(userGroupIdentifier, scope, false);
+        if (isOrgProjectBasicFeatureFlagEnabled) {
+          createRoleAssignmentForProject(userGroupIdentifier, scope, false);
+        }
       } else if (isNotEmpty(scope.getOrgIdentifier())) {
-        createRoleAssignmentsForOrganization(userGroupIdentifier, scope, false);
+        if (isOrgProjectBasicFeatureFlagEnabled) {
+          createRoleAssignmentsForOrganization(userGroupIdentifier, scope, false);
+        }
       } else {
         createRoleAssignmentsForAccount(userGroupIdentifier, scope, false);
       }

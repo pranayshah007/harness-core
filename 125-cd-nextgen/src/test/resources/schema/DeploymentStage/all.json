@@ -1365,6 +1365,34 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AwsLambdaInfrastructure": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Infrastructure"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "region"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string",
+              "minLength": 1
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AwsLambdaServiceSpec": {
       "allOf": [
         {
@@ -6810,7 +6838,8 @@
             "TAS",
             "Asg",
             "GoogleCloudFunctions",
-            "AWS_SAM"
+            "AWS_SAM",
+            "AwsLambda"
           ]
         }
       },
@@ -6844,6 +6873,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AsgInfrastructure"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AwsLambda"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsLambdaInfrastructure"
               }
             }
           }
@@ -14487,6 +14532,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "value"
+          ],
           "properties": {
             "value": {
               "oneOf": [
@@ -14620,6 +14668,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "value"
+          ],
           "properties": {
             "value": {
               "oneOf": [
@@ -14745,6 +14796,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "upsizeInActiveApp"
+          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [
@@ -14783,6 +14837,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "downSizeOldApplication"
+          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [

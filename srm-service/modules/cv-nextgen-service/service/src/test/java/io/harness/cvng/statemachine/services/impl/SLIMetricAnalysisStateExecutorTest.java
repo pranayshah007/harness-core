@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.Sources;
@@ -27,12 +28,14 @@ import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.downtime.beans.AllEntitiesRule;
 import io.harness.cvng.downtime.beans.DowntimeDTO;
+import io.harness.cvng.downtime.beans.DowntimeType;
 import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
+import io.harness.cvng.downtime.transformer.DowntimeSpecDetailsTransformer;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
@@ -51,6 +54,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -88,6 +92,10 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
   private SLIMetricAnalysisState sliMetricAnalysisState;
   ServiceLevelObjectiveDTO serviceLevelObjective;
 
+  @Inject private Map<DowntimeType, DowntimeSpecDetailsTransformer> downtimeTransformerMap;
+
+  @Inject Clock clock;
+
   @Before
   public void setup() throws IllegalAccessException {
     MockitoAnnotations.initMocks(this);
@@ -105,7 +113,7 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
     serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
         builderFactory.getProjectParams(), serviceLevelObjective.getServiceLevelIndicators().get(0).getIdentifier());
     verificationTaskId = serviceLevelIndicator.getUuid();
-    startTime = Instant.now().minus(10, ChronoUnit.MINUTES).truncatedTo(ChronoUnit.MINUTES);
+    startTime = clock.instant().minus(10, ChronoUnit.MINUTES).truncatedTo(ChronoUnit.MINUTES);
     endTime = startTime.plus(5, ChronoUnit.MINUTES);
     AnalysisInput input =
         AnalysisInput.builder().verificationTaskId(verificationTaskId).startTime(startTime).endTime(endTime).build();
@@ -134,7 +142,7 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
     assertThat(sliRecordList.size()).isEqualTo(5);
     SLOHealthIndicator sloHealthIndicator = sloHealthIndicatorService.getBySLOIdentifier(
         builderFactory.getProjectParams(), serviceLevelObjective.getIdentifier());
-    assertThat(sloHealthIndicator.getErrorBudgetRemainingPercentage()).isEqualTo(100);
+    assertThat(sloHealthIndicator.getErrorBudgetRemainingPercentage()).isEqualTo(99.94212962962963);
   }
 
   @Test
@@ -201,11 +209,17 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testExecuteWithSkipDataBecauseOfDowntime() throws IllegalAccessException {
+    clock = Clock.fixed(clock.instant().minus(30, ChronoUnit.MINUTES), clock.getZone());
+    FieldUtils.writeField(downtimeService, "clock", clock, true);
+    FieldUtils.writeField(entityUnavailabilityStatusesService, "clock", clock, true);
+    FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.ONE_TIME), "clock", clock, true);
+    FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.RECURRING), "clock", clock, true);
     DowntimeDTO downtimeDTO = builderFactory.getOnetimeEndTimeBasedDowntimeDTO();
     downtimeDTO.getSpec().getSpec().setStartTime(startTime.minus(10, ChronoUnit.MINUTES).getEpochSecond());
     ((OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) ((OnetimeDowntimeSpec) downtimeDTO.getSpec().getSpec()).getSpec())
         .setEndTime(endTime.plus(10, ChronoUnit.MINUTES).getEpochSecond());
     downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
+    clock = CVNGTestConstants.FIXED_TIME_FOR_TESTS;
     FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "downtimeService", downtimeService, true);
     FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "entityUnavailabilityStatusesService",
         entityUnavailabilityStatusesService, true);
@@ -234,13 +248,53 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
+  public void testExecuteWithNoImpactBecauseOfDowntimeDisabled() throws IllegalAccessException {
+    DowntimeDTO downtimeDTO = builderFactory.getOnetimeEndTimeBasedDowntimeDTO();
+    downtimeDTO.setEnabled(false);
+    downtimeDTO.getSpec().getSpec().setStartTime(startTime.minus(10, ChronoUnit.MINUTES).getEpochSecond());
+    ((OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) ((OnetimeDowntimeSpec) downtimeDTO.getSpec().getSpec()).getSpec())
+        .setEndTime(endTime.plus(10, ChronoUnit.MINUTES).getEpochSecond());
+    downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
+    FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "downtimeService", downtimeService, true);
+    FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "entityUnavailabilityStatusesService",
+        entityUnavailabilityStatusesService, true);
+    FieldUtils.writeField(sliMetricAnalysisStateExecutor, "sliDataUnavailabilityInstancesHandlerService",
+        sliDataUnavailabilityInstancesHandlerService, true);
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(any(), any(), any())).thenReturn(generateTimeSeriesRecord());
+    doCallRealMethod()
+        .when(sliDataUnavailabilityInstancesHandlerService)
+        .filterSLIRecordsToSkip(any(), any(), any(), any(), any(), any());
+    sliMetricAnalysisState = (SLIMetricAnalysisState) sliMetricAnalysisStateExecutor.execute(sliMetricAnalysisState);
+    List<SLIRecord> sliRecordList = hPersistence.createQuery(SLIRecord.class)
+                                        .filter(SLIRecordKeys.sliId, serviceLevelIndicator.getUuid())
+                                        .field(SLIRecordKeys.timestamp)
+                                        .greaterThanOrEq(startTime)
+                                        .field(SLIRecordKeys.timestamp)
+                                        .lessThan(endTime)
+                                        .asList();
+    assertThat(sliMetricAnalysisState.getStatus().name()).isEqualTo(AnalysisStatus.SUCCESS.name());
+    assertThat(sliRecordList.get(0).getSliState()).isEqualTo(SLIRecord.SLIState.BAD);
+    assertThat(sliRecordList.size()).isEqualTo(5);
+    SLOHealthIndicator sloHealthIndicator = sloHealthIndicatorService.getBySLOIdentifier(
+        builderFactory.getProjectParams(), serviceLevelObjective.getIdentifier());
+    assertThat(sloHealthIndicator.getErrorBudgetRemainingPercentage()).isEqualTo(99.94212962962963);
+  }
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
   public void testExecuteWithSkipDataBecauseOfDowntimeWithALLMonitoredServices() throws IllegalAccessException {
+    clock = Clock.fixed(clock.instant().minus(30, ChronoUnit.MINUTES), clock.getZone());
+    FieldUtils.writeField(downtimeService, "clock", clock, true);
+    FieldUtils.writeField(entityUnavailabilityStatusesService, "clock", clock, true);
+    FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.ONE_TIME), "clock", clock, true);
+    FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.RECURRING), "clock", clock, true);
     DowntimeDTO downtimeDTO = builderFactory.getOnetimeEndTimeBasedDowntimeDTO();
     downtimeDTO.setEntitiesRule(AllEntitiesRule.builder().build());
     downtimeDTO.getSpec().getSpec().setStartTime(startTime.minus(10, ChronoUnit.MINUTES).getEpochSecond());
     ((OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) ((OnetimeDowntimeSpec) downtimeDTO.getSpec().getSpec()).getSpec())
         .setEndTime(endTime.plus(10, ChronoUnit.MINUTES).getEpochSecond());
     downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
+    clock = CVNGTestConstants.FIXED_TIME_FOR_TESTS;
     FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "downtimeService", downtimeService, true);
     FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "entityUnavailabilityStatusesService",
         entityUnavailabilityStatusesService, true);
@@ -275,7 +329,7 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
     String group1 = "group1";
     String group2 = "group2";
     Double value1 = 20.0;
-    Double value2 = 50.0;
+    Double value2 = 110.0;
     for (Instant instant = startTime; instant.isBefore(endTime); instant = instant.plus(1, ChronoUnit.MINUTES)) {
       TimeSeriesRecordDTO timeSeriesDataCollectionRecord1 =
           TimeSeriesRecordDTO.builder()

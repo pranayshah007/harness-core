@@ -40,4 +40,7 @@ public class Caching {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   private ParameterField<List<String>> paths;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  private ParameterField<String> key;
 }

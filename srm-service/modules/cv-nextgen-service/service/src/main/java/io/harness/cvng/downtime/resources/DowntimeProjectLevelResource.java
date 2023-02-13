@@ -120,8 +120,8 @@ public class DowntimeProjectLevelResource {
   @Timed
   @ExceptionMetered
   @Path("/monitored-services/{identifier}")
-  @ApiOperation(value = "get associated Monitored Services", nickname = "getDowntimeAssociatedMonitoredServices")
-  /*  @Operation(operationId = "getDowntimeAssociatedMonitoredServices", summary = "Get Downtime Associated Monitored
+  @ApiOperation(value = "get associated Monitored Services", nickname = "getAssociatedMonitoredServices")
+  /*  @Operation(operationId = "getAssociatedMonitoredServices", summary = "Get Downtime Associated Monitored
      Services", responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Get Downtime
      Associated Monitored Services")
      })*/
@@ -173,9 +173,8 @@ public class DowntimeProjectLevelResource {
         responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Gets the list of downtimes")
      })*/
   @NGAccessControlCheck(resourceType = DOWNTIME, permission = VIEW_PERMISSION)
-  public ResponseDTO<PageResponse<DowntimeListView>> listDowntimes(
-      @Valid @BeanParam ProjectPathParams projectPathParams, @BeanParam PageParams pageParams,
-      @BeanParam DowntimeDashboardFilter filter) {
+  public ResponseDTO<PageResponse<DowntimeListView>> listDowntimes(@BeanParam ProjectPathParams projectPathParams,
+      @BeanParam PageParams pageParams, @BeanParam DowntimeDashboardFilter filter) {
     ProjectParams projectParams = fromProjectPathParams(projectPathParams);
     return ResponseDTO.newResponse(downtimeService.list(projectParams, pageParams, filter));
   }
@@ -216,10 +215,12 @@ public class DowntimeProjectLevelResource {
   @ExceptionMetered
   @Path("monitored-services")
   @ApiOperation(value = "get all monitored services associated with the downtime",
-      nickname = "getDowntimeSLOAssociatedMonitoredServices")
+      nickname = "getDowntimeAssociatedMonitoredServices")
   @NGAccessControlCheck(resourceType = DOWNTIME, permission = VIEW_PERMISSION)
   public ResponseDTO<PageResponse<MSDropdownResponse>>
-  getSLOAssociatedMonitoredServices(@BeanParam ProjectParams projectParams, @BeanParam PageParams pageParams) {
+  getDowntimeAssociatedMonitoredServices(
+      @BeanParam ProjectPathParams projectPathParams, @BeanParam PageParams pageParams) {
+    ProjectParams projectParams = fromProjectPathParams(projectPathParams);
     return ResponseDTO.newResponse(downtimeService.getDowntimeAssociatedMonitoredServices(projectParams, pageParams));
   }
 }

@@ -288,7 +288,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     try {
       EnvironmentResponse response =
           NGRestUtils.getResponse(environmentResourceClient.getEnvironment(ngEntityDetail.getIdentifier(),

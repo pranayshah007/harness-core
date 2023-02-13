@@ -14,7 +14,9 @@ import static io.harness.rule.OwnerRule.vivekveman;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -25,6 +27,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
@@ -35,6 +38,7 @@ import io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesMetadata;
 import io.harness.cdng.service.beans.ServicesYaml;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
@@ -55,6 +59,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.assertj.core.util.Maps;
 import org.junit.Rule;
 import org.junit.Test;
@@ -68,6 +73,7 @@ import org.mockito.junit.MockitoRule;
 public class MultiDeploymentSpawnerStepTest extends CategoryTest {
   @Mock private NGFeatureFlagHelperService featureFlagHelperService;
   @Mock private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
+  @Mock private EnvironmentGroupService environmentGroupService;
   @Mock private AccessControlClient accessControlClient;
   @InjectMocks private final MultiDeploymentSpawnerStep multiDeploymentSpawnerStep = new MultiDeploymentSpawnerStep();
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -95,19 +101,7 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testValidateResourcesWithEnvironmentGroup() {
-    Map<String, String> setupAbstractions = new HashMap<>();
-    setupAbstractions.put(SetupAbstractionKeys.accountId, "account1");
-    setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "org1");
-    setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "project1");
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putAllSetupAbstractions(setupAbstractions)
-                            .setMetadata(ExecutionMetadata.newBuilder()
-                                             .setPrincipalInfo(ExecutionPrincipalInfo.newBuilder()
-                                                                   .setPrincipalType(PrincipalType.USER)
-                                                                   .setPrincipal("Principal")
-                                                                   .build())
-                                             .build())
-                            .build();
+    Ambiance ambiance = prepareTestAmbiance();
 
     MultiDeploymentStepParameters multiDeploymentStepParameters =
         MultiDeploymentStepParameters.builder()
@@ -115,6 +109,10 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
             .environmentGroup(
                 EnvironmentGroupYaml.builder().envGroupRef(ParameterField.createValueField("org.envGroup1")).build())
             .build();
+
+    doReturn(Optional.of(EnvironmentGroupYaml.builder().envGroupRef(ParameterField.createValueField("envGroupRef"))))
+        .when(environmentGroupService)
+        .get(anyString(), anyString(), anyString(), anyString(), anyBoolean());
     multiDeploymentSpawnerStep.validateResources(ambiance, multiDeploymentStepParameters);
 
     ArgumentCaptor<ResourceScope> resourceScopeCaptor = ArgumentCaptor.forClass(ResourceScope.class);
@@ -133,6 +131,25 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
     assertThat(resource).isNotNull();
     assertThat(resource.getResourceIdentifier()).isEqualTo("envGroup1");
     assertThat(resource.getResourceType()).isEqualTo(NGResourceType.ENVIRONMENT_GROUP);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testValidateResourcesWithEnvironmentGroupDeleted() {
+    Ambiance ambiance = prepareTestAmbiance();
+    MultiDeploymentStepParameters multiDeploymentStepParameters =
+        MultiDeploymentStepParameters.builder()
+            .childNodeId("test")
+            .environmentGroup(
+                EnvironmentGroupYaml.builder().envGroupRef(ParameterField.createValueField("org.envGroup1")).build())
+            .build();
+    doReturn(Optional.empty())
+        .when(environmentGroupService)
+        .get(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+    assertThatThrownBy(() -> multiDeploymentSpawnerStep.validateResources(ambiance, multiDeploymentStepParameters))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Could not find environment group with identifier: org.envGroup1");
   }
 
   @Test
@@ -442,5 +459,21 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
 
   private Ambiance prepareAmbience() {
     return Ambiance.newBuilder().build();
+  }
+
+  private Ambiance prepareTestAmbiance() {
+    Map<String, String> setupAbstractions = new HashMap<>();
+    setupAbstractions.put(SetupAbstractionKeys.accountId, "account1");
+    setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "org1");
+    setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "project1");
+    return Ambiance.newBuilder()
+        .putAllSetupAbstractions(setupAbstractions)
+        .setMetadata(ExecutionMetadata.newBuilder()
+                         .setPrincipalInfo(ExecutionPrincipalInfo.newBuilder()
+                                               .setPrincipalType(PrincipalType.USER)
+                                               .setPrincipal("Principal")
+                                               .build())
+                         .build())
+        .build();
   }
 }

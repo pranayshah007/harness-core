@@ -11,11 +11,13 @@ import static io.harness.cvng.CVConstants.RULE_TYPE;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Map;
 import java.util.Optional;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
@@ -28,7 +30,10 @@ import lombok.experimental.SuperBuilder;
   , @JsonSubTypes.Type(value = EntityIdentifiersRule.class, name = "Identifiers"),
 })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = RULE_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
+@EqualsAndHashCode()
 public abstract class EntitiesRule {
+  @JsonProperty(RULE_TYPE) RuleType type;
+
   @JsonIgnore public abstract RuleType getType();
   public abstract boolean isPresent(Map<String, String> entityDetailsMap);
 

@@ -9,6 +9,7 @@ package io.harness.ngmigration.template;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.serializer.JsonUtils;
 import io.harness.steps.StepSpecTypeConstants;
 
@@ -57,10 +58,13 @@ public class ShellScriptTemplateService implements NgTemplateService {
     }
     List<Map<String, String>> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(template.getVariables())) {
-      template.getVariables().forEach(variable -> {
-        variables.add(ImmutableMap.of("name", valueOrDefaultEmpty(variable.getName()), "type", "String", "value",
-            valueOrDefaultRuntime(variable.getValue())));
-      });
+      template.getVariables()
+          .stream()
+          .filter(variable -> StringUtils.isNotBlank(variable.getName()))
+          .forEach(variable -> {
+            variables.add(ImmutableMap.of("name", valueOrDefaultEmpty(variable.getName()), "type", "String", "value",
+                valueOrDefaultRuntime(variable.getValue())));
+          });
     }
     Map<String, Object> templateSpec =
         ImmutableMap.<String, Object>builder()
@@ -87,7 +91,7 @@ public class ShellScriptTemplateService implements NgTemplateService {
   }
 
   static String valueOrDefaultEmpty(String val) {
-    return StringUtils.isNotBlank(val) ? val.replace('-', '_') : "";
+    return StringUtils.isNotBlank(val) ? MigratorUtility.generateName(val).replace('-', '_') : "";
   }
 
   static String valueOrDefaultRuntime(String val) {

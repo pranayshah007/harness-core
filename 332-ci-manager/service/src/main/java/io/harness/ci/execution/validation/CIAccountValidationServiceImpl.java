@@ -9,7 +9,11 @@ package io.harness.ci.validation;
 
 import io.harness.account.AccountClient;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.license.CILicenseService;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseType;
+import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.ng.core.account.AccountTrustLevel;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.remote.client.CGRestUtils;
@@ -26,15 +30,28 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
   @Inject private UserClient userClient;
   @Inject private AccountClient accountClient;
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
+  @Inject private CILicenseService ciLicenseService;
 
   @Inject
   public CIAccountValidationServiceImpl() {}
 
   @Override
   public boolean isAccountValidForExecution(String accountId) {
-    Integer trustLevel = AccountTrustLevel.UNINITIALIZED;
+    Integer trustLevel = AccountTrustLevel.BASIC_USER;
     try {
+      LicensesWithSummaryDTO ciLicense = ciLicenseService.getLicenseSummary(accountId);
+      if (ciLicense != null) {
+        if (ciLicense.getEdition() == Edition.ENTERPRISE || ciLicense.getEdition() == Edition.TEAM
+            || ciLicense.getLicenseType() == LicenseType.PAID) {
+          return true;
+        }
+      }
       trustLevel = CGRestUtils.getResponse(accountClient.getAccountTrustLevel(accountId));
+
+      if (trustLevel == AccountTrustLevel.UNINITIALIZED || trustLevel == AccountTrustLevel.BASIC_USER
+          || trustLevel == AccountTrustLevel.NEW_USER) {
+        return true;
+      }
 
       if (AccountTrustLevel.UNINITIALIZED.equals(trustLevel)) {
         trustLevel = initializeAccountTrustLevel(accountId);
@@ -44,11 +61,11 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
         }
       }
     } catch (Exception e) {
-      log.info("Error retrieving account trust level. Proceeding as regular. {}", e);
+      log.info("Error in setting account trust level. Proceeding as regular. {}", e);
       trustLevel = AccountTrustLevel.BASIC_USER;
     }
 
-    if (trustLevel < AccountTrustLevel.BASIC_USER) {
+    if (trustLevel < AccountTrustLevel.UNINITIALIZED) {
       throw new CIStageExecutionException("Account is not trusted for CI builds. Please reach support@harness.io");
     }
 

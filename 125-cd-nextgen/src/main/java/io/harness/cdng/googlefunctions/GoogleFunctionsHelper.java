@@ -259,9 +259,6 @@ public class GoogleFunctionsHelper extends CDStepHelper {
     if (googleFunctionCommandResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       return getFailureResponseBuilder(googleFunctionCommandResponse, stepResponseBuilder).build();
     } else {
-      if (googleFunctionCommandResponse.getFunction() == null) {
-        return stepResponseBuilder.status(Status.SUCCEEDED).build();
-      }
       InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
           ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
       GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig =
@@ -379,6 +376,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
             .gitRequestFileConfigs(Collections.singletonList(gitRequestFileConfig))
             .shouldOpenLogStream(shouldOpenLogStream)
             .commandUnitName(GoogleFunctionsCommandUnitConstants.fetchManifests.toString())
+            .closeLogStream(true)
             .build();
 
     final TaskData taskData = TaskData.builder()

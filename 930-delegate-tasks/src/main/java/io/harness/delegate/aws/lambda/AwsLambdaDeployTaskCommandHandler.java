@@ -13,11 +13,14 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTaskHelper;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
+import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaCommandResponse;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
 import io.harness.exception.InvalidArgumentsException;
@@ -28,6 +31,7 @@ import io.harness.logging.LogLevel;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
+import com.google.inject.Inject;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -36,6 +40,8 @@ import org.apache.commons.lang3.tuple.Pair;
 @NoArgsConstructor
 @Slf4j
 public class AwsLambdaDeployTaskCommandHandler extends AwsLambdaCommandTaskHandler {
+  @Inject private AwsLambdaCommandTaskHelper awsLambdaCommandTaskHelper;
+
   @Override
   protected AwsLambdaCommandResponse executeTaskInternal(AwsLambdaCommandRequest awsLambdaCommandRequest,
       ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
@@ -45,11 +51,20 @@ public class AwsLambdaDeployTaskCommandHandler extends AwsLambdaCommandTaskHandl
               + "AwsLambdaCommandRequest"));
     }
 
+    AwsLambdaDeployRequest awsLambdaDeployRequest = (AwsLambdaDeployRequest) awsLambdaCommandRequest;
+
+    AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
+
     LogCallback executionLogCallback = new NGDelegateLogCallback(
         iLogStreamingTaskClient, AwsLambdaCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
 
     try {
       executionLogCallback.saveExecutionLog(format("Deploying..%n%n"), LogLevel.INFO);
+
+      awsLambdaCommandTaskHelper.invokeFunction(awsInternalConfig,
+          awsLambdaDeployRequest.getAwsLambdaDeployManifestContent(), executionLogCallback,
+          awsLambdaDeployRequest.getFunctionName(), awsLambdaDeployRequest.getQualifier());
+
       return AwsLambdaDeployResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
     } catch (Exception exception) {
       executionLogCallback.saveExecutionLog(color(format("%n Deployment Failed."), LogColor.Red, LogWeight.Bold),
