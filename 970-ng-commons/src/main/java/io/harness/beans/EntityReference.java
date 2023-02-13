@@ -16,8 +16,7 @@ import io.swagger.annotations.ApiModel;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-@ApiModel(value = "EntityReference",
-    subTypes = {IdentifierRef.class, InputSetReference.class, NGTemplateReference.class}, discriminator = "type")
+@ApiModel(value = "EntityReference", subTypes = {IdentifierRef.class, InputSetReference.class}, discriminator = "type")
 public interface EntityReference extends NGAccess {
   @JsonIgnore String getFullyQualifiedName();
   String getBranch();

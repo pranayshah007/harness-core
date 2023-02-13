@@ -174,7 +174,6 @@ public class NGCommonEntityConstants {
   public static final String HARNESS_IMAGE = "harnessImage";
   public static final String METHOD_NAME = "methodName";
   public static final String AGENT_KEY = "agentIdentifier";
-  public static final String IS_STABLE_TEMPLATE = "isStableTemplate";
   public static final String CONFIG_FILE_FUNCTOR = "configFile";
   public static final String FUNCTOR_STRING_METHOD_NAME = "getAsString";
   public static final String FUNCTOR_BASE64_METHOD_NAME = "getAsBase64";
