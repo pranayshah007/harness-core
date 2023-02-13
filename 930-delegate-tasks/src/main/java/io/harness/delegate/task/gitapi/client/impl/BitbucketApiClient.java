@@ -30,7 +30,6 @@ import io.harness.git.GitClientHelper;
 import io.harness.git.GitTokenRetriever;
 import io.harness.gitpolling.github.GitPollingWebhookData;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.security.encryption.SecretDecryptionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -43,25 +42,26 @@ import org.json.JSONObject;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class BitbucketApiClient implements GitApiClient {
-  private BitbucketService bitbucketService;
-  private final SecretDecryptionService secretDecryptionService;
-  private GitTokenRetriever tokenRetriever;
   private static final String BITBUCKET_CLOUD_API_URL = "https://bitbucket.org/api/";
   private static final String PATH_SEPARATOR = "/";
+  private static final String UNSUPPORTED_OPERATION = "Unsupported operation";
+  private static final String USERNAME_ERR = "Unable to get username information from api access for identifier %s";
+  private BitbucketService bitbucketService;
+  private GitTokenRetriever tokenRetriever;
 
   @Override
   public DelegateResponseData findPullRequest(GitApiTaskParams gitApiTaskParams) {
-    throw new InvalidRequestException("Not implemented");
+    throw new InvalidRequestException(UNSUPPORTED_OPERATION);
   }
 
   @Override
   public List<GitPollingWebhookData> getWebhookRecentDeliveryEvents(GitHubPollingDelegateRequest attributesRequest) {
-    throw new InvalidRequestException("Not implemented");
+    throw new InvalidRequestException(UNSUPPORTED_OPERATION);
   }
 
   @Override
   public DelegateResponseData deleteRef(GitApiTaskParams gitApiTaskParams) {
-    throw new InvalidRequestException("Not implemented");
+    throw new InvalidRequestException(UNSUPPORTED_OPERATION);
   }
 
   @Override
@@ -111,12 +111,12 @@ public class BitbucketApiClient implements GitApiClient {
     try {
       return jsonObject.get(key);
     } catch (Exception ex) {
-      log.error("Failed to get key: {} in JsonObject: {}", key, jsonObject);
+      log.error("Failed to get key: {} in JsonObject: {}. Error: {}", key, jsonObject, ex.getMessage());
       return null;
     }
   }
 
-  private String getBitbucketApiURL(String url, boolean isSaaS) {
+  private static String getBitbucketApiURL(String url, boolean isSaaS) {
     if (isSaaS) {
       return BITBUCKET_CLOUD_API_URL;
     }
@@ -130,11 +130,9 @@ public class BitbucketApiClient implements GitApiClient {
         return ((BitbucketUsernameTokenApiAccessDTO) gitConfigDTO.getApiAccess().getSpec()).getUsername();
       }
     } catch (Exception ex) {
-      log.error(format("Unable to get username information from api access for identifier %s", identifier), ex);
-      throw new InvalidRequestException(
-          format("Unable to get username information from api access for identifier %s", identifier));
+      log.error(format(USERNAME_ERR, identifier), ex);
+      throw new InvalidRequestException(format(USERNAME_ERR, identifier));
     }
-    throw new InvalidRequestException(
-        format("Unable to get username information from api access for identifier %s", identifier));
+    throw new InvalidRequestException(format(USERNAME_ERR, identifier));
   }
 }
