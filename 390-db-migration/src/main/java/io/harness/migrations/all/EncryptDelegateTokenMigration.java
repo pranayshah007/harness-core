@@ -1,4 +1,4 @@
-package io.harness.service.intfc;
+package io.harness.migrations.all;
 
 import static io.harness.persistence.HQuery.excludeAuthority;
 

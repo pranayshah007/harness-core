@@ -324,24 +324,21 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   }
 
   @Override
-  // For migration purpose, to insert encrypted delegate token record
-  public void upsertEncryptedTokenRecord(DelegateToken delegateToken) {
-    EncryptedRecord encryptedRecord = localEncryptor.encryptSecret(delegateToken.getAccountId(),
-        delegateToken.getValue(), localSecretManagerService.getEncryptionConfig(delegateToken.getAccountId()));
-    UpdateOperations<DelegateToken> updateOperations = persistence.createUpdateOperations(DelegateToken.class);
-    setUnset(updateOperations, DelegateTokenKeys.encryptedToken, encryptedRecord);
-    persistence.update(delegateToken, updateOperations);
+  public EncryptedRecord encrypt(String accountId) {
+    String token = encodeBase64(Misc.generateSecretKey());
+    return localEncryptor.encryptSecret(accountId, token, localSecretManagerService.getEncryptionConfig(accountId));
   }
 
   @Override
   public String decrypt(DelegateToken delegateToken) {
+    EncryptedRecord encryptedRecord = delegateToken.getEncryptedToken();
     if (delegateToken.getEncryptedToken() == null) {
       //@TODO: Remove this check after token migration to encrypted value
+      // should not come, only in case in migration missed
       upsertEncryptedTokenRecord(delegateToken);
     }
-    String token =
-        String.valueOf(localEncryptor.fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedToken(),
-            localSecretManagerService.getEncryptionConfig(delegateToken.getAccountId())));
+    String token = String.valueOf(localEncryptor.fetchSecretValue(delegateToken.getAccountId(), encryptedRecord,
+        localSecretManagerService.getEncryptionConfig(delegateToken.getAccountId())));
 
     return featureFlagService.isEnabled(FeatureName.DELEGATE_TOKEN_ENCRYPTION, delegateToken.getAccountId())
         ? (delegateToken.isNg() ? decodeBase64ToString(token) : token)
@@ -349,9 +346,14 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   }
 
   @Override
-  public EncryptedRecord encrypt(String accountId) {
-    String token = encodeBase64(Misc.generateSecretKey());
-    return localEncryptor.encryptSecret(accountId, token, localSecretManagerService.getEncryptionConfig(accountId));
+  // For migration purpose, to insert encrypted delegate token record
+  public EncryptedRecord upsertEncryptedTokenRecord(DelegateToken delegateToken) {
+    EncryptedRecord encryptedRecord = localEncryptor.encryptSecret(delegateToken.getAccountId(),
+        delegateToken.getValue(), localSecretManagerService.getEncryptionConfig(delegateToken.getAccountId()));
+    UpdateOperations<DelegateToken> updateOperations = persistence.createUpdateOperations(DelegateToken.class);
+    setUnset(updateOperations, DelegateTokenKeys.encryptedToken, encryptedRecord);
+    persistence.update(delegateToken, updateOperations);
+    return encryptedRecord;
   }
 
   private String getTokenValue(DelegateToken delegateToken) {
