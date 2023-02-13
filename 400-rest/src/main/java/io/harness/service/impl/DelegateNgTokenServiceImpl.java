@@ -335,7 +335,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     if (delegateToken.getEncryptedToken() == null) {
       //@TODO: Remove this check after token migration to encrypted value
       // should not come, only in case in migration missed
-      upsertEncryptedTokenRecord(delegateToken);
+      encryptedRecord = upsertEncryptedTokenRecord(delegateToken);
     }
     String token = String.valueOf(localEncryptor.fetchSecretValue(delegateToken.getAccountId(), encryptedRecord,
         localSecretManagerService.getEncryptionConfig(delegateToken.getAccountId())));
