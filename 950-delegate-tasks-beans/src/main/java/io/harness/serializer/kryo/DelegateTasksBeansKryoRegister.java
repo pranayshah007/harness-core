@@ -20,6 +20,7 @@ import io.harness.audit.streaming.outgoing.Principal;
 import io.harness.audit.streaming.outgoing.Resource;
 import io.harness.audit.streaming.outgoing.ResourceScope;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
+import io.harness.beans.HttpCertificate;
 import io.harness.capability.AwsRegionParameters;
 import io.harness.capability.CapabilityParameters;
 import io.harness.capability.CapabilitySubjectPermission.PermissionResult;
@@ -1249,6 +1250,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(HelmInstallationCapability.class, 19120);
     kryo.register(HttpConnectionExecutionCapability.class, 19003);
     kryo.register(HttpTaskParameters.class, 20002);
+    kryo.register(HttpCertificate.class, 20003);
     kryo.register(K8sDeployRequest.class, 19101);
     kryo.register(K8sDeployResponse.class, 19099);
     kryo.register(K8sManifestDelegateConfig.class, 19103);
