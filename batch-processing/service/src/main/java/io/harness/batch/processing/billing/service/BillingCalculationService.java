@@ -96,11 +96,18 @@ public class BillingCalculationService {
   }
 
   private PricingData getUpdatedPricingData(InstanceData instanceData, PricingData pricingData) {
-    if (ImmutableList.of(PricingSource.PUBLIC_API, PricingSource.HARDCODED).contains(pricingData.getPricingSource())) {
+    // For Testing
+    log.info("pricingData: {}", pricingData);
+    log.info("updatedPricingData: {}", updatePricingData(pricingData, 1.05D));
+    log.info("conversionFactor: {}",
+        currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
+            instanceData.getAccountId(), getCloudServiceProvider(instanceData), Currency.USD));
+    if (pricingData.getPricingSource() != PricingSource.CUR_REPORT) {
       Double conversionFactor = currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
           instanceData.getAccountId(), getCloudServiceProvider(instanceData), Currency.USD);
       pricingData = updatePricingData(pricingData, conversionFactor);
     }
+    log.info("final pricingData: {}", pricingData);
     return pricingData;
   }
 
@@ -110,6 +117,7 @@ public class BillingCalculationService {
     try {
       cloudServiceProvider = CloudServiceProvider.valueOf(instanceData.getMetaData().get("cloud_provider"));
     } catch (Exception exception) {
+      log.warn("Unable to get cloud service provider from instance data: {}", instanceData, exception);
       cloudServiceProvider = CloudServiceProvider.AWS;
     }
     return cloudServiceProvider;
