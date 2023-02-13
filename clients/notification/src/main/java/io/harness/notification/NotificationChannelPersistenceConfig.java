@@ -34,6 +34,7 @@ import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
@@ -98,6 +99,7 @@ public class NotificationChannelPersistenceConfig extends AbstractMongoClientCon
 
   @Bean(name = "notification-channel")
   public MongoTemplate mongoTemplate(MongoDatabaseFactory databaseFactory, MappingMongoConverter converter) {
-    return new HMongoTemplate(databaseFactory, converter, mongoConfig);
+    return new HMongoTemplate(
+        new SimpleMongoClientDatabaseFactory(mongoClient(), getDatabaseName()), converter, mongoConfig);
   }
 }

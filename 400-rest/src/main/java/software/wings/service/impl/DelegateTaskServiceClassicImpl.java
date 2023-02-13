@@ -1045,9 +1045,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       return null;
     }
 
-    try (AutoLogContext ignore = new TaskLogContext(taskId, delegateTask.getData().getTaskType(),
-             TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
-      log.info("Delegate completed validating {} task", delegateTask.getData().isAsync() ? ASYNC : SYNC);
+    String taskType = delegateTask.getData() != null ? delegateTask.getData().getTaskType()
+                                                     : delegateTask.getTaskDataV2().getTaskType();
+    boolean async =
+        delegateTask.getData() != null ? delegateTask.getData().isAsync() : delegateTask.getTaskDataV2().isAsync();
+    try (AutoLogContext ignore =
+             new TaskLogContext(taskId, taskType, TaskType.valueOf(taskType).getTaskGroup().name(), OVERRIDE_ERROR)) {
+      log.info("Delegate completed validating {} task", async ? ASYNC : SYNC);
 
       UpdateOperations<DelegateTask> updateOperations =
           persistence.createUpdateOperations(DelegateTask.class)
@@ -1095,8 +1099,10 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         return DelegateTaskPackage.builder().build();
       }
 
-      try (AutoLogContext ignore = new TaskLogContext(taskId, delegateTask.getData().getTaskType(),
-               TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
+      String taskType = delegateTask.getData() != null ? delegateTask.getData().getTaskType()
+                                                       : delegateTask.getTaskDataV2().getTaskType();
+      try (AutoLogContext ignore =
+               new TaskLogContext(taskId, taskType, TaskType.valueOf(taskType).getTaskGroup().name(), OVERRIDE_ERROR)) {
         if (assignDelegateService.shouldValidate(delegateTask, delegateId)) {
           setValidationStarted(delegateId, delegateTask);
           return resolvePreAssignmentExpressions(delegateTask, SecretManagerMode.APPLY);
@@ -1114,7 +1120,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @VisibleForTesting
   void setValidationStarted(String delegateId, DelegateTask delegateTask) {
     delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_VALIDATION);
-    log.debug("Delegate to validate {} task", delegateTask.getData().isAsync() ? ASYNC : SYNC);
+    boolean async =
+        delegateTask.getData() != null ? delegateTask.getData().isAsync() : delegateTask.getTaskDataV2().isAsync();
+    log.debug("Delegate to validate {} task", async ? ASYNC : SYNC);
     UpdateOperations<DelegateTask> updateOperations = persistence.createUpdateOperations(DelegateTask.class)
                                                           .addToSet(DelegateTaskKeys.validatingDelegateIds, delegateId);
     Query<DelegateTask> updateQuery = persistence.createQuery(DelegateTask.class)

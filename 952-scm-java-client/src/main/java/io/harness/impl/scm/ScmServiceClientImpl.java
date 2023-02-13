@@ -32,7 +32,6 @@ import io.harness.beans.request.ListFilesInCommitRequest;
 import io.harness.beans.response.GitFileBatchResponse;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
-import io.harness.beans.response.ScmGitMetadata;
 import io.harness.constants.Constants;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -1060,10 +1059,6 @@ public class ScmServiceClientImpl implements ScmServiceClient {
           .objectId(fileContent.getBlobId())
           .branch(branch)
           .statusCode(Constants.HTTP_SUCCESS_STATUS_CODE)
-          .scmGitMetadata(ScmGitMetadata.builder()
-                              .scmConnector(scmConnector)
-                              .repoName(scmGitProviderHelper.getRepoName(scmConnector))
-                              .build())
           .build();
     } catch (Exception exception) {
       checkAndRethrowExceptionIfApplicable(exception);

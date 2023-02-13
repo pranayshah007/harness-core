@@ -21,6 +21,7 @@ import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.gitsync.GitSdkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
+import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.mongo.MongoConfig;
@@ -153,8 +154,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty(value = "grpcNegotiationType") NegotiationType grpcNegotiationType;
   // If flag is enabled, only one thread does Notify response cleanup.
   @JsonProperty(value = "lockNotifyResponseCleanup") private boolean lockNotifyResponseCleanup;
-  @JsonProperty("queueServiceClientConfig") private ServiceHttpClientConfig queueServiceClientConfig;
-  @JsonProperty("queueServiceSecret") private String queueServiceSecret;
+  @JsonProperty("queueServiceClientConfig") private QueueServiceClientConfig queueServiceClientConfig;
 
   private String managerServiceSecret;
   private String managerTarget;

@@ -210,13 +210,14 @@ templateServiceClientConfig:
   connectTimeOutSeconds: 30
   readTimeOutSeconds: 30
 
-
 queueServiceClientConfig:
-  baseUrl: http://localhost:3457/api/
-  connectTimeOutSeconds: 15
-  readTimeOutSeconds: 15
+  httpClientConfig:
+    baseUrl: http://localhost:9091/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  queueServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+  envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
 
-queueServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 pipelineServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 templateServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM

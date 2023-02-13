@@ -2377,7 +2377,9 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
     }
     for (DelegateTask task : delegateTasks) {
       // This log statement is pretty custom now for LogDataCollectionInfos
-      LogDataCollectionInfo info = (LogDataCollectionInfo) task.getData().getParameters()[0];
+      Object taskParameter =
+          task.getData() != null ? task.getData().getParameters()[0] : task.getTaskDataV2().getParameters()[0];
+      LogDataCollectionInfo info = (LogDataCollectionInfo) taskParameter;
       log.info(
           "Creating a delegate task for stateExecutionId {} for hosts {}", info.getStateExecutionId(), info.getHosts());
       delegateService.queueTaskV2(task);

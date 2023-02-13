@@ -51,7 +51,6 @@ import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.executable.CiAsyncExecutable;
 import io.harness.ci.execution.BackgroundTaskUtility;
 import io.harness.ci.execution.QueueExecutionUtils;
-import io.harness.ci.execution.queue.QueueClient;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
@@ -84,6 +83,9 @@ import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.ngexception.CILiteEngineException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.helper.SerializedResponseDataHelper;
+import io.harness.hsqs.client.api.HsqsClientService;
+import io.harness.hsqs.client.model.EnqueueRequest;
+import io.harness.hsqs.client.model.EnqueueResponse;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logging.CommandExecutionStatus;
@@ -168,11 +170,11 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   @Inject private CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
 
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
+  @Inject private HsqsClientService hsqsClientService;
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
 
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject QueueExecutionUtils queueExecutionUtils;
-  @Inject QueueClient queueClient;
   @Inject CIExecutionRepository ciExecutionRepository;
   private static final String DEPENDENCY_OUTCOME = "dependencies";
 
@@ -197,12 +199,17 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     if (queueConcurrencyEnabled) {
       log.info("start executeAsyncAfterRbac for initialize step with queue");
       taskId = generateUuid();
+      String topic = "ci";
+      String moduleName = "ci";
       String payload = RecastOrchestrationUtils.toJson(
           CIInitTaskArgs.builder().ambiance(ambiance).callbackId(taskId).stepElementParameters(stepParameters).build());
+      EnqueueRequest enqueueRequest =
+          EnqueueRequest.builder().topic(topic).subTopic(accountId).producerName(moduleName).payload(payload).build();
       try {
-        String queueId = queueClient.queue(accountId, payload);
-        if (StringUtils.isNotBlank(queueId)) {
-          ciExecutionRepository.updateQueueId(accountId, ambiance.getStageExecutionId(), queueId);
+        EnqueueResponse execute = hsqsClientService.enqueue(enqueueRequest);
+        log.info("build queued. message id: {}", execute.getItemId());
+        if (StringUtils.isNotBlank(execute.getItemId())) {
+          ciExecutionRepository.updateQueueId(accountId, ambiance.getStageExecutionId(), execute.getItemId());
         }
       } catch (Exception e) {
         log.info("failed to queue build", e);

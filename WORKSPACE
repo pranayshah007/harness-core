@@ -1296,8 +1296,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:TB0fL4RpUrIngifmZ6CWFOJQpVKtKJGjLGGj00TLqYE=",
-    version = "v1.28.2-0.20230130112242-4428a9bf64df",
+    sum = "h1:7Ud/0r3SJA37MRG8iPztTNIF34LF31aJ9KTqbsk7Y48=",
+    version = "v1.28.2-0.20230210135737-288a76aba2cf",
 )
 
 go_repository(
@@ -5847,7 +5847,7 @@ http_archive(
     name = "contrib_rules_jvm",
     sha256 = "a939cd04da2deee16131898d91d8e23559dcd1a30a5128beac30a2b01b33c94f",
     strip_prefix = "rules_jvm-0.4.0",
-    url = "https://github.com/bazel-contrib/rules_jvm/archive/v0.4.0.tar.gz",
+    url = "http://jfrogdev.dev.harness.io:80/artifactory/bazel-contrib-rules-jvm/archive/v0.4.0.tar.gz",
 )
 
 # Fetches the contrib_rules_jvm dependencies.

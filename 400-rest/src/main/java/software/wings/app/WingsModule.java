@@ -53,8 +53,11 @@ import io.harness.ccm.billing.preaggregated.PreAggregateBillingService;
 import io.harness.ccm.billing.preaggregated.PreAggregateBillingServiceImpl;
 import io.harness.ccm.budget.BudgetService;
 import io.harness.ccm.budget.BudgetServiceImpl;
+import io.harness.ccm.clickHouse.ClickHouseService;
+import io.harness.ccm.clickHouse.ClickHouseServiceImpl;
 import io.harness.ccm.cluster.ClusterRecordService;
 import io.harness.ccm.cluster.ClusterRecordServiceImpl;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.service.impl.EntityMetadataServiceImpl;
 import io.harness.ccm.commons.service.impl.InstanceDataServiceImpl;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
@@ -162,7 +165,7 @@ import io.harness.governance.pipeline.service.evaluators.OnWorkflow;
 import io.harness.governance.pipeline.service.evaluators.PipelineStatusEvaluator;
 import io.harness.governance.pipeline.service.evaluators.WorkflowStatusEvaluator;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
-import io.harness.hsqs.client.HsqsServiceClient;
+import io.harness.hsqs.client.HsqsClient;
 import io.harness.instancesync.InstanceSyncResourceClientModule;
 import io.harness.instancesyncmonitoring.module.InstanceSyncMonitoringModule;
 import io.harness.invites.NgInviteClientModule;
@@ -936,6 +939,13 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
   @Provides
   @Singleton
+  @Named("clickHouseConfig")
+  ClickHouseConfig clickHouseConfig() {
+    return ClickHouseConfig.builder().build();
+  }
+
+  @Provides
+  @Singleton
   @Named("isClickHouseEnabled")
   public boolean isClickHouseEnabled() {
     return false;
@@ -1444,6 +1454,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(NGGitService.class).to(NGGitServiceImpl.class);
     bind(GitClientV2.class).to(GitClientV2Impl.class);
     bind(PerpetualTaskScheduleService.class).to(PerpetualTaskScheduleServiceImpl.class);
+    bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
 
     bind(AnomalyService.class).to(AnomalyServiceImpl.class);
 
@@ -1516,7 +1527,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(K8sWatchTaskService.class).to(K8sWatchTaskServiceImpl.class);
     bind(HelmChartService.class).to(HelmChartServiceImpl.class);
     bind(LogStreamingServiceRestClient.class).toProvider(LogStreamingServiceClientFactory.class);
-    bind(HsqsServiceClient.class).toProvider(HQueueServiceClientFactory.class);
+    bind(HsqsClient.class).toProvider(HQueueServiceClientFactory.class);
     bind(IInstanceReconService.class).to(InstanceReconServiceImpl.class);
 
     // audit service

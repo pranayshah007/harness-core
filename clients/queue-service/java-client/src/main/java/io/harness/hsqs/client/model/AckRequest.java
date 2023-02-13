@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.With;
 
 /**
  * AckRequest Object for acknowledging messages successfully processed by clients
@@ -27,5 +28,5 @@ public class AckRequest {
 
   String subTopic;
 
-  String topic;
+  @With String topic;
 }

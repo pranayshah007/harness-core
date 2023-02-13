@@ -145,7 +145,6 @@ public class ClickHouseQueryResponseHelper {
       boolean isUsedByTimeSeriesStats, boolean skipRoundOff, String conversionField, String accountId,
       List<QLCEViewGroupBy> groupBy, BusinessMapping businessMapping, boolean addSharedCostFromGroupBy)
       throws SQLException {
-    log.info("GridQueryLog: isClusterPerspective {}", isClusterPerspective);
     if (isClusterPerspective) {
       return convertToEntityStatsDataForCluster(resultSet, costTrendData, startTimeForTrend, isUsedByTimeSeriesStats,
           skipRoundOff, groupBy, accountId, cloudProviderTableName);
@@ -165,7 +164,6 @@ public class ClickHouseQueryResponseHelper {
     }
     List<QLCEViewEntityStatsDataPoint> entityStatsDataPoints = new ArrayList<>();
     int totalColumns = getTotalColumnsCount(resultSet);
-    log.info("GridQueryLog: Total columns{}", totalColumns);
     while (resultSet != null && resultSet.next()) {
       QLCEViewEntityStatsDataPointBuilder dataPointBuilder = QLCEViewEntityStatsDataPoint.builder();
       int columnIndex = 1;
@@ -176,16 +174,13 @@ public class ClickHouseQueryResponseHelper {
       while (columnIndex <= totalColumns) {
         String columnName = resultSet.getMetaData().getColumnName(columnIndex);
         String columnType = resultSet.getMetaData().getColumnTypeName(columnIndex);
-        log.info("GridQueryLog: Column name {} , columnType {}", columnName, columnType);
         if (columnType.toUpperCase(Locale.ROOT).contains(STRING)) {
           name = fetchStringValue(resultSet, columnName, fieldName);
           id = getUpdatedId(id, name);
           entityNames.add(name);
-          log.info("GridQueryLog: name {}", name);
         } else if (columnType.toUpperCase(Locale.ROOT).contains(FLOAT64)) {
           if (columnName.equalsIgnoreCase(COST)) {
             cost = fetchNumericValue(resultSet, columnName, skipRoundOff);
-            log.info("GridQueryLog: cost {}", cost);
             dataPointBuilder.cost(cost);
           } else if (sharedCostBucketNames.contains(columnName)) {
             if (sharedCostBucketNames.contains(columnName)) {
@@ -205,8 +200,6 @@ public class ClickHouseQueryResponseHelper {
       entityStatsDataPoints.add(dataPointBuilder.build());
     }
 
-    log.info("GridQueryLog: entityStatsDataPoints {}", entityStatsDataPoints);
-
     if (conversionField != null) {
       entityStatsDataPoints =
           viewBillingServiceHelper.getUpdatedDataPoints(entityStatsDataPoints, entityNames, accountId, conversionField);
@@ -220,7 +213,6 @@ public class ClickHouseQueryResponseHelper {
     if (entityStatsDataPoints.size() > MAX_LIMIT_VALUE) {
       log.warn("Grid result set size: {}", entityStatsDataPoints.size());
     }
-    log.info("GridQueryLog: entityStatsDataPoints final {}", entityStatsDataPoints);
     return QLCEViewGridData.builder()
         .data(entityStatsDataPoints)
         .fields(getStringFieldNames(fieldToDataTypeMapping, cloudProviderTableName))
@@ -233,8 +225,8 @@ public class ClickHouseQueryResponseHelper {
       throws SQLException {
     Map<String, String> fieldToDataTypeMapping = getFieldToDataTypeMapping(resultSet);
     List<String> fields = new ArrayList<>(fieldToDataTypeMapping.keySet());
-    log.info("GridQueryLog: fieldToDataTypeMapping {}", fieldToDataTypeMapping);
     String fieldName = viewParametersHelper.getEntityGroupByFieldName(groupBy);
+    String fieldId = viewParametersHelper.getEntityGroupByFieldId(groupBy);
     boolean isInstanceDetailsData = fields.contains(INSTANCE_ID);
     List<QLCEViewEntityStatsDataPoint> entityStatsDataPoints = new ArrayList<>();
     Set<String> instanceTypes = new HashSet<>();
@@ -243,6 +235,7 @@ public class ClickHouseQueryResponseHelper {
       ClusterDataBuilder clusterDataBuilder = ClusterData.builder();
       Double cost = null;
       String name = DEFAULT_GRID_ENTRY_NAME;
+      String nameForGroupByField = DEFAULT_GRID_ENTRY_NAME;
       String entityId = DEFAULT_STRING_VALUE;
       String pricingSource = DEFAULT_STRING_VALUE;
 
@@ -250,14 +243,13 @@ public class ClickHouseQueryResponseHelper {
       for (java.lang.reflect.Field builderField : clusterDataBuilder.getClass().getDeclaredFields()) {
         builderFields.put(builderField.getName().toLowerCase(), builderField);
       }
-      log.info("GridQueryLog: fields {}", fields);
       for (String field : fields) {
         java.lang.reflect.Field builderField = builderFields.get(field.toLowerCase(Locale.ROOT));
         try {
           if (builderField != null) {
             builderField.setAccessible(true);
             if (builderField.getType().equals(String.class)) {
-              builderField.set(clusterDataBuilder, fetchStringValue(resultSet, field));
+              builderField.set(clusterDataBuilder, fetchStringValue(resultSet, field, fieldName));
             } else {
               builderField.set(clusterDataBuilder, fetchNumericValue(resultSet, field, skipRoundOff));
             }
@@ -280,14 +272,16 @@ public class ClickHouseQueryResponseHelper {
         } catch (Exception e) {
           log.error("Exception in convertToEntityStatsDataForCluster: {}", e.toString());
         }
-
         if (fieldToDataTypeMapping.get(field).toUpperCase(Locale.ROOT).contains(STRING)) {
-          name = fetchStringValue(resultSet, field);
+          name = fetchStringValue(resultSet, field, fieldName);
           entityId = getUpdatedId(entityId, name);
+          if (field.equalsIgnoreCase(fieldId)) {
+            nameForGroupByField = name;
+          }
         }
       }
       clusterDataBuilder.id(entityId);
-      clusterDataBuilder.name(name);
+      clusterDataBuilder.name(nameForGroupByField);
       ClusterData clusterData = clusterDataBuilder.build();
       // Calculating efficiency score
       if (cost != null && cost > 0 && clusterData.getIdleCost() != null && clusterData.getUnallocatedCost() != null) {
@@ -306,11 +300,10 @@ public class ClickHouseQueryResponseHelper {
       dataPointBuilder.clusterData(clusterDataBuilder.build());
       dataPointBuilder.isClusterPerspective(true);
       dataPointBuilder.id(entityId);
-      dataPointBuilder.name(name);
+      dataPointBuilder.name(nameForGroupByField);
       dataPointBuilder.pricingSource(pricingSource);
       entityStatsDataPoints.add(dataPointBuilder.build());
     }
-
     if (isInstanceDetailsData && !isUsedByTimeSeriesStats) {
       return QLCEViewGridData.builder()
           .data(instanceDetailsHelper.getInstanceDetails(
@@ -321,7 +314,6 @@ public class ClickHouseQueryResponseHelper {
     if (entityStatsDataPoints.size() > MAX_LIMIT_VALUE) {
       log.warn("Grid result set size (for cluster): {}", entityStatsDataPoints.size());
     }
-    log.info("GridQueryLog: entityStatsDataPoints final {}", entityStatsDataPoints);
     return QLCEViewGridData.builder()
         .data(entityStatsDataPoints)
         .fields(getStringFieldNames(fieldToDataTypeMapping, cloudProviderTableName))
@@ -333,7 +325,6 @@ public class ClickHouseQueryResponseHelper {
     Map<String, ViewCostData> costTrendData = new HashMap<>();
     String fieldName = viewParametersHelper.getEntityGroupByFieldName(groupBy);
     Map<String, String> fieldToDataTypeMapping = getFieldToDataTypeMapping(resultSet);
-    log.info("GridTrendQueryLog: fieldToDataTypeMapping {}", fieldToDataTypeMapping);
     int totalColumns = getTotalColumnsCount(resultSet);
     while (resultSet != null && resultSet.next()) {
       String name;
@@ -343,11 +334,9 @@ public class ClickHouseQueryResponseHelper {
       while (columnIndex <= totalColumns) {
         String columnName = resultSet.getMetaData().getColumnName(columnIndex);
         String columnType = resultSet.getMetaData().getColumnTypeName(columnIndex);
-        log.info("GridTrendQueryLog: Column name {} , columnType {}", columnName, columnType);
         if (columnType.toUpperCase(Locale.ROOT).contains(STRING)) {
           name = fetchStringValue(resultSet, columnName, fieldName);
           id = getUpdatedId(id, name);
-          log.info("GridTrendQueryLog: name {}", name);
         } else if (columnType.toUpperCase(Locale.ROOT).contains(FLOAT64)) {
           if (columnName.equalsIgnoreCase(COST)) {
             viewCostDataBuilder.cost(fetchNumericValue(resultSet, columnName, skipRoundOff));
@@ -403,8 +392,6 @@ public class ClickHouseQueryResponseHelper {
         || businessMappingFromGroupBy.getUnallocatedCost() == null
         || businessMappingFromGroupBy.getUnallocatedCost().getStrategy() != HIDE;
 
-    log.info("fields: {}", fields);
-    log.info("Shared cost bucket names: {}", sharedCostBucketNames);
     double totalCost = 0.0;
     Double idleCost = null;
     Double unallocatedCost = null;
@@ -469,7 +456,6 @@ public class ClickHouseQueryResponseHelper {
       }
       viewCostDataBuilder.utilizedCost(viewsQueryHelper.getRoundedDoubleValue(utilizedCost));
     }
-    log.info("Cost trend data: {}", viewCostDataBuilder.build());
     return viewCostDataBuilder.build();
   }
 
@@ -479,7 +465,6 @@ public class ClickHouseQueryResponseHelper {
   public PerspectiveTimeSeriesData convertToTimeSeriesData(ResultSet resultSet, long timePeriod, String conversionField,
       String businessMappingId, String accountId, List<QLCEViewGroupBy> groupBy,
       Map<String, Map<Timestamp, Double>> sharedCostFromFilters, boolean addSharedCostFromGroupBy) throws SQLException {
-    log.info("ChartQueryLog: Conversion starts");
     BusinessMapping businessMapping = businessMappingService.get(businessMappingId);
     UnallocatedCostStrategy strategy = businessMapping != null && businessMapping.getUnallocatedCost() != null
         ? businessMapping.getUnallocatedCost().getStrategy()
@@ -518,7 +503,6 @@ public class ClickHouseQueryResponseHelper {
     Map<String, Double> costPerEntity = new HashMap<>();
     Map<String, Reference> entityReference = new HashMap<>();
     int totalColumns = getTotalColumnsCount(resultSet);
-    log.info("ChartQueryLog: total columns {}", totalColumns);
     while (resultSet != null && resultSet.next()) {
       Timestamp startTimeTruncatedTimestamp = null;
       double value = 0d;
@@ -538,25 +522,20 @@ public class ClickHouseQueryResponseHelper {
       while (columnIndex <= totalColumns) {
         String field = resultSet.getMetaData().getColumnName(columnIndex);
         String fieldType = resultSet.getMetaData().getColumnTypeName(columnIndex);
-        log.info("ChartQueryLog: field {}", field);
-        log.info("ChartQueryLog: field type {}", fieldType);
         if (fieldType.toUpperCase(Locale.ROOT).contains(DATETIME)
             || fieldType.toUpperCase(Locale.ROOT).contains(DATE)) {
           startTimeTruncatedTimestamp = Timestamp.ofTimeMicroseconds(
               resultSet.getTimestamp(field, Calendar.getInstance(TimeZone.getTimeZone("UTC"))).getTime() * 1000);
-          log.info("ChartQueryLog: startTimeTruncatedTimestamp {}", startTimeTruncatedTimestamp);
         } else if (fieldType.toUpperCase(Locale.ROOT).contains(STRING)) {
           stringValue = fetchStringValue(resultSet, field, fieldName);
           entityNames.add(stringValue);
           type = field.toUpperCase(Locale.ROOT);
           id = getUpdatedId(id, stringValue);
-          log.info("ChartQueryLog: name {}", stringValue);
         } else if (fieldType.toUpperCase(Locale.ROOT).contains(FLOAT64)) {
           switch (field) {
             case COST:
             case BILLING_AMOUNT:
               value += fetchNumericValue(resultSet, field);
-              log.info("cost:{}", value);
               break;
             case TIME_AGGREGATED_CPU_LIMIT:
               cpuLimit = fetchNumericValue(resultSet, field) / (timePeriod * 1024);
@@ -681,8 +660,6 @@ public class ClickHouseQueryResponseHelper {
           costDataPointsMap, new ArrayList<>(entityNames), accountId, conversionField);
     }
 
-    log.info("ChartQueryLog final response: {}",
-        PerspectiveTimeSeriesResponseHelper.convertTimeSeriesPointsMapToList(costDataPointsMap));
     return PerspectiveTimeSeriesData.builder()
         .stats(PerspectiveTimeSeriesResponseHelper.convertTimeSeriesPointsMapToList(costDataPointsMap))
         .cpuLimit(PerspectiveTimeSeriesResponseHelper.convertTimeSeriesPointsMapToList(cpuLimitDataPointsMap))
@@ -831,7 +808,9 @@ public class ClickHouseQueryResponseHelper {
   public String fetchStringValue(ResultSet resultSet, String field, String fieldName) throws SQLException {
     String value = resultSet.getString(field);
     if (value != null) {
-      return value;
+      if (!value.isEmpty()) {
+        return value;
+      }
     }
     return fieldName;
   }

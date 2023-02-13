@@ -30,9 +30,6 @@ import static io.harness.delegate.message.MessageConstants.DELEGATE_STOP_ACQUIRI
 import static io.harness.delegate.message.MessageConstants.DELEGATE_STOP_GRPC;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_SWITCH_STORAGE;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_TOKEN_NAME;
-import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_NEEDED;
-import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_PENDING;
-import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_STARTED;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_VERSION;
 import static io.harness.delegate.message.MessageConstants.EXTRA_WATCHER;
 import static io.harness.delegate.message.MessageConstants.MIGRATE_TO_JRE_VERSION;
@@ -41,7 +38,6 @@ import static io.harness.delegate.message.MessageConstants.NEW_WATCHER;
 import static io.harness.delegate.message.MessageConstants.NEXT_WATCHER;
 import static io.harness.delegate.message.MessageConstants.RUNNING_DELEGATES;
 import static io.harness.delegate.message.MessageConstants.UNREGISTERED;
-import static io.harness.delegate.message.MessageConstants.UPGRADING_DELEGATE;
 import static io.harness.delegate.message.MessageConstants.WATCHER_DATA;
 import static io.harness.delegate.message.MessageConstants.WATCHER_GO_AHEAD;
 import static io.harness.delegate.message.MessageConstants.WATCHER_HEARTBEAT;
@@ -143,6 +139,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -176,12 +173,11 @@ import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 public class WatcherServiceImpl implements WatcherService {
   private static final long DELEGATE_HEARTBEAT_TIMEOUT = MINUTES.toMillis(5);
   private static final long DELEGATE_STARTUP_TIMEOUT = MINUTES.toMillis(1);
-  private static final long DELEGATE_UPGRADE_TIMEOUT = MINUTES.toMillis(10);
   private static final long DELEGATE_SHUTDOWN_TIMEOUT = TimeUnit.HOURS.toMillis(2);
   private static final long DELEGATE_VERSION_MATCH_TIMEOUT = TimeUnit.HOURS.toMillis(2);
   private static final long DELEGATE_RESTART_TO_UPGRADE_JRE_TIMEOUT = MINUTES.toMillis(5);
   private static final int DELEGATE_VERSION_CHECK_FREQ_MINS = 25;
-  private static final Pattern VERSION_PATTERN = Pattern.compile("^[1-9]\\.[0-9]\\.[0-9]*-\\d{3}$");
+  private static final Pattern VERSION_PATTERN = Pattern.compile("^[1-9]\\.[0-9]\\.[0-9]*-?[0-9]*");
   private static final String DELEGATE_SEQUENCE_CONFIG_FILE = "./delegate_sequence_config";
   private static final String USER_DIR = "user.dir";
   private static final String DELEGATE_RESTART_SCRIPT = "DelegateRestartScript";
@@ -461,7 +457,8 @@ public class WatcherServiceImpl implements WatcherService {
     scheduleLocalHeartbeat();
 
     inputExecutor.scheduleWithFixedDelay(
-        new Schedulable("Error fetching delegate version from manager", this::watchDelegateVersions), 0,
+        new Schedulable("Error fetching delegate version from manager", this::watchDelegateVersions),
+        new Random().nextInt(20), // Random initial delay, so that not all watcher have fixed 20 coinciding window.
         DELEGATE_VERSION_CHECK_FREQ_MINS, MINUTES);
     heartbeatExecutor.scheduleWithFixedDelay(
         new Schedulable("Error while logging-performance", this::logPerformance), 0, 60, TimeUnit.SECONDS);
@@ -526,9 +523,6 @@ public class WatcherServiceImpl implements WatcherService {
   private void watchDelegate() {
     Map<String, Object> delegateData = null;
     try {
-      if (!multiVersion) {
-        log.info("Watching delegate processes: {}", runningDelegates);
-      }
       // Cleanup obsolete
       messageService.listDataNames(DELEGATE_DASH)
           .stream()
@@ -578,25 +572,15 @@ public class WatcherServiceImpl implements WatcherService {
       List<String> shutdownPendingList = new ArrayList<>();
       List<String> drainingNeededList = emptyList();
 
-      if (isEmpty(runningDelegates)) {
-        if (!multiVersion) {
-          if (working.compareAndSet(false, true)) {
-            downloadRunScriptsBeforeRestartingDelegateAndWatcher();
-            startDelegateProcess(
-                getPrimaryDelegate(expectedVersions), ".", emptyList(), "DelegateStartScript", getProcessId());
-          }
-        }
-      } else {
+      if (isNotEmpty(runningDelegates)) {
         List<String> obsolete = new ArrayList<>();
         List<String> restartNeededList = new ArrayList<>();
         List<String> drainingRestartNeededList = new ArrayList<>();
-        List<String> upgradeNeededList = new ArrayList<>();
         List<String> shutdownNeededList = new ArrayList<>();
         drainingNeededList = new ArrayList<>();
         List<String> stopGrpcServerList = new ArrayList<>();
         List<String> startGrpcServerList = new ArrayList<>();
 
-        String upgradePendingDelegate = null;
         boolean newDelegateTimedOut = false;
         long now = clock.millis();
 
@@ -661,10 +645,6 @@ public class WatcherServiceImpl implements WatcherService {
               boolean newDelegate = Optional.ofNullable((Boolean) delegateData.get(DELEGATE_IS_NEW)).orElse(false);
               boolean restartNeeded =
                   Optional.ofNullable((Boolean) delegateData.get(DELEGATE_RESTART_NEEDED)).orElse(false);
-              boolean upgradeNeeded =
-                  Optional.ofNullable((Boolean) delegateData.get(DELEGATE_UPGRADE_NEEDED)).orElse(false);
-              boolean upgradePending =
-                  Optional.ofNullable((Boolean) delegateData.get(DELEGATE_UPGRADE_PENDING)).orElse(false);
               boolean shutdownPending =
                   Optional.ofNullable((Boolean) delegateData.get(DELEGATE_SHUTDOWN_PENDING)).orElse(false);
 
@@ -684,28 +664,22 @@ public class WatcherServiceImpl implements WatcherService {
               }
 
               boolean shutdownTimedOut = now - shutdownStarted > DELEGATE_SHUTDOWN_TIMEOUT;
-              long upgradeStarted =
-                  Optional.ofNullable((Long) delegateData.get(DELEGATE_UPGRADE_STARTED)).orElse(Long.MAX_VALUE);
-              boolean upgradeTimedOut = now - upgradeStarted > DELEGATE_UPGRADE_TIMEOUT;
 
               if (isEmpty(delegateVersion)) {
                 log.error("Unable to read Delegate version for process {}, setting {} as delegate version",
                     delegateProcess, getPrimaryDelegate(expectedVersions));
                 delegateVersion = getPrimaryDelegate(expectedVersions);
               }
-              if (multiVersion) {
-                if (!expectedVersions.toString().contains(delegateVersion) && !shutdownPending) {
-                  log.info("Delegate version {} ({}) is not a published version. Future requests will go to primary.",
-                      delegateVersion, delegateProcess);
-                  drainingNeededList.add(delegateProcess);
-                }
+              if (!expectedVersions.toString().contains(delegateVersion) && !shutdownPending) {
+                log.info("Delegate version {} ({}) is not a published version. Future requests will go to primary.",
+                    delegateVersion, delegateProcess);
+                drainingNeededList.add(delegateProcess);
               }
 
               if (newDelegate) {
                 log.info("New delegate process {} is starting", delegateProcess);
                 boolean startupTimedOut = now - heartbeat > DELEGATE_STARTUP_TIMEOUT;
                 if (startupTimedOut) {
-                  newDelegateTimedOut = true;
                   shutdownNeededList.add(delegateProcess);
                 }
               } else if (shutdownPending) {
@@ -715,24 +689,17 @@ public class WatcherServiceImpl implements WatcherService {
                 if (shutdownTimedOut || heartbeatTimedOut) {
                   shutdownNeededList.add(delegateProcess);
                 }
-              } else if (heartbeatTimedOut || versionMatchTimedOut || delegateMinorVersionMismatch || upgradeTimedOut) {
+              } else if (heartbeatTimedOut || versionMatchTimedOut || delegateMinorVersionMismatch) {
                 log.info("Restarting delegate process {}. Local heartbeat timeout: {}, "
-                        + "Version match timeout: {}, Version banned: {}, Upgrade timeout: {}",
-                    delegateProcess, heartbeatTimedOut, versionMatchTimedOut, delegateMinorVersionMismatch,
-                    upgradeTimedOut);
+                        + "Version match timeout: {}, Version banned: {} ",
+                    delegateProcess, heartbeatTimedOut, versionMatchTimedOut, delegateMinorVersionMismatch);
                 restartNeededList.add(delegateProcess);
                 minMinorVersion.set(0);
                 illegalVersions.clear();
               } else if (restartNeeded) {
                 log.info("Draining restart delegate process {} at delegate request", delegateProcess);
                 drainingRestartNeededList.add(delegateProcess);
-              } else if (upgradeNeeded) {
-                upgradeNeededList.add(delegateProcess);
               }
-              if (upgradePending) {
-                upgradePendingDelegate = delegateProcess;
-              }
-
               if (isPrimaryDelegate(delegateVersion, expectedVersions)) {
                 startGrpcServerList.add(delegateProcess);
               } else {
@@ -747,21 +714,11 @@ public class WatcherServiceImpl implements WatcherService {
             messageService.putData(WATCHER_DATA, RUNNING_DELEGATES, runningDelegates);
             obsolete.forEach(this::shutdownDelegate);
           }
-
-          if (!multiVersion && shutdownPendingList.containsAll(runningDelegates)) {
-            log.warn("No delegates acquiring tasks. Delegate processes {} pending shutdown. Forcing shutdown now",
-                shutdownPendingList);
-            shutdownPendingList.forEach(this::shutdownDelegate);
-          }
         }
 
         if (isNotEmpty(shutdownNeededList)) {
           log.warn("Delegate processes {} exceeded grace period. Forcing shutdown", shutdownNeededList);
           shutdownNeededList.forEach(this::shutdownDelegate);
-          if (newDelegateTimedOut && upgradePendingDelegate != null) {
-            log.warn("New delegate failed to start. Resuming old delegate {}", upgradePendingDelegate);
-            messageService.writeMessageToChannel(DELEGATE, upgradePendingDelegate, DELEGATE_RESUME);
-          }
         }
         if (isNotEmpty(restartNeededList)) {
           log.warn("Delegate processes {} need restart. Shutting down", restartNeededList);
@@ -775,18 +732,8 @@ public class WatcherServiceImpl implements WatcherService {
           } else if (drainingRestartNeededList.containsAll(runningDelegates) && working.compareAndSet(false, true)) {
             log.warn(
                 "Delegate processes {} need restart. Starting new process and draining old", drainingRestartNeededList);
-            startDelegateProcess(getPrimaryDelegate(expectedVersions), ".", drainingRestartNeededList,
-                DELEGATE_RESTART_SCRIPT, getProcessId());
-          }
-        }
-        if (!multiVersion && isNotEmpty(upgradeNeededList)) {
-          if (working.compareAndSet(false, true)) {
-            log.info("Delegate processes {} ready for upgrade. Sending confirmation", upgradeNeededList);
-            upgradeNeededList.forEach(
-                delegateProcess -> messageService.writeMessageToChannel(DELEGATE, delegateProcess, UPGRADING_DELEGATE));
-            downloadRunScriptsBeforeRestartingDelegateAndWatcher();
-            startDelegateProcess(
-                getPrimaryDelegate(expectedVersions), ".", upgradeNeededList, "DelegateUpgradeScript", getProcessId());
+            startDelegateProcess(getPrimaryDelegate(expectedVersions), getPrimaryDelegate(expectedVersions),
+                drainingRestartNeededList, DELEGATE_RESTART_SCRIPT, getProcessId());
           }
         }
 
@@ -805,7 +752,7 @@ public class WatcherServiceImpl implements WatcherService {
         }
       }
 
-      if (multiVersion && !isDiskFull()) {
+      if (!isDiskFull()) {
         log.info("Watching delegate processes: {}",
             runningVersions.keySet()
                 .stream()
@@ -901,11 +848,7 @@ public class WatcherServiceImpl implements WatcherService {
       }
 
       for (String expectedVersion : expectedDelegateVersions) {
-        if (multiVersion) {
-          downloadRunScripts(expectedVersion, expectedVersion, true);
-        } else {
-          downloadRunScripts(".", expectedVersion, true);
-        }
+        downloadRunScripts(expectedVersion, expectedVersion, true);
       }
     } catch (IOException ioe) {
       if (ioe.getMessage().contains(NO_SPACE_LEFT_ON_DEVICE_ERROR)) {
@@ -924,11 +867,7 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void restartDelegate() {
     log.info("Received request to restart Delegate");
-    if (multiVersion) {
-      runningDelegates.forEach(this::drainDelegateProcess);
-    } else if (working.compareAndSet(false, true)) {
-      startDelegateProcess(null, ".", new ArrayList<>(runningDelegates), DELEGATE_RESTART_SCRIPT, getProcessId());
-    }
+    runningDelegates.forEach(this::drainDelegateProcess);
   }
 
   private void upgradeJre(String delegateJreVersion, String migrateToJreVersion) {
@@ -1136,15 +1075,25 @@ public class WatcherServiceImpl implements WatcherService {
       return;
     }
 
-    RestResponse<String> restResponse = callInterruptible21(timeLimiter, ofSeconds(30),
-        ()
-            -> SafeHttpCall.execute(
-                managerClient.getDelegateDownloadUrl(minorVersion, watcherConfiguration.getAccountId())));
-    if (restResponse == null) {
-      return;
+    String downloadUrl;
+    if (multiVersion) {
+      // Fetch delegate download location from manager in case of saas.
+      RestResponse<String> restResponse = callInterruptible21(timeLimiter, ofSeconds(30),
+          ()
+              -> SafeHttpCall.execute(
+                  managerClient.getDelegateDownloadUrl(minorVersion, watcherConfiguration.getAccountId())));
+      if (restResponse == null) {
+        return;
+      }
+      downloadUrl = restResponse.getResource();
+    } else {
+      // In case of on-prem, construct download url.
+      final String storageUrl = System.getenv().get("DELEGATE_STORAGE_URL");
+      final String delegateMetadata =
+          Http.getResponseStringFromUrl(watcherConfiguration.getDelegateCheckLocation(), 10, 10);
+      downloadUrl = storageUrl + "/" + substringAfter(delegateMetadata, " ").trim();
     }
 
-    String downloadUrl = restResponse.getResource();
     log.info("Downloading delegate jar version {} and download url {}", version, substringBefore(downloadUrl, "?"));
     File downloadFolder = new File(version);
     if (!downloadFolder.exists()) {
