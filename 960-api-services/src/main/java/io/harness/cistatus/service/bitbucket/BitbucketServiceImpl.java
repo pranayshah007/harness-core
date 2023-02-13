@@ -38,6 +38,7 @@ public class BitbucketServiceImpl implements BitbucketService {
   private static final String MERGED = "merged";
   private static final String ERROR = "error";
   private static final String SHA = "sha";
+  private static final String MESSAGE = "message";
 
   @Override
   public boolean sendStatus(BitbucketConfig bitbucketConfig, String userName, String token,
@@ -127,7 +128,7 @@ public class BitbucketServiceImpl implements BitbucketService {
     JSONObject errObject = null;
     try {
       errObject = new JSONObject(response.errorBody().string());
-      return ((JSONObject) ((JSONArray) errObject.get("errors")).get(0)).get("message");
+      return ((JSONObject) ((JSONArray) errObject.get("errors")).get(0)).get(MESSAGE);
     } catch (Exception e) {
       log.error("Failed to get error message from merge response. Error {}", e.getMessage());
       return "Failed to get error message from merge response";
@@ -138,7 +139,7 @@ public class BitbucketServiceImpl implements BitbucketService {
     JSONObject errObject = null;
     try {
       errObject = new JSONObject(response.errorBody().string());
-      return ((JSONObject) errObject.get("error")).get("message");
+      return ((JSONObject) errObject.get(ERROR)).get(MESSAGE);
     } catch (Exception e) {
       log.error("Failed to get error message from merge response. Error {}", e.getMessage());
       return "Failed to get error message from merge response";
