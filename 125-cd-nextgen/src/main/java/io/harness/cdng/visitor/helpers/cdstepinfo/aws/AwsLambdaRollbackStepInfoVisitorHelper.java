@@ -7,14 +7,14 @@
 
 package io.harness.cdng.visitor.helpers.cdstepinfo.aws;
 
-import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepInfo;
+import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
-public class AwsLambdaDeployStepInfoVisitorHelper implements ConfigValidator {
+public class AwsLambdaRollbackStepInfoVisitorHelper implements ConfigValidator {
   @Override
   public Object createDummyVisitableElement(Object originalElement) {
-    return AwsLambdaRollbackStepInfo.infoBuilder().build();
+    return AwsLambdaDeployStepInfo.infoBuilder().build();
   }
 
   @Override

@@ -113,4 +113,6 @@ public interface StepSpecTypeConstants {
   String ASG_BLUE_GREEN_SWAP_SERVICE = "AsgBlueGreenSwapService";
 
   String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
+
+  String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
 }
