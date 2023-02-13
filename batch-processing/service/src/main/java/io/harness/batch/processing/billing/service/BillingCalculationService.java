@@ -98,14 +98,14 @@ public class BillingCalculationService {
   private PricingData getUpdatedPricingData(InstanceData instanceData, PricingData pricingData) {
     // For Testing
     log.info("pricingData: {}", pricingData);
-    log.info("updatedPricingData: {}", updatePricingData(pricingData, 1.05D));
+    log.info("updatedPricingData: {}", updatePricingData(pricingData, 10.0D));
     log.info("conversionFactor: {}",
         currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
             instanceData.getAccountId(), getCloudServiceProvider(instanceData), Currency.USD));
     if (pricingData.getPricingSource() != PricingSource.CUR_REPORT) {
       Double conversionFactor = currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
           instanceData.getAccountId(), getCloudServiceProvider(instanceData), Currency.USD);
-      pricingData = updatePricingData(pricingData, conversionFactor);
+      pricingData = updatePricingData(pricingData, 10.0D);
     }
     log.info("final pricingData: {}", pricingData);
     return pricingData;
