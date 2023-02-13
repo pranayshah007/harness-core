@@ -109,3 +109,9 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 		return err
 	})
 }
+
+// ListBlobPrefix is no-op
+func (s *Store) ListBlobPrefix(ctx context.Context, prefix string) ([]string, error) {
+	return []string{}, errors.New("not implemented, use the s3 Datastore")
+
+}

@@ -67,7 +67,10 @@ export LOG_SERVICE_S3_ACCESS_KEY_ID=***
 export LOG_SERVICE_S3_SECRET_ACCESS_KEY=***
 export LOG_SERVICE_S3_REGION=us-east-1
 ```
-The above is compatible with GCS as well (you can setup access and secret keys for a service account in the settings and use those)
+The above is compatible with GCS as well (you can setup access and secret keys for a service account in the settings and use those) and also export
+```
+export LOG_SERVICE_S3_ENDPOINT="https://storage.googleapis.com"
+```
 
 Run minio locally using:
 ```

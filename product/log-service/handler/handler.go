@@ -6,6 +6,7 @@
 package handler
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -91,11 +92,26 @@ func Handler(stream stream.Stream, store store.Store, config config.Config, ngCl
 			sr.Use(AuthMiddleware(config, ngClient))
 		}
 
+		fmt.Println("S3.AccessKeyID===", config.S3.AccessKeyID)
+		fmt.Println("S3.secret===", config.S3.AccessKeySecret)
+		fmt.Println("S3config===", config.S3)
+
 		sr.Post("/", HandleUpload(store))
 		sr.Delete("/", HandleDelete(store))
 		sr.Get("/", HandleDownload(store))
 		sr.Post("/link/upload", HandleUploadLink(store))
 		sr.Post("/link/download", HandleDownloadLink(store))
+
+		return sr
+	}())
+
+	r.Mount("/prefix", func() http.Handler {
+		sr := chi.NewRouter()
+		if !config.Auth.DisableAuth {
+			sr.Use(AuthMiddleware(config, ngClient))
+		}
+
+		sr.Post("/link/download", HandlePrefixDownloadLink(stream, store))
 
 		return sr
 	}())

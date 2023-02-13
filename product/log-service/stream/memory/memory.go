@@ -9,6 +9,7 @@ package memory
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 	"sync"
@@ -80,7 +81,9 @@ func (s *Streamer) ListPrefix(ctx context.Context, prefix string) ([]string, err
 	s.Lock()
 	defer s.Unlock()
 	keys := []string{}
+	fmt.Println("streams===", s.streams)
 	for k := range s.streams {
+		fmt.Println("streamstring===", k)
 		if strings.HasPrefix(k, prefix) {
 			keys = append(keys, k)
 		}

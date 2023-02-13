@@ -28,4 +28,7 @@ type Store interface {
 
 	// Delete deletes the blob from the datastore.
 	Delete(ctx context.Context, key string) error
+
+	//Lists Prefix associated with the input keys from datastore
+	ListBlobPrefix(ctx context.Context, prefix string) ([]string, error)
 }

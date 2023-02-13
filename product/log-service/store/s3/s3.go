@@ -9,6 +9,7 @@ package s3
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"path"
 	"strings"
@@ -106,6 +107,9 @@ func (s *Store) Upload(ctx context.Context, key string, r io.Reader) error {
 		Key:    aws.String(keyWithPrefix),
 		Body:   r,
 	}
+	fmt.Println("acl===", *input.ACL)
+	fmt.Println("buck===", *input.Bucket)
+	fmt.Println("key===", *input.Key)
 	_, err := uploader.Upload(input)
 	return err
 }
@@ -131,4 +135,18 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 		Key:    aws.String(keyWithPrefix),
 	})
 	return err
+}
+
+// ListBlobPrefix returns the list of keys associated with the prefix
+func (s *Store) ListBlobPrefix(ctx context.Context, prefix string) ([]string, error) {
+	svc := s3.New(s.session)
+	keys := []string{}
+	req, _ := svc.ListObjects(&s3.ListObjectsInput{
+		Bucket: aws.String(s.bucket),
+		Prefix: aws.String(prefix),
+	})
+	for _, key := range req.Contents {
+		keys = append(keys, *key.Key)
+	}
+	return keys, nil
 }
