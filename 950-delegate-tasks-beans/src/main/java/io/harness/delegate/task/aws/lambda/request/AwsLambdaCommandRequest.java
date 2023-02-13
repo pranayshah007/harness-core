@@ -14,10 +14,13 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,13 +34,20 @@ public interface AwsLambdaCommandRequest extends TaskParameters, ExecutionCapabi
 
   CommandUnitsProgress getCommandUnitsProgress();
 
-  AwsLambdaFunctionsInfraConfig getAwsLambdaFunctionsInfraConfig();
+  AwsLambdaInfraConfig getAwsLambdaFunctionsInfraConfig();
 
   default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig = getAwsLambdaFunctionsInfraConfig();
-    List<ExecutionCapability> capabilities = new ArrayList<>();
-    capabilities.add((ExecutionCapability) AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
-        awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), maskingEvaluator));
+    AwsLambdaInfraConfig awslambdaInfraConfig = getAwsLambdaFunctionsInfraConfig();
+    List<EncryptedDataDetail> infraConfigEncryptionDataDetails = awslambdaInfraConfig.getEncryptionDataDetails();
+    List<ExecutionCapability> capabilities =
+        new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+            infraConfigEncryptionDataDetails, maskingEvaluator));
+    if (awslambdaInfraConfig instanceof AwsLambdaFunctionsInfraConfig) {
+      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig =
+          (AwsLambdaFunctionsInfraConfig) awslambdaInfraConfig;
+      capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
+          awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), maskingEvaluator));
+    }
     return capabilities;
   }
 }

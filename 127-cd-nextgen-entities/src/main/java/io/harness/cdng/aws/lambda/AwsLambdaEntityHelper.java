@@ -19,6 +19,7 @@ import static java.util.Collections.emptyList;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.infra.beans.AwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -77,9 +78,12 @@ public class AwsLambdaEntityHelper {
     ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), ngAccess);
     switch (infrastructureOutcome.getKind()) {
       case AWS_LAMBDA:
+        AwsLambdaInfrastructureOutcome awsLambdaInfrastructureOutcome =
+            (AwsLambdaInfrastructureOutcome) infrastructureOutcome;
         return AwsLambdaFunctionsInfraConfig.builder()
             .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
             .awsConnectorDTO((AwsConnectorDTO) connectorDTO.getConnectorConfig())
+            .region(awsLambdaInfrastructureOutcome.getRegion())
             .build();
       default:
         throw new UnsupportedOperationException(

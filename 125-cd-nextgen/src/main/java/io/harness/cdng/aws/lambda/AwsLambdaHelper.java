@@ -49,7 +49,6 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluatorUtils;
-import io.harness.googlefunctions.command.GoogleFunctionsCommandUnitConstants;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -290,7 +289,7 @@ public class AwsLambdaHelper extends CDStepHelper {
           AmbianceUtils.getStageLevelFromAmbiance(ambiance).map(Level::getIdentifier).orElse("Deployment stage");
       String stepType = Optional.ofNullable(AmbianceUtils.getCurrentStepType(ambiance))
                             .map(StepType::getType)
-                            .orElse("Google Function");
+                            .orElse("Aws Lambda Function");
       throw new GeneralException(
           format("No manifests found in stage %s. %s step requires a manifest defined in stage service definition",
               stageName, stepType));
