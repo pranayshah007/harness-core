@@ -189,7 +189,6 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       return;
     }
     DataCollectionTask dataCollectionTask = getDataCollectionTask(result.getDataCollectionTaskId());
-    recordMetricsOnUpdateStatus(dataCollectionTask);
     ExecutionLogger executionLogger = executionLogService.getLogger(dataCollectionTask);
     executionLogger.log(
         dataCollectionTask.getLogLevel(), "Data collection task status: " + dataCollectionTask.getStatus());
