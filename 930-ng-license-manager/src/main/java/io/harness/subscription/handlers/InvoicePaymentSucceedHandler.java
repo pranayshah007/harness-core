@@ -33,10 +33,6 @@ import com.stripe.model.InvoiceLineItem;
 import com.stripe.model.PaymentIntent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

@@ -10,7 +10,6 @@ package io.harness.subscription.services.impl;
 import static io.harness.subscription.entities.SubscriptionDetail.INCOMPLETE;
 
 import io.harness.ModuleType;
-import io.harness.exception.IllegalArgumentException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnsupportedOperationException;
@@ -55,7 +54,6 @@ import com.stripe.model.Event;
 import com.stripe.model.Price;
 import com.stripe.model.Subscription;
 import com.stripe.model.SubscriptionItem;
-import com.stripe.model.SubscriptionItemCollection;
 import com.stripe.net.ApiResource;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -239,9 +237,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     // TODO: transaction control in case any race condition
 
-    List<ModuleLicense> moduleLicenses = licenseRepository
-            .findByAccountIdentifierAndModuleType(accountIdentifier, subscriptionRequest.getModuleType());
-    if (moduleLicenses.stream().anyMatch(moduleLicense -> moduleLicense.isActive() && moduleLicense.getLicenseType().equals(LicenseType.PAID))) {
+    List<ModuleLicense> moduleLicenses =
+        licenseRepository.findByAccountIdentifierAndModuleType(accountIdentifier, subscriptionRequest.getModuleType());
+    if (moduleLicenses.stream().anyMatch(
+            moduleLicense -> moduleLicense.isActive() && moduleLicense.getLicenseType().equals(LicenseType.PAID))) {
       throw new InvalidRequestException("Cannot create a new subscription, since there is an active one.");
     }
 
@@ -258,7 +257,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     if (!subscriptionDetailList.isEmpty()) {
       SubscriptionDetail subscriptionDetail = subscriptionDetailList.get(0);
       if (!subscriptionDetail.isIncomplete()) {
-
         StripeSubscriptionRequest stripeSubscriptionRequest =
             buildStripeSubscriptionRequest(subscriptionRequest, stripeCustomer.getCustomerId());
         Optional<Subscription> subscription = stripeHelper.searchSubscription(accountIdentifier);

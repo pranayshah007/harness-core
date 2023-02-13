@@ -16,7 +16,6 @@ import io.harness.subscription.dto.PriceCollectionDTO;
 import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
-import io.harness.subscription.entities.StripeCustomer;
 import io.harness.subscription.params.SubscriptionRequest;
 import io.harness.subscription.params.UsageKey;
 

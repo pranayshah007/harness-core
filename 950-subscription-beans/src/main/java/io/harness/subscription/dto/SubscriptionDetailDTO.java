@@ -7,8 +7,6 @@
 
 package io.harness.subscription.dto;
 
-import io.harness.ModuleType;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
