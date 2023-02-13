@@ -25,9 +25,9 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.http.HttpStatus;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.http.HttpStatus;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -131,7 +131,7 @@ public class BitbucketServiceImpl implements BitbucketService {
       log.error("Failed to merge PR for Bitbucket Server. URL {} and PR number {} ", url, prNumber, e);
       responseObj.put(MERGED, false);
       responseObj.put(ERROR, e.getMessage());
-      responseObj.put(CODE, HttpStatus.INTERNAL_SERVER_ERROR.value());
+      responseObj.put(CODE, HttpStatus.SC_INTERNAL_SERVER_ERROR);
     }
     return responseObj;
   }
@@ -190,7 +190,7 @@ public class BitbucketServiceImpl implements BitbucketService {
           prNumber, e);
       responseObj.put(MERGED, false);
       responseObj.put(ERROR, e.getMessage());
-      responseObj.put(CODE, HttpStatus.INTERNAL_SERVER_ERROR.value());
+      responseObj.put(CODE, HttpStatus.SC_INTERNAL_SERVER_ERROR);
     }
     return responseObj;
   }
