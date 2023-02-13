@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -7,6 +7,7 @@
 
 package io.harness.subscription.helpers;
 
+import com.stripe.model.Subscription;
 import io.harness.ModuleType;
 import io.harness.subscription.dto.CustomerDetailDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
@@ -36,10 +37,12 @@ public interface StripeHelper {
   Price getPrice(String lookupKey);
   PriceCollectionDTO listPrices(List<String> lookupKeys);
   SubscriptionDetailDTO createSubscription(StripeSubscriptionRequest stripeSubscriptionRequest);
+  SubscriptionDetailDTO addToSubscription(StripeSubscriptionRequest subscriptionParams, Subscription subscription);
   SubscriptionDetailDTO updateSubscription(StripeSubscriptionRequest stripeSubscriptionRequest);
   SubscriptionDetailDTO updateSubscriptionDefaultPayment(StripeSubscriptionRequest stripeSubscriptionRequest);
   void cancelSubscription(StripeSubscriptionRequest stripeSubscriptionRequest);
   SubscriptionDetailDTO retrieveSubscription(StripeSubscriptionRequest stripeSubscriptionRequest);
+  Optional<Subscription> searchSubscription(String accountIdentifier);
   InvoiceDetailDTO getUpcomingInvoice(String invoiceParams);
   InvoiceDetailDTO previewInvoice(StripeSubscriptionRequest stripeSubscriptionRequest);
   void payInvoice(String invoiceId);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -16,11 +16,11 @@ import io.harness.subscription.dto.PriceCollectionDTO;
 import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
+import io.harness.subscription.entities.StripeCustomer;
 import io.harness.subscription.params.SubscriptionRequest;
 import io.harness.subscription.params.UsageKey;
 
 import java.util.EnumMap;
-import java.util.List;
 
 public interface SubscriptionService {
   EnumMap<UsageKey, Long> getRecommendation(String accountIdentifier, long numberOfMAUs, long numberOfUsers);
@@ -31,11 +31,10 @@ public interface SubscriptionService {
   SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionRequest subscriptionRequest);
   SubscriptionDetailDTO updateSubscription(
       String accountIdentifier, String subscriptionId, SubscriptionDTO subscriptionDTO);
-  void cancelSubscription(String accountIdentifier, String subscriptionId);
+  void cancelSubscription(String accountIdentifier, String subscriptionId, ModuleType moduleType);
   void cancelAllSubscriptions(String accountIdentifier);
-  SubscriptionDetailDTO getSubscription(String accountIdentifier, String subscriptionId);
+  SubscriptionDetailDTO getSubscription(String accountIdentifier);
   boolean checkSubscriptionExists(String subscriptionId);
-  List<SubscriptionDetailDTO> listSubscriptions(String accountIdentifier, ModuleType moduleType);
 
   CustomerDetailDTO createStripeCustomer(String accountIdentifier, CustomerDTO customerDTO);
   CustomerDetailDTO updateStripeCustomer(String accountIdentifier, String customerId, CustomerDTO customerDTO);
