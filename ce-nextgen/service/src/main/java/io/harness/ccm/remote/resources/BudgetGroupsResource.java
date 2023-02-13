@@ -9,6 +9,9 @@ package io.harness.ccm.remote.resources;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_FOLDER;
+import static io.harness.ccm.rbac.CCMRbacPermissions.*;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -17,8 +20,13 @@ import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.service.BudgetGroupService;
+import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
+import io.harness.ccm.views.service.CEViewFolderService;
+import io.harness.ccm.views.service.CEViewService;
+import io.harness.exception.AccessDeniedException;
+import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -36,7 +44,10 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -70,6 +81,8 @@ import org.springframework.stereotype.Service;
     content = { @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ErrorDTO.class)) })
 public class BudgetGroupsResource {
   @Inject private BudgetGroupService budgetGroupService;
+  @Inject private CEViewFolderService ceViewFolderService;
+  @Inject private CEViewService ceViewService;
   @Inject private CCMRbacHelper rbacHelper;
 
   @POST
@@ -92,7 +105,14 @@ public class BudgetGroupsResource {
   save(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Budget Group definition") @NotNull @Valid BudgetGroup budgetGroup) {
-    rbacHelper.checkBudgetEditPermission(accountId, null, null, null);
+    Set<String> folderIds =
+        budgetGroupService.findFolderIdsGivenBudgetGroup(accountId, Collections.singletonList(budgetGroup));
+    Set<String> allowedFolderIds =
+        rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_CREATE_AND_EDIT);
+    if (folderIds.size() != allowedFolderIds.size()) {
+      throw new AccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, BUDGET_CREATE_AND_EDIT, RESOURCE_FOLDER), WingsException.USER);
+    }
     return ResponseDTO.newResponse(budgetGroupService.save(budgetGroup));
   }
 
@@ -116,7 +136,14 @@ public class BudgetGroupsResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Parameter(required = true, description = "Unique identifier for the budget") @PathParam(
           "id") String budgetGroupId) {
-    rbacHelper.checkBudgetViewPermission(accountId, null, null, null);
+    Set<String> folderIds = budgetGroupService.findFolderIdsGivenBudgetGroup(
+        accountId, Collections.singletonList(budgetGroupService.get(budgetGroupId, accountId)));
+    Set<String> allowedFolderIds =
+        rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_VIEW);
+    if (folderIds.size() != allowedFolderIds.size()) {
+      throw new AccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, BUDGET_VIEW, RESOURCE_FOLDER), WingsException.USER);
+    }
     return ResponseDTO.newResponse(budgetGroupService.get(budgetGroupId, accountId));
   }
 
@@ -136,8 +163,13 @@ public class BudgetGroupsResource {
   public ResponseDTO<List<BudgetGroup>>
   list(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
-    rbacHelper.checkBudgetViewPermission(accountId, null, null, null);
-    return ResponseDTO.newResponse(budgetGroupService.list(accountId));
+    Set<String> folderIds = ceViewFolderService.getFolders(accountId, "")
+                                .stream()
+                                .map(ceViewFolder -> ceViewFolder.getUuid())
+                                .collect(Collectors.toSet());
+    Set<String> allowedFolderIds =
+        rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_VIEW);
+    return ResponseDTO.newResponse(budgetGroupService.list(accountId, allowedFolderIds));
   }
 
   @PUT
@@ -161,7 +193,14 @@ public class BudgetGroupsResource {
       @Valid @NotNull @Parameter(required = true, description = "Unique identifier for the budget group") @PathParam(
           "id") String budgetGroupId,
       @RequestBody(required = true, description = "The Budget object") @NotNull @Valid BudgetGroup budgetGroup) {
-    rbacHelper.checkBudgetEditPermission(accountId, null, null, null);
+    Set<String> folderIds =
+        budgetGroupService.findFolderIdsGivenBudgetGroup(accountId, Collections.singletonList(budgetGroup));
+    Set<String> allowedFolderIds =
+        rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_CREATE_AND_EDIT);
+    if (folderIds.size() != allowedFolderIds.size()) {
+      throw new AccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, BUDGET_CREATE_AND_EDIT, RESOURCE_FOLDER), WingsException.USER);
+    }
     budgetGroupService.update(budgetGroupId, accountId, budgetGroup);
     return ResponseDTO.newResponse("Successfully updated the Budget group");
   }
@@ -186,7 +225,14 @@ public class BudgetGroupsResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @Parameter(required = true, description = "Unique identifier for the budget") @PathParam(
           "id") String budgetGroupId) {
-    rbacHelper.checkBudgetDeletePermission(accountId, null, null, null);
+    Set<String> folderIds = budgetGroupService.findFolderIdsGivenBudgetGroup(
+        accountId, Collections.singletonList(budgetGroupService.get(budgetGroupId, accountId)));
+    Set<String> allowedFolderIds =
+        rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_DELETE);
+    if (folderIds.size() != allowedFolderIds.size()) {
+      throw new AccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, BUDGET_DELETE, RESOURCE_FOLDER), WingsException.USER);
+    }
     return ResponseDTO.newResponse(budgetGroupService.delete(budgetGroupId, accountId));
   }
 
@@ -211,7 +257,19 @@ public class BudgetGroupsResource {
       @QueryParam("areChildEntitiesBudgets") @NotNull @Valid boolean areChildEntitiesBudgets,
       @RequestBody(required = true,
           description = "List of child budgets/budget groups") @NotNull @Valid List<String> childEntityIds) {
-    rbacHelper.checkBudgetViewPermission(accountId, null, null, null);
+    Set<String> folderIds = null;
+    if (areChildEntitiesBudgets) {
+      folderIds = budgetGroupService.getFolderIdsGivenBudgetIds(accountId, childEntityIds);
+    } else {
+      List<BudgetGroup> budgetGroups = budgetGroupService.list(accountId, childEntityIds);
+      folderIds = budgetGroupService.findFolderIdsGivenBudgetGroup(accountId, budgetGroups);
+    }
+    Set<String> allowedFolderIds =
+        rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_VIEW);
+    if (allowedFolderIds.size() != folderIds.size()) {
+      throw new AccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, BUDGET_VIEW, RESOURCE_FOLDER), WingsException.USER);
+    }
     return ResponseDTO.newResponse(
         budgetGroupService.getAggregatedAmount(accountId, areChildEntitiesBudgets, childEntityIds));
   }
@@ -235,10 +293,15 @@ public class BudgetGroupsResource {
       @Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY)
       @AccountIdentifier @NotNull @Valid String accountId, @QueryParam("budgetGroupId") @Valid String budgetGroupId,
       @QueryParam("showAllEntities") @NotNull @Valid boolean showAllEntities) {
-    rbacHelper.checkBudgetViewPermission(accountId, null, null, null);
+    Set<String> folderIds = ceViewFolderService.getFolders(accountId, "")
+                                .stream()
+                                .map(ceViewFolder -> ceViewFolder.getUuid())
+                                .collect(Collectors.toSet());
+    Set<String> allowedFolderIds =
+        rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_VIEW);
     List<BudgetSummary> summaryList = showAllEntities
-        ? budgetGroupService.listAllEntities(accountId)
-        : budgetGroupService.listBudgetsAndBudgetGroupsSummary(accountId, budgetGroupId);
+        ? budgetGroupService.listAllEntities(accountId, allowedFolderIds)
+        : budgetGroupService.listBudgetsAndBudgetGroupsSummary(accountId, budgetGroupId, allowedFolderIds);
     return ResponseDTO.newResponse(summaryList);
   }
 }

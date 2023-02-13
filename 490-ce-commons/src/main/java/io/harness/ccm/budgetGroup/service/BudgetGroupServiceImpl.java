@@ -26,6 +26,7 @@ import io.harness.ccm.budgetGroup.utils.BudgetGroupUtils;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetCostData;
 import io.harness.ccm.commons.entities.budget.BudgetData;
+import io.harness.ccm.views.dao.CEViewDao;
 import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Inject;
@@ -37,6 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 public class BudgetGroupServiceImpl implements BudgetGroupService {
   @Inject BudgetGroupDao budgetGroupDao;
   @Inject BudgetDao budgetDao;
+  @Inject CEViewDao ceViewDao;
   public static final String INVALID_BUDGET_GROUP_ID_EXCEPTION = "Invalid budget group id";
   public static final String MISSING_BUDGET_GROUP_DATA_EXCEPTION = "Missing Budget Group data exception";
 
@@ -131,8 +134,21 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
   }
 
   @Override
-  public List<BudgetGroup> list(String accountId) {
-    return budgetGroupDao.list(accountId, Integer.MAX_VALUE, 0);
+  public List<BudgetGroup> list(String accountId, Set<String> allowedFolderIds) {
+    List<BudgetGroup> budgetGroups = budgetGroupDao.list(accountId, Integer.MAX_VALUE, 0);
+    List<BudgetGroup> filteredBudgetGroups = new ArrayList<>();
+    for (BudgetGroup budgetGroup : budgetGroups) {
+      Set<String> requiredFolderIds = findFolderIdsGivenBudgetGroup(accountId, Collections.singletonList(budgetGroup));
+      if (allowedFolderIds.containsAll(requiredFolderIds)) {
+        filteredBudgetGroups.add(budgetGroup);
+      }
+    }
+    return filteredBudgetGroups;
+  }
+
+  @Override
+  public List<BudgetGroup> list(String accountId, List<String> budgetGroupIds) {
+    return budgetGroupDao.list(accountId, budgetGroupIds);
   }
 
   @Override
@@ -170,6 +186,59 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
       updateCostsOfParentBudgetGroupsOnEntityDeletion(
           budgetGroupDao.get(immediateParent.getParentBudgetGroupId(), immediateParent.getAccountId()));
     }
+  }
+
+  @Override
+  public Set<String> findFolderIdsGivenBudgetGroup(String accountId, List<BudgetGroup> budgetGroups) {
+    Stack<BudgetGroup> budgetGroupStack = new Stack<>();
+    budgetGroupStack.addAll(budgetGroups);
+    HashSet<String> perspectiveIds = new HashSet<>();
+    HashSet<String> visitedGroupsIds = new HashSet<>();
+
+    while (!budgetGroupStack.isEmpty()) {
+      BudgetGroup tempBudgetGroup = budgetGroupStack.pop();
+      visitedGroupsIds.add(tempBudgetGroup.getUuid());
+      if (tempBudgetGroup != null && tempBudgetGroup.getChildEntities() != null
+          && tempBudgetGroup.getChildEntities().size() > 0) {
+        boolean isChildEntitiesBudgetGroup = tempBudgetGroup.getChildEntities().get(0).isBudgetGroup();
+        List<String> childEntityIds = tempBudgetGroup.getChildEntities()
+                                          .stream()
+                                          .map(BudgetGroupChildEntityDTO::getId)
+                                          .collect(Collectors.toList());
+        if (!isChildEntitiesBudgetGroup) {
+          List<Budget> tempBudgets = budgetDao.list(accountId, childEntityIds);
+          Set<String> tempPerspectiveIds = tempBudgets.stream()
+                                               .filter(BudgetUtils::isPerspectiveBudget)
+                                               .map(BudgetUtils::getPerspectiveIdForBudget)
+                                               .collect(Collectors.toSet());
+          perspectiveIds.addAll(tempPerspectiveIds);
+        } else {
+          List<BudgetGroup> tempBudgetGroups = budgetGroupDao.list(accountId, childEntityIds);
+          budgetGroupStack.addAll(tempBudgetGroups.stream()
+                                      .filter(budgetGroup -> !(visitedGroupsIds.contains(budgetGroup.getUuid())))
+                                      .collect(Collectors.toList()));
+        }
+      }
+    }
+
+    return (ceViewDao.getPerspectivesByIds(accountId, perspectiveIds.stream().collect(Collectors.toList())))
+        .stream()
+        .map(ceView -> ceView.getFolderId())
+        .collect(Collectors.toSet());
+  }
+
+  @Override
+  public Set<String> getFolderIdsGivenBudgetIds(String accountId, List<String> budgetIds) {
+    return ceViewDao
+        .list(accountId,
+            budgetDao.list(accountId, budgetIds)
+                .stream()
+                .filter(BudgetUtils::isPerspectiveBudget)
+                .map(BudgetUtils::getPerspectiveIdForBudget)
+                .collect(Collectors.toList()))
+        .stream()
+        .map(ceView -> ceView.getFolderId())
+        .collect(Collectors.toSet());
   }
 
   @Override
@@ -231,9 +300,9 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
   }
 
   @Override
-  public List<BudgetSummary> listAllEntities(String accountId) {
+  public List<BudgetSummary> listAllEntities(String accountId, Set<String> allowedFolderIds) {
     List<BudgetSummary> summaryList = new ArrayList<>();
-    List<BudgetGroup> budgetGroups = list(accountId);
+    List<BudgetGroup> budgetGroups = list(accountId, allowedFolderIds);
     budgetGroups.sort(Comparator.comparing(BudgetGroup::getLastUpdatedAt).reversed());
     List<Budget> budgets = budgetDao.list(accountId);
     budgets.sort(Comparator.comparing(Budget::getLastUpdatedAt).reversed());
@@ -246,10 +315,11 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
   }
 
   @Override
-  public List<BudgetSummary> listBudgetsAndBudgetGroupsSummary(String accountId, String id) {
+  public List<BudgetSummary> listBudgetsAndBudgetGroupsSummary(
+      String accountId, String id, Set<String> allowedFolderIds) {
     List<BudgetSummary> summaryList = new ArrayList<>();
 
-    List<BudgetGroup> budgetGroups = list(accountId);
+    List<BudgetGroup> budgetGroups = list(accountId, allowedFolderIds);
     final Map<String, BudgetGroup> budgetGroupIdMapping =
         budgetGroups.stream().collect(Collectors.toMap(BudgetGroup::getUuid, budgetGroup -> budgetGroup));
     budgetGroups.sort(Comparator.comparing(BudgetGroup::getLastUpdatedAt).reversed());
