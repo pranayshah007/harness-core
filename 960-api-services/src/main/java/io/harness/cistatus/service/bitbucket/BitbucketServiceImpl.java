@@ -111,7 +111,7 @@ public class BitbucketServiceImpl implements BitbucketService {
       } else {
         log.error("Failed to merge PR for Bitbucket Server. URL {} and PR number {}. Response {} ", url, prNumber,
             mergePRResponse.errorBody());
-        responseObj.put(ERROR, getErrorMessage(mergePRResponse));
+        responseObj.put(ERROR, getOnPremErrorMessage(mergePRResponse));
         responseObj.put("code", mergePRResponse.code());
         responseObj.put(MERGED, false);
       }
@@ -123,11 +123,22 @@ public class BitbucketServiceImpl implements BitbucketService {
     return responseObj;
   }
 
-  private Object getErrorMessage(Response<Object> response) {
+  private Object getOnPremErrorMessage(Response<Object> response) {
     JSONObject errObject = null;
     try {
       errObject = new JSONObject(response.errorBody().string());
       return ((JSONObject) ((JSONArray) errObject.get("errors")).get(0)).get("message");
+    } catch (Exception e) {
+      log.error("Failed to get error message from merge response. Error {}", e.getMessage());
+      return "Failed to get error message from merge response";
+    }
+  }
+
+  private Object getSaaSErrorMessage(Response<Object> response) {
+    JSONObject errObject = null;
+    try {
+      errObject = new JSONObject(response.errorBody().string());
+      return ((JSONObject) errObject.get("error")).get("message");
     } catch (Exception e) {
       log.error("Failed to get error message from merge response. Error {}", e.getMessage());
       return "Failed to get error message from merge response";
@@ -157,7 +168,7 @@ public class BitbucketServiceImpl implements BitbucketService {
       } else {
         log.error("Failed to merge PR for Bitbucket Cloud. URL {} and PR number {}. Response {} ",
             bitbucketConfig.getBitbucketUrl(), prNumber, mergePRResponse.errorBody());
-        responseObj.put(ERROR, getErrorMessage(mergePRResponse));
+        responseObj.put(ERROR, getSaaSErrorMessage(mergePRResponse));
         responseObj.put("code", mergePRResponse.code());
         responseObj.put(MERGED, false);
       }
@@ -187,7 +198,7 @@ public class BitbucketServiceImpl implements BitbucketService {
         return true;
       } else {
         log.error("Failed to delete ref for Bitbucket Server. URL {}, ref {}, Error {}",
-            bitbucketConfig.getBitbucketUrl(), ref, getErrorMessage(response));
+            bitbucketConfig.getBitbucketUrl(), ref, getOnPremErrorMessage(response));
       }
     } catch (Exception e) {
       log.error("Failed to delete ref for Bitbucket Server. URL {}, ref {}, Error {}",
