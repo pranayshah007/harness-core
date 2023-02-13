@@ -27,5 +27,5 @@ import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 @RecasterAlias("io.harness.beans.yaml.extended.volumes.V1.MountVolume")
 public class MountVolume {
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> name;
-  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> target;
+  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> path;
 }

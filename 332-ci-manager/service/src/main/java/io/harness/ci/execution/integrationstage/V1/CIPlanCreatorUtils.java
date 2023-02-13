@@ -258,7 +258,7 @@ public class CIPlanCreatorUtils {
             }).collect(Collectors.toList());
 
     List<ParameterField<String>> volumes = new ArrayList<>();
-    mountVolumesList.forEach(l -> l.forEach(v -> volumes.add(v.getTarget())));
+    mountVolumesList.forEach(l -> l.forEach(v -> volumes.add(v.getPath())));
     return ParameterField.createValueField(volumes.stream()
         .filter(l -> !ParameterField.isBlank(l))
         .map(l -> (String) l.fetchFinalValue())
