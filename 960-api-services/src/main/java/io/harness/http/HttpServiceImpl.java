@@ -51,6 +51,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
@@ -159,22 +160,36 @@ public class HttpServiceImpl implements HttpService {
   protected HttpInternalResponse executeHttpStep(CloseableHttpClient httpclient,
       HttpInternalResponse httpInternalResponse, HttpUriRequest httpUriRequest, HttpInternalConfig httpInternalConfig,
       boolean isSupportingErrorFramework) throws IOException {
+    return executeHttpStepTrial(
+        httpclient, httpInternalResponse, httpUriRequest, httpInternalConfig, isSupportingErrorFramework);
+  }
+
+  @VisibleForTesting
+  protected HttpInternalResponse executeHttpStepTrial(CloseableHttpClient httpclient,
+      HttpInternalResponse httpInternalResponse, HttpUriRequest httpUriRequest, HttpInternalConfig httpInternalConfig,
+      boolean isSupportingErrorFramework) throws IOException {
     HttpResponse httpResponse = httpclient.execute(httpUriRequest);
-    if (isSupportingErrorFramework) {
-      if (httpResponse.getStatusLine().getStatusCode() == 401) {
-        throw new AuthenticationRuntimeException(httpUriRequest.getURI().toString());
+    try (CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpUriRequest)) {
+      HttpEntity httpEntity = closeableHttpResponse.getEntity();
+
+      if (isSupportingErrorFramework) {
+        if (closeableHttpResponse.getStatusLine().getStatusCode() == 401) {
+          throw new AuthenticationRuntimeException(httpUriRequest.getURI().toString());
+        }
+
+        if (closeableHttpResponse.getStatusLine().getStatusCode() == 403) {
+          throw new AuthorizationRuntimeException(httpUriRequest.getURI().toString());
+        }
       }
 
-      if (httpResponse.getStatusLine().getStatusCode() == 403) {
-        throw new AuthorizationRuntimeException(httpUriRequest.getURI().toString());
-      }
+      httpInternalResponse.setHttpResponseCode(httpResponse.getStatusLine().getStatusCode());
+      httpInternalResponse.setHttpResponseBody(
+          httpEntity != null ? EntityUtils.toString(httpEntity, StandardCharsets.UTF_8) : "");
+
+      EntityUtils.consume(httpEntity);
     }
 
     httpInternalResponse.setHeader(httpInternalConfig.getHeader());
-    httpInternalResponse.setHttpResponseCode(httpResponse.getStatusLine().getStatusCode());
-    HttpEntity entity = httpResponse.getEntity();
-    httpInternalResponse.setHttpResponseBody(
-        entity != null ? EntityUtils.toString(entity, StandardCharsets.UTF_8) : "");
 
     return httpInternalResponse;
   }
