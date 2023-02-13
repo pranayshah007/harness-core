@@ -533,7 +533,11 @@ public class EnvironmentResourceV2 {
           environmentGroupService.get(accountId, orgIdentifier, projectIdentifier, envGroupIdentifier, false);
       IdentifierRef envGroupIdentifierRef =
           IdentifierRefHelper.getIdentifierRef(envGroupIdentifier, accountId, orgIdentifier, projectIdentifier);
-      environmentGroupEntity.ifPresent(groupEntity -> envIdentifiers.addAll(groupEntity.getEnvIdentifiers()));
+      environmentGroupEntity.ifPresentOrElse(
+          groupEntity -> envIdentifiers.addAll(groupEntity.getEnvIdentifiers()), () -> {
+            throw new InvalidRequestException(
+                String.format("Could not find environment group with identifier: %s", envGroupIdentifier));
+          });
       // fetch environments from the same scope as of env group
       criteria = CoreCriteriaUtils.createCriteriaForGetList(envGroupIdentifierRef.getAccountIdentifier(),
           envGroupIdentifierRef.getOrgIdentifier(), envGroupIdentifierRef.getProjectIdentifier(), false);

@@ -27,6 +27,7 @@ public class GoogleFunctionRollbackResponse implements GoogleFunctionCommandResp
   CommandExecutionStatus commandExecutionStatus;
   String errorMessage;
   GoogleFunction function;
+  boolean isFunctionDeleted;
 
   @Override
   public void setDelegateMetaInfo(DelegateMetaInfo metaInfo) {

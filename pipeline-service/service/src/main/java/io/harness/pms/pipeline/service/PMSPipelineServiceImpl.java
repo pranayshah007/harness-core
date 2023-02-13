@@ -161,6 +161,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       PipelineEntity createdEntity;
       PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
       createdEntity = pipelineCRUDResult.getPipelineEntity();
+      try {
+        pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(
+            createdEntity, GitAwareContextHelper.getBranchInRequest(), governanceMetadata, Action.CRUD);
+      } catch (Exception e) {
+        log.error("Unable to save validation event for Pipeline: " + e.getMessage(), e);
+      }
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(createdEntity).build();
     } catch (IOException ex) {
       log.error(format(INVALID_YAML_IN_NODE, YamlUtils.getErrorNodePartialFQN(ex)), ex);
@@ -393,6 +399,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
     }
     PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
+    try {
+      pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(
+          updatedEntity, GitAwareContextHelper.getBranchInRequest(), governanceMetadata, Action.CRUD);
+    } catch (Exception e) {
+      log.error("Unable to save validation event for Pipeline: " + e.getMessage(), e);
+    }
     return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(updatedEntity).build();
   }
 

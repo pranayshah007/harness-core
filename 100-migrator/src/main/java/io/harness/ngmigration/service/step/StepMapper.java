@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -36,8 +37,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@Slf4j
 public abstract class StepMapper {
   @Inject MigrationTemplateUtils migrationTemplateUtils;
 
@@ -72,7 +75,10 @@ public abstract class StepMapper {
     NGYamlFile template = context.getMigratedEntities().get(
         CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
     if (template == null) {
-      return null;
+      log.warn("Found a step with template ID but not found in migrated context. Workflow ID - {} & Step - {}",
+          context.getWorkflow().getUuid(), graphNode.getName());
+      throw new InvalidRequestException(
+          String.format("The template used for step %s was not migrated", graphNode.getName()));
     }
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(template.getNgEntityDetail()));

@@ -421,16 +421,9 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           }
         });
 
-    GitFileBatchResponse gitFileBatchResponseForManager = processGitFileBatchRequest(
-        scmGetBatchFilesByBranchRequestDTO.getAccountIdentifier(), gitFileRequestMapForManager, true);
-    GitFileBatchResponse gitFileBatchResponseForDelegate = processGitFileBatchRequest(
-        scmGetBatchFilesByBranchRequestDTO.getAccountIdentifier(), gitFileRequestMapForDelegate, false);
-    gitFileBatchResponseForManager.getGetBatchFileRequestIdentifierGitFileResponseMap().putAll(
-        gitFileBatchResponseForDelegate.getGetBatchFileRequestIdentifierGitFileResponseMap());
-
     ScmGetBatchFilesResponseDTO scmGetBatchFilesResponseDTO =
-        prepareScmGetBatchFilesResponse(scmGetBatchFilesByBranchRequestDTO.getAccountIdentifier(),
-            gitFileBatchResponseForManager.getGetBatchFileRequestIdentifierGitFileResponseMap());
+        processGitFileBatchRequest(scmGetBatchFilesByBranchRequestDTO.getAccountIdentifier(),
+            gitFileRequestMapForManager, gitFileRequestMapForDelegate);
     scmGetBatchFilesResponseDTO.getScmGetFileResponseV2DTOMap().putAll(cachedScmGetFileResponseMap);
     return scmGetBatchFilesResponseDTO;
   }
@@ -930,6 +923,27 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     return ScmGetBatchFilesResponseDTO.builder().scmGetFileResponseV2DTOMap(scmGetFileResponseV2DTOMap).build();
   }
 
+  private ScmGetBatchFilesResponseDTO processGitFileBatchRequest(String accountIdentifier,
+      Map<GetBatchFileRequestIdentifier, GitFileRequestV2> requestsViaManager,
+      Map<GetBatchFileRequestIdentifier, GitFileRequestV2> requestsViaDelegate) {
+    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> allFileRequestMap = new HashMap<>();
+    GitFileBatchResponse gitFileBatchResponseForManager =
+        processGitFileBatchRequest(accountIdentifier, requestsViaManager, true);
+    GitFileBatchResponse gitFileBatchResponseForDelegate =
+        processGitFileBatchRequest(accountIdentifier, requestsViaDelegate, false);
+
+    Map<GetBatchFileRequestIdentifier, GitFileResponse> gitFileResponseMap = new HashMap<>();
+    gitFileResponseMap.putAll(gitFileBatchResponseForManager.getGetBatchFileRequestIdentifierGitFileResponseMap());
+    gitFileResponseMap.putAll(gitFileBatchResponseForDelegate.getGetBatchFileRequestIdentifierGitFileResponseMap());
+    GitFileBatchResponse gitFileBatchResponse =
+        GitFileBatchResponse.builder().getBatchFileRequestIdentifierGitFileResponseMap(gitFileResponseMap).build();
+
+    allFileRequestMap.putAll(requestsViaManager);
+    allFileRequestMap.putAll(requestsViaDelegate);
+    return prepareScmGetBatchFilesResponse(accountIdentifier,
+        gitFileBatchResponse.getGetBatchFileRequestIdentifierGitFileResponseMap(), allFileRequestMap);
+  }
+
   @VisibleForTesting
   protected GitFileBatchResponse processGitFileBatchRequest(String accountIdentifier,
       Map<GetBatchFileRequestIdentifier, GitFileRequestV2> gitFileRequestMap, boolean isManagerExecutable) {
@@ -952,17 +966,18 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     return gitFileBatchResponse;
   }
 
-  private ScmGetBatchFilesResponseDTO prepareScmGetBatchFilesResponse(
-      String accountIdentifier, Map<GetBatchFileRequestIdentifier, GitFileResponse> gitFileResponseMap) {
+  private ScmGetBatchFilesResponseDTO prepareScmGetBatchFilesResponse(String accountIdentifier,
+      Map<GetBatchFileRequestIdentifier, GitFileResponse> gitFileResponseMap,
+      Map<GetBatchFileRequestIdentifier, GitFileRequestV2> gitFileRequestMap) {
     Map<ScmGetBatchFileRequestIdentifier, ScmGetFileResponseV2DTO> finalResponseMap = new HashMap<>();
 
     gitFileResponseMap.forEach((requestIdentifier, gitFileResponse) -> {
+      GitFileRequestV2 gitFileRequest = gitFileRequestMap.get(requestIdentifier);
       ScmGetBatchFileRequestIdentifier identifier =
           ScmGetBatchFileRequestIdentifier.fromGetBatchFileRequestIdentifier(requestIdentifier);
       try {
-        handleIfFailureForGetFileOperation(accountIdentifier, gitFileResponse,
-            gitFileResponse.getScmGitMetadata().getScmConnector(), "",
-            gitFileResponse.getScmGitMetadata().getRepoName(), gitFileResponse.getFilepath());
+        handleIfFailureForGetFileOperation(accountIdentifier, gitFileResponse, gitFileRequest.getScmConnector(),
+            gitFileRequest.getConnectorRef(), gitFileRequest.getRepo(), gitFileRequest.getFilepath());
         finalResponseMap.put(identifier, getScmGetFileResponseDTO(gitFileResponse).toScmGetFileResponseV2DTO());
       } catch (Exception exception) {
         finalResponseMap.put(identifier, prepareScmGetFileResponseV2FromException(exception));

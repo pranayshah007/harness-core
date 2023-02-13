@@ -37,7 +37,6 @@ import io.harness.cvng.analysis.entities.TimeSeriesLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesLoadTestLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesRiskSummary;
 import io.harness.cvng.analysis.entities.TimeSeriesShortTermHistory;
-import io.harness.cvng.analysis.entities.VerificationTaskBase;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.AwsPrometheusCVConfig;
@@ -237,7 +236,6 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(CompositeSLORecord.class);
     set.add(AutoVerificationJob.class);
     set.add(TimeSeriesCanaryLearningEngineTask_v2.class);
-    set.add(VerificationTaskBase.class);
     set.add(NextGenMetricCVConfig.class);
     set.add(NextGenLogCVConfig.class);
     set.add(Downtime.class);

@@ -122,9 +122,12 @@ public class DefaultUserGroupServiceTest extends CategoryTest {
   @Test
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
-  public void testCreateDefaultUserGroup_OrgScope() {
+  public void testCreateDefaultUserGroup_OrgScope_withFFOn() {
     Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null);
     createAndMockUserGroupDTO(scope, getUserGroupIdentifier(scope));
+    when(ngFeatureFlagHelperService.isEnabled(
+             scope.getAccountIdentifier(), FeatureName.PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS))
+        .thenReturn(true);
     final UserGroup userGroup = defaultUserGroupService.create(scope, Collections.emptyList());
     assertThat(userGroup.getIdentifier()).isEqualTo(DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER);
     verify(defaultUserGroupService, times(1))
@@ -138,9 +141,50 @@ public class DefaultUserGroupServiceTest extends CategoryTest {
   @Test
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
-  public void testCreateDefaultUserGroup_ProjectScope() {
+  public void testCreateDefaultUserGroup_OrgScope_withFFOF() {
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null);
+    createAndMockUserGroupDTO(scope, getUserGroupIdentifier(scope));
+    when(ngFeatureFlagHelperService.isEnabled(
+             scope.getAccountIdentifier(), FeatureName.PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS))
+        .thenReturn(false);
+    final UserGroup userGroup = defaultUserGroupService.create(scope, Collections.emptyList());
+    assertThat(userGroup.getIdentifier()).isEqualTo(DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER);
+    verify(defaultUserGroupService, times(0))
+        .createRoleAssignment(DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER, scope, true, true,
+            ORGANIZATION_BASIC_ROLE, NGConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+    verify(defaultUserGroupService, times(1))
+        .createRoleAssignment(DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER, scope, true, false,
+            ORGANIZATION_VIEWER_ROLE, NGConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testCreateDefaultUserGroup_ProjectScope_withFFOF() {
     Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     createAndMockUserGroupDTO(scope, getUserGroupIdentifier(scope));
+    when(ngFeatureFlagHelperService.isEnabled(
+             scope.getAccountIdentifier(), FeatureName.PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS))
+        .thenReturn(false);
+    final UserGroup userGroup = defaultUserGroupService.create(scope, Collections.emptyList());
+    assertThat(userGroup.getIdentifier()).isEqualTo(DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER);
+    verify(defaultUserGroupService, times(0))
+        .createRoleAssignment(DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER, scope, true, true, PROJECT_BASIC_ROLE,
+            NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+    verify(defaultUserGroupService, times(1))
+        .createRoleAssignment(DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER, scope, true, false, PROJECT_VIEWER_ROLE,
+            NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testCreateDefaultUserGroup_ProjectScope_withFFON() {
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    createAndMockUserGroupDTO(scope, getUserGroupIdentifier(scope));
+    when(ngFeatureFlagHelperService.isEnabled(
+             scope.getAccountIdentifier(), FeatureName.PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS))
+        .thenReturn(true);
     final UserGroup userGroup = defaultUserGroupService.create(scope, Collections.emptyList());
     assertThat(userGroup.getIdentifier()).isEqualTo(DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER);
     verify(defaultUserGroupService, times(1))
@@ -154,8 +198,11 @@ public class DefaultUserGroupServiceTest extends CategoryTest {
   @Test
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
-  public void createOrUpdateUserGroupAtScope_checkRoleAssignmentAtProjectScope() {
+  public void createOrUpdateUserGroupAtScope_checkRoleAssignmentAtProjectScope_withFFON() {
     Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    when(ngFeatureFlagHelperService.isEnabled(
+             scope.getAccountIdentifier(), FeatureName.PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS))
+        .thenReturn(true);
 
     Optional<UserGroup> userGroupOptional =
         Optional.of(UserGroup.builder().users(Arrays.asList("user1", "user2", "user3")).build());
@@ -176,8 +223,36 @@ public class DefaultUserGroupServiceTest extends CategoryTest {
   @Test
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
-  public void createOrUpdateUserGroupAtScope_checkRoleAssignmentAtOrgScope() {
+  public void createOrUpdateUserGroupAtScope_checkRoleAssignmentAtProjectScope_withFFOF() {
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    when(ngFeatureFlagHelperService.isEnabled(
+             scope.getAccountIdentifier(), FeatureName.PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS))
+        .thenReturn(false);
+
+    Optional<UserGroup> userGroupOptional =
+        Optional.of(UserGroup.builder().users(Arrays.asList("user1", "user2", "user3")).build());
+    Optional<List<RoleAssignmentResponseDTO>> roleAssignmentResponseDTOS = Optional.of(emptyList());
+    when(userGroupService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, getUserGroupIdentifier(scope)))
+        .thenReturn(userGroupOptional);
+    doReturn(roleAssignmentResponseDTOS).when(defaultUserGroupService).getRoleAssignmentsAtScope(scope);
+
+    defaultUserGroupService.createOrUpdateUserGroupAtScope(scope);
+    verify(defaultUserGroupService, times(0))
+        .createRoleAssignment(DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER, scope, true, true, PROJECT_BASIC_ROLE,
+            NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+    verify(defaultUserGroupService, times(0))
+        .createRoleAssignment(DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER, scope, false, false, PROJECT_VIEWER_ROLE,
+            NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void createOrUpdateUserGroupAtScope_checkRoleAssignmentAtOrgScope_withFFON() {
     Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null);
+    when(ngFeatureFlagHelperService.isEnabled(
+             scope.getAccountIdentifier(), FeatureName.PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS))
+        .thenReturn(true);
 
     Optional<UserGroup> userGroupOptional =
         Optional.of(UserGroup.builder().users(Arrays.asList("user1", "user2", "user3")).build());
@@ -188,6 +263,31 @@ public class DefaultUserGroupServiceTest extends CategoryTest {
 
     defaultUserGroupService.createOrUpdateUserGroupAtScope(scope);
     verify(defaultUserGroupService, times(1))
+        .createRoleAssignment(DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER, scope, true, true,
+            ORGANIZATION_BASIC_ROLE, NGConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+    verify(defaultUserGroupService, times(0))
+        .createRoleAssignment(DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER, scope, false, false,
+            ORGANIZATION_VIEWER_ROLE, NGConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void createOrUpdateUserGroupAtScope_checkRoleAssignmentAtOrgScope_withFFOFF() {
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null);
+    when(ngFeatureFlagHelperService.isEnabled(
+             scope.getAccountIdentifier(), FeatureName.PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS))
+        .thenReturn(false);
+
+    Optional<UserGroup> userGroupOptional =
+        Optional.of(UserGroup.builder().users(Arrays.asList("user1", "user2", "user3")).build());
+    Optional<List<RoleAssignmentResponseDTO>> roleAssignmentResponseDTOS = Optional.of(emptyList());
+    when(userGroupService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, getUserGroupIdentifier(scope)))
+        .thenReturn(userGroupOptional);
+    doReturn(roleAssignmentResponseDTOS).when(defaultUserGroupService).getRoleAssignmentsAtScope(scope);
+
+    defaultUserGroupService.createOrUpdateUserGroupAtScope(scope);
+    verify(defaultUserGroupService, times(0))
         .createRoleAssignment(DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER, scope, true, true,
             ORGANIZATION_BASIC_ROLE, NGConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER);
     verify(defaultUserGroupService, times(0))

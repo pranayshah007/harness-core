@@ -14,7 +14,6 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.mockito.Mockito.mock;
 
-import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.cache.CacheConfig;
@@ -53,7 +52,6 @@ import io.harness.service.intfc.DelegateSyncService;
 import io.harness.springdata.HTransactionTemplate;
 import io.harness.template.services.NoOpTemplateGitXServiceImpl;
 import io.harness.template.services.TemplateGitXService;
-import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -198,8 +196,6 @@ public class TemplateServiceTestRule implements InjectorRuleMixin, MethodRule, M
         bind(TemplateGitXService.class).to(NoOpTemplateGitXServiceImpl.class);
         bind(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class)
             .toInstance(Mockito.mock(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class));
-        bind(AccountClient.class).toInstance(mock(AccountClient.class));
-        bind(NGTemplateFeatureFlagHelperService.class).toInstance(mock(NGTemplateFeatureFlagHelperService.class));
       }
     });
 

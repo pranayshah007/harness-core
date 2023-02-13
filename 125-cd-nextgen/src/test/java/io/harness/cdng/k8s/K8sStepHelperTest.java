@@ -32,6 +32,7 @@ import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -3115,7 +3116,8 @@ public class K8sStepHelperTest extends CategoryTest {
 
     assertThat(response.getPassThroughData()).isInstanceOf(StepExceptionPassThroughData.class);
     StepExceptionPassThroughData stepExceptionData = (StepExceptionPassThroughData) response.getPassThroughData();
-    assertThat(stepExceptionData.getErrorMessage()).isEqualTo(ExceptionUtils.getMessage(thrownException));
+    assertThat(stepExceptionData.getErrorMessage())
+        .isEqualTo(format("Error while fetching values yaml: %s", ExceptionUtils.getMessage(thrownException)));
     List<UnitProgress> unitProgresses = stepExceptionData.getUnitProgressData().getUnitProgresses();
     assertThat(unitProgresses).hasSize(2);
     assertThat(unitProgresses.get(0).getEndTime()).isNotZero();

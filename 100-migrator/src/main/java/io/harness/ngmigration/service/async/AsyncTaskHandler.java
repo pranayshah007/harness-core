@@ -16,7 +16,10 @@ import io.harness.beans.MigrationAsyncTracker.MigrationAsyncTrackerKeys;
 import io.harness.beans.MigrationAsyncTrackerStatus;
 import io.harness.beans.MigrationTrackReqPayload;
 import io.harness.beans.MigrationTrackRespPayload;
+import io.harness.eraro.ErrorCode;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.core.Status;
+import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.persistence.HPersistence;
 
 import com.google.common.cache.Cache;
@@ -92,21 +95,25 @@ public abstract class AsyncTaskHandler {
     try (AutoLogContext ignore1 = new AutoLogContext(
              ImmutableMap.of(ACCOUNT_IDENTIFIER, accountId, REQUEST_ID, reqId, TASK_TYPE, getTaskType()),
              OVERRIDE_ERROR)) {
-      MigrationTrackRespPayload respPayload = processTask(apiKey, accountId, reqId, reqPayload);
-      onComplete(accountId, reqId, respPayload);
-    } catch (Exception e) {
-      onError(accountId, reqId, e);
+      try {
+        MigrationTrackRespPayload respPayload = processTask(apiKey, accountId, reqId, reqPayload);
+        onComplete(accountId, reqId, respPayload);
+      } catch (Exception e) {
+        onError(accountId, reqId, e);
+      }
     }
   }
 
   void onError(String accountId, String reqId, Exception e) {
+    log.error("There was an error processing the task", e);
     HPersistence hPersistence = getHPersistence();
     Query<MigrationAsyncTracker> query = hPersistence.createQuery(MigrationAsyncTracker.class)
                                              .filter(MigrationAsyncTracker.UUID_KEY, reqId)
                                              .filter(MigrationAsyncTracker.ACCOUNT_ID_KEY, accountId);
-    log.error("There was an error processing the task", e);
     UpdateOperations<MigrationAsyncTracker> updateOperations =
         hPersistence.createUpdateOperations(MigrationAsyncTracker.class)
+            .set(MigrationAsyncTrackerKeys.responsePayload,
+                ErrorDTO.newError(Status.ERROR, ErrorCode.DEFAULT_ERROR_CODE, e.getMessage()))
             .set(MigrationAsyncTrackerKeys.status, MigrationAsyncTrackerStatus.ERROR);
     hPersistence.update(query, updateOperations);
     cache.invalidate(accountId);

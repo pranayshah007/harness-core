@@ -116,7 +116,7 @@ public abstract class NgMigrationService {
             .build();
     if (mappingExist) {
       try {
-        YamlDTO yamlDTO = getNGEntity(ngEntityDetail, inputDTO.getAccountIdentifier());
+        YamlDTO yamlDTO = getNGEntity(cgEntityNode, ngEntityDetail, inputDTO.getAccountIdentifier());
         if (yamlDTO == null) {
           return null;
         }
@@ -161,7 +161,8 @@ public abstract class NgMigrationService {
         .build();
   }
 
-  protected abstract YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier);
+  protected abstract YamlDTO getNGEntity(
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier);
 
   protected abstract boolean isNGEntityExists();
 

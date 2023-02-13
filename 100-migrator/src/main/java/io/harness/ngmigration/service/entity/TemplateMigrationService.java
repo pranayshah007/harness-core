@@ -167,8 +167,8 @@ public class TemplateMigrationService extends NgMigrationService {
               .yaml(NGTemplateConfig.builder()
                         .templateInfoConfig(NGTemplateInfoConfig.builder()
                                                 .type(ngTemplateService.getTemplateEntityType())
-                                                .identifier(MigratorUtility.generateIdentifier(template.getName()))
-                                                .name(template.getName())
+                                                .identifier(identifier)
+                                                .name(name)
                                                 .description(ParameterField.createValueField(description))
                                                 .projectIdentifier(projectIdentifier)
                                                 .orgIdentifier(orgIdentifier)
@@ -201,7 +201,7 @@ public class TemplateMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     try {
       // Note: We are passing versionLabel as `null` because we do not know the version label.
       // It will return a stable version by default.
