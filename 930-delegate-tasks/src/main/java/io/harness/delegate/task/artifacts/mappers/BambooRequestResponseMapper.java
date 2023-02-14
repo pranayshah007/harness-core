@@ -8,8 +8,8 @@
 package io.harness.delegate.task.artifacts.mappers;
 
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.connector.bamboo.BambooConstant;
 import io.harness.delegate.beans.connector.bamboo.BambooUserNamePasswordDTO;
-import io.harness.delegate.beans.connector.jenkins.JenkinsConstant;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateResponse;
@@ -28,13 +28,13 @@ public class BambooRequestResponseMapper {
     if (request.getBambooConnectorDTO().getAuth() != null
         && request.getBambooConnectorDTO().getAuth().getCredentials() != null
         && request.getBambooConnectorDTO().getAuth().getAuthType().getDisplayName()
-            == JenkinsConstant.USERNAME_PASSWORD) {
+            == BambooConstant.USERNAME_PASSWORD) {
       BambooUserNamePasswordDTO credentials =
           (BambooUserNamePasswordDTO) request.getBambooConnectorDTO().getAuth().getCredentials();
       if (credentials.getPasswordRef() != null) {
         password = EmptyPredicate.isNotEmpty(credentials.getPasswordRef().getDecryptedValue())
-            ? credentials.getPasswordRef().getDecryptedValue().toString()
-            : "";
+            ? new String(credentials.getPasswordRef().getDecryptedValue())
+            : null;
       }
       username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
           credentials.getUsername(), credentials.getUsernameRef());
