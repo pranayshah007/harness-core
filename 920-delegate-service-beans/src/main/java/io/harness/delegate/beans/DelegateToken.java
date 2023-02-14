@@ -14,6 +14,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
+import io.harness.encryption.Encrypted;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -25,9 +26,9 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 import io.harness.security.dto.Principal;
 
-import software.wings.jersey.JsonViews;
+import software.wings.annotation.EncryptableSetting;
+import software.wings.settings.SettingVariableTypes;
 
-import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
@@ -47,7 +48,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Entity(value = "delegateTokens", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "DelegateTokenKeys")
 @OwnedBy(HarnessTeam.DEL)
-public class DelegateToken implements PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware, NameAndValueAccess {
+public class DelegateToken
+    implements PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware, NameAndValueAccess, EncryptableSetting {
   public static final Duration TTL = ofDays(30);
 
   public static List<MongoIndex> mongoIndexes() {
@@ -83,11 +85,17 @@ public class DelegateToken implements PersistentEntity, UuidAware, CreatedAtAwar
   private boolean isNg;
   private DelegateEntityOwner owner;
 
-  @NotEmpty String encryptedTokenId;
-  @JsonView(JsonViews.Internal.class) @NotEmpty private char[] encryptedTokenValue;
+  @Encrypted(fieldName = "tokenValue") private char[] tokenValue;
+
+  private String encryptedTokenValue;
 
   // this is for ng, ng doesn't have embeddedUser concept.
   private Principal createdByNgUser;
 
   @FdTtlIndex private Date validUntil;
+
+  @Override
+  public SettingVariableTypes getSettingType() {
+    return SettingVariableTypes.DELEGATE_TOKEN;
+  }
 }

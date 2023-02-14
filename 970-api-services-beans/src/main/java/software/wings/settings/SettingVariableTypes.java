@@ -295,6 +295,8 @@ public enum SettingVariableTypes {
 
   LDAP("LDAP"),
 
+  DELEGATE_TOKEN("DELEGATE_TOKEN"),
+
   GCP_SECRETS_MANAGER,
 
   TRIGGER,

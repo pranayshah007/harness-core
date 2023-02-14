@@ -7,7 +7,6 @@
 
 package io.harness.delegate.service.intfc;
 
-import io.harness.beans.EncryptedData;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateTokenDetails;
@@ -58,9 +57,7 @@ public interface DelegateNgTokenService extends OwnedByAccount {
 
   Map<String, Boolean> isDelegateTokenActive(String accountId, List<String> tokensNameList);
 
-  EncryptedData encrypt(String accountId, String token);
-
   String decrypt(DelegateToken delegateToken);
 
-  String upsertEncryptedTokenRecord(DelegateToken delegateToken);
+  void upsertEncryptedTokenRecord(DelegateToken delegateToken);
 }
