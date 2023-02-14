@@ -2604,7 +2604,7 @@ public class DelegateServiceImpl implements DelegateService {
     // this code is to mark all the task in running as failed if same delegate registration
     if(existingDelegate != null){
       try {
-        delegateId=existingDelegate.getDelegateGroupId();
+        String delegateId=existingDelegate.getDelegateGroupId();
         onDelegateDisconnected(delegateParams.getAccountId(), delegateId);
       } catch (Exception e){
         e.printStackTrace();
