@@ -57,12 +57,13 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import lombok.extern.slf4j.Slf4j;
+import software.wings.sm.states.AwsLambdaRollback;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
-          .setType(ExecutionNodeType.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK.getYamlType())
+          .setType(ExecutionNodeType.AWS_LAMBDA_ROLLBACK.getYamlType())
           .setStepCategory(StepCategory.STEP)
           .build();
 
@@ -102,8 +103,8 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
   @Override
   public TaskRequest obtainTaskAfterRbac(
           Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    GoogleFunctionsRollbackStepParameters googleFunctionsRollbackStepParameters =
-            (GoogleFunctionsRollbackStepParameters) stepParameters.getSpec();
+    AwsLambdaRollbackStepParameters awsLambdaRollbackStepParameters =
+            (AwsLambdaRollbackStepParameters) stepParameters.getSpec();
     if (EmptyPredicate.isEmpty(googleFunctionsRollbackStepParameters.getGoogleFunctionDeployWithoutTrafficStepFnq())
             && EmptyPredicate.isEmpty(googleFunctionsRollbackStepParameters.getGoogleFunctionDeployStepFnq())) {
       return skipTaskRequest(GOOGLE_CLOUD_FUNCTIONS_DEPLOYMENT_STEP_MISSING);
