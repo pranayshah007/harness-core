@@ -14,8 +14,6 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,7 +22,6 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.api.client.util.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -859,22 +856,5 @@ public class YamlUtilsTest extends CategoryTest {
   public void testCoercionConfig() throws IOException {
     assertThat(YamlUtils.read("\"\"", LinkedHashMap.class)).isNull();
     assertThat(YamlUtils.read("\"\"", ArrayList.class)).isEmpty();
-  }
-
-  @Test
-  @Owner(developers = PRASHANTSHARMA)
-  @Category(UnitTests.class)
-  public void testDuplicateField() {
-    String invalidYaml = "pipeline:\n"
-        + "  name: pipeline\n"
-        + "  project: project\n"
-        + "  project: identifier\n";
-    assertThatThrownBy(() -> YamlUtils.readTree(invalidYaml)).isInstanceOf(MismatchedInputException.class);
-
-    // valid yaml
-    String valid = "pipeline:\n"
-        + "  name: pipeline\n"
-        + "  project: project\n";
-    assertThatCode(() -> YamlUtils.readTree(valid)).doesNotThrowAnyException();
   }
 }
