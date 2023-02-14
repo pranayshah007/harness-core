@@ -34,7 +34,7 @@ public class BambooRequestResponseMapper {
       if (credentials.getPasswordRef() != null) {
         password = EmptyPredicate.isNotEmpty(credentials.getPasswordRef().getDecryptedValue())
             ? new String(credentials.getPasswordRef().getDecryptedValue())
-            : null;
+            : "";
       }
       username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
           credentials.getUsername(), credentials.getUsernameRef());
