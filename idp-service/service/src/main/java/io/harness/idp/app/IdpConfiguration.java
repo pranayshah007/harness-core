@@ -12,15 +12,20 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.mongo.MongoConfig;
+import io.harness.reflection.HarnessReflections;
 import io.harness.secret.ConfigSecret;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
+import javax.ws.rs.Path;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Getter
 @OwnedBy(HarnessTeam.IDP)
@@ -31,6 +36,8 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("logStreamingServiceConfig")
   @ConfigSecret
   private LogStreamingServiceConfiguration logStreamingServiceConfig;
+  public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
+  public static final String IDP_SPEC_PACKAGE = "io.harness.spec.server.idp.v1";
 
   public List<String> getDbAliases() {
     List<String> dbAliases = new ArrayList<>();
@@ -38,5 +45,13 @@ public class IdpConfiguration extends Configuration {
       dbAliases.add(mongoConfig.getAliasDBName());
     }
     return dbAliases;
+  }
+
+  public static Collection<Class<?>> getResourceClasses() {
+    return HarnessReflections.get()
+        .getTypesAnnotatedWith(Path.class)
+        .stream()
+        .filter(klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), IDP_SPEC_PACKAGE))
+        .collect(Collectors.toSet());
   }
 }

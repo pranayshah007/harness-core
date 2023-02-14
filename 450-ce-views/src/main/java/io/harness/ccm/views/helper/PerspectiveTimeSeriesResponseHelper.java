@@ -219,7 +219,7 @@ public class PerspectiveTimeSeriesResponseHelper {
         case PROPORTIONAL:
           sharedCost += sharedCostForGivenTimestamp * (entityCost / sharedCostParameters.getTotalCost());
           break;
-        case FIXED:
+        case EQUAL:
         default:
           sharedCost += sharedCostForGivenTimestamp * (1.0 / sharedCostParameters.getNumberOfEntities());
           break;
