@@ -346,14 +346,13 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     if (!featureFlagService.isEnabled(FeatureName.DELEGATE_TOKEN_ENCRYPTION, delegateToken.getAccountId())) {
       return getTokenValue(delegateToken);
     }
-
+    String encryptionId = delegateToken.getEncryptedTokenId();
     if (delegateToken.getEncryptedTokenId() == null) {
       //@TODO: Remove this check after token migration to encrypted value
       // should not come, only in case in migration missed
-      upsertEncryptedTokenRecord(delegateToken);
+      encryptionId = upsertEncryptedTokenRecord(delegateToken);
     }
-    EncryptedData encryptedData =
-        secretManagerImpl.getSecretById(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId());
+    EncryptedData encryptedData = secretManagerImpl.getSecretById(delegateToken.getAccountId(), encryptionId);
     String decryptedToken = String.valueOf(secretService.fetchSecretValue(encryptedData));
 
     return delegateToken.isNg() ? decodeBase64ToString(decryptedToken) : decryptedToken;
@@ -361,12 +360,13 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
   @Override
   // For migration purpose, to insert encrypted delegate token record
-  public void upsertEncryptedTokenRecord(DelegateToken delegateToken) {
+  public String upsertEncryptedTokenRecord(DelegateToken delegateToken) {
     EncryptedData encryptedData = encrypt(delegateToken.getAccountId(), delegateToken.getValue());
     UpdateOperations<DelegateToken> updateOperations = persistence.createUpdateOperations(DelegateToken.class);
     setUnset(updateOperations, DelegateTokenKeys.encryptedTokenId, encryptedData.getUuid());
     setUnset(updateOperations, DelegateTokenKeys.encryptedTokenValue, encryptedData.getEncryptedValue());
     persistence.update(delegateToken, updateOperations);
+    return encryptedData.getUuid();
   }
 
   private String getTokenValue(DelegateToken delegateToken) {

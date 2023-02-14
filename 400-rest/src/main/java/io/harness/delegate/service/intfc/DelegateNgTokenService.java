@@ -62,5 +62,5 @@ public interface DelegateNgTokenService extends OwnedByAccount {
 
   String decrypt(DelegateToken delegateToken);
 
-  void upsertEncryptedTokenRecord(DelegateToken delegateToken);
+  String upsertEncryptedTokenRecord(DelegateToken delegateToken);
 }
