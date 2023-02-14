@@ -133,6 +133,7 @@ import io.harness.cdng.creator.plan.steps.aws.asg.AsgCanaryDeployStepPlanCreator
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgRollingDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgRollingRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.lambda.AwsLambdaDeployStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.aws.lambda.AwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotDeploymentStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotSwapSlotPlanCreator;
@@ -211,6 +212,7 @@ import io.harness.cdng.creator.variables.TasRollingRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRoutesStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.AwsLambdaDeployStepVariableCreator;
+import io.harness.cdng.creator.variables.aws.AwsLambdaRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsDeployWithoutTrafficStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsRollbackStepVariableCreator;
@@ -290,6 +292,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String ELASTIGROUP = "Elastigroup";
   private static final String TAS = "TAS";
   private static final String ASG = "AutoScalingGroup";
+  private static final String AWS_LAMBDA = "AwsLambda";
 
   private static final List<String> CUSTOM_DEPLOYMENT_CATEGORY = Arrays.asList(COMMANDS, CUSTOM_DEPLOYMENT);
   private static final List<String> CLOUDFORMATION_CATEGORY =
@@ -462,6 +465,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     // AWS Lambda
     planCreators.add(new AwsLambdaDeployStepPlanCreator());
+    planCreators.add(new AwsLambdaRollbackStepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -598,6 +602,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     // AWS Lambda
     variableCreators.add(new AwsLambdaDeployStepVariableCreator());
+    variableCreators.add(new AwsLambdaRollbackStepVariableCreator());
 
     return variableCreators;
   }
@@ -1266,6 +1271,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                      .setFeatureFlag(FeatureName.TERRAFORM_CLOUD.name())
                                      .build();
 
+    StepInfo awsLambdaRollback =
+        StepInfo.newBuilder()
+            .setName("Aws Lambda Rollback")
+            .setType(StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(AWS_LAMBDA).setFolderPath(AWS_LAMBDA).build())
+            .setFeatureFlag(FeatureName.CDS_AWS_NATIVE_LAMBDA.name())
+            .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsCreatePR);
@@ -1345,6 +1358,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(asgBlueGreenSwapService);
     stepInfos.add(terraformCloudRun);
     stepInfos.add(awsLambdaDeploy);
+    stepInfos.add(awsLambdaRollback);
     return stepInfos;
   }
 }

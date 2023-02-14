@@ -10,46 +10,70 @@ package io.harness.cdng.aws.lambda.rollback;
 import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.aws.lambda.AwsLambdaHelper;
 import io.harness.cdng.aws.lambda.AwsLambdaStepExecutor;
 import io.harness.cdng.aws.lambda.AwsLambdaStepPassThroughData;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome;
+import io.harness.cdng.executables.CdTaskExecutable;
+import io.harness.cdng.googlefunctions.GoogleFunctionsHelper;
+import io.harness.cdng.googlefunctions.GoogleFunctionsStepPassThroughData;
+import io.harness.cdng.googlefunctions.beans.GoogleFunctionPrepareRollbackOutcome;
+import io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStepParameters;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
+import io.harness.delegate.task.aws.lambda.response.AwsLambdaCommandResponse;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
+import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionRollbackRequest;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionCommandResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionRollbackResponse;
+import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
+import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class AwsLambdaRollbackStep extends TaskChainExecutableWithRollbackAndRbac implements AwsLambdaStepExecutor {
+public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
-                                               .setType(ExecutionNodeType.AWS_LAMBDA_ROLLBACK.getYamlType())
-                                               .setStepCategory(StepCategory.STEP)
-                                               .build();
-  @Inject private AwsLambdaHelper awsLambdaHelper;
+          .setType(ExecutionNodeType.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK.getYamlType())
+          .setStepCategory(StepCategory.STEP)
+          .build();
 
-  private final String AWS_LAMBDA_DEPLOY_COMMAND_NAME = "DeployAwsLambda";
-  @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
-  }
+  public static final String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK_COMMAND_NAME = "CloudFunctionRollback";
+  public static final String GOOGLE_CLOUD_FUNCTIONS_DEPLOYMENT_STEP_MISSING =
+          "Google Function Deployment Step was not executed. Skipping Rollback...";
+
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private OutcomeService outcomeService;
+  @Inject private GoogleFunctionsHelper googleFunctionsHelper;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -57,64 +81,76 @@ public class AwsLambdaRollbackStep extends TaskChainExecutableWithRollbackAndRba
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
-      throws Exception {
-    log.info("Calling executeNextLink");
-    return awsLambdaHelper.executeNextLink(ambiance, stepParameters, passThroughData, responseSupplier);
-  }
-
-  @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
-    log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
-    AwsLambdaStepPassThroughData awsLambdaStepPassThroughData = (AwsLambdaStepPassThroughData) passThroughData;
-    AwsLambdaDeployResponse awsLambdaDeployResponse;
-
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+                                                          ThrowingSupplier<AwsLambdaCommandResponse> responseDataSupplier) throws Exception {
+    StepResponse stepResponse = null;
     try {
-      awsLambdaDeployResponse = (AwsLambdaDeployResponse) responseDataSupplier.get();
+      AwsLambdaCommandResponse awsLambdaCommandResponse =
+              (AwsLambdaCommandResponse) responseDataSupplier.get();
+
+      StepResponseBuilder stepResponseBuilder = StepResponse.builder().unitProgressList(
+              awsLambdaCommandResponse.getUnitProgressData().getUnitProgresses());
+//      stepResponse =
+//              googleFunctionsHelper.generateStepResponse(awsLambdaCommandResponse, stepResponseBuilder, ambiance);
     } catch (Exception e) {
-      log.error("Error while processing AWS Lambda Function response: {}", e.getCause(), e);
-      return awsLambdaHelper.handleStepFailureException(ambiance, awsLambdaStepPassThroughData, e);
+      log.error("Error while processing google function rollback response: {}", ExceptionUtils.getMessage(e), e);
+      throw e;
     }
-    StepResponse.StepResponseBuilder stepResponseBuilder =
-        StepResponse.builder().unitProgressList(awsLambdaDeployResponse.getUnitProgressData().getUnitProgresses());
-    if (awsLambdaDeployResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
-      return AwsLambdaHelper.getFailureResponseBuilder(awsLambdaDeployResponse, stepResponseBuilder).build();
-    }
-
-    AwsLambdaStepOutcome awsLambdaStepOutcome =
-        awsLambdaHelper.getAwsLambdaStepOutcome(awsLambdaDeployResponse.getAwsLambda());
-
-    return StepResponse.builder()
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(OutcomeExpressionConstants.OUTPUT)
-                         .outcome(awsLambdaStepOutcome)
-                         .build())
-        .build();
+    return stepResponse;
   }
 
   @Override
-  public TaskChainResponse startChainLinkAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return awsLambdaHelper.startChainLink(ambiance, stepParameters);
+  public TaskRequest obtainTaskAfterRbac(
+          Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+    GoogleFunctionsRollbackStepParameters googleFunctionsRollbackStepParameters =
+            (GoogleFunctionsRollbackStepParameters) stepParameters.getSpec();
+    if (EmptyPredicate.isEmpty(googleFunctionsRollbackStepParameters.getGoogleFunctionDeployWithoutTrafficStepFnq())
+            && EmptyPredicate.isEmpty(googleFunctionsRollbackStepParameters.getGoogleFunctionDeployStepFnq())) {
+      return skipTaskRequest(GOOGLE_CLOUD_FUNCTIONS_DEPLOYMENT_STEP_MISSING);
+    }
+
+    String stepFnq = googleFunctionsRollbackStepParameters.getGoogleFunctionDeployWithoutTrafficStepFnq();
+    if (EmptyPredicate.isEmpty(stepFnq)) {
+      stepFnq = googleFunctionsRollbackStepParameters.getGoogleFunctionDeployStepFnq();
+    }
+    OptionalSweepingOutput googleFunctionPrepareRollbackDataOptional =
+            executionSweepingOutputService.resolveOptional(ambiance,
+                    RefObjectUtils.getSweepingOutputRefObject(
+                            stepFnq + "." + OutcomeExpressionConstants.GOOGLE_FUNCTION_PREPARE_ROLLBACK_OUTCOME));
+
+    GoogleFunctionPrepareRollbackOutcome googleFunctionPrepareRollbackOutcome =
+            (GoogleFunctionPrepareRollbackOutcome) googleFunctionPrepareRollbackDataOptional.getOutput();
+
+    InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+    GoogleFunctionRollbackRequest googleFunctionRollbackRequest =
+            GoogleFunctionRollbackRequest.builder()
+                    .googleFunctionCommandType(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_ROLLBACK)
+                    .commandName(GOOGLE_CLOUD_FUNCTIONS_ROLLBACK_COMMAND_NAME)
+                    .googleFunctionInfraConfig(googleFunctionsHelper.getInfraConfig(infrastructureOutcome, ambiance))
+                    .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+                    .googleCloudRunServiceAsString(googleFunctionPrepareRollbackOutcome.getCloudRunServiceAsString())
+                    .googleFunctionAsString(googleFunctionPrepareRollbackOutcome.getCloudFunctionAsString())
+                    .isFirstDeployment(googleFunctionPrepareRollbackOutcome.isFirstDeployment())
+                    .commandUnitsProgress(CommandUnitsProgress.builder().build())
+                    .googleFunctionDeployManifestContent(googleFunctionPrepareRollbackOutcome.getManifestContent())
+                    .build();
+
+    return googleFunctionsHelper
+            .queueTask(stepParameters, googleFunctionRollbackRequest, ambiance,
+                    GoogleFunctionsStepPassThroughData.builder().infrastructureOutcome(infrastructureOutcome).build(), true)
+            .getTaskRequest();
   }
 
   @Override
-  public TaskChainResponse executeTask(Ambiance ambiance, StepElementParameters stepParameters,
-      AwsLambdaStepPassThroughData awsLambdaStepPassThroughData, UnitProgressData unitProgressData) {
-    InfrastructureOutcome infrastructureOutcome = awsLambdaStepPassThroughData.getInfrastructureOutcome();
+  public Class<StepElementParameters> getStepParametersClass() {
+    return StepElementParameters.class;
+  }
 
-    AwsLambdaDeployRequest awsLambdaDeployRequest =
-        AwsLambdaDeployRequest.builder()
-            .awsLambdaCommandTypeNG(AwsLambdaCommandTypeNG.AWS_LAMBDA_DEPLOY)
-            .commandName(AWS_LAMBDA_DEPLOY_COMMAND_NAME)
-            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-            .awsLambdaFunctionsInfraConfig(awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance))
-            .awsLambdaDeployManifestContent(awsLambdaStepPassThroughData.getManifestContent())
+  private TaskRequest skipTaskRequest(String message) {
+    return TaskRequest.newBuilder()
+            .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(message).build())
             .build();
-
-    return awsLambdaHelper.queueTask(
-        stepParameters, awsLambdaDeployRequest, ambiance, awsLambdaStepPassThroughData, true);
   }
 }
