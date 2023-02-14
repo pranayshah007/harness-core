@@ -21,5 +21,6 @@ public interface BitbucketService {
   JSONObject mergePR(BitbucketConfig bitbucketConfig, String token, String userName, String org, String name,
       String prNumber, boolean deleteSourceBranch, String ref, boolean isSaaS);
 
-  Boolean deleteRef(BitbucketConfig bitbucketConfig, String token, String org, String name, String ref);
+  Boolean deleteRef(
+      BitbucketConfig bitbucketConfig, String token, String org, String name, String ref, JSONObject responseObj);
 }

@@ -47,6 +47,7 @@ public class BitbucketApiClient implements GitApiClient {
   private static final String PATH_SEPARATOR = "/";
   private static final String UNSUPPORTED_OPERATION = "Unsupported operation";
   private static final String USERNAME_ERR = "Unable to get username information from api access for identifier %s";
+  private static final String HTTPS = "https://";
   private BitbucketService bitbucketService;
   private GitTokenRetriever tokenRetriever;
 
@@ -86,22 +87,34 @@ public class BitbucketApiClient implements GitApiClient {
 
   GitApiTaskResponseBuilder prepareResponse(String repoSlug, String prNumber, String sha, JSONObject mergePRResponse) {
     GitApiTaskResponseBuilder responseBuilder = GitApiTaskResponse.builder();
-    if (mergePRResponse != null) {
-      if ((boolean) getValue(mergePRResponse, BitbucketServiceImpl.MERGED)) {
-        Object mergeCommitSha = getValue(mergePRResponse, BitbucketServiceImpl.SHA);
-        responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-            .gitApiResult(GitApiMergePRTaskResponse.builder()
-                              .sha(mergeCommitSha == null ? null : String.valueOf(mergeCommitSha))
-                              .build());
-      } else {
-        responseBuilder.commandExecutionStatus(FAILURE).errorMessage(
-            format("Merging PR encountered a problem. SHA:%s Repo:%s PrNumber:%s Message:%s Code:%s", sha, repoSlug,
-                prNumber, getValue(mergePRResponse, BitbucketServiceImpl.ERROR),
-                getValue(mergePRResponse, BitbucketServiceImpl.CODE)));
-      }
-    } else {
+    if (mergePRResponse == null) {
       responseBuilder.commandExecutionStatus(FAILURE).errorMessage(
           format("Merging PR encountered a problem. SHA:%s Repo:%s PrNumber:%s", sha, repoSlug, prNumber));
+      return responseBuilder;
+    }
+    // if branch is not merged
+    if (!(boolean) getValue(mergePRResponse, BitbucketServiceImpl.MERGED)) {
+      responseBuilder.commandExecutionStatus(FAILURE).errorMessage(format(
+          "Merging PR encountered a problem. SHA:%s Repo:%s PrNumber:%s Message:%s Code:%s", sha, repoSlug, prNumber,
+          getValue(mergePRResponse, BitbucketServiceImpl.ERROR), getValue(mergePRResponse, BitbucketServiceImpl.CODE)));
+      return responseBuilder;
+    }
+    // when the branch is merged
+    Object mergeCommitSha = getValue(mergePRResponse, BitbucketServiceImpl.SHA);
+    if (mergeCommitSha == null) {
+      log.error("Merge is successful. But, SHA is null. Please refer to the sha in the repo. Repo:%s PrNumber:%s",
+          repoSlug, prNumber);
+    }
+
+    if (getValue(mergePRResponse, BitbucketServiceImpl.ERROR) != null) {
+      // when branch is merged, but error occurred when deleting the source branch
+      responseBuilder.commandExecutionStatus(FAILURE).errorMessage(format(
+          "PR merged successfully, but encountered a problem while deleting the source branch. Merge Commit SHA:%s Repo:%s PrNumber:%s Message:%s Code:%s",
+          mergeCommitSha, repoSlug, prNumber, getValue(mergePRResponse, BitbucketServiceImpl.ERROR),
+          getValue(mergePRResponse, BitbucketServiceImpl.CODE)));
+    } else {
+      responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+          .gitApiResult(GitApiMergePRTaskResponse.builder().sha(String.valueOf(mergeCommitSha)).build());
     }
     return responseBuilder;
   }
@@ -123,7 +136,7 @@ public class BitbucketApiClient implements GitApiClient {
       return BITBUCKET_CLOUD_API_URL;
     }
     String domain = GitClientHelper.getGitSCM(url);
-    return "https://" + domain + PATH_SEPARATOR;
+    return HTTPS + domain + PATH_SEPARATOR;
   }
 
   private String fetchUserName(BitbucketConnectorDTO gitConfigDTO, String identifier) {

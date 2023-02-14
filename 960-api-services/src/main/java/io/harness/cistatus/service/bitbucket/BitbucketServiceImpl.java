@@ -113,11 +113,11 @@ public class BitbucketServiceImpl implements BitbucketService {
         responseObj.put(MERGED, true);
         if (deleteSourceBranch) {
           // if merge is successful, delete source branch
-          boolean isBranchDeleted = deleteRef(bitbucketConfig, authToken, org, repoSlug, ref);
+          boolean isBranchDeleted = deleteRef(bitbucketConfig, authToken, org, repoSlug, ref, responseObj);
           if (!isBranchDeleted) {
             log.error(
                 "Error encountered when deleting source branch {} of the pull request {}. URL {}", ref, prNumber, url);
-            // Not failing the merge for failure to delete source branch
+            // In this case, we'll have SHA, merge status, error message and code in the response object
           }
         }
       } else {
@@ -200,7 +200,8 @@ public class BitbucketServiceImpl implements BitbucketService {
   }
 
   @Override
-  public Boolean deleteRef(BitbucketConfig bitbucketConfig, String authToken, String org, String repoSlug, String ref) {
+  public Boolean deleteRef(BitbucketConfig bitbucketConfig, String authToken, String org, String repoSlug, String ref,
+      JSONObject responseObj) {
     Map<String, Object> parameters = new HashMap<>();
     parameters.put(NAME, ref);
     parameters.put(DRY_RUN, false);
@@ -210,15 +211,24 @@ public class BitbucketServiceImpl implements BitbucketService {
 
       if (response.isSuccessful()) {
         return true;
-      } else {
-        log.error("Failed to delete ref for Bitbucket Server. URL {}, ref {}, Error {}",
-            bitbucketConfig.getBitbucketUrl(), ref, getOnPremErrorMessage(response));
       }
+      Object errMsg = getOnPremErrorMessage(response);
+      populateErrorInResponse(responseObj, errMsg, response.code());
+      log.error("Failed to delete ref for Bitbucket Server. URL {}, ref {}, Error {}",
+          bitbucketConfig.getBitbucketUrl(), ref, errMsg);
     } catch (Exception e) {
+      populateErrorInResponse(responseObj, e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
       log.error("Failed to delete ref for Bitbucket Server. URL {}, ref {}, Error {}",
           bitbucketConfig.getBitbucketUrl(), ref, e);
     }
     return false;
+  }
+
+  private void populateErrorInResponse(JSONObject response, Object errMsg, int errCode) {
+    if (response != null) {
+      response.put(ERROR, errMsg);
+      response.put(CODE, errCode);
+    }
   }
 
   @VisibleForTesting
