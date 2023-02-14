@@ -12,6 +12,7 @@ https://harness.atlassian.net/wiki/spaces/BT/pages/21101969665/How+to+setup+loca
 
 ### Prerequisities
 1. Install Homebrew:
+2. 
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
