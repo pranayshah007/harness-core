@@ -19,7 +19,7 @@ import io.harness.beans.MigrationTrackRespPayload;
 import io.harness.eraro.ErrorCode;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.Status;
-import io.harness.ng.core.dto.ErrorDTO;
+import io.harness.ngmigration.dto.ErrorDTO;
 import io.harness.persistence.HPersistence;
 
 import com.google.common.cache.Cache;

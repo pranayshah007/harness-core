@@ -283,7 +283,7 @@ public class PcfPluginState extends State {
     // resolve template variables
     stateExecutionData.setTemplateVariable(templateUtils.processTemplateVariables(context, getTemplateVariables()));
 
-    final String delegateTaskId = delegateService.queueTaskV2(gitFetchFileTask);
+    final String delegateTaskId = delegateService.queueTask(gitFetchFileTask);
     appendDelegateTaskDetails(context, gitFetchFileTask);
 
     return ExecutionResponse.builder()
@@ -421,7 +421,7 @@ public class PcfPluginState extends State {
                                                       .build();
     renderDelegateTask(context, delegateTask, stateExecutionContext);
 
-    delegateService.queueTaskV2(delegateTask);
+    delegateService.queueTask(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
 
     return ExecutionResponse.builder()

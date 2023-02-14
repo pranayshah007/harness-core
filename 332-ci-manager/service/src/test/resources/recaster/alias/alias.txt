@@ -320,3 +320,7 @@ io.harness.beans.steps.stepinfo.V1.BackgroundStepInfoV1
 io.harness.steps.policy.step.outcome.PolicyStepOutcome
 io.harness.steps.policy.step.outcome.PolicySetOutcome
 io.harness.steps.policy.step.outcome.PolicyOutcome
+io.harness.beans.steps.stepinfo.V1.BitriseStepInfoV1
+io.harness.beans.steps.nodes.V1.BitriseStepNodeV1
+io.harness.beans.steps.nodes.V1.ActionStepNodeV1
+io.harness.beans.steps.stepinfo.V1.ActionStepInfoV1

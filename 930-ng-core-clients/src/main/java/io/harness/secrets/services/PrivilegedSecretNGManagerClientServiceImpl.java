@@ -12,6 +12,7 @@ import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.DecryptedSecretValue;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.NGAccessWithEncryptionConsumer;
@@ -48,5 +49,12 @@ public class PrivilegedSecretNGManagerClientServiceImpl implements SecretManager
       String projectIdentifier, String identifier, boolean maskSecrets) {
     return getResponse(secretManagerClient.getSecretManager(
         identifier, accountIdentifier, orgIdentifier, projectIdentifier, maskSecrets));
+  }
+
+  @Override
+  public DecryptedSecretValue getDecryptedSecretValue(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    return getResponse(
+        secretManagerClient.getDecryptedSecretValue(identifier, accountIdentifier, orgIdentifier, projectIdentifier));
   }
 }

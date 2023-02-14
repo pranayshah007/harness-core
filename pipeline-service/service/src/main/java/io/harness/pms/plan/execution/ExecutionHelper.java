@@ -30,6 +30,7 @@ import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.executions.retry.RetryExecutionParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.exception.WingsException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
@@ -277,6 +278,16 @@ public class ExecutionHelper {
       ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,
           triggerInfo, pipelineEntity, executionId, retryExecutionInfo, notificationRules, isDebug);
       return ExecArgs.builder().metadata(executionMetadata).planExecutionMetadata(planExecutionMetadata).build();
+    } catch (WingsException e) {
+      throw e;
+    } catch (Exception e) {
+      log.error(
+          String.format(
+              "Failed to start execution for Pipeline with identifier [%s] in Project [%s] of Org [%s]. Error Message: %s",
+              pipelineEntity.getIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getOrgIdentifier(),
+              e.getMessage()),
+          e);
+      throw new InvalidRequestException("Failed to start execution for Pipeline.", e);
     } finally {
       log.info("[PMS_EXECUTE] Pipeline build execution args took time {}ms", System.currentTimeMillis() - start);
     }
@@ -338,7 +349,7 @@ public class ExecutionHelper {
 
   @VisibleForTesting
   TemplateMergeResponseDTO getPipelineYamlAndValidateStaticallyReferredEntities(
-      String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) throws IOException {
+      String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) {
     YamlConfig pipelineYamlConfig;
 
     long start = System.currentTimeMillis();

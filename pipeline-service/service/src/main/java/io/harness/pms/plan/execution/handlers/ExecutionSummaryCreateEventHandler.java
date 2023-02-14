@@ -41,6 +41,7 @@ import io.harness.pms.plan.execution.StoreTypeMapper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
+import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
@@ -71,24 +72,25 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
   private final PlanService planService;
   private final PlanExecutionService planExecutionService;
   private final NodeTypeLookupService nodeTypeLookupService;
-  private final PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
   private final PmsGitSyncHelper pmsGitSyncHelper;
   private final NotificationHelper notificationHelper;
   private final RecentExecutionsInfoHelper recentExecutionsInfoHelper;
+  private final PmsExecutionSummaryService pmsExecutionSummaryService;
 
   @Inject
   public ExecutionSummaryCreateEventHandler(PMSPipelineService pmsPipelineService, PlanService planService,
       PlanExecutionService planExecutionService, NodeTypeLookupService nodeTypeLookupService,
-      PmsExecutionSummaryRepository pmsExecutionSummaryRespository, PmsGitSyncHelper pmsGitSyncHelper,
-      NotificationHelper notificationHelper, RecentExecutionsInfoHelper recentExecutionsInfoHelper) {
+      PmsGitSyncHelper pmsGitSyncHelper, NotificationHelper notificationHelper,
+      RecentExecutionsInfoHelper recentExecutionsInfoHelper, PmsExecutionSummaryService pmsExecutionSummaryService) {
     this.pmsPipelineService = pmsPipelineService;
     this.planService = planService;
     this.planExecutionService = planExecutionService;
     this.nodeTypeLookupService = nodeTypeLookupService;
-    this.pmsExecutionSummaryRespository = pmsExecutionSummaryRespository;
+
     this.pmsGitSyncHelper = pmsGitSyncHelper;
     this.notificationHelper = notificationHelper;
     this.recentExecutionsInfoHelper = recentExecutionsInfoHelper;
+    this.pmsExecutionSummaryService = pmsExecutionSummaryService;
   }
 
   @Override
@@ -118,8 +120,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
       // updating isLatest and canRetry
       Update update = new Update();
       update.set(PlanExecutionSummaryKeys.isLatestExecution, false);
-      Query query = new Query(Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(parentExecutionId));
-      pmsExecutionSummaryRespository.update(query, update);
+      pmsExecutionSummaryService.update(parentExecutionId, update);
     }
 
     recentExecutionsInfoHelper.onExecutionStart(accountId, orgId, projectId, pipelineId, planExecution);
@@ -185,7 +186,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .connectorRef(
                 EmptyPredicate.isEmpty(metadata.getPipelineConnectorRef()) ? null : metadata.getPipelineConnectorRef())
             .build();
-    pmsExecutionSummaryRespository.save(pipelineExecutionSummaryEntity);
+    pmsExecutionSummaryService.save(pipelineExecutionSummaryEntity);
     notificationHelper.sendNotification(
         orchestrationStartInfo.getAmbiance(), PipelineEventType.PIPELINE_START, null, null);
   }

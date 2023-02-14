@@ -67,6 +67,9 @@ public class PcfDeployStepMapperImpl extends StepMapper {
 
   private TasInstanceSelectionWrapper getInstanceSelectionWrapper(
       Integer instanceCount, InstanceUnitType instanceUnitType) {
+    if (null == instanceCount || null == instanceUnitType) {
+      return null;
+    }
     if (PERCENTAGE.equals(instanceUnitType)) {
       return TasInstanceSelectionWrapper.builder()
           .type(TasInstanceUnitType.PERCENTAGE)

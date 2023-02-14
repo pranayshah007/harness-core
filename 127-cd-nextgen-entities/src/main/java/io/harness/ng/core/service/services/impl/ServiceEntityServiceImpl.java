@@ -554,15 +554,17 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     List<String> accountLevelIdentifiers = new ArrayList<>();
 
     for (String serviceIdentifier : serviceRefs) {
-      IdentifierRef identifierRef =
-          IdentifierRefHelper.getIdentifierRef(serviceIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
+      if (isNotEmpty(serviceIdentifier)) {
+        IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
+            serviceIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
 
-      if (Scope.PROJECT.equals(identifierRef.getScope())) {
-        projectLevelIdentifiers.add(identifierRef.getIdentifier());
-      } else if (Scope.ORG.equals(identifierRef.getScope())) {
-        orgLevelIdentifiers.add(identifierRef.getIdentifier());
-      } else if (Scope.ACCOUNT.equals(identifierRef.getScope())) {
-        accountLevelIdentifiers.add(identifierRef.getIdentifier());
+        if (Scope.PROJECT.equals(identifierRef.getScope())) {
+          projectLevelIdentifiers.add(identifierRef.getIdentifier());
+        } else if (Scope.ORG.equals(identifierRef.getScope())) {
+          orgLevelIdentifiers.add(identifierRef.getIdentifier());
+        } else if (Scope.ACCOUNT.equals(identifierRef.getScope())) {
+          accountLevelIdentifiers.add(identifierRef.getIdentifier());
+        }
       }
     }
 

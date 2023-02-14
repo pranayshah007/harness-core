@@ -42,6 +42,7 @@ import software.wings.infra.AzureInstanceInfrastructure;
 import software.wings.infra.InfraMappingInfrastructureProvider;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.infra.PhysicalInfra;
+import software.wings.infra.PhysicalInfraWinrm;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
@@ -51,6 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 
 public class SshWinRmInfraDefMapper implements InfraDefMapper {
@@ -74,9 +76,16 @@ public class SshWinRmInfraDefMapper implements InfraDefMapper {
         }
         break;
       case PHYSICAL_DATA_CENTER:
-        PhysicalInfra pdcInfra = (PhysicalInfra) infrastructureDefinition.getInfrastructure();
-        if (StringUtils.isNotBlank(pdcInfra.getHostConnectionAttrs())) {
-          connectorIds.add(pdcInfra.getHostConnectionAttrs());
+        if (DeploymentType.WINRM.equals(infrastructureDefinition.getDeploymentType())) {
+          PhysicalInfraWinrm pdcInfra = (PhysicalInfraWinrm) infrastructureDefinition.getInfrastructure();
+          if (StringUtils.isNotBlank(pdcInfra.getWinRmConnectionAttributes())) {
+            connectorIds.add(pdcInfra.getWinRmConnectionAttributes());
+          }
+        } else {
+          PhysicalInfra pdcInfra = (PhysicalInfra) infrastructureDefinition.getInfrastructure();
+          if (StringUtils.isNotBlank(pdcInfra.getHostConnectionAttrs())) {
+            connectorIds.add(pdcInfra.getHostConnectionAttrs());
+          }
         }
         break;
       default:
@@ -115,7 +124,8 @@ public class SshWinRmInfraDefMapper implements InfraDefMapper {
       case AZURE:
         return getAzureSshInfra(migratedEntities, infrastructureDefinition.getInfrastructure());
       case PHYSICAL_DATA_CENTER:
-        return getPdcSshInfra(migratedEntities, infrastructureDefinition.getInfrastructure());
+        return getPdcSshInfra(migratedEntities, infrastructureDefinition.getInfrastructure(),
+            infrastructureDefinition.getDeploymentType());
       default:
         throw new InvalidRequestException("Unsupported Infra for ssh deployment");
     }
@@ -165,29 +175,41 @@ public class SshWinRmInfraDefMapper implements InfraDefMapper {
         .build();
   }
 
-  private Infrastructure getPdcSshInfra(
-      Map<CgEntityId, NGYamlFile> migratedEntities, InfraMappingInfrastructureProvider infrastructure) {
-    PhysicalInfra pdcInfra = (PhysicalInfra) infrastructure;
+  private Infrastructure getPdcSshInfra(Map<CgEntityId, NGYamlFile> migratedEntities,
+      InfraMappingInfrastructureProvider infrastructure, @NotNull DeploymentType deploymentType) {
     PdcInfrastructureBuilder builder = PdcInfrastructure.builder();
-    builder.credentialsRef(ParameterField.createValueField(
-        MigratorUtility.getSecretRef(migratedEntities, pdcInfra.getHostConnectionAttrs(), CONNECTOR)
-            .toSecretRefStringValue()));
-    if (isNotEmpty(pdcInfra.getHostNames())) {
-      builder.hosts(ParameterField.createValueField(pdcInfra.getHostNames()));
-    }
-    Map<String, String> expressions = pdcInfra.getExpressions();
-    if (isNotEmpty(expressions) && expressions.containsKey(PhysicalInfra.hostname)
-        && expressions.containsKey(PhysicalInfra.hostArrayPath)) {
-      Map<String, String> hostAttrs = new HashMap<>();
-      expressions.forEach((k, v) -> {
-        if (!isNotEmpty(v)) {
-          if (PhysicalInfra.hostArrayPath.equals(k) && isNotEmpty(v)) {
-            builder.hostObjectArray(ParameterField.createValueField(v));
+
+    if (deploymentType.equals(DeploymentType.WINRM)) {
+      PhysicalInfraWinrm pdcInfra = (PhysicalInfraWinrm) infrastructure;
+      builder.credentialsRef(ParameterField.createValueField(
+          MigratorUtility.getSecretRef(migratedEntities, pdcInfra.getWinRmConnectionAttributes(), CONNECTOR)
+              .toSecretRefStringValue()));
+      if (isNotEmpty(pdcInfra.getHostNames())) {
+        builder.hosts(ParameterField.createValueField(pdcInfra.getHostNames()));
+      }
+    } else {
+      PhysicalInfra pdcInfra = (PhysicalInfra) infrastructure;
+      builder.credentialsRef(ParameterField.createValueField(
+          MigratorUtility.getSecretRef(migratedEntities, pdcInfra.getHostConnectionAttrs(), CONNECTOR)
+              .toSecretRefStringValue()));
+      if (isNotEmpty(pdcInfra.getHostNames())) {
+        builder.hosts(ParameterField.createValueField(pdcInfra.getHostNames()));
+      }
+
+      Map<String, String> expressions = pdcInfra.getExpressions();
+      if (isNotEmpty(expressions) && expressions.containsKey(PhysicalInfra.hostname)
+          && expressions.containsKey(PhysicalInfra.hostArrayPath)) {
+        Map<String, String> hostAttrs = new HashMap<>();
+        expressions.forEach((k, v) -> {
+          if (!isNotEmpty(v)) {
+            if (PhysicalInfra.hostArrayPath.equals(k) && isNotEmpty(v)) {
+              builder.hostObjectArray(ParameterField.createValueField(v));
+            }
+            hostAttrs.put(k, v);
           }
-          hostAttrs.put(k, v);
-        }
-      });
-      builder.hostAttributes(ParameterField.createValueField(hostAttrs));
+        });
+        builder.hostAttributes(ParameterField.createValueField(hostAttrs));
+      }
     }
 
     builder.hostFilter(HostFilter.builder().type(HostFilterType.ALL).spec(AllHostsFilter.builder().build()).build());

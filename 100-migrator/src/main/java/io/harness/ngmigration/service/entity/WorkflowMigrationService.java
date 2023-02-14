@@ -296,6 +296,7 @@ public class WorkflowMigrationService extends NgMigrationService {
       try {
         templateSpec = workflowHandler.getTemplateSpec(entities, migratedEntities, workflow);
       } catch (Exception e) {
+        log.error("Exception during migrating workflow ", e);
         return YamlGenerationDetails.builder()
             .yamlFileList(files)
             .skipDetails(Collections.singletonList(NGSkipDetail.builder()
