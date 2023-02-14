@@ -160,6 +160,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
   public DelegateResponseData handleMergePR(NGGitOpsTaskParams gitOpsTaskParams) {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    log.info("PR env test delegate MergePR step");
     try {
       log.info("Running Merge PR Task for activityId {}", gitOpsTaskParams.getActivityId());
       logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), MergePR, true, commandUnitsProgress);
@@ -188,6 +189,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           responseData = (GitApiTaskResponse) azureRepoApiClient.mergePR(taskParams);
           break;
         case BITBUCKET:
+          log.info("PR env test Bitbucket MergePR");
           responseData = (GitApiTaskResponse) bitbucketApiClient.mergePR(taskParams);
           break;
 

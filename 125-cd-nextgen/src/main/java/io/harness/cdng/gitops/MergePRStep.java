@@ -128,7 +128,7 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     MergePRStepParams gitOpsSpecParams = (MergePRStepParams) stepParameters.getSpec();
-
+    log.info("PR env test MergePR step");
     ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
 
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
@@ -226,10 +226,12 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
                 .build();
         break;
       case BITBUCKET:
+        log.info("PR env test Bitbucket connector");
         gitApiTaskParams = getTaskParamsForBitbucket((BitbucketConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO(),
             connectorDetails, prNumber, sha, ref, gitOpsSpecParams.getDeleteSourceBranch(), stepParameters);
         break;
       default:
+        log.info("PR env test Invalid connector {}", gitStoreDelegateConfig.getGitConfigDTO().getConnectorType());
         throw new InvalidRequestException("Failed to run MergePR Step. Connector not supported", USER);
     }
 
