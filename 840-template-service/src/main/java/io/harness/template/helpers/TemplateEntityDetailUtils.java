@@ -11,8 +11,8 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.NGTemplateReference;
-import io.harness.encryption.ScopeHelper;
 import io.harness.ng.core.EntityDetail;
+import io.harness.scope.ScopeHelper;
 import io.harness.template.entity.TemplateEntity;
 
 import lombok.experimental.UtilityClass;

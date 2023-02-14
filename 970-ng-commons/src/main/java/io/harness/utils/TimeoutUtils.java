@@ -14,7 +14,6 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.timeout.Timeout;
 
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import lombok.experimental.UtilityClass;
 
@@ -22,7 +21,6 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 public class TimeoutUtils {
   public final String DEFAULT_TIMEOUT = "10h";
-  public Long DEFAULT_TIMEOUT_IN_MILLIS = Duration.ofHours(10).toMillis();
 
   public long getTimeoutInSeconds(Timeout timeout, long defaultTimeoutInSeconds) {
     if (timeout == null) {

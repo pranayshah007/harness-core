@@ -12,8 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.delegate.task.jira.JiraTaskNGParameters;
+import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
 import io.harness.jira.JiraInternalConfig;
-import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
 import lombok.experimental.UtilityClass;
 
