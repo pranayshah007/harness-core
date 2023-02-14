@@ -40,7 +40,7 @@ public class AwsLambdaRollbackStepNode extends CdAbstractStepNode {
 
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  AwsLambdaDeployStepInfo lambdaDeployStepInfo;
+  AwsLambdaRollbackStepInfo awsLambdaRollbackStepInfo;
 
   @Override
   public String getType() {
@@ -49,7 +49,7 @@ public class AwsLambdaRollbackStepNode extends CdAbstractStepNode {
 
   @Override
   public StepSpecType getStepSpecType() {
-    return lambdaDeployStepInfo;
+    return awsLambdaRollbackStepInfo;
   }
 
   enum StepType {

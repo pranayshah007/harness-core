@@ -17,6 +17,8 @@ import io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo;
 import io.harness.cdng.aws.lambda.AwsLambdaStepExceptionPassThroughData;
 import io.harness.cdng.aws.lambda.AwsLambdaStepPassThroughData;
+import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepInfo;
+import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepParameters;
 import io.harness.cdng.azure.webapp.ApplicationSettingsParameters;
 import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
@@ -276,5 +278,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(AwsLambdaInfrastructure.class, 12659);
     kryo.register(AwsLambdaStepPassThroughData.class, 12660);
     kryo.register(AwsLambdaStepExceptionPassThroughData.class, 12661);
+    kryo.register(AwsLambdaRollbackStepInfo.class, 12662);
+    kryo.register(AwsLambdaRollbackStepParameters.class, 12663);
   }
 }

@@ -45,7 +45,7 @@ import java.util.List;
 @JsonTypeName(StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK)
 @TypeAlias("awslambdaRollbackStepInfo")
 @RecasterAlias("io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepInfo")
-public class AwsLambdaRollbackStepInfo extends AwsLambdaDeployBaseStepInfo implements CDAbstractStepInfo, Visitable {
+public class AwsLambdaRollbackStepInfo extends AwsLambdaRollbackBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -60,17 +60,17 @@ public class AwsLambdaRollbackStepInfo extends AwsLambdaDeployBaseStepInfo imple
 
   @Override
   public StepType getStepType() {
-    return AwsLambdaDeployStep.STEP_TYPE;
+    return AwsLambdaRollbackStep.STEP_TYPE;
   }
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
+    return OrchestrationFacilitatorType.TASK;
   }
 
   @Override
   public SpecParameters getSpecParameters() {
-    return AwsLambdaDeployStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
+    return AwsLambdaRollbackStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
   }
 
   @Override

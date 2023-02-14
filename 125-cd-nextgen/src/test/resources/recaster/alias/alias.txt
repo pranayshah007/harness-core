@@ -766,7 +766,6 @@ io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepInfo
 io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepNode
 io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepParameters
 io.harness.cdng.aws.lambda.AwsLambdaStepPassThroughData
-io.harness.cdng.aws.lambda.AwsLambdaStepExceptionPassThroughData
 io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome
 io.harness.cdng.service.beans.AwsLambdaServiceSpec
 io.harness.cdng.manifest.yaml.kinds.AwsLambdaDefinitionManifest
@@ -781,3 +780,7 @@ io.harness.cdng.service.beans.AwsSamServiceSpec
 io.harness.cdng.manifest.yaml.kinds.AwsSamDirectoryManifest
 io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome
 io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig
+io.harness.cdng.aws.lambda.AwsLambdaStepExceptionPassThroughData
+io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepParameters
+io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepInfo
+io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepNode
