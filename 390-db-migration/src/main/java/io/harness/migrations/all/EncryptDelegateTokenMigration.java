@@ -38,7 +38,7 @@ public class EncryptDelegateTokenMigration implements Migration {
         delegateTokenService.upsertEncryptedTokenRecord(delegateToken);
       }
     } catch (Exception e) {
-      log.error("Exception while migartion delegate token with encrypted value", e);
+      log.error("Exception while migration delegate token with encrypted value", e);
     }
     log.info("The migration completed to insert encrypted delegate token values");
   }

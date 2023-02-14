@@ -343,6 +343,10 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
   @Override
   public String decrypt(DelegateToken delegateToken) {
+    if (!featureFlagService.isEnabled(FeatureName.DELEGATE_TOKEN_ENCRYPTION, delegateToken.getAccountId())) {
+      return getTokenValue(delegateToken);
+    }
+
     if (delegateToken.getEncryptedTokenId() == null) {
       //@TODO: Remove this check after token migration to encrypted value
       // should not come, only in case in migration missed
@@ -352,9 +356,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
         secretManagerImpl.getSecretById(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId());
     String decryptedToken = String.valueOf(secretService.fetchSecretValue(encryptedData));
 
-    return featureFlagService.isEnabled(FeatureName.DELEGATE_TOKEN_ENCRYPTION, delegateToken.getAccountId())
-        ? (delegateToken.isNg() ? decodeBase64ToString(decryptedToken) : decryptedToken)
-        : getTokenValue(delegateToken);
+    return delegateToken.isNg() ? decodeBase64ToString(decryptedToken) : decryptedToken;
   }
 
   @Override
