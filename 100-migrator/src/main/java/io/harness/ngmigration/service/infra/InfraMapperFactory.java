@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.infra;
 
 import static software.wings.api.DeploymentType.AMI;
+import static software.wings.api.DeploymentType.AZURE_WEBAPP;
 import static software.wings.api.DeploymentType.CUSTOM;
 import static software.wings.api.DeploymentType.ECS;
 import static software.wings.api.DeploymentType.HELM;
@@ -35,6 +36,7 @@ public class InfraMapperFactory {
   private static final InfraDefMapper elastigroupInfraDefMapper = new AmiElastigroupInfraDefMapper();
   private static final InfraDefMapper customDeploymentInfraDefMapper = new CustomDeploymentInfraDefMapper();
   private static final InfraDefMapper pcfInfraDefMapper = new PcfInfraDefMapper();
+  private static final InfraDefMapper azureWebappInfraDefMapper = new AzureWebappInfraDefMapper();
   public static final Map<DeploymentType, InfraDefMapper> INFRA_DEF_MAPPER_MAP =
       ImmutableMap.<DeploymentType, InfraDefMapper>builder()
           .put(KUBERNETES, k8sInfraDefMapper)
@@ -45,6 +47,7 @@ public class InfraMapperFactory {
           .put(CUSTOM, customDeploymentInfraDefMapper)
           .put(WINRM, sshWinRmInfraDefMapper)
           .put(PCF, pcfInfraDefMapper)
+          .put(AZURE_WEBAPP, azureWebappInfraDefMapper)
           .build();
 
   public static InfraDefMapper getInfraDefMapper(InfrastructureDefinition infraDef) {

@@ -40,6 +40,7 @@ import static io.harness.filestore.FilePermissionConstants.FILE_EDIT_PERMISSION;
 import static io.harness.filestore.FilePermissionConstants.FILE_VIEW_PERMISSION;
 import static io.harness.ng.core.utils.NGUtils.validate;
 import static io.harness.pms.rbac.NGResourceType.FILE;
+import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
 import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA;
@@ -58,6 +59,7 @@ import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.beans.PageRequest;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.dto.EmbeddedUserDetailsDTO;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -406,7 +408,7 @@ public class FileStoreResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the list of entities where file is referenced by")
       })
-  public ResponseDTO<Page<EntitySetupUsageDTO>>
+  public ResponseDTO<PageResponse<EntitySetupUsageDTO>>
   getReferencedBy(@Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
                       PAGE_KEY) @DefaultValue("0") int page,
       @Parameter(description = "Number of entries per page. The default value is 100") @QueryParam(
@@ -420,9 +422,9 @@ public class FileStoreResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, identifier), FILE_VIEW_PERMISSION);
 
-    return ResponseDTO.newResponse(fileStoreService.listReferencedBy(
+    return ResponseDTO.newResponse(getNGPageResponse(fileStoreService.listReferencedBy(
         SearchPageParams.builder().page(page).size(size).searchTerm(searchTerm).build(), accountIdentifier,
-        orgIdentifier, projectIdentifier, identifier, entityType));
+        orgIdentifier, projectIdentifier, identifier, entityType)));
   }
 
   @GET

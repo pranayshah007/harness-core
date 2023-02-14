@@ -12,13 +12,16 @@ import static io.harness.k8s.constants.K8sConstants.DEFAULT_NAMESPACE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptedSecretValue;
 import io.harness.idp.secret.beans.entity.EnvironmentSecretEntity;
 import io.harness.idp.secret.mappers.EnvironmentSecretMapper;
-import io.harness.idp.secret.repositories.EnvironmentEnvironmentSecretRepository;
+import io.harness.idp.secret.repositories.EnvironmentSecretRepository;
 import io.harness.k8s.client.K8sClient;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,8 +34,9 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
-  private EnvironmentEnvironmentSecretRepository environmentSecretRepository;
+  private EnvironmentSecretRepository environmentSecretRepository;
   private K8sClient k8sClient;
+  @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
 
   @Override
   public Optional<EnvironmentSecret> findByIdAndAccountIdentifier(String identifier, String accountIdentifier) {
@@ -72,9 +76,10 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
     Map<String, byte[]> secretData = new HashMap<>();
     String envName = environmentSecret.getName();
     String secretIdentifier = environmentSecret.getSecretIdentifier();
-    String secretValue = secretIdentifier;
-    // TODO: Resolve secret. Use /v2/secrets/{identifier}/decrypt API
-    secretData.put(envName, secretValue.getBytes());
+
+    DecryptedSecretValue decryptedValue =
+        ngSecretService.getDecryptedSecretValue(accountIdentifier, null, null, secretIdentifier);
+    secretData.put(envName, decryptedValue.getDecryptedValue().getBytes());
     return k8sClient.updateSecretData(DEFAULT_NAMESPACE, BACKSTAGE_SECRET, secretData, false);
   }
 }

@@ -9,6 +9,7 @@ package io.harness.ccm.graphql.query.budget;
 
 import static io.harness.ccm.budget.AlertThresholdBase.ACTUAL_COST;
 import static io.harness.ccm.budget.AlertThresholdBase.FORECASTED_COST;
+import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_VIEW;
 
 import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetSummary;
@@ -24,6 +25,7 @@ import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
 import io.harness.ccm.rbac.CCMRbacHelper;
+import io.harness.ccm.views.service.CEViewService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -33,7 +35,9 @@ import io.leangen.graphql.annotations.GraphQLQuery;
 import io.leangen.graphql.execution.ResolutionEnvironment;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,6 +48,7 @@ public class BudgetsQuery {
   @Inject private GraphQLUtils graphQLUtils;
   @Inject private BudgetDao budgetDao;
   @Inject private BudgetGroupDao budgetGroupDao;
+  @Inject private CEViewService ceViewService;
   @Inject private BudgetService budgetService;
   @Inject private BudgetGroupService budgetGroupService;
   @Inject private BudgetCostService budgetCostService;
@@ -92,14 +97,31 @@ public class BudgetsQuery {
       @GraphQLArgument(name = "offset", defaultValue = "0") Integer offset,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    rbacHelper.checkBudgetViewPermission(accountId, null, null);
-    List<BudgetSummary> budgetSummaryList = new ArrayList<>();
     List<Budget> budgets = budgetDao.list(accountId, limit, offset);
     if (fetchOnlyPerspectiveBudgets) {
       budgets = budgets.stream().filter(BudgetUtils::isPerspectiveBudget).collect(Collectors.toList());
     }
-    budgets.sort(Comparator.comparing(Budget::getLastUpdatedAt).reversed());
-    budgets.forEach(budget -> budgetSummaryList.add(buildBudgetSummary(budget, false)));
+    List<String> perspectiveIds = budgets.stream()
+                                      .filter(BudgetUtils::isPerspectiveBudget)
+                                      .map(BudgetUtils::getPerspectiveIdForBudget)
+                                      .collect(Collectors.toList());
+    Set<String> folderIds = ceViewService.getPerspectiveFolderIds(accountId, perspectiveIds);
+    HashMap<String, String> perspectiveIdAndFolderIds =
+        ceViewService.getPerspectiveIdAndFolderId(accountId, perspectiveIds);
+    List<Budget> allowedBudgets = null;
+    if (folderIds != null) {
+      Set<String> allowedFolderIds =
+          rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_VIEW);
+      allowedBudgets = budgets.stream()
+                           .filter(budget
+                               -> BudgetUtils.isPerspectiveBudget(budget)
+                                   && allowedFolderIds.contains(
+                                       perspectiveIdAndFolderIds.get(BudgetUtils.getPerspectiveIdForBudget(budget))))
+                           .collect(Collectors.toList());
+    }
+    List<BudgetSummary> budgetSummaryList = new ArrayList<>();
+    allowedBudgets.sort(Comparator.comparing(Budget::getLastUpdatedAt).reversed());
+    allowedBudgets.forEach(budget -> budgetSummaryList.add(buildBudgetSummary(budget, false)));
 
     return budgetSummaryList;
   }

@@ -9,6 +9,9 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.ngmigration.service.step.arm.AzureCreateARMResourceStepMapperImpl;
 import io.harness.ngmigration.service.step.arm.AzureRollbackARMResourceStepMapperImpl;
+import io.harness.ngmigration.service.step.cloudformation.CloudformationCreateStepMapperImpl;
+import io.harness.ngmigration.service.step.cloudformation.CloudformationDeleteStepMapperImpl;
+import io.harness.ngmigration.service.step.cloudformation.CloudformationRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.ecs.EcsServiceRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.ecs.EcsServiceSetupStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupDeployStepMapperImpl;
@@ -129,6 +132,9 @@ public class StepMapperFactory {
   @Inject ElastigroupSwapRouteStepMapperImpl elastigroupSwapRouteStepMapper;
   @Inject AzureCreateARMResourceStepMapperImpl azureCreateARMResourceStepMapper;
   @Inject AzureRollbackARMResourceStepMapperImpl azureRollbackARMResourceStepMapper;
+  @Inject CloudformationCreateStepMapperImpl cloudformationCreateStepMapper;
+  @Inject CloudformationDeleteStepMapperImpl cloudformationDeleteStepMapper;
+  @Inject CloudformationRollbackStepMapperImpl cloudformationRollbackStepMapper;
   @Inject UnsupportedStepMapperImpl unsupportedStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
@@ -266,6 +272,12 @@ public class StepMapperFactory {
       case "PCF_MAP_ROUTE":
       case "PCF_UNMAP_ROUTE":
         return unsupportedStepMapper;
+      case "CLOUD_FORMATION_CREATE_STACK":
+        return cloudformationCreateStepMapper;
+      case "CLOUD_FORMATION_DELETE_STACK":
+        return cloudformationDeleteStepMapper;
+      case "CLOUD_FORMATION_ROLLBACK_STACK":
+        return cloudformationRollbackStepMapper;
       default:
         return unsupportedStepMapper;
     }

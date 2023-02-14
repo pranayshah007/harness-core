@@ -154,14 +154,17 @@ public class GovernanceRuleSetResource {
     if (createRuleSetDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
+
     RuleSet ruleSet = createRuleSetDTO.getRuleSet();
     if (ruleSetService.fetchByName(accountId, ruleSet.getName(), true) != null) {
       throw new InvalidRequestException("Rule Set with this name already exits");
     }
     if (!ruleSet.getIsOOTB()) {
       ruleSet.setAccountId(accountId);
-    } else {
+    } else if (ruleSet.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
       ruleSet.setAccountId(GLOBAL_ACCOUNT_ID);
+    } else {
+      throw new InvalidRequestException("Not authorised to create OOTB rule set. Make a custom rule set instead");
     }
     GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
     if (ruleSet.getRulesIdentifier().size() > governanceConfig.getPoliciesInPack()) {
@@ -204,6 +207,9 @@ public class GovernanceRuleSetResource {
     ruleSet.toDTO();
     ruleSet.setAccountId(accountId);
     RuleSet oldRuleSet = ruleSetService.fetchById(accountId, ruleSet.getUuid(), true);
+    if (oldRuleSet.getIsOOTB()) {
+      throw new InvalidRequestException("Editing OOTB Rule Set is not allowed");
+    }
     ruleService.check(accountId, ruleSet.getRulesIdentifier());
     GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
     if (ruleSet.getRulesIdentifier().size() > governanceConfig.getPoliciesInPack()) {
@@ -236,20 +242,20 @@ public class GovernanceRuleSetResource {
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<RuleSet>
-  updateRuleOOTB(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+  updateRuleSetOOTB(
+      @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Rule pack object") @Valid CreateRuleSetDTO createRuleSetDTO) {
     //  rbacHelper checkRuleSetEditPermission(accountId, null, null)
     if (createRuleSetDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
-    if (!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
-      throw new InvalidRequestException("Editing OOTB rule pack is not allowed");
-    }
     RuleSet ruleSet = createRuleSetDTO.getRuleSet();
     ruleSet.toDTO();
-    ruleSet.setAccountId(GLOBAL_ACCOUNT_ID);
+    if (!ruleSet.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
+      throw new InvalidRequestException("Editing OOTB rule set is not allowed");
+    }
     ruleSetService.fetchById(GLOBAL_ACCOUNT_ID, ruleSet.getUuid(), false);
     if (ruleSet.getRulesIdentifier().size() > configuration.getGovernanceConfig().getPoliciesInPack()) {
       throw new InvalidRequestException("Limit of Rules In a Set is exceeded ");

@@ -272,7 +272,7 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
         storeBuilder.branch(ParameterField.createValueField(state.getTfVarGitFileConfig().getBranch()));
       } else {
         storeBuilder.gitFetchType(FetchType.COMMIT);
-        storeBuilder.branch(ParameterField.createValueField(state.getTfVarGitFileConfig().getCommitId()));
+        storeBuilder.commitId(ParameterField.createValueField(state.getTfVarGitFileConfig().getCommitId()));
       }
       storeBuilder.paths(ParameterField.createValueField(
           Arrays.stream(state.getTfVarGitFileConfig().getFilePath().split(",")).collect(Collectors.toList())));
@@ -334,7 +334,7 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
       storeBuilder.branch(ParameterField.createValueField(provisioner.getSourceRepoBranch()));
     } else {
       storeBuilder.gitFetchType(FetchType.COMMIT);
-      storeBuilder.branch(ParameterField.createValueField(provisioner.getCommitId()));
+      storeBuilder.commitId(ParameterField.createValueField(provisioner.getCommitId()));
     }
     storeBuilder.folderPath(ParameterField.createValueField(path));
     return storeBuilder.build();

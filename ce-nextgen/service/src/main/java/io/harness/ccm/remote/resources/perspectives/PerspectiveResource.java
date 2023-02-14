@@ -10,6 +10,10 @@ package io.harness.ccm.remote.resources.perspectives;
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_FOLDER;
+import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_CREATE_AND_EDIT;
+import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_VIEW;
 import static io.harness.ccm.remote.resources.TelemetryConstants.DATA_SOURCES;
 import static io.harness.ccm.remote.resources.TelemetryConstants.IS_CLONE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
@@ -39,15 +43,19 @@ import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.service.intf.CCMNotificationService;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.entities.CEView;
+import io.harness.ccm.views.entities.CEViewFolder;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewType;
 import io.harness.ccm.views.graphql.QLCEView;
 import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ccm.views.service.CEReportScheduleService;
+import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.exception.AccessDeniedException;
+import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -73,6 +81,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -90,6 +99,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.hibernate.validator.constraints.NotBlank;
+import org.jooq.tools.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -109,6 +119,7 @@ import org.springframework.transaction.support.TransactionTemplate;
     content = { @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ErrorDTO.class)) })
 public class PerspectiveResource {
   private final CEViewService ceViewService;
+  private final CEViewFolderService ceViewFolderService;
   private final CEReportScheduleService ceReportScheduleService;
   private final ViewCustomFieldService viewCustomFieldService;
   private final BigQueryService bigQueryService;
@@ -130,7 +141,7 @@ public class PerspectiveResource {
       BudgetCostService budgetCostService, BudgetService budgetService, CCMNotificationService notificationService,
       AwsAccountFieldHelper awsAccountFieldHelper, TelemetryReporter telemetryReporter,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
-      CCMRbacHelper rbacHelper) {
+      CCMRbacHelper rbacHelper, CEViewFolderService ceViewFolderService) {
     this.ceViewService = ceViewService;
     this.ceReportScheduleService = ceReportScheduleService;
     this.viewCustomFieldService = viewCustomFieldService;
@@ -144,6 +155,7 @@ public class PerspectiveResource {
     this.transactionTemplate = transactionTemplate;
     this.outboxService = outboxService;
     this.rbacHelper = rbacHelper;
+    this.ceViewFolderService = ceViewFolderService;
   }
 
   @GET
@@ -167,7 +179,7 @@ public class PerspectiveResource {
                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @QueryParam("perspectiveId") @Parameter(
           required = true, description = "Unique identifier for the Perspective") String perspectiveId) {
-    rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
+    rbacHelper.checkPerspectiveViewPermission(accountId, null, null, ceViewService.get(perspectiveId).getFolderId());
     return ResponseDTO.newResponse(ceViewService.getLastMonthCostForPerspective(accountId, perspectiveId));
   }
 
@@ -195,7 +207,7 @@ public class PerspectiveResource {
       @NotNull @Valid @QueryParam("period") @Parameter(required = true,
           description = "The period (DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY) for which we want the cost")
       BudgetPeriod period) {
-    rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
+    rbacHelper.checkPerspectiveViewPermission(accountId, null, null, ceViewService.get(perspectiveId).getFolderId());
     return ResponseDTO.newResponse(budgetCostService.getLastPeriodCost(accountId, perspectiveId, startTime, period));
   }
 
@@ -226,7 +238,7 @@ public class PerspectiveResource {
           required = true, description = "Only support for PREVIOUS_PERIOD_SPEND budget type") BudgetType type,
       @NotNull @Valid @QueryParam("breakdown") @Parameter(
           required = true, description = "Only support for MONTHLY breakdown") BudgetBreakdown breakdown) {
-    rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
+    rbacHelper.checkPerspectiveViewPermission(accountId, null, null, ceViewService.get(perspectiveId).getFolderId());
     List<ValueDataPoint> response = null;
     if (period == BudgetPeriod.YEARLY && type == BudgetType.PREVIOUS_PERIOD_SPEND
         && breakdown == BudgetBreakdown.MONTHLY) {
@@ -258,7 +270,7 @@ public class PerspectiveResource {
                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Valid @NotNull @Parameter(required = true, description = "Unique identifier for the Perspective") @QueryParam(
           "perspectiveId") String perspectiveId) {
-    rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
+    rbacHelper.checkPerspectiveViewPermission(accountId, null, null, ceViewService.get(perspectiveId).getFolderId());
     return ResponseDTO.newResponse(ceViewService.getForecastCostForPerspective(accountId, perspectiveId));
   }
 
@@ -287,7 +299,7 @@ public class PerspectiveResource {
       @NotNull @Valid @QueryParam("period") @Parameter(required = true,
           description = "The period (DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY) for which we want the forecast cost")
       BudgetPeriod period) {
-    rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
+    rbacHelper.checkPerspectiveViewPermission(accountId, null, null, ceViewService.get(perspectiveId).getFolderId());
     return ResponseDTO.newResponse(budgetCostService.getForecastCost(accountId, perspectiveId, startTime, period));
   }
 
@@ -314,7 +326,21 @@ public class PerspectiveResource {
           required = true, description = "Set the clone parameter as true to clone a Perspective.") boolean clone,
       @RequestBody(
           required = true, description = "Request body containing Perspective's CEView object") @Valid CEView ceView) {
-    rbacHelper.checkPerspectiveEditPermission(accountId, null, null);
+    if (StringUtils.isEmpty(ceView.getFolderId())) {
+      String defaultFolderId = ceViewService.getDefaultFolderId(ceView.getAccountId());
+      List<CEViewFolder> ceViewFolders = ceViewFolderService.getFolders(accountId, "");
+      Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
+          ceViewFolders.stream().map(ceViewFolder -> ceViewFolder.getUuid()).collect(Collectors.toSet()),
+          PERSPECTIVE_CREATE_AND_EDIT);
+      boolean setFolderIdSuccess = ceViewService.setFolderId(ceView, allowedFolderIds, ceViewFolders, defaultFolderId);
+      if (!setFolderIdSuccess) {
+        throw new AccessDeniedException(
+            String.format(PERMISSION_MISSING_MESSAGE, PERSPECTIVE_CREATE_AND_EDIT, RESOURCE_FOLDER),
+            WingsException.USER);
+      }
+    } else {
+      rbacHelper.checkPerspectiveEditPermission(accountId, null, null, ceView.getFolderId());
+    }
     ceView.setAccountId(accountId);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
@@ -370,8 +396,8 @@ public class PerspectiveResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @QueryParam("perspectiveId") @Parameter(required = true,
           description = "Unique identifier for the Perspective") @NotBlank @Valid String perspectiveId) {
-    rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
     CEView ceView = ceViewService.get(perspectiveId);
+    rbacHelper.checkPerspectiveViewPermission(accountId, null, null, ceView.getFolderId());
     awsAccountFieldHelper.mergeAwsAccountNameInAccountRules(ceView.getViewRules(), accountId);
     return ResponseDTO.newResponse(ceView);
   }
@@ -394,8 +420,17 @@ public class PerspectiveResource {
   public ResponseDTO<List<QLCEView>>
   getAll(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
-    rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
-    return ResponseDTO.newResponse(ceViewService.getAllViews(accountId, true, null));
+    List<QLCEView> allPerspectives = ceViewService.getAllViews(accountId, true, null);
+    List<QLCEView> allowedPerspectives = null;
+    if (allPerspectives != null) {
+      Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
+          allPerspectives.stream().map(perspective -> perspective.getFolderId()).collect(Collectors.toSet()),
+          PERSPECTIVE_VIEW);
+      allowedPerspectives = allPerspectives.stream()
+                                .filter(perspective -> allowedFolderIds.contains(perspective.getFolderId()))
+                                .collect(Collectors.toList());
+    }
+    return ResponseDTO.newResponse(allowedPerspectives);
   }
 
   @PUT
@@ -418,7 +453,7 @@ public class PerspectiveResource {
   update(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Valid @RequestBody(required = true, description = "Perspective's CEView object") CEView ceView) {
-    rbacHelper.checkPerspectiveEditPermission(accountId, null, null);
+    rbacHelper.checkPerspectiveEditPermission(accountId, null, null, ceView.getFolderId());
     CEView oldPerspective = ceViewService.get(ceView.getUuid());
     ceView.setAccountId(accountId);
     log.info(ceView.toString());
@@ -452,8 +487,8 @@ public class PerspectiveResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @QueryParam("perspectiveId") @Parameter(required = true,
           description = "Unique identifier for the Perspective") @NotNull @Valid String perspectiveId) {
-    rbacHelper.checkPerspectiveDeletePermission(accountId, null, null);
     CEView perspective = ceViewService.get(perspectiveId);
+    rbacHelper.checkPerspectiveDeletePermission(accountId, null, null, perspective.getFolderId());
     ceViewService.delete(perspectiveId, accountId);
 
     ceReportScheduleService.deleteAllByView(perspectiveId, accountId);
@@ -491,10 +526,11 @@ public class PerspectiveResource {
           "perspectiveId") String perspectiveId,
       @Valid @NotNull @Parameter(required = true, description = "Name for the Perspective clone") @QueryParam(
           "cloneName") String cloneName) {
-    rbacHelper.checkPerspectiveEditPermission(accountId, null, null);
+    CEView perspective = ceViewService.get(perspectiveId);
+    rbacHelper.checkPerspectiveEditPermission(accountId, null, null, perspective.getFolderId());
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
-    List<ViewFieldIdentifier> dataSourcesList = ceViewService.get(perspectiveId).getDataSources();
+    List<ViewFieldIdentifier> dataSourcesList = perspective.getDataSources();
     String dataSources = "";
     if (dataSourcesList != null) {
       dataSources = dataSourcesList.stream().map(Object::toString).collect(Collectors.joining(","));

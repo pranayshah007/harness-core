@@ -172,6 +172,11 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     pmsExecutionSummaryRepository.update(query, update);
   }
 
+  @Override
+  public PipelineExecutionSummaryEntity save(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity) {
+    return pmsExecutionSummaryRepository.save(pipelineExecutionSummaryEntity);
+  }
+
   public boolean updateStrategyPlanNode(String planExecutionId, NodeExecution strategyNodeExecution, Update update) {
     // If nodeExecution is of type identity, or it is not stage strategy node then ignore.
     if (strategyNodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE
@@ -227,11 +232,6 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE
         && StatusUtils.isFinalStatus(nodeExecution.getStatus())) {
       return updateIdentityStageOrStrategyNodes(planExecutionId, update) || updateRequired;
-    }
-
-    if (OrchestrationUtils.isPipelineNode(nodeExecution)) {
-      // Update pipeline based data in layoutNodeMap
-      updateRequired = ExecutionSummaryUpdateUtils.addPipelineUpdateCriteria(update, nodeExecution) || updateRequired;
     }
     return ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution) || updateRequired;
   }

@@ -12,6 +12,7 @@ import static io.harness.encryption.Scope.PROJECT;
 import static io.harness.ngmigration.utils.NGMigrationConstants.SERVICE_COMMAND_TEMPLATE_SEPARATOR;
 
 import static software.wings.api.DeploymentType.AMI;
+import static software.wings.api.DeploymentType.AZURE_WEBAPP;
 import static software.wings.api.DeploymentType.ECS;
 import static software.wings.beans.ConfigFile.DEFAULT_TEMPLATE_ID;
 import static software.wings.ngmigration.NGMigrationEntityType.AMI_STARTUP_SCRIPT;
@@ -228,7 +229,7 @@ public class ServiceMigrationService extends NgMigrationService {
       }
     }
 
-    if (AMI == service.getDeploymentType()) {
+    if (AMI == service.getDeploymentType() || AZURE_WEBAPP == service.getDeploymentType()) {
       UserDataSpecification userDataSpecification =
           serviceResourceService.getUserDataSpecification(service.getAppId(), serviceId);
       if (null != userDataSpecification) {

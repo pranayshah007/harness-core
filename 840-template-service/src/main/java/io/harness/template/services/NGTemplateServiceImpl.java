@@ -60,6 +60,7 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
 import io.harness.grpc.utils.StringValueUtils;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
@@ -1126,25 +1127,20 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
   }
 
-  public List<EntitySetupUsageDTO> listTemplateReferences(int page, int size, String accountIdentifier,
+  public PageResponse<EntitySetupUsageDTO> listTemplateReferences(int page, int size, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel, String searchTerm,
       boolean isStableTemplate) {
-    List<EntitySetupUsageDTO> referredEntities;
+    PageResponse<EntitySetupUsageDTO> referredEntities;
     String referredEntityFQN =
         createFqnForTemplate(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel);
     if (isStableTemplate) {
       String referredEntityFQNForStableTemplate =
           createFqnForTemplate(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, "");
-      referredEntities =
-          NGRestUtils
-              .getResponse(entitySetupUsageClient.listAllEntityUsageWith2Fqns(page, size, accountIdentifier,
-                  referredEntityFQN, referredEntityFQNForStableTemplate, EntityType.TEMPLATE, searchTerm))
-              .getContent();
+      referredEntities = NGRestUtils.getResponse(entitySetupUsageClient.listAllEntityUsageWith2Fqns(page, size,
+          accountIdentifier, referredEntityFQN, referredEntityFQNForStableTemplate, EntityType.TEMPLATE, searchTerm));
     } else {
-      referredEntities = NGRestUtils
-                             .getResponse(entitySetupUsageClient.listAllEntityUsage(
-                                 page, size, accountIdentifier, referredEntityFQN, EntityType.TEMPLATE, searchTerm))
-                             .getContent();
+      referredEntities = NGRestUtils.getResponse(entitySetupUsageClient.listAllEntityUsage(
+          page, size, accountIdentifier, referredEntityFQN, EntityType.TEMPLATE, searchTerm));
     }
     return referredEntities;
   }

@@ -32,6 +32,7 @@ import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.CacheState;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityValidityDetails;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.EntityDetail;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
@@ -43,9 +44,13 @@ import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineMetadataV2;
+import io.harness.pms.pipeline.PipelineValidationResponseDTO;
 import io.harness.pms.pipeline.RecentExecutionInfo;
 import io.harness.pms.pipeline.RecentExecutionInfoDTO;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
+import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
+import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.rule.Owner;
 
 import java.time.LocalDate;
@@ -656,5 +661,32 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertFalse(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam("false"));
     //    when junk value is passed for string loadFromCache
     assertFalse(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam("abcs"));
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testBuildPipelineValidationResponseDTO() {
+    PipelineValidationEvent event = PipelineValidationEvent.builder()
+                                        .status(ValidationStatus.IN_PROGRESS)
+                                        .result(ValidationResult.builder().build())
+                                        .startTs(1L)
+                                        .endTs(2L)
+                                        .build();
+    PipelineValidationResponseDTO responseBody = PMSPipelineDtoMapper.buildPipelineValidationResponseDTO(event);
+    assertThat(responseBody.getStatus()).isEqualTo("IN_PROGRESS");
+    assertThat(responseBody.getPolicyEval()).isNull();
+
+    event = PipelineValidationEvent.builder()
+                .status(ValidationStatus.IN_PROGRESS)
+                .result(ValidationResult.builder()
+                            .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
+                            .build())
+                .startTs(1L)
+                .endTs(2L)
+                .build();
+    responseBody = PMSPipelineDtoMapper.buildPipelineValidationResponseDTO(event);
+    assertThat(responseBody.getStatus()).isEqualTo("IN_PROGRESS");
+    assertThat(responseBody.getPolicyEval().getDeny()).isFalse();
   }
 }

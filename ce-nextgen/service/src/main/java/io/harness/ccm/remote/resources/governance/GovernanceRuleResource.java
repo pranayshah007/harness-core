@@ -208,8 +208,10 @@ public class GovernanceRuleResource {
     Rule rule = createRuleDTO.getRule();
     if (!rule.getIsOOTB()) {
       rule.setAccountId(accountId);
-    } else {
+    } else if (rule.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
       rule.setAccountId(GLOBAL_ACCOUNT_ID);
+    } else {
+      throw new InvalidRequestException("Not authorised to create OOTB rules. Make a custom rule instead");
     }
     if (governanceRuleService.fetchByName(accountId, rule.getName(), true) != null) {
       throw new InvalidRequestException("Rule with the given name already exits");
@@ -302,12 +304,19 @@ public class GovernanceRuleResource {
     Rule rule = createRuleDTO.getRule();
     rule.toDTO();
     Rule oldRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
+    if (oldRule.getIsOOTB()) {
+      throw new InvalidRequestException("Editing OOTB rule is not allowed");
+    }
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_NAME, oldRule.getName());
-    oldRule.setRulesYaml(rule.getRulesYaml());
-    governanceRuleService.validateAWSSchema(oldRule);
-    governanceRuleService.custodianValidate(oldRule);
+    if (rule.getRulesYaml() != null) {
+      Rule testSchema = Rule.builder().build();
+      testSchema.setName(oldRule.getName());
+      testSchema.setRulesYaml(rule.getRulesYaml());
+      governanceRuleService.validateAWSSchema(testSchema);
+      governanceRuleService.custodianValidate(testSchema);
+    }
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
@@ -340,12 +349,20 @@ public class GovernanceRuleResource {
     if (createRuleDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
-    if (!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
-      throw new InvalidRequestException("Editing OOTB rule is not allowed");
-    }
+
     Rule rule = createRuleDTO.getRule();
     rule.toDTO();
-    governanceRuleService.fetchById(GLOBAL_ACCOUNT_ID, rule.getUuid(), true);
+    if (!rule.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
+      throw new InvalidRequestException("Editing OOTB rule is not allowed");
+    }
+    Rule oldRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
+    if (rule.getRulesYaml() != null) {
+      Rule testSchema = Rule.builder().build();
+      testSchema.setName(oldRule.getName());
+      testSchema.setRulesYaml(rule.getRulesYaml());
+      governanceRuleService.validateAWSSchema(testSchema);
+      governanceRuleService.custodianValidate(testSchema);
+    }
     return ResponseDTO.newResponse(governanceRuleService.update(rule, GLOBAL_ACCOUNT_ID));
   }
   // Internal API for deletion of OOTB rules
@@ -374,7 +391,7 @@ public class GovernanceRuleResource {
       @PathParam("ruleID") @Parameter(
           required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid) {
     if (!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
-      throw new InvalidRequestException("Editing OOTB rule is not allowed");
+      throw new InvalidRequestException("Deleting OOTB rule is not allowed");
     }
     governanceRuleService.fetchById(GLOBAL_ACCOUNT_ID, uuid, false);
     boolean result = governanceRuleService.delete(GLOBAL_ACCOUNT_ID, uuid);

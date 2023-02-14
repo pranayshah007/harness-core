@@ -287,6 +287,63 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ActionStepInfoV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "uses"
+          ],
+          "properties": {
+            "envs": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "outputs": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "uses": {
+              "type": "string"
+            },
+            "with": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AquaTrivyStepInfo": {
       "allOf": [
         {
@@ -936,6 +993,63 @@
                   "type": "string"
                 }
               ]
+            },
+            "uses": {
+              "type": "string"
+            },
+            "with": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "BitriseStepInfoV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "uses"
+          ],
+          "properties": {
+            "envs": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "outputs": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
             },
             "uses": {
               "type": "string"
@@ -10087,6 +10201,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "action"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ActionStepInfoV1"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "background"
               }
             }
@@ -10095,6 +10225,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/BackgroundStepInfoV1"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "bitrise"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BitriseStepInfoV1"
               }
             }
           }
