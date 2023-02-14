@@ -11,6 +11,7 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateResult;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.NewRelicCVConfig;
@@ -100,25 +101,29 @@ public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
       String environmentRef, String serviceRef, String monitoredServiceIdentifier, String identifier, String name,
       MetricPackService metricPackService) {
     List<NewRelicCVConfig> cvConfigs = new ArrayList<>();
-    CollectionUtils.emptyIfNull(metricPacks).forEach(metricPack -> {
-      MetricPack metricPackFromDb =
-          metricPack.toMetricPack(accountId, orgIdentifier, projectIdentifier, getType(), metricPackService);
-      NewRelicCVConfig newRelicCVConfig = NewRelicCVConfig.builder()
-                                              .accountId(accountId)
-                                              .orgIdentifier(orgIdentifier)
-                                              .projectIdentifier(projectIdentifier)
-                                              .identifier(identifier)
-                                              .connectorIdentifier(getConnectorRef())
-                                              .monitoringSourceName(name)
-                                              .applicationName(applicationName)
-                                              .applicationId(Long.valueOf(applicationId))
-                                              .metricPack(metricPackFromDb)
-                                              .category(metricPackFromDb.getCategory())
-                                              .productName(feature)
-                                              .monitoredServiceIdentifier(monitoredServiceIdentifier)
-                                              .build();
-      cvConfigs.add(newRelicCVConfig);
-    });
+    CollectionUtils.emptyIfNull(metricPacks)
+        .stream()
+        .filter(
+            metricPack -> !metricPack.getIdentifier().equalsIgnoreCase(MonitoredServiceConstants.CUSTOM_METRIC_PACK))
+        .forEach(metricPack -> {
+          MetricPack metricPackFromDb =
+              metricPack.toMetricPack(accountId, orgIdentifier, projectIdentifier, getType(), metricPackService);
+          NewRelicCVConfig newRelicCVConfig = NewRelicCVConfig.builder()
+                                                  .accountId(accountId)
+                                                  .orgIdentifier(orgIdentifier)
+                                                  .projectIdentifier(projectIdentifier)
+                                                  .identifier(identifier)
+                                                  .connectorIdentifier(getConnectorRef())
+                                                  .monitoringSourceName(name)
+                                                  .applicationName(applicationName)
+                                                  .applicationId(Long.valueOf(applicationId))
+                                                  .metricPack(metricPackFromDb)
+                                                  .category(metricPackFromDb.getCategory())
+                                                  .productName(feature)
+                                                  .monitoredServiceIdentifier(monitoredServiceIdentifier)
+                                                  .build();
+          cvConfigs.add(newRelicCVConfig);
+        });
 
     // cvConfigs for the custom metrics
     Map<MetricDefinitionKey, List<NewRelicMetricDefinition>> metricDefinitionMap =

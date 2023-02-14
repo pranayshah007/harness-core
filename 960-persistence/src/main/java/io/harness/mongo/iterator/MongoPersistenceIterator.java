@@ -20,7 +20,6 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.System.currentTimeMillis;
-import static java.time.Duration.ZERO;
 import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofSeconds;
 
@@ -223,7 +222,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
 
     Long nextIteration = next.obtainNextIteration(fieldName);
     if (nextIteration == null) {
-      return ZERO;
+      return maximumDelayForCheck == null ? targetInterval : maximumDelayForCheck;
     }
 
     Duration nextEntity = ofMillis(nextIteration - currentTimeMillis());

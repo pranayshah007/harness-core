@@ -92,14 +92,14 @@ public abstract class WorkflowHandler {
       CUSTOM_DEPLOYMENT_FETCH_INSTANCES.getName(), AWS_NODE_SELECT.name(), AZURE_NODE_SELECT.getName());
 
   @Inject private StepMapperFactory stepMapperFactory;
-
   public List<CgEntityId> getReferencedEntities(StepMapperFactory stepMapperFactory, Workflow workflow) {
     List<GraphNode> steps = getSteps(workflow);
+    Map<String, String> stepIdToServiceIdMap = getStepIdToServiceIdMap(workflow);
     if (EmptyPredicate.isEmpty(steps)) {
       return Collections.emptyList();
     }
     return steps.stream()
-        .map(step -> stepMapperFactory.getStepMapper(step.getType()).getReferencedEntities(step))
+        .map(step -> stepMapperFactory.getStepMapper(step.getType()).getReferencedEntities(step, stepIdToServiceIdMap))
         .filter(EmptyPredicate::isNotEmpty)
         .flatMap(Collection::stream)
         .collect(Collectors.toList());
@@ -247,6 +247,36 @@ public abstract class WorkflowHandler {
       stepYamls.addAll(getStepsFromPhases(rollbackPhases));
     }
     return stepYamls;
+  }
+
+  public Map<String, String> getStepIdToServiceIdMap(Workflow workflow) {
+    Map<String, String> result = new HashMap<>();
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    List<WorkflowPhase> phases = orchestrationWorkflow.getWorkflowPhases();
+    result.putAll(getStepIdToServiceIdMap(phases));
+    List<WorkflowPhase> rollbackPhases = getRollbackPhases(workflow);
+    result.putAll(getStepIdToServiceIdMap(rollbackPhases));
+    return result;
+  }
+
+  private Map<String, String> getStepIdToServiceIdMap(List<WorkflowPhase> phases) {
+    Map<String, String> result = new HashMap<>();
+    if (isNotEmpty(phases)) {
+      for (WorkflowPhase phase : phases) {
+        String serviceId = phase.getServiceId();
+        List<PhaseStep> phaseSteps = phase.getPhaseSteps();
+        if (isNotEmpty(phaseSteps)) {
+          for (PhaseStep phaseStep : phaseSteps) {
+            List<GraphNode> steps = phaseStep.getSteps();
+            if (isNotEmpty(steps)) {
+              steps.forEach(s -> result.put(s.getId(), serviceId));
+            }
+          }
+        }
+      }
+    }
+    return result;
   }
 
   List<GraphNode> getStepsFromPhases(List<WorkflowPhase> phases) {

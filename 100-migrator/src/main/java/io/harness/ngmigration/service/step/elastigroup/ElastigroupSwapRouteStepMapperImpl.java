@@ -10,8 +10,8 @@ package io.harness.ngmigration.service.step.elastigroup;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStepInfo;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -58,7 +58,7 @@ public class ElastigroupSwapRouteStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 }

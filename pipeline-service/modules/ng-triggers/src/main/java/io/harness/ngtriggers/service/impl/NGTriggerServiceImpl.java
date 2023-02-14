@@ -661,13 +661,6 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       throw new InvalidArgumentsException("Name can not be empty");
     }
 
-    if (isNotEmpty(triggerDetails.getNgTriggerConfigV2().getInputYaml())) {
-      Map<String, Map<String, String>> errorMap = validatePipelineRef(triggerDetails);
-      if (!CollectionUtils.isEmpty(errorMap)) {
-        throw new InvalidTriggerYamlException("Invalid Yaml", errorMap, triggerDetails, null);
-      }
-    }
-
     NGTriggerSourceV2 triggerSource = triggerDetails.getNgTriggerConfigV2().getSource();
     NGTriggerSpecV2 spec = triggerSource.getSpec();
     switch (triggerSource.getType()) {
@@ -789,7 +782,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         String templateYaml = createRuntimeInputForm(pipelineYaml);
         String triggerYaml = triggerDetails.getNgTriggerEntity().getYaml();
         String triggerPipelineYml = getPipelineComponent(triggerYaml);
-        Map<FQN, String> invalidFQNs = getInvalidFQNsInTrigger(templateYaml, triggerPipelineYml);
+        String accountIdentifier = triggerDetails.getNgTriggerEntity().getAccountId();
+        Map<FQN, String> invalidFQNs = getInvalidFQNsInTrigger(templateYaml, triggerPipelineYml, accountIdentifier);
         if (isEmpty(invalidFQNs)) {
           return errorMap;
         }
@@ -844,7 +838,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
   }
 
-  public Map<FQN, String> getInvalidFQNsInTrigger(String templateYaml, String triggerPipelineCompYaml) {
+  public Map<FQN, String> getInvalidFQNsInTrigger(
+      String templateYaml, String triggerPipelineCompYaml, String accountIdentifier) {
     Map<FQN, String> errorMap = new LinkedHashMap<>();
     YamlConfig triggerConfig = new YamlConfig(triggerPipelineCompYaml);
     Set<FQN> triggerFQNs = new LinkedHashSet<>(triggerConfig.getFqnToValueMap().keySet());
@@ -882,6 +877,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       } else {
         Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(triggerConfig.getFqnToValueMap(), key);
         subMap.keySet().forEach(triggerFQNs::remove);
+        if (pmsFeatureFlagService.isEnabled(
+                accountIdentifier, FeatureName.SPG_VALIDATE_PIPELINE_RUNTIME_INPUT_FOR_TRIGGER)) {
+          errorMap.put(key, "Trigger does not contain required input " + key.getExpressionFqn());
+        }
       }
     });
     triggerFQNs.forEach(fqn -> errorMap.put(fqn, "Field either not present in pipeline or not a runtime input"));

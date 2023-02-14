@@ -41,7 +41,9 @@ import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
+import io.harness.ng.overview.dto.OpenTaskDetails;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
+import io.harness.pms.execution.ExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.service.instancedashboardservice.InstanceDashboardServiceImpl;
 
@@ -51,6 +53,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
@@ -1106,5 +1109,41 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     verify(instanceDashboardService)
         .getActiveServiceInstanceInfoWithEnvType(
             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_OpenTasks() {
+    CDOverviewDashboardServiceImpl cdOverviewDashboardService1 = spy(cdOverviewDashboardService);
+    String query = DashboardServiceHelper.buildOpenTaskQuery(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, 1000l);
+    List<String> STATUS_LIST = Arrays
+                                   .asList(ExecutionStatus.ABORTED, ExecutionStatus.ABORTEDBYFREEZE,
+                                       ExecutionStatus.FAILED, ExecutionStatus.EXPIRED, ExecutionStatus.APPROVALWAITING)
+                                   .stream()
+                                   .map(ExecutionStatus::name)
+                                   .collect(Collectors.toList());
+    List<String> pipelineExecutionIdList = Arrays.asList(PIPELINE_EXECUTION_1, PIPELINE_EXECUTION_2);
+    List<ServicePipelineInfo> servicePipelineInfoList = Arrays.asList(
+        ServicePipelineInfo.builder().pipelineExecutionId(PIPELINE_EXECUTION_2).lastExecutedAt(1l).build(),
+        ServicePipelineInfo.builder().pipelineExecutionId(PIPELINE_EXECUTION_1).lastExecutedAt(2l).build());
+    List<ServicePipelineInfo> servicePipelineInfoListSorted =
+        Arrays.asList(servicePipelineInfoList.get(1), servicePipelineInfoList.get(0));
+    Map<String, ServicePipelineInfo> servicePipelineInfoMap = new HashMap<>();
+    servicePipelineInfoMap.put(PIPELINE_EXECUTION_1, servicePipelineInfoList.get(0));
+    servicePipelineInfoMap.put(PIPELINE_EXECUTION_2, servicePipelineInfoList.get(1));
+    doReturn(pipelineExecutionIdList)
+        .when(cdOverviewDashboardService1)
+        .getPipelineExecutionIdFromServiceInfraInfo(query);
+    doReturn(servicePipelineInfoMap)
+        .when(cdOverviewDashboardService1)
+        .getPipelineExecutionDetails(pipelineExecutionIdList, STATUS_LIST);
+    OpenTaskDetails openTaskDetailsResult =
+        cdOverviewDashboardService1.getOpenTasks(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, 1000l);
+    OpenTaskDetails openTaskDetails =
+        OpenTaskDetails.builder().pipelineDeploymentDetails(servicePipelineInfoListSorted).build();
+    assertThat(openTaskDetails).isEqualTo(openTaskDetailsResult);
+    verify(cdOverviewDashboardService1).getPipelineExecutionIdFromServiceInfraInfo(query);
+    verify(cdOverviewDashboardService1).getPipelineExecutionDetails(pipelineExecutionIdList, STATUS_LIST);
   }
 }

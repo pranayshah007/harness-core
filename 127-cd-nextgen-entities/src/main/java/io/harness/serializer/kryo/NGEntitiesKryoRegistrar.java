@@ -66,6 +66,7 @@ import io.harness.cdng.customdeployment.CustomDeploymentNumberNGVariable;
 import io.harness.cdng.customdeployment.CustomDeploymentSecretNGVariable;
 import io.harness.cdng.customdeployment.CustomDeploymentStringNGVariable;
 import io.harness.cdng.infra.beans.AsgInfrastructureOutcome;
+import io.harness.cdng.infra.beans.AwsSamInfrastructureOutcome;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.GoogleFunctionsInfrastructureOutcome;
@@ -90,6 +91,7 @@ import io.harness.cdng.manifest.yaml.AsgScalingPolicyManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScheduledUpdateGroupActionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
 import io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
 import io.harness.cdng.manifest.yaml.AzureRepoStore;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
@@ -133,6 +135,7 @@ import io.harness.cdng.manifest.yaml.kinds.AsgScalingPolicyManifest;
 import io.harness.cdng.manifest.yaml.kinds.AsgScheduledUpdateGroupActionManifest;
 import io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest;
 import io.harness.cdng.manifest.yaml.kinds.AwsLambdaDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.AwsSamDirectoryManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
@@ -383,5 +386,10 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(BambooArtifactConfig.class, 150070);
     kryo.register(AwsLambdaDefinitionManifest.class, 140071);
     kryo.register(AwsLambdaDefinitionManifestOutcome.class, 140072);
+
+    // AWS SAM
+    kryo.register(AwsSamInfrastructureOutcome.class, 1510001);
+    kryo.register(AwsSamDirectoryManifest.class, 1510002);
+    kryo.register(AwsSamDirectoryManifestOutcome.class, 1510003);
   }
 }

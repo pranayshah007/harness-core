@@ -350,10 +350,12 @@ public abstract class State {
   protected void renderDelegateTask(
       ExecutionContext context, DelegateTask task, StateExecutionContext stateExecutionContext) {
     context.resetPreparedCache();
-    if (task.getData().getParameters().length == 1 && task.getData().getParameters()[0] instanceof TaskParameters) {
+    Object[] taskParameters =
+        task.getData() != null ? task.getData().getParameters() : task.getTaskDataV2().getParameters();
+    if (taskParameters.length == 1 && taskParameters[0] instanceof TaskParameters) {
       task.setWorkflowExecutionId(context.getWorkflowExecutionId());
-      ExpressionReflectionUtils.applyExpression(task.getData().getParameters()[0],
-          (secretMode, value) -> context.renderExpression(value, stateExecutionContext));
+      ExpressionReflectionUtils.applyExpression(
+          taskParameters[0], (secretMode, value) -> context.renderExpression(value, stateExecutionContext));
     }
   }
 

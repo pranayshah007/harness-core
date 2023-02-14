@@ -139,11 +139,9 @@ public class GenericPlanCreatorUtilsTest extends CategoryTest {
         + "         - __uuid: a0\n"
         + "           stage:\n"
         + "             type: Pipeline\n"
-        + "           __uuid: a1\n"
         + "         - __uuid: a3\n"
         + "           stage:\n"
-        + "             type: Deployment\n"
-        + "             __uuid: a4\n";
+        + "             type: Deployment\n";
 
     pipelineYamlField = YamlUtils.readTree(parallelStageYaml);
     pipelineStageNode = pipelineYamlField.getNode()
@@ -167,8 +165,7 @@ public class GenericPlanCreatorUtilsTest extends CategoryTest {
         + "         - __uuid: a0\n"
         + "           stage:\n"
         + "             type: Pipeline\n"
-        + "           __uuid: a1\n"
-        + "         - __uuid: a3\n"
+        + "         - __uuid: a1\n"
         + "           stage:\n"
         + "             type: Deployment\n"
         + "             __uuid: a4\n"

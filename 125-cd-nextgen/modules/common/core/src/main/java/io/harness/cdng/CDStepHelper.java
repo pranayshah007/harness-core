@@ -68,6 +68,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
+import io.harness.data.encoding.EncodingUtils;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
@@ -563,6 +564,16 @@ public class CDStepHelper {
 
     validateReleaseName(releaseName);
     return releaseName;
+  }
+
+  public String getFileContentAsBase64(Ambiance ambiance, String scopedFilePath, long allowedBytesFileSize) {
+    return EncodingUtils.encodeBase64(getFileContentAsString(ambiance, scopedFilePath, allowedBytesFileSize));
+  }
+
+  public String getFileContentAsString(Ambiance ambiance, final String scopedFilePath, long allowedBytesFileSize) {
+    return fileStoreService.getFileContentAsString(AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), scopedFilePath,
+        allowedBytesFileSize);
   }
 
   private static void validateReleaseName(String name) {
