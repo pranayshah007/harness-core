@@ -189,7 +189,6 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       return;
     }
     DataCollectionTask dataCollectionTask = getDataCollectionTask(result.getDataCollectionTaskId());
-    recordMetricsOnUpdateStatus(dataCollectionTask);
     ExecutionLogger executionLogger = executionLogService.getLogger(dataCollectionTask);
     executionLogger.log(
         dataCollectionTask.getLogLevel(), "Data collection task status: " + dataCollectionTask.getStatus());
@@ -224,20 +223,6 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       }
     } else {
       retry(dataCollectionTask);
-    }
-  }
-
-  private void recordMetricsOnUpdateStatus(DataCollectionTask dataCollectionTask) {
-    try (AutoMetricContext ignore = metricContextBuilder.getContext(dataCollectionTask, DataCollectionTask.class)) {
-      metricService.incCounter(CVNGMetricsUtils.getDataCollectionTaskStatusMetricName(dataCollectionTask.getStatus()));
-      metricService.recordDuration(
-          CVNGMetricsUtils.DATA_COLLECTION_TASK_TOTAL_TIME, dataCollectionTask.totalTime(clock.instant()));
-
-      if (dataCollectionTask.getLastPickedAt() != null) {
-        metricService.recordDuration(CVNGMetricsUtils.DATA_COLLECTION_TASK_WAIT_TIME, dataCollectionTask.waitTime());
-        metricService.recordDuration(
-            CVNGMetricsUtils.DATA_COLLECTION_TASK_RUNNING_TIME, dataCollectionTask.runningTime(clock.instant()));
-      }
     }
   }
 

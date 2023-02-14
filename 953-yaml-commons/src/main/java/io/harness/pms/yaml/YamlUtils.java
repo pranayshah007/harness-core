@@ -67,6 +67,16 @@ public class YamlUtils {
   static {
     mapper = new ObjectMapper(new YAMLFactory());
     mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    // This is added to prevent duplicate fields in the yaml. Without this, through api duplicate fields were allowed to
+    // save. The below yaml is invalid and should not be allowed to save.
+    /*
+    pipeline:
+      name: pipeline
+      orgIdentifier: org
+      projectIdentifier: project
+      orgIdentifier: org
+     */
+    mapper.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
     mapper.setSubtypeResolver(AnnotationAwareJsonSubtypeResolver.newInstance(mapper.getSubtypeResolver()));
     mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     mapper.registerModule(new Jdk8Module());
@@ -618,7 +628,7 @@ public class YamlUtils {
     for (FQN fqn : fqnToValueMap.keySet()) {
       Object value = fqnToValueMap.get(fqn);
       if (value instanceof TextNode) {
-        String trimValue = value.toString().trim();
+        String trimValue = ((TextNode) value).textValue().trim();
         String valueWithoutValidators = trimValue;
         for (String validator : VALIDATORS) {
           if (trimValue.contains(validator)) {

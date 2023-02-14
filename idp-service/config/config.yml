@@ -15,7 +15,7 @@ mongo:
 server:
   applicationConnectors:
     - type: http
-      port: 12001
+      port: 12003
       maxRequestHeaderSize: 100KiB
   requestLog:
     appenders: []

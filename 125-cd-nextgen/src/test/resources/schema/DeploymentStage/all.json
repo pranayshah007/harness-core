@@ -1440,6 +1440,25 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AwsSamDirectoryManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AwsSamInfrastructure": {
       "allOf": [
         {
@@ -1464,6 +1483,18 @@
               "minLength": 1
             }
           }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AwsSamServiceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ServiceSpec"
+        },
+        {
+          "type": "object",
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -3878,7 +3909,8 @@
             "TAS",
             "Asg",
             "GoogleCloudFunctions",
-            "AwsLambda"
+            "AwsLambda",
+            "AWS_SAM"
           ]
         },
         "environment": {
@@ -4105,8 +4137,7 @@
               "type": "string"
             },
             "tagRegex": {
-              "type": "string",
-              "pattern": "^[a-zA-Z0-9 .*/#_-]*$"
+              "type": "string"
             }
           }
         },
@@ -4644,16 +4675,7 @@
               }
             },
             "name": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string",
-                  "pattern": "(<\\+.+>.*)",
-                  "minLength": 1
-                }
-              ]
+              "type": "string"
             }
           }
         }
@@ -4950,16 +4972,7 @@
               "$ref": "#/definitions/ElastigroupInstances"
             },
             "name": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string",
-                  "pattern": "(<\\+.+>.*)",
-                  "minLength": 1
-                }
-              ]
+              "type": "string"
             }
           }
         }
@@ -8388,7 +8401,8 @@
             "AsgScalingPolicy",
             "AsgScheduledUpdateGroupAction",
             "GoogleCloudFunctionDefinition",
-            "AwsLambda"
+            "AwsLambda",
+            "AwsSamDirectory"
           ]
         }
       },
@@ -8470,6 +8484,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AwsLambdaDefinitionManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AwsSamDirectory"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsSamDirectoryManifest"
               }
             }
           }
@@ -11181,12 +11211,29 @@
             "TAS",
             "Asg",
             "GoogleCloudFunctions",
-            "AwsLambda"
+            "AwsLambda",
+            "AWS_SAM"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AWS_SAM"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsSamServiceSpec"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {

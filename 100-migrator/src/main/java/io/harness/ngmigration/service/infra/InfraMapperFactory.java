@@ -12,6 +12,7 @@ import static software.wings.api.DeploymentType.CUSTOM;
 import static software.wings.api.DeploymentType.ECS;
 import static software.wings.api.DeploymentType.HELM;
 import static software.wings.api.DeploymentType.KUBERNETES;
+import static software.wings.api.DeploymentType.PCF;
 import static software.wings.api.DeploymentType.SSH;
 import static software.wings.api.DeploymentType.WINRM;
 
@@ -33,6 +34,7 @@ public class InfraMapperFactory {
   private static final InfraDefMapper ecsInfraDefMapper = new EcsInfraDefMapper();
   private static final InfraDefMapper elastigroupInfraDefMapper = new AmiElastigroupInfraDefMapper();
   private static final InfraDefMapper customDeploymentInfraDefMapper = new CustomDeploymentInfraDefMapper();
+  private static final InfraDefMapper pcfInfraDefMapper = new PcfInfraDefMapper();
   public static final Map<DeploymentType, InfraDefMapper> INFRA_DEF_MAPPER_MAP =
       ImmutableMap.<DeploymentType, InfraDefMapper>builder()
           .put(KUBERNETES, k8sInfraDefMapper)
@@ -42,6 +44,7 @@ public class InfraMapperFactory {
           .put(AMI, elastigroupInfraDefMapper)
           .put(CUSTOM, customDeploymentInfraDefMapper)
           .put(WINRM, sshWinRmInfraDefMapper)
+          .put(PCF, pcfInfraDefMapper)
           .build();
 
   public static InfraDefMapper getInfraDefMapper(InfrastructureDefinition infraDef) {

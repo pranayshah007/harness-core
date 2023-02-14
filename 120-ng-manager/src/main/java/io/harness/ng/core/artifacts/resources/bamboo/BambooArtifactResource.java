@@ -97,9 +97,9 @@ public class BambooArtifactResource {
         planName = bambooArtifactConfig.getPlanKey().fetchFinalValue().toString();
       }
     }
-    planName = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    planName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, planName, fqnPath, gitEntityBasicInfo, serviceRef);
-    bambooConnectorIdentifier = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    bambooConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, bambooConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(bambooConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -134,9 +134,9 @@ public class BambooArtifactResource {
         artifactPath = bambooArtifactConfig.getArtifactPath().getValue();
       }
     }
-    planName = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    planName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, planName, fqnPath, gitEntityBasicInfo, serviceRef);
-    bambooConnectorIdentifier = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    bambooConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, bambooConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(bambooConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);

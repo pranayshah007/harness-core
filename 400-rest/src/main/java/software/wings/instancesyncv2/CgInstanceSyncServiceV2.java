@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.exception.WingsException;
 import io.harness.exception.runtime.NoInstancesException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.grpc.DelegateServiceGrpcClient;
@@ -48,8 +49,10 @@ import software.wings.service.impl.instance.InstanceHandler;
 import software.wings.service.impl.instance.InstanceHandlerFactoryService;
 import software.wings.service.impl.instance.InstanceSyncByPerpetualTaskHandler;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskService;
+import software.wings.service.impl.instance.Status;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.instance.DeploymentService;
+import software.wings.service.intfc.instance.InstanceService;
 import software.wings.settings.SettingVariableTypes;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -59,7 +62,6 @@ import com.google.inject.Singleton;
 import com.google.protobuf.util.Durations;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -95,6 +97,7 @@ public class CgInstanceSyncServiceV2 {
   private final PersistentLocker persistentLocker;
   private final FeatureFlagService featureFlagService;
   private final InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
+  private final InstanceService instanceService;
 
   private static final int INSTANCE_COUNT_LIMIT =
       Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_INSTANCE_COUNT", "100"));
@@ -218,6 +221,9 @@ public class CgInstanceSyncServiceV2 {
           restorePerpetualTasks(perpetualTaskId, result, instanceSyncTaskDetails);
         }
       }
+      // Cleaning up th Unused Perpetual Task if Present
+      instanceSyncV2CleanupIfPresent(perpetualTaskId, result);
+
       return;
     }
 
@@ -237,27 +243,37 @@ public class CgInstanceSyncServiceV2 {
       restorePerpetualTasks(perpetualTaskId, result, instanceSyncTaskDetails);
     }
 
+    List<InstanceSyncTaskDetails> instanceSyncTaskDetailsList =
+        taskDetailsService.fetchAllForPerpetualTask(result.getAccountId(), perpetualTaskId);
+    Map<String, InstanceSyncTaskDetails> instanceSyncTaskDetailsMap = new HashMap<>();
+    for (InstanceSyncTaskDetails instanceSyncTaskDetails : instanceSyncTaskDetailsList) {
+      instanceSyncTaskDetailsMap.put(instanceSyncTaskDetails.getUuid(), instanceSyncTaskDetails);
+    }
+
     Map<String, List<InstanceSyncData>> instancesPerTask = new HashMap<>();
     for (InstanceSyncData instanceSyncData : result.getInstanceDataList()) {
-      if (!instanceSyncData.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
-        log.error("Instance Sync failed for perpetual task: [{}], for task details: [{}], with error: [{}]",
-            perpetualTaskId, instanceSyncData.getTaskDetailsId(), instanceSyncData.getErrorMessage());
-        continue;
-      }
-
       if (!instancesPerTask.containsKey(instanceSyncData.getTaskDetailsId())) {
         instancesPerTask.put(instanceSyncData.getTaskDetailsId(), new ArrayList<>());
       }
 
-      instancesPerTask.get(instanceSyncData.getTaskDetailsId()).addAll(Arrays.asList(instanceSyncData));
+      instancesPerTask.get(instanceSyncData.getTaskDetailsId()).add(instanceSyncData);
     }
 
-    handlingInstanceSync(instancesPerTask);
+    handlingInstanceSync(instancesPerTask, instanceSyncTaskDetailsMap);
   }
 
-  private void handlingInstanceSync(Map<String, List<InstanceSyncData>> instancesPerTask) {
+  private void instanceSyncV2CleanupIfPresent(String perpetualTaskId, CgInstanceSyncResponse result) {
+    if (!taskDetailsService.isInstanceSyncTaskDetailsExist(result.getAccountId(), perpetualTaskId)) {
+      delegateServiceClient.deletePerpetualTask(AccountId.newBuilder().setId(result.getAccountId()).build(),
+          PerpetualTaskId.newBuilder().setId(perpetualTaskId).build());
+      log.info("Deleted Instance Sync V2 Perpetual task: [{}] .", perpetualTaskId);
+    }
+  }
+
+  private void handlingInstanceSync(Map<String, List<InstanceSyncData>> instancesPerTask,
+      Map<String, InstanceSyncTaskDetails> instanceSyncTaskDetailsMap) {
     for (String taskDetailsId : instancesPerTask.keySet()) {
-      InstanceSyncTaskDetails taskDetails = taskDetailsService.getForId(taskDetailsId);
+      InstanceSyncTaskDetails taskDetails = instanceSyncTaskDetailsMap.get(taskDetailsId);
       if (isNull(taskDetails)) {
         log.warn("No InstanceSyncTaskDetails Present for taskId: [{}]", taskDetailsId);
         continue;
@@ -300,15 +316,41 @@ public class CgInstanceSyncServiceV2 {
               (DelegateResponseData) kryoSerializer.asObject(instanceSyncData.getTaskResponse().toByteArray());
           try {
             instanceSyncHandler.processInstanceSyncResponseFromPerpetualTask(infraMapping, delegateResponse);
-          } catch (NoInstancesException e) {
+          } catch (NoInstancesException ex) {
             // No Action Required
+          } catch (Exception ex) {
+            handleSyncFailure(infraMapping, ex);
+            log.error(ex.getMessage());
+          } finally {
+            Status status = instanceSyncHandler.getStatus(infraMapping, delegateResponse);
+            if (status.isSuccess()) {
+              instanceService.updateSyncSuccess(infraMapping.getAppId(), infraMapping.getServiceId(),
+                  infraMapping.getEnvId(), infraMapping.getUuid(), infraMapping.getDisplayName(),
+                  System.currentTimeMillis());
+            }
           }
         }
         taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
       }
     }
   }
+  private void handleSyncFailure(InfrastructureMapping infrastructureMapping, Exception ex) {
+    String errorMsg = getErrorMsg(ex);
 
+    instanceService.handleSyncFailure(infrastructureMapping.getAppId(), infrastructureMapping.getServiceId(),
+        infrastructureMapping.getEnvId(), infrastructureMapping.getUuid(), infrastructureMapping.getDisplayName(),
+        System.currentTimeMillis(), errorMsg);
+  }
+
+  private String getErrorMsg(Exception ex) {
+    String errorMsg;
+    if (ex instanceof WingsException) {
+      errorMsg = ex.getMessage();
+    } else {
+      errorMsg = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
+    }
+    return errorMsg;
+  }
   private void restorePerpetualTasks(
       String perpetualTaskId, CgInstanceSyncResponse result, List<InstanceSyncTaskDetails> instanceSyncTaskDetails) {
     Map<String, List<InstanceSyncTaskDetails>> instanceTaskMap = new HashMap<>();

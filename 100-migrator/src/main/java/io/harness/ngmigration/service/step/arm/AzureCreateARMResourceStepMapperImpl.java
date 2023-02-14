@@ -46,8 +46,8 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -74,7 +74,7 @@ import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 public class AzureCreateARMResourceStepMapperImpl extends BaseAzureARMProvisionerMapper {
-  public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
+  public List<CgEntityId> getReferencedEntities(GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     ARMProvisionState state = (ARMProvisionState) getState(graphNode);
 
     List<CgEntityId> references = new ArrayList<>();
@@ -339,8 +339,8 @@ public class AzureCreateARMResourceStepMapperImpl extends BaseAzureARMProvisione
   }
 
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 
   @Override
