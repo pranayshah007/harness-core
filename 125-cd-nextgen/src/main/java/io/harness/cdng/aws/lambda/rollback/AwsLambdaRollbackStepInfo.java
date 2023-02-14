@@ -54,8 +54,8 @@ public class AwsLambdaRollbackStepInfo extends AwsLambdaRollbackBaseStepInfo imp
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public AwsLambdaRollbackStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public AwsLambdaRollbackStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String awsLambdaDeployStepFnq) {
+    super(delegateSelectors, awsLambdaDeployStepFnq);
   }
 
   @Override

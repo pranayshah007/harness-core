@@ -30,7 +30,7 @@ import java.util.List;
 @RecasterAlias("io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepParameters")
 public class AwsLambdaRollbackStepParameters extends AwsLambdaRollbackBaseStepInfo implements AwsLambdaSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public AwsLambdaRollbackStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public AwsLambdaRollbackStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String awsLambdaDeployStepFnq) {
+    super(delegateSelectors, awsLambdaDeployStepFnq);
   }
 }

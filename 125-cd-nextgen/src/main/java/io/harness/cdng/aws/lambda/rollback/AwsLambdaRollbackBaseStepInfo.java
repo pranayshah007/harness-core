@@ -7,6 +7,7 @@
 
 package io.harness.cdng.aws.lambda.rollback;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -35,4 +36,7 @@ public class AwsLambdaRollbackBaseStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+
+  @JsonIgnore
+  String awsLambdaDeployStepFnq;
 }

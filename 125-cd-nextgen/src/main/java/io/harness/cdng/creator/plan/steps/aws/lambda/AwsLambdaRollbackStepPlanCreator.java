@@ -7,6 +7,8 @@
 
 package io.harness.cdng.creator.plan.steps.aws.lambda;
 
+import static io.harness.cdng.visitor.YamlTypes.AWS_LAMBDA_DEPLOY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepNode;
@@ -41,10 +43,13 @@ public class AwsLambdaRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<Aws
   @Override
   protected StepParameters getStepParameters(PlanCreationContext ctx, AwsLambdaRollbackStepNode stepNode) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepNode);
+
+    String awsLambdaDeployStepFnq = getExecutionStepFqn(ctx.getCurrentField(), AWS_LAMBDA_DEPLOY);
     AwsLambdaRollbackStepParameters awsLambdaRollbackStepParameters =
         (AwsLambdaRollbackStepParameters) ((StepElementParameters) stepParameters).getSpec();
     awsLambdaRollbackStepParameters.setDelegateSelectors(
         stepNode.getAwsLambdaRollbackStepInfo().getDelegateSelectors());
+    awsLambdaRollbackStepParameters.setAwsLambdaDeployStepFnq(awsLambdaDeployStepFnq);
     return stepParameters;
   }
 }

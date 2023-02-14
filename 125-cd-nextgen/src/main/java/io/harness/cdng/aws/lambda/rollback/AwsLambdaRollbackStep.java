@@ -68,8 +68,8 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
           .build();
 
   public static final String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK_COMMAND_NAME = "CloudFunctionRollback";
-  public static final String GOOGLE_CLOUD_FUNCTIONS_DEPLOYMENT_STEP_MISSING =
-          "Google Function Deployment Step was not executed. Skipping Rollback...";
+  public static final String AWS_LAMBDA_DEPLOYMENT_STEP_MISSING =
+          "Aws Lambda Deployment Step was not executed. Skipping Rollback...";
 
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private OutcomeService outcomeService;
@@ -105,15 +105,11 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
           Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     AwsLambdaRollbackStepParameters awsLambdaRollbackStepParameters =
             (AwsLambdaRollbackStepParameters) stepParameters.getSpec();
-    if (EmptyPredicate.isEmpty(googleFunctionsRollbackStepParameters.getGoogleFunctionDeployWithoutTrafficStepFnq())
-            && EmptyPredicate.isEmpty(googleFunctionsRollbackStepParameters.getGoogleFunctionDeployStepFnq())) {
-      return skipTaskRequest(GOOGLE_CLOUD_FUNCTIONS_DEPLOYMENT_STEP_MISSING);
+    if (EmptyPredicate.isEmpty(awsLambdaRollbackStepParameters.getAwsLambdaDeployStepFnq())) {
+      return skipTaskRequest(AWS_LAMBDA_DEPLOYMENT_STEP_MISSING);
     }
 
-    String stepFnq = googleFunctionsRollbackStepParameters.getGoogleFunctionDeployWithoutTrafficStepFnq();
-    if (EmptyPredicate.isEmpty(stepFnq)) {
-      stepFnq = googleFunctionsRollbackStepParameters.getGoogleFunctionDeployStepFnq();
-    }
+    String stepFnq = awsLambdaRollbackStepParameters.getAwsLambdaDeployStepFnq();
     OptionalSweepingOutput googleFunctionPrepareRollbackDataOptional =
             executionSweepingOutputService.resolveOptional(ambiance,
                     RefObjectUtils.getSweepingOutputRefObject(
