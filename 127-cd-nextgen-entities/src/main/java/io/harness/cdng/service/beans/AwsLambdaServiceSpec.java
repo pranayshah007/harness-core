@@ -54,7 +54,8 @@ public class AwsLambdaServiceSpec implements ServiceSpec, Visitable {
 
   @Override
   public String getType() {
-    return ServiceDefinitionType.AWS_LAMBDA.getYamlName();
+    return "";
+    // return ServiceDefinitionType.AWS_LAMBDA.getYamlName();
   }
 
   @Override

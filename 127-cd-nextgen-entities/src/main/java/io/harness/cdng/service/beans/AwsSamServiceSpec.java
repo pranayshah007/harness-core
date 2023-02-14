@@ -54,7 +54,8 @@ public class AwsSamServiceSpec implements ServiceSpec, Visitable {
 
   @Override
   public String getType() {
-    return ServiceDefinitionType.AWS_SAM.getYamlName();
+    return "";
+    //return ServiceDefinitionType.AWS_SAM.getYamlName();
   }
 
   @Override

@@ -3859,9 +3859,7 @@
             "Elastigroup",
             "TAS",
             "Asg",
-            "GoogleCloudFunctions",
-            "AwsLambda",
-            "AWS_SAM"
+            "GoogleCloudFunctions"
           ]
         },
         "environment": {
@@ -11144,9 +11142,7 @@
             "Elastigroup",
             "TAS",
             "Asg",
-            "GoogleCloudFunctions",
-            "AwsLambda",
-            "AWS_SAM"
+            "GoogleCloudFunctions"
           ]
         }
       },
