@@ -32,6 +32,10 @@ public interface PMSInputSetService {
       String pipelineIdentifier, String identifier, boolean deleted, String pipelineBranch, String pipelineRepoID,
       boolean hasNewYamlStructure);
 
+  Optional<InputSetEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String identifier, boolean deleted, String pipelineBranch, String pipelineRepoID,
+      boolean hasNewYamlStructure, boolean loadFromCache);
+
   Optional<InputSetEntity> getWithoutValidations(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean deleted);
 

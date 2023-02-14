@@ -164,7 +164,8 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
 
   @Override
   public Optional<InputSetEntity> find(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String identifier, boolean notDeleted, boolean getMetadataOnly) {
+      String pipelineIdentifier, String identifier, boolean notDeleted, boolean getMetadataOnly,
+      boolean loadFromCache) {
     Criteria criteria = PMSInputSetFilterHelper.getCriteriaForFind(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, notDeleted);
     Query query = new Query(criteria);
@@ -188,6 +189,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
               .branchName(gitEntityInfo.getBranch())
               .connectorRef(savedEntity.getConnectorRef())
               .filePath(savedEntity.getFilePath())
+              .loadFromCache(loadFromCache)
               .repoName(savedEntity.getRepo())
               .build(),
           Collections.emptyMap());

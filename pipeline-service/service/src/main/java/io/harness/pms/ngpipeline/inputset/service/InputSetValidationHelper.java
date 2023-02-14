@@ -59,6 +59,11 @@ public class InputSetValidationHelper {
   // this method is not for old git sync
   public void validateInputSet(
       PMSInputSetService inputSetService, InputSetEntity inputSetEntity, boolean hasNewYamlStructure) {
+    validateInputSet(inputSetService, inputSetEntity, hasNewYamlStructure, false);
+  }
+
+  public void validateInputSet(PMSInputSetService inputSetService, InputSetEntity inputSetEntity,
+      boolean hasNewYamlStructure, boolean loadFromCache) {
     switch (inputSetEntity.getHarnessVersion()) {
       case PipelineVersion.V1:
         return;
@@ -77,7 +82,7 @@ public class InputSetValidationHelper {
         validateIdentifyingFieldsInYAML(orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
       }
     } else {
-      OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity);
+      OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity, loadFromCache);
     }
   }
 

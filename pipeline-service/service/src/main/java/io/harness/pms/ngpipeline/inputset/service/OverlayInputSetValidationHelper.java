@@ -42,7 +42,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class OverlayInputSetValidationHelper {
-  public void validateOverlayInputSet(PMSInputSetService inputSetService, InputSetEntity inputSetEntity) {
+  public void validateOverlayInputSet(
+      PMSInputSetService inputSetService, InputSetEntity inputSetEntity, boolean loadFromCache) {
     String accountId = inputSetEntity.getAccountId();
     String orgIdentifier = inputSetEntity.getOrgIdentifier();
     String projectIdentifier = inputSetEntity.getProjectIdentifier();

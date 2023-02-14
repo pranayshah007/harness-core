@@ -489,7 +489,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     verify(inputSetRepository, times(1))
         .findForOldGitSync(
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true);
-    verify(inputSetRepository, times(0)).find(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean());
+    verify(inputSetRepository, times(0)).find(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean(), false);
     mockSettings.close();
   }
 
@@ -501,21 +501,24 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
 
     doThrow(new ExplanationException("msg", null))
         .when(inputSetRepository)
-        .find(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false);
+        .find(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false, false);
     assertThatThrownBy(()
                            -> pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null, false))
         .isInstanceOf(ExplanationException.class);
     doThrow(new HintException("msg", null))
         .when(inputSetRepository)
-        .find(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false);
+        .find(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false, false);
     assertThatThrownBy(()
                            -> pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null, false))
         .isInstanceOf(HintException.class);
     doThrow(new ScmException(ErrorCode.DEFAULT_ERROR_CODE))
         .when(inputSetRepository)
-        .find(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false);
+        .find(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false, false);
     assertThatThrownBy(()
                            -> pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null, false))
@@ -523,7 +526,8 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
 
     doThrow(new NullPointerException())
         .when(inputSetRepository)
-        .find(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false);
+        .find(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false, false);
     assertThatThrownBy(()
                            -> pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null, false))
@@ -531,7 +535,8 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
 
     doReturn(Optional.of(inputSetEntity.withStoreType(StoreType.REMOTE)))
         .when(inputSetRepository)
-        .find(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false);
+        .find(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false, false);
     // without mocks this will throw an exception
     assertThatThrownBy(()
                            -> pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
@@ -851,7 +856,8 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     doReturn(Optional.of(inputSetEntityV1))
         .when(inputSetRepository)
-        .find(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false);
+        .find(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false, false);
     Optional<InputSetEntity> optionalInputSetEntity = pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER,
         PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null, false);
     assertThat(optionalInputSetEntity.isPresent()).isTrue();

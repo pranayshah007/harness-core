@@ -40,7 +40,7 @@ public interface PMSInputSetRepositoryCustom {
       String pipelineIdentifier, String identifier, boolean notDeleted);
 
   Optional<InputSetEntity> find(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String identifier, boolean notDeleted, boolean getMetadataOnly);
+      String pipelineIdentifier, String identifier, boolean notDeleted, boolean getMetadataOnly, boolean loadFromCache);
 
   InputSetEntity updateForOldGitSync(InputSetEntity entityToUpdate, InputSetYamlDTO yamlDTO, ChangeType changeType);
 
