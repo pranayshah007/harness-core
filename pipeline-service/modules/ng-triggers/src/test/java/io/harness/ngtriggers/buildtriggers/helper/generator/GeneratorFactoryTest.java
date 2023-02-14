@@ -24,6 +24,7 @@ import io.harness.ngtriggers.buildtriggers.helpers.generator.AMIPollingItemGener
 import io.harness.ngtriggers.buildtriggers.helpers.generator.AcrPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.ArtifactoryRegistryPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.AzureArtifactsPollingItemGenerator;
+import io.harness.ngtriggers.buildtriggers.helpers.generator.BambooPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.CustomPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.DockerRegistryPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.EcrPollingItemGenerator;
@@ -66,6 +67,7 @@ public class GeneratorFactoryTest extends CategoryTest {
   private DockerRegistryPollingItemGenerator dockerRegistryPollingItemGenerator;
   private ArtifactoryRegistryPollingItemGenerator artifactoryRegistryPollingItemGenerator;
   private JenkinsPollingItemGenerator jenkinsPollingItemGenerator;
+  private BambooPollingItemGenerator bambooPollingItemGenerator;
   private AMIPollingItemGenerator amiPollingItemGenerator;
   private GitPollingItemGenerator gitPollingItemGenerator;
   private GoogleCloudStoragePollingItemGenerator googleCloudStoragePollingItemGenerator;
@@ -89,6 +91,7 @@ public class GeneratorFactoryTest extends CategoryTest {
     GithubPackagesPollingItemGenerator githubPackagesPollingItemGenerator =
         new GithubPackagesPollingItemGenerator(buildTriggerHelper);
     JenkinsPollingItemGenerator jenkinsPollingItemGenerator = new JenkinsPollingItemGenerator(buildTriggerHelper);
+    BambooPollingItemGenerator bambooPollingItemGenerator = new BambooPollingItemGenerator(buildTriggerHelper);
     AcrPollingItemGenerator acrPollingItemGenerator = new AcrPollingItemGenerator(buildTriggerHelper);
     CustomPollingItemGenerator customPollingItemGenerator = new CustomPollingItemGenerator(buildTriggerHelper);
     ArtifactoryRegistryPollingItemGenerator artifactoryRegistryPollingItemGenerator =
@@ -100,13 +103,13 @@ public class GeneratorFactoryTest extends CategoryTest {
     AzureArtifactsPollingItemGenerator azureArtifactsPollingItemGenerator =
         new AzureArtifactsPollingItemGenerator(buildTriggerHelper);
     AMIPollingItemGenerator amiPollingItemGenerator = new AMIPollingItemGenerator(buildTriggerHelper);
-    generatorFactory =
-        new GeneratorFactory(buildTriggerHelper, httpHelmPollingItemGenerator, s3HelmPollingItemGenerator,
-            s3PollingItemGenerator, gcsHelmPollingItemGenerator, gcrPollingItemGenerator, ecrPollingItemGenerator,
-            dockerRegistryPollingItemGenerator, artifactoryRegistryPollingItemGenerator, acrPollingItemGenerator,
-            jenkinsPollingItemGenerator, gitPollingItemGenerator, customPollingItemGenerator, garPollingItemGenerator,
-            githubPackagesPollingItemGenerator, nexus2RegistryPollingItemGenerator, nexus3PollingItemGenerator,
-            azureArtifactsPollingItemGenerator, amiPollingItemGenerator, googleCloudStoragePollingItemGenerator);
+    generatorFactory = new GeneratorFactory(buildTriggerHelper, httpHelmPollingItemGenerator,
+        s3HelmPollingItemGenerator, s3PollingItemGenerator, gcsHelmPollingItemGenerator, gcrPollingItemGenerator,
+        ecrPollingItemGenerator, dockerRegistryPollingItemGenerator, artifactoryRegistryPollingItemGenerator,
+        acrPollingItemGenerator, jenkinsPollingItemGenerator, gitPollingItemGenerator, customPollingItemGenerator,
+        garPollingItemGenerator, githubPackagesPollingItemGenerator, nexus2RegistryPollingItemGenerator,
+        nexus3PollingItemGenerator, azureArtifactsPollingItemGenerator, amiPollingItemGenerator,
+        googleCloudStoragePollingItemGenerator, bambooPollingItemGenerator);
 
     classLoader = getClass().getClassLoader();
   }

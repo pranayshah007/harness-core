@@ -34,6 +34,7 @@ public interface Constants {
   String ECR = "Ecr";
   String ACR = "Acr";
   String JENKINS = "Jenkins";
+  String BAMBOO = "Bamboo";
   String AMAZON_S3 = "AmazonS3";
   String CUSTOM_ARTIFACT = "CustomArtifact";
   String GOOGLE_ARTIFACT_REGISTRY = "GoogleArtifactRegistry";

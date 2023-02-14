@@ -30,7 +30,8 @@ public enum ArtifactType {
   @JsonProperty(Constants.GITHUB_PACKAGES) GITHUB_PACKAGES(Constants.GITHUB_PACKAGES),
   @JsonProperty(Constants.AZURE_ARTIFACTS) AZURE_ARTIFACTS(Constants.AZURE_ARTIFACTS),
   @JsonProperty(Constants.AMI) AMI(Constants.AMI),
-  @JsonProperty(Constants.GOOGLE_CLOUD_STORAGE) GOOGLE_CLOUD_STORAGE(Constants.GOOGLE_CLOUD_STORAGE);
+  @JsonProperty(Constants.GOOGLE_CLOUD_STORAGE) GOOGLE_CLOUD_STORAGE(Constants.GOOGLE_CLOUD_STORAGE),
+  @JsonProperty(Constants.BAMBOO) BAMBOO(Constants.BAMBOO);
 
   private String value;
 
