@@ -113,7 +113,7 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
     OptionalSweepingOutput googleFunctionPrepareRollbackDataOptional =
             executionSweepingOutputService.resolveOptional(ambiance,
                     RefObjectUtils.getSweepingOutputRefObject(
-                            stepFnq + "." + OutcomeExpressionConstants.GOOGLE_FUNCTION_PREPARE_ROLLBACK_OUTCOME));
+                            stepFnq + "." + OutcomeExpressionConstants.AWS_LAMBDA_PREPARE_ROLLBACK_OUTCOME));
 
     GoogleFunctionPrepareRollbackOutcome googleFunctionPrepareRollbackOutcome =
             (GoogleFunctionPrepareRollbackOutcome) googleFunctionPrepareRollbackDataOptional.getOutput();
