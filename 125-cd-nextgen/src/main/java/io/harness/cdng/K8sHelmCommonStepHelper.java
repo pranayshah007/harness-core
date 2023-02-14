@@ -96,7 +96,6 @@ import io.harness.filestore.service.FileStoreService;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.helm.HelmSubCommandType;
-import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -184,28 +183,8 @@ public class K8sHelmCommonStepHelper {
     orderedValuesManifests.addFirst(valuesManifestOutcome);
     List<GitFetchFilesConfig> gitFetchFilesConfigs =
         mapValuesManifestToGitFetchFileConfig(aggregatedValuesManifests, ambiance);
-    List<ManifestOutcome> stepOverrides = getStepLevelManifestOutcomes(stepElementParameters);
     ManifestOutcome k8sManifestOutcome = k8sStepPassThroughData.getManifestOutcome();
-    LogCallback logCallback = cdStepHelper.getLogCallback(
-        K8sCommandUnitConstants.FetchFiles, ambiance, k8sStepPassThroughData.getShouldOpenFetchFilesStream());
-    if (!isEmpty(stepOverrides)) {
-      for (ManifestOutcome manifestOutcome : stepOverrides) {
-        if (ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
-          gitFetchFilesConfigs.add(getGitFetchFilesConfig(
-              ambiance, manifestOutcome.getStore(), manifestOutcome.getIdentifier(), manifestOutcome));
-          orderedValuesManifests.add((ValuesManifestOutcome) manifestOutcome);
-        } else if (ManifestStoreType.INLINE.equals(manifestOutcome.getStore().getKind())) {
-          orderedValuesManifests.add((ValuesManifestOutcome) manifestOutcome);
-        } else if (ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind())) {
-          orderedValuesManifests.add((ValuesManifestOutcome) manifestOutcome);
-          Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents =
-              k8sStepPassThroughData.getLocalStoreFileMapContents();
-          localStoreFileMapContents.putAll(fetchFilesFromLocalStore(ambiance,
-              k8sStepPassThroughData.getManifestOutcome(), orderedValuesManifests, new ArrayList<>(), logCallback));
-          k8sStepPassThroughData.setLocalStoreFileMapContents(localStoreFileMapContents);
-        }
-      }
-    }
+
     if (ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
       gitFetchFilesConfigs.addAll(
           mapK8sOrHelmValuesManifestToGitFetchFileConfig(valuesManifestOutcome, ambiance, k8sManifestOutcome));

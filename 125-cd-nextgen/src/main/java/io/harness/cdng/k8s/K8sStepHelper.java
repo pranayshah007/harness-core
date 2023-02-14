@@ -445,20 +445,23 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
                                                         .infrastructure(infrastructureOutcome)
                                                         .build();
 
+    List<ManifestOutcome> orderedManifestOutcome = getOrderedManifestOutcome(manifestsOutcome.values());
+    orderedManifestOutcome.addAll(getStepLevelManifestOutcomes(stepElementParameters));
+
     if (ManifestType.Kustomize.equals(k8sManifestOutcome.getType())) {
       List<KustomizePatchesManifestOutcome> kustomizePatchesManifests =
-          getKustomizePatchesManifests(getOrderedManifestOutcome(manifestsOutcome.values()));
+          getKustomizePatchesManifests(orderedManifestOutcome);
       return prepareKustomizeTemplateWithPatchesManifest(
           ambiance, k8sStepExecutor, kustomizePatchesManifests, stepElementParameters, k8sStepPassThroughData);
     }
 
     if (VALUES_YAML_SUPPORTED_MANIFEST_TYPES.contains(k8sManifestOutcome.getType())) {
-      return prepareK8sOrHelmWithValuesManifests(ambiance, k8sStepExecutor,
-          getOrderedManifestOutcome(manifestsOutcome.values()), stepElementParameters, k8sStepPassThroughData);
+      return prepareK8sOrHelmWithValuesManifests(
+          ambiance, k8sStepExecutor, orderedManifestOutcome, stepElementParameters, k8sStepPassThroughData);
     } else {
       return prepareOcTemplateWithOcParamManifests(k8sStepExecutor,
-          valuesAndParamsManifestOutcomes(getOrderedManifestOutcome(manifestsOutcome.values())), ambiance,
-          stepElementParameters, k8sStepPassThroughData);
+          valuesAndParamsManifestOutcomes(orderedManifestOutcome), ambiance, stepElementParameters,
+          k8sStepPassThroughData);
     }
   }
 

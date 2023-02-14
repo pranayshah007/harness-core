@@ -45,7 +45,7 @@ public class K8sStepPassThroughData implements PassThroughData {
   List<ManifestOutcome> manifestOutcomeList;
   InfrastructureOutcome infrastructure;
   Map<String, HelmFetchFileResult> helmValuesFileMapContents;
-  @Setter @NonFinal Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents;
+  Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents;
   String helmValuesFileContent;
   List<ManifestFiles> manifestFiles;
 
