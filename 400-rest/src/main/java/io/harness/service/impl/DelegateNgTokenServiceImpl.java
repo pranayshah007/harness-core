@@ -15,7 +15,9 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EncryptedData;
 import io.harness.beans.FeatureName;
+import io.harness.beans.SecretText;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateToken;
@@ -28,19 +30,18 @@ import io.harness.delegate.events.DelegateNgTokenCreateEvent;
 import io.harness.delegate.events.DelegateNgTokenRevokeEvent;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
-import io.harness.encryptors.clients.LocalEncryptor;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
+import io.harness.secrets.SecretService;
 import io.harness.security.SourcePrincipalContextBuilder;
-import io.harness.security.encryption.EncryptedRecord;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.utils.Misc;
 
 import software.wings.beans.Account;
+import software.wings.service.impl.security.SecretManagerImpl;
 import software.wings.service.intfc.account.AccountCrudObserver;
-import software.wings.service.intfc.security.LocalSecretManagerService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -54,6 +55,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
@@ -68,8 +70,8 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   private final HPersistence persistence;
   private final OutboxService outboxService;
   private final DelegateCache delegateCache;
-  @Inject private LocalEncryptor localEncryptor;
-  @Inject private LocalSecretManagerService localSecretManagerService;
+  @Inject private SecretManagerImpl secretManagerImpl;
+  @Inject SecretService secretService;
   @Inject private FeatureFlagService featureFlagService;
 
   @Inject
@@ -82,13 +84,17 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
   @Override
   public DelegateTokenDetails createToken(String accountId, DelegateEntityOwner owner, String name) {
+    String token = encodeBase64(Misc.generateSecretKey());
+    EncryptedData encryptedData = encrypt(accountId, token);
     DelegateToken delegateToken = DelegateToken.builder()
                                       .accountId(accountId)
                                       .owner(owner)
                                       .name(name.trim())
                                       .isNg(true)
                                       .status(DelegateTokenStatus.ACTIVE)
-                                      .encryptedToken(encrypt(accountId))
+                                      .value(token)
+                                      .encryptedTokenId(encryptedData.getUuid())
+                                      .encryptedTokenValue(encryptedData.getEncryptedValue())
                                       .createdByNgUser(SourcePrincipalContextBuilder.getSourcePrincipal())
                                       .build();
 
@@ -324,36 +330,41 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   }
 
   @Override
-  public EncryptedRecord encrypt(String accountId) {
-    String token = encodeBase64(Misc.generateSecretKey());
-    return localEncryptor.encryptSecret(accountId, token, localSecretManagerService.getEncryptionConfig(accountId));
+  public EncryptedData encrypt(String accountId, String token) {
+    SecretText secretText = SecretText.builder()
+                                .value(token)
+                                .hideFromListing(true)
+                                .name(UUID.randomUUID().toString())
+                                .scopedToAccount(true)
+                                .kmsId(accountId)
+                                .build();
+    return secretService.createSecret(accountId, secretText, false);
   }
 
   @Override
   public String decrypt(DelegateToken delegateToken) {
-    EncryptedRecord encryptedRecord = delegateToken.getEncryptedToken();
-    if (delegateToken.getEncryptedToken() == null) {
+    if (delegateToken.getEncryptedTokenId() == null) {
       //@TODO: Remove this check after token migration to encrypted value
       // should not come, only in case in migration missed
-      encryptedRecord = upsertEncryptedTokenRecord(delegateToken);
+      upsertEncryptedTokenRecord(delegateToken);
     }
-    String token = String.valueOf(localEncryptor.fetchSecretValue(delegateToken.getAccountId(), encryptedRecord,
-        localSecretManagerService.getEncryptionConfig(delegateToken.getAccountId())));
+    EncryptedData encryptedData =
+        secretManagerImpl.getSecretById(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId());
+    String decryptedToken = String.valueOf(secretService.fetchSecretValue(encryptedData));
 
     return featureFlagService.isEnabled(FeatureName.DELEGATE_TOKEN_ENCRYPTION, delegateToken.getAccountId())
-        ? (delegateToken.isNg() ? decodeBase64ToString(token) : token)
+        ? decryptedToken
         : getTokenValue(delegateToken);
   }
 
   @Override
   // For migration purpose, to insert encrypted delegate token record
-  public EncryptedRecord upsertEncryptedTokenRecord(DelegateToken delegateToken) {
-    EncryptedRecord encryptedRecord = localEncryptor.encryptSecret(delegateToken.getAccountId(),
-        delegateToken.getValue(), localSecretManagerService.getEncryptionConfig(delegateToken.getAccountId()));
+  public void upsertEncryptedTokenRecord(DelegateToken delegateToken) {
+    EncryptedData encryptedData = encrypt(delegateToken.getAccountId(), delegateToken.getValue());
     UpdateOperations<DelegateToken> updateOperations = persistence.createUpdateOperations(DelegateToken.class);
-    setUnset(updateOperations, DelegateTokenKeys.encryptedToken, encryptedRecord);
+    setUnset(updateOperations, DelegateTokenKeys.encryptedTokenId, encryptedData.getUuid());
+    setUnset(updateOperations, DelegateTokenKeys.encryptedTokenValue, encryptedData.getEncryptedValue());
     persistence.update(delegateToken, updateOperations);
-    return encryptedRecord;
   }
 
   private String getTokenValue(DelegateToken delegateToken) {

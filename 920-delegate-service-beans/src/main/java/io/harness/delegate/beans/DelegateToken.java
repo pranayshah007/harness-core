@@ -24,8 +24,10 @@ import io.harness.persistence.NameAndValueAccess;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 import io.harness.security.dto.Principal;
-import io.harness.security.encryption.EncryptedRecord;
 
+import software.wings.jersey.JsonViews;
+
+import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
@@ -80,7 +82,10 @@ public class DelegateToken implements PersistentEntity, UuidAware, CreatedAtAwar
   @Deprecated private String value;
   private boolean isNg;
   private DelegateEntityOwner owner;
-  private EncryptedRecord encryptedToken;
+
+  @NotEmpty String encryptedTokenId;
+  @JsonView(JsonViews.Internal.class) @NotEmpty private char[] encryptedTokenValue;
+
   // this is for ng, ng doesn't have embeddedUser concept.
   private Principal createdByNgUser;
 

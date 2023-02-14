@@ -7,12 +7,15 @@
 
 package io.harness.service.impl;
 
+import static io.harness.data.encoding.EncodingUtils.encodeBase64;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.EncryptedData;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
@@ -23,6 +26,7 @@ import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateTokenService;
+import io.harness.utils.Misc;
 
 import software.wings.beans.Account;
 import software.wings.beans.Event;
@@ -51,12 +55,16 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
 
   @Override
   public DelegateTokenDetails createDelegateToken(String accountId, String name) {
+    String token = encodeBase64(Misc.generateSecretKey());
+    EncryptedData encryptedData = delegateNgTokenService.encrypt(accountId, token);
     DelegateToken delegateToken = DelegateToken.builder()
                                       .accountId(accountId)
                                       .createdAt(System.currentTimeMillis())
                                       .name(name.trim())
                                       .status(DelegateTokenStatus.ACTIVE)
-                                      .encryptedToken(delegateNgTokenService.encrypt(accountId))
+                                      .value(token)
+                                      .encryptedTokenId(encryptedData.getUuid())
+                                      .encryptedTokenValue(encryptedData.getEncryptedValue())
                                       .build();
 
     try {
