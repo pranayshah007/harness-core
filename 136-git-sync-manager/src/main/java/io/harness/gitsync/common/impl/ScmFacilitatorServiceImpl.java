@@ -305,21 +305,19 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       }
     }
 
-    if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.PIE_NG_GITX_CACHING)) {
-      gitFileCacheService.upsertCache(GitFileCacheKey.builder()
-                                          .accountIdentifier(scope.getAccountIdentifier())
-                                          .completeFilePath(scmGetFileByBranchRequestDTO.getFilePath())
-                                          .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
-                                          .repoName(scmGetFileByBranchRequestDTO.getRepoName())
-                                          .ref(branchName)
-                                          .isDefaultBranch(isEmpty(scmGetFileByBranchRequestDTO.getBranchName()))
-                                          .build(),
-          GitFileCacheObject.builder()
-              .fileContent(fileContent.getContent())
-              .commitId(fileContent.getCommitId())
-              .objectId(fileContent.getBlobId())
-              .build());
-    }
+    gitFileCacheService.upsertCache(GitFileCacheKey.builder()
+                                        .accountIdentifier(scope.getAccountIdentifier())
+                                        .completeFilePath(scmGetFileByBranchRequestDTO.getFilePath())
+                                        .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
+                                        .repoName(scmGetFileByBranchRequestDTO.getRepoName())
+                                        .ref(branchName)
+                                        .isDefaultBranch(isEmpty(scmGetFileByBranchRequestDTO.getBranchName()))
+                                        .build(),
+        GitFileCacheObject.builder()
+            .fileContent(fileContent.getContent())
+            .commitId(fileContent.getCommitId())
+            .objectId(fileContent.getBlobId())
+            .build());
 
     return ScmGetFileResponseDTO.builder()
         .fileContent(fileContent.getContent())
@@ -356,21 +354,19 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         scmGetFileByBranchRequestDTO.getConnectorRef(), scmGetFileByBranchRequestDTO.getRepoName(),
         scmGetFileByBranchRequestDTO.getFilePath());
 
-    if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.PIE_NG_GITX_CACHING)) {
-      gitFileCacheService.upsertCache(GitFileCacheKey.builder()
-                                          .accountIdentifier(scope.getAccountIdentifier())
-                                          .completeFilePath(scmGetFileByBranchRequestDTO.getFilePath())
-                                          .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
-                                          .repoName(scmGetFileByBranchRequestDTO.getRepoName())
-                                          .ref(gitFileResponse.getBranch())
-                                          .isDefaultBranch(isEmpty(scmGetFileByBranchRequestDTO.getBranchName()))
-                                          .build(),
-          GitFileCacheObject.builder()
-              .fileContent(gitFileResponse.getContent())
-              .commitId(gitFileResponse.getCommitId())
-              .objectId(gitFileResponse.getObjectId())
-              .build());
-    }
+    gitFileCacheService.upsertCache(GitFileCacheKey.builder()
+                                        .accountIdentifier(scope.getAccountIdentifier())
+                                        .completeFilePath(scmGetFileByBranchRequestDTO.getFilePath())
+                                        .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
+                                        .repoName(scmGetFileByBranchRequestDTO.getRepoName())
+                                        .ref(gitFileResponse.getBranch())
+                                        .isDefaultBranch(isEmpty(scmGetFileByBranchRequestDTO.getBranchName()))
+                                        .build(),
+        GitFileCacheObject.builder()
+            .fileContent(gitFileResponse.getContent())
+            .commitId(gitFileResponse.getCommitId())
+            .objectId(gitFileResponse.getObjectId())
+            .build());
 
     return getScmGetFileResponseDTO(gitFileResponse);
   }
@@ -545,20 +541,18 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
               .build());
     }
 
-    if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.PIE_NG_GITX_CACHING)) {
-      gitFileCacheService.upsertCache(GitFileCacheKey.builder()
-                                          .accountIdentifier(scope.getAccountIdentifier())
-                                          .completeFilePath(scmCreateFileRequestDTO.getFilePath())
-                                          .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
-                                          .repoName(scmCreateFileRequestDTO.getRepoName())
-                                          .ref(scmCreateFileRequestDTO.getBranchName())
-                                          .build(),
-          GitFileCacheObject.builder()
-              .fileContent(scmCreateFileRequestDTO.getFileContent())
-              .commitId(createFileResponse.getCommitId())
-              .objectId(createFileResponse.getBlobId())
-              .build());
-    }
+    gitFileCacheService.upsertCache(GitFileCacheKey.builder()
+                                        .accountIdentifier(scope.getAccountIdentifier())
+                                        .completeFilePath(scmCreateFileRequestDTO.getFilePath())
+                                        .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
+                                        .repoName(scmCreateFileRequestDTO.getRepoName())
+                                        .ref(scmCreateFileRequestDTO.getBranchName())
+                                        .build(),
+        GitFileCacheObject.builder()
+            .fileContent(scmCreateFileRequestDTO.getFileContent())
+            .commitId(createFileResponse.getCommitId())
+            .objectId(createFileResponse.getBlobId())
+            .build());
 
     return ScmCommitFileResponseDTO.builder()
         .commitId(createFileResponse.getCommitId())
@@ -607,20 +601,18 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
               .build());
     }
 
-    if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.PIE_NG_GITX_CACHING)) {
-      gitFileCacheService.upsertCache(GitFileCacheKey.builder()
-                                          .accountIdentifier(scope.getAccountIdentifier())
-                                          .completeFilePath(scmUpdateFileRequestDTO.getFilePath())
-                                          .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
-                                          .repoName(scmUpdateFileRequestDTO.getRepoName())
-                                          .ref(scmUpdateFileRequestDTO.getBranchName())
-                                          .build(),
-          GitFileCacheObject.builder()
-              .fileContent(scmUpdateFileRequestDTO.getFileContent())
-              .commitId(updateFileResponse.getCommitId())
-              .objectId(updateFileResponse.getBlobId())
-              .build());
-    }
+    gitFileCacheService.upsertCache(GitFileCacheKey.builder()
+                                        .accountIdentifier(scope.getAccountIdentifier())
+                                        .completeFilePath(scmUpdateFileRequestDTO.getFilePath())
+                                        .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
+                                        .repoName(scmUpdateFileRequestDTO.getRepoName())
+                                        .ref(scmUpdateFileRequestDTO.getBranchName())
+                                        .build(),
+        GitFileCacheObject.builder()
+            .fileContent(scmUpdateFileRequestDTO.getFileContent())
+            .commitId(updateFileResponse.getCommitId())
+            .objectId(updateFileResponse.getBlobId())
+            .build());
 
     return ScmCommitFileResponseDTO.builder()
         .commitId(updateFileResponse.getCommitId())
@@ -868,17 +860,15 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   private void invalidateGitFileCache(
       String accountIdentifier, String filePath, ScmConnector scmConnector, String repoName, String branchName) {
-    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PIE_NG_GITX_CACHING)) {
-      GitFileCacheKey cacheKey = GitFileCacheKey.builder()
-                                     .accountIdentifier(accountIdentifier)
-                                     .completeFilePath(filePath)
-                                     .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
-                                     .repoName(repoName)
-                                     .ref(branchName)
-                                     .build();
-      GitFileCacheDeleteResult gitFileCacheDeleteResult = gitFileCacheService.invalidateCache(cacheKey);
-      log.info("Invalidated cache for key: {} , result: {}", cacheKey, gitFileCacheDeleteResult);
-    }
+    GitFileCacheKey cacheKey = GitFileCacheKey.builder()
+                                   .accountIdentifier(accountIdentifier)
+                                   .completeFilePath(filePath)
+                                   .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
+                                   .repoName(repoName)
+                                   .ref(branchName)
+                                   .build();
+    GitFileCacheDeleteResult gitFileCacheDeleteResult = gitFileCacheService.invalidateCache(cacheKey);
+    log.info("Invalidated cache for key: {} , result: {}", cacheKey, gitFileCacheDeleteResult);
   }
 
   private boolean isBatchGetFileTaskSupportedByDelegates(String accountIdentifier) {
