@@ -235,7 +235,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
             .collect(Collectors.toSet());
 
     List<ManifestConfigWrapper> manifests =
-        manifestMigrationService.getManifests(manifestIds, inputDTO, entities, migratedEntities);
+        manifestMigrationService.getManifests(manifestIds, inputDTO, entities, migratedEntities, null);
 
     List<ConfigFileWrapper> configFiles =
         configFileMigrationService.getConfigFiles(configFileIds, inputDTO, entities, migratedEntities);

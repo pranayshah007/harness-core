@@ -145,3 +145,7 @@ cfClientConfig:
 featureFlagConfig:
   featureFlagSystem: LOCAL
   syncFeaturesToCF: false
+
+listOfErrorCodesForOffsetReset:
+  - 286 # Resume token cannot be found in oplog
+  - 10334 # Invalid BSONObj size

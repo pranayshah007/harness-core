@@ -40,6 +40,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
 import io.harness.category.element.UnitTests;
+import io.harness.common.NGExpressionUtils;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidArgumentsException;
@@ -79,6 +80,8 @@ import io.harness.pms.inputset.InputSetErrorDTOPMS;
 import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
+import io.harness.pms.merger.YamlConfig;
+import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -94,6 +97,7 @@ import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -106,6 +110,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -606,6 +611,47 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     assertThat((triggerNode1.getCurrJsonNode().get(PIPELINE_BRANCH_NAME))).isEqualTo(new TextNode(pipelineBranchName));
   }
 
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testGetInvalidFQNsInTrigger() throws IOException {
+    String pipelineFilename = "ng-trigger-pipeline.yaml";
+    String triggerFileName = "ng-trigger-input.yaml";
+    String templateYaml = createRuntimeInputFormForTrigger(
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(pipelineFilename)), StandardCharsets.UTF_8));
+    JsonNode node = YamlUtils
+                        .readTree(Resources.toString(
+                            Objects.requireNonNull(classLoader.getResource(triggerFileName)), StandardCharsets.UTF_8))
+                        .getNode()
+                        .getCurrJsonNode();
+    ObjectNode innerMap = (ObjectNode) node.get("trigger");
+    JsonNode inputYaml = innerMap.get("inputYaml");
+    JsonNode pipelineNode = YamlUtils.readTree(inputYaml.asText()).getNode().getCurrJsonNode();
+    String triggerPipelineYaml = YamlUtils.write(pipelineNode).replace("---\n", "");
+    when(pmsFeatureFlagService.isEnabled(ACCOUNT_ID, FeatureName.SPG_VALIDATE_PIPELINE_RUNTIME_INPUT_FOR_TRIGGER))
+        .thenReturn(true);
+
+    assertThat(ngTriggerServiceImpl.getInvalidFQNsInTrigger(templateYaml, triggerPipelineYaml, ACCOUNT_ID).size())
+        .isEqualTo(3);
+
+    String triggerExtraInputFileName = "ng-trigger-extra-input.yaml";
+    node = YamlUtils
+               .readTree(Resources.toString(
+                   Objects.requireNonNull(classLoader.getResource(triggerExtraInputFileName)), StandardCharsets.UTF_8))
+               .getNode()
+               .getCurrJsonNode();
+    innerMap = (ObjectNode) node.get("trigger");
+    inputYaml = innerMap.get("inputYaml");
+    pipelineNode = YamlUtils.readTree(inputYaml.asText()).getNode().getCurrJsonNode();
+    String extraInputTriggerPipelineYaml = YamlUtils.write(pipelineNode).replace("---\n", "");
+
+    Map<FQN, String> extraInputResult =
+        ngTriggerServiceImpl.getInvalidFQNsInTrigger(templateYaml, extraInputTriggerPipelineYaml, ACCOUNT_ID);
+    assertThat(extraInputResult.size()).isEqualTo(3);
+    assertThat(extraInputResult.containsValue("Field either not present in pipeline or not a runtime input"))
+        .isEqualTo(true);
+  }
+
   private void checkTriggerYamlDiff(String filenamePipeline, String filenameTrigger, String filenameNewTrigger,
       Boolean useNullPipelineBranchName) throws IOException {
     String newTriggerYaml =
@@ -702,6 +748,19 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     when(validationHelper.generateErrorMap(any())).thenCallRealMethod();
     assertThatThrownBy(() -> ngTriggerServiceImpl.validateInputSetsInternal(triggerDetails))
         .isInstanceOf(InvalidTriggerYamlException.class);
+  }
+
+  private String createRuntimeInputFormForTrigger(String yaml) {
+    YamlConfig yamlConfig = new YamlConfig(yaml);
+    Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
+    Map<FQN, Object> templateMap = new LinkedHashMap<>();
+    fullMap.keySet().forEach(key -> {
+      String value = fullMap.get(key).toString().replace("\"", "");
+      if (NGExpressionUtils.matchesInputSetPattern(value)) {
+        templateMap.put(key, fullMap.get(key));
+      }
+    });
+    return (new YamlConfig(templateMap, yamlConfig.getYamlMap())).getYaml();
   }
 
   @Test

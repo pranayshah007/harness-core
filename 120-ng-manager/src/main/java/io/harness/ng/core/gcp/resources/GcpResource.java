@@ -92,7 +92,7 @@ public class GcpResource {
         resolvedGcpConnectorRef = (String) googleCloudStorageArtifactConfig.getConnectorRef().fetchFinalValue();
       }
       // Getting the resolved connectorRef in case of expressions
-      resolvedGcpConnectorRef = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+      resolvedGcpConnectorRef = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
           pipelineIdentifier, runtimeInputYaml, resolvedGcpConnectorRef, fqnPath, gitEntityBasicInfo, serviceRef);
     } else if (isNotEmpty(envId) && isNotEmpty(infraDefinitionId)) {
       InfrastructureDefinitionConfig infrastructureDefinitionConfig =

@@ -59,6 +59,7 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.CaseUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
@@ -69,10 +70,13 @@ public class MigratorUtility {
   public static final Pattern cgPattern = Pattern.compile("\\$\\{[\\w-.\"()]+}");
   public static final Pattern ngPattern = Pattern.compile("<\\+[\\w-.\"()]+>");
 
+  private static final String[] schemes = {"https", "http"};
+
   private static final int APPLICATION = 0;
   private static final int SECRET_MANAGER = 1;
   private static final int SECRET = 5;
   private static final int TEMPLATE = 7;
+  private static final int SERVICE_COMMAND_TEMPLATE = 8;
   private static final int CONNECTOR = 10;
   private static final int CONTAINER_TASK = 13;
   private static final int ECS_SERVICE_SPEC = 14;
@@ -95,6 +99,7 @@ public class MigratorUtility {
           .put(NGMigrationEntityType.APPLICATION, APPLICATION)
           .put(NGMigrationEntityType.SECRET_MANAGER, SECRET_MANAGER)
           .put(NGMigrationEntityType.TEMPLATE, TEMPLATE)
+          .put(NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE, SERVICE_COMMAND_TEMPLATE)
           .put(NGMigrationEntityType.CONNECTOR, CONNECTOR)
           .put(NGMigrationEntityType.CONTAINER_TASK, CONTAINER_TASK)
           .put(NGMigrationEntityType.ECS_SERVICE_SPEC, ECS_SERVICE_SPEC)
@@ -461,5 +466,10 @@ public class MigratorUtility {
   public static String generateFileIdentifier(String fileName) {
     String prefix = fileName + ' ';
     return MigratorUtility.generateManifestIdentifier(prefix);
+  }
+
+  public static boolean checkIfStringIsValidUrl(String value) {
+    UrlValidator urlValidator = new UrlValidator(schemes);
+    return urlValidator.isValid(value);
   }
 }

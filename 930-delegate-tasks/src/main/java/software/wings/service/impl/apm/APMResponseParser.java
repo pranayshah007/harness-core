@@ -12,9 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.exception.WingsException;
 import io.harness.time.Timestamp;
 
+import software.wings.beans.dto.NewRelicMetricDataRecord;
 import software.wings.delegatetasks.CustomDataCollectionUtils;
 import software.wings.delegatetasks.cv.DataCollectionException;
-import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 
 import com.google.common.collect.Multimap;
 import java.text.ParseException;

@@ -7,7 +7,7 @@
 
 package io.harness.ngmigration.service;
 
-import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
+import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
@@ -30,6 +30,7 @@ import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.persistence.NameAccess;
 import io.harness.serializer.JsonUtils;
+import io.harness.serializer.jackson.PipelineJacksonModule;
 
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
@@ -46,6 +47,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import com.google.inject.Inject;
+import io.dropwizard.jackson.Jackson;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -59,6 +61,8 @@ import retrofit2.Response;
 @Slf4j
 public abstract class NgMigrationService {
   private static final MediaType TEXT_PLAIN = MediaType.parse("text/plain");
+  public static final ObjectMapper MIGRATION_DEFAULT_OBJECT_MAPPER =
+      configureObjectMapperForNG(Jackson.newObjectMapper()).registerModule(new PipelineJacksonModule());
 
   @Inject MigratorMappingService migratorMappingService;
 
@@ -86,7 +90,8 @@ public abstract class NgMigrationService {
                                          .configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true)
                                          .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
                                          .enable(SerializationFeature.INDENT_OUTPUT);
-    return NGYamlUtils.getYamlString(yamlFile.getYaml(), NG_DEFAULT_OBJECT_MAPPER, YAML_MAPPER);
+    YAML_MAPPER.registerModule(new PipelineJacksonModule());
+    return NGYamlUtils.getYamlString(yamlFile.getYaml(), MIGRATION_DEFAULT_OBJECT_MAPPER, YAML_MAPPER);
   }
 
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,

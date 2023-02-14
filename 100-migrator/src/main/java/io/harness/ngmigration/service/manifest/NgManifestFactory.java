@@ -13,7 +13,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 
+import software.wings.api.DeploymentType;
 import software.wings.beans.GitFileConfig;
+import software.wings.beans.Service;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.StoreType;
@@ -28,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NgManifestFactory {
   @Inject K8sManifestRemoteStoreService k8sManifestRemoteStoreService;
+  @Inject TanzuManifestRemoteStoreService tanzuManifestRemoteStoreService;
   @Inject K8sManifestHelmSourceRepoStoreService k8sManifestHelmSourceRepoStoreService;
   @Inject K8sManifestHelmChartRepoStoreService k8sManifestHelmChartRepoStoreService;
   @Inject ValuesManifestRemoteStoreService valuesManifestRemoteStoreService;
@@ -35,13 +38,15 @@ public class NgManifestFactory {
   @Inject OpenshiftParamRemoteStoreService openshiftParamRemoteStoreService;
   @Inject OpenshiftParamLocalStoreService openshiftParamLocalStoreService;
   @Inject K8sManifestLocalStoreService k8sManifestLocalStoreService;
+  @Inject TanzuManifestLocalStoreService tanzuManifestLocalStoreService;
+  @Inject TanzuManifestCustomStoreService tanzuManifestCustomStoreService;
   @Inject KustomizeSourceRepoStoreService kustomizeSourceRepoStoreService;
   @Inject OpenshiftSourceRepoStoreService openshiftSourceRepoStoreService;
   @Inject HelmChartOverrideRepoStoreService helmChartOverrideRepoStoreService;
 
   private static String ERROR_STRING = "%s storetype is currently not supported for %s appManifestKind";
 
-  public NgManifestService getNgManifestService(ApplicationManifest applicationManifest) {
+  public NgManifestService getNgManifestService(ApplicationManifest applicationManifest, Service service) {
     if (applicationManifest.getKind() == null) {
       throw new InvalidRequestException("Empty appManifest kind is not supported for migration");
     }
@@ -52,9 +57,17 @@ public class NgManifestFactory {
       case K8S_MANIFEST:
         switch (storeType) {
           case Local:
-            return k8sManifestLocalStoreService;
+            if (null != service && service.getDeploymentType().equals(DeploymentType.PCF)) {
+              return tanzuManifestLocalStoreService;
+            } else {
+              return k8sManifestLocalStoreService;
+            }
           case Remote:
-            return k8sManifestRemoteStoreService;
+            if (null != service && service.getDeploymentType().equals(DeploymentType.PCF)) {
+              return tanzuManifestRemoteStoreService;
+            } else {
+              return k8sManifestRemoteStoreService;
+            }
           case HelmSourceRepo:
             return k8sManifestHelmSourceRepoStoreService;
           case HelmChartRepo:
@@ -63,6 +76,8 @@ public class NgManifestFactory {
             return kustomizeSourceRepoStoreService;
           case OC_TEMPLATES:
             return openshiftSourceRepoStoreService;
+          case CUSTOM:
+            return tanzuManifestCustomStoreService;
           default:
             throw new InvalidRequestException(String.format(ERROR_STRING, storeType, appManifestKind));
         }

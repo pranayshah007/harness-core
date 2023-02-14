@@ -27,8 +27,8 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
-import io.harness.ngmigration.beans.StepTypeSummary;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
+import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.TypeSummary;
 import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.WorkflowSummary;
@@ -151,10 +151,10 @@ public class WorkflowMigrationService extends NgMigrationService {
                                                 return workflowHandler.getSteps(workflow).stream();
                                               })
                                               .collect(groupingBy(GraphNode::getType, counting()));
-    Map<String, StepTypeSummary> stepTypeSummaryMap = new HashMap<>();
+    Map<String, TypeSummary> stepTypeSummaryMap = new HashMap<>();
     summaryByStepType.forEach((key, value) -> {
       stepTypeSummaryMap.put(key,
-          StepTypeSummary.builder()
+          TypeSummary.builder()
               .count(value)
               .status(stepMapperFactory.getStepMapper(key).stepSupportStatus(GraphNode.builder().build()))
               .build());
@@ -239,7 +239,7 @@ public class WorkflowMigrationService extends NgMigrationService {
                                            .filter(step
                                                -> stepMapperFactory.getStepMapper(step.getType())
                                                       .stepSupportStatus(step)
-                                                      .equals(WorkflowStepSupportStatus.UNSUPPORTED))
+                                                      .equals(SupportStatus.UNSUPPORTED))
                                            .collect(Collectors.toList());
     if (EmptyPredicate.isNotEmpty(unsupportedSteps)) {
       return YamlGenerationDetails.builder()

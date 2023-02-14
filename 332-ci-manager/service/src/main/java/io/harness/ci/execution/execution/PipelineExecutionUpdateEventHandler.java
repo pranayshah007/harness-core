@@ -150,8 +150,10 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           // like in k8s node pressure evictions) - then this is where we move all of them to blob storage.
           ciLogServiceUtils.closeLogStream(AmbianceUtils.getAccountId(ambiance), logKey, true, true);
           // Now Delete the build from db while cleanup is happening. \
+        } else if (level.getStepType().getStepCategory() == StepCategory.STAGE) {
+          log.info("Skipping cleanup for stageExecutionID {} and stepCategory {} with status",
+              ambiance.getStageExecutionId(), level.getStepType().getStepCategory(), status);
         }
-        log.info("Not Calling Cleanup as status is {} for stageExecutionID {}", status, ambiance.getStageExecutionId());
       });
     } catch (Exception ex) {
       log.error("Failed to send cleanup call for node {}", level.getRuntimeId(), ex);

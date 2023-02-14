@@ -896,7 +896,7 @@
 7341:software.wings.beans.HostValidationTaskParameters
 7345:software.wings.delegatetasks.validation.capabilities.ClusterMasterUrlValidationCapability
 7346:software.wings.api.HelmDeployContextElement
-7347:software.wings.service.impl.newrelic.NewRelicMetricDataRecord
+7347:software.wings.beans.dto.NewRelicMetricDataRecord
 7348:software.wings.service.intfc.analysis.ClusterLevel
 7349:software.wings.helpers.ext.vault.VaultTokenLookupResult
 7360:software.wings.service.impl.stackdriver.StackdriverLogGcpConfigTaskParams
@@ -2671,3 +2671,7 @@
 10000304:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType
 
 10000401:io.harness.delegate.beans.executioncapability.AwsSamInstallationCapability
+10000450:io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO
+10000451:io.harness.delegate.beans.connector.jira.JiraAuthType
+10000452:io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO
+10000453:io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO

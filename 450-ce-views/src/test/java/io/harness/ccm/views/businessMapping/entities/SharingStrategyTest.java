@@ -22,10 +22,10 @@ public class SharingStrategyTest extends CategoryTest {
   @Test
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
-  public void testFixedSharingStrategy() {
-    final String fixed = "FIXED";
-    assertThat(SharingStrategy.FIXED.name()).isEqualTo(fixed);
-    assertThat(SharingStrategy.valueOf(fixed)).isEqualTo(SharingStrategy.FIXED);
+  public void testEqualSharingStrategy() {
+    final String equal = "EQUAL";
+    assertThat(SharingStrategy.EQUAL.name()).isEqualTo(equal);
+    assertThat(SharingStrategy.valueOf(equal)).isEqualTo(SharingStrategy.EQUAL);
   }
 
   @Test
@@ -35,6 +35,15 @@ public class SharingStrategyTest extends CategoryTest {
     final String proportional = "PROPORTIONAL";
     assertThat(SharingStrategy.PROPORTIONAL.name()).isEqualTo(proportional);
     assertThat(SharingStrategy.valueOf(proportional)).isEqualTo(SharingStrategy.PROPORTIONAL);
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testFixedSharingStrategy() {
+    final String fixed = "FIXED";
+    assertThat(SharingStrategy.FIXED.name()).isEqualTo(fixed);
+    assertThat(SharingStrategy.valueOf(fixed)).isEqualTo(SharingStrategy.FIXED);
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -48,6 +57,6 @@ public class SharingStrategyTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void testSharingStrategyCount() {
-    assertThat(SharingStrategy.values().length).isEqualTo(2);
+    assertThat(SharingStrategy.values().length).isEqualTo(3);
   }
 }

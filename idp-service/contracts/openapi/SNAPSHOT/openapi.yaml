@@ -1,0 +1,214 @@
+openapi: 3.0.3
+x-stoplight:
+  id: cvtx2sc7fr201
+info:
+  title: IDP
+  version: '1.0'
+  description: Harness Internal Developer Portal API Reference
+servers:
+  - url: 'https://api.harness.io'
+paths:
+  /v1/environment-secrets:
+    get:
+      summary: Retrieves all Environment Secrets
+      responses:
+        '200':
+          $ref: '#/components/responses/EnvironmentSecretResponseList'
+      operationId: get-environment-secrets
+      description: Get all environment secrets mapping for a given account
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+      requestBody:
+        $ref: '#/components/requestBodies/EnvironmentSecretRequest'
+      security:
+        - x-api-key: []
+      x-internal: true
+      tags:
+        - EnvironmentSecret
+    post:
+      summary: Creates an Environment Secret
+      operationId: create-environment-secret
+      responses:
+        '201':
+          $ref: '#/components/responses/EnvironmentSecretResponse'
+      description: Creates an environment secret
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/EnvironmentSecretRequest'
+      tags:
+        - EnvironmentSecret
+      x-internal: true
+    parameters: []
+  '/v1/environment-secrets/{environment-secret}':
+    parameters:
+      - $ref: '#/components/parameters/EnvironmentSecret'
+    get:
+      summary: Retrieves an Environment Secret
+      responses:
+        '200':
+          $ref: '#/components/responses/EnvironmentSecretResponse'
+      operationId: get-environment-secret
+      description: Get environment secret mapping for a given environment secret
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
+      tags:
+        - EnvironmentSecret
+    put:
+      summary: Updates an Environment Secret
+      operationId: update-environment-secret
+      responses:
+        '200':
+          $ref: '#/components/responses/EnvironmentSecretResponse'
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/EnvironmentSecretRequest'
+      description: Updates the specified environment secret
+      tags:
+        - EnvironmentSecret
+      x-internal: true
+    delete:
+      summary: Deletes an Environment Secret
+      operationId: delete-environment-secret
+      description: Deletes the requested environment secret
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - EnvironmentSecret
+      x-internal: true
+      responses:
+        '204':
+          description: No Content
+components:
+  schemas:
+    EnvironmentSecret:
+      title: EnvironmentSecret
+      x-stoplight:
+        id: c62d4d8f19081
+      type: object
+      properties:
+        name:
+          type: string
+        secret_identifier:
+          type: string
+        created:
+          type: integer
+          format: int64
+        updated:
+          type: integer
+          format: int64
+    EnvironmentSecretRequest:
+      title: EnvironmentSecretRequest
+      x-stoplight:
+        id: a94746e067851
+      type: object
+      properties:
+        secret:
+          $ref: '#/components/schemas/EnvironmentSecret'
+    EnvironmentSecretResponse:
+      title: EnvironmentSecretResponse
+      x-stoplight:
+        id: e8875709fc5b1
+      type: object
+      properties:
+        secret:
+          $ref: '#/components/schemas/EnvironmentSecret'
+  parameters:
+    AccountHeader:
+      name: Harness-Account
+      in: header
+      required: false
+      schema:
+        type: string
+      description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+      description: 'Pagination: Number of items to return'
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+      description: "Pagination page number strategy: Specify the page number within the paginated collection related to the number of items in each page\t"
+    Sort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Parameter on the basis of which sorting is done.
+    EnvironmentSecret:
+      name: environment-secret
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Identifier field of the environment secret the resource is scoped to
+  requestBodies:
+    EnvironmentSecretRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvironmentSecretRequest'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/EnvironmentSecretRequest'
+  responses:
+    EnvironmentSecretResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvironmentSecretResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/EnvironmentSecretResponse'
+    EnvironmentSecretResponseList:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/EnvironmentSecretResponse'
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/EnvironmentSecretResponse'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
+  securitySchemes:
+    x-api-key:
+      name: x-api-key
+      type: apiKey
+      in: header

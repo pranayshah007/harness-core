@@ -7,12 +7,11 @@
 
 package io.harness.k8s.client;
 
-import io.kubernetes.client.openapi.ApiException;
 import java.util.Map;
 
 public interface K8sClient {
   boolean updateSecretData(String namespace, String secretName, Map<String, byte[]> data, boolean replace)
-      throws ApiException;
+      throws Exception;
   boolean updateConfigMapData(String namespace, String configMapName, Map<String, String> data, boolean replace)
-      throws ApiException;
+      throws Exception;
 }
