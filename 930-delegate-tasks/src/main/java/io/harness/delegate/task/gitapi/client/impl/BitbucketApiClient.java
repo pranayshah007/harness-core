@@ -102,7 +102,7 @@ public class BitbucketApiClient implements GitApiClient {
     // when the branch is merged
     Object mergeCommitSha = getValue(mergePRResponse, BitbucketServiceImpl.SHA);
     if (mergeCommitSha == null) {
-      log.error("Merge is successful. But, SHA is null. Please refer to the sha in the repo. Repo:%s PrNumber:%s",
+      log.error("PR merged successfully, but SHA is null. Please refer the SHA in the repo. Repo:%s PrNumber:%s",
           repoSlug, prNumber);
     }
 
