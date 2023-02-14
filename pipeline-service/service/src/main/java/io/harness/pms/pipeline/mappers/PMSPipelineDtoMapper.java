@@ -38,9 +38,11 @@ import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineMetadataV2;
+import io.harness.pms.pipeline.PipelineValidationResponseDTO;
 import io.harness.pms.pipeline.RecentExecutionInfo;
 import io.harness.pms.pipeline.RecentExecutionInfoDTO;
 import io.harness.pms.pipeline.api.PipelineRequestInfoDTO;
+import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
 import io.harness.pms.pipeline.yaml.PipelineYaml;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
@@ -453,5 +455,14 @@ public class PMSPipelineDtoMapper {
     } else {
       return BOOLEAN_TRUE_VALUE.equalsIgnoreCase(loadFromCache);
     }
+  }
+
+  public PipelineValidationResponseDTO buildPipelineValidationResponseDTO(PipelineValidationEvent event) {
+    return PipelineValidationResponseDTO.builder()
+        .status(event.getStatus().name())
+        .policyEval(event.getResult().getGovernanceMetadata())
+        .startTs(event.getStartTs())
+        .endTs(event.getEndTs())
+        .build();
   }
 }

@@ -372,7 +372,7 @@ public class PcfStateHelper {
                             .tagList(renderedTags)
                             .build());
 
-    delegateService.queueTaskV2(delegateTask);
+    delegateService.queueTask(delegateTask);
     appendDelegateTaskDetails(delegateTask, stateExecutionInstanceId);
 
     return ExecutionResponse.builder()

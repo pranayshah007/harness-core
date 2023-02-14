@@ -539,6 +539,25 @@ public class ExecutionHelperTest extends CategoryTest {
         .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYamlForS2WithExpression, true);
   }
 
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testBuildExecutionArgsWithError() {
+    // this will throw a WingsException in the try block, and the first catch block should be invoked
+    assertThatThrownBy(()
+                           -> executionHelper.buildExecutionArgs(pipelineEntity, "CD", null, Collections.emptyList(),
+                               Collections.emptyMap(), null, null, null, false, true))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Debug executions are not allowed for pipeline [pipelineId]");
+
+    // this will throw an NPE in the try block, and the second catch block should be invoked
+    assertThatThrownBy(()
+                           -> executionHelper.buildExecutionArgs(
+                               pipelineEntity, null, null, null, null, null, null, null, false, false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Failed to start execution for Pipeline.");
+  }
+
   private void buildExecutionArgsMocks() {
     doReturn(executionPrincipalInfo).when(principalInfoHelper).getPrincipalInfoFromSecurityContext();
     doReturn(394).when(pipelineMetadataService).incrementRunSequence(any());

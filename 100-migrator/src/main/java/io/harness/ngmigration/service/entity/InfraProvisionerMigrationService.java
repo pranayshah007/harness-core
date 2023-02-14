@@ -37,6 +37,7 @@ import io.harness.ngmigration.service.NgMigrationService;
 
 import software.wings.beans.ARMInfrastructureProvisioner;
 import software.wings.beans.ARMSourceType;
+import software.wings.beans.CloudFormationInfrastructureProvisioner;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.beans.TerragruntInfrastructureProvisioner;
@@ -109,8 +110,7 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
                            .build());
         }
       }
-    }
-    if (provisioner instanceof TerragruntInfrastructureProvisioner) {
+    } else if (provisioner instanceof TerragruntInfrastructureProvisioner) {
       TerragruntInfrastructureProvisioner terragruntInfrastructureProvisioner =
           (TerragruntInfrastructureProvisioner) provisioner;
       if (StringUtils.isNotBlank(terragruntInfrastructureProvisioner.getSourceRepoSettingId())) {
@@ -124,6 +124,14 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
                          .type(SECRET_MANAGER)
                          .id(terragruntInfrastructureProvisioner.getSecretManagerId())
                          .build());
+      }
+    } else if (provisioner instanceof CloudFormationInfrastructureProvisioner) {
+      CloudFormationInfrastructureProvisioner cfProvisioner = (CloudFormationInfrastructureProvisioner) provisioner;
+
+      if (cfProvisioner.provisionByGit() && null != cfProvisioner.getGitFileConfig()
+          && isNotEmpty(cfProvisioner.getGitFileConfig().getConnectorId())) {
+        children.add(
+            CgEntityId.builder().type(CONNECTOR).id(cfProvisioner.getGitFileConfig().getConnectorId()).build());
       }
     }
 

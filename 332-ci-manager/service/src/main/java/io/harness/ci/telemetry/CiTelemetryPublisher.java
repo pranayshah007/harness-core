@@ -51,6 +51,7 @@ public class CiTelemetryPublisher {
     log.info("CiTelemetryPublisher recordTelemetry execute started.");
     try {
       List<AccountDTO> accountDTOList = getAllAccounts();
+      log.info("Memory before telemetry is {} ", getMemoryUse());
       for (AccountDTO accountDTO : accountDTOList) {
         String accountId = accountDTO.getIdentifier();
         if (EmptyPredicate.isNotEmpty(accountId) && !accountId.equals(GLOBAL_ACCOUNT_ID)) {
@@ -79,6 +80,7 @@ public class CiTelemetryPublisher {
           }
         }
       }
+      log.info("Memory after telemetry is {} ", getMemoryUse());
     } catch (Exception e) {
       log.error("CITelemetryPublisher recordTelemetry execute failed.", e);
     } finally {
@@ -88,5 +90,11 @@ public class CiTelemetryPublisher {
 
   List<AccountDTO> getAllAccounts() {
     return CGRestUtils.getResponse(accountClient.getAllAccounts());
+  }
+
+  private long getMemoryUse() {
+    long totalMemory = Runtime.getRuntime().totalMemory();
+    long freeMemory = Runtime.getRuntime().freeMemory();
+    return (totalMemory - freeMemory);
   }
 }

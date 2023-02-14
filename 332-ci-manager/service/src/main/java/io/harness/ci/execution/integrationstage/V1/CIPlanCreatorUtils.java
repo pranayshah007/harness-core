@@ -12,10 +12,7 @@ import static io.harness.yaml.extended.ci.codebase.Build.builder;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.build.BuildStatusUpdateParameter;
-import io.harness.beans.build.BuildStatusUpdateParameter.BuildStatusUpdateParameterBuilder;
 import io.harness.beans.execution.BranchWebhookEvent;
-import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
 import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
@@ -31,10 +28,8 @@ import io.harness.beans.yaml.extended.platform.V1.PlatformV1;
 import io.harness.beans.yaml.extended.runtime.V1.RuntimeV1;
 import io.harness.beans.yaml.extended.runtime.V1.VMRuntimeV1;
 import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.states.codebase.ScmGitRefManager;
 import io.harness.ci.utils.WebhookTriggerProcessorUtils;
-import io.harness.cimanager.stages.V1.IntegrationStageNodeV1;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.InvalidRequestException;
@@ -45,12 +40,9 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.plan.Dependency;
-import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStoreType;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.triggers.ParsedPayload;
-import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
 import io.harness.pms.yaml.ParameterField;
@@ -158,34 +150,6 @@ public class CIPlanCreatorUtils {
     return EmptyPredicate.isEmpty(bytes) ? Optional.empty() : Optional.of(kryoSerializer.asObject(bytes));
   }
 
-  public ExecutionSource buildExecutionSource(PlanCreationContext ctx, CodeBase codeBase, String identifier) {
-    if (codeBase == null) {
-      return null;
-    }
-    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
-    ExecutionTriggerInfo triggerInfo = planCreationContextValue.getMetadata().getTriggerInfo();
-    TriggerPayload triggerPayload = planCreationContextValue.getTriggerPayload();
-    return IntegrationStageUtils.buildExecutionSource(triggerInfo, triggerPayload, identifier, codeBase.getBuild(),
-        codeBase.getConnectorRef().getValue(), connectorUtils, ctx, codeBase);
-  }
-
-  public BuildStatusUpdateParameter getBuildStatusUpdateParameter(
-      IntegrationStageNodeV1 stageNode, CodeBase codebase, ExecutionSource executionSource) {
-    if (codebase == null) {
-      return null;
-    }
-    BuildStatusUpdateParameterBuilder builder = BuildStatusUpdateParameter.builder()
-                                                    .connectorIdentifier(codebase.getConnectorRef().getValue())
-                                                    .repoName(codebase.getRepoName().getValue())
-                                                    .name(stageNode.getName())
-                                                    .identifier(stageNode.getIdentifier());
-
-    if (executionSource != null && executionSource.getType() == ExecutionSource.Type.WEBHOOK) {
-      builder = builder.sha(retrieveLastCommitSha((WebhookExecutionSource) executionSource));
-    }
-    return builder.build();
-  }
-
   public static List<YamlField> getStepYamlFields(YamlField yamlField) {
     List<YamlNode> yamlNodes = Optional.of(yamlField.getNode().asArray()).orElse(Collections.emptyList());
     return yamlNodes.stream().map(YamlField::new).collect(Collectors.toList());
@@ -251,7 +215,9 @@ public class CIPlanCreatorUtils {
     if (gitSyncBranchContext == null) {
       throw new InvalidRequestException("Git sync data cannot be null for remote pipeline");
     }
-    boolean connectorOverride = !ParameterField.isBlank(repository.getConnector());
+    boolean connectorOverride = !ParameterField.isBlank(repository.getConnector())
+        && !repository.getConnector().fetchFinalValue().equals(
+            ctx.getMetadata().getMetadata().getPipelineConnectorRef());
     ParameterField<String> repoName = !connectorOverride && ParameterField.isBlank(repository.getName())
         ? ParameterField.createValueField(gitSyncBranchContext.getGitBranchInfo().getRepoName())
         : repository.getName();
@@ -370,8 +336,8 @@ public class CIPlanCreatorUtils {
           connectorIdentifier);
       return Optional.of(defaultBranch);
     } catch (Exception ex) {
-      log.error(String.format("Cannot find default branch for connector: %s", connectorIdentifier));
-      throw ex;
+      throw new InvalidRequestException(
+          String.format("Cannot find default branch for connector: %s", connectorIdentifier));
     }
   }
 

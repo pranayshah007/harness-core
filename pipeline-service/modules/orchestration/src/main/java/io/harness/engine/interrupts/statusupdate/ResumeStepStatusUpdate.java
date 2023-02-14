@@ -8,11 +8,8 @@
 package io.harness.engine.interrupts.statusupdate;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
 import static io.harness.pms.contracts.execution.Status.INPUT_WAITING;
 import static io.harness.pms.contracts.execution.Status.PAUSED;
-import static io.harness.pms.contracts.execution.Status.PAUSING;
-import static io.harness.pms.contracts.execution.Status.QUEUED;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -42,10 +39,7 @@ public class ResumeStepStatusUpdate implements NodeStatusUpdateHandler {
       Status planStatus = planExecutionService.calculateStatusExcluding(
           nodeStatusUpdateInfo.getPlanExecutionId(), nodeStatusUpdateInfo.getNodeExecutionId());
       if (!StatusUtils.isFinalStatus(planStatus)) {
-        EnumSet<Status> allowedStartStatuses =
-            EnumSet.of(RUNNING, DISCONTINUING, PAUSING, QUEUED, PAUSED, INPUT_WAITING);
-        planExecutionService.updateStatusForceful(
-            nodeStatusUpdateInfo.getPlanExecutionId(), planStatus, null, false, allowedStartStatuses);
+        planExecutionService.updateStatus(nodeStatusUpdateInfo.getPlanExecutionId(), planStatus);
       }
     }
   }

@@ -9,6 +9,7 @@ package io.harness.ccm.graphql.query.perspectives;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
+import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_VIEW;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.graphql.core.perspectives.PerspectiveFieldsHelper;
@@ -27,6 +28,7 @@ import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.dto.PerspectiveTimeSeriesData;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
+import io.harness.ccm.views.graphql.QLCEView;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
@@ -52,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.tools.StringUtils;
 
@@ -256,10 +259,20 @@ public class PerspectivesQuery {
       @GraphQLArgument(name = "sortCriteria") QLCEViewSortCriteria sortCriteria,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
     if (StringUtils.isEmpty(folderId)) {
-      return PerspectiveData.builder().customerViews(viewService.getAllViews(accountId, true, sortCriteria)).build();
+      List<QLCEView> allPerspectives = viewService.getAllViews(accountId, true, sortCriteria);
+      List<QLCEView> allowedPerspectives = null;
+      if (allPerspectives != null) {
+        Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
+            allPerspectives.stream().map(perspective -> perspective.getFolderId()).collect(Collectors.toSet()),
+            PERSPECTIVE_VIEW);
+        allowedPerspectives = allPerspectives.stream()
+                                  .filter(perspective -> allowedFolderIds.contains(perspective.getFolderId()))
+                                  .collect(Collectors.toList());
+      }
+      return PerspectiveData.builder().customerViews(allowedPerspectives).build();
     }
+    rbacHelper.checkPerspectiveViewPermission(accountId, null, null, folderId);
     return PerspectiveData.builder()
         .customerViews(viewService.getAllViews(accountId, folderId, true, sortCriteria))
         .build();

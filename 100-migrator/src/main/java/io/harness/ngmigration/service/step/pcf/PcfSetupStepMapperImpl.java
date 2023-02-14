@@ -59,6 +59,9 @@ public class PcfSetupStepMapperImpl extends StepMapper {
   @Override
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     PcfSetupState state = (PcfSetupState) getState(graphNode);
+    if (null == state.getOlderActiveVersionCountToKeep()) {
+      state.setOlderActiveVersionCountToKeep(3);
+    }
 
     if (state.isBlueGreen()) {
       TasBGAppSetupStepNode tasBGAppSetupStepNode = new TasBGAppSetupStepNode();
@@ -70,7 +73,7 @@ public class PcfSetupStepMapperImpl extends StepMapper {
               .additionalRoutes(
                   ParameterField.createValueField(Arrays.stream(state.getFinalRouteMap()).collect(Collectors.toList())))
               .existingVersionToKeep(
-                  ParameterField.createValueField(state.getOlderActiveVersionCountToKeep().toString()))
+                  new ParameterField(state.getOlderActiveVersionCountToKeep(), null, false, true, null, null, false))
               .tempRoutes(
                   ParameterField.createValueField(Arrays.stream(state.getTempRouteMap()).collect(Collectors.toList())))
               .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getTags()))
@@ -91,7 +94,7 @@ public class PcfSetupStepMapperImpl extends StepMapper {
               .additionalRoutes(
                   ParameterField.createValueField(Arrays.stream(state.getFinalRouteMap()).collect(Collectors.toList())))
               .existingVersionToKeep(
-                  ParameterField.createValueField(state.getOlderActiveVersionCountToKeep().toString()))
+                  new ParameterField(state.getOlderActiveVersionCountToKeep(), null, false, true, null, null, false))
               .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getTags()))
               .build();
 

@@ -535,20 +535,14 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     Criteria criteria =
         getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, null, envId);
 
-    if (infraId != null) {
-      criteria.and(InstanceKeys.infraIdentifier).is(infraId);
-    }
-    if (clusterIdentifier != null) {
-      criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).is(clusterIdentifier);
-    }
-
-    if (environmentType != null) {
-      criteria.and(InstanceKeys.envType).is(environmentType);
-    }
-
-    if (displayName != null) {
-      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME).is(displayName);
-    }
+    criteria.and(InstanceKeys.infraIdentifier)
+        .is(infraId)
+        .and(InstanceKeysAdditional.instanceInfoClusterIdentifier)
+        .is(clusterIdentifier)
+        .and(InstanceKeys.envType)
+        .is(environmentType)
+        .and(InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
+        .is(displayName);
 
     MatchOperation matchOperation = Aggregation.match(criteria);
     SortOperation sortOperation = Aggregation.sort(Sort.by(Sort.Direction.DESC, InstanceKeys.lastDeployedAt));

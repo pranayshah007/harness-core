@@ -416,7 +416,7 @@ public class PcfSetupState extends State {
             .tagList(renderedTags)
             .build());
 
-    delegateService.queueTaskV2(delegateTask);
+    delegateService.queueTask(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
 
     return ExecutionResponse.builder()
@@ -826,7 +826,7 @@ public class PcfSetupState extends State {
         context, appManifestMap, activityId, isSelectionLogsTrackingForTasksEnabled());
     gitFetchFileTask.setTags(pcfStateHelper.getRenderedTags(context, tags));
 
-    final String delegateTaskId = delegateService.queueTaskV2(gitFetchFileTask);
+    final String delegateTaskId = delegateService.queueTask(gitFetchFileTask);
     appendDelegateTaskDetails(context, gitFetchFileTask);
     return ExecutionResponse.builder()
         .async(true)
@@ -886,7 +886,7 @@ public class PcfSetupState extends State {
 
     updateGitFetchFilesResult(context, newStateExecutionData);
     prepareDelegateTask(context, newStateExecutionData, delegateTask, expressionFunctorToken);
-    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
+    String delegateTaskId = delegateService.queueTask(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
 
     return ExecutionResponse.builder()
