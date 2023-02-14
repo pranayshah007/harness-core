@@ -353,7 +353,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     String decryptedToken = String.valueOf(secretService.fetchSecretValue(encryptedData));
 
     return featureFlagService.isEnabled(FeatureName.DELEGATE_TOKEN_ENCRYPTION, delegateToken.getAccountId())
-        ? decryptedToken
+        ? (delegateToken.isNg() ? decodeBase64ToString(decryptedToken) : decryptedToken)
         : getTokenValue(delegateToken);
   }
 
