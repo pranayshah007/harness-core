@@ -76,7 +76,7 @@ public class YamlUtils {
       projectIdentifier: project
       orgIdentifier: org
      */
-    mapper.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
+    //mapper.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
     mapper.setSubtypeResolver(AnnotationAwareJsonSubtypeResolver.newInstance(mapper.getSubtypeResolver()));
     mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     mapper.registerModule(new Jdk8Module());
