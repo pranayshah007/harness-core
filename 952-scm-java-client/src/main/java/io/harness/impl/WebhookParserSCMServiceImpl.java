@@ -83,7 +83,7 @@ public class WebhookParserSCMServiceImpl implements WebhookParserSCMService {
           ParseWebhookRequest.newBuilder().setBody(payload).setProvider(gitProvider).setHeader(header.build()).build());
       log.info("Finished parsing webhook payload in {} ", stopwatch.elapsed(TimeUnit.SECONDS));
     } catch (StatusRuntimeException e) {
-      log.error("Failed to parse webhook payload");
+      log.error("Failed to parse webhook payload: '{}' with headers: '{}' ", payload, headers.toString());
       throw e;
     }
     return parseWebhookResponse;
