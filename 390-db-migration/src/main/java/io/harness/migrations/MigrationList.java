@@ -100,6 +100,7 @@ import io.harness.migrations.all.DropUniqueIndexOnTemplateGallery;
 import io.harness.migrations.all.DropYamlGitSyncCollectionMigration;
 import io.harness.migrations.all.DuplicateGlobalAccountMigration;
 import io.harness.migrations.all.EnableIteratorsForLdapSync;
+import io.harness.migrations.all.EncryptDelegateTokenMigration;
 import io.harness.migrations.all.EntityNameValidationMigration_All_00;
 import io.harness.migrations.all.EntityNameValidationMigration_All_01;
 import io.harness.migrations.all.EntityNameValidationMigration_All_02;
@@ -467,6 +468,7 @@ public class MigrationList {
         .add(Pair.of(381, AddRingDetailsToDelegateRing.class))
         .add(Pair.of(382, InitTerraformProvisionersSourceType.class))
         .add(Pair.of(383, CreateLongerDataRetention.class))
+        .add(Pair.of(385, EncryptDelegateTokenMigration.class))
         .build();
   }
 }
