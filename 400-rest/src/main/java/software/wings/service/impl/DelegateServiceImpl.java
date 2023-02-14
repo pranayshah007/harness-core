@@ -2601,6 +2601,17 @@ public class DelegateServiceImpl implements DelegateService {
     final Delegate existingDelegate = getExistingDelegate(delegateParams.getAccountId(), delegateParams.getHostName(),
         delegateParams.isNg(), delegateParams.getDelegateType(), delegateParams.getIp());
 
+    // this code is to mark all the task in running as failed if same delegate registration
+    if(existingDelegate != null){
+      try {
+        delegateId=existingDelegate.getDelegateGroupId();
+        onDelegateDisconnected(delegateParams.getAccountId(), delegateId);
+      } catch (Exception e){
+        e.printStackTrace();
+        log.info("couldn't delete the task associated with existing delegate: "+delegateId);
+      }
+    }
+
     if (existingDelegate != null && existingDelegate.getStatus() == DelegateInstanceStatus.DELETED) {
       broadcasterFactory.lookup(STREAM_DELEGATE + delegateParams.getAccountId(), true)
           .broadcast(SELF_DESTRUCT + existingDelegate.getUuid());
