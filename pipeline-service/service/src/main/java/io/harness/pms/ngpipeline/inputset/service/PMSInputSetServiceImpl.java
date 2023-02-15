@@ -18,6 +18,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.EntityYamlRootNames;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.eraro.ErrorCode;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
 import io.harness.exception.DuplicateFieldException;
@@ -138,7 +139,8 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, deleted, loadFromFallbackBranch);
     if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(
-          String.format("InputSet with the given ID: %s does not exist or has been deleted", identifier));
+          String.format("InputSet with the given ID: %s does not exist or has been deleted", identifier),
+          ErrorCode.RESOURCE_NOT_FOUND_EXCEPTION, null);
     }
 
     InputSetEntity inputSetEntity = optionalInputSetEntity.get();
