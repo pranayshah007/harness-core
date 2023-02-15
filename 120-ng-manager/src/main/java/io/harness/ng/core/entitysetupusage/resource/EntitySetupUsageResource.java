@@ -10,6 +10,8 @@ package io.harness.ng.core.entitysetupusage.resource;
 import static io.harness.NGConstants.REFERRED_BY_ENTITY_FQN;
 import static io.harness.NGConstants.REFERRED_BY_ENTITY_TYPE;
 import static io.harness.NGConstants.REFERRED_ENTITY_FQN;
+import static io.harness.NGConstants.REFERRED_ENTITY_FQN1;
+import static io.harness.NGConstants.REFERRED_ENTITY_FQN2;
 import static io.harness.NGConstants.REFERRED_ENTITY_TYPE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.utils.PageUtils.getNGPageResponse;
