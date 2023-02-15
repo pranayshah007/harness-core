@@ -29,6 +29,7 @@ import io.harness.pms.contracts.data.StepOutcomeRef;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.data.PmsOutcome;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
+import io.harness.repositories.planExecutionJson.PlanExpansionService;
 import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
@@ -60,6 +61,7 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
   @Inject private ExpressionEvaluatorProvider expressionEvaluatorProvider;
   @Inject private Injector injector;
   @Inject private MongoTemplate mongoTemplate;
+  @Inject private PlanExpansionService planExpansionService;
 
   @Override
   public String resolve(Ambiance ambiance, RefObject refObject) {
@@ -92,6 +94,7 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
                                    .groupName(groupName)
                                    .levelRuntimeIdIdx(ResolverUtils.prepareLevelRuntimeIdIdx(ambiance.getLevelsList()))
                                    .build());
+      planExpansionService.addOutcomesToJson(ambiance, name, instance.getOutcomeValue());
       return instance.getUuid();
     } catch (DuplicateKeyException ex) {
       throw new OutcomeException(format("Outcome with name %s is already saved", name), ex);

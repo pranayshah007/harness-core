@@ -39,6 +39,7 @@ import io.harness.pms.execution.utils.PlanExecutionProjectionConstants;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.repositories.PlanExecutionRepository;
+import io.harness.repositories.planExecutionJson.PlanExpansionService;
 import io.harness.springdata.PersistenceModule;
 import io.harness.waiter.StringNotifyResponseData;
 import io.harness.waiter.WaitNotifyEngine;
@@ -75,13 +76,16 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   @Inject private NodeStatusUpdateHandlerFactory nodeStatusUpdateHandlerFactory;
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private WaitNotifyEngine waitNotifyEngine;
+  @Inject private PlanExpansionService planExpansionService;
 
   @Getter private final Subject<PlanStatusUpdateObserver> planStatusUpdateSubject = new Subject<>();
   @Getter private final Subject<PlanExecutionDeleteObserver> planExecutionDeleteObserverSubject = new Subject<>();
 
   @Override
   public PlanExecution save(PlanExecution planExecution) {
-    return planExecutionRepository.save(planExecution);
+    PlanExecution planExecution1 = planExecutionRepository.save(planExecution);
+    planExpansionService.createPlanExpansionEntity(planExecution.getUuid());
+    return planExecution1;
   }
 
   /**

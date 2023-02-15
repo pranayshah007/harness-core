@@ -63,7 +63,7 @@ pmsSdkOrchestrationEventPoolConfig:
   timeUnit: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 mongo:
-  uri: mongodb://localhost:27017/pms-harness
+  uri: mongodb://localhost:27018,127.0.0.1:27019,127.0.0.1:27017/pms-harness?replicaSet=rs0
   connectTimeout: 30000
   serverSelectionTimeout: 90000
   socketTimeout: 360000

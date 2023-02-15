@@ -15,6 +15,7 @@ import io.harness.data.structure.CollectionUtils;
 import io.harness.engine.execution.ExecutionInputService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.expressions.AmbianceExpressionEvaluator;
+import io.harness.engine.expressions.functors.ExpressionQualifiedFunctor;
 import io.harness.engine.expressions.functors.NodeExecutionEntityType;
 import io.harness.engine.expressions.functors.StrategyFunctor;
 import io.harness.expression.VariableResolverTracker;
@@ -37,6 +38,7 @@ import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.project.remote.ProjectClient;
+import io.harness.repositories.planExecutionJson.PlanExpansionService;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -51,6 +53,8 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
   @Inject private PlanExecutionMetadataService planExecutionMetadataService;
   @Inject private PMSExecutionService pmsExecutionService;
+  @Inject private PlanExpansionService planExpansionService;
+
   @Inject PmsSdkInstanceService pmsSdkInstanceService;
   @Inject PipelineExpressionHelper pipelineExpressionHelper;
   @Inject ExecutionInputService executionInputService;
@@ -76,6 +80,8 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
     // Trigger functors
     addToContext(SetupAbstractionKeys.eventPayload, new EventPayloadFunctor(ambiance, planExecutionMetadataService));
     addToContext(SetupAbstractionKeys.trigger, new TriggerFunctor(ambiance, planExecutionMetadataService));
+    addToContext("executionJson", new ExpressionQualifiedFunctor(ambiance, planExpansionService));
+
     Map<String, PmsSdkInstance> cacheValueMap = pmsSdkInstanceService.getSdkInstanceCacheValue();
     cacheValueMap.values().forEach(e -> {
       for (Map.Entry<String, String> entry : CollectionUtils.emptyIfNull(e.getStaticAliases()).entrySet()) {

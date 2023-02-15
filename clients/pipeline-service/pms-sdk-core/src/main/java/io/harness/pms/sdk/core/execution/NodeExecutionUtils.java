@@ -67,6 +67,13 @@ public class NodeExecutionUtils {
     return (Map<String, Object>) resolveObject(RecastOrchestrationUtils.fromJson(json));
   }
 
+  public Map<String, Object> extractAndProcessObject(Map<String, Object> map) {
+    if (EmptyPredicate.isEmpty(map)) {
+      return null;
+    }
+    return (Map<String, Object>) resolveObject(map);
+  }
+
   public Object resolveObject(Object o) {
     if (o == null) {
       return null;

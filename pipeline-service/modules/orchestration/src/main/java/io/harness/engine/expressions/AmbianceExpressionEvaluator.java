@@ -150,6 +150,15 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
             .ambiance(ambiance)
             .entityTypes(entityTypes)
             .build());
+    // Access StepParameters and Outcomes using fully qualified names.
+    addToContext("expanded",
+        NodeExecutionQualifiedFunctor.builder()
+            .nodeExecutionsCache(nodeExecutionsCache)
+            .pmsOutcomeService(pmsOutcomeService)
+            .pmsSweepingOutputService(pmsSweepingOutputService)
+            .ambiance(ambiance)
+            .entityTypes(entityTypes)
+            .build());
   }
 
   /**
@@ -182,7 +191,12 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
     if (entityTypes.contains(NodeExecutionEntityType.SWEEPING_OUTPUT)) {
       listBuilder.add("output");
     }
-    return listBuilder.add("child").add("ancestor").add("qualified").addAll(super.fetchPrefixes()).build();
+    return listBuilder.add("children")
+        .add("child")
+        .add("ancestor")
+        .add("qualified")
+        .addAll(super.fetchPrefixes())
+        .build();
   }
 
   @Override

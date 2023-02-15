@@ -69,6 +69,8 @@ import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.queue.TimerScheduledExecutorService;
+import io.harness.repositories.planExecutionJson.PlanExpansionService;
+import io.harness.repositories.planExecutionJson.PlanExpansionServiceImpl;
 import io.harness.serializer.KryoSerializer;
 import io.harness.testing.TestExecution;
 import io.harness.threading.ThreadPool;
@@ -146,6 +148,8 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
       bind(PmsFeatureFlagService.class).to(PmsFeatureFlagHelper.class);
       bind(PipelineSettingsService.class).to(PipelineSettingsServiceImpl.class).in(Singleton.class);
     }
+    bind(PlanExpansionService.class).to(PlanExpansionServiceImpl.class).in(Singleton.class);
+
     bind(NodeExecutionService.class).to(NodeExecutionServiceImpl.class).in(Singleton.class);
     bind(PlanExecutionService.class).to(PlanExecutionServiceImpl.class).in(Singleton.class);
     bind(PlanExecutionMonitorService.class).to(PlanExecutionMonitorServiceImpl.class).in(Singleton.class);

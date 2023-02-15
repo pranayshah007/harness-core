@@ -54,6 +54,7 @@ import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.repositories.planExecutionJson.PlanExpansionService;
 import io.harness.springdata.PersistenceModule;
 import io.harness.springdata.TransactionHelper;
 
@@ -103,6 +104,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Inject private OrchestrationLogPublisher orchestrationLogPublisher;
   @Inject private OrchestrationLogConfiguration orchestrationLogConfiguration;
   @Inject private NodeExecutionReadHelper nodeExecutionReadHelper;
+
+  @Inject private PlanExpansionService planExpansionService;
 
   @Getter private final Subject<NodeStatusUpdateObserver> nodeStatusUpdateSubject = new Subject<>();
   @Getter private final Subject<NodeExecutionStartObserver> nodeExecutionStartSubject = new Subject<>();
@@ -362,6 +365,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       NodeExecution savedNodeExecution = transactionHelper.performTransaction(() -> {
         NodeExecution nodeExecution1 = mongoTemplate.insert(nodeExecution);
         orchestrationLogPublisher.onNodeStart(NodeStartInfo.builder().nodeExecution(nodeExecution).build());
+        planExpansionService.addBasicInformationToJson(nodeExecution1);
         return nodeExecution1;
       });
       if (savedNodeExecution != null) {
@@ -383,6 +387,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     } else {
       NodeExecution savedNodeExecution = transactionHelper.performTransaction(() -> {
         orchestrationLogPublisher.onNodeStart(NodeStartInfo.builder().nodeExecution(nodeExecution).build());
+        planExpansionService.addBasicInformationToJson(nodeExecution);
         return mongoTemplate.save(nodeExecution);
       });
       if (savedNodeExecution != null) {
