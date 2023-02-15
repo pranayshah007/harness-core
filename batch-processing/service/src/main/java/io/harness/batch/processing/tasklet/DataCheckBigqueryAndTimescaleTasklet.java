@@ -11,9 +11,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.batch.processing.billing.timeseries.service.impl.BillingDataServiceImpl;
 import io.harness.batch.processing.ccm.CCMJobConstants;
+import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.entities.ClusterDataDetails;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperServiceImpl;
 import io.harness.ccm.commons.beans.JobConstants;
+import io.harness.configuration.DeployMode;
 
 import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
@@ -28,9 +30,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class DataCheckBigqueryAndTimescaleTasklet implements Tasklet {
   @Autowired private BillingDataServiceImpl billingDataService;
   @Autowired private BigQueryHelperServiceImpl bigQueryHelperService;
+  @Autowired private BatchMainConfig config;
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
+    if (DeployMode.isOnPrem(config.getDeployMode().name()) && config.isClickHouseEnabled()) {
+      log.info("Not running DataCheckBigqueryAndTimescaleTasklet job for AWS onPrem deploy mode with clickhouse.");
+      return null;
+    }
     final JobConstants jobConstants = new CCMJobConstants(chunkContext);
 
     ClusterDataDetails timeScaleClusterData = billingDataService.getTimeScaleClusterData(
