@@ -112,7 +112,7 @@ public class AnomalyDetectionBigQueryServiceImpl {
   private boolean isTableExists(String accountId) {
     try {
       if (configuration.isClickHouseEnabled()) {
-        return Boolean.parseBoolean(clickHouseService
+        return "1".equals(clickHouseService
                                         .executeClickHouseQuery(configuration.getClickHouseConfig(),
                                             String.format("EXISTS ccm.%s", preAggregated), Boolean.TRUE)
                                         .get(0));
