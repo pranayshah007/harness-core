@@ -2607,7 +2607,7 @@ public class DelegateServiceImpl implements DelegateService {
         onDelegateDisconnected(delegateParams.getAccountId(), existingDelegate.getDelegateGroupId());
       } catch (Exception e) {
         e.printStackTrace();
-        log.info("couldn't delete the task associated with existing delegate: "+existingDelegate.getDelegateGroupId());
+        log.warn("couldn't delete the task associated with existing delegate: "+existingDelegate.getDelegateGroupId());
       }
     }
 
