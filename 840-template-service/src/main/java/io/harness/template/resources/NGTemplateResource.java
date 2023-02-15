@@ -43,6 +43,7 @@ import io.harness.ng.core.customDeployment.CustomDeploymentYamlRequestDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateListType;
