@@ -239,6 +239,10 @@ public class EcrArtifactResource {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
+    if (region.equals("null")) {
+      throw new InvalidRequestException("Region cannot be empty.");
+    }
+
     EcrListImagesDTO ecrListImagesDTO =
         ecrResourceService.getImages(connectorRef, region, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(ecrListImagesDTO);
