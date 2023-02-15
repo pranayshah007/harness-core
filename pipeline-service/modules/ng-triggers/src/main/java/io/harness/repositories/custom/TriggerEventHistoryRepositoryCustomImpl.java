@@ -11,14 +11,19 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory.TriggerEventHistoryKeys;
+import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.BulkOperations;
@@ -68,5 +73,17 @@ public class TriggerEventHistoryRepositoryCustomImpl implements TriggerEventHist
   public void deleteBatch(Criteria criteria) {
     BulkOperations operations = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, TriggerEventHistory.class);
     operations.remove(new Query(criteria)).execute();
+  }
+
+  @Override
+  public DeleteResult deleteTriggerEventHistoryForTriggerIdentifier(Criteria criteria) {
+    Query query = new Query(criteria);
+    RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying]: Failed deleting Trigger Event History; attempt: {}",
+        "[Failed]: Failed deleting Trigger Event history; attempt: {}");
+    return Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, TriggerEventHistory.class));
+  }
+
+  private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
+    return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
   }
 }

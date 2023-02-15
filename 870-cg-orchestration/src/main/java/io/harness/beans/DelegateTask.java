@@ -91,6 +91,12 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
                  .field(DelegateTaskKeys.delegateId)
                  .field(DelegateTaskKeys.nextBroadcast)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("taskcountperaccount")
+                 .field(DelegateTaskKeys.accountId)
+                 .field(DelegateTaskKeys.delegateId)
+                 .field(DelegateTaskKeys.status)
+                 .build())
         .build();
   }
 

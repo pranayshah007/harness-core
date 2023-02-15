@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/harness/harness-core/commons/go/lib/exec"
@@ -249,6 +250,9 @@ func (r *runTask) getShell(ctx context.Context) (string, string, error) {
 	} else if r.shellType == pb.ShellType_PWSH {
 		return "pwsh", "-Command", nil
 	} else if r.shellType == pb.ShellType_PYTHON {
+		if runtime.GOOS == "windows" {
+			return "python", "-c", nil
+		}
 		return "python3", "-c", nil
 	}
 	return "", "", fmt.Errorf("Unknown shell type: %s", r.shellType)

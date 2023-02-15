@@ -82,7 +82,7 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
       String secretIdentifier, @Valid EnvironmentSecretRequest body, String harnessAccount) {
     EnvironmentSecret secret;
     try {
-      secret = environmentSecretService.saveAndSyncK8sSecret(body.getSecret(), harnessAccount);
+      secret = environmentSecretService.updateAndSyncK8sSecret(body.getSecret(), harnessAccount);
     } catch (Exception e) {
       log.error("Could not update environment secret for id {}", secretIdentifier, e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();

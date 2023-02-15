@@ -22,6 +22,7 @@ import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.audittrails.events.PerspectiveFolderCreateEvent;
 import io.harness.ccm.audittrails.events.PerspectiveFolderDeleteEvent;
@@ -38,7 +39,6 @@ import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -282,8 +282,8 @@ public class PerspectiveFolderResource {
     Set<String> permittedPerspectiveFolderIds =
         rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, perspectiveFolderIds, FOLDER_VIEW);
     if (permittedPerspectiveFolderIds.size() != perspectiveFolderIds.size()) {
-      throw new AccessDeniedException(
-          String.format(PERMISSION_MISSING_MESSAGE, FOLDER_VIEW, RESOURCE_FOLDER), WingsException.USER);
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, FOLDER_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
     }
     return ResponseDTO.newResponse(ceViewFolderService.moveMultipleCEViews(accountId, perspectiveIds, newFolderId));
   }

@@ -40,6 +40,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.VaultConfig;
 import software.wings.service.intfc.security.SecretManager;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,7 +54,7 @@ public class NgSecretManagerFunctorTest extends WingsBaseTest {
   @Mock private SecretManagerClientService ngSecretService;
   @Mock private DelegateMetricsService delegateMetricsService;
   @Inject private SecretManager secretManager;
-  @Mock private javax.cache.Cache<String, EncryptedDataDetails> secretsCache;
+  @Mock private Cache<String, EncryptedDataDetails> secretsCache;
   private static String ORG_ID = "orgId";
   private static String PROJECT_ID = "projectId";
 

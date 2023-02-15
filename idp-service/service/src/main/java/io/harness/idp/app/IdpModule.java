@@ -8,6 +8,8 @@
 package io.harness.idp.app;
 
 import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -18,6 +20,7 @@ import io.harness.idp.config.service.AppConfigService;
 import io.harness.idp.config.service.AppConfigServiceImpl;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.namespace.service.NamespaceServiceImpl;
+import io.harness.idp.secret.eventlisteners.SecretCrudListener;
 import io.harness.idp.secret.resources.EnvironmentSecretApiImpl;
 import io.harness.idp.secret.service.EnvironmentSecretService;
 import io.harness.idp.secret.service.EnvironmentSecretServiceImpl;
@@ -30,6 +33,7 @@ import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.ng.core.event.MessageListener;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
@@ -49,6 +53,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
 import java.util.List;
 import java.util.Map;
@@ -157,6 +162,7 @@ public class IdpModule extends AbstractModule {
     bind(EnvironmentSecretApi.class).to(EnvironmentSecretApiImpl.class);
     bind(IDPStatusResource.class).to(IDPStatusResourceImpl.class);
     bind(K8sClient.class).to(K8sApiClient.class);
+    bind(MessageListener.class).annotatedWith(Names.named(SECRET_ENTITY + ENTITY_CRUD)).to(SecretCrudListener.class);
   }
 
   @Provides

@@ -5147,8 +5147,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
+              "pattern": "(^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$|^$)"
             }
           ]
         },
@@ -5207,8 +5206,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
+              "pattern": "(^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$|^$)"
             }
           ]
         },
@@ -5222,8 +5220,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
+              "pattern": "(^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$|^$)"
             }
           ]
         },
@@ -5341,7 +5338,8 @@
             "StepGroupRollback",
             "PipelineRollback",
             "ManualIntervention",
-            "ProceedWithDefaultValues"
+            "ProceedWithDefaultValues",
+            "MarkAsFailure"
           ]
         }
       },
@@ -8886,6 +8884,28 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "MarkAsFailFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "MarkAsFailure"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "MarkAsSuccessFailureActionConfig": {
       "allOf": [
         {
@@ -11576,8 +11596,7 @@
             },
             {
               "type": "string",
-              "pattern": "(<\\+.+>.*)",
-              "minLength": 1
+              "pattern": "(^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$|^$)"
             }
           ]
         },

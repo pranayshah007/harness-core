@@ -9,6 +9,10 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.ngmigration.service.step.arm.AzureCreateARMResourceStepMapperImpl;
 import io.harness.ngmigration.service.step.arm.AzureRollbackARMResourceStepMapperImpl;
+import io.harness.ngmigration.service.step.azure.webapp.AzureSlotRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.azure.webapp.AzureSlotSetupMapperImpl;
+import io.harness.ngmigration.service.step.azure.webapp.AzureSlotShiftTrafficMapperImpl;
+import io.harness.ngmigration.service.step.azure.webapp.AzureSlotSwapMapperImpl;
 import io.harness.ngmigration.service.step.cloudformation.CloudformationCreateStepMapperImpl;
 import io.harness.ngmigration.service.step.cloudformation.CloudformationDeleteStepMapperImpl;
 import io.harness.ngmigration.service.step.cloudformation.CloudformationRollbackStepMapperImpl;
@@ -135,6 +139,10 @@ public class StepMapperFactory {
   @Inject CloudformationCreateStepMapperImpl cloudformationCreateStepMapper;
   @Inject CloudformationDeleteStepMapperImpl cloudformationDeleteStepMapper;
   @Inject CloudformationRollbackStepMapperImpl cloudformationRollbackStepMapper;
+  @Inject AzureSlotRollbackStepMapperImpl azureSlotRollbackStepMapper;
+  @Inject AzureSlotSetupMapperImpl azureSlotSetupMapper;
+  @Inject AzureSlotShiftTrafficMapperImpl azureSlotShiftTrafficMapper;
+  @Inject AzureSlotSwapMapperImpl azureSlotSwapMapper;
   @Inject UnsupportedStepMapperImpl unsupportedStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
@@ -278,6 +286,14 @@ public class StepMapperFactory {
         return cloudformationDeleteStepMapper;
       case "CLOUD_FORMATION_ROLLBACK_STACK":
         return cloudformationRollbackStepMapper;
+      case "AZURE_WEBAPP_SLOT_SETUP":
+        return azureSlotSetupMapper;
+      case "AZURE_WEBAPP_SLOT_SHIFT_TRAFFIC":
+        return azureSlotShiftTrafficMapper;
+      case "AZURE_WEBAPP_SLOT_SWAP":
+        return azureSlotSwapMapper;
+      case "AZURE_WEBAPP_SLOT_ROLLBACK":
+        return azureSlotRollbackStepMapper;
       default:
         return unsupportedStepMapper;
     }

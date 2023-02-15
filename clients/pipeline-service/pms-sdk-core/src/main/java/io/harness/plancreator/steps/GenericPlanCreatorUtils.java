@@ -97,6 +97,8 @@ public class GenericPlanCreatorUtils {
         return RepairActionCode.MANUAL_INTERVENTION;
       case RETRY:
         return RepairActionCode.RETRY;
+      case MARK_AS_FAILURE:
+        return RepairActionCode.MARK_AS_FAILURE;
       default:
         throw new InvalidRequestException(
 

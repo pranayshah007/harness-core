@@ -37,6 +37,7 @@ import io.harness.ngmigration.service.MigrationTemplateUtils;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.step.ApprovalStepMapperImpl;
+import io.harness.ngmigration.service.workflow.WorkflowHandler;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.plancreator.execution.ExecutionElementConfig;
@@ -282,6 +283,7 @@ public class PipelineMigrationService extends NgMigrationService {
         ApprovalStageConfig.builder()
             .execution(ExecutionElementConfig.builder().steps(Collections.singletonList(stepWrapper)).build())
             .build());
+    approvalStageNode.setFailureStrategies(WorkflowHandler.getDefaultFailureStrategy());
 
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(approvalStageNode)).build();
   }

@@ -257,6 +257,7 @@
 3107:io.harness.pms.sdk.core.adviser.manualintervention.ManualInterventionAdviserParameters
 3108:io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameters
 3109:io.harness.pms.sdk.core.adviser.abort.OnAbortAdviserParameters
+3110:io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviserParameters
 3211:io.harness.steps.fork.ForkStepParameters
 3214:io.harness.steps.section.chain.SectionChainStepParameters
 3217:io.harness.steps.section.chain.SectionChainPassThroughData
@@ -2902,6 +2903,7 @@
 873575:io.harness.delegate.beans.connector.bamboo.BambooValidationParams
 873576:io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest
 873577:io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateResponse
+680009:io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse
 878001:io.harness.steps.matrix.StrategyMetadata
 878018:io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultAdviserParameters
 878019:io.harness.pms.sdk.core.execution.AsyncTimeoutResponseData
@@ -3086,9 +3088,7 @@
 10000302:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialSpecDTO
 10000303:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO
 10000304:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType
-
 10000401:io.harness.delegate.beans.executioncapability.AwsSamInstallationCapability
-
 10000450:io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO
 10000451:io.harness.delegate.beans.connector.jira.JiraAuthType
 10000452:io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO

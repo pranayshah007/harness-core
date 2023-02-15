@@ -107,10 +107,11 @@ public class HttpStepMapperImpl extends StepMapper {
     if (EmptyPredicate.isNotEmpty(state.getResponseProcessingExpressions())) {
       httpStepInfoBuilder.outputVariables(state.getResponseProcessingExpressions()
                                               .stream()
+                                              .filter(output -> StringUtils.isNotBlank(output.getName()))
                                               .map(output
                                                   -> StringNGVariable.builder()
                                                          .type(NGVariableType.STRING)
-                                                         .name(output.getName())
+                                                         .name(StringUtils.trim(output.getName()))
                                                          .value(ParameterField.createValueField(output.getValue()))
                                                          .build())
                                               .collect(Collectors.toList()));

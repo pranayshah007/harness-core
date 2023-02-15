@@ -3073,7 +3073,8 @@
             "StepGroupRollback",
             "PipelineRollback",
             "ManualIntervention",
-            "ProceedWithDefaultValues"
+            "ProceedWithDefaultValues",
+            "MarkAsFailure"
           ]
         }
       },
@@ -4702,6 +4703,28 @@
               "type": "string",
               "enum": [
                 "ManualIntervention"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "MarkAsFailFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "MarkAsFailure"
               ]
             }
           }

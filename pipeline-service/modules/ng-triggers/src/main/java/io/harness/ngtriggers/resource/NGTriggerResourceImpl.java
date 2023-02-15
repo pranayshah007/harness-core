@@ -182,8 +182,13 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   public ResponseDTO<Boolean> delete(String ifMatch, @NotNull @AccountIdentifier String accountIdentifier,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String targetIdentifier, String triggerIdentifier) {
-    return ResponseDTO.newResponse(ngTriggerService.delete(accountIdentifier, orgIdentifier, projectIdentifier,
-        targetIdentifier, triggerIdentifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null));
+    boolean triggerDeleted = ngTriggerService.delete(accountIdentifier, orgIdentifier, projectIdentifier,
+        targetIdentifier, triggerIdentifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null);
+    if (triggerDeleted) {
+      ngTriggerEventsService.deleteTriggerEventHistory(
+          accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier);
+    }
+    return ResponseDTO.newResponse(triggerDeleted);
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)

@@ -54,7 +54,7 @@ public interface TerraformCloudClient {
   String getPolicyCheckOutput(String url, String token, String policyCheckId) throws IOException;
 
   TerraformCloudResponse<List<StateVersionOutputData>> getStateVersionOutputs(
-      String url, String token, String stateVersionId) throws IOException;
+      String url, String token, String stateVersionId, int page) throws IOException;
 
   String getLogs(String url, int offset, int limit) throws IOException;
 }

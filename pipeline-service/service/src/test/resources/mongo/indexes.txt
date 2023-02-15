@@ -29,6 +29,7 @@ gitProcessRequestSdk {"name": "accountId_repo_branch_commit_index", "background"
 inputSetsPMS {"name": "accountId_organizationId_projectId_repo_branch", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "yamlGitConfigRef": 1, "branch": 1, "lastUpdatedAt": -1}
 inputSetsPMS {"name": "accountId_repoURL_filePath", "background": true} {"accountId": 1, "repoURL": 1, "filePath": 1}
 inputSetsPMS {"name": "createdAt_1", "background": true} {"createdAt": 1}
+inputSetsPMS {"name": "gitx_accountId_organizationId_projectId_pipelineId_inputSetId_repo", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineIdentifier": 1, "identifier": 1, "repo": 1}
 inputSetsPMS {"name": "unique_accountId_organizationId_projectId_pipelineId_inputSetId_repo_branch", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineIdentifier": 1, "identifier": 1, "yamlGitConfigRef": 1, "branch": 1}
 interrupts {"name": "planExecutionId_createdAt_idx", "background": true} {"planExecutionId": 1, "createdAt": -1}
 interrupts {"name": "planExecutionId_nodeExecutionId_createdAt_idx", "background": true} {"planExecutionId": 1, "nodeExecutionId": 1, "createdAt": -1}

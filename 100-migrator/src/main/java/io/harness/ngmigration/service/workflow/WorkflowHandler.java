@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.workflow;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.utils.MigratorUtility.getRollbackPhases;
 import static io.harness.when.beans.WhenConditionStatus.SUCCESS;
 
 import static software.wings.sm.StepType.AWS_NODE_SELECT;
@@ -93,7 +94,7 @@ public abstract class WorkflowHandler {
 
   @Inject private StepMapperFactory stepMapperFactory;
   public List<CgEntityId> getReferencedEntities(StepMapperFactory stepMapperFactory, Workflow workflow) {
-    List<GraphNode> steps = getSteps(workflow);
+    List<GraphNode> steps = MigratorUtility.getSteps(workflow);
     Map<String, String> stepIdToServiceIdMap = getStepIdToServiceIdMap(workflow);
     if (EmptyPredicate.isEmpty(steps)) {
       return Collections.emptyList();
@@ -195,21 +196,6 @@ public abstract class WorkflowHandler {
   public abstract JsonNode getTemplateSpec(
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow);
 
-  List<WorkflowPhase> getRollbackPhases(Workflow workflow) {
-    CanaryOrchestrationWorkflow orchestrationWorkflow =
-        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
-    Map<String, WorkflowPhase> rollbackWorkflowPhaseIdMap = orchestrationWorkflow.getRollbackWorkflowPhaseIdMap();
-    if (EmptyPredicate.isEmpty(orchestrationWorkflow.getWorkflowPhaseIds())) {
-      return Collections.emptyList();
-    }
-    return orchestrationWorkflow.getWorkflowPhaseIds()
-        .stream()
-        .filter(phaseId
-            -> rollbackWorkflowPhaseIdMap.containsKey(phaseId) && rollbackWorkflowPhaseIdMap.get(phaseId) != null)
-        .map(rollbackWorkflowPhaseIdMap::get)
-        .collect(Collectors.toList());
-  }
-
   List<WorkflowPhase> getPhases(Workflow workflow) {
     CanaryOrchestrationWorkflow orchestrationWorkflow =
         (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
@@ -224,29 +210,6 @@ public abstract class WorkflowHandler {
 
   PhaseStep getPostDeploymentPhase(Workflow workflow) {
     return null;
-  }
-
-  public List<GraphNode> getSteps(Workflow workflow) {
-    CanaryOrchestrationWorkflow orchestrationWorkflow =
-        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
-    List<GraphNode> stepYamls = new ArrayList<>();
-    PhaseStep postDeploymentPhaseStep = orchestrationWorkflow.getPostDeploymentSteps();
-    if (postDeploymentPhaseStep != null && EmptyPredicate.isNotEmpty(postDeploymentPhaseStep.getSteps())) {
-      stepYamls.addAll(postDeploymentPhaseStep.getSteps());
-    }
-    PhaseStep preDeploymentPhaseStep = orchestrationWorkflow.getPreDeploymentSteps();
-    if (preDeploymentPhaseStep != null && EmptyPredicate.isNotEmpty(preDeploymentPhaseStep.getSteps())) {
-      stepYamls.addAll(preDeploymentPhaseStep.getSteps());
-    }
-    List<WorkflowPhase> phases = orchestrationWorkflow.getWorkflowPhases();
-    if (EmptyPredicate.isNotEmpty(phases)) {
-      stepYamls.addAll(getStepsFromPhases(phases));
-    }
-    List<WorkflowPhase> rollbackPhases = getRollbackPhases(workflow);
-    if (EmptyPredicate.isNotEmpty(rollbackPhases)) {
-      stepYamls.addAll(getStepsFromPhases(rollbackPhases));
-    }
-    return stepYamls;
   }
 
   public Map<String, String> getStepIdToServiceIdMap(Workflow workflow) {
@@ -277,15 +240,6 @@ public abstract class WorkflowHandler {
       }
     }
     return result;
-  }
-
-  List<GraphNode> getStepsFromPhases(List<WorkflowPhase> phases) {
-    return phases.stream()
-        .filter(phase -> isNotEmpty(phase.getPhaseSteps()))
-        .flatMap(phase -> phase.getPhaseSteps().stream())
-        .filter(phaseStep -> isNotEmpty(phaseStep.getSteps()))
-        .flatMap(phaseStep -> phaseStep.getSteps().stream())
-        .collect(Collectors.toList());
   }
 
   List<ExecutionWrapperConfig> getStepGroups(WorkflowMigrationContext context, WorkflowPhase phase) {
@@ -526,7 +480,7 @@ public abstract class WorkflowHandler {
     return getDeploymentStageConfig(inferServiceDefinitionType(workflow), steps, rollbackSteps);
   }
 
-  ParameterField<List<FailureStrategyConfig>> getDefaultFailureStrategy() {
+  public static ParameterField<List<FailureStrategyConfig>> getDefaultFailureStrategy() {
     FailureStrategyConfig failureStrategyConfig =
         FailureStrategyConfig.builder()
             .onFailure(OnFailureConfig.builder()

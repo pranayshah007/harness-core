@@ -29,7 +29,6 @@ public class NodeStatusUpdateHandlerFactory {
   @Inject AbortAndRunningStepStatusUpdate abortAndRunningStepStatusUpdate;
   @Inject WaitStepStatusUpdate waitStepStatusUpdate;
   @Inject QueuedLicenseLimitReachedStatusUpdate queuedLicenseLimitReachedStatusUpdate;
-
   public NodeStatusUpdateHandler obtainStepStatusUpdate(NodeUpdateInfo nodeStatusUpdateInfo) {
     switch (nodeStatusUpdateInfo.getStatus()) {
       case APPROVAL_WAITING:
