@@ -88,7 +88,7 @@ public class DelegateAgentApplication extends Application<DelegateAgentConfig> {
 
     final Injector injector = Guice.createInjector(new DelegateAgentModule(configuration));
 
-    addShutdownHook(injector);
+//    addShutdownHook(injector);
 
     registerHealthChecks(environment, injector);
     registerResources(environment, injector);

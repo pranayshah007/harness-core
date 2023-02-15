@@ -598,7 +598,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
               .accountId(accountId)
               .orgIdentifier(delegateOrgIdentifier)
               .projectIdentifier(delegateProjectIdentifier)
-              .hostName(HOST_NAME)
+              .hostName("dont-know-name-548d4d9459-26q8n")
               .delegateName(DELEGATE_NAME)
               .delegateGroupName(DELEGATE_GROUP_NAME)
               .delegateGroupId(delegateGroupId)
