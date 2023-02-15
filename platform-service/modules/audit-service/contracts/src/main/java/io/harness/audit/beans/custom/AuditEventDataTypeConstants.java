@@ -20,7 +20,6 @@ public class AuditEventDataTypeConstants {
   public static final String ADD_COLLABORATOR_AUDIT_EVENT_DATA = "AddCollaboratorAuditEventData";
   public static final String TEMPLATE_AUDIT_EVENT_DATA = "TemplateAuditEventData";
   public static final String FILE_AUDIT_EVENT_DATA = "FileAuditEventData";
-  public static final String OPA_AUDIT_EVENT_DATA = "OpaAuditEventData";
   public static final String CHAOS_AUDIT_EVENT_DATA = "ChaosAuditEventData";
   public static final String FEATURE_FLAG_AUDIT_EVENT_DATA = "FeatureFlagAuditEventData";
 

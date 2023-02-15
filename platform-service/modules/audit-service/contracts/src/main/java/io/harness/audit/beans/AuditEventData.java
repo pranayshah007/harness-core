@@ -13,7 +13,6 @@ import static io.harness.audit.beans.custom.AuditEventDataTypeConstants.*;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.beans.custom.chaos.ChaosAuditEventData;
 import io.harness.audit.beans.custom.ff.FeatureFlagAuditEventData;
-import io.harness.audit.beans.custom.opa.OpaAuditEventData;
 import io.harness.audit.beans.custom.template.TemplateEventData;
 import io.harness.audit.beans.custom.user.AddCollaboratorAuditEventData;
 import io.harness.audit.beans.custom.user.UserInvitationAuditEventData;
@@ -36,7 +35,6 @@ import org.hibernate.validator.constraints.NotBlank;
       @JsonSubTypes.Type(value = UserInvitationAuditEventData.class, name = USER_INVITATION_AUDIT_EVENT_DATA)
       , @JsonSubTypes.Type(value = AddCollaboratorAuditEventData.class, name = ADD_COLLABORATOR_AUDIT_EVENT_DATA),
           @JsonSubTypes.Type(value = TemplateEventData.class, name = TEMPLATE_AUDIT_EVENT_DATA),
-          @JsonSubTypes.Type(value = OpaAuditEventData.class, name = OPA_AUDIT_EVENT_DATA),
           @JsonSubTypes.Type(value = ChaosAuditEventData.class, name = CHAOS_AUDIT_EVENT_DATA),
           @JsonSubTypes.Type(value = FeatureFlagAuditEventData.class, name = FEATURE_FLAG_AUDIT_EVENT_DATA),
 
