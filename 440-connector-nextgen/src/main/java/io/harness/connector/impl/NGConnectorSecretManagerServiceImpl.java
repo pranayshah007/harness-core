@@ -12,6 +12,7 @@ import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.helpers.GlobalSecretManagerUtils.GLOBAL_ACCOUNT_ID;
 import static io.harness.security.encryption.EncryptionType.CUSTOM_NG;
+import static io.harness.security.encryption.EncryptionType.LOCAL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorDTO;
@@ -28,6 +29,7 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.SecretManagerConfigDTOMapper;
 import io.harness.secretmanagerclient.dto.CustomSecretManagerConfigDTO;
+import io.harness.secretmanagerclient.dto.LocalConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.security.encryption.EncryptedDataParams;
 
@@ -143,5 +145,16 @@ public class NGConnectorSecretManagerServiceImpl implements NGConnectorSecretMan
 
   public void resetHeartBeatTask(String accountId, String taskId) {
     connectorService.resetHeartBeatTask(accountId, taskId);
+  }
+
+  @Override
+  public SecretManagerConfigDTO getLocalConfigDTO(String accountIdentifier) {
+    return LocalConfigDTO.builder()
+        .encryptionType(LOCAL)
+        .identifier(HARNESS_SECRET_MANAGER_IDENTIFIER)
+        .harnessManaged(true)
+        .accountIdentifier(accountIdentifier)
+        .isDefault(false)
+        .build();
   }
 }

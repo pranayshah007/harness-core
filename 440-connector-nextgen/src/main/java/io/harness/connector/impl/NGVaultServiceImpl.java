@@ -25,6 +25,7 @@ import static io.harness.security.encryption.AccessType.APP_ROLE;
 import static io.harness.security.encryption.AccessType.AWS_IAM;
 import static io.harness.security.encryption.AccessType.TOKEN;
 import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
+import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.EncryptionType.VAULT;
 import static io.harness.threading.Morpheus.sleep;
 
@@ -926,8 +927,14 @@ public class NGVaultServiceImpl implements NGVaultService {
     }
 
     // Get KMS Config for secret Manager of encrypted data's secret manager
-    EncryptionConfig encryptionConfig = getDecryptedEncryptionConfig(
-        accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier());
+    EncryptionConfig encryptionConfig;
+    if (encryptedData.getEncryptionType() == LOCAL) {
+      encryptionConfig =
+          SecretManagerConfigMapper.fromDTO(ngConnectorSecretManagerService.getLocalConfigDTO(accountIdentifier));
+    } else {
+      encryptionConfig = getDecryptedEncryptionConfig(
+          accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier());
+    }
 
     // Decrypt the encypted data with above KMS Config
     char[] decryptedValue = ngEncryptorService.fetchSecretValue(
