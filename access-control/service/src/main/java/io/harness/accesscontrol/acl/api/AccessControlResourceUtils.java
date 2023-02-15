@@ -10,9 +10,9 @@ package io.harness.accesscontrol.acl.api;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.security.dto.PrincipalType.SERVICE;
 
+import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.accesscontrol.principals.PrincipalType;
 
 import java.util.List;
 import java.util.Objects;
@@ -28,9 +28,9 @@ public class AccessControlResourceUtils {
         Optional.ofNullable(principalInContext).filter(x -> SERVICE.equals(x.getType()));
 
     return serviceCall.isPresent()
-        && (principalToCheckPermissions == null ||
-            Objects.equals(serviceCall.get().getName(), principalToCheckPermissions.getPrincipalIdentifier()) ||
-            PrincipalType.SERVICE.equals(principalToCheckPermissions.getPrincipalType()));
+        && (principalToCheckPermissions == null
+            || Objects.equals(serviceCall.get().getName(), principalToCheckPermissions.getPrincipalIdentifier())
+            || PrincipalType.SERVICE.equals(principalToCheckPermissions.getPrincipalType()));
   }
 
   private static boolean userContextAndDifferentPrincipalInBody(
