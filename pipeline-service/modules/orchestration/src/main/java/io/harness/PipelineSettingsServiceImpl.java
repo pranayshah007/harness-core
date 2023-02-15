@@ -72,10 +72,11 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
   public PlanExecutionSettingResponse shouldQueuePlanExecution(String accountId, String pipelineIdentifier) {
     try {
       Edition edition = getEdition(accountId);
-      long maxConcurrentExecutions = Long.parseLong(
-          NGRestUtils
-              .getResponse(ngSettingsClient.getSetting("concurrent_active_pipeline_executions", accountId, null, null))
-              .getValue());
+      long maxConcurrentExecutions =
+          Long.parseLong(NGRestUtils
+                             .getResponse(ngSettingsClient.getSetting(
+                                 SettingConstants.CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS, accountId, null, null))
+                             .getValue());
 
       switch (edition) {
         case FREE:
