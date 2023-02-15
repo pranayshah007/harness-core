@@ -134,6 +134,8 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     return Long.MAX_VALUE;
   }
 
+  // There's no setting added in account resources for max pipeline creation. And this is added as ignored setting in
+  // the pipeline settings and limits doc
   @Override
   public int getMaxConcurrencyBasedOnEdition(String accountId, long childCount) {
     try {
