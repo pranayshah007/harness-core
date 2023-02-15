@@ -16,6 +16,7 @@ import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.remote.client.NGRestUtils;
 
 import com.google.common.cache.CacheBuilder;
@@ -33,7 +34,7 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
   @Inject PlanExecutionService planExecutionService;
 
   @Inject NgLicenseHttpClient ngLicenseHttpClient;
-
+  @Inject NGSettingsClient ngSettingsClient;
   @Inject OrchestrationRestrictionConfiguration orchestrationRestrictionConfiguration;
 
   private final LoadingCache<String, List<ModuleLicenseDTO>> moduleLicensesCache =
@@ -65,27 +66,31 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     return edition;
   }
 
+  // We can use 3 different FFs for each plan to figure out whether, or not to queue execution based on max limit.
+  // Currently, we are using config value
   @Override
   public PlanExecutionSettingResponse shouldQueuePlanExecution(String accountId, String pipelineIdentifier) {
     try {
       Edition edition = getEdition(accountId);
+      long maxConcurrentExecutions = Long.parseLong(
+          NGRestUtils
+              .getResponse(ngSettingsClient.getSetting("concurrent_active_pipeline_executions", accountId, null, null))
+              .getValue());
+
       switch (edition) {
         case FREE:
           if (orchestrationRestrictionConfiguration.isUseRestrictionForFree()) {
-            return shouldQueueInternal(accountId, pipelineIdentifier,
-                orchestrationRestrictionConfiguration.getPlanExecutionRestriction().getFree());
+            return shouldQueueInternal(accountId, pipelineIdentifier, maxConcurrentExecutions);
           }
           break;
         case ENTERPRISE:
           if (orchestrationRestrictionConfiguration.isUseRestrictionForEnterprise()) {
-            return shouldQueueInternal(accountId, pipelineIdentifier,
-                orchestrationRestrictionConfiguration.getPlanExecutionRestriction().getEnterprise());
+            return shouldQueueInternal(accountId, pipelineIdentifier, maxConcurrentExecutions);
           }
           break;
         case TEAM:
           if (orchestrationRestrictionConfiguration.isUseRestrictionForTeam()) {
-            return shouldQueueInternal(accountId, pipelineIdentifier,
-                orchestrationRestrictionConfiguration.getPlanExecutionRestriction().getTeam());
+            return shouldQueueInternal(accountId, pipelineIdentifier, maxConcurrentExecutions);
           }
           break;
         default:
@@ -97,6 +102,8 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     return PlanExecutionSettingResponse.builder().shouldQueue(false).useNewFlow(false).build();
   }
 
+  // There's no setting added in account resources for max pipeline creation. And this is added as ignored setting in
+  // the pipeline settings and limits doc
   @Override
   public long getMaxPipelineCreationCount(String accountId) {
     try {

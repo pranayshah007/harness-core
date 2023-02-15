@@ -39,6 +39,7 @@ shared_dependencies = [
     "@maven//:org_springframework_data_spring_data_mongodb",
     "@maven//:org_springframework_spring_context",
     "@maven//:org_springframework_spring_core",
+    "//clients/ngsettings:module",
     "//:lombok",
 ]
 
