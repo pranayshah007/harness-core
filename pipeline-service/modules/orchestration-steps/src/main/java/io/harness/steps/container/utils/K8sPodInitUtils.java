@@ -83,6 +83,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerDetailsSweepingOutput;
+import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.steps.plugin.ContainerStepInfo;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
@@ -123,6 +124,7 @@ public class K8sPodInitUtils {
 
   @Inject private PmsFeatureFlagHelper featureFlagHelper;
   @Inject private LogStreamingServiceConfiguration logStreamingServiceConfiguration;
+  @Inject ContainerExecutionConfig containerExecutionConfig;
 
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
@@ -392,7 +394,7 @@ public class K8sPodInitUtils {
 
   public Map<String, String> getLogServiceEnvVariables(ContainerDetailsSweepingOutput k8PodDetails, String accountID) {
     Map<String, String> envVars = new HashMap<>();
-    final String logServiceBaseUrl = logStreamingServiceConfiguration.getBaseUrl();
+    final String logServiceBaseUrl = containerExecutionConfig.getLogStreamingContainerStepBaseUrl();
 
     RetryPolicy<Object> retryPolicy =
         getRetryPolicy(format("[Retrying failed call to fetch log service token attempt: {}"),
