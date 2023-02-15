@@ -2602,13 +2602,12 @@ public class DelegateServiceImpl implements DelegateService {
         delegateParams.isNg(), delegateParams.getDelegateType(), delegateParams.getIp());
 
     // this code is to mark all the task in running as failed if same delegate registration
-    if(existingDelegate != null){
+    if (existingDelegate != null) {
       try {
-        String delegateId=existingDelegate.getDelegateGroupId();
-        onDelegateDisconnected(delegateParams.getAccountId(), delegateId);
-      } catch (Exception e){
+        onDelegateDisconnected(delegateParams.getAccountId(), existingDelegate.getDelegateGroupId());
+      } catch (Exception e) {
         e.printStackTrace();
-        log.info("couldn't delete the task associated with existing delegate: "+delegateId);
+        log.info("couldn't delete the task associated with existing delegate: " + delegateId);
       }
     }
 
