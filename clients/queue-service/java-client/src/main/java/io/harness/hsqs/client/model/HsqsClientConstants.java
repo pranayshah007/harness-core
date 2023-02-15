@@ -7,4 +7,6 @@
 
 package io.harness.hsqs.client.model;
 
-public final class HsqsClientConstants { public static final String QUEUE_SERVICE_ENV_NAMESPACE = "queueEnvNamespace"; }
+public final class HsqsClientConstants {
+  public static final String QUEUE_SERVICE_ENV_NAMESPACE = "queueEnvNamespace";
+}

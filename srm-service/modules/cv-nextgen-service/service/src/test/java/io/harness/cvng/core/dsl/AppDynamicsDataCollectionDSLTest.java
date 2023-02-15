@@ -411,7 +411,7 @@ public class AppDynamicsDataCollectionDSLTest extends HoverflyCVNextGenTestBase 
             .controllerUrl("https://harness-test.saas.appdynamics.com/controller")
             .accountname("harness-test")
             .username("uitest@harness.io")
-            .passwordRef(SecretRefData.builder().decryptedValue("*Sj3&Sjsl32ssCv".toCharArray()).build())
+            .passwordRef(SecretRefData.builder().decryptedValue("**".toCharArray()).build())
             .build());
     String code = appDynamicsConnectorValidationInfo.getConnectionValidationDSL();
     Instant instant = Instant.now();
@@ -442,7 +442,7 @@ public class AppDynamicsDataCollectionDSLTest extends HoverflyCVNextGenTestBase 
             .controllerUrl("https://harness-test.saas.appdynamics.com/controllerr")
             .accountname("harness-test")
             .username("uitest@harness.io")
-            .passwordRef(SecretRefData.builder().decryptedValue("*Sj3&Sjsl32ssCv".toCharArray()).build())
+            .passwordRef(SecretRefData.builder().decryptedValue("**".toCharArray()).build())
             .build());
     String code = appDynamicsConnectorValidationInfo.getConnectionValidationDSL();
     Instant instant = Instant.now();

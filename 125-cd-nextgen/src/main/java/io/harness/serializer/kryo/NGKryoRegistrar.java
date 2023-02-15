@@ -18,6 +18,7 @@ import io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo;
 import io.harness.cdng.azure.webapp.ApplicationSettingsParameters;
 import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
+import io.harness.cdng.bamboo.BambooBuildStepInfo;
 import io.harness.cdng.chaos.ChaosStepNotifyData;
 import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
@@ -272,5 +273,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(GoogleFunctionsInfrastructure.class, 12657);
     kryo.register(AwsSamInfrastructure.class, 12658);
     kryo.register(AwsLambdaInfrastructure.class, 12659);
+    kryo.register(BambooBuildStepInfo.class, 1800700);
   }
 }

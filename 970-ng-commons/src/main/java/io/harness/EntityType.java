@@ -535,6 +535,8 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK)
   GOOGLE_CLOUD_FUNCTIONS_ROLLBACK(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK,
       IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.BAMBOO_BUILD)
+  BAMBOO_BUILD(ModuleType.CD, EntityTypeConstants.BAMBOO_BUILD, IdentifierRef.class, EntityYamlRootNames.BAMBOO_BUILD),
   @JsonProperty(EntityTypeConstants.AWS_LAMBDA_DEPLOY)
   AWS_LAMBDA_DEPLOY(
       ModuleType.CD, EntityTypeConstants.AWS_LAMBDA_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_LAMBDA_DEPLOY);

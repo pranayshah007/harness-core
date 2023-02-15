@@ -13,6 +13,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.DecryptedSecretValue;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.DecryptableEntityWithEncryptionConsumers;
 import io.harness.ng.core.NGAccessWithEncryptionConsumer;
@@ -75,4 +76,11 @@ public interface SecretNGManagerClient {
   Call<ResponseDTO<DecryptableEntity>> decryptEncryptedDetails(
       @Body DecryptableEntityWithEncryptionConsumers decryptableEntityWithEncryptionConsumers,
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
+
+  @GET(SECRETS_API + "/{identifier}/decrypt")
+  Call<ResponseDTO<DecryptedSecretValue>> getDecryptedSecretValue(
+      @Path(NGCommonEntityConstants.IDENTIFIER_KEY) String identifier,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier);
 }

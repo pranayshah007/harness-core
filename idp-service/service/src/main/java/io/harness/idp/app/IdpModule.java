@@ -7,6 +7,8 @@
 
 package io.harness.idp.app;
 
+import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.events.EventsFrameworkModule;
@@ -14,6 +16,8 @@ import io.harness.idp.config.resource.ConfigManagerResource;
 import io.harness.idp.config.resources.ConfigManagerResourceImpl;
 import io.harness.idp.config.service.AppConfigService;
 import io.harness.idp.config.service.AppConfigServiceImpl;
+import io.harness.idp.namespace.service.NamespaceService;
+import io.harness.idp.namespace.service.NamespaceServiceImpl;
 import io.harness.idp.secret.resources.EnvironmentSecretApiImpl;
 import io.harness.idp.secret.service.EnvironmentSecretService;
 import io.harness.idp.secret.service.EnvironmentSecretServiceImpl;
@@ -30,6 +34,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.queue.QueueController;
+import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.serializer.IdpServiceRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.spec.server.idp.v1.EnvironmentSecretApi;
@@ -132,6 +137,8 @@ public class IdpModule extends AbstractModule {
         });
       }
     });
+    install(new SecretNGManagerClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
 
     bind(IdpConfiguration.class).toInstance(appConfig);
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
@@ -145,6 +152,7 @@ public class IdpModule extends AbstractModule {
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
     bind(AppConfigService.class).to(AppConfigServiceImpl.class);
     bind(EnvironmentSecretService.class).to(EnvironmentSecretServiceImpl.class);
+    bind(NamespaceService.class).to(NamespaceServiceImpl.class);
     bind(ConfigManagerResource.class).to(ConfigManagerResourceImpl.class);
     bind(EnvironmentSecretApi.class).to(EnvironmentSecretApiImpl.class);
     bind(IDPStatusResource.class).to(IDPStatusResourceImpl.class);

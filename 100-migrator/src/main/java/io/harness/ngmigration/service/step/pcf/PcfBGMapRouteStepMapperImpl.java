@@ -33,7 +33,7 @@ public class PcfBGMapRouteStepMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     PcfSwitchBlueGreenRoutes state = (PcfSwitchBlueGreenRoutes) getState(stepYaml);
-    if (state.isRollback()) {
+    if (stepYaml.isRollback()) {
       return StepSpecTypeConstants.TAS_SWAP_ROUTES;
     } else {
       return StepSpecTypeConstants.SWAP_ROLLBACK;
@@ -52,7 +52,7 @@ public class PcfBGMapRouteStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     PcfSwitchBlueGreenRoutes state = (PcfSwitchBlueGreenRoutes) getState(graphNode);
 
-    if (state.isRollback()) {
+    if (graphNode.isRollback()) {
       TasSwapRollbackStepNode tasSwapRollbackStepNode = new TasSwapRollbackStepNode();
       baseSetup(state, tasSwapRollbackStepNode);
       TasSwapRollbackStepInfo tasSwapRollbackStepInfo =

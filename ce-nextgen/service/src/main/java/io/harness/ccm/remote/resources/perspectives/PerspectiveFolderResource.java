@@ -9,6 +9,9 @@ package io.harness.ccm.remote.resources.perspectives;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_FOLDER;
+import static io.harness.ccm.rbac.CCMRbacPermissions.FOLDER_VIEW;
 import static io.harness.ccm.remote.resources.TelemetryConstants.FOLDER_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.FOLDER_ID;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
@@ -35,6 +38,8 @@ import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.exception.AccessDeniedException;
+import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -60,6 +65,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -136,7 +143,7 @@ public class PerspectiveFolderResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing Perspective's CEViewFolder object")
       @Valid CreatePerspectiveFolderDTO createPerspectiveFolderDTO) {
-    rbacHelper.checkFolderEditPermission(accountId, null, null);
+    rbacHelper.checkFolderEditPermission(accountId, null, null, null);
     CEViewFolder ceViewFolder = createPerspectiveFolderDTO.getCeViewFolder();
     ceViewFolder.setAccountId(accountId);
     ceViewFolder.setPinned(false);
@@ -177,10 +184,19 @@ public class PerspectiveFolderResource {
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Parameter(description = "Search by folder name pattern") @QueryParam(
           "folderNamePattern") String folderNamePattern) {
-    rbacHelper.checkFolderViewPermission(accountId, null, null);
-    List<CEViewFolder> ceViewFolders;
-    ceViewFolders = ceViewFolderService.getFolders(accountId, folderNamePattern == null ? "" : folderNamePattern);
-    return ResponseDTO.newResponse(ceViewFolders);
+    List<CEViewFolder> ceViewFolders =
+        ceViewFolderService.getFolders(accountId, folderNamePattern == null ? "" : folderNamePattern);
+
+    List<CEViewFolder> allowedCeViewFolders = null;
+    if (ceViewFolders != null) {
+      Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
+          ceViewFolders.stream().map(ceViewFolder -> ceViewFolder.getUuid()).collect(Collectors.toSet()), FOLDER_VIEW);
+      allowedCeViewFolders = ceViewFolders.stream()
+                                 .filter(ceViewFolder -> allowedFolderIds.contains(ceViewFolder.getUuid()))
+                                 .collect(Collectors.toList());
+    }
+
+    return ResponseDTO.newResponse(allowedCeViewFolders);
   }
 
   @GET
@@ -203,7 +219,7 @@ public class PerspectiveFolderResource {
                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Parameter(required = true, description = "Unique identifier for folder") @PathParam(
           "folderId") String folderId) {
-    rbacHelper.checkFolderViewPermission(accountId, null, null);
+    rbacHelper.checkFolderViewPermission(accountId, null, null, folderId);
     return ResponseDTO.newResponse(ceViewService.getAllViews(accountId, folderId, true, null));
   }
 
@@ -224,7 +240,7 @@ public class PerspectiveFolderResource {
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing ceViewFolder object") @Valid CEViewFolder ceViewFolder) {
-    rbacHelper.checkFolderEditPermission(accountId, null, null);
+    rbacHelper.checkFolderEditPermission(accountId, null, null, ceViewFolder.getUuid());
     List<CEViewFolder> oldPerspectiveFolder =
         ceViewFolderService.getFolders(accountId, new ArrayList<>(Arrays.asList(ceViewFolder.getUuid())));
     CEViewFolder newPerspectiveFolder = ceViewFolderService.updateFolder(accountId, ceViewFolder);
@@ -257,9 +273,18 @@ public class PerspectiveFolderResource {
                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing perspectiveIds to be moved and newFolderId")
       @Valid MovePerspectiveDTO movePerspectiveDTO) {
-    rbacHelper.checkFolderEditPermission(accountId, null, null);
     List<String> perspectiveIds = movePerspectiveDTO.getPerspectiveIds();
     String newFolderId = movePerspectiveDTO.getNewFolderId();
+
+    Set<String> perspectiveFolderIds = ceViewService.getPerspectiveFolderIds(accountId, perspectiveIds);
+    perspectiveFolderIds.add(newFolderId);
+
+    Set<String> permittedPerspectiveFolderIds =
+        rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, perspectiveFolderIds, FOLDER_VIEW);
+    if (permittedPerspectiveFolderIds.size() != perspectiveFolderIds.size()) {
+      throw new AccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, FOLDER_VIEW, RESOURCE_FOLDER), WingsException.USER);
+    }
     return ResponseDTO.newResponse(ceViewFolderService.moveMultipleCEViews(accountId, perspectiveIds, newFolderId));
   }
 
@@ -282,7 +307,7 @@ public class PerspectiveFolderResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("folderId") @Parameter(required = true,
           description = "Unique identifier for the Perspective folder") @NotNull @Valid String folderId) {
-    rbacHelper.checkFolderDeletePermission(accountId, null, null);
+    rbacHelper.checkFolderDeletePermission(accountId, null, null, folderId);
     List<CEViewFolder> perspectiveFolder =
         ceViewFolderService.getFolders(accountId, new ArrayList<>(Arrays.asList(folderId)));
     boolean result = ceViewFolderService.delete(accountId, folderId);

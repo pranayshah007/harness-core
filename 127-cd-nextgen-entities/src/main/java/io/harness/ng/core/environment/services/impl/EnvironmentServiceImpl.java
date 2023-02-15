@@ -671,46 +671,51 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     for (String env : envRefs) {
       // org level entities need to have compatible ids. Eg. Stage level template will call with only org.Service type
       // refs
-      IdentifierRef envIdentifierRef =
-          IdentifierRefHelper.getIdentifierRef(env, accountId, orgIdentifier, projectIdentifier);
-      Optional<Environment> environment =
-          environmentRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
-              envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
-              envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier());
-      if (environment.isPresent()) {
-        String inputYaml =
-            createEnvironmentInputsYaml(envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
+      if (isNotEmpty(env)) {
+        IdentifierRef envIdentifierRef =
+            IdentifierRefHelper.getIdentifierRef(env, accountId, orgIdentifier, projectIdentifier);
+        Optional<Environment> environment =
+            environmentRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+                envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
                 envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier());
-        List<ServiceOverridesMetadata> serviceOverridesMetadataList = new ArrayList<>();
-        for (String serviceRef : serviceRefs) {
-          IdentifierRef serviceIdentifierRef =
-              IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgIdentifier, projectIdentifier);
+        if (environment.isPresent()) {
+          String inputYaml =
+              createEnvironmentInputsYaml(envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
+                  envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier());
+          List<ServiceOverridesMetadata> serviceOverridesMetadataList = new ArrayList<>();
+          for (String serviceRef : serviceRefs) {
+            if (isNotEmpty(serviceRef)) {
+              IdentifierRef serviceIdentifierRef =
+                  IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgIdentifier, projectIdentifier);
 
-          Optional<ServiceEntity> serviceEntity = serviceEntityService.getService(
-              serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
-              serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier());
-          if (serviceEntity.isPresent()) {
-            // use env ref and service ref to fetch service overrides
-            // overrides will be at same level of env, this can be different from service
-            String serviceOverrides =
-                serviceOverrideService.createServiceOverrideInputsYaml(envIdentifierRef.getAccountIdentifier(),
-                    envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier(), env, serviceRef);
-            serviceOverridesMetadataList.add(ServiceOverridesMetadata.builder()
-                                                 .serviceRef(serviceRef)
-                                                 .serviceOverridesYaml(serviceOverrides)
-                                                 .serviceYaml(serviceEntity.get().getYaml())
-                                                 .serviceRuntimeInputYaml(serviceEntityService.createServiceInputsYaml(
-                                                     serviceEntity.get().getYaml(), serviceRef))
-                                                 .build());
+              Optional<ServiceEntity> serviceEntity = serviceEntityService.getService(
+                  serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
+                  serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier());
+              if (serviceEntity.isPresent()) {
+                // use env ref and service ref to fetch service overrides
+                // overrides will be at same level of env, this can be different from service
+                String serviceOverrides =
+                    serviceOverrideService.createServiceOverrideInputsYaml(envIdentifierRef.getAccountIdentifier(),
+                        envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier(), env, serviceRef);
+                serviceOverridesMetadataList.add(
+                    ServiceOverridesMetadata.builder()
+                        .serviceRef(serviceRef)
+                        .serviceOverridesYaml(serviceOverrides)
+                        .serviceYaml(serviceEntity.get().getYaml())
+                        .serviceRuntimeInputYaml(
+                            serviceEntityService.createServiceInputsYaml(serviceEntity.get().getYaml(), serviceRef))
+                        .build());
+              }
+            }
           }
+          environmentInputSetYamlAndServiceOverridesMetadataList.add(
+              EnvironmentInputSetYamlAndServiceOverridesMetadata.builder()
+                  .envRef(env)
+                  .envRuntimeInputYaml(inputYaml)
+                  .servicesOverrides(serviceOverridesMetadataList)
+                  .envYaml(environment.get().getYaml())
+                  .build());
         }
-        environmentInputSetYamlAndServiceOverridesMetadataList.add(
-            EnvironmentInputSetYamlAndServiceOverridesMetadata.builder()
-                .envRef(env)
-                .envRuntimeInputYaml(inputYaml)
-                .servicesOverrides(serviceOverridesMetadataList)
-                .envYaml(environment.get().getYaml())
-                .build());
       }
     }
     return EnvironmentInputSetYamlAndServiceOverridesMetadataDTO.builder()

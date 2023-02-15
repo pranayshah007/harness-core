@@ -31,8 +31,7 @@ public class PcfRollbackStepMapperImpl extends StepMapper {
 
   @Override
   public String getStepType(GraphNode stepYaml) {
-    // todo : decide which setup step to return
-    return StepSpecTypeConstants.TAS_ROLLBACK; // or SWAP_ROLLBACK
+    return StepSpecTypeConstants.TAS_ROLLBACK;
   }
 
   @Override

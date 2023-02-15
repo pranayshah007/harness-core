@@ -267,6 +267,9 @@ public enum NGStepType {
   GOOGLE_CLOUD_FUNCTIONS_ROLLBACK("Google Cloud Functions Rollback",
       Arrays.asList(ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS), "Google Functions",
       StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.BAMBOO_BUILD)
+  BAMBOO_BUILD(
+      "Bamboo Build", Arrays.asList(ServiceDefinitionType.values()), "Builds", StepSpecTypeConstants.BAMBOO_BUILD),
   @JsonProperty(StepSpecTypeConstants.AWS_LAMBDA_DEPLOY)
   AWS_LAMBDA_DEPLOY("AWS Lambda Deploy", Arrays.asList(ServiceDefinitionType.AWS_LAMBDA), "AWS Lambda",
       StepSpecTypeConstants.AWS_LAMBDA_DEPLOY);
