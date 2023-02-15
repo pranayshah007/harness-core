@@ -19,4 +19,5 @@ public class GitSyncConstants {
   public static final String FOLDER_PATH = ".harness/";
   public static final String TRUE_VALUE = "true";
   public static final String GIT_CLIENT_ENABLED_SETTING = "enable_git_commands";
+  public static final String INDEPENDENT_INPUT_SET_SETTING = "independent_inputSets";
 }

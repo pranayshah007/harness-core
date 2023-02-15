@@ -109,6 +109,28 @@ public class InputSetValidationHelper {
     return optionalPipelineEntity.get();
   }
 
+  public PipelineEntity getPipelineMetadata(PMSPipelineService pmsPipelineService, String accountId,
+      String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    Optional<PipelineEntity> optionalPipelineEntity;
+    if (GitContextHelper.isUpdateToNewBranch()) {
+      String baseBranch = Objects.requireNonNull(GitContextHelper.getGitEntityInfo()).getBaseBranch();
+      GitSyncBranchContext branchContext =
+          GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().branch(baseBranch).build()).build();
+      try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
+        optionalPipelineEntity = pmsPipelineService.getPipeline(
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, true, false, false);
+      }
+    } else {
+      optionalPipelineEntity = pmsPipelineService.getPipeline(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, true, false, false);
+    }
+    if (optionalPipelineEntity.isEmpty()) {
+      throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
+          orgIdentifier, projectIdentifier, pipelineIdentifier));
+    }
+    return optionalPipelineEntity.get();
+  }
+
   public String getPipelineYamlForOldGitSyncFlow(PMSPipelineService pmsPipelineService, String accountId,
       String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String pipelineBranch,
       String pipelineRepoID) {

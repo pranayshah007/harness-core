@@ -16,7 +16,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.interceptor.GitSyncConstants;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.inputset.InputSetErrorDTOPMS;
 import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
@@ -25,6 +27,7 @@ import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.utils.PipelineYamlHelper;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.pipeline.v1.model.FQNtoError;
 import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
 import io.harness.spec.server.pipeline.v1.model.GitDetails;
@@ -44,12 +47,18 @@ import java.util.List;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
+@Slf4j
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InputSetsApiUtils {
   @Inject private final PmsFeatureFlagHelper pmsFeatureFlagHelper;
+
+  @Inject private final NGSettingsClient ngSettingsClient;
+
+  @Inject private final PMSPipelineService pipelineService;
 
   public InputSetResponseBody getInputSetResponse(InputSetEntity inputSetEntity) {
     InputSetResponseBody responseBody = new InputSetResponseBody();
@@ -200,5 +209,27 @@ public class InputSetsApiUtils {
   public String inputSetVersion(String accountId, String yaml) {
     boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
     return PipelineYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
+  }
+
+  public void validateRemoteInputSetCreation(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String inputSetRepoName) {
+    if (!isIndependentInputSetEnabledInSettings(accountIdentifier)) {
+      PipelineEntity pipelineEntity = InputSetValidationHelper.getPipelineMetadata(
+          pipelineService, accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier);
+      String pipelineRepoName = pipelineEntity.getRepo();
+      if (pipelineRepoName.equals(inputSetRepoName)) {
+        log.info("Input-Set is created in the same repo as the pipeline.");
+      } else {
+        throw new InvalidRequestException("Input-Set has to be in the same repo as the pipeline.");
+      }
+    }
+  }
+
+  public boolean isIndependentInputSetEnabledInSettings(String accountId) {
+    String isGitClientEnabledString = NGRestUtils
+                                          .getResponse(ngSettingsClient.getSetting(
+                                              GitSyncConstants.INDEPENDENT_INPUT_SET_SETTING, accountId, null, null))
+                                          .getValue();
+    return GitSyncConstants.TRUE_VALUE.equals(isGitClientEnabledString);
   }
 }

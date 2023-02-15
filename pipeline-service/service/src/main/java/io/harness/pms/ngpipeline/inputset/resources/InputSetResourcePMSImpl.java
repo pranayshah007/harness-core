@@ -145,6 +145,8 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @ResourceIdentifier String pipelineIdentifier, String pipelineBranch, String pipelineRepoID,
       GitEntityCreateInfoDTO gitEntityCreateInfo, @NotNull String yaml) {
     String inputSetVersion = inputSetsApiUtils.inputSetVersion(accountId, yaml);
+    inputSetsApiUtils.validateRemoteInputSetCreation(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, gitEntityCreateInfo.getRepoName());
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntityFromVersion(accountId, orgIdentifier,
         projectIdentifier, pipelineIdentifier, yaml, inputSetVersion, InputSetEntityType.INPUT_SET);
     log.info(String.format("Create input set with identifier %s for pipeline %s in project %s, org %s, account %s",
@@ -165,7 +167,8 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     log.info(
         String.format("Create overlay input set with identifier %s for pipeline %s in project %s, org %s, account %s",
             entity.getIdentifier(), pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-
+    inputSetsApiUtils.validateRemoteInputSetCreation(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, gitEntityCreateInfo.getRepoName());
     // overlay input set validation does not require pipeline branch and repo, hence sending null here
     InputSetEntity createdEntity = pmsInputSetService.create(entity, false);
     return ResponseDTO.newResponse(
@@ -179,6 +182,8 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       String pipelineBranch, String pipelineRepoID, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml) {
     log.info(String.format("Updating input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
+    //    inputSetsApiUtils.validateRemoteInputSetCreation(accountId, orgIdentifier, projectIdentifier,
+    //    pipelineIdentifier, gitEntityInfo.getRepoName());
     String inputSetVersion = inputSetsApiUtils.inputSetVersion(accountId, yaml);
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntityFromVersion(accountId, orgIdentifier,
         projectIdentifier, pipelineIdentifier, yaml, inputSetVersion, InputSetEntityType.INPUT_SET);
