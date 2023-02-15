@@ -257,6 +257,7 @@
 3107:io.harness.pms.sdk.core.adviser.manualintervention.ManualInterventionAdviserParameters
 3108:io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameters
 3109:io.harness.pms.sdk.core.adviser.abort.OnAbortAdviserParameters
+3110:io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviserParameters
 3211:io.harness.steps.fork.ForkStepParameters
 3214:io.harness.steps.section.chain.SectionChainStepParameters
 3217:io.harness.steps.section.chain.SectionChainPassThroughData
@@ -2891,6 +2892,7 @@
 680006:io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse
 680007:io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit
 680008:io.harness.delegate.beans.terraformcloud.PlanType
+680009:io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse
 878001:io.harness.steps.matrix.StrategyMetadata
 878018:io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultAdviserParameters
 878019:io.harness.pms.sdk.core.execution.AsyncTimeoutResponseData

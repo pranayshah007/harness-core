@@ -43,6 +43,8 @@ public class NgManifestFactory {
   @Inject KustomizeSourceRepoStoreService kustomizeSourceRepoStoreService;
   @Inject OpenshiftSourceRepoStoreService openshiftSourceRepoStoreService;
   @Inject HelmChartOverrideRepoStoreService helmChartOverrideRepoStoreService;
+  @Inject AzureAppServiceLocalStoreService azureAppServiceLocalStoreService;
+  @Inject AzureAppServiceRemoteStoreService azureAppServiceRemoteStoreService;
 
   private static String ERROR_STRING = "%s storetype is currently not supported for %s appManifestKind";
 
@@ -104,6 +106,15 @@ public class NgManifestFactory {
           return helmChartOverrideRepoStoreService;
         }
         throw new InvalidRequestException(String.format(ERROR_STRING, storeType, appManifestKind));
+      case AZURE_APP_SERVICE_MANIFEST:
+        switch (storeType) {
+          case Remote:
+            return azureAppServiceRemoteStoreService;
+          case Local:
+            return azureAppServiceLocalStoreService;
+          default:
+            throw new InvalidRequestException(String.format(ERROR_STRING, storeType, appManifestKind));
+        }
       default:
         throw new InvalidRequestException(
             String.format("%s appManifestKind is currently not supported", appManifestKind));

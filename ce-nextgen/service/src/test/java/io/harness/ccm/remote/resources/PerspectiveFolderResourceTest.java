@@ -42,7 +42,9 @@ import io.harness.telemetry.TelemetryReporter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -131,6 +133,9 @@ public class PerspectiveFolderResourceTest extends CategoryTest {
   @Owner(developers = TRUNAPUSHPA)
   @Category(UnitTests.class)
   public void testGetFolders() {
+    Set<String> perspectiveFolders = new HashSet<>();
+    perspectiveFolders.add(FOLDER_ID);
+    when(rbacHelper.checkFolderIdsGivenPermission(any(), any(), any(), any(), any())).thenReturn(perspectiveFolders);
     ResponseDTO<List<CEViewFolder>> response = perspectiveFolderResource.getFolders(ACCOUNT_ID, "");
     assertThat(response.getData().size()).isEqualTo(1);
     assertThat(response.getData().get(0)).isEqualTo(perspectiveFolder);
@@ -161,6 +166,9 @@ public class PerspectiveFolderResourceTest extends CategoryTest {
   @Owner(developers = TRUNAPUSHPA)
   @Category(UnitTests.class)
   public void movePerspectives() {
+    Set<String> perspectiveFolders = new HashSet<>();
+    perspectiveFolders.add(FOLDER_ID);
+    when(rbacHelper.checkFolderIdsGivenPermission(any(), any(), any(), any(), any())).thenReturn(perspectiveFolders);
     ResponseDTO<List<CEView>> response = perspectiveFolderResource.movePerspectives(ACCOUNT_ID,
         MovePerspectiveDTO.builder()
             .perspectiveIds(Collections.singletonList(PERSPECTIVE_ID))

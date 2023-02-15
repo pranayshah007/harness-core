@@ -231,6 +231,7 @@ public enum FeatureName {
   DISABLE_DEPLOYMENTS_SEARCH_AND_LIMIT_DEPLOYMENT_STATS,
   RATE_LIMITED_TOTP,
   USE_IMMUTABLE_DELEGATE("Use immutable delegate on download delegate from UI", HarnessTeam.DEL),
+  DELEGATE_TASK_LOAD_DISTRIBUTION("Delegate task load distribution among delegates", HarnessTeam.DEL),
   ACTIVE_MIGRATION_FROM_LOCAL_TO_GCP_KMS,
   TERRAFORM_AWS_CP_AUTHENTICATION,
   CI_DOCKER_INFRASTRUCTURE,
@@ -422,7 +423,6 @@ public enum FeatureName {
   SRM_CUSTOM_CHANGE_SOURCE("UI FF to enable Custom Change Source", HarnessTeam.CV),
   SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
   ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC),
-  LOOKER_ENTITY_RECONCILIATION,
   STAGE_AND_STEP_LEVEL_DEPLOYMENT_DETAILS,
   NG_DEPLOYMENT_FREEZE("Enables Deployment freeze for NG", HarnessTeam.CDC),
   NG_DEPLOYMENT_FREEZE_OVERRIDE("Override freeze for NG", HarnessTeam.CDC),
@@ -525,8 +525,6 @@ public enum FeatureName {
   CDS_TERRAFORM_S3_SUPPORT(
       "Enable support for AWS S3 bucket and URIs for Terraform Source, tfVars and Backend Config", HarnessTeam.CDP),
   CCM_BUDGET_CASCADES("Enable to allow nested budgets for Financial Management", HarnessTeam.CE),
-  PIE_NG_GITX_CACHING("FF to enable caching on new git experience", HarnessTeam.PIPELINE),
-
   PIE_NG_BATCH_GET_TEMPLATES(
       "FF to enable batching of templates to improve loading time of pipeline and template studio",
       HarnessTeam.PIPELINE),
@@ -617,7 +615,10 @@ public enum FeatureName {
   SPG_VALIDATE_PIPELINE_RUNTIME_INPUT_FOR_TRIGGER("Validate the pipeline runtime input for triggers", HarnessTeam.SPG),
   SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE(
       "To silent ignore org.modelmapper.MappingException inside state machine executor", HarnessTeam.SPG),
-  PL_AUDIT_LOG_STREAMING_ENABLED("Enables AuditLogStreaming tab on AuditTrails page in account scope", HarnessTeam.PL);
+  PL_AUDIT_LOG_STREAMING_ENABLED("Enables AuditLogStreaming tab on AuditTrails page in account scope", HarnessTeam.PL),
+  SRM_ELK_LOGS_V2("Will enable Elasticsearch logs v2 health source in SRM", HarnessTeam.CV),
+  PIE_NG_GITX_CACHING("FF to enable caching on new git experience", HarnessTeam.PIPELINE),
+  ;
 
   @Deprecated
   FeatureName() {

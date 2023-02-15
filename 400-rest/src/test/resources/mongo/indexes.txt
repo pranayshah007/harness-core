@@ -187,6 +187,7 @@ delegateTasks {"name": "index", "background": true} {"status": 1, "expiry": 1}
 delegateTasks {"name": "pulling", "background": true} {"accountId": 1, "status": 1, "data.async": 1, "expiry": 1}
 delegateTasks {"name": "rebroadcast", "background": true} {"version": 1, "status": 1, "delegateId": 1, "nextBroadcast": 1}
 delegateTasks {"name": "rebroadcast1", "background": true} {"status": 1, "delegateId": 1, "nextBroadcast": 1}
+delegateTasks {"name": "taskcountperaccount", "background": true} {"accountId": 1, "delegateId": 1, "status": 1}
 delegateTasks {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 delegateTokens {"name": "byAccountAndName", "unique": true} {"accountId": 1, "name": 1}
 delegateTokens {"name": "byAccountAndNgAndOwnerAndStatus", "background": true} {"accountId": 1, "isNg": 1, "owner": 1, "status": 1}

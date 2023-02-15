@@ -7,6 +7,7 @@
 
 package io.harness.idp.secret.service;
 
+import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 
 import java.util.List;
@@ -14,8 +15,11 @@ import java.util.Optional;
 
 public interface EnvironmentSecretService {
   Optional<EnvironmentSecret> findByIdAndAccountIdentifier(String identifier, String accountIdentifier);
+  List<EnvironmentSecret> findByAccountIdentifier(String accountIdentifier);
   EnvironmentSecret saveAndSyncK8sSecret(EnvironmentSecret environmentSecret, String accountIdentifier)
       throws Exception;
-  List<EnvironmentSecret> findByAccountIdentifier(String accountIdentifier);
+  EnvironmentSecret updateAndSyncK8sSecret(EnvironmentSecret environmentSecret, String accountIdentifier)
+      throws Exception;
+  void processSecretUpdate(EntityChangeDTO entityChangeDTO, String action) throws Exception;
   void delete(String secretIdentifier, String harnessAccount);
 }

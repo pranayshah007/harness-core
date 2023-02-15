@@ -638,20 +638,6 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
-  public void testShouldRetryWithNonDefaultBranch() {
-    assertTrue(pipelineRepository.shouldRetryWithFallBackBranch(
-        new ScmBadRequestException(scmBadRequest), branch, "main-patch"));
-
-    assertFalse(
-        pipelineRepository.shouldRetryWithFallBackBranch(new ScmBadRequestException(scmBadRequest), branch, branch));
-
-    assertFalse(
-        pipelineRepository.shouldRetryWithFallBackBranch(new ScmConflictException(scmBadRequest), branch, branch));
-  }
-
-  @Test
-  @Owner(developers = ADITHYA)
-  @Category(UnitTests.class)
   public void testUpdatePipelineOperationsInlineToRemote() {
     Criteria pipelineCriteria = new Criteria();
     Update pipelineUpdate = new Update();

@@ -151,8 +151,9 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           ciLogServiceUtils.closeLogStream(AmbianceUtils.getAccountId(ambiance), logKey, true, true);
           // Now Delete the build from db while cleanup is happening. \
         } else if (level.getStepType().getStepCategory() == StepCategory.STAGE) {
-          log.info("Skipping cleanup for stageExecutionID {} and stepCategory {} with status",
-              ambiance.getStageExecutionId(), level.getStepType().getStepCategory(), status);
+          log.info("Skipping cleanup for stageExecutionID {} and stepCategory {} with status and pipeline {}",
+              ambiance.getStageExecutionId(), level.getStepType().getStepCategory(), status,
+              ambiance.getMetadata().getPipelineIdentifier());
         }
       });
     } catch (Exception ex) {

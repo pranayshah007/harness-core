@@ -347,6 +347,27 @@ public class ManifestMigrationService extends NgMigrationService {
     return gitStore;
   }
 
+  public GitStore getGitStoreWithFilePaths(GitFileConfig gitFileConfig, NgEntityDetail connector) {
+    GitStore gitStore =
+        GitStore.builder()
+            .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
+            .gitFetchType(StringUtils.isNotBlank(gitFileConfig.getBranch()) ? FetchType.BRANCH : FetchType.COMMIT)
+            .build();
+    if (StringUtils.isNotBlank(gitFileConfig.getRepoName())) {
+      gitStore.setRepoName(ParameterField.createValueField(gitFileConfig.getRepoName()));
+    }
+
+    if (StringUtils.isNotBlank(gitFileConfig.getBranch())) {
+      gitStore.setBranch(ParameterField.createValueField(gitFileConfig.getBranch()));
+    } else {
+      gitStore.setCommitId(ParameterField.createValueField(gitFileConfig.getCommitId()));
+    }
+    if (isNotEmpty(gitFileConfig.getFilePathList())) {
+      gitStore.setPaths(ParameterField.createValueField(gitFileConfig.getFilePathList()));
+    }
+    return gitStore;
+  }
+
   public HarnessStore getHarnessStore(List<NGYamlFile> files) {
     return HarnessStore.builder().files(MigratorUtility.getFileStorePaths(files)).build();
   }

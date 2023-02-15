@@ -165,7 +165,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
                                .build();
     doReturn(Optional.of(forS1))
         .when(pmsInputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS1", false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS1", false, false);
 
     String yamlForS1AndS2 = "inputSet:\n"
         + "  pipeline:\n"
@@ -185,7 +185,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
                                     .build();
     doReturn(Optional.of(forS1AndS2))
         .when(pmsInputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS1AndS2", false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS1AndS2", false, false);
 
     String yamlForS2 = "inputSet:\n"
         + "  pipeline:\n"
@@ -200,7 +200,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
                                .build();
     doReturn(Optional.of(forS2))
         .when(pmsInputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS2", false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS2", false, false);
 
     String mergedInputSet = validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId, orgId, projectId,
         pipelineId, Arrays.asList("forS1", "forS1AndS2", "forS2"), null, null, Collections.singletonList("s2"));
@@ -283,19 +283,19 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
 
     doReturn(Optional.of(inputSet1))
         .when(pmsInputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, inputSetId1, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, inputSetId1, false, false);
     doReturn(Optional.of(inputSet2))
         .when(pmsInputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, inputSetId2, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, inputSetId2, false, false);
     doReturn(Optional.of(inputSet3))
         .when(pmsInputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, inputSetId3, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, inputSetId3, false, false);
     doReturn(Optional.of(inputSet4))
         .when(pmsInputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, inputSetId4, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, inputSetId4, false, false);
     doReturn(Optional.of(overlay))
         .when(pmsInputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, overlayId, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, overlayId, false, false);
 
     String mergedInputSets = validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(
         accountId, orgId, projectId, pipelineId, Arrays.asList(inputSetId1, inputSetId2, overlayId), null, null, null);
@@ -337,7 +337,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
                                .build();
     doReturn(Optional.of(forS1))
         .when(pmsInputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS1", false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS1", false, false);
 
     assertThatThrownBy(()
                            -> validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId, orgId, projectId,
@@ -379,7 +379,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
 
     doReturn(Optional.of(forS1))
         .when(pmsInputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS1", false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS1", false, false);
 
     InputSetEntity overlaidIS = InputSetEntity.builder()
                                     .identifier("overlaidIS1")
@@ -389,7 +389,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
                                     .build();
     doReturn(Optional.of(overlaidIS))
         .when(pmsInputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "overlaidIS1", false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "overlaidIS1", false, false);
 
     assertThatThrownBy(()
                            -> validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId, orgId, projectId,
@@ -509,7 +509,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         Optional.of(
             InputSetEntity.builder().yaml(lastRuntimeS1S2).inputSetEntityType(InputSetEntityType.INPUT_SET).build()))
         .when(pmsInputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "is1", false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "is1", false, false);
     String merged4 =
         validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId, projectId,
             pipelineId, Collections.singletonList("is1"), null, null, Collections.singletonList("s2"), lastRuntimeS2);

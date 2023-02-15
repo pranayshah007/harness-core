@@ -213,4 +213,13 @@ public class CEViewDao {
     }
     return query.order(Sort.ascending(sortField));
   }
+
+  public List<CEView> getPerspectivesByIds(String accountId, List<String> uuids) {
+    return hPersistence.createQuery(CEView.class)
+        .field(CEViewKeys.accountId)
+        .equal(accountId)
+        .field(CEViewKeys.uuid)
+        .in(uuids)
+        .asList();
+  }
 }

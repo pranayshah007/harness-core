@@ -14,6 +14,7 @@ import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.TemplateMoveConfigRequestDTO;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
@@ -25,7 +26,6 @@ import io.harness.template.beans.TemplateListRepoResponse;
 import io.harness.template.beans.TemplateMoveConfigResponse;
 import io.harness.template.entity.TemplateEntity;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -97,8 +97,8 @@ public interface NGTemplateService {
   TemplateListRepoResponse getListOfRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       boolean includeAllTemplatesAccessibleAtScope);
 
-  List<EntitySetupUsageDTO> listTemplateReferences(int page, int size, String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String templateIdentifier, String versionLabel, String searchTerm,
+  PageResponse<EntitySetupUsageDTO> listTemplateReferences(int page, int size, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel, String searchTerm,
       boolean isStableTemplate);
 
   TemplateMoveConfigResponse moveTemplateStoreTypeConfig(String accountIdentifier, String orgIdentifier,
