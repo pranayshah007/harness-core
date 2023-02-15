@@ -135,13 +135,13 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       String pipelineIdentifier, String identifier, boolean deleted, String pipelineBranch, String pipelineRepoID,
       boolean hasNewYamlStructure, boolean loadFromFallbackBranch) {
     return get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, deleted, pipelineBranch,
-        pipelineRepoID, hasNewYamlStructure, false);
+        pipelineRepoID, hasNewYamlStructure, false, false);
   }
 
   @Override
   public Optional<InputSetEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean deleted, String pipelineBranch, String pipelineRepoID,
-      boolean hasNewYamlStructure, String loadFromFallbackBranch, boolean loadFromCache) {
+      boolean hasNewYamlStructure, boolean loadFromFallbackBranch, boolean loadFromCache) {
     Optional<InputSetEntity> optionalInputSetEntity = getWithoutValidations(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, identifier, deleted, loadFromFallbackBranch, loadFromCache);
     if (optionalInputSetEntity.isEmpty()) {
@@ -153,7 +153,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
       ScmGitMetaData inputSetScmGitMetaData = GitAwareContextHelper.getScmGitMetaData();
       try {
-        InputSetValidationHelper.validateInputSet(this, inputSetEntity, hasNewYamlStructure);
+        InputSetValidationHelper.validateInputSet(this, inputSetEntity, hasNewYamlStructure, loadFromCache);
       } finally {
         // input set validation involves fetching the pipeline, which can change the global scm metadata to that of the
         // pipeline. Hence, it needs to be changed back to that of the input set once validation is complete,
@@ -169,7 +169,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       String projectIdentifier, String pipelineIdentifier, String identifier, boolean deleted,
       boolean loadFromFallbackBranch) {
     return getWithoutValidations(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, deleted, false);
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, deleted, false, false);
   }
 
   public Optional<InputSetEntity> getWithoutValidations(String accountId, String orgIdentifier,

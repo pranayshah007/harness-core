@@ -35,10 +35,14 @@ public interface PMSInputSetService {
 
   Optional<InputSetEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean deleted, String pipelineBranch, String pipelineRepoID,
-      boolean hasNewYamlStructure, boolean loadFromCache);
+      boolean hasNewYamlStructure, boolean loadFromFallbackBranch, boolean loadFromCache);
 
   Optional<InputSetEntity> getWithoutValidations(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean deleted, boolean loadFromFallbackBranch);
+
+  Optional<InputSetEntity> getWithoutValidations(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String identifier, boolean deleted, boolean loadFromFallbackBranch,
+      boolean loadFromCache);
 
   // pipeline branch and repo ID are needed for old git sync
   InputSetEntity update(ChangeType changeType, InputSetEntity inputSetEntity, boolean hasNewYamlStructure);

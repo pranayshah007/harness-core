@@ -65,8 +65,8 @@ public class OverlayInputSetValidationHelper {
     InputSetYamlHelper.confirmPipelineIdentifierInOverlayInputSet(yaml, pipelineIdentifier);
     InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml, "overlayInputSet", orgIdentifier, projectIdentifier);
 
-    List<Optional<InputSetEntity>> inputSets = findAllReferredInputSets(
-        inputSetService, inputSetReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+    List<Optional<InputSetEntity>> inputSets = findAllReferredInputSets(inputSetService, inputSetReferences, accountId,
+        orgIdentifier, projectIdentifier, pipelineIdentifier, loadFromCache);
     Map<String, String> invalidReferences =
         InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, inputSetReferences);
     if (!invalidReferences.isEmpty()) {
@@ -101,7 +101,7 @@ public class OverlayInputSetValidationHelper {
         continue;
       }
       List<Optional<InputSetEntity>> inputSets = findAllReferredInputSets(
-          inputSetService, inputSetReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+          inputSetService, inputSetReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
       Map<String, String> invalidReferences =
           InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, inputSetReferences);
       if (invalidReferences.isEmpty()) {
@@ -138,7 +138,7 @@ public class OverlayInputSetValidationHelper {
 
   private List<Optional<InputSetEntity>> findAllReferredInputSets(PMSInputSetService inputSetService,
       List<String> referencesInOverlay, String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier) {
+      String pipelineIdentifier, boolean loadFromCache) {
     if (GitContextHelper.isUpdateToNewBranch()) {
       String baseBranch = Objects.requireNonNull(GitContextHelper.getGitEntityInfo()).getBaseBranch();
       String repoIdentifier = GitContextHelper.getGitEntityInfo().getYamlGitConfigId();
@@ -147,26 +147,26 @@ public class OverlayInputSetValidationHelper {
               .gitBranchInfo(GitEntityInfo.builder().branch(baseBranch).yamlGitConfigId(repoIdentifier).build())
               .build();
       try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
-        return findAllReferredInputSetsInternal(
-            inputSetService, referencesInOverlay, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+        return findAllReferredInputSetsInternal(inputSetService, referencesInOverlay, accountId, orgIdentifier,
+            projectIdentifier, pipelineIdentifier, loadFromCache);
       }
     } else {
-      return findAllReferredInputSetsInternal(
-          inputSetService, referencesInOverlay, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+      return findAllReferredInputSetsInternal(inputSetService, referencesInOverlay, accountId, orgIdentifier,
+          projectIdentifier, pipelineIdentifier, loadFromCache);
     }
   }
 
   // todo: optimise this
   private List<Optional<InputSetEntity>> findAllReferredInputSetsInternal(PMSInputSetService inputSetService,
       List<String> referencesInOverlay, String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier) {
+      String pipelineIdentifier, boolean loadFromCache) {
     List<Optional<InputSetEntity>> inputSets = new ArrayList<>();
     referencesInOverlay.forEach(identifier -> {
       if (EmptyPredicate.isEmpty(identifier)) {
         throw new InvalidRequestException("Empty Input Set Identifier not allowed in Input Set References");
       }
       inputSets.add(inputSetService.getWithoutValidations(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false, false));
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false, false, loadFromCache));
     });
     return inputSets;
   }
@@ -181,7 +181,7 @@ public class OverlayInputSetValidationHelper {
 
     List<String> currentReferences = InputSetYamlHelper.getReferencesFromOverlayInputSetYaml(yaml);
     List<Optional<InputSetEntity>> inputSets = findAllReferredInputSetsInternal(
-        inputSetService, currentReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+        inputSetService, currentReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     Map<String, String> invalidReferencesWithErrors =
         InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, currentReferences, pipelineYaml);
     List<String> existingButInvalidReferences =
