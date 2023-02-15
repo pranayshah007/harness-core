@@ -9,7 +9,6 @@ package io.harness.service.impl;
 
 import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.mongo.MongoUtils.setUnset;
 
 import static java.lang.String.format;
@@ -330,10 +329,14 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     if (!featureFlagService.isEnabled(FeatureName.DELEGATE_TOKEN_ENCRYPTION, delegateToken.getAccountId())) {
       return getTokenValue(delegateToken);
     }
+    //@TODO: remove this check after migration, should not come here only in case we missed on migration or local env
+    if (delegateToken.getTokenValue() == null) {
+      upsertEncryptedTokenRecord(delegateToken);
+    }
     managerDecryptionService.decrypt(delegateToken, secretManager.getEncryptionDetails(delegateToken));
-    String decryptedToken = isEmpty(delegateToken.getEncryptedTokenValue()) ? delegateToken.getEncryptedTokenValue()
-                                                                            : delegateToken.getValue();
-    return delegateToken.isNg() ? decodeBase64ToString(decryptedToken) : decryptedToken;
+    log.info("FOR TEST only: printing encrypted value {}", delegateToken.getEncryptedTokenValue());
+    return delegateToken.isNg() ? decodeBase64ToString(delegateToken.getEncryptedTokenValue())
+                                : delegateToken.getEncryptedTokenValue();
   }
 
   @Override
