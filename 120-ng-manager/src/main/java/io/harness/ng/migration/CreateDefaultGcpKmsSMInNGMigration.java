@@ -15,6 +15,7 @@ import static io.harness.helpers.GlobalSecretManagerUtils.GLOBAL_ACCOUNT_ID;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.entities.Connector;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.migration.NGMigration;
@@ -22,27 +23,34 @@ import io.harness.ng.core.migration.NGSecretManagerMigration;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.mongodb.client.result.DeleteResult;
+import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 
 @OwnedBy(PL)
 @Slf4j
 public class CreateDefaultGcpKmsSMInNGMigration implements NGMigration {
   private final NGSecretManagerMigration ngSecretManagerMigration;
   private final ConnectorService connectorService;
+  private MongoTemplate mongoTemplate;
 
   @Inject
   public CreateDefaultGcpKmsSMInNGMigration(NGSecretManagerMigration ngSecretManagerMigration,
-      @Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService, ConnectorService connectorService1) {
+      @Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService, MongoTemplate mongoTemplate) {
     this.ngSecretManagerMigration = ngSecretManagerMigration;
-    this.connectorService = connectorService1;
+    this.connectorService = connectorService;
+    this.mongoTemplate = mongoTemplate;
   }
 
   @Override
   public void migrate() {
+    Optional<ConnectorResponseDTO> connectorResponseDTO;
     try {
-      Optional<ConnectorResponseDTO> connectorResponseDTO =
-          connectorService.get(GLOBAL_ACCOUNT_ID, null, null, HARNESS_SECRET_MANAGER_IDENTIFIER);
+      connectorResponseDTO = connectorService.get(GLOBAL_ACCOUNT_ID, null, null, HARNESS_SECRET_MANAGER_IDENTIFIER);
       // No migration for clusters where Global GCP KMS already exists
       if (connectorResponseDTO.isPresent()
           && connectorResponseDTO.get().getConnector().getConnectorType() == ConnectorType.GCP_KMS) {
@@ -53,9 +61,33 @@ public class CreateDefaultGcpKmsSMInNGMigration implements NGMigration {
           "[CreateDefaultGcpKMSInNGMigration]: Error while fetching Global SM for accountId {}", GLOBAL_ACCOUNT_ID);
       return;
     }
-    log.info("[CreateDefaultGcpKMSInNGMigration]: Creating global SM.");
-    ConnectorDTO globalConnectorDTO =
-        ngSecretManagerMigration.createGlobalGcpKmsSM(GLOBAL_ACCOUNT_ID, null, null, true);
-    log.info("[CreateDefaultGcpKMSInNGMigration]: Global SM Created Successfully.");
+
+    log.info("[CreateDefaultGcpKMSInNGMigration]: Removing GLOBAL Local Connector");
+    Query query = new Query(Criteria.where(Connector.ConnectorKeys.identifier)
+                                .is(HARNESS_SECRET_MANAGER_IDENTIFIER)
+                                .and(Connector.ConnectorKeys.accountIdentifier)
+                                .is(GLOBAL_ACCOUNT_ID)
+                                .and(Connector.ConnectorKeys.type)
+                                .is(ConnectorType.LOCAL));
+    final DeleteResult remove = mongoTemplate.remove(query, Connector.class);
+
+    log.info("[CreateDefaultGcpKMSInNGMigration]: Removed GLOBAL Local Connector");
+
+    ConnectorDTO globalConnectorDTO;
+    try {
+      log.info("[CreateDefaultGcpKMSInNGMigration]: Creating global SM.");
+      globalConnectorDTO = ngSecretManagerMigration.createGlobalGcpKmsSM(GLOBAL_ACCOUNT_ID, null, null, true);
+      log.info("[CreateDefaultGcpKMSInNGMigration]: Global SM Created Successfully.");
+    } catch (Exception e) {
+      log.info("[CreateDefaultGcpKMSInNGMigration]: Error while creating global SM ", e);
+      // save local connector back in mongo
+      throw e;
+    }
+
+    if (globalConnectorDTO != null) {
+      List<String> allAccounts = ngSecretManagerMigration.fetchAllAccounts();
+      ngSecretManagerMigration.populateHarnessManagedDefaultKms(allAccounts, globalConnectorDTO);
+      log.info("[CreateDefaultGcpKMSInNGMigration] HarnessManaged KMS Created/Updated");
+    }
   }
 }
