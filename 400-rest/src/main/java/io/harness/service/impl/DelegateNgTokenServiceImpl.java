@@ -331,7 +331,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     }
     //@TODO: remove this check after migration, should not come here only in case we missed on migration or local env
     if (delegateToken.getTokenValue() == null) {
-      upsertEncryptedTokenRecord(delegateToken);
+      delegateToken = updateTokenWithEncryptedValue(delegateToken);
     }
     managerDecryptionService.decrypt(delegateToken, secretManager.getEncryptionDetails(delegateToken));
     log.info("FOR TEST only: printing encrypted value {}", delegateToken.getEncryptedTokenValue());
@@ -349,5 +349,14 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
   private String getTokenValue(DelegateToken delegateToken) {
     return delegateToken.isNg() ? decodeBase64ToString(delegateToken.getValue()) : delegateToken.getValue();
+  }
+
+  //@TODO: Remove this after migration
+  private DelegateToken updateTokenWithEncryptedValue(DelegateToken delegateToken) {
+    UpdateOperations<DelegateToken> updateOperations = persistence.createUpdateOperations(DelegateToken.class);
+    setUnset(updateOperations, DelegateTokenKeys.encryptedTokenValue, delegateToken.getValue().toCharArray());
+    return persistence.upsert(
+        persistence.createQuery(DelegateToken.class).filter(DelegateTokenKeys.uuid, delegateToken.getUuid()),
+        updateOperations, HPersistence.upsertReturnNewOptions);
   }
 }
