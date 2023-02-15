@@ -18,13 +18,13 @@ import lombok.Value;
 @Value
 @EqualsAndHashCode(callSuper = false)
 public class BambooArtifactDelegateResponse extends ArtifactDelegateResponse {
-  /** Jenkins Job build number */
+  /** Bamboo Job build number */
   String build;
 
-  /** Jenkins Job name */
+  /** Bamboo Job name */
   String planKey;
 
-  /** Jenkins artifact path */
+  /** Bamboo artifact path */
   String artifactPath;
 
   @Builder
@@ -34,5 +34,11 @@ public class BambooArtifactDelegateResponse extends ArtifactDelegateResponse {
     this.build = build;
     this.planKey = planKey;
     this.artifactPath = artifactPath;
+  }
+
+  @Override
+  public String describe() {
+    return "type: " + (getSourceType() != null ? getSourceType().getDisplayName() : null) + "\nplanKey: " + getPlanKey()
+        + "\nartifactPath: " + getArtifactPath() + "\nbuild: " + getBuild();
   }
 }

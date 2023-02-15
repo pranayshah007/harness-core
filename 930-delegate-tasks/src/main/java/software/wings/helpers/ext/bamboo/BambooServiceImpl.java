@@ -287,7 +287,7 @@ public class BambooServiceImpl implements BambooService {
   public List<BuildDetails> getBuilds(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails,
       String planKey, List<String> artifactPaths, int maxNumberOfBuilds) {
     try {
-      return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(20), () -> {
+      return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(60), () -> {
         List<BuildDetails> buildDetailsList = new ArrayList<>();
         Call<JsonNode> request =
             getBambooClient(bambooConfig, encryptionDetails)

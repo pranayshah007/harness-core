@@ -217,5 +217,9 @@ message GoogleCloudStoragePayload {
 
 message BambooPayload {
   string planKey = 1;
-  repeated string artifactPath = 2;
+  repeated ArtifactPathList artifactPath = 2;
+}
+
+message ArtifactPathList {
+  string artifactPath = 1;
 }

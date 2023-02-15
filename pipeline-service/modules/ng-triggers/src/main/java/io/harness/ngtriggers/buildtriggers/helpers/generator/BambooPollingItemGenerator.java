@@ -13,14 +13,17 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
 import io.harness.ngtriggers.buildtriggers.helpers.dtos.BuildTriggerOpsData;
+import io.harness.polling.contracts.ArtifactPathList;
 import io.harness.polling.contracts.BambooPayload;
 import io.harness.polling.contracts.JenkinsPayload;
 import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.polling.contracts.Type;
+import io.harness.yaml.core.variables.NGVariableTrigger;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 
@@ -40,13 +43,22 @@ public class BambooPollingItemGenerator implements PollingItemGenerator {
         buildTriggerHelper.validateAndFetchStringListFromJsonNode(buildTriggerOpsData, "spec.artifactPath");
 
     return builder
-        .setPollingPayloadData(
-            PollingPayloadData.newBuilder()
-                .setConnectorRef(connectorRef)
-                .setType(Type.BAMBOO)
-                .setBambooPayload(
-                    BambooPayload.newBuilder().setPlanKey(planKey).addAllArtifactPath(artifactPath).build())
-                .build())
+        .setPollingPayloadData(PollingPayloadData.newBuilder()
+                                   .setConnectorRef(connectorRef)
+                                   .setType(Type.BAMBOO)
+                                   .setBambooPayload(BambooPayload.newBuilder()
+                                                         .setPlanKey(planKey)
+                                                         .addAllArtifactPath(mapToArtifactPathList(artifactPath))
+                                                         .build())
+                                   .build())
         .build();
+  }
+
+  public List<ArtifactPathList> mapToArtifactPathList(List<String> variables) {
+    List<ArtifactPathList> inputs = new ArrayList<>();
+    for (String variable : variables) {
+      inputs.add(ArtifactPathList.newBuilder().setArtifactPath(variable).build());
+    }
+    return inputs;
   }
 }

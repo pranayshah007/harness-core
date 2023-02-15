@@ -11,8 +11,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.polling.bean.PollingInfo;
 import io.harness.polling.bean.artifact.BambooArtifactInfo;
+import io.harness.polling.contracts.ArtifactPathList;
 import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.polling.mapper.PollingInfoBuilder;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @OwnedBy(HarnessTeam.CDC)
 public class BambooArtifactInfoBuilder implements PollingInfoBuilder {
@@ -21,7 +25,15 @@ public class BambooArtifactInfoBuilder implements PollingInfoBuilder {
     return BambooArtifactInfo.builder()
         .connectorRef(pollingPayloadData.getConnectorRef())
         .planKey(pollingPayloadData.getBambooPayload().getPlanKey())
-        .artifactPath(pollingPayloadData.getBambooPayload().getArtifactPathList())
+        .artifactPath(mapToString(pollingPayloadData.getBambooPayload().getArtifactPathList()))
         .build();
+  }
+
+  public List<String> mapToString(List<ArtifactPathList> ngVariableList) {
+    List<String> inputs = new ArrayList<>();
+    for (ArtifactPathList variable : ngVariableList) {
+      inputs.add(variable.getArtifactPath());
+    }
+    return inputs;
   }
 }

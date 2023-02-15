@@ -11,6 +11,7 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static java.time.Duration.ofSeconds;
 
+import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.beans.ExecutionStatus;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.mappers.BambooRequestResponseMapper;
@@ -35,6 +36,7 @@ import com.google.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -63,7 +65,12 @@ public class BambooArtifactTaskHandler extends DelegateArtifactTaskHandler<Bambo
                                                             .build();
     List<BuildDetails> buildDetails = bambooBuildService.getBuilds(null, artifactStreamAttributes,
         BambooRequestResponseMapper.toBambooConfig(attributesRequest), attributesRequest.getEncryptedDataDetails());
-    return ArtifactTaskExecutionResponse.builder().buildDetails(buildDetails).build();
+    List<BambooArtifactDelegateResponse> bambooArtifactDelegateResponses =
+        buildDetails.stream()
+            .sorted(new BuildDetailsComparatorDescending())
+            .map(build -> BambooRequestResponseMapper.toBambooArtifactDelegateResponse(build, attributesRequest))
+            .collect(Collectors.toList());
+    return getSuccessTaskExecutionResponse(bambooArtifactDelegateResponses, buildDetails);
   }
 
   @Override
