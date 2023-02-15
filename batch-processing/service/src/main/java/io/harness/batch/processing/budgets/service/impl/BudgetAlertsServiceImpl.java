@@ -298,6 +298,16 @@ public class BudgetAlertsServiceImpl {
                                                             .userGroups(Collections.emptyList());
     Response<RestResponse<NotificationResult>> response =
         notificationResourceClient.sendNotification(budgetCommon.getAccountId(), slackChannelBuilder.build()).execute();
+    log.info("RestResponse from notificationResourceClient: {}", response);
+    log.info("Response.isSuccessful(): {}", response.isSuccessful());
+    log.info("Response.code: {}", response.code());
+    log.info("Response.errorBody(): {}", response.errorBody());
+    log.info("Response.message(): {}", response.message());
+    log.info("Response.toString(): {}", response.toString());
+    log.info("Response.body(): {}", response.body());
+    if (response.body() != null) {
+      log.info("Response.body().getResource(): {}", response.body().getResource());
+    }
     if (!response.isSuccessful()) {
       log.error("Failed to send slack notification for accountId: {}, budgetId: {} error: {}",
           budgetCommon.getAccountId(), budgetCommon.getUuid(),

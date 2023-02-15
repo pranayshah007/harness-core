@@ -82,8 +82,10 @@ public class CCMNotificationsResource {
                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(
           required = true, description = "Notification channel") NotificationChannelDTO notificationChannelDTO) {
+    log.info("Received sendNotification request with accountId: {} notificationChannelDTO: {}", accountId, notificationChannelDTO);
     NotificationResult notificationResult = null;
     if (isNotEmpty(notificationChannelDTO.getEmailRecipients())) {
+      log.info("Sending Email NotificationAsync");
       EmailChannel emailChannel =
           new EmailChannel(notificationChannelDTO.getAccountId(), notificationChannelDTO.getUserGroups(),
               notificationChannelDTO.getTemplateId(), notificationChannelDTO.getTemplateData(),
@@ -91,12 +93,14 @@ public class CCMNotificationsResource {
       notificationResult = notificationClient.sendNotificationAsync(emailChannel);
     }
     if (isNotEmpty(notificationChannelDTO.getWebhookUrls())) {
+      log.info("Sending Slack NotificationAsync");
       SlackChannel slackChannel =
           new SlackChannel(notificationChannelDTO.getAccountId(), notificationChannelDTO.getUserGroups(),
               notificationChannelDTO.getTemplateId(), notificationChannelDTO.getTemplateData(),
               notificationChannelDTO.getTeam(), notificationChannelDTO.getWebhookUrls(), null, null, 0);
       notificationResult = notificationClient.sendNotificationAsync(slackChannel);
     }
+    log.info("Notification result: {}", notificationResult);
     return ResponseDTO.newResponse(notificationResult);
   }
 }
