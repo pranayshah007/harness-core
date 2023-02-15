@@ -26,6 +26,7 @@ import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.audittrails.events.PerspectiveCreateEvent;
 import io.harness.ccm.audittrails.events.PerspectiveDeleteEvent;
@@ -54,7 +55,6 @@ import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -334,9 +334,9 @@ public class PerspectiveResource {
           PERSPECTIVE_CREATE_AND_EDIT);
       boolean setFolderIdSuccess = ceViewService.setFolderId(ceView, allowedFolderIds, ceViewFolders, defaultFolderId);
       if (!setFolderIdSuccess) {
-        throw new AccessDeniedException(
+        throw new NGAccessDeniedException(
             String.format(PERMISSION_MISSING_MESSAGE, PERSPECTIVE_CREATE_AND_EDIT, RESOURCE_FOLDER),
-            WingsException.USER);
+            WingsException.USER, null);
       }
     } else {
       rbacHelper.checkPerspectiveEditPermission(accountId, null, null, ceView.getFolderId());

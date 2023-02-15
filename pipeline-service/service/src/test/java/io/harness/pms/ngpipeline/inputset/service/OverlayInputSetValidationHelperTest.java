@@ -157,7 +157,7 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
     InputSetEntity inputSetEntity1 = InputSetEntity.builder().inputSetEntityType(INPUT_SET).yaml(inputSetYaml1).build();
     doReturn(Optional.of(inputSetEntity1))
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, identifier1, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, identifier1, false, false);
 
     String inputSetFile2 = "inputSetWrong1.yml";
     String inputSetYaml2 = readFile(inputSetFile2);
@@ -165,7 +165,7 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
     InputSetEntity inputSetEntity2 = InputSetEntity.builder().inputSetEntityType(INPUT_SET).yaml(inputSetYaml2).build();
     doReturn(Optional.of(inputSetEntity2))
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, identifier2, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, identifier2, false, false);
 
     String overlayInputSetYaml = getOverlayInputSetWithAllIds(true);
     InputSetEntity inputSetEntity = InputSetEntity.builder()
@@ -199,7 +199,7 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
                                         .build();
     doReturn(Optional.empty())
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, nonExistentReference, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, nonExistentReference, false, false);
     assertThatThrownBy(
         () -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity, false))
         .isInstanceOf(InvalidOverlayInputSetException.class);
@@ -258,10 +258,10 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
     String yaml = getOverlayInputSetWithAllIds(true);
     doReturn(Optional.of(InputSetEntity.builder().inputSetEntityType(INPUT_SET).isInvalid(false).build()))
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "input1", false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "input1", false, false);
     doReturn(Optional.empty())
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "thisInputSetIsWrong", false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "thisInputSetIsWrong", false, false);
 
     MockedStatic<InputSetErrorsHelper> mockSettings = Mockito.mockStatic(InputSetErrorsHelper.class);
     when(InputSetErrorsHelper.getInvalidInputSetReferences(any(), any(), any())).thenCallRealMethod();
@@ -293,10 +293,10 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
     String yaml = getOverlayInputSetWithAllIds(true);
     doReturn(Optional.empty())
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "input1", false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "input1", false, false);
     doReturn(Optional.empty())
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "thisInputSetIsWrong", false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "thisInputSetIsWrong", false, false);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
     doReturn(Collections.emptyList()).when(inputSetService).list(any());
     InputSetEntity inputSetEntity = InputSetEntity.builder()
@@ -361,7 +361,7 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
                                          .build();
     doReturn(Optional.of(updatedInputSet))
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "i1", false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "i1", false, false);
     OverlayInputSetValidationHelper.validateOverlayInputSetsForGivenInputSet(inputSetService, updatedInputSet);
     verify(inputSetService, times(1)).switchValidationFlag(overlay1, false);
     verify(inputSetService, times(0)).switchValidationFlag(overlay2, false);

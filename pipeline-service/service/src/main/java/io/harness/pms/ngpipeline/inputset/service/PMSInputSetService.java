@@ -15,6 +15,7 @@ import io.harness.git.model.ChangeType;
 import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
+import io.harness.pms.pipeline.PMSInputSetListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 
 import java.util.List;
@@ -30,14 +31,14 @@ public interface PMSInputSetService {
 
   Optional<InputSetEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean deleted, String pipelineBranch, String pipelineRepoID,
-      boolean hasNewYamlStructure);
+      boolean hasNewYamlStructure, boolean loadFromFallbackBranch);
 
   Optional<InputSetEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean deleted, String pipelineBranch, String pipelineRepoID,
       boolean hasNewYamlStructure, boolean loadFromCache);
 
   Optional<InputSetEntity> getWithoutValidations(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String identifier, boolean deleted);
+      String pipelineIdentifier, String identifier, boolean deleted, boolean loadFromFallbackBranch);
 
   // pipeline branch and repo ID are needed for old git sync
   InputSetEntity update(ChangeType changeType, InputSetEntity inputSetEntity, boolean hasNewYamlStructure);
@@ -70,4 +71,7 @@ public interface PMSInputSetService {
 
   InputSetEntity moveConfig(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String inputSetIdentifier, InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO);
+
+  PMSInputSetListRepoResponse getListOfRepos(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
 }

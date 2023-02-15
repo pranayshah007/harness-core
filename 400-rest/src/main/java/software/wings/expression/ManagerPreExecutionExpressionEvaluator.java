@@ -30,9 +30,9 @@ import software.wings.service.intfc.ServiceTemplateService;
 import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import javax.cache.Cache;
 import lombok.Value;
 
 @OwnedBy(CDC)

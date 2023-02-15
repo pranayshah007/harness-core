@@ -45,6 +45,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.PipelineExceptionsHelper;
+import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PipelineYamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -126,7 +127,7 @@ public class RetryExecutionHelper {
           .build();
     }
 
-    PipelineExceptionsHelper.setupEntityDetails(pipelineExecutionSummaryEntity.getEntityGitDetails());
+    PipelineGitXHelper.setupEntityDetails(pipelineExecutionSummaryEntity.getEntityGitDetails());
 
     Optional<PipelineEntity> optionalPipelineEntity =
         pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);

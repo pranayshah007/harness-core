@@ -11,6 +11,8 @@ import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterTyp
 import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.HostFrequencyData;
 import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.TimestampFrequencyCount;
 
+import io.harness.cvng.core.beans.LogFeedback;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
@@ -31,9 +33,11 @@ public class LogAnalysisRadarChartListDTO implements Comparable<LogAnalysisRadar
    */
   @Deprecated(forRemoval = true) int label;
   Risk risk;
+  Risk previousRisk;
   @JsonIgnore Double radius;
   @JsonIgnore Double angle;
   DeploymentLogAnalysisDTO.ClusterType clusterType;
+  DeploymentLogAnalysisDTO.ClusterType previousClusterType;
   int count;
 
   List<HostFrequencyData> testHostFrequencyData;
@@ -43,6 +47,9 @@ public class LogAnalysisRadarChartListDTO implements Comparable<LogAnalysisRadar
   List<TimestampFrequencyCount> averageControlFrequencyData;
 
   LogAnalysisRadarChartListDTO baseline;
+
+  LogFeedback feedback;
+  LogFeedback feedbackApplied;
 
   @JsonProperty(value = "hasControlData")
   public boolean hasControlData() {

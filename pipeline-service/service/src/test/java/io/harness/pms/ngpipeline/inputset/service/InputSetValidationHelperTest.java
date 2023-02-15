@@ -36,7 +36,6 @@ import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
-import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
 
@@ -208,7 +207,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
   public void testGetYAMLDiffForNonExistentInputSet() {
     doReturn(Optional.empty())
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false);
     assertThatThrownBy(()
                            -> InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService, null, null,
                                accountId, orgId, projectId, pipelineId, "inputSetId", null, null))
@@ -230,7 +229,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
         InputSetEntity.builder().inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET).build();
     doReturn(Optional.of(overlayEntity))
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false);
     when(OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
              gitSyncSdkService, inputSetService, overlayEntity, "pipeline: yaml"))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
@@ -259,7 +258,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
                                        .build();
     doReturn(Optional.of(overlayEntity))
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false);
     when(OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
              gitSyncSdkService, inputSetService, overlayEntity, "pipeline: yaml"))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());

@@ -45,6 +45,7 @@ import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.analysis.services.api.LogAnalysisService;
 import io.harness.cvng.analysis.services.api.LogClusterService;
+import io.harness.cvng.core.beans.LogFeedback;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.LogCVConfig;
@@ -52,6 +53,7 @@ import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.HostRecordService;
+import io.harness.cvng.core.services.api.LogFeedbackService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
@@ -72,6 +74,7 @@ import dev.morphia.query.Sort;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -96,6 +99,7 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private HostRecordService hostRecordService;
   @Inject private DeploymentLogAnalysisService deploymentLogAnalysisService;
+  @Inject private LogFeedbackService logFeedbackService;
 
   @Inject private FeatureFlagService featureFlagService;
 
@@ -438,6 +442,16 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
             .verificationTaskId(inputs.getVerificationTaskId())
             .build();
     verificationJobInstanceService.logProgress(progressLog);
+  }
+
+  @Override
+  public List<LogFeedback> getLogFeedbackList(String verificationTaskId) {
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(verificationTaskId);
+    VerificationJob verificationJob = verificationJobInstance.getResolvedJob();
+    String serviceIdentifier = verificationJob.getServiceIdentifier();
+    String environmentIdentifier = verificationJob.getEnvIdentifier();
+    return logFeedbackService.list(serviceIdentifier, environmentIdentifier);
   }
 
   @Override

@@ -161,8 +161,10 @@ public class GovernanceRuleSetResource {
     }
     if (!ruleSet.getIsOOTB()) {
       ruleSet.setAccountId(accountId);
+      ruleService.check(accountId, ruleSet.getRulesIdentifier());
     } else if (ruleSet.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
       ruleSet.setAccountId(GLOBAL_ACCOUNT_ID);
+      ruleService.check(GLOBAL_ACCOUNT_ID, ruleSet.getRulesIdentifier());
     } else {
       throw new InvalidRequestException("Not authorised to create OOTB rule set. Make a custom rule set instead");
     }
@@ -170,7 +172,6 @@ public class GovernanceRuleSetResource {
     if (ruleSet.getRulesIdentifier().size() > governanceConfig.getPoliciesInPack()) {
       throw new InvalidRequestException("Limit of Rules in a set is exceeded ");
     }
-    ruleService.check(accountId, ruleSet.getRulesIdentifier());
     ruleSetService.save(ruleSet);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
@@ -262,7 +263,7 @@ public class GovernanceRuleSetResource {
     }
     ruleService.check(GLOBAL_ACCOUNT_ID, ruleSet.getRulesIdentifier());
     ruleSetService.update(GLOBAL_ACCOUNT_ID, ruleSet);
-    return ResponseDTO.newResponse(ruleSet);
+    return ResponseDTO.newResponse(ruleSetService.fetchById(GLOBAL_ACCOUNT_ID, ruleSet.getUuid(), false));
   }
 
   @POST

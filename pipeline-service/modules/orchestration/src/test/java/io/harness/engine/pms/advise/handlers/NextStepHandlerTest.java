@@ -30,19 +30,20 @@ import io.harness.engine.executions.plan.PlanService;
 import io.harness.execution.NodeExecution;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
+import io.harness.plan.NodeType;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.NextStepAdvise;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
-import java.util.List;
-import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -106,6 +107,13 @@ public class NextStepHandlerTest extends CategoryTest {
                                       .notifyId(generateUuid())
                                       .build();
 
+    doReturn(NodeExecution.builder()
+                 .ambiance(Ambiance.newBuilder()
+                               .addLevels(Level.newBuilder().setNodeType(NodeType.PLAN_NODE.name()).build())
+                               .build())
+                 .build())
+        .when(nodeExecutionService)
+        .getWithFieldsIncluded(any(), eq(NodeProjectionUtils.withAmbiance));
     when(planService.fetchNode(planId, nextNodeId)).thenReturn(planNode);
     doNothing().when(nodeExecutionService).updateV2(eq(nodeExecutionId), any());
 
@@ -121,75 +129,64 @@ public class NextStepHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
-  public void handleAdviseWithNextNodeIdForIdentityNodes() {
-    String nodeExecutionId = generateUuid();
-    String originalNodeExecutionId = generateUuid();
-    String nextNodeId = generateUuid();
-    String planId = generateUuid();
-    String planExecutionId = generateUuid();
-    AdviserResponse adviserResponse =
-        AdviserResponse.newBuilder()
-            .setNextStepAdvise(NextStepAdvise.newBuilder().setNextNodeId(nextNodeId).build())
-            .build();
+  public void testCreateIdentityNodeIfRequired() {
+    IdentityPlanNode identityPlanNode = IdentityPlanNode.builder().build();
+    PlanNode planNode = PlanNode.builder()
+                            .uuid("uuid")
+                            .identifier("nodeId")
+                            .name("nodeName")
+                            .stepType(StepType.newBuilder().build())
+                            .build();
+    // node already of identityType. Same will be returned.
+    assertThat(nextStepHandler.createIdentityNodeIfRequired(identityPlanNode, NodeExecution.builder().build()))
+        .isEqualTo(identityPlanNode);
+    // NodeExecution.parentId is empty. Same node will be returned.
+    assertThat(nextStepHandler.createIdentityNodeIfRequired(planNode,
+                   NodeExecution.builder()
+                       .ambiance(Ambiance.newBuilder().setPlanExecutionId("planExecutinoId").build())
+                       .build()))
+        .isEqualTo(planNode);
 
-    Node node = IdentityPlanNode.builder()
-                    .uuid(nextNodeId)
-                    .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-                    .identifier("DUMMY")
-                    .serviceName("CD")
-                    .build();
-    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(planExecutionId).setPlanId(planId).build();
-    NodeExecution nodeExecution = NodeExecution.builder()
-                                      .uuid(nodeExecutionId)
-                                      .planNode(IdentityPlanNode.builder().build())
-                                      .ambiance(ambiance)
-                                      .status(Status.QUEUED)
-                                      .mode(ExecutionMode.TASK)
-                                      .startTs(System.currentTimeMillis())
-                                      .parentId(generateUuid())
-                                      .notifyId(generateUuid())
-                                      .originalNodeExecutionId(originalNodeExecutionId)
-                                      .build();
+    doReturn(NodeExecution.builder()
+                 .ambiance(Ambiance.newBuilder()
+                               .addLevels(Level.newBuilder().setNodeType(NodeType.PLAN_NODE.name()).build())
+                               .build())
+                 .build())
+        .when(nodeExecutionService)
+        .getWithFieldsIncluded(eq("parentId"), any());
+    assertThat(
+        nextStepHandler.createIdentityNodeIfRequired(planNode, NodeExecution.builder().parentId("parentId").build()))
+        .isEqualTo(planNode);
 
-    when(planService.fetchNode(planId, nextNodeId)).thenReturn(node);
-    doNothing().when(nodeExecutionService).updateV2(eq(nodeExecutionId), any());
-
-    ArgumentCaptor<Ambiance> ambianceArgumentCaptor = ArgumentCaptor.forClass(Ambiance.class);
-    nextStepHandler.handleAdvise(nodeExecution, adviserResponse);
-    verify(engine).runNextNode(ambianceArgumentCaptor.capture(), eq(node), eq(nodeExecution), eq(null));
-
-    assertThat(ambianceArgumentCaptor.getValue().getLevelsCount()).isEqualTo(1);
-    assertThat(ambianceArgumentCaptor.getValue().getLevels(0).getSetupId()).isEqualTo(nextNodeId);
+    // Till now, same node has been returned all time. So, no interaction with planService.
     verify(planService, times(0)).saveIdentityNodesForMatrix(any(), any());
 
-    node = PlanNode.builder()
-               .uuid(nextNodeId)
-               .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-               .identifier("DUMMY")
-               .name("DUMMY")
-               .serviceName("CD")
-               .build();
-
-    when(planService.fetchNode(planId, nextNodeId)).thenReturn(node);
-    doReturn(NodeExecution.builder().uuid(originalNodeExecutionId).nextId("nextId").build())
+    doReturn(NodeExecution.builder()
+                 .ambiance(Ambiance.newBuilder()
+                               .addLevels(Level.newBuilder().setNodeType(NodeType.IDENTITY_PLAN_NODE.name()).build())
+                               .build())
+                 .uuid("parentId")
+                 .build())
         .when(nodeExecutionService)
-        .getWithFieldsIncluded(originalNodeExecutionId, Set.of("nextId"));
-    nextStepHandler.handleAdvise(nodeExecution, adviserResponse);
-    ArgumentCaptor<List> identityNodeArgCaptor = ArgumentCaptor.forClass(List.class);
-    verify(planService, times(1)).saveIdentityNodesForMatrix(identityNodeArgCaptor.capture(), any());
-
-    IdentityPlanNode savedIdentityNode = (IdentityPlanNode) identityNodeArgCaptor.getValue().get(0);
-    assertThat(savedIdentityNode.getIdentifier()).isEqualTo(node.getIdentifier());
-    assertThat(savedIdentityNode.getName()).isEqualTo(node.getName());
-    assertThat(savedIdentityNode.getStepType()).isEqualTo(node.getStepType());
-
-    ArgumentCaptor<Ambiance> ambianceArgumentCaptor1 = ArgumentCaptor.forClass(Ambiance.class);
-    // The savedIdentityNode will be passed to engine to start the nextNode instead of node.
-    verify(engine).runNextNode(ambianceArgumentCaptor1.capture(), eq(savedIdentityNode), eq(nodeExecution), eq(null));
-    assertThat(ambianceArgumentCaptor1.getValue().getLevelsCount()).isEqualTo(1);
-    // Ambiance will not have nextNodeId as its latest levels setupId. the setup id will be the uuid of saved
-    // identityNode.
-    assertThat(ambianceArgumentCaptor1.getValue().getLevels(0).getSetupId()).isNotEqualTo(nextNodeId);
-    assertThat(ambianceArgumentCaptor1.getValue().getLevels(0).getSetupId()).isEqualTo(savedIdentityNode.getUuid());
+        .getWithFieldsIncluded(eq("parentId"), any());
+    doReturn(NodeExecution.builder()
+                 .planNode(IdentityPlanNode.builder().build())
+                 .uuid("originalNodeExecutionId")
+                 .nextId("nextId")
+                 .build())
+        .when(nodeExecutionService)
+        .getWithFieldsIncluded(eq("originalNodeExecutionId"), any());
+    // Since currentNode is of type planNode and parentNodeExecution.nodeType is identityPlanNode. So identityNode will
+    // be created for current node.
+    Node savedIdentityNode = nextStepHandler.createIdentityNodeIfRequired(planNode,
+        NodeExecution.builder()
+            .ambiance(Ambiance.newBuilder().setPlanId("planId").build())
+            .originalNodeExecutionId("originalNodeExecutionId")
+            .parentId("parentId")
+            .build());
+    assertThat(savedIdentityNode.getName()).isEqualTo(planNode.getName());
+    assertThat(savedIdentityNode.getIdentifier()).isEqualTo(planNode.getIdentifier());
+    assertThat(savedIdentityNode.getStepType()).isEqualTo(planNode.getStepType());
+    assertThat(((IdentityPlanNode) savedIdentityNode).getOriginalNodeExecutionId()).isEqualTo("nextId");
   }
 }

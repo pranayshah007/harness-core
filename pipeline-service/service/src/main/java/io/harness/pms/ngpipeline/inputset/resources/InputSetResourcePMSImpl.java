@@ -61,6 +61,7 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
+import io.harness.pms.pipeline.PMSInputSetListRepoResponse;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
@@ -99,13 +100,14 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   public ResponseDTO<InputSetResponseDTOPMS> getInputSet(String inputSetIdentifier,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
-      String pipelineBranch, String pipelineRepoId, GitEntityFindInfoDTO gitEntityBasicInfo,
+      String pipelineBranch, String pipelineRepoId, boolean loadFromFallbackBranch,
+      GitEntityFindInfoDTO gitEntityBasicInfo,
       @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache) {
     log.info(String.format("Retrieving input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
     Optional<InputSetEntity> optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier,
         projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, pipelineBranch, pipelineRepoId, false,
-        PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
+        loadFromFallbackBranch, PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
 
     if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(
@@ -121,12 +123,14 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   public ResponseDTO<OverlayInputSetResponseDTOPMS> getOverlayInputSet(String inputSetIdentifier,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
-      String pipelineBranch, String pipelineRepoId, GitEntityFindInfoDTO gitEntityBasicInfo) {
+      String pipelineBranch, String pipelineRepoId, boolean loadFromFallbackBranch,
+      GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info(String.format(
         "Retrieving overlay input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-    Optional<InputSetEntity> optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier,
-        projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, pipelineBranch, pipelineRepoId, false);
+    Optional<InputSetEntity> optionalInputSetEntity =
+        pmsInputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier,
+            false, pipelineBranch, pipelineRepoId, false, loadFromFallbackBranch);
 
     if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(
@@ -400,5 +404,12 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                 .build());
     return ResponseDTO.newResponse(
         InputSetMoveConfigResponseDTO.builder().identifier(movedInputSet.getIdentifier()).build());
+  }
+
+  @Override
+  public ResponseDTO<PMSInputSetListRepoResponse> getListRepos(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    return ResponseDTO.newResponse(
+        pmsInputSetService.getListOfRepos(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier));
   }
 }
