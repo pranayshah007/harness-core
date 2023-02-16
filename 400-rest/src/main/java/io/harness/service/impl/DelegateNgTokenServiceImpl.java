@@ -80,7 +80,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
   @Override
   public DelegateTokenDetails createToken(String accountId, DelegateEntityOwner owner, String name) {
-    String token = encodeBase64(Misc.generateSecretKey());
+    String token = Misc.generateSecretKey();
     DelegateToken delegateToken = DelegateToken.builder()
                                       .accountId(accountId)
                                       .owner(owner)
