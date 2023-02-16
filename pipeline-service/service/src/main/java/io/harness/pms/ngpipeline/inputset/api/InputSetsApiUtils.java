@@ -25,7 +25,6 @@ import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.utils.PipelineYamlHelper;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.pipeline.v1.model.FQNtoError;
@@ -57,8 +56,6 @@ public class InputSetsApiUtils {
   @Inject private final PmsFeatureFlagHelper pmsFeatureFlagHelper;
 
   @Inject private final NGSettingsClient ngSettingsClient;
-
-  @Inject private final PMSPipelineService pipelineService;
 
   public InputSetResponseBody getInputSetResponse(InputSetEntity inputSetEntity) {
     InputSetResponseBody responseBody = new InputSetResponseBody();
@@ -209,21 +206,6 @@ public class InputSetsApiUtils {
   public String inputSetVersion(String accountId, String yaml) {
     boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
     return PipelineYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
-  }
-
-  public void validateRemoteInputSetCreation(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String inputSetRepoName) {
-    if (!isIndependentInputSetEnabledInSettings(accountIdentifier)) {
-      PipelineEntity pipelineEntity = InputSetValidationHelper.getPipelineMetadata(
-          pipelineService, accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier);
-
-      String pipelineRepoName = pipelineEntity.getRepo();
-      if (pipelineRepoName.equals(inputSetRepoName)) {
-        log.info("Input-Set is created in the same repo as the pipeline.");
-      } else {
-        throw new InvalidRequestException("Input-Set has to be in the same repo as the pipeline.");
-      }
-    }
   }
 
   public boolean isIndependentInputSetEnabledInSettings(String accountId) {

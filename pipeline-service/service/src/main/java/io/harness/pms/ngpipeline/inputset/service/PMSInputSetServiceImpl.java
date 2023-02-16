@@ -108,7 +108,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     if (!isOldGitSync) {
       InputSetValidationHelper.checkForPipelineStoreType(inputSetEntity, pipelineService);
     }
-
+    validateRemoteInputSetCreation(inputSetEntity);
     try {
       if (isOldGitSync) {
         return inputSetRepository.saveForOldGitSync(inputSetEntity, InputSetYamlDTOMapper.toDTO(inputSetEntity));
@@ -185,6 +185,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     boolean isOldGitSync = gitSyncSdkService.isGitSyncEnabled(inputSetEntity.getAccountIdentifier(),
         inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
     InputSetValidationHelper.validateInputSet(this, inputSetEntity, hasNewYamlStructure);
+    validateRemoteInputSetUpdation(inputSetEntity);
     if (isOldGitSync) {
       return updateForOldGitSync(inputSetEntity, changeType);
     }
@@ -664,5 +665,46 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       throw new DuplicateFileImportException(error);
     }
     return repoURL;
+  }
+
+  private void validateRemoteInputSetCreation(InputSetEntity inputSetEntity) {
+    if (!inputSetsApiUtils.isIndependentInputSetEnabledInSettings(inputSetEntity.getAccountId())) {
+      PipelineEntity pipelineEntity = InputSetValidationHelper.getPipelineMetadata(pipelineService,
+          inputSetEntity.getAccountId(), inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier(),
+          inputSetEntity.getPipelineIdentifier());
+
+      GitAwareContextHelper.initDefaultScmGitMetaData();
+      GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+
+      validatePipelineAndInputSetRepos(pipelineEntity.getRepo(), gitEntityInfo.getRepoName());
+    }
+  }
+  private void validateRemoteInputSetUpdation(InputSetEntity inputSetEntity) {
+    if (!inputSetsApiUtils.isIndependentInputSetEnabledInSettings(inputSetEntity.getAccountId())) {
+      PipelineEntity pipelineEntity = InputSetValidationHelper.getPipelineMetadata(pipelineService,
+          inputSetEntity.getAccountId(), inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier(),
+          inputSetEntity.getPipelineIdentifier());
+
+      Optional<InputSetEntity> inputSetMetadata = getWithoutValidations(inputSetEntity.getAccountId(),
+          inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier(),
+          inputSetEntity.getPipelineIdentifier(), inputSetEntity.getIdentifier(), false, true, false);
+
+      if (inputSetMetadata.isEmpty()) {
+        throw new InvalidRequestException(
+            format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] doesn't exist.",
+                inputSetEntity.getIdentifier(), inputSetEntity.getPipelineIdentifier(),
+                inputSetEntity.getProjectIdentifier(), inputSetEntity.getOrgIdentifier()));
+      }
+      validatePipelineAndInputSetRepos(pipelineEntity.getRepo(), inputSetMetadata.get().getRepo());
+    }
+  }
+
+  private void validatePipelineAndInputSetRepos(String pipelineRepo, String inputSetRepo) {
+    if (EmptyPredicate.isNotEmpty(pipelineRepo) && EmptyPredicate.isNotEmpty(inputSetRepo)
+        && pipelineRepo.equals(inputSetRepo)) {
+      log.info("Input-Set is created in the same repo as the pipeline.");
+    } else {
+      throw new InvalidRequestException("Input-Set has to be in the same repo as the pipeline.");
+    }
   }
 }
