@@ -124,6 +124,8 @@ public class CIExecutionConfigService {
       case SECURITY:
         executionConfig.setSecurityImage(value);
         break;
+      case SSCA_ORCHESTRATION:
+        executionConfig.setSscaOrchestrationImage(value);
       default:
         throw new BadRequestException(String.format("Field %s does not exist for infra type: K8", field));
     }
@@ -254,6 +256,9 @@ public class CIExecutionConfigService {
     if (Strings.isNotBlank(overriddenConfig.getSecurityTag())) {
       defaultConfig.setSecurityTag(overriddenConfig.getSecurityTag());
     }
+    if (Strings.isNotBlank(overriddenConfig.getSscaOrchestrationTag())) {
+      defaultConfig.setSscaOrchestrationTag(overriddenConfig.getSscaOrchestrationTag());
+    }
   }
 
   private CIExecutionImages mapVMConfig(CIExecutionConfig config) {
@@ -343,6 +348,7 @@ public class CIExecutionConfigService {
         .cacheGCSTag(config.getCacheGCSConfig().getImage())
         .cacheS3Tag(config.getCacheS3Config().getImage())
         .securityTag(config.getSecurityConfig().getImage())
+        .sscaOrchestrationTag(config.getSscaOrchestrationConfig().getImage())
         .build();
   }
 
@@ -361,6 +367,7 @@ public class CIExecutionConfigService {
         .cacheGCSTag(config.getCacheGCSTag())
         .cacheS3Tag(config.getCacheS3Tag())
         .securityTag(config.getSecurityImage())
+        .sscaOrchestrationTag(config.getSscaOrchestrationImage())
         .build();
   }
 
@@ -464,6 +471,11 @@ public class CIExecutionConfigService {
           image = ciExecutionConfig.getGitCloneImage();
         }
         break;
+      case SSCA_ORCHESTRATION:
+        if (Strings.isNotBlank(ciExecutionConfig.getSscaOrchestrationImage())) {
+          image = ciExecutionConfig.getSscaOrchestrationImage();
+        }
+        break;
       default:
         throw new BadRequestException("Unexpected value: " + stepInfoType);
     }
@@ -501,6 +513,8 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getArtifactoryUploadConfig();
       case GIT_CLONE:
         return ciExecutionServiceConfig.getStepConfig().getGitCloneConfig();
+      case SSCA_ORCHESTRATION:
+        return ciExecutionServiceConfig.getStepConfig().getSscaOrchestrationConfig();
       default:
         throw new BadRequestException("Unexpected value: " + stepInfoType);
     }

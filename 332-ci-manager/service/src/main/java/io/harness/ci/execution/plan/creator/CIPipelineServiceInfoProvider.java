@@ -61,6 +61,7 @@ import io.harness.ci.plancreator.S3UploadStepPlanCreator;
 import io.harness.ci.plancreator.SaveCacheGCSStepPlanCreator;
 import io.harness.ci.plancreator.SaveCacheS3StepPlanCreator;
 import io.harness.ci.plancreator.SecurityStepPlanCreator;
+import io.harness.ci.plancreator.SscaOrchestrationPlanCreator;
 import io.harness.ci.plancreator.V1.BackgroundStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.PluginStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.RunStepPlanCreatorV1;
@@ -129,6 +130,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new InitializeStepPlanCreator());
     planCreators.add(new ActionStepPlanCreator());
     planCreators.add(new BitriseStepPlanCreator());
+    planCreators.add(new SscaOrchestrationPlanCreator());
 
     // add V1 plan creators
     planCreators.add(new IntegrationStagePMSPlanCreatorV3());

@@ -32,6 +32,7 @@ import io.harness.beans.steps.nodes.S3UploadNode;
 import io.harness.beans.steps.nodes.SaveCacheGCSNode;
 import io.harness.beans.steps.nodes.SaveCacheS3Node;
 import io.harness.beans.steps.nodes.SecurityNode;
+import io.harness.beans.steps.nodes.SscaOrchestrationStepNode;
 import io.harness.ci.serializer.morphia.CIExecutionMorphiaRegistrar;
 import io.harness.cimanager.serializer.CIContractsKryoRegistrar;
 import io.harness.cimanager.serializer.CIContractsMorphiaRegistrar;
@@ -335,6 +336,17 @@ public class CiBeansRegistrars {
                                            .build())
                    .availableAtAccountLevel(false)
                    .clazz(BitriseStepNode.class)
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.SSCA_ORCHESTRATION_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .modulesSupported(Arrays.asList(ModuleType.CI, ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .clazz(SscaOrchestrationStepNode.class)
                    .build())
           .build();
 }

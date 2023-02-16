@@ -306,6 +306,7 @@ public class K8InitializeStepUtils {
       case UPLOAD_S3:
       case UPLOAD_GCS:
       case GIT_CLONE:
+      case SSCA_ORCHESTRATION:
         return createPluginCompatibleStepContainerDefinition((PluginCompatibleStep) ciStepInfo, stageNode,
             ciExecutionArgs, portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(),
             stepElement.getType(), timeout, accountId, os, ambiance, extraMemoryPerStep, extraCPUPerStep);
@@ -336,6 +337,7 @@ public class K8InitializeStepUtils {
       case ECR:
       case ACR:
       case GCR:
+      case SSCA_ORCHESTRATION:
         throw new CIStageExecutionException(format("%s step not allowed in windows kubernetes builds", stepType));
       default:
         return;
@@ -400,6 +402,7 @@ public class K8InitializeStepUtils {
         case ACR:
         case GCR:
         case DOCKER:
+        case SSCA_ORCHESTRATION:
           envVarMap.put("container", "docker");
           break;
         default:
@@ -1028,6 +1031,7 @@ public class K8InitializeStepUtils {
       case SAVE_CACHE_GCS:
       case SECURITY:
       case GIT_CLONE:
+      case SSCA_ORCHESTRATION:
         return getContainerCpuLimit(((PluginCompatibleStep) ciStepInfo).getResources(), stepElement.getType(),
             stepElement.getIdentifier(), accountId);
       default:
@@ -1076,6 +1080,7 @@ public class K8InitializeStepUtils {
       case SAVE_CACHE_GCS:
       case SECURITY:
       case GIT_CLONE:
+      case SSCA_ORCHESTRATION:
         return ((PluginCompatibleStep) ciStepInfo).getResources();
       default:
         throw new CIStageExecutionException(
@@ -1277,6 +1282,7 @@ public class K8InitializeStepUtils {
       case UPLOAD_S3:
       case UPLOAD_GCS:
       case GIT_CLONE:
+      case SSCA_ORCHESTRATION:
         return ((PluginCompatibleStep) ciStepInfo).getResources();
       case PLUGIN:
         return ((PluginStepInfo) ciStepInfo).getResources();

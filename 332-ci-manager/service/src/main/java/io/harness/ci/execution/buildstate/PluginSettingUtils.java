@@ -16,6 +16,7 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParamete
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterV2;
 import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
+import static io.harness.beans.steps.CIStepInfoType.SSCA_ORCHESTRATION;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_SHA;
@@ -68,6 +69,7 @@ import io.harness.beans.steps.stepinfo.RestoreCacheS3StepInfo;
 import io.harness.beans.steps.stepinfo.SaveCacheGCSStepInfo;
 import io.harness.beans.steps.stepinfo.SaveCacheS3StepInfo;
 import io.harness.beans.steps.stepinfo.SecurityStepInfo;
+import io.harness.beans.steps.stepinfo.SscaOrchestrationStepInfo;
 import io.harness.beans.steps.stepinfo.UploadToArtifactoryStepInfo;
 import io.harness.beans.steps.stepinfo.UploadToGCSStepInfo;
 import io.harness.beans.steps.stepinfo.UploadToS3StepInfo;
@@ -177,6 +179,8 @@ public class PluginSettingUtils {
         return getRestoreCacheS3StepInfoEnvVariables((RestoreCacheS3StepInfo) stepInfo, identifier, timeout);
       case GIT_CLONE:
         return getGitCloneStepInfoEnvVariables((GitCloneStepInfo) stepInfo, ambiance, identifier);
+      case SSCA_ORCHESTRATION:
+        return getSscaOrchestrationEnvVariables((SscaOrchestrationStepInfo) stepInfo, identifier);
       default:
         throw new IllegalStateException("Unexpected value: " + stepInfo.getNonYamlInfo().getStepInfoType());
     }
@@ -234,6 +238,7 @@ public class PluginSettingUtils {
         map.put(EnvVariableEnum.ARTIFACTORY_PASSWORD, PLUGIN_PASSW);
         return map;
       case GIT_CLONE:
+      case SSCA_ORCHESTRATION:
         return map;
       case IACM_TERRAFORM_PLAN:
         map.put(EnvVariableEnum.AWS_ACCESS_KEY, PLUGIN_ACCESS_KEY);
@@ -748,6 +753,24 @@ public class PluginSettingUtils {
     map.putAll(getBuildEnvVars(ambiance, gitConnector, stepInfo));
     map.putAll(getCloneDirEnvVars(stepInfo.getCloneDirectory(), repoName, map.get(DRONE_REMOTE_URL), identifier));
     map.putAll(getPluginDepthEnvVars(stepInfo.getDepth()));
+
+    return map;
+  }
+
+  private Map<String, String> getSscaOrchestrationEnvVariables(SscaOrchestrationStepInfo stepInfo, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    String sbomTool = resolveStringParameter(
+        "sbomGenerationTool", SSCA_ORCHESTRATION.getDisplayName(), identifier, stepInfo.getSbomGenerationTool(), false);
+    setMandatoryEnvironmentVariable(map, "SbomGenerationTool", sbomTool);
+
+    String sbomFormat = resolveStringParameter(
+        "sbomFormat", SSCA_ORCHESTRATION.getDisplayName(), identifier, stepInfo.getSbomFormat(), false);
+    setMandatoryEnvironmentVariable(map, "SbomFormat", sbomFormat);
+
+    String sbomSource = resolveStringParameter(
+        "sbomSource", SSCA_ORCHESTRATION.getDisplayName(), identifier, stepInfo.getSbomSource(), false);
+    setMandatoryEnvironmentVariable(map, "PLUGIN_SBOMSOURCE", sbomSource);
 
     return map;
   }

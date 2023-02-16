@@ -582,6 +582,7 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
       case SECURITY:
       case RESTORE_CACHE_S3:
       case GIT_CLONE:
+      case SSCA_ORCHESTRATION:
         return pluginCompatibleStepSerializer.serializeStepWithStepParameters((PluginCompatibleStep) ciStepInfo, port,
             taskId, logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId,
             stepName, os, ambiance);

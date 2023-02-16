@@ -324,8 +324,18 @@ public class YamlSchemaUtils {
       // TODO: Use YamlSchemaMetadata.getNamespace instead of moduleType.
       String nameSpaceString = getNamespaceFromModuleType(schemaWithDetails.getModuleType());
       if (validateSchemaMetadata(schemaWithDetails, moduleType, enabledFeatureFlags, featureRestrictionsMap)) {
-        oneOfNode.add(JsonNodeUtils.upsertPropertyInObjectNode(new ObjectNode(JsonNodeFactory.instance), REF_NODE,
-            "#/definitions/" + nameSpaceString + schemaWithDetails.getSchemaClassName()));
+        JsonNode nodeToAdd = JsonNodeUtils.upsertPropertyInObjectNode(new ObjectNode(JsonNodeFactory.instance),
+            REF_NODE, "#/definitions/" + nameSpaceString + schemaWithDetails.getSchemaClassName());
+        boolean nodeExist = false;
+        for (JsonNode element : oneOfNode) {
+          if (element.equals(nodeToAdd)) {
+            nodeExist = true;
+            break;
+          }
+        }
+        if (!nodeExist) {
+          oneOfNode.add(nodeToAdd);
+        }
       }
     }
 

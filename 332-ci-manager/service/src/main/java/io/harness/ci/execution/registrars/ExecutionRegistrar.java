@@ -9,6 +9,7 @@ package io.harness.ci.registrars;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.steps.stepinfo.SscaOrchestrationStepInfo;
 import io.harness.ci.states.ACRStep;
 import io.harness.ci.states.ActionStep;
 import io.harness.ci.states.BackgroundStep;
@@ -16,6 +17,7 @@ import io.harness.ci.states.BitriseStep;
 import io.harness.ci.states.CISpecStep;
 import io.harness.ci.states.CleanupStep;
 import io.harness.ci.states.DockerStep;
+import io.harness.ci.states.DummyStep;
 import io.harness.ci.states.ECRStep;
 import io.harness.ci.states.GCRStep;
 import io.harness.ci.states.GitCloneStep;
@@ -29,6 +31,7 @@ import io.harness.ci.states.RunTestsStep;
 import io.harness.ci.states.SaveCacheGCSStep;
 import io.harness.ci.states.SaveCacheS3Step;
 import io.harness.ci.states.SecurityStep;
+import io.harness.ci.states.SscaOrchestrationStep;
 import io.harness.ci.states.UploadToArtifactoryStep;
 import io.harness.ci.states.UploadToGCSStep;
 import io.harness.ci.states.UploadToS3Step;
@@ -73,6 +76,8 @@ public class ExecutionRegistrar {
     engineSteps.put(ActionStep.STEP_TYPE, ActionStep.class);
     engineSteps.put(BitriseStep.STEP_TYPE, BitriseStep.class);
     engineSteps.put(CISpecStep.STEP_TYPE, CISpecStep.class);
+    engineSteps.put(SscaOrchestrationStepInfo.STEP_TYPE, SscaOrchestrationStep.class);
+    engineSteps.put(DummyStep.STEP_TYPE, DummyStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     return engineSteps;
   }
