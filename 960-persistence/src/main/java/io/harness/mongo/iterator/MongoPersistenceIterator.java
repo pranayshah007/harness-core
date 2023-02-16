@@ -309,6 +309,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
     int batchSize = Math.max(BATCH_SIZE_MULTIPLY_FACTOR * (threadPoolExecutor.getCorePoolSize() - 1), 1);
     long movingAverage = 0;
     long previous = 0;
+    long threadId = Thread.currentThread().getId();
 
     while (docsAvailable) {
       // Check if iterators should run or not.
@@ -356,12 +357,12 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         acquiredLock = acquireLock();
 
         processTime = currentTimeMillis() - startTime;
-        log.debug("Redis Batch Iterator Mode - time to acquire Redis lock {}", processTime);
+        log.debug("Redis Batch Iterator Mode thread {} - time to acquire Redis lock {}", threadId, processTime);
 
         startTime = currentTimeMillis();
         Iterator<T> docItr = persistenceProvider.obtainNextInstances(clazz, fieldName, filterExpander, limit);
         processTime = currentTimeMillis() - startTime;
-        log.debug("Redis Batch Iterator Mode - time to acquire {} docs is {}", limit, processTime);
+        log.debug("Redis Batch Iterator Mode thread {} - time to acquire {} docs is {}", threadId, limit, processTime);
 
         // Iterate over the fetched documents - submit it to workers and prepare bulkWrite operations
         List<String> docIds = new ArrayList<>();
@@ -379,7 +380,13 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
 
       } finally {
         // Release the distributed lock - acquiredLock cannot be null
-        acquiredLock.release();
+        log.debug("Redis Batch Iterator Mode thread {} - Releasing the Redis lock", threadId);
+        try {
+          acquiredLock.release();
+        } catch (Throwable t) {
+          log.error("Redis Batch Iterator Mode thread {} - received exception while releasing lock {} ", t.getStackTrace());
+        }
+        log.debug("Redis Batch Iterator Mode thread {} - Release the Redis lock", threadId);
 
         // Release the semaphore
         semaphore.release();
