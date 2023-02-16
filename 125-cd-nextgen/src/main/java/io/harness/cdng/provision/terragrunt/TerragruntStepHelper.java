@@ -257,7 +257,7 @@ public class TerragruntStepHelper {
     }
   }
 
-  private boolean isExportCredentialForSourceModule(TerragruntConfigFilesWrapper configFiles, String type) {
+  public boolean isExportCredentialForSourceModule(TerragruntConfigFilesWrapper configFiles, String type) {
     String description = String.format("%s step", type);
     return configFiles.getModuleSource() != null
         && !ParameterField.isNull(configFiles.getModuleSource().getUseConnectorCredentials())
