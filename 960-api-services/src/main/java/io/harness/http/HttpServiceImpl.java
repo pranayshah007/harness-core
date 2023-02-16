@@ -168,7 +168,6 @@ public class HttpServiceImpl implements HttpService {
   protected HttpInternalResponse executeHttpStepTrial(CloseableHttpClient httpclient,
       HttpInternalResponse httpInternalResponse, HttpUriRequest httpUriRequest, HttpInternalConfig httpInternalConfig,
       boolean isSupportingErrorFramework) throws IOException {
-    HttpResponse httpResponse = httpclient.execute(httpUriRequest);
     try (CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpUriRequest)) {
       HttpEntity httpEntity = closeableHttpResponse.getEntity();
 
@@ -182,7 +181,7 @@ public class HttpServiceImpl implements HttpService {
         }
       }
 
-      httpInternalResponse.setHttpResponseCode(httpResponse.getStatusLine().getStatusCode());
+      httpInternalResponse.setHttpResponseCode(closeableHttpResponse.getStatusLine().getStatusCode());
       httpInternalResponse.setHttpResponseBody(
           httpEntity != null ? EntityUtils.toString(httpEntity, StandardCharsets.UTF_8) : "");
 
