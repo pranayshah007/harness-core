@@ -597,8 +597,23 @@ if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
   if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
         export EVENTS_FRAMEWORK_REDIS_PASSWORD; yq -i '.sentinelServersConfig.userName=env($EVENTS_FRAMEWORK_REDIS_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
   fi
-  replace_key_value eventsFramework.redis.userName $EVENTS_FRAMEWORK_REDIS_USERNAME
-  replace_key_value eventsFramework.redis.password $EVENTS_FRAMEWORK_REDIS_PASSWORD
-  replace_key_value redisLockConfig.userName $LOCK_CONFIG_REDIS_USERNAME
-  replace_key_value redisLockConfig.password $LOCK_CONFIG_REDIS_PASSWORD
+else
+  yq -i 'del(.sentinelServersConfig)' $REDISSON_CACHE_FILE
+  if [[ "" != "$EVENTS_FRAMEWORK_REDIS_USERNAME" ]]; then
+      export EVENTS_FRAMEWORK_REDIS_USERNAME; yq -i '.singleServerConfig.userName=env(EVENTS_FRAMEWORK_REDIS_USERNAME)' $REDISSON_CACHE_FILE
+  fi
+  if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
+        export EVENTS_FRAMEWORK_REDIS_PASSWORD; yq -i '.singleServerConfig.userName=env($EVENTS_FRAMEWORK_REDIS_PASSWORD)' $REDISSON_CACHE_FILE
+  fi
+  yq -i 'del(.sentinelServersConfig)' $ENTERPRISE_REDISSON_CACHE_FILE
+  if [[ "" != "$EVENTS_FRAMEWORK_REDIS_USERNAME" ]]; then
+      export EVENTS_FRAMEWORK_REDIS_USERNAME; yq -i '.singleServerConfig.userName=env(EVENTS_FRAMEWORK_REDIS_USERNAME)' $ENTERPRISE_REDISSON_CACHE_FILE
+  fi
+  if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
+        export EVENTS_FRAMEWORK_REDIS_PASSWORD; yq -i '.singleServerConfig.userName=env($EVENTS_FRAMEWORK_REDIS_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
+  fi
 fi
+replace_key_value eventsFramework.redis.userName $EVENTS_FRAMEWORK_REDIS_USERNAME
+replace_key_value eventsFramework.redis.password $EVENTS_FRAMEWORK_REDIS_PASSWORD
+replace_key_value redisLockConfig.userName $LOCK_CONFIG_REDIS_USERNAME
+replace_key_value redisLockConfig.password $LOCK_CONFIG_REDIS_PASSWORD
