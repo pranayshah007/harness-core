@@ -615,12 +615,18 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
 
     ResultSummary resultSummary = null;
     if (deploymentLogAnalysisFilter.filterByHostNames()) {
-      for (HostSummary hostSummary : deploymentLogAnalysis.getHostSummaries()) {
-        if (deploymentLogAnalysisFilter.getHostNames().contains(hostSummary.getHost())) {
-          resultSummary = hostSummary.getResultSummary();
-          break;
-        }
-      }
+      List<ClusterSummary> testClusterSummaryList =
+          getFilteredTestClusterSummary(deploymentLogAnalysis.getResultSummary().getTestClusterSummaries(),
+              deploymentLogAnalysisFilter.getHostNames());
+      List<ClusterHostFrequencyData> filteredClusterClusterHostFrequencies = getFilteredControlClusterHostFrequencies(
+          deploymentLogAnalysis.getResultSummary().getControlClusterHostFrequencies(),
+          deploymentLogAnalysisFilter.getHostNames());
+      ResultSummary.ResultSummaryBuilder filteredResultSummaryBuilder =
+          deploymentLogAnalysis.getResultSummary().toBuilder();
+      filteredResultSummaryBuilder.testClusterSummaries(testClusterSummaryList)
+          .controlClusterHostFrequencies(filteredClusterClusterHostFrequencies)
+          .build();
+      resultSummary = filteredResultSummaryBuilder.build();
     } else {
       // Make sure Error Tracking entries are filtered. Error Tracking for the time being is extending the use of Logs
       // until it gets its own type
@@ -640,7 +646,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
         controlClusterSummary -> controlClusters.put(controlClusterSummary.getLabel(), controlClusterSummary));
 
     Map<Integer, ClusterHostFrequencyData> controlClusterFrequencyDataMap =
-        CollectionUtils.emptyIfNull(resultSummary.getControlClusterHostFrequencies())
+        CollectionUtils.emptyIfNull(deploymentLogAnalysis.getResultSummary().getControlClusterHostFrequencies())
             .stream()
             .collect(Collectors.toMap(
                 ClusterHostFrequencyData::getLabel, clusterHostFrequencyData -> clusterHostFrequencyData));
@@ -694,6 +700,43 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
           logAnalysisRadarChartListDTOList.size() <= 1, "clusterId filter should result in one or zero cluster");
     }
     return logAnalysisRadarChartListDTOList;
+  }
+
+  private List<ClusterHostFrequencyData> getFilteredControlClusterHostFrequencies(
+      List<ClusterHostFrequencyData> controlClusterHostFrequencies, List<String> hostNames) {
+    List<ClusterHostFrequencyData> filteredClusterHostFrequencyData = new ArrayList<>();
+    for (ClusterHostFrequencyData clusterHostFrequencyData : controlClusterHostFrequencies) {
+      List<HostFrequencyData> hostFrequencyDataList =
+          getFilteredHostFrequencyDataList(clusterHostFrequencyData.getFrequencyData(), hostNames);
+      ClusterHostFrequencyData.ClusterHostFrequencyDataBuilder clusterHostFrequencyDataBuilder =
+          clusterHostFrequencyData.toBuilder();
+      clusterHostFrequencyDataBuilder.frequencyData(hostFrequencyDataList);
+      filteredClusterHostFrequencyData.add(clusterHostFrequencyDataBuilder.build());
+    }
+    return filteredClusterHostFrequencyData;
+  }
+
+  private List<ClusterSummary> getFilteredTestClusterSummary(
+      List<ClusterSummary> originalClusterSummaryList, List<String> hostNames) {
+    List<ClusterSummary> filteredClusterSummary = new ArrayList<>();
+    for (ClusterSummary c : originalClusterSummaryList) {
+      List<HostFrequencyData> hostFrequencyDataList = getFilteredHostFrequencyDataList(c.getFrequencyData(), hostNames);
+      ClusterSummary.ClusterSummaryBuilder clusterSummaryBuilder = c.toBuilder();
+      clusterSummaryBuilder.frequencyData(hostFrequencyDataList);
+      filteredClusterSummary.add(clusterSummaryBuilder.build());
+    }
+    return filteredClusterSummary;
+  }
+
+  private List<HostFrequencyData> getFilteredHostFrequencyDataList(
+      List<HostFrequencyData> frequencyDataList, List<String> hostNames) {
+    List<HostFrequencyData> filteredHostNames = new ArrayList<>();
+    for (HostFrequencyData hostFrequencyData : frequencyDataList) {
+      if (hostNames.contains(hostFrequencyData.getHost())) {
+        filteredHostNames.add(hostFrequencyData);
+      }
+    }
+    return filteredHostNames;
   }
 
   private int getCountFromTotalTestFrequencyData(List<TimestampFrequencyCount> totalTestFrequencyData) {

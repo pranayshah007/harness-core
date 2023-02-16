@@ -47,7 +47,14 @@ java_library(
         "@maven//:net_sourceforge_argparse4j_argparse4j",
         "@maven//:org_apache_commons_commons_lang3",
         "@maven//:io_dropwizard_dropwizard_http2",
+        "@maven//:org_mongodb_mongo_java_driver",
+        "//960-persistence:module",
+        "@maven//:org_springframework_data_spring_data_mongodb",
         "@maven//:org_apache_logging_log4j_log4j_to_slf4j",
+        "@maven//:javax_activation_activation",
+        "@maven//:javax_xml_bind_jaxb_api",
+        "//419-delegate-service-app/src/main/java/io/harness/dms/module",
+        "//419-delegate-service-app/src/main/java/io/harness/dms/configuration:module",
     ],
 )
 

@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.Value;
 import org.apache.commons.collections4.CollectionUtils;
 @Value
@@ -181,7 +180,7 @@ public class DeploymentLogAnalysisDTO {
   }
 
   @Value
-  @Builder
+  @Builder(toBuilder = true)
   public static class ClusterHostFrequencyData {
     List<HostFrequencyData> frequencyData;
     int label;

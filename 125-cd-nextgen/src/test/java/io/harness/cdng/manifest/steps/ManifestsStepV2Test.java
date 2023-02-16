@@ -22,6 +22,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -41,6 +42,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -80,7 +82,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class ManifestsStepV2Test {
+public class ManifestsStepV2Test extends CategoryTest {
   @Mock private ExecutionSweepingOutputService sweepingOutputService;
   @Mock private ConnectorService connectorService;
   @Mock private CDStepHelper cdStepHelper;
@@ -88,7 +90,9 @@ public class ManifestsStepV2Test {
   @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
+  @Mock private ServiceStepsHelper serviceStepsHelper;
   @InjectMocks private ManifestsStepV2 step = new ManifestsStepV2();
+
   private AutoCloseable mocks;
 
   private static final String SVC_ID = "SVC_ID";

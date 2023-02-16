@@ -95,7 +95,7 @@ public class CDLicenseUsageResourceTest extends CategoryTest {
     when(serviceEntityService.list(any(), any())).thenReturn(serviceList);
     List<ServiceResponse> content =
         cdLicenseUsageResource
-            .listServices(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER, "services", 0, 10, null)
+            .getAllServices(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER, "services", 0, 10, null)
             .getData()
             .getContent();
 
@@ -112,7 +112,7 @@ public class CDLicenseUsageResourceTest extends CategoryTest {
         .thenThrow(new InvalidRequestException(format("Invalid account identifier, %s", ACCOUNT_IDENTIFIER)));
 
     assertThatThrownBy(()
-                           -> cdLicenseUsageResource.listServices(
+                           -> cdLicenseUsageResource.getAllServices(
                                ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER, "services", 0, 10, null))
         .hasMessage(format("Invalid account identifier, %s", ACCOUNT_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class);
