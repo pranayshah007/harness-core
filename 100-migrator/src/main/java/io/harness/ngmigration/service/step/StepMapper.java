@@ -16,6 +16,7 @@ import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.MigrationTemplateUtils;
+import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
@@ -39,12 +40,14 @@ import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 public abstract class StepMapper {
   @Inject MigrationTemplateUtils migrationTemplateUtils;
+  @Inject WorkflowHandlerFactory workflowHandlerFactory;
 
-  public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
+  public List<CgEntityId> getReferencedEntities(GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     return Collections.emptyList();
   }
 
@@ -69,11 +72,18 @@ public abstract class StepMapper {
 
   public TemplateStepNode defaultTemplateSpecMapper(WorkflowMigrationContext context, GraphNode graphNode) {
     String templateId = graphNode.getTemplateUuid();
+    NGYamlFile template;
     if (StringUtils.isBlank(templateId)) {
       return null;
+    } else {
+      template = context.getMigratedEntities().get(
+          CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
     }
-    NGYamlFile template = context.getMigratedEntities().get(
-        CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
+    return getTemplateStepNode(context, graphNode, template);
+  }
+
+  @NotNull
+  TemplateStepNode getTemplateStepNode(WorkflowMigrationContext context, GraphNode graphNode, NGYamlFile template) {
     if (template == null) {
       log.warn("Found a step with template ID but not found in migrated context. Workflow ID - {} & Step - {}",
           context.getWorkflow().getUuid(), graphNode.getName());

@@ -254,7 +254,7 @@ public class ApprovalStepMapperImpl extends StepMapper {
                         .build())
             .scriptTimeout(ParameterField.createValueField(Timeout.builder().timeoutString("10m").build()))
             .retryInterval(ParameterField.createValueField(
-                Timeout.builder().timeoutInMillis(approvalParams.getRetryInterval()).build()))
+                Timeout.builder().timeoutString((approvalParams.getRetryInterval() / 1000) + "s").build()))
             .outputVariables(Collections.emptyList())
             .environmentVariables(Collections.emptyList())
             .shell(ShellType.Bash)

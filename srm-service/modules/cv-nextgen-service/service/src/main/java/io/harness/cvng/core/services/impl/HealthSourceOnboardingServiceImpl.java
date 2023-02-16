@@ -73,8 +73,9 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
   @Override
   public HealthSourceRecordsResponse fetchSampleRawRecordsForHealthSource(
       HealthSourceRecordsRequest healthSourceRecordsRequest, ProjectParams projectParams) {
-    NextGenHealthSourceHelper nextGenHealthSourceHelper =
-        dataSourceTypeNextGenHelperMapBinder.get(healthSourceRecordsRequest.getProviderType());
+    healthSourceRecordsRequest.validate();
+    DataSourceType dataSourceType = getDataSourceType(healthSourceRecordsRequest);
+    NextGenHealthSourceHelper nextGenHealthSourceHelper = dataSourceTypeNextGenHelperMapBinder.get(dataSourceType);
     DataCollectionRequest<?> request = nextGenHealthSourceHelper.getDataCollectionRequest(healthSourceRecordsRequest);
     OnboardingRequestDTO onboardingRequestDTO =
         OnboardingRequestDTO.builder()
@@ -89,7 +90,7 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
         onboardingService.getOnboardingResponse(projectParams.getAccountIdentifier(), onboardingRequestDTO);
     Object result = onboardingResponseDTO.getResult();
     HealthSourceRecordsResponse healthSourceRecordsResponse =
-        HealthSourceRecordsResponse.builder().providerType(healthSourceRecordsRequest.getProviderType()).build();
+        HealthSourceRecordsResponse.builder().providerType(dataSourceType).build();
     if (!(result instanceof Collection)) {
       healthSourceRecordsResponse.getRawRecords().add(result);
     } else if (((Collection<?>) result).size() > 0) {
@@ -98,8 +99,18 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
     return healthSourceRecordsResponse;
   }
 
+  private static DataSourceType getDataSourceType(HealthSourceRecordsRequest healthSourceRecordsRequest) {
+    DataSourceType dataSourceType =
+        MonitoredServiceDataSourceType.getDataSourceType(healthSourceRecordsRequest.getHealthSourceType());
+    if (dataSourceType == null) {
+      dataSourceType = healthSourceRecordsRequest.getProviderType();
+    }
+    return dataSourceType;
+  }
+
   @Override
   public MetricRecordsResponse fetchMetricData(QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams) {
+    queryRecordsRequest.validate();
     String accountIdentifier = projectParams.getAccountIdentifier();
     String orgIdentifier = projectParams.getOrgIdentifier();
     String projectIdentifier = projectParams.getProjectIdentifier();
@@ -141,16 +152,16 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
     String orgIdentifier = projectParams.getOrgIdentifier();
     String projectIdentifier = projectParams.getProjectIdentifier();
     CVConfig cvConfig;
-    DataSourceType providerType = queryRecordsRequest.getProviderType();
+    DataSourceType providerType = getDataSourceType(queryRecordsRequest);
     List<MetricPack> metricPacks =
         metricPackService.getMetricPacks(accountIdentifier, orgIdentifier, projectIdentifier, providerType);
     metricPackService.populateDataCollectionDsl(providerType, metricPacks.get(0));
     if (providerType.isNextGenSpec() && providerType.getVerificationType() == VerificationType.TIME_SERIES) {
       cvConfig = NextGenMetricCVConfig.builder()
-                     .accountId(projectParams.getAccountIdentifier())
-                     .orgIdentifier(projectParams.getOrgIdentifier())
-                     .projectIdentifier(projectParams.getProjectIdentifier())
-                     .dataSourceType(queryRecordsRequest.getProviderType())
+                     .accountId(accountIdentifier)
+                     .orgIdentifier(orgIdentifier)
+                     .projectIdentifier(projectIdentifier)
+                     .dataSourceType(providerType)
                      .groupName(DEFAULT_GROUP)
                      .monitoredServiceIdentifier(MONITORED_SERVICE_IDENTIFIER)
                      .connectorIdentifier(queryRecordsRequest.getConnectorIdentifier())
@@ -178,6 +189,7 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
 
   @Override
   public LogRecordsResponse fetchLogData(QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams) {
+    queryRecordsRequest.validate();
     String accountIdentifier = projectParams.getAccountIdentifier();
     String orgIdentifier = projectParams.getOrgIdentifier();
     String projectIdentifier = projectParams.getProjectIdentifier();
@@ -230,12 +242,12 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
   private DataCollectionInfo<ConnectorConfigDTO> getDataCollectionInfoForLog(
       QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams) {
     CVConfig cvConfig;
-    DataSourceType providerType = queryRecordsRequest.getProviderType();
+    DataSourceType providerType = getDataSourceType(queryRecordsRequest);
     if (providerType.isNextGenSpec() && providerType.getVerificationType() == VerificationType.LOG) {
       cvConfig = NextGenLogCVConfig.builder()
                      .orgIdentifier(projectParams.getOrgIdentifier())
                      .projectIdentifier(projectParams.getProjectIdentifier())
-                     .dataSourceType(queryRecordsRequest.getProviderType())
+                     .dataSourceType(providerType)
                      .accountId(projectParams.getAccountIdentifier())
                      .monitoredServiceIdentifier(MONITORED_SERVICE_IDENTIFIER)
                      .queryParams(queryRecordsRequest.getHealthSourceQueryParams().getQueryParamsEntity())

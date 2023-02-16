@@ -307,4 +307,31 @@ public class NewRelicMetricDataRecord
       }
     });
   }
+
+  public software.wings.beans.dto.NewRelicMetricDataRecord toDto() {
+    return software.wings.beans.dto.NewRelicMetricDataRecord.builder()
+        .uuid(uuid)
+        .appId(appId)
+        .createdAt(createdAt)
+        .lastUpdatedAt(lastUpdatedAt)
+        .entityYamlPath(entityYamlPath)
+        .stateType(stateType)
+        .name(name)
+        .workflowId(workflowId)
+        .workflowExecutionId(workflowExecutionId)
+        .serviceId(serviceId)
+        .cvConfigId(cvConfigId)
+        .stateExecutionId(stateExecutionId)
+        .timeStamp(timeStamp)
+        .dataCollectionMinute(dataCollectionMinute)
+        .host(host)
+        .level(level)
+        .tag(tag)
+        .groupName(groupName)
+        .values(values)
+        .deeplinkMetadata(deeplinkMetadata)
+        .deeplinkUrl(deeplinkUrl)
+        .accountId(accountId)
+        .build();
+  }
 }

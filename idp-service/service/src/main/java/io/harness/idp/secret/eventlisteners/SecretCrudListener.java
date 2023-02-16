@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.events.listeners;
+package io.harness.idp.secret.eventlisteners;
 
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.*;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -16,17 +16,22 @@ import io.harness.eventsframework.NgEventLogContext;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.secret.service.EnvironmentSecretService;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.event.MessageListener;
 
+import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Map;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @OwnedBy(HarnessTeam.IDP)
+@AllArgsConstructor(onConstructor = @__({ @Inject }))
+@Slf4j
 public class SecretCrudListener implements MessageListener {
   private static final String ACCOUNT_ID = "accountId";
+  private EnvironmentSecretService environmentSecretService;
 
   @Override
   public boolean handleMessage(Message message) {
@@ -48,7 +53,7 @@ public class SecretCrudListener implements MessageListener {
             }
             String action = metadataMap.get(ACTION);
             if (action != null) {
-              processSecretEntityChangeEvent(entityChangeDTO, action);
+              environmentSecretService.processSecretUpdate(entityChangeDTO, action);
               log.info("Completed processing the secrets crud event with the id {}", messageId);
               return true;
             } else {
@@ -58,10 +63,10 @@ public class SecretCrudListener implements MessageListener {
             }
           }
         }
+      } catch (Exception e) {
+        log.error("Error processing the secrets crud event with the id {}", messageId, e);
       }
     }
     return true;
   }
-
-  private void processSecretEntityChangeEvent(EntityChangeDTO entityChangeDTO, String action) {}
 }

@@ -13,6 +13,7 @@ import static io.harness.beans.DelegateTask.Status.ERROR;
 import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.beans.DelegateTask.Status.runningStatuses;
+import static io.harness.beans.FeatureName.DELEGATE_TASK_LOAD_DISTRIBUTION;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -36,7 +37,6 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_N
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_NO_FIRST_WHITELISTED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_VALIDATION;
 
-import static software.wings.app.ManagerCacheRegistrar.SECRET_CACHE;
 import static software.wings.expression.SecretManagerModule.EXPRESSION_EVALUATOR_EXECUTOR;
 import static software.wings.service.impl.AssignDelegateServiceImpl.PIPELINE;
 import static software.wings.service.impl.AssignDelegateServiceImpl.STAGE;
@@ -47,6 +47,7 @@ import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.NO_EL
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -173,6 +174,8 @@ import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -193,6 +196,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -206,7 +210,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import javax.cache.Cache;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -275,7 +278,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private AuditHelper auditHelper;
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private DelegateGlobalAccountController delegateGlobalAccountController;
-  @Inject @Named(SECRET_CACHE) Cache<String, EncryptedDataDetails> secretsCache;
   @Inject @Named(EXPRESSION_EVALUATOR_EXECUTOR) ExecutorService expressionEvaluatorExecutor;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
   @Inject private DelegateTaskQueueService delegateTaskQueueService;
@@ -285,6 +287,14 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private ManagerObserverEventProducer managerObserverEventProducer;
+
+  final Comparator<Map.Entry<String, Long>> delegateTaskCountComparator = (d1, d2) -> {
+    long diff = d1.getValue() - d2.getValue();
+    if (diff == 0) {
+      return (int) Math.max(random.nextLong(), 0);
+    }
+    return (int) diff;
+  };
 
   private LoadingCache<String, String> logStreamingAccountTokenCache =
       CacheBuilder.newBuilder()
@@ -296,6 +306,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
               return retrieveLogStreamingAccountToken(accountId);
             }
           });
+
+  private final Cache<String, EncryptedDataDetails> secretsCache =
+      Caffeine.newBuilder().maximumSize(10000).expireAfterWrite(5, TimeUnit.MINUTES).build();
 
   public static void embedCapabilitiesInDelegateTask(
       DelegateTask task, Collection<EncryptionConfig> encryptionConfigs, ExpressionEvaluator maskingEvaluator) {
@@ -751,15 +764,42 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private String getDelegateIdForFirstBroadcast(DelegateTask delegateTask, List<String> eligibleListOfDelegates) {
-    for (String delegateId : eligibleListOfDelegates) {
-      if (assignDelegateService.isDelegateGroupWhitelisted(delegateTask, delegateId)
-          || assignDelegateService.isWhitelisted(delegateTask, delegateId)) {
-        return delegateId;
+    if (delegateTask.isNGTask(delegateTask.getSetupAbstractions())
+        && featureFlagService.isEnabled(DELEGATE_TASK_LOAD_DISTRIBUTION, delegateTask.getAccountId())) {
+      List<String> eligibleDelegatesSorted =
+          getEligibleDelegateListOrderedNumberByTaskAssigned(delegateTask, eligibleListOfDelegates);
+      delegateTask.setEligibleToExecuteDelegateIds(new LinkedList<>(eligibleDelegatesSorted));
+      log.info("Eligible delegate sorted list: {}", eligibleDelegatesSorted);
+      delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_NO_FIRST_WHITELISTED);
+      return eligibleDelegatesSorted.get(0);
+    } else {
+      for (String delegateId : eligibleListOfDelegates) {
+        if (assignDelegateService.isDelegateGroupWhitelisted(delegateTask, delegateId)
+            || assignDelegateService.isWhitelisted(delegateTask, delegateId)) {
+          return delegateId;
+        }
       }
+      delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_NO_FIRST_WHITELISTED);
+      printCriteriaNoMatch(delegateTask);
+      return eligibleListOfDelegates.get(random.nextInt(eligibleListOfDelegates.size()));
     }
-    delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_NO_FIRST_WHITELISTED);
-    printCriteriaNoMatch(delegateTask);
-    return eligibleListOfDelegates.get(random.nextInt(eligibleListOfDelegates.size()));
+  }
+
+  @VisibleForTesting
+  protected List<String> getEligibleDelegateListOrderedNumberByTaskAssigned(
+      DelegateTask delegateTask, List<String> eligibleListOfDelegates) {
+    List<DelegateTask> delegateTasks = persistence.createQuery(DelegateTask.class)
+                                           .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
+                                           .filter(DelegateTaskKeys.status, STARTED)
+                                           .field(DelegateTaskKeys.delegateId)
+                                           .in(eligibleListOfDelegates)
+                                           .project(DelegateTaskKeys.uuid, true)
+                                           .project(DelegateTaskKeys.delegateId, true)
+                                           .asList();
+    Map<String, Long> tasksCount =
+        delegateTasks.stream().collect(groupingBy(DelegateTask::getDelegateId, Collectors.counting()));
+    eligibleListOfDelegates.forEach(delegate -> tasksCount.computeIfAbsent(delegate, key -> 0L));
+    return tasksCount.entrySet().stream().sorted(delegateTaskCountComparator).map(Map.Entry::getKey).collect(toList());
   }
 
   private void handleTaskFailureResponse(DelegateTask task, Exception exception) {

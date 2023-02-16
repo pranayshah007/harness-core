@@ -9,11 +9,11 @@ package software.wings.delegatetasks;
 
 import static io.harness.threading.Morpheus.sleep;
 
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 import static software.wings.delegatetasks.cv.CVConstants.CANARY_DAYS_TO_COLLECT;
 import static software.wings.delegatetasks.cv.CVConstants.DATA_COLLECTION_RETRY_SLEEP;
 import static software.wings.delegatetasks.cv.CVConstants.DURATION_TO_ASK_MINUTES;
 import static software.wings.service.impl.analysis.AnalysisComparisonStrategy.COMPARE_WITH_CURRENT;
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -28,6 +28,7 @@ import io.harness.time.Timestamp;
 
 import software.wings.beans.DynaTraceConfig;
 import software.wings.beans.TaskType;
+import software.wings.beans.dto.NewRelicMetricDataRecord;
 import software.wings.delegatetasks.cv.CVConstants;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
@@ -37,7 +38,6 @@ import software.wings.service.impl.dynatrace.DynaTraceDataCollectionInfo;
 import software.wings.service.impl.dynatrace.DynaTraceMetricDataRequest;
 import software.wings.service.impl.dynatrace.DynaTraceMetricDataResponse;
 import software.wings.service.impl.dynatrace.DynaTraceTimeSeries;
-import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.intfc.analysis.ClusterLevel;
 import software.wings.service.intfc.dynatrace.DynaTraceDelegateService;
 

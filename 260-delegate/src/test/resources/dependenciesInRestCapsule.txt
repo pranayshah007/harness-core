@@ -156,9 +156,6 @@ com.googlecode.javaewah:JavaEWAH:jar:1.1.6
 com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:jar:20200713.1
 com.graphql-java:graphql-java:jar:12.0
 com.graphql-java:java-dataloader:jar:2.1.1
-com.hazelcast:hazelcast-aws:jar:2.4
-com.hazelcast:hazelcast-kubernetes:jar:1.5.3
-com.hazelcast:hazelcast:jar:3.12.8
 com.healthmarketscience.sqlbuilder:sqlbuilder:jar:3.0.0
 com.hierynomus:asn-one:jar:0.4.0
 com.hierynomus:smbj:jar:0.9.0

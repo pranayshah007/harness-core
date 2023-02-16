@@ -74,7 +74,7 @@ import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 public class AzureCreateARMResourceStepMapperImpl extends BaseAzureARMProvisionerMapper {
-  public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
+  public List<CgEntityId> getReferencedEntities(GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     ARMProvisionState state = (ARMProvisionState) getState(graphNode);
 
     List<CgEntityId> references = new ArrayList<>();

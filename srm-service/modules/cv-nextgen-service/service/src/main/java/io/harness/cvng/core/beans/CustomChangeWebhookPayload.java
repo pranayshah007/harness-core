@@ -20,8 +20,8 @@ import lombok.Value;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CustomChangeWebhookPayload {
   String eventIdentifier;
-  @NotNull @NotEmpty long startTime;
-  @NotNull @NotEmpty long endTime;
+  @NotNull Long startTime;
+  @NotNull Long endTime;
   @NotNull @NotEmpty String user;
   @NotNull CustomChangeWebhookEventDetail eventDetail;
   @Value

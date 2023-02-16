@@ -9,6 +9,8 @@ package io.harness.ccm.remote.resources;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_VIEW;
+import static io.harness.ccm.rbac.CCMResources.BUDGET;
 import static io.harness.ccm.remote.resources.TelemetryConstants.ALERTS_COUNT;
 import static io.harness.ccm.remote.resources.TelemetryConstants.BUDGET_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.BUDGET_PERIOD;
@@ -27,13 +29,13 @@ import io.harness.ccm.audittrails.events.BudgetCreateEvent;
 import io.harness.ccm.audittrails.events.BudgetDeleteEvent;
 import io.harness.ccm.audittrails.events.BudgetUpdateEvent;
 import io.harness.ccm.budget.BudgetBreakdown;
+import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.rbac.CCMRbacHelper;
-import io.harness.ccm.rbac.CCMRbacPermissions;
-import io.harness.ccm.rbac.CCMResources;
 import io.harness.ccm.utils.LogAccountIdentifier;
+import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -58,6 +60,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -120,7 +124,8 @@ public class BudgetResource {
   save(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Budget definition") @NotNull @Valid Budget budget) {
-    rbacHelper.checkBudgetEditPermission(accountId, null, null);
+    rbacHelper.checkBudgetEditPermission(
+        accountId, null, null, ceViewService.get(BudgetUtils.getPerspectiveIdForBudget(budget)).getFolderId());
     budget.setAccountId(accountId);
     budget.setNgBudget(true);
     HashMap<String, Object> properties = new HashMap<>();
@@ -157,7 +162,9 @@ public class BudgetResource {
             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("id") @Parameter(required = true, description = "Unique identifier for the budget") String budgetId,
       @QueryParam("cloneName") @Parameter(required = true, description = "Name of the new budget") String budgetName) {
-    rbacHelper.checkBudgetEditPermission(accountId, null, null);
+    Budget budget = budgetService.get(budgetId, accountId);
+    rbacHelper.checkBudgetEditPermission(
+        accountId, null, null, ceViewService.get(BudgetUtils.getPerspectiveIdForBudget(budget)).getFolderId());
     return ResponseDTO.newResponse(budgetService.clone(budgetId, budgetName, accountId));
   }
 
@@ -179,8 +186,10 @@ public class BudgetResource {
   get(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Parameter(required = true, description = "Unique identifier for the budget") @PathParam("id") String budgetId) {
-    rbacHelper.checkBudgetViewPermission(accountId, null, null);
-    return ResponseDTO.newResponse(budgetService.get(budgetId, accountId));
+    Budget budget = budgetService.get(budgetId, accountId);
+    rbacHelper.checkBudgetViewPermission(
+        accountId, null, null, ceViewService.get(BudgetUtils.getPerspectiveIdForBudget(budget)).getFolderId());
+    return ResponseDTO.newResponse(budget);
   }
 
   @GET
@@ -199,8 +208,27 @@ public class BudgetResource {
   public ResponseDTO<List<Budget>>
   list(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
-    rbacHelper.checkBudgetViewPermission(accountId, null, null);
-    return ResponseDTO.newResponse(budgetService.list(accountId));
+    List<Budget> allBudgets = budgetService.list(accountId);
+    List<String> perspectiveIds = allBudgets.stream()
+                                      .filter(BudgetUtils::isPerspectiveBudget)
+                                      .map(BudgetUtils::getPerspectiveIdForBudget)
+                                      .collect(Collectors.toList());
+    Set<String> folderIds = ceViewService.getPerspectiveFolderIds(accountId, perspectiveIds);
+    HashMap<String, String> perspectiveIdAndFolderIds =
+        ceViewService.getPerspectiveIdAndFolderId(accountId, perspectiveIds);
+
+    List<Budget> allowedBudgets = null;
+    if (folderIds != null) {
+      Set<String> allowedFolderIds =
+          rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_VIEW);
+      allowedBudgets = allBudgets.stream()
+                           .filter(budget
+                               -> (BudgetUtils.isPerspectiveBudget(budget)
+                                   && allowedFolderIds.contains(
+                                       perspectiveIdAndFolderIds.get(BudgetUtils.getPerspectiveIdForBudget(budget)))))
+                           .collect(Collectors.toList());
+    }
+    return ResponseDTO.newResponse(allowedBudgets);
   }
 
   @GET
@@ -222,8 +250,13 @@ public class BudgetResource {
            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Parameter(required = true, description = "Unique identifier for the Perspective") @QueryParam(
           "perspectiveId") String perspectiveId) {
-    rbacHelper.checkBudgetViewPermission(accountId, null, null);
-    return ResponseDTO.newResponse(budgetService.list(accountId, perspectiveId));
+    CEView perspective = ceViewService.get(perspectiveId);
+    List<Budget> budgets = null;
+    if (perspective != null) {
+      rbacHelper.checkBudgetViewPermission(accountId, null, null, perspective.getFolderId());
+      budgets = budgetService.list(accountId, perspectiveId);
+    }
+    return ResponseDTO.newResponse(budgets);
   }
 
   @PUT
@@ -246,7 +279,8 @@ public class BudgetResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Valid @NotNull @Parameter(required = true, description = "Unique identifier for the budget") @PathParam("id")
       String budgetId, @RequestBody(required = true, description = "The Budget object") @NotNull @Valid Budget budget) {
-    rbacHelper.checkBudgetEditPermission(accountId, null, null);
+    rbacHelper.checkBudgetEditPermission(
+        accountId, null, null, ceViewService.get(BudgetUtils.getPerspectiveIdForBudget(budget)).getFolderId());
     Budget oldBudget = budgetService.get(budgetId, accountId);
     budgetService.update(budgetId, budget);
     Budget newBudget = budgetService.get(budgetId, accountId);
@@ -276,8 +310,9 @@ public class BudgetResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @Parameter(required = true, description = "Unique identifier for the budget") @PathParam(
           "id") String budgetId) {
-    rbacHelper.checkBudgetDeletePermission(accountId, null, null);
     Budget budget = budgetService.get(budgetId, accountId);
+    rbacHelper.checkBudgetDeletePermission(
+        accountId, null, null, ceViewService.get(BudgetUtils.getPerspectiveIdForBudget(budget)).getFolderId());
     budgetService.delete(budgetId, accountId);
     return ResponseDTO.newResponse(
         Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -300,6 +335,7 @@ public class BudgetResource {
                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @QueryParam("perspectiveId") @Parameter(
           required = true, description = "The identifier of the Perspective") String perspectiveId) {
+    rbacHelper.checkBudgetViewPermission(accountId, null, null, ceViewService.get(perspectiveId).getFolderId());
     return ResponseDTO.newResponse(ceViewService.getLastMonthCostForPerspective(accountId, perspectiveId));
   }
 
@@ -315,6 +351,7 @@ public class BudgetResource {
   getForecastCost(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                       NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam("perspectiveId") String perspectiveId) {
+    rbacHelper.checkBudgetViewPermission(accountId, null, null, ceViewService.get(perspectiveId).getFolderId());
     return ResponseDTO.newResponse(ceViewService.getForecastCostForPerspective(accountId, perspectiveId));
   }
 
@@ -323,7 +360,7 @@ public class BudgetResource {
   @Timed
   @LogAccountIdentifier
   @ExceptionMetered
-  @NGAccessControlCheck(resourceType = CCMResources.BUDGET, permission = CCMRbacPermissions.BUDGET_VIEW)
+  @NGAccessControlCheck(resourceType = BUDGET, permission = BUDGET_VIEW)
   @ApiOperation(value = "Get cost details for budget", nickname = "getCostDetails")
   @Operation(operationId = "getCostDetails",
       description = "Fetch the cost details of a Cloud Cost Budget for the given Budget ID.",
@@ -340,6 +377,9 @@ public class BudgetResource {
       @Parameter(required = true, description = "Unique identifier for the Budget") @PathParam("id") String budgetId,
       @Parameter(description = "MONTHLY/YEARLY breakdown. The default value is YEARLY") @QueryParam(
           "breakdown") BudgetBreakdown breakdown) {
+    Budget budget = budgetService.get(budgetId, accountId);
+    rbacHelper.checkBudgetViewPermission(
+        accountId, null, null, ceViewService.get(BudgetUtils.getPerspectiveIdForBudget(budget)).getFolderId());
     return ResponseDTO.newResponse(budgetService.getBudgetTimeSeriesStats(
         budgetService.get(budgetId, accountId), breakdown == null ? BudgetBreakdown.YEARLY : breakdown));
   }

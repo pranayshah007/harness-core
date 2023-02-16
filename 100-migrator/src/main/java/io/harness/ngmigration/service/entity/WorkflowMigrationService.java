@@ -148,7 +148,7 @@ public class WorkflowMigrationService extends NgMigrationService {
                                                 Workflow workflow = (Workflow) entity.getEntity();
                                                 WorkflowHandler workflowHandler =
                                                     workflowHandlerFactory.getWorkflowHandler(workflow);
-                                                return workflowHandler.getSteps(workflow).stream();
+                                                return MigratorUtility.getSteps(workflow).stream();
                                               })
                                               .collect(groupingBy(GraphNode::getType, counting()));
     Map<String, TypeSummary> stepTypeSummaryMap = new HashMap<>();
@@ -164,7 +164,7 @@ public class WorkflowMigrationService extends NgMigrationService {
             .flatMap(entity -> {
               Workflow workflow = (Workflow) entity.getEntity();
               WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
-              return workflowHandler.getSteps(workflow).stream();
+              return MigratorUtility.getSteps(workflow).stream();
             })
             .flatMap(step -> stepMapperFactory.getStepMapper(step.getType()).getExpressions(step).stream())
             .collect(Collectors.toSet());
@@ -224,7 +224,7 @@ public class WorkflowMigrationService extends NgMigrationService {
     String description = StringUtils.isBlank(workflow.getDescription()) ? "" : workflow.getDescription();
 
     WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
-    List<GraphNode> steps = workflowHandler.getSteps(workflow);
+    List<GraphNode> steps = MigratorUtility.getSteps(workflow);
     // We will skip migration if any of the steps are unsupported
     if (EmptyPredicate.isEmpty(steps)) {
       return YamlGenerationDetails.builder()
@@ -296,6 +296,7 @@ public class WorkflowMigrationService extends NgMigrationService {
       try {
         templateSpec = workflowHandler.getTemplateSpec(entities, migratedEntities, workflow);
       } catch (Exception e) {
+        log.error("Exception during migrating workflow ", e);
         return YamlGenerationDetails.builder()
             .yamlFileList(files)
             .skipDetails(Collections.singletonList(NGSkipDetail.builder()

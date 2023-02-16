@@ -9,6 +9,8 @@ package io.harness.cvng.analysis.beans;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.cvng.core.beans.LogFeedback;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.ArrayList;
@@ -19,7 +21,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.Value;
 import org.apache.commons.collections4.CollectionUtils;
 @Value
@@ -95,7 +100,7 @@ public class DeploymentLogAnalysisDTO {
   }
 
   @Value
-  @Builder
+  @Builder(toBuilder = true)
   public static class ClusterSummary {
     int label;
     ClusterType clusterType;
@@ -106,6 +111,8 @@ public class DeploymentLogAnalysisDTO {
     double score;
     int count;
     List<Double> testFrequencyData;
+    public LogFeedback feedback;
+    LogFeedback feedbackApplied;
 
     List<HostFrequencyData> frequencyData;
     public List<Double> getTestFrequencyData() {
@@ -181,7 +188,7 @@ public class DeploymentLogAnalysisDTO {
   }
 
   @Value
-  @Builder
+  @Builder(toBuilder = true)
   public static class ResultSummary {
     int risk;
     public Risk getRiskLevel() {

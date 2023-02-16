@@ -785,3 +785,4 @@ io.harness.cdng.aws.sam.AwsSamDeployStepParameters
 io.harness.cdng.aws.sam.AwsSamRollbackStepInfo
 io.harness.cdng.aws.sam.AwsSamRollbackStepNode
 io.harness.cdng.aws.sam.AwsSamRollbackStepParameters
+io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig

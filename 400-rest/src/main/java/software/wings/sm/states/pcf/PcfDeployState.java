@@ -249,7 +249,7 @@ public class PcfDeployState extends State {
                                            .tagList(renderedTags)
                                            .build());
 
-    delegateService.queueTaskV2(task);
+    delegateService.queueTask(task);
     appendDelegateTaskDetails(context, task);
 
     return ExecutionResponse.builder()

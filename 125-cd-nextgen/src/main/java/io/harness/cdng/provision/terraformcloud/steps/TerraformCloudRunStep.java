@@ -8,6 +8,8 @@
 package io.harness.cdng.provision.terraformcloud.steps;
 
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN;
+import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_AND_DESTROY;
+import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.REFRESH_STATE;
 import static io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome.OUTCOME_NAME;
 
 import io.harness.EntityType;
@@ -25,7 +27,9 @@ import io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome
 import io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome.TerraformCloudRunOutcomeBuilder;
 import io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanSpecParameters;
 import io.harness.common.ParameterFieldHelper;
+import io.harness.connector.helper.EncryptionHelper;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse;
@@ -78,6 +82,7 @@ public class TerraformCloudRunStep extends CdTaskExecutable<TerraformCloudRunTas
   @Inject private StepHelper stepHelper;
   @Inject private TerraformCloudStepHelper helper;
   @Inject private TerraformCloudParamsMapper paramsMapper;
+  @Inject private EncryptionHelper encryptionHelper;
 
   @Override
   public Class getStepParametersClass() {
@@ -123,7 +128,16 @@ public class TerraformCloudRunStep extends CdTaskExecutable<TerraformCloudRunTas
 
     terraformCloudTaskParams.setAccountId(AmbianceUtils.getAccountId(ambiance));
     terraformCloudTaskParams.setMessage(ParameterFieldHelper.getParameterFieldValue(runStepParameters.getMessage()));
-    terraformCloudTaskParams.setTerraformCloudConnectorDTO(helper.getTerraformCloudConnector(runSpec, ambiance));
+
+    TerraformCloudConnectorDTO terraformCloudConnector = helper.getTerraformCloudConnector(runSpec, ambiance);
+    terraformCloudTaskParams.setTerraformCloudConnectorDTO(terraformCloudConnector);
+    terraformCloudTaskParams.setEncryptionDetails(encryptionHelper.getEncryptionDetail(
+        terraformCloudConnector.getCredential().getSpec(), AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance)));
+
+    terraformCloudTaskParams.setEntityId(runSpec.getType() != REFRESH_STATE
+            ? helper.generateFullIdentifier(helper.getProvisionIdentifier(runSpec), ambiance)
+            : null);
 
     TaskData taskData = TaskData.builder()
                             .async(true)
@@ -192,17 +206,12 @@ public class TerraformCloudRunStep extends CdTaskExecutable<TerraformCloudRunTas
         String provisionerIdentifier = helper.getProvisionIdentifier(runStepParameters.getSpec());
 
         helper.saveTerraformPlanExecutionDetails(ambiance, terraformCloudRunTaskResponse, provisionerIdentifier);
-
-        String planJsonOutputName =
-            helper.saveTerraformPlanJsonOutput(ambiance, terraformCloudRunTaskResponse, provisionerIdentifier);
-
-        if (planJsonOutputName != null) {
-          terraformCloudRunOutcomeBuilder.jsonFilePath(TerraformPlanJsonFunctor.getExpressionV2(planJsonOutputName));
-        }
+        terraformCloudRunOutcomeBuilder.jsonFilePath(TerraformPlanJsonFunctor.getExpression(provisionerIdentifier));
       }
 
-      if (runType == TerraformCloudRunType.APPLY || runType == TerraformCloudRunType.PLAN_AND_APPLY) {
-        terraformCloudRunOutcomeBuilder.outcome(
+      if (runType == TerraformCloudRunType.APPLY || runType == TerraformCloudRunType.PLAN_AND_APPLY
+          || runType == PLAN_AND_DESTROY) {
+        terraformCloudRunOutcomeBuilder.outputs(
             new HashMap<>(helper.parseTerraformOutputs(terraformCloudRunTaskResponse.getTfOutput())));
       }
 
