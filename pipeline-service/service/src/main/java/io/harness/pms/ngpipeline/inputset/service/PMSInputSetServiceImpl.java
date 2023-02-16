@@ -108,7 +108,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     if (!isOldGitSync) {
       InputSetValidationHelper.checkForPipelineStoreType(inputSetEntity, pipelineService);
     }
-    validateRemoteInputSetCreation(inputSetEntity);
+    validateIndependentInputSetSetting(inputSetEntity, ChangeType.ADD);
     try {
       if (isOldGitSync) {
         return inputSetRepository.saveForOldGitSync(inputSetEntity, InputSetYamlDTOMapper.toDTO(inputSetEntity));
@@ -185,7 +185,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     boolean isOldGitSync = gitSyncSdkService.isGitSyncEnabled(inputSetEntity.getAccountIdentifier(),
         inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
     InputSetValidationHelper.validateInputSet(this, inputSetEntity, hasNewYamlStructure);
-    validateRemoteInputSetUpdation(inputSetEntity);
+    validateIndependentInputSetSetting(inputSetEntity, ChangeType.MODIFY);
     if (isOldGitSync) {
       return updateForOldGitSync(inputSetEntity, changeType);
     }
@@ -667,35 +667,33 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     return repoURL;
   }
 
-  private void validateRemoteInputSetCreation(InputSetEntity inputSetEntity) {
+  private void validateIndependentInputSetSetting(InputSetEntity inputSetEntity, ChangeType changeType) {
     if (!inputSetsApiUtils.isIndependentInputSetEnabledInSettings(inputSetEntity.getAccountId())) {
       PipelineEntity pipelineEntity = InputSetValidationHelper.getPipelineMetadata(pipelineService,
           inputSetEntity.getAccountId(), inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier(),
           inputSetEntity.getPipelineIdentifier());
+      String inputSetRepo;
 
-      GitAwareContextHelper.initDefaultScmGitMetaData();
-      GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+      if (ChangeType.ADD.equals(changeType)) {
+        GitAwareContextHelper.initDefaultScmGitMetaData();
+        GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+        inputSetRepo = gitEntityInfo.getRepoName();
+      } else if (ChangeType.MODIFY.equals(changeType)) {
+        Optional<InputSetEntity> inputSetMetadata = getWithoutValidations(inputSetEntity.getAccountId(),
+            inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier(),
+            inputSetEntity.getPipelineIdentifier(), inputSetEntity.getIdentifier(), false, true, false);
 
-      validatePipelineAndInputSetRepos(pipelineEntity.getRepo(), gitEntityInfo.getRepoName());
-    }
-  }
-  private void validateRemoteInputSetUpdation(InputSetEntity inputSetEntity) {
-    if (!inputSetsApiUtils.isIndependentInputSetEnabledInSettings(inputSetEntity.getAccountId())) {
-      PipelineEntity pipelineEntity = InputSetValidationHelper.getPipelineMetadata(pipelineService,
-          inputSetEntity.getAccountId(), inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier(),
-          inputSetEntity.getPipelineIdentifier());
-
-      Optional<InputSetEntity> inputSetMetadata = getWithoutValidations(inputSetEntity.getAccountId(),
-          inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier(),
-          inputSetEntity.getPipelineIdentifier(), inputSetEntity.getIdentifier(), false, true, false);
-
-      if (inputSetMetadata.isEmpty()) {
-        throw new InvalidRequestException(
-            format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] doesn't exist.",
-                inputSetEntity.getIdentifier(), inputSetEntity.getPipelineIdentifier(),
-                inputSetEntity.getProjectIdentifier(), inputSetEntity.getOrgIdentifier()));
+        if (inputSetMetadata.isEmpty()) {
+          throw new InvalidRequestException(
+              format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] doesn't exist.",
+                  inputSetEntity.getIdentifier(), inputSetEntity.getPipelineIdentifier(),
+                  inputSetEntity.getProjectIdentifier(), inputSetEntity.getOrgIdentifier()));
+        }
+        inputSetRepo = inputSetMetadata.get().getRepo();
+      } else {
+        throw new InvalidRequestException("Invalid change type provided");
       }
-      validatePipelineAndInputSetRepos(pipelineEntity.getRepo(), inputSetMetadata.get().getRepo());
+      validatePipelineAndInputSetRepos(pipelineEntity.getRepo(), inputSetRepo);
     }
   }
 
