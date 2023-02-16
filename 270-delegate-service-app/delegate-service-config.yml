@@ -95,7 +95,7 @@ redisLockConfig:
   nettyThreads: 16
   useScriptCache: true
 
-atmosphereBroadcaster: HAZELCAST
+atmosphereBroadcaster: MEMORY
 
 redisAtmosphereConfig:
   sentinel: false
@@ -230,7 +230,7 @@ portal:
   criticalDelegateTaskRejectAtLimit: 100000
 
 cacheConfig:
-  cacheBackend: HAZELCAST
+  cacheBackend: NOOP
   cacheNamespace: ""
   disabledCaches: []
 

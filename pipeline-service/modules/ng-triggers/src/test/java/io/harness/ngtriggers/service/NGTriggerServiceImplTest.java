@@ -45,6 +45,7 @@ import io.harness.common.NGTimeConversionHelper;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
@@ -82,6 +83,7 @@ import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -199,7 +201,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   public void setup() throws Exception {
     on(ngTriggerServiceImpl).set("ngTriggerElementMapper", ngTriggerElementMapper);
 
-    when(validationHelper.fetchPipelineForTrigger(any())).thenReturn(Optional.empty());
+    when(validationHelper.fetchPipelineYamlForTrigger(any())).thenReturn(Optional.empty());
     ngTriggerYamlWithGitSync =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(filenameGitSync)), StandardCharsets.UTF_8);
     ngTriggerConfig = YamlPipelineUtils.read(ngTriggerYamlWithGitSync, NGTriggerConfigV2.class);
@@ -681,7 +683,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
             .build();
     String pipelineYaml =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(filenamePipeline)), StandardCharsets.UTF_8);
-    when(validationHelper.fetchPipelineForTrigger(any())).thenReturn(Optional.ofNullable(pipelineYaml));
+    when(validationHelper.fetchPipelineYamlForTrigger(any())).thenReturn(Optional.ofNullable(pipelineYaml));
     ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()
                                                      .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
                                                      .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
@@ -711,7 +713,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     when(mergeInputSetResponseDTOPMS.execute())
         .thenReturn(Response.success(
             ResponseDTO.newResponse(MergeInputSetResponseDTOPMS.builder().isErrorResponse(false).build())));
-    when(validationHelper.fetchPipelineForTrigger(any())).thenReturn(Optional.of(pipelineYamlV1));
+    when(validationHelper.fetchPipelineYamlForTrigger(any())).thenReturn(Optional.of(pipelineYamlV1));
     assertThat(ngTriggerServiceImpl.validateInputSetsInternal(triggerDetails)).isNull();
   }
 
@@ -744,7 +746,9 @@ public class NGTriggerServiceImplTest extends CategoryTest {
                                 .build()))
                         .build())
                 .build())));
-    when(validationHelper.fetchPipelineForTrigger(any())).thenReturn(Optional.of(pipelineYamlV1));
+    when(validationHelper.fetchPipelineYamlForTrigger(any())).thenReturn(Optional.of(pipelineYamlV1));
+    when(validationHelper.fetchPipelineForTrigger(any()))
+        .thenReturn(PMSPipelineResponseDTO.builder().storeType(StoreType.INLINE).yamlPipeline(pipelineYamlV1).build());
     when(validationHelper.generateErrorMap(any())).thenCallRealMethod();
     assertThatThrownBy(() -> ngTriggerServiceImpl.validateInputSetsInternal(triggerDetails))
         .isInstanceOf(InvalidTriggerYamlException.class);
@@ -784,5 +788,20 @@ public class NGTriggerServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
         .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testInvalidPipelineBranchName() {
+    PMSPipelineResponseDTO pipelineResponse =
+        PMSPipelineResponseDTO.builder().storeType(StoreType.REMOTE).yamlPipeline("yamlPipeline").build();
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder().ngTriggerConfigV2(NGTriggerConfigV2.builder().build()).build();
+
+    when(validationHelper.fetchPipelineForTrigger(triggerDetails)).thenReturn(pipelineResponse);
+    assertThatThrownBy(() -> ngTriggerServiceImpl.validatePipelineRef(triggerDetails))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("pipelineBranchName is missing or is empty.");
   }
 }

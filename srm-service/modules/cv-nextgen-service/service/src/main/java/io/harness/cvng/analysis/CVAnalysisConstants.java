@@ -46,4 +46,5 @@ public interface CVAnalysisConstants {
   String AFTER = "after";
   String PRIMARY = "primary";
   String CANARY = "canary";
+  String LOG_FEEDBACK_LIST = "log-feedbacks";
 }

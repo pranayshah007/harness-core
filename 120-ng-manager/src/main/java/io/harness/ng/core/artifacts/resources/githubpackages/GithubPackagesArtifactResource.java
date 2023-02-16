@@ -62,8 +62,6 @@ public class GithubPackagesArtifactResource {
 
   private final ArtifactResourceUtils artifactResourceUtils;
 
-  private String emptyConnectorMessage = "Connector reference cannot be empty";
-
   // GET Api to fetch Github Packages from an account or an org
   @GET
   @Path("packages")
@@ -75,7 +73,7 @@ public class GithubPackagesArtifactResource {
       @NotNull @QueryParam("packageType") String packageType, @QueryParam("org") String org,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     if (StringUtils.isBlank(gitConnectorIdentifier)) {
-      throw new InvalidRequestException(emptyConnectorMessage);
+      throw new InvalidRequestException("Connector reference cannot be empty");
     }
 
     IdentifierRef connectorRef =
@@ -156,7 +154,7 @@ public class GithubPackagesArtifactResource {
       @QueryParam("versionRegex") String versionRegex, @QueryParam("org") String org,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     if (StringUtils.isBlank(gitConnectorIdentifier)) {
-      throw new InvalidRequestException(emptyConnectorMessage);
+      throw new InvalidRequestException("Connector reference cannot be empty");
     }
 
     IdentifierRef connectorRef =
@@ -254,7 +252,7 @@ public class GithubPackagesArtifactResource {
       @QueryParam("version") String version, @QueryParam("versionRegex") String versionRegex,
       @QueryParam("org") String org, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     if (StringUtils.isBlank(gitConnectorIdentifier)) {
-      throw new InvalidRequestException(emptyConnectorMessage);
+      throw new InvalidRequestException("Connector reference cannot be empty");
     }
 
     IdentifierRef connectorRef =
