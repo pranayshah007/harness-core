@@ -64,6 +64,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -389,14 +390,18 @@ public class DiscoveryService {
     List<NGSkipDetail> skipDetails = new ArrayList<>();
 
     // Load all migrated entities for the CG entities before actual migration
-    for (CgEntityId cgEntityId : entities.keySet()) {
-      NGYamlFile yamlFile =
-          migrationFactory.getMethod(cgEntityId.getType()).getExistingYaml(inputDTO, entities, cgEntityId);
-      if (yamlFile != null) {
-        migratedEntities.put(cgEntityId, yamlFile);
-        files.add(yamlFile);
-      }
-    }
+    // We'll first load the environment because infra depends on Environment
+    entities.keySet()
+        .stream()
+        .sorted(Comparator.comparing(id -> !ENVIRONMENT.equals(id.getType())))
+        .forEach(cgEntityId -> {
+          NGYamlFile yamlFile = migrationFactory.getMethod(cgEntityId.getType())
+                                    .getExistingYaml(inputDTO, entities, migratedEntities, cgEntityId);
+          if (yamlFile != null) {
+            migratedEntities.put(cgEntityId, yamlFile);
+            files.add(yamlFile);
+          }
+        });
 
     // Note: Special case: Migrate environments
     // We are doing this because when we migrate infra we need to reference environment

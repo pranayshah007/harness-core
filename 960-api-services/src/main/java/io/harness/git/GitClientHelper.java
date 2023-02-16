@@ -223,7 +223,7 @@ public class GitClientHelper {
     return url.startsWith("http") && !url.startsWith("https");
   }
 
-  private static String getHttpProtocolPrefix(String url) {
+  public static String getHttpProtocolPrefix(String url) {
     if (isUrlHTTP(url)) {
       return "http://";
     }

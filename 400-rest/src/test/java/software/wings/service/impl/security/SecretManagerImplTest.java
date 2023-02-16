@@ -31,7 +31,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -66,7 +65,6 @@ import software.wings.beans.ServiceVariable.ServiceVariableKeys;
 import software.wings.beans.User;
 import software.wings.beans.WorkflowExecution;
 import software.wings.dl.WingsPersistence;
-import software.wings.expression.EncryptedDataDetails;
 import software.wings.security.EnvFilter;
 import software.wings.security.GenericEntityFilter;
 import software.wings.security.UsageRestrictions;
@@ -92,7 +90,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import javax.cache.Cache;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -110,7 +107,6 @@ public class SecretManagerImplTest extends WingsBaseTest {
   @Mock private FileService fileService;
   @Mock private AppService appService;
   @Mock private EnvironmentService environmentService;
-  @Mock private Cache<String, EncryptedDataDetails> secretsCache;
   @Inject @InjectMocks private GcpSecretsManagerService gcpSecretsManagerService;
   @Inject @InjectMocks private SecretManagerImpl secretManager;
   @Inject private SecretsRBACService secretsRBACService;
@@ -398,9 +394,6 @@ public class SecretManagerImplTest extends WingsBaseTest {
         SecretText.builder().name("Dummy record").kmsId(accountId).usageRestrictions(usageRestrictions).build();
 
     secretManager.updateSecretText(accountId, secretId, secretTextUpdate, true);
-
-    verify(secretsCache).remove(secretId);
-
     EncryptedData editedEncryptedDataInDB = wingsPersistence.get(EncryptedData.class, secretId);
     assertThat(editedEncryptedDataInDB).isNotNull();
     assertThat(editedEncryptedDataInDB.isScopedToAccount()).isFalse();

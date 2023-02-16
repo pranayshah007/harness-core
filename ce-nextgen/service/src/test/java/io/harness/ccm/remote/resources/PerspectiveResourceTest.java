@@ -29,6 +29,7 @@ import io.harness.ccm.views.entities.ViewState;
 import io.harness.ccm.views.entities.ViewType;
 import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ccm.views.service.CEReportScheduleService;
+import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -47,6 +48,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class PerspectiveResourceTest extends CategoryTest {
   private CEViewService ceViewService = mock(CEViewService.class);
+  private CEViewFolderService ceViewFolderService = mock(CEViewFolderService.class);
   private ViewCustomFieldService viewCustomFieldService = mock(ViewCustomFieldService.class);
   private CEReportScheduleService ceReportScheduleService = mock(CEReportScheduleService.class);
   private BigQueryService bigQueryService = mock(BigQueryService.class);
@@ -69,6 +71,7 @@ public class PerspectiveResourceTest extends CategoryTest {
   private final String perspectiveVersion = "v1";
   private final String NEW_NAME = "PERSPECTIVE_NAME_NEW";
   private final String UNIFIED_TABLE_NAME = "unified";
+  private final String PERSPECTIVE_FOLDER_ID = "FOLDER_ID";
 
   private CEView perspective;
 
@@ -81,6 +84,7 @@ public class PerspectiveResourceTest extends CategoryTest {
                       .name(NAME)
                       .uuid(PERSPECTIVE_ID)
                       .viewVersion(perspectiveVersion)
+                      .folderId(PERSPECTIVE_FOLDER_ID)
                       .build();
     when(ceViewService.get(PERSPECTIVE_ID)).thenReturn(perspective);
     when(ceViewService.save(perspective, false)).thenReturn(perspective);
@@ -91,7 +95,7 @@ public class PerspectiveResourceTest extends CategoryTest {
 
     perspectiveResource = new PerspectiveResource(ceViewService, ceReportScheduleService, viewCustomFieldService,
         bigQueryService, bigQueryHelper, budgetCostService, budgetService, notificationService, awsAccountFieldHelper,
-        telemetryReporter, transactionTemplate, outboxService, rbacHelper);
+        telemetryReporter, transactionTemplate, outboxService, rbacHelper, ceViewFolderService);
   }
 
   @Test

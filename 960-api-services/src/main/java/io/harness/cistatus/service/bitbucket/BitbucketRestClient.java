@@ -7,11 +7,14 @@
 
 package io.harness.cistatus.service.bitbucket;
 
+import io.harness.cistatus.BitbucketOnPremMergeResponse;
+import io.harness.cistatus.BitbucketSaaSMergeResponse;
 import io.harness.cistatus.StatusCreationResponse;
 
 import java.util.Map;
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.HTTP;
 import retrofit2.http.Header;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
@@ -25,4 +28,20 @@ public interface BitbucketRestClient {
   @POST("rest/build-status/1.0/commits/{commitId}/")
   Call<StatusCreationResponse> createOnPremStatus(@Header("Authorization") String authorization,
       @Path("commitId") String sha, @Body Map<String, Object> parameters);
+
+  @POST("2.0/repositories/{workspace}/{repo_slug}/pullrequests/{pull_request_id}/merge")
+  Call<BitbucketSaaSMergeResponse> mergeSaaSPR(@Header("Authorization") String authorization,
+      @Path("workspace") String workspace, @Path("repo_slug") String repo,
+      @Path("pull_request_id") String pullRequestId, @Body Map<String, Object> parameters);
+
+  @POST("rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/pull-requests/{pullRequestId}/merge?version=0")
+  Call<BitbucketOnPremMergeResponse> mergeOnPremPR(@Header("Authorization") String authorization,
+      @Path("projectKey") String projectKey, @Path("repositorySlug") String repo,
+      @Path("pullRequestId") String pullRequestId, @Body Map<String, Object> parameters);
+
+  @HTTP(method = "DELETE", path = "rest/branch-utils/1.0/projects/{projectKey}/repos/{repositorySlug}/branches",
+      hasBody = true)
+  Call<Object>
+  deleteOnPremRef(@Header("Authorization") String authorization, @Path("projectKey") String projectKey,
+      @Path("repositorySlug") String repo, @Body Map<String, Object> parameters);
 }

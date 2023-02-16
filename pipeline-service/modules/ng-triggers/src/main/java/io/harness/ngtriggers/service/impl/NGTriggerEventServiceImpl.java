@@ -20,6 +20,7 @@ import io.harness.repositories.spring.TriggerEventHistoryRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import java.util.regex.PatternSyntaxException;
 import lombok.AllArgsConstructor;
@@ -87,5 +88,25 @@ public class NGTriggerEventServiceImpl implements NGTriggerEventsService {
                             .and(TriggerEventHistoryKeys.targetIdentifier)
                             .is(pipelineIdentifier);
     triggerEventHistoryRepository.deleteBatch(criteria);
+  }
+
+  public void deleteTriggerEventHistory(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String triggerIdentifier) {
+    Criteria criteria = Criteria.where(TriggerEventHistoryKeys.accountId)
+                            .is(accountId)
+                            .and(TriggerEventHistoryKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(TriggerEventHistoryKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(TriggerEventHistoryKeys.targetIdentifier)
+                            .is(pipelineIdentifier)
+                            .and(TriggerEventHistoryKeys.triggerIdentifier)
+                            .is(triggerIdentifier);
+    DeleteResult deleteResult = triggerEventHistoryRepository.deleteTriggerEventHistoryForTriggerIdentifier(criteria);
+    if (!deleteResult.wasAcknowledged()) {
+      log.error(String.format("Unable to delete event history for trigger [%s]", triggerIdentifier));
+      return;
+    }
+    log.info("NGTrigger {} event history delete successful", triggerIdentifier);
   }
 }

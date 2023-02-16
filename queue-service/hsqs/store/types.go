@@ -39,7 +39,7 @@ type EnqueueResponse struct {
 
 // EnqueueErrorResponse Error Message object for Enqueuing messages
 type EnqueueErrorResponse struct {
-	ErrorMessage string
+	ErrorMessage string `json:"errorMessage"`
 }
 
 func (e *EnqueueErrorResponse) Error() string {
@@ -72,7 +72,7 @@ type DequeueItemMetadata struct {
 
 // DequeueErrorResponse Error Response object for Dequeue Request response
 type DequeueErrorResponse struct {
-	ErrorMessage string
+	ErrorMessage string `json:"errorMessage"`
 }
 
 func (e *DequeueErrorResponse) Error() string {
@@ -95,7 +95,7 @@ type AckResponse struct {
 
 // AckErrorResponse Error Response object for Acknowledging a message
 type AckErrorResponse struct {
-	ErrorMessage string
+	ErrorMessage string `json:"errorMessage"`
 }
 
 func (e *AckErrorResponse) Error() string {
@@ -135,10 +135,69 @@ type UnAckResponse struct {
 
 // UnAckErrorResponse Response object for UnAck a message
 type UnAckErrorResponse struct {
-	ErrorMessage string
+	ErrorMessage string `json:"errorMessage"`
 }
 
 func (e *UnAckErrorResponse) Error() string {
 	return fmt.Sprintf("UnAckErrorResponse: message - %s",
 		e.ErrorMessage)
+}
+
+// ValidateDequeueRequest helper method to Validate Dequeue Request
+func ValidateDequeueRequest(request *DequeueRequest) error {
+	if len(request.Topic) == 0 {
+		return fmt.Errorf("DequeueRequest Topic is Missing")
+	}
+	if len(request.ConsumerName) == 0 {
+		return fmt.Errorf("DequeueRequest ConsumerName is Missing")
+	}
+	if request.BatchSize <= 0 {
+		return fmt.Errorf("DequeueRequest BatchSize should be greater than 0")
+	}
+	if request.MaxWaitDuration <= 0 {
+		return fmt.Errorf("DequeueRequest MaxWaitDuration should be greater than 0")
+	}
+	return nil
+}
+
+// ValidateEnqueueRequest helper method to Validate Enqueue Request
+func ValidateEnqueueRequest(request *EnqueueRequest) error {
+	if len(request.Topic) == 0 {
+		return fmt.Errorf("EnqueueRequest Topic is missing")
+	}
+
+	if len(request.SubTopic) == 0 {
+		return fmt.Errorf("EnqueueRequest SubTopic is missing")
+	}
+
+	if len(request.ProducerName) == 0 {
+		return fmt.Errorf("EnqueueRequest ProducerName is missing")
+	}
+
+	if len(request.Payload) == 0 {
+		return fmt.Errorf("EnqueueRequest Payload is missing")
+	}
+	return nil
+
+}
+
+// ValidateAckRequest helper method to Validate Enqueue Request
+func ValidateAckRequest(request *AckRequest) error {
+	if len(request.Topic) == 0 {
+		return fmt.Errorf("AckRequest Topic is missing")
+	}
+
+	if len(request.SubTopic) == 0 {
+		return fmt.Errorf("AckRequest SubTopic is missing")
+	}
+
+	if len(request.ConsumerName) == 0 {
+		return fmt.Errorf("AckRequest ConsumerName is missing")
+	}
+
+	if len(request.ItemID) == 0 {
+		return fmt.Errorf("AckRequest ItemID is missing")
+	}
+	return nil
+
 }

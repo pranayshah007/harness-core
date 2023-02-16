@@ -68,11 +68,10 @@ public abstract class DelegateHeartbeatService<T extends Object> {
     if (isNotEmpty(existingDelegate.getDelegateConnectionId())) {
       UUID currentUUID = convertFromBase64(params.getDelegateConnectionId());
       UUID existingUUID = convertFromBase64(existingDelegate.getDelegateConnectionId());
-      if (existingUUID.timestamp() > currentUUID.timestamp()) {
+      if (existingUUID.timestamp() < currentUUID.timestamp()) {
         if (DelegateType.SHELL_SCRIPT.equals(existingDelegate.getDelegateType())) {
           shellScriptDelegateLocationCheck(existingDelegate, params);
         }
-      } else {
         delegateMetricsService.recordDelegateMetrics(existingDelegate, DELEGATE_RESTARTED);
         log.debug("Delegate restarted");
       }

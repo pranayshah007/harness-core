@@ -89,7 +89,10 @@ func startServer(c *config.Config) {
 
 	// enabling AppDynamics For Service
 
+	log.Info("Initializing redis service with values ", c.Redis.Endpoint, " ", len(c.Redis.Password), " ", c.Redis.SSLEnabled, " ", c.Redis.CertPath, " ", c.ClaimTimeout, c.PendingTimeout)
 	store := redis.NewRedisStoreWithTLS(c.Redis.Endpoint, c.Redis.Password, c.Redis.SSLEnabled, c.Redis.CertPath, c.PendingTimeout, c.ClaimTimeout)
+
+	log.Info("redis initialized with store ", store)
 	customMetrics := metrics.InitMetrics()
 	h := handler.NewHandler(store, customMetrics)
 

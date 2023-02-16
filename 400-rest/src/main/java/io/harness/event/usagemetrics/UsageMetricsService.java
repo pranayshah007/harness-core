@@ -43,9 +43,9 @@ import software.wings.service.intfc.verification.CVConfigurationService;
 import software.wings.sm.StateType;
 import software.wings.verification.CVConfiguration;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.hazelcast.internal.util.Preconditions;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

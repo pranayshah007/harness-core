@@ -144,9 +144,9 @@ public class TerraformCloudClientImpl implements TerraformCloudClient {
 
   @Override
   public TerraformCloudResponse<List<StateVersionOutputData>> getStateVersionOutputs(
-      String url, String token, String stateVersionId) throws IOException {
+      String url, String token, String stateVersionId, int page) throws IOException {
     Call<TerraformCloudResponse<List<StateVersionOutputData>>> call =
-        getRestClient(url).getStateVersionOutputs(getAuthorization(token), stateVersionId);
+        getRestClient(url).getStateVersionOutputs(getAuthorization(token), stateVersionId, page);
     return executeRestCall(call);
   }
 

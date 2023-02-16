@@ -11,8 +11,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -60,8 +60,8 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.CDC)
 public class ApprovalStepMapperImpl extends StepMapper {
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 
   @Override
@@ -254,7 +254,7 @@ public class ApprovalStepMapperImpl extends StepMapper {
                         .build())
             .scriptTimeout(ParameterField.createValueField(Timeout.builder().timeoutString("10m").build()))
             .retryInterval(ParameterField.createValueField(
-                Timeout.builder().timeoutInMillis(approvalParams.getRetryInterval()).build()))
+                Timeout.builder().timeoutString((approvalParams.getRetryInterval() / 1000) + "s").build()))
             .outputVariables(Collections.emptyList())
             .environmentVariables(Collections.emptyList())
             .shell(ShellType.Bash)

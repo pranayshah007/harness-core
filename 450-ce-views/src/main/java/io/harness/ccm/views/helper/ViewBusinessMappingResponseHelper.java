@@ -163,13 +163,13 @@ public class ViewBusinessMappingResponseHelper {
       double entityCost, double totalCost, double totalEntities) {
     double sharedCost = 0.0;
     for (SharedCost sharedCostBucket : sharedCostBuckets) {
-      SharingStrategy sharingStrategy = totalCost != 0 ? sharedCostBucket.getStrategy() : SharingStrategy.FIXED;
+      SharingStrategy sharingStrategy = totalCost != 0 ? sharedCostBucket.getStrategy() : SharingStrategy.EQUAL;
       switch (sharingStrategy) {
         case PROPORTIONAL:
           sharedCost += sharedCosts.get(viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName()))
               * (entityCost / totalCost);
           break;
-        case FIXED:
+        case EQUAL:
         default:
           sharedCost += sharedCosts.get(viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName()))
               * (1.0 / totalEntities);
@@ -245,12 +245,12 @@ public class ViewBusinessMappingResponseHelper {
     for (SharedCost sharedCostBucket : sharedCostBusinessMapping.getSharedCosts()) {
       double sharedCostForGivenTimestamp =
           sharedCosts.get(viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName())).get(timestamp);
-      SharingStrategy sharingStrategy = totalCost != 0 ? sharedCostBucket.getStrategy() : SharingStrategy.FIXED;
+      SharingStrategy sharingStrategy = totalCost != 0 ? sharedCostBucket.getStrategy() : SharingStrategy.EQUAL;
       switch (sharingStrategy) {
         case PROPORTIONAL:
           sharedCost += sharedCostForGivenTimestamp * (entityCost / totalCost);
           break;
-        case FIXED:
+        case EQUAL:
         default:
           sharedCost += sharedCostForGivenTimestamp * (1.0 / numberOfEntities);
           break;

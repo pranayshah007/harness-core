@@ -297,9 +297,8 @@ public class NGFreezeDtoMapper {
     if (windows != null) {
       windows.stream().forEach(freezeWindow -> {
         try {
-          if (freezeConfig.getFreezeInfoConfig().getStatus() == FreezeStatus.ENABLED) {
-            FreezeTimeUtils.validateTimeRange(freezeWindow);
-          }
+          FreezeStatus freezeStatus = freezeConfig.getFreezeInfoConfig().getStatus();
+          FreezeTimeUtils.validateTimeRange(freezeWindow, freezeStatus);
         } catch (ParseException e) {
           throw new InvalidRequestException("Invalid time format provided.", e);
         } catch (DateTimeParseException e) {

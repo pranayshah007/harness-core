@@ -23,7 +23,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
-import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
 import io.harness.cdng.provision.terraformcloud.output.TerraformCloudPlanOutput;
 import io.harness.cdng.provision.terraformcloud.params.TerraformCloudApplySpecParameters;
 import io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanAndApplySpecParameters;
@@ -39,7 +38,6 @@ import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformClou
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -57,7 +55,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
-import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 
@@ -191,25 +188,6 @@ public class TerraformCloudStepHelper {
             .build();
 
     terraformPlanExectionDetailsService.save(terraformPlanExecutionDetails);
-  }
-
-  @Nullable
-  public String saveTerraformPlanJsonOutput(
-      Ambiance ambiance, TerraformCloudRunTaskResponse response, String provisionIdentifier) {
-    if (isEmpty(response.getTfPlanJsonFileId())) {
-      return null;
-    }
-
-    TerraformPlanJsonOutput planJsonOutput = TerraformPlanJsonOutput.builder()
-                                                 .provisionerIdentifier(provisionIdentifier)
-                                                 .tfPlanFileId(response.getTfPlanJsonFileId())
-                                                 .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
-                                                 .build();
-
-    String outputName = TerraformPlanJsonOutput.getOutputName(provisionIdentifier);
-    executionSweepingOutputService.consume(ambiance, outputName, planJsonOutput, StepCategory.STEP.name());
-
-    return outputName;
   }
 
   private TerraformCloudPlanOutput getSavedTerraformCloudOutput(

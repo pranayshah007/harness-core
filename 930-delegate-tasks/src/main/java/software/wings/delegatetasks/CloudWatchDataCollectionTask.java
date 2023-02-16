@@ -10,9 +10,9 @@ package software.wings.delegatetasks;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.threading.Morpheus.sleep;
 
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 import static software.wings.delegatetasks.cv.CVConstants.DATA_COLLECTION_RETRY_SLEEP;
 import static software.wings.delegatetasks.cv.CVConstants.DURATION_TO_ASK_MINUTES;
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -25,6 +25,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.time.Timestamp;
 
 import software.wings.beans.TaskType;
+import software.wings.beans.dto.NewRelicMetricDataRecord;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.DataCollectionTaskResult;
@@ -35,7 +36,6 @@ import software.wings.service.impl.cloudwatch.AwsNameSpace;
 import software.wings.service.impl.cloudwatch.CloudWatchDataCollectionInfo;
 import software.wings.service.impl.cloudwatch.CloudWatchDelegateServiceImpl;
 import software.wings.service.impl.cloudwatch.CloudWatchMetric;
-import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.intfc.analysis.ClusterLevel;
 
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;

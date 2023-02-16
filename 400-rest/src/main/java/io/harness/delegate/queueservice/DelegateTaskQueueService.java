@@ -69,8 +69,10 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
    */
   @Override
   public void enqueue(DelegateTask delegateTask) {
-    try (AutoLogContext ignore = new TaskLogContext(delegateTask.getUuid(), delegateTask.getData().getTaskType(),
-             TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
+    String taskType = delegateTask.getData() != null ? delegateTask.getData().getTaskType()
+                                                     : delegateTask.getTaskDataV2().getTaskType();
+    try (AutoLogContext ignore = new TaskLogContext(
+             delegateTask.getUuid(), taskType, TaskType.valueOf(taskType).getTaskGroup().name(), OVERRIDE_ERROR)) {
       String topic = delegateQueueServiceConfig.getTopic();
       String task = referenceFalseKryoSerializer.asString(delegateTask);
       EnqueueRequest enqueueRequest = EnqueueRequest.builder()

@@ -36,6 +36,7 @@ public class ArtifactStreamFactory {
 
   private static final ArtifactStreamMapper acrMapper = new ACRArtifactStreamMapper();
   private static final ArtifactStreamMapper amiMapper = new AmiArtifactStreamMapper();
+  private static final ArtifactStreamMapper azureMapper = new AzureArtifactStreamMapper();
 
   private static final Map<ArtifactStreamType, ArtifactStreamMapper> ARTIFACT_STREAM_MAPPER_MAP =
       ImmutableMap.<ArtifactStreamType, ArtifactStreamMapper>builder()
@@ -46,10 +47,11 @@ public class ArtifactStreamFactory {
           .put(ArtifactStreamType.NEXUS, nexusMapper)
           .put(ArtifactStreamType.JENKINS, jenkinsMapper)
           .put(ArtifactStreamType.CUSTOM, customArtifactMapper)
-          .put(ArtifactStreamType.AZURE_ARTIFACTS, azureArtifactMapper)
+          //          .put(ArtifactStreamType.AZURE_ARTIFACTS, azureArtifactMapper)
           .put(ArtifactStreamType.AMAZON_S3, amazonS3Mapper)
           .put(ArtifactStreamType.ACR, acrMapper)
           .put(ArtifactStreamType.AMI, amiMapper)
+          .put(ArtifactStreamType.AZURE_ARTIFACTS, azureMapper)
           .build();
 
   public static ArtifactStreamMapper getArtifactStreamMapper(ArtifactStream artifactStream) {

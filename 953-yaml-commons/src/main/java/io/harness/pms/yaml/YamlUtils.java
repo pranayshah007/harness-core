@@ -618,7 +618,7 @@ public class YamlUtils {
     for (FQN fqn : fqnToValueMap.keySet()) {
       Object value = fqnToValueMap.get(fqn);
       if (value instanceof TextNode) {
-        String trimValue = value.toString().trim();
+        String trimValue = ((TextNode) value).textValue().trim();
         String valueWithoutValidators = trimValue;
         for (String validator : VALIDATORS) {
           if (trimValue.contains(validator)) {

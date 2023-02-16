@@ -47,6 +47,7 @@ import io.harness.tasks.ResponseData;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -145,11 +146,16 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
 
     PipelineStageSweepingOutput pipelineStageSweepingOutput = (PipelineStageSweepingOutput) sweepingOutput.getOutput();
 
-    NodeExecution nodeExecution =
-        nodeExecutionService
-            .getPipelineNodeExecutionWithProjections(
-                pipelineStageSweepingOutput.getChildExecutionId(), Collections.singleton(NodeExecutionKeys.ambiance))
-            .get();
+    NodeExecution nodeExecution;
+    Ambiance childNodeAmbiance = null;
+    Optional<NodeExecution> nodeExecutionOptional = nodeExecutionService.getPipelineNodeExecutionWithProjections(
+        pipelineStageSweepingOutput.getChildExecutionId(), Collections.singleton(NodeExecutionKeys.ambiance));
+
+    // NodeExecutionOptional can be empty when no node was executed in child execution
+    if (nodeExecutionOptional.isPresent()) {
+      nodeExecution = nodeExecutionOptional.get();
+      childNodeAmbiance = nodeExecution.getAmbiance();
+    }
 
     PipelineStageResponseData pipelineStageResponseData =
         (PipelineStageResponseData) responseDataMap.get(pipelineStageSweepingOutput.getChildExecutionId());
@@ -158,7 +164,7 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutputExpressionConstants.OUTPUT)
                          .outcome(pipelineStageHelper.resolveOutputVariables(
-                             stepParameters.getOutputs().getValue(), nodeExecution.getAmbiance()))
+                             stepParameters.getOutputs().getValue(), childNodeAmbiance))
                          .build())
         .build();
   }

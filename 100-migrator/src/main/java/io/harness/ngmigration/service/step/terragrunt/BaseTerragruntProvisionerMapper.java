@@ -43,7 +43,7 @@ import io.harness.cdng.provision.terragrunt.TerragruntVarFileWrapper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -75,11 +75,11 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
   private static final String SECRET_FORMAT = "<+secrets.getValue(\"%s\")>";
 
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.MANUAL_EFFORT;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.MANUAL_EFFORT;
   }
 
-  public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
+  public List<CgEntityId> getReferencedEntities(GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     TerragruntProvisionState state = (TerragruntProvisionState) getState(graphNode);
 
     List<CgEntityId> references = new ArrayList<>();
@@ -246,7 +246,7 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
         storeBuilder.branch(ParameterField.createValueField(state.getTfVarGitFileConfig().getBranch()));
       } else {
         storeBuilder.gitFetchType(FetchType.COMMIT);
-        storeBuilder.branch(ParameterField.createValueField(state.getTfVarGitFileConfig().getCommitId()));
+        storeBuilder.commitId(ParameterField.createValueField(state.getTfVarGitFileConfig().getCommitId()));
       }
       storeBuilder.paths(ParameterField.createValueField(
           Arrays.stream(state.getTfVarGitFileConfig().getFilePath().split(",")).collect(Collectors.toList())));
@@ -308,7 +308,7 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
       storeBuilder.branch(ParameterField.createValueField(provisioner.getSourceRepoBranch()));
     } else {
       storeBuilder.gitFetchType(FetchType.COMMIT);
-      storeBuilder.branch(ParameterField.createValueField(provisioner.getCommitId()));
+      storeBuilder.commitId(ParameterField.createValueField(provisioner.getCommitId()));
     }
     storeBuilder.folderPath(ParameterField.createValueField(provisioner.getPath()));
     return storeBuilder.build();

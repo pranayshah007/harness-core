@@ -669,6 +669,10 @@ if [[ "" != "$AWS_MARKETPLACE_PRODUCTCODE" ]]; then
   export AWS_MARKETPLACE_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceProductCode=env(AWS_MARKETPLACE_PRODUCTCODE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$AWS_MARKETPLACE_FF_PRODUCTCODE" ]]; then
+  export AWS_MARKETPLACE_FF_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceFfProductCode=env(AWS_MARKETPLACE_FF_PRODUCTCODE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$AWS_MARKETPLACE_CE_PRODUCTCODE" ]]; then
   export AWS_MARKETPLACE_CE_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceCeProductCode=env(AWS_MARKETPLACE_CE_PRODUCTCODE)' $CONFIG_FILE
 fi

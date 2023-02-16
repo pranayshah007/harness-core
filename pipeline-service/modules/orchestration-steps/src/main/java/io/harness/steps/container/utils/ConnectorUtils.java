@@ -7,6 +7,7 @@
 
 package io.harness.steps.container.utils;
 
+import static io.harness.delegate.beans.connector.azureconnector.AzureCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
@@ -20,8 +21,22 @@ import io.harness.connector.ConnectorResourceClient;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails.ConnectorDetailsBuilder;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
+import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
+import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
@@ -173,12 +188,59 @@ public class ConnectorUtils {
       case DOCKER:
         connectorDetails = getDockerConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
         break;
+      case GCP:
+        connectorDetails = getGcpConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
+        break;
+      case AWS:
+        connectorDetails = getAwsConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
+        break;
+      case AZURE:
+        connectorDetails = getAzureConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
+        break;
+      case ARTIFACTORY:
+        connectorDetails = getArtifactoryConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
+        break;
       default:
         throw new InvalidArgumentsException(format("Unexpected connector type:[%s]", connectorType));
     }
     log.info("Successfully fetched encryption details for  connector id:[{}] type:[{}] scope:[{}]",
         connectorRef.getIdentifier(), connectorType, connectorRef.getScope());
     return connectorDetails;
+  }
+
+  private ConnectorDetails getAzureConnectorDetails(
+      NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
+    List<EncryptedDataDetail> encryptedDataDetails;
+    AzureConnectorDTO azureConnectorDTO = (AzureConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig();
+    AzureCredentialDTO credentialDTO = azureConnectorDTO.getCredential();
+    if (credentialDTO.getAzureCredentialType() == MANUAL_CREDENTIALS) {
+      AzureManualDetailsDTO config = (AzureManualDetailsDTO) credentialDTO.getConfig();
+      encryptedDataDetails =
+          secretManagerClientService.getEncryptionDetails(ngAccess, config.getAuthDTO().getCredentials());
+      return connectorDetailsBuilder.executeOnDelegate(azureConnectorDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
+    } else {
+      return connectorDetailsBuilder.executeOnDelegate(azureConnectorDTO.getExecuteOnDelegate()).build();
+    }
+  }
+
+  private ConnectorDetails getGcpConnectorDetails(
+      NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
+    List<EncryptedDataDetail> encryptedDataDetails;
+    GcpConnectorDTO gcpConnectorDTO = (GcpConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig();
+    GcpConnectorCredentialDTO credential = gcpConnectorDTO.getCredential();
+    if (credential.getGcpCredentialType() == GcpCredentialType.MANUAL_CREDENTIALS) {
+      GcpManualDetailsDTO credentialConfig = (GcpManualDetailsDTO) credential.getConfig();
+      encryptedDataDetails = secretManagerClientService.getEncryptionDetails(ngAccess, credentialConfig);
+      return connectorDetailsBuilder.executeOnDelegate(gcpConnectorDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
+    } else if (credential.getGcpCredentialType() == GcpCredentialType.INHERIT_FROM_DELEGATE) {
+      return connectorDetailsBuilder.executeOnDelegate(gcpConnectorDTO.getExecuteOnDelegate()).build();
+    }
+    throw new InvalidArgumentsException(format("Unsupported gcp credential type:[%s] on connector:[%s]",
+        gcpConnectorDTO.getCredential().getGcpCredentialType(), gcpConnectorDTO));
   }
 
   private ConnectorDetails getDockerConnectorDetails(
@@ -228,10 +290,49 @@ public class ConnectorUtils {
     }
     return connectorDetails;
   }
+
   public ConnectorDetails getConnectorDetailsWithConversionInfo(
       NGAccess ngAccess, ConnectorConversionInfo connectorConversionInfo) {
     ConnectorDetails connectorDetails = getConnectorDetails(ngAccess, connectorConversionInfo.getConnectorRef());
     connectorDetails.setEnvToSecretsMap(connectorConversionInfo.getEnvToSecretsMap());
     return connectorDetails;
+  }
+
+  private ConnectorDetails getArtifactoryConnectorDetails(
+      NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
+    List<EncryptedDataDetail> encryptedDataDetails;
+
+    ArtifactoryConnectorDTO artifactoryConnectorDTO =
+        (ArtifactoryConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig();
+    if (artifactoryConnectorDTO.getAuth().getAuthType() == ArtifactoryAuthType.USER_PASSWORD) {
+      ArtifactoryUsernamePasswordAuthDTO auth =
+          (ArtifactoryUsernamePasswordAuthDTO) artifactoryConnectorDTO.getAuth().getCredentials();
+      encryptedDataDetails = secretManagerClientService.getEncryptionDetails(ngAccess, auth);
+      return connectorDetailsBuilder.executeOnDelegate(artifactoryConnectorDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
+    }
+    throw new InvalidArgumentsException(format("Unsupported artifactory auth type:[%s] on connector:[%s]",
+        artifactoryConnectorDTO.getAuth().getAuthType(), artifactoryConnectorDTO));
+  }
+
+  private ConnectorDetails getAwsConnectorDetails(
+      NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
+    List<EncryptedDataDetail> encryptedDataDetails;
+    AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig();
+    AwsCredentialDTO awsCredentialDTO = awsConnectorDTO.getCredential();
+    if (awsCredentialDTO.getAwsCredentialType() == AwsCredentialType.MANUAL_CREDENTIALS) {
+      AwsManualConfigSpecDTO awsManualConfigSpecDTO = (AwsManualConfigSpecDTO) awsCredentialDTO.getConfig();
+      encryptedDataDetails = secretManagerClientService.getEncryptionDetails(ngAccess, awsManualConfigSpecDTO);
+      return connectorDetailsBuilder.executeOnDelegate(awsConnectorDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
+    } else if (awsCredentialDTO.getAwsCredentialType() == AwsCredentialType.INHERIT_FROM_DELEGATE) {
+      return connectorDetailsBuilder.executeOnDelegate(awsConnectorDTO.getExecuteOnDelegate()).build();
+    } else if (awsCredentialDTO.getAwsCredentialType() == AwsCredentialType.IRSA) {
+      return connectorDetailsBuilder.executeOnDelegate(awsConnectorDTO.getExecuteOnDelegate()).build();
+    }
+    throw new InvalidArgumentsException(format("Unsupported aws credential type:[%s] on connector:[%s]",
+        awsCredentialDTO.getAwsCredentialType(), awsConnectorDTO));
   }
 }

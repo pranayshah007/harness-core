@@ -70,7 +70,7 @@ public class VaultConnectorDTOTest extends CategoryTest {
     }
   }
 
-  @Test(expected = InvalidRequestException.class)
+  @Test
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
   public void testValidateVaultConectorAwsIamMissingVaultXVaultAwsIamServerId() {
@@ -80,6 +80,7 @@ public class VaultConnectorDTOTest extends CategoryTest {
     vaultConnectorDTO.setAwsRegion(randomAlphabetic(10));
     // Did not set XVaultAwsIamServerId header
     vaultConnectorDTO.validate();
+    // no exception should be thrown. Which means this field is optional
   }
 
   @Test(expected = InvalidRequestException.class)

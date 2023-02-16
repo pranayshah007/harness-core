@@ -235,7 +235,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
             .collect(Collectors.toSet());
 
     List<ManifestConfigWrapper> manifests =
-        manifestMigrationService.getManifests(manifestIds, inputDTO, entities, migratedEntities);
+        manifestMigrationService.getManifests(manifestIds, inputDTO, entities, migratedEntities, null);
 
     List<ConfigFileWrapper> configFiles =
         configFileMigrationService.getConfigFiles(configFileIds, inputDTO, entities, migratedEntities);
@@ -288,7 +288,8 @@ public class EnvironmentMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected YamlDTO getNGEntity(CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     try {
       EnvironmentResponse response =
           NGRestUtils.getResponse(environmentResourceClient.getEnvironment(ngEntityDetail.getIdentifier(),
