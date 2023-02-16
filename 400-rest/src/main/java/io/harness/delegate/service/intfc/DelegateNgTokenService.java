@@ -58,6 +58,4 @@ public interface DelegateNgTokenService extends OwnedByAccount {
   Map<String, Boolean> isDelegateTokenActive(String accountId, List<String> tokensNameList);
 
   String decrypt(DelegateToken delegateToken);
-
-  void upsertEncryptedTokenRecord(DelegateToken delegateToken);
 }

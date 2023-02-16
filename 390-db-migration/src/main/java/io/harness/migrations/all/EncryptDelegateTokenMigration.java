@@ -35,7 +35,8 @@ public class EncryptDelegateTokenMigration implements Migration {
         persistence.createQuery(DelegateToken.class, excludeAuthority).field(DelegateTokenKeys.value).exists();
     try (HIterator<DelegateToken> records = new HIterator<>(query.fetch())) {
       for (DelegateToken delegateToken : records) {
-        delegateTokenService.upsertEncryptedTokenRecord(delegateToken);
+        delegateToken.setTokenValue(delegateToken.getValue().toCharArray());
+        persistence.save(delegateToken);
       }
     } catch (Exception e) {
       log.error("Exception while migration delegate token with encrypted value", e);

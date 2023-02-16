@@ -323,21 +323,22 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     return delegateTokenStatusMap;
   }
 
+  @SuppressWarnings("checkstyle:UseIsEmpty")
   @Override
   public String decrypt(DelegateToken delegateToken) {
     if (!featureFlagService.isEnabled(FeatureName.DELEGATE_TOKEN_ENCRYPTION, delegateToken.getAccountId())) {
       return getTokenValue(delegateToken);
     }
+    //@TODO: remove this check after migration, should not come here only in case we missed on migration or local env
+    if (delegateToken.getTokenValue() == null || delegateToken.getTokenValue().length == 0) {
+      delegateToken.setTokenValue(delegateToken.getValue().toCharArray());
+      persistence.save(delegateToken);
+    }
+
     managerDecryptionService.decrypt(delegateToken, secretManager.getEncryptionDetails(delegateToken));
+    log.info("Encrypted token value {}", delegateToken.getEncryptedTokenValue());
     return delegateToken.isNg() ? decodeBase64ToString(delegateToken.getEncryptedTokenValue())
                                 : delegateToken.getEncryptedTokenValue();
-  }
-
-  @Override
-  // For migration purpose, to insert encrypted delegate token record
-  public void upsertEncryptedTokenRecord(DelegateToken delegateToken) {
-    delegateToken.setTokenValue(delegateToken.getValue().toCharArray());
-    persistence.save(delegateToken);
   }
 
   private String getTokenValue(DelegateToken delegateToken) {
