@@ -86,6 +86,7 @@ public class ApiResponseFilter implements ContainerResponseFilter {
         break;
       case 404:
         errorResponse.setMessage("Not Found.");
+        errorResponse.setCode(ErrorResponse.CodeEnum.RESOURCE_NOT_FOUND);
         break;
       case 412:
         errorResponse.setMessage("Precondition Failed.");
