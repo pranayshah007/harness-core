@@ -49,30 +49,37 @@ public class CreateDefaultGcpKmsSMInNGMigration implements NGMigration {
   @Override
   public void migrate() {
     Optional<ConnectorResponseDTO> connectorResponseDTO;
+    ConnectorDTO globalConnectorDTO;
     try {
       connectorResponseDTO = connectorService.get(GLOBAL_ACCOUNT_ID, null, null, HARNESS_SECRET_MANAGER_IDENTIFIER);
       // No migration for clusters where Global GCP KMS already exists
       if (connectorResponseDTO.isPresent()
           && connectorResponseDTO.get().getConnector().getConnectorType() == ConnectorType.GCP_KMS) {
-        return;
+        globalConnectorDTO = ConnectorDTO.builder().connectorInfo(connectorResponseDTO.get().getConnector()).build();
+        createGcpKmsCopiesInAllScopes(globalConnectorDTO);
+      } else {
+        removeGlobalLocalConnector();
+        globalConnectorDTO = createGlobalGcpKMS();
+        createGcpKmsCopiesInAllScopes(globalConnectorDTO);
       }
     } catch (Exception e) {
       log.error(
           "[CreateDefaultGcpKMSInNGMigration]: Error while fetching Global SM for accountId {}", GLOBAL_ACCOUNT_ID);
       return;
     }
+  }
 
-    log.info("[CreateDefaultGcpKMSInNGMigration]: Removing GLOBAL Local Connector");
-    Query query = new Query(Criteria.where(Connector.ConnectorKeys.identifier)
-                                .is(HARNESS_SECRET_MANAGER_IDENTIFIER)
-                                .and(Connector.ConnectorKeys.accountIdentifier)
-                                .is(GLOBAL_ACCOUNT_ID)
-                                .and(Connector.ConnectorKeys.type)
-                                .is(ConnectorType.LOCAL));
-    final DeleteResult remove = mongoTemplate.remove(query, Connector.class);
+  private void createGcpKmsCopiesInAllScopes(ConnectorDTO globalConnectorDTO) {
+    // Add logic to check if there are no LOCAL connector except one then migration is not needed.
 
-    log.info("[CreateDefaultGcpKMSInNGMigration]: Removed GLOBAL Local Connector");
+    if (globalConnectorDTO != null) {
+      List<String> allAccounts = ngSecretManagerMigration.fetchAllAccounts();
+      ngSecretManagerMigration.populateHarnessManagedDefaultKms(allAccounts, globalConnectorDTO);
+      log.info("[CreateDefaultGcpKMSInNGMigration] HarnessManaged KMS Created/Updated");
+    }
+  }
 
+  private ConnectorDTO createGlobalGcpKMS() {
     ConnectorDTO globalConnectorDTO;
     try {
       log.info("[CreateDefaultGcpKMSInNGMigration]: Creating global SM.");
@@ -83,11 +90,23 @@ public class CreateDefaultGcpKmsSMInNGMigration implements NGMigration {
       // save local connector back in mongo
       throw e;
     }
+    return globalConnectorDTO;
+  }
 
-    if (globalConnectorDTO != null) {
-      List<String> allAccounts = ngSecretManagerMigration.fetchAllAccounts();
-      ngSecretManagerMigration.populateHarnessManagedDefaultKms(allAccounts, globalConnectorDTO);
-      log.info("[CreateDefaultGcpKMSInNGMigration] HarnessManaged KMS Created/Updated");
+  private void removeGlobalLocalConnector() throws Exception {
+    log.info("[CreateDefaultGcpKMSInNGMigration]: Removing GLOBAL Local Connector");
+    Query query = new Query(Criteria.where(Connector.ConnectorKeys.identifier)
+                                .is(HARNESS_SECRET_MANAGER_IDENTIFIER)
+                                .and(Connector.ConnectorKeys.accountIdentifier)
+                                .is(GLOBAL_ACCOUNT_ID)
+                                .and(Connector.ConnectorKeys.type)
+                                .is(ConnectorType.LOCAL));
+    final DeleteResult remove = mongoTemplate.remove(query, Connector.class);
+    if (remove.getDeletedCount() == 1) {
+      log.info("[CreateDefaultGcpKMSInNGMigration]: Removed GLOBAL Local Connector");
+    } else {
+      log.error("[CreateDefaultGcpKMSInNGMigration]: Unable to remove GLOBAL Local Connector");
+      throw new Exception("Unable to remove GLOBAL Local Connector");
     }
   }
 }
