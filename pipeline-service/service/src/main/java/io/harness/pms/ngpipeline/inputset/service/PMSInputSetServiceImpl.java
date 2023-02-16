@@ -674,25 +674,31 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
           inputSetEntity.getPipelineIdentifier());
       String inputSetRepo;
 
-      if (ChangeType.ADD.equals(changeType)) {
-        GitAwareContextHelper.initDefaultScmGitMetaData();
-        GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-        inputSetRepo = gitEntityInfo.getRepoName();
-      } else if (ChangeType.MODIFY.equals(changeType)) {
-        Optional<InputSetEntity> inputSetMetadata = getWithoutValidations(inputSetEntity.getAccountId(),
-            inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier(),
-            inputSetEntity.getPipelineIdentifier(), inputSetEntity.getIdentifier(), false, true, false);
-
-        if (inputSetMetadata.isEmpty()) {
-          throw new InvalidRequestException(
-              format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] doesn't exist.",
-                  inputSetEntity.getIdentifier(), inputSetEntity.getPipelineIdentifier(),
-                  inputSetEntity.getProjectIdentifier(), inputSetEntity.getOrgIdentifier()));
+      switch (changeType) {
+        case ADD: {
+          GitAwareContextHelper.initDefaultScmGitMetaData();
+          GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+          inputSetRepo = gitEntityInfo.getRepoName();
+          break;
         }
-        inputSetRepo = inputSetMetadata.get().getRepo();
-      } else {
-        throw new InvalidRequestException("Invalid change type provided");
+        case MODIFY: {
+          Optional<InputSetEntity> inputSetMetadata = getWithoutValidations(inputSetEntity.getAccountId(),
+              inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier(),
+              inputSetEntity.getPipelineIdentifier(), inputSetEntity.getIdentifier(), false, true, false);
+
+          if (inputSetMetadata.isEmpty()) {
+            throw new InvalidRequestException(
+                format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] doesn't exist.",
+                    inputSetEntity.getIdentifier(), inputSetEntity.getPipelineIdentifier(),
+                    inputSetEntity.getProjectIdentifier(), inputSetEntity.getOrgIdentifier()));
+          }
+          inputSetRepo = inputSetMetadata.get().getRepo();
+          break;
+        }
+        default:
+          throw new InvalidRequestException("Invalid change type provided");
       }
+
       validatePipelineAndInputSetRepos(pipelineEntity.getRepo(), inputSetRepo);
     }
   }
