@@ -14,7 +14,6 @@ import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -110,7 +109,7 @@ public class InputSetsApiImpl implements InputSetsApi {
           .build();
     }
     if (!optionalInputSetEntity.isPresent()) {
-      throw new EntityNotFoundException(
+      throw new InvalidRequestException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSet));
     }
     InputSetResponseBody inputSetResponse = inputSetsApiUtils.getInputSetResponse(optionalInputSetEntity.get());

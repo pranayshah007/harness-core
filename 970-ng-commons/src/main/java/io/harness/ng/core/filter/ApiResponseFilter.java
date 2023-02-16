@@ -61,6 +61,7 @@ public class ApiResponseFilter implements ContainerResponseFilter {
         } else if (isaResourceNotFound(responseContext)) {
           ErrorDTOBase errorDTOBase = (ErrorDTOBase) responseContext.getEntity();
           errorResponse.setMessage(String.format("Not Found. %s", errorDTOBase.getMessage()));
+          errorResponse.setCode(ErrorResponse.CodeEnum.RESOURCE_NOT_FOUND);
           responseContext.setStatus(404);
         } else if (isaDuplicateField(responseContext)) {
           ErrorDTOBase errorDTOBase = (ErrorDTOBase) responseContext.getEntity();
