@@ -38,7 +38,6 @@ import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.plan.execution.StagesExecutionHelper;
 import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.yaml.PipelineVersion;
-import io.harness.utils.PipelineExceptionsHelper;
 import io.harness.utils.PipelineGitXHelper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -229,7 +228,7 @@ public class ValidateAndMergeHelper {
     if (inputSetReferences != null) {
       inputSetReferences.forEach(identifier -> {
         Optional<InputSetEntity> entity = pmsInputSetService.getWithoutValidations(
-            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false, false);
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false, false, false);
         if (entity.isEmpty()) {
           return;
         }
@@ -242,7 +241,7 @@ public class ValidateAndMergeHelper {
           List<String> overlayReferences = inputSet.getInputSetReferences();
           overlayReferences.forEach(id -> {
             Optional<InputSetEntity> entity2 = pmsInputSetService.getWithoutValidations(
-                accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, id, false, false);
+                accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, id, false, false, false);
             entity2.ifPresent(inputSetEntity -> {
               checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(pipelineEntity, entity2.get());
               inputSetYamlList.add(inputSetEntity.getYaml());

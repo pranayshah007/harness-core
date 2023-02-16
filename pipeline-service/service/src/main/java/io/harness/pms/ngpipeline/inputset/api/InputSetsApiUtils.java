@@ -216,6 +216,7 @@ public class InputSetsApiUtils {
     if (!isIndependentInputSetEnabledInSettings(accountIdentifier)) {
       PipelineEntity pipelineEntity = InputSetValidationHelper.getPipelineMetadata(
           pipelineService, accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier);
+
       String pipelineRepoName = pipelineEntity.getRepo();
       if (pipelineRepoName.equals(inputSetRepoName)) {
         log.info("Input-Set is created in the same repo as the pipeline.");

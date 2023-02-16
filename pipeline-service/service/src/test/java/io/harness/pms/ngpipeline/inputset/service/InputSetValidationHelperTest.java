@@ -207,7 +207,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
   public void testGetYAMLDiffForNonExistentInputSet() {
     doReturn(Optional.empty())
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false, false);
     assertThatThrownBy(()
                            -> InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService, null, null,
                                accountId, orgId, projectId, pipelineId, "inputSetId", null, null))
@@ -229,7 +229,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
         InputSetEntity.builder().inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET).build();
     doReturn(Optional.of(overlayEntity))
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false, false);
     when(OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
              gitSyncSdkService, inputSetService, overlayEntity, "pipeline: yaml"))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
@@ -258,7 +258,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
                                        .build();
     doReturn(Optional.of(overlayEntity))
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false, false);
     when(OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
              gitSyncSdkService, inputSetService, overlayEntity, "pipeline: yaml"))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());

@@ -179,7 +179,7 @@ public class InputSetValidationHelper {
       String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String inputSetIdentifier,
       String pipelineBranch, String pipelineRepoID) {
     Optional<InputSetEntity> optionalInputSetEntity = inputSetService.getWithoutValidations(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false);
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false, false);
     if (!optionalInputSetEntity.isPresent()) {
       throw new InvalidRequestException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));

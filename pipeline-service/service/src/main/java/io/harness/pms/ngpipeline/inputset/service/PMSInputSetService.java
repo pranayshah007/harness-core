@@ -34,7 +34,8 @@ public interface PMSInputSetService {
       boolean hasNewYamlStructure, boolean loadFromFallbackBranch);
 
   Optional<InputSetEntity> getWithoutValidations(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String identifier, boolean deleted, boolean loadFromFallbackBranch);
+      String pipelineIdentifier, String identifier, boolean deleted, boolean getMetadataOnly,
+      boolean loadFromFallbackBranch);
 
   // pipeline branch and repo ID are needed for old git sync
   InputSetEntity update(ChangeType changeType, InputSetEntity inputSetEntity, boolean hasNewYamlStructure);

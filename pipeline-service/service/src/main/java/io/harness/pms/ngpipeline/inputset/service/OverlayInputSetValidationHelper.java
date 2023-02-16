@@ -165,7 +165,7 @@ public class OverlayInputSetValidationHelper {
         throw new InvalidRequestException("Empty Input Set Identifier not allowed in Input Set References");
       }
       inputSets.add(inputSetService.getWithoutValidations(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false, false));
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false, false, false));
     });
     return inputSets;
   }
