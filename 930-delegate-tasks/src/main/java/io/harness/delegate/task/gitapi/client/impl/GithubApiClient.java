@@ -20,6 +20,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cistatus.service.GithubAppConfig;
 import io.harness.cistatus.service.GithubService;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessSpecDTO;
@@ -172,7 +173,7 @@ public class GithubApiClient implements GitApiClient {
     GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
     String gitApiURL = getGitApiURL(gitConfigDTO.getUrl());
     String repoOwner = gitConfigDTO.getGitRepositoryDetails().getOrg();
-    String repoName = gitConfigDTO.getGitRepositoryDetails().getName();
+    String repoName = gitConfigDTO.getGitRepositoryDetails().getName() != null ? gitConfigDTO.getGitRepositoryDetails().getName() : attributesRequest.getRepository();
     String webhookId = attributesRequest.getWebhookId();
     String token = retrieveAuthToken(gitConnector);
 

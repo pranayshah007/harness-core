@@ -213,7 +213,7 @@ public class GithubServiceImpl implements GithubService {
 
     } catch (Exception e) {
       log.error(
-          "Failed to fetch repo events for github url {}, webhookId {} and repo {} ", apiUrl, repoName, webhookId, e);
+          "Failed to fetch repo events for github url {}, webhookId {} and repo {} ", apiUrl, webhookId, repoName, e);
     }
     return Collections.emptyList();
   }

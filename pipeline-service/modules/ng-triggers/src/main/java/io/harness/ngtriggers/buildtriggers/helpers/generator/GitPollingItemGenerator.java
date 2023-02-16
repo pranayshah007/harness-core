@@ -44,6 +44,7 @@ public class GitPollingItemGenerator implements PollingItemGenerator {
 
     String webhookId =
         buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity().getTriggerStatus().getWebhookInfo().getWebhookId();
+    String repository = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName();
 
     int pollInterval = NGTimeConversionHelper.convertTimeStringToMinutesZeroAllowed(
         buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity().getPollInterval());
@@ -54,7 +55,7 @@ public class GitPollingItemGenerator implements PollingItemGenerator {
                 .setConnectorRef(connectorRef)
                 .setType(Type.GIT_POLL)
                 .setGitPollPayload(
-                    GitPollingPayload.newBuilder().setWebhookId(webhookId).setPollInterval(pollInterval).build())
+                    GitPollingPayload.newBuilder().setWebhookId(webhookId).setPollInterval(pollInterval).setRepository(repository).build())
                 .build())
         .build();
   }
