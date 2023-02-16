@@ -66,7 +66,7 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     return edition;
   }
 
-  // We can use 3 different FFs for each plan to figure out whether, or not to queue execution based on max limit.
+  // We can use FF to figure out whether, or not to queue execution based on max limit.
   // Currently, we are using config value
   @Override
   public PlanExecutionSettingResponse shouldQueuePlanExecution(String accountId, String pipelineIdentifier) {
@@ -135,8 +135,7 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     return Long.MAX_VALUE;
   }
 
-  // There's no setting added in account resources for max pipeline creation. And this is added as ignored setting in
-  // the pipeline settings and limits doc
+  // The max values for this can be fetched from enforcement client service rather than from config.yml
   @Override
   public int getMaxConcurrencyBasedOnEdition(String accountId, long childCount) {
     try {
