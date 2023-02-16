@@ -202,6 +202,12 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
         }
       }
 
+      if (TerragruntTaskRunType.RUN_ALL == planTaskParameters.getRunConfiguration().getRunType()
+          && planTaskParameters.isExportJsonPlan()) {
+        planLogCallback.saveExecutionLog(
+            "Terragrunt export json plan is not supported when Run Configuration is \"All Modules\"", LogLevel.WARN);
+      }
+
       planLogCallback.saveExecutionLog(
           color("\nTerragrunt plan successfully completed", LogColor.White, LogWeight.Bold), INFO,
           CommandExecutionStatus.SUCCESS);

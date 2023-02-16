@@ -232,6 +232,7 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
     String entityId = terragruntStepHelper.generateFullIdentifier(provisionerIdentifier, ambiance);
     builder.accountId(accountId)
         .entityId(entityId)
+        .tgModuleSourceInheritSSH(terragruntConfig.isUseConnectorCredentials())
         .stateFileId(terragruntStepHelper.getLatestFileId(entityId))
         .workspace(terragruntConfig.getWorkspace())
         .configFilesStore(terragruntStepHelper.getGitFetchFilesConfig(
@@ -259,6 +260,7 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
     String entityId = terragruntStepHelper.generateFullIdentifier(provisionerIdentifier, ambiance);
     builder.accountId(accountId)
         .entityId(entityId)
+        .tgModuleSourceInheritSSH(terragruntConfig.isUseConnectorCredentials())
         .stateFileId(terragruntStepHelper.getLatestFileId(entityId))
         .workspace(terragruntConfig.getWorkspace())
         .configFilesStore(terragruntStepHelper.getGitFetchFilesConfig(

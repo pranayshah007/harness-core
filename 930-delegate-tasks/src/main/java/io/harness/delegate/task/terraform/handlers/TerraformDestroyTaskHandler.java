@@ -82,7 +82,8 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
       }
 
       if (taskParameters.isTfModuleSourceInheritSSH()) {
-        terraformBaseHelper.configureCredentialsForModuleSource(taskParameters, conFileFileGitStore, logCallback);
+        terraformBaseHelper.configureCredentialsForModuleSource(
+            baseDir, taskParameters.getEnvironmentVariables(), conFileFileGitStore, logCallback);
       }
 
       GitBaseRequest gitBaseRequestForConfigFile = terraformBaseHelper.getGitBaseRequestForConfigFile(
