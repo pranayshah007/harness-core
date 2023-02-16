@@ -112,7 +112,7 @@ reportScheduleConfig:
   templateName: "ce_scheduled_report"
 
 scheduler-jobs-config:
-  budgetAlertsJobCron: "0 */10 * * * ?"
+  budgetAlertsJobCron: "0 30 14 * * ?"
   weeklyReportsJobCron: "0 0 14 * * MON"
   budgetCostUpdateJobCron: "0 0 14 * * ?"
   connectorHealthUpdateJobCron: "0 0 14 * * ?"
