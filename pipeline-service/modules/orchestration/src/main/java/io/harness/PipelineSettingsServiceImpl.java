@@ -72,7 +72,7 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
   public PlanExecutionSettingResponse shouldQueuePlanExecution(String accountId, String pipelineIdentifier) {
     try {
       Edition edition = getEdition(accountId);
-      // Sending only accountId here because this setting only exists as account level
+      // Sending only accountId here because this setting only exists at account level
       long maxConcurrentExecutions =
           Long.parseLong(NGRestUtils
                              .getResponse(ngSettingsClient.getSetting(
