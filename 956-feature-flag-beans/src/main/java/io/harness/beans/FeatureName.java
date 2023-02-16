@@ -266,7 +266,7 @@ public enum FeatureName {
   CV_FAIL_ON_EMPTY_NODES,
   HELM_VERSION_3_8_0,
   DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST("Enable dynamic handling of task request", HarnessTeam.DEL),
-  DELEGATE_TOKEN_ENCRYPTION("Store encrypted delegate token in DB", HarnessTeam.DEL),
+  READ_ENCRYPTED_DELEGATE_TOKEN("Read encrypted delegate token value", HarnessTeam.DEL),
   YAML_GIT_CONNECTOR_NAME,
   STOP_SHOWING_RUNNING_EXECUTIONS,
   SSH_NG,

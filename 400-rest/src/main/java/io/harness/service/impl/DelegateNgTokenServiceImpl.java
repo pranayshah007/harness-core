@@ -158,7 +158,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
       log.warn("Not able to find delegate token {} for account {} . Please verify manually.", name, accountId);
       throw new InvalidRequestException(format("Token not found .", name));
     }
-    return featureFlagService.isEnabled(FeatureName.DELEGATE_TOKEN_ENCRYPTION, accountId)
+    return featureFlagService.isEnabled(FeatureName.READ_ENCRYPTED_DELEGATE_TOKEN, accountId)
         ? decrypt(delegateToken)
         : getTokenValue(delegateToken);
   }
@@ -325,12 +325,8 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
   @Override
   public String decrypt(DelegateToken delegateToken) {
-    if (!featureFlagService.isEnabled(FeatureName.DELEGATE_TOKEN_ENCRYPTION, delegateToken.getAccountId())) {
-      return getTokenValue(delegateToken);
-    }
     managerDecryptionService.decrypt(delegateToken, secretManager.getEncryptionDetails(delegateToken));
-    return delegateToken.isNg() ? decodeBase64ToString(delegateToken.getEncryptedTokenValue())
-                                : delegateToken.getEncryptedTokenValue();
+    return delegateToken.getEncryptedTokenValue();
   }
 
   private String getTokenValue(DelegateToken delegateToken) {
