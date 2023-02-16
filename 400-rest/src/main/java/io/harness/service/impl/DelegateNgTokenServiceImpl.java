@@ -329,10 +329,6 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     if (!featureFlagService.isEnabled(FeatureName.DELEGATE_TOKEN_ENCRYPTION, delegateToken.getAccountId())) {
       return getTokenValue(delegateToken);
     }
-    //@TODO: remove this check after migration, should not come here only in case we missed on migration or local env
-    if (delegateToken.getTokenValue() == null) {
-      delegateToken = updateTokenWithEncryptedValue(delegateToken);
-    }
     managerDecryptionService.decrypt(delegateToken, secretManager.getEncryptionDetails(delegateToken));
     log.info("FOR TEST only: printing encrypted value {}", delegateToken.getEncryptedTokenValue());
     return delegateToken.isNg() ? decodeBase64ToString(delegateToken.getEncryptedTokenValue())
@@ -343,7 +339,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   // For migration purpose, to insert encrypted delegate token record
   public void upsertEncryptedTokenRecord(DelegateToken delegateToken) {
     UpdateOperations<DelegateToken> updateOperations = persistence.createUpdateOperations(DelegateToken.class);
-    setUnset(updateOperations, DelegateTokenKeys.encryptedTokenValue, delegateToken.getValue().toCharArray());
+    setUnset(updateOperations, DelegateTokenKeys.tokenValue, delegateToken.getValue().toCharArray());
     persistence.update(delegateToken, updateOperations);
   }
 
@@ -354,7 +350,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   //@TODO: Remove this after migration
   private DelegateToken updateTokenWithEncryptedValue(DelegateToken delegateToken) {
     UpdateOperations<DelegateToken> updateOperations = persistence.createUpdateOperations(DelegateToken.class);
-    setUnset(updateOperations, DelegateTokenKeys.encryptedTokenValue, delegateToken.getValue().toCharArray());
+    setUnset(updateOperations, DelegateTokenKeys.tokenValue, delegateToken.getValue().toCharArray());
     return persistence.upsert(
         persistence.createQuery(DelegateToken.class).filter(DelegateTokenKeys.uuid, delegateToken.getUuid()),
         updateOperations, HPersistence.upsertReturnNewOptions);

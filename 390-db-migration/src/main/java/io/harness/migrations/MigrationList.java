@@ -468,7 +468,7 @@ public class MigrationList {
         .add(Pair.of(381, AddRingDetailsToDelegateRing.class))
         .add(Pair.of(382, InitTerraformProvisionersSourceType.class))
         .add(Pair.of(383, CreateLongerDataRetention.class))
-        .add(Pair.of(385, EncryptDelegateTokenMigration.class))
+        .add(Pair.of(386, EncryptDelegateTokenMigration.class))
         .build();
   }
 }
