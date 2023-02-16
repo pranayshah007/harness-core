@@ -27,8 +27,12 @@ import io.harness.persistence.UuidAware;
 import io.harness.security.dto.Principal;
 
 import software.wings.annotation.EncryptableSetting;
+import software.wings.jersey.JsonViews;
 import software.wings.settings.SettingVariableTypes;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
+import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
@@ -87,7 +91,7 @@ public class DelegateToken
 
   @Encrypted(fieldName = "tokenValue") private char[] tokenValue;
 
-  private String encryptedTokenValue;
+  @JsonIgnore @JsonView(JsonViews.Internal.class) @SchemaIgnore private String encryptedTokenValue;
 
   // this is for ng, ng doesn't have embeddedUser concept.
   private Principal createdByNgUser;

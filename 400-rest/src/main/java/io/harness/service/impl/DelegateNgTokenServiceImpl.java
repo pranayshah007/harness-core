@@ -9,7 +9,6 @@ package io.harness.service.impl;
 
 import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
-import static io.harness.mongo.MongoUtils.setUnset;
 
 import static java.lang.String.format;
 
@@ -330,7 +329,6 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
       return getTokenValue(delegateToken);
     }
     managerDecryptionService.decrypt(delegateToken, secretManager.getEncryptionDetails(delegateToken));
-    log.info("FOR TEST only: printing encrypted value {}", delegateToken.getEncryptedTokenValue());
     return delegateToken.isNg() ? decodeBase64ToString(delegateToken.getEncryptedTokenValue())
                                 : delegateToken.getEncryptedTokenValue();
   }
@@ -338,21 +336,11 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   @Override
   // For migration purpose, to insert encrypted delegate token record
   public void upsertEncryptedTokenRecord(DelegateToken delegateToken) {
-    UpdateOperations<DelegateToken> updateOperations = persistence.createUpdateOperations(DelegateToken.class);
-    setUnset(updateOperations, DelegateTokenKeys.tokenValue, delegateToken.getValue().toCharArray());
-    persistence.update(delegateToken, updateOperations);
+    delegateToken.setTokenValue(delegateToken.getValue().toCharArray());
+    persistence.save(delegateToken);
   }
 
   private String getTokenValue(DelegateToken delegateToken) {
     return delegateToken.isNg() ? decodeBase64ToString(delegateToken.getValue()) : delegateToken.getValue();
-  }
-
-  //@TODO: Remove this after migration
-  private DelegateToken updateTokenWithEncryptedValue(DelegateToken delegateToken) {
-    UpdateOperations<DelegateToken> updateOperations = persistence.createUpdateOperations(DelegateToken.class);
-    setUnset(updateOperations, DelegateTokenKeys.tokenValue, delegateToken.getValue().toCharArray());
-    return persistence.upsert(
-        persistence.createQuery(DelegateToken.class).filter(DelegateTokenKeys.uuid, delegateToken.getUuid()),
-        updateOperations, HPersistence.upsertReturnNewOptions);
   }
 }
