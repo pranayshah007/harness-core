@@ -21,15 +21,13 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 import io.harness.service.intfc.AgentMtlsEndpointService;
 
-import software.wings.WingsBaseTest;
-
 import java.nio.file.InvalidPathException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @OwnedBy(DEL)
-public class AgentMtlsVerifierTest extends WingsBaseTest {
+public class AgentMtlsVerifierTest {
   private static final String ACCOUNT_ID_0 = "account0";
   private static final String ACCOUNT_ID_1 = "account1";
 

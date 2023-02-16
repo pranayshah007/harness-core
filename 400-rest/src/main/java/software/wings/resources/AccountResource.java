@@ -47,6 +47,7 @@ import io.harness.scheduler.PersistentScheduler;
 import io.harness.security.annotations.LearningEngineAuth;
 import io.harness.security.annotations.PublicApi;
 import io.harness.seeddata.SampleDataProviderService;
+import io.harness.service.intfc.DelegateAuthService;
 
 import software.wings.beans.Account;
 import software.wings.beans.AccountEvent;
@@ -134,13 +135,16 @@ public class AccountResource {
   private final HarnessUserGroupService harnessUserGroupService;
   private final AdminLicenseHttpClient adminLicenseHttpClient;
 
+  private final DelegateAuthService delegateAuthService;
+
   @Inject
   public AccountResource(AccountService accountService, UserService userService,
       Provider<LicenseService> licenseServiceProvider, AccountPermissionUtils accountPermissionUtils,
       FeatureService featureService, @Named("BackgroundJobScheduler") PersistentScheduler jobScheduler,
       GcpMarketPlaceApiHandler gcpMarketPlaceApiHandler,
       Provider<SampleDataProviderService> sampleDataProviderServiceProvider, AuthService authService,
-      HarnessUserGroupService harnessUserGroupService, AdminLicenseHttpClient adminLicenseHttpClient) {
+      HarnessUserGroupService harnessUserGroupService, AdminLicenseHttpClient adminLicenseHttpClient,
+      DelegateAuthService delegateAuthService) {
     this.accountService = accountService;
     this.userService = userService;
     this.licenseServiceProvider = licenseServiceProvider;
@@ -152,6 +156,7 @@ public class AccountResource {
     this.authService = authService;
     this.harnessUserGroupService = harnessUserGroupService;
     this.adminLicenseHttpClient = adminLicenseHttpClient;
+    this.delegateAuthService = delegateAuthService;
   }
 
   @GET
@@ -541,7 +546,7 @@ public class AccountResource {
       @QueryParam("delegateToken") @NotNull String delegateToken, @QueryParam("delegateId") String delegateId,
       @QueryParam("delegateTokenName") String delegateTokenName,
       @QueryParam("agentMtlsAuthority") String agentMtlsAuthority) {
-    authService.validateDelegateToken(accountId, substringAfter(delegateToken, "Delegate "), delegateId,
+    delegateAuthService.validateDelegateToken(accountId, substringAfter(delegateToken, "Delegate "), delegateId,
         delegateTokenName, agentMtlsAuthority, false);
     return new RestResponse<>(true);
   }

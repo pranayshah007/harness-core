@@ -28,10 +28,10 @@ import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.metrics.impl.CachedMetricsPublisher;
 import io.harness.serializer.JsonUtils;
+import io.harness.service.intfc.DelegateAuthService;
 import io.harness.service.intfc.DelegateCache;
 
 import software.wings.logcontext.WebsocketLogContext;
-import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.DelegateService;
 
 import com.google.common.base.Splitter;
@@ -39,9 +39,6 @@ import com.google.common.io.CharStreams;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.List;
-/**
- * Created by peeyushaggarwal on 8/15/16.
- */
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.atmosphere.cache.UUIDBroadcasterCache;
@@ -61,12 +58,12 @@ import org.atmosphere.interceptor.AtmosphereResourceLifecycleInterceptor;
     broadcastFilters = {DelegateEventFilter.class})
 public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
   public static final Splitter SPLITTER = Splitter.on("/").omitEmptyStrings();
-
-  private final AuthService authService;
   private final DelegateService delegateService;
   private final DelegateCache delegateCache;
   private final CachedMetricsPublisher cachedMetrics;
   private final DelegateStreamHeartbeatService delegateStreamHeartbeatService;
+
+  private final DelegateAuthService delegateAuthService;
 
   @Override
   public void onRequest(AtmosphereResource resource) throws IOException {
@@ -141,7 +138,7 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
            AutoLogContext ignore3 = new WebsocketLogContext(websocketId, OVERRIDE_ERROR)) {
         DelegateParams delegateParams = JsonUtils.asObject(CharStreams.toString(req.getReader()), DelegateParams.class);
         if (isNotEmpty(delegateParams.getToken())) {
-          authService.validateDelegateToken(accountId, delegateParams.getToken(), delegateId,
+          delegateAuthService.validateDelegateToken(accountId, delegateParams.getToken(), delegateId,
               delegateParams.getTokenName(), agentMtlsAuthority, false);
         }
         if ("ECS".equals(delegateParams.getDelegateType())) {

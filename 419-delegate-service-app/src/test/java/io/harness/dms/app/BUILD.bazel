@@ -20,6 +20,8 @@ java_library(
         "//980-commons/src/main/java/io/harness/network:module",
         "//990-commons-test:module",
         "@bazel_tools//tools/java/runfiles",
+        "@maven//:de_bwaldvogel_mongo_java_server_core",
+        "@maven//:de_bwaldvogel_mongo_java_server_memory_backend",
         "@maven//:io_dropwizard_dropwizard_testing",
         "@maven//:jakarta_ws_rs_jakarta_ws_rs_api",
         "@maven//:javax_ws_rs_javax_ws_rs_api",
@@ -27,6 +29,7 @@ java_library(
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_glassfish_jersey_core_jersey_client",
         "@maven//:org_mockito_mockito_core",
+        "@maven//:org_mongodb_mongo_java_driver",
     ],
 )
 

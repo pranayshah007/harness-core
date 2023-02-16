@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.service.impl;
+package io.harness.service.impl.agent.mtls;
 
 import io.harness.agent.beans.AgentMtlsEndpoint;
 import io.harness.agent.beans.AgentMtlsEndpoint.AgentMtlsEndpointKeys;
