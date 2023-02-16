@@ -158,7 +158,8 @@ public class DebeziumServiceApplication extends Application<DebeziumServiceConfi
                                                         .redisStreamSize(debeziumConfig.getRedisStreamSize())
                                                         .build();
 
-        starter.startDebeziumController(debeziumConfig, changeConsumerConfig, locker, appConfig.getRedisLockConfig());
+        starter.startDebeziumController(debeziumConfig, changeConsumerConfig, locker, appConfig.getRedisLockConfig(),
+            appConfig.getListOfErrorCodesForOffsetReset());
       }
     }
     MaintenanceController.forceMaintenance(false);

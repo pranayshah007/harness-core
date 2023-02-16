@@ -27,8 +27,8 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
-import io.harness.ngmigration.beans.StepTypeSummary;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
+import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.TypeSummary;
 import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.WorkflowSummary;
@@ -148,13 +148,13 @@ public class WorkflowMigrationService extends NgMigrationService {
                                                 Workflow workflow = (Workflow) entity.getEntity();
                                                 WorkflowHandler workflowHandler =
                                                     workflowHandlerFactory.getWorkflowHandler(workflow);
-                                                return workflowHandler.getSteps(workflow).stream();
+                                                return MigratorUtility.getSteps(workflow).stream();
                                               })
                                               .collect(groupingBy(GraphNode::getType, counting()));
-    Map<String, StepTypeSummary> stepTypeSummaryMap = new HashMap<>();
+    Map<String, TypeSummary> stepTypeSummaryMap = new HashMap<>();
     summaryByStepType.forEach((key, value) -> {
       stepTypeSummaryMap.put(key,
-          StepTypeSummary.builder()
+          TypeSummary.builder()
               .count(value)
               .status(stepMapperFactory.getStepMapper(key).stepSupportStatus(GraphNode.builder().build()))
               .build());
@@ -164,7 +164,7 @@ public class WorkflowMigrationService extends NgMigrationService {
             .flatMap(entity -> {
               Workflow workflow = (Workflow) entity.getEntity();
               WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
-              return workflowHandler.getSteps(workflow).stream();
+              return MigratorUtility.getSteps(workflow).stream();
             })
             .flatMap(step -> stepMapperFactory.getStepMapper(step.getType()).getExpressions(step).stream())
             .collect(Collectors.toSet());
@@ -224,7 +224,7 @@ public class WorkflowMigrationService extends NgMigrationService {
     String description = StringUtils.isBlank(workflow.getDescription()) ? "" : workflow.getDescription();
 
     WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
-    List<GraphNode> steps = workflowHandler.getSteps(workflow);
+    List<GraphNode> steps = MigratorUtility.getSteps(workflow);
     // We will skip migration if any of the steps are unsupported
     if (EmptyPredicate.isEmpty(steps)) {
       return YamlGenerationDetails.builder()
@@ -239,7 +239,7 @@ public class WorkflowMigrationService extends NgMigrationService {
                                            .filter(step
                                                -> stepMapperFactory.getStepMapper(step.getType())
                                                       .stepSupportStatus(step)
-                                                      .equals(WorkflowStepSupportStatus.UNSUPPORTED))
+                                                      .equals(SupportStatus.UNSUPPORTED))
                                            .collect(Collectors.toList());
     if (EmptyPredicate.isNotEmpty(unsupportedSteps)) {
       return YamlGenerationDetails.builder()
@@ -296,6 +296,7 @@ public class WorkflowMigrationService extends NgMigrationService {
       try {
         templateSpec = workflowHandler.getTemplateSpec(entities, migratedEntities, workflow);
       } catch (Exception e) {
+        log.error("Exception during migrating workflow ", e);
         return YamlGenerationDetails.builder()
             .yamlFileList(files)
             .skipDetails(Collections.singletonList(NGSkipDetail.builder()

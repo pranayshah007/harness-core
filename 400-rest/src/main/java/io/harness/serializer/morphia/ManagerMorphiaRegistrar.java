@@ -397,6 +397,7 @@ import software.wings.service.impl.newrelic.LearningEngineExperimentalAnalysisTa
 import software.wings.service.impl.newrelic.MLExperiments;
 import software.wings.service.impl.newrelic.NewRelicMarkerExecutionData;
 import software.wings.service.impl.newrelic.NewRelicMetricAnalysisRecord;
+import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.impl.splunk.SplunkAnalysisCluster;
 import software.wings.service.impl.trigger.TriggerCallback;
 import software.wings.service.impl.trigger.TriggerServiceImpl.TriggerIdempotentResult;
@@ -881,6 +882,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(Log.class);
     set.add(InstanceSyncPTInfoBackup.class);
     set.add(HelmChart.class);
+    set.add(NewRelicMetricDataRecord.class);
   }
 
   @Override

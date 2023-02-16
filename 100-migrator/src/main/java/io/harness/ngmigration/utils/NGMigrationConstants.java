@@ -14,4 +14,6 @@ public interface NGMigrationConstants {
   String VIZ_TEMP_DIR_PREFIX = "viz-output";
   String VIZ_FILE_NAME = "/viz.png";
   String PLEASE_FIX_ME = "__PLEASE_FIX_ME__";
+  String SERVICE_COMMAND_TEMPLATE_SEPARATOR = "::";
+  String UNKNOWN_SERVICE = "UNKNOWN_S";
 }

@@ -178,4 +178,5 @@ public class NGCommonEntityConstants {
   public static final String CONFIG_FILE_FUNCTOR = "configFile";
   public static final String FUNCTOR_STRING_METHOD_NAME = "getAsString";
   public static final String FUNCTOR_BASE64_METHOD_NAME = "getAsBase64";
+  public static final String FILE_STORE_FUNCTOR = "fileStore";
 }

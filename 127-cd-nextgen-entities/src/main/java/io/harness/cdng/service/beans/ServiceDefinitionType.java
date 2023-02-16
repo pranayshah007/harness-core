@@ -88,7 +88,11 @@ public enum ServiceDefinitionType {
 
   @JsonProperty(ServiceSpecType.AWS_LAMBDA)
   AWS_LAMBDA(ServiceSpecType.AWS_LAMBDA, Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT),
-      ServiceSpecType.AWS_LAMBDA);
+      ServiceSpecType.AWS_LAMBDA),
+
+  @JsonProperty(ServiceSpecType.AWS_SAM)
+  AWS_SAM(ServiceSpecType.AWS_SAM, Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT),
+      ServiceSpecType.AWS_SAM);
 
   /*
   //Unsupported for now

@@ -23,6 +23,8 @@ public class NodeProjectionUtils {
 
   public static final Set<String> withParentId = Sets.newHashSet(NodeExecutionKeys.parentId);
 
+  public static final Set<String> withNextId = Sets.newHashSet(NodeExecutionKeys.nextId);
+
   public static final Set<String> fieldsForRetryInterruptHandler = Sets.newHashSet(
       NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.oldRetry, NodeExecutionKeys.mode);
 
@@ -42,6 +44,8 @@ public class NodeProjectionUtils {
 
   public static final Set<String> withAmbianceAndStatus =
       Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status);
+
+  public static final Set<String> withAmbiance = Sets.newHashSet(NodeExecutionKeys.ambiance);
 
   public static final Set<String> withStatus = Sets.newHashSet(NodeExecutionKeys.status);
 

@@ -32,6 +32,8 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.TypeSummary;
 import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.ConnectorSummary;
@@ -56,11 +58,13 @@ import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.SettingsService;
+import software.wings.settings.SettingVariableTypes;
 
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -104,7 +108,23 @@ public class ConnectorMigrationService extends NgMigrationService {
     Map<String, Long> summaryByType = entities.stream()
                                           .map(entity -> (SettingAttribute) entity.getEntity())
                                           .collect(groupingBy(entity -> entity.getValue().getType(), counting()));
-    return ConnectorSummary.builder().count(entities.size()).typeSummary(summaryByType).build();
+
+    Map<String, TypeSummary> summaryMap = new HashMap<>();
+    summaryByType.forEach(
+        (key, value)
+            -> summaryMap.put(key,
+                TypeSummary.builder()
+                    .count(value)
+                    .status(ConnectorFactory.CONNECTOR_FACTORY_MAP.containsKey(SettingVariableTypes.valueOf(key))
+                            ? SupportStatus.SUPPORTED
+                            : SupportStatus.UNSUPPORTED)
+                    .build()));
+
+    return ConnectorSummary.builder()
+        .count(entities.size())
+        .typeSummary(summaryByType)
+        .typesSummary(summaryMap)
+        .build();
   }
 
   @Override

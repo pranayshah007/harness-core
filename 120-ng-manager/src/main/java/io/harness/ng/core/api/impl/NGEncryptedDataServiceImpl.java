@@ -556,6 +556,18 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     }
   }
 
+  @Override
+  public boolean validateSecretRef(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String secretManagerIdentifier, String secretRefPath) {
+    SecretManagerConfigDTO secretManager =
+        getSecretManagerOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, false);
+    boolean isValidationSuccess;
+    isValidationSuccess =
+        vaultEncryptorsRegistry.getVaultEncryptor(SecretManagerConfigMapper.fromDTO(secretManager).getEncryptionType())
+            .validateReference(accountIdentifier, secretRefPath, SecretManagerConfigMapper.fromDTO(secretManager));
+    return isValidationSuccess;
+  }
+
   private byte[] getInputBytes(InputStream inputStream) {
     byte[] inputBytes = new byte[0];
     if (inputStream != null) {

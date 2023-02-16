@@ -499,15 +499,14 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
         .getMetrics()
         .stream()
         .filter(MetricDefinition::isIncluded)
-        .map(metricDefinition -> {
-          return MetricsAnalysis.builder()
-              .metricName(metricDefinition.getName())
-              .metricIdentifier(metricDefinition.getIdentifier())
-              .healthSource(healthSource)
-              .metricType(getMetricTypeFromCvConfigAndMetricDefinition(metricCVConfig, metricDefinition))
-              .thresholds(getThresholdsFromDefinition(metricDefinition))
-              .build();
-        })
+        .map(metricDefinition
+            -> MetricsAnalysis.builder()
+                   .metricName(metricDefinition.getName())
+                   .metricIdentifier(metricDefinition.getIdentifier())
+                   .healthSource(healthSource)
+                   .metricType(getMetricTypeFromCvConfigAndMetricDefinition(metricCVConfig, metricDefinition))
+                   .thresholds(getThresholdsFromDefinition(metricDefinition))
+                   .build())
         .collect(
             Collectors.toMap(MetricsAnalysis::getMetricIdentifier, metricsAnalysis -> metricsAnalysis, (u, v) -> v));
   }

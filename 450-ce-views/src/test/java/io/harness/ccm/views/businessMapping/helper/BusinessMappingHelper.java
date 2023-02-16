@@ -64,7 +64,7 @@ public final class BusinessMappingHelper {
     final List<ViewRule> rules = getRules();
     final List<SharedCostSplit> splits = getSharedCostSplits();
     return Stream
-        .of(getSharedCost(TEST_NAME, rules, SharingStrategy.FIXED, splits),
+        .of(getSharedCost(TEST_NAME, rules, SharingStrategy.EQUAL, splits),
             getSharedCost(TEST_NAME, rules, SharingStrategy.PROPORTIONAL, splits))
         .collect(Collectors.toList());
   }
@@ -95,7 +95,7 @@ public final class BusinessMappingHelper {
         unallocatedCostBuilder.label("TEST_LABEL");
         break;
       case SHARE:
-        unallocatedCostBuilder.sharingStrategy(SharingStrategy.FIXED).splits(getSharedCostSplits());
+        unallocatedCostBuilder.sharingStrategy(SharingStrategy.EQUAL).splits(getSharedCostSplits());
         break;
       default:
         break;

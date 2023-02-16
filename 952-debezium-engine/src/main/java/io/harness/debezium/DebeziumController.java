@@ -21,6 +21,7 @@ import com.google.inject.Singleton;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
 import java.time.Duration;
+import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
@@ -39,15 +40,17 @@ public class DebeziumController<T extends MongoCollectionChangeConsumer> impleme
   private final PersistentLocker locker;
   private final AtomicBoolean shouldStop;
   private final DebeziumService debeziumService;
+  List<Integer> listOfErrorCodesForOffsetReset;
 
   public DebeziumController(Properties props, T changeConsumer, PersistentLocker locker,
-      ExecutorService executorService, DebeziumService debeziumService) {
+      ExecutorService executorService, DebeziumService debeziumService, List<Integer> listOfErrorCodesForOffsetReset) {
     this.props = props;
     this.changeConsumer = changeConsumer;
     this.executorService = executorService;
     this.locker = locker;
     this.shouldStop = new AtomicBoolean(false);
     this.debeziumService = debeziumService;
+    this.listOfErrorCodesForOffsetReset = listOfErrorCodesForOffsetReset;
   }
 
   @Override
@@ -61,7 +64,8 @@ public class DebeziumController<T extends MongoCollectionChangeConsumer> impleme
           continue;
         }
         RLock rLock = (RLock) aggregatorLock.getLock();
-        debeziumEngine = debeziumService.getEngine(props, changeConsumer, changeConsumer.getCollection(), this);
+        debeziumEngine = debeziumService.getEngine(
+            props, changeConsumer, changeConsumer.getCollection(), this, listOfErrorCodesForOffsetReset);
         Future<?> future = executorService.submit(debeziumEngine);
         log.info("Starting Debezium Engine for Collection {} at {}", changeConsumer.getCollection(),
             System.currentTimeMillis());

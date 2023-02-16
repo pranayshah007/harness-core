@@ -7,8 +7,8 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.barrier.BarrierStepInfo;
 import io.harness.plancreator.steps.barrier.BarrierStepNode;
@@ -22,8 +22,8 @@ import java.util.Map;
 
 public class BarrierStepMapperImpl extends StepMapper {
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 
   @Override

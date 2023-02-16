@@ -95,6 +95,6 @@ public class ShellScriptTemplateService implements NgTemplateService {
   }
 
   static String valueOrDefaultRuntime(String val) {
-    return StringUtils.isNotBlank(val) ? val : "<+input>";
+    return StringUtils.isNotBlank(val) ? val.trim() : "<+input>";
   }
 }

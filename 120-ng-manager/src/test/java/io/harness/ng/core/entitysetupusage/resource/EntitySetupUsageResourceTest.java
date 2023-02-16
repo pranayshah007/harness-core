@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.EntityType;
@@ -21,6 +22,7 @@ import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import java.util.ArrayList;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -28,6 +30,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 
 @OwnedBy(DX)
 public class EntitySetupUsageResourceTest extends CategoryTest {
@@ -49,6 +53,10 @@ public class EntitySetupUsageResourceTest extends CategoryTest {
     String identifier = "identifier";
     String searchTerm = "searchTerm";
     String referredEntityFQN = "referredEntityFQN";
+    Page<EntitySetupUsageDTO> entitySetupUsageDTOPage = new PageImpl<>(new ArrayList<>());
+    when(entitySetupUsageService.listAllEntityUsage(
+             eq(100), eq(100), eq(accountIdentifier), eq(referredEntityFQN), eq(EntityType.CONNECTORS), eq(searchTerm)))
+        .thenReturn(entitySetupUsageDTOPage);
     entitySetupUsageResource.listAllEntityUsage(
         100, 100, accountIdentifier, referredEntityFQN, EntityType.CONNECTORS, searchTerm);
     Mockito.verify(entitySetupUsageService, times(1))
@@ -67,6 +75,11 @@ public class EntitySetupUsageResourceTest extends CategoryTest {
     String searchTerm = "searchTerm";
     String referredEntityFQN = "referredEntityFQN";
     String referredEntityFQN2 = "referredEntityFQN2";
+    Page<EntitySetupUsageDTO> entitySetupUsageDTOPage = new PageImpl<>(new ArrayList<>());
+    when(entitySetupUsageService.listAllEntityUsageWithSupportForTwoFqnForASingleEntity(eq(100), eq(100),
+             eq(accountIdentifier), eq(referredEntityFQN), eq(referredEntityFQN2), eq(EntityType.TEMPLATE),
+             eq(searchTerm)))
+        .thenReturn(entitySetupUsageDTOPage);
     entitySetupUsageResource.listAllEntityUsageWith2Fqns(
         100, 100, accountIdentifier, referredEntityFQN, referredEntityFQN2, EntityType.TEMPLATE, searchTerm);
     Mockito.verify(entitySetupUsageService, times(1))
@@ -95,6 +108,10 @@ public class EntitySetupUsageResourceTest extends CategoryTest {
     String accountIdentifier = "accountIdentifier";
     String referredEntityFQN = "referredEntityFQN";
     String searchTerm = "searchTerm";
+    Page<EntitySetupUsageDTO> entitySetupUsageDTOPage = new PageImpl<>(new ArrayList<>());
+    when(entitySetupUsageService.listAllEntityUsage(
+             eq(100), eq(100), eq(accountIdentifier), eq(referredEntityFQN), eq(EntityType.CONNECTORS), eq(searchTerm)))
+        .thenReturn(entitySetupUsageDTOPage);
     entitySetupUsageResource.listAllEntityUsageV2(
         100, 100, accountIdentifier, referredEntityFQN, EntityType.CONNECTORS, searchTerm);
     Mockito.verify(entitySetupUsageService, times(1))

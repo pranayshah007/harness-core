@@ -58,6 +58,8 @@ public enum MonitoredServiceDataSourceType {
   }
 
   public static DataSourceType getDataSourceType(MonitoredServiceDataSourceType monitoredServiceDataSourceType) {
+    if (monitoredServiceDataSourceType == null)
+      return null;
     for (Map.Entry<DataSourceType, MonitoredServiceDataSourceType> entry :
         dataSourceTypeMonitoredServiceDataSourceTypeMap.entrySet()) {
       if (entry.getValue() == monitoredServiceDataSourceType) {

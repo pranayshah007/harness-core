@@ -8,6 +8,7 @@
 package io.harness.ng;
 
 import static io.harness.NGCommonEntityConstants.CONFIG_FILE_FUNCTOR;
+import static io.harness.NGCommonEntityConstants.FILE_STORE_FUNCTOR;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInterMsvcRequests;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInternalApi;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassPaths;
@@ -152,6 +153,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.expressions.functors.ConfigFileFunctor;
+import io.harness.pms.expressions.functors.FileStoreFunctor;
 import io.harness.pms.expressions.functors.ImagePullSecretFunctor;
 import io.harness.pms.expressions.functors.InstanceFunctor;
 import io.harness.pms.governance.EnvironmentExpansionHandler;
@@ -718,6 +720,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         TerraformHumanReadablePlanFunctor.TERRAFORM_HUMAN_READABLE_PLAN, TerraformHumanReadablePlanFunctor.class);
     sdkFunctorMap.put(InstanceFunctor.INSTANCE, InstanceFunctor.class);
     sdkFunctorMap.put(CONFIG_FILE_FUNCTOR, ConfigFileFunctor.class);
+    sdkFunctorMap.put(FILE_STORE_FUNCTOR, FileStoreFunctor.class);
     return sdkFunctorMap;
   }
 

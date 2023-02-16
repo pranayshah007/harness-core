@@ -7,6 +7,7 @@
 
 package io.harness.auditevent.streaming.serializer;
 
+import io.harness.auditevent.streaming.serializer.morphia.AuditEventStreamingMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.DelegateServiceDriverRegistrars;
 import io.harness.serializer.KryoRegistrar;
@@ -25,5 +26,6 @@ public class AuditEventStreamingRegistrar {
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
       ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
           .addAll(DelegateServiceDriverRegistrars.morphiaRegistrars)
+          .add(AuditEventStreamingMorphiaRegistrar.class)
           .build();
 }

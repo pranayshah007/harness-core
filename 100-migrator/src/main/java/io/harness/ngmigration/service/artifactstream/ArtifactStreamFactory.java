@@ -47,7 +47,7 @@ public class ArtifactStreamFactory {
           .put(ArtifactStreamType.NEXUS, nexusMapper)
           .put(ArtifactStreamType.JENKINS, jenkinsMapper)
           .put(ArtifactStreamType.CUSTOM, customArtifactMapper)
-          .put(ArtifactStreamType.AZURE_ARTIFACTS, azureArtifactMapper)
+          //          .put(ArtifactStreamType.AZURE_ARTIFACTS, azureArtifactMapper)
           .put(ArtifactStreamType.AMAZON_S3, amazonS3Mapper)
           .put(ArtifactStreamType.ACR, acrMapper)
           .put(ArtifactStreamType.AMI, amiMapper)

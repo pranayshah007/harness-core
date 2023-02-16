@@ -65,12 +65,15 @@ public class AccountDTO {
   @Schema(description = "Specifies if Account has two factor authentication enforced.")
   @VariableExpression(skipVariableExpression = true)
   boolean isTwoFactorAdminEnforced;
+  @Schema(description = "Account creation time in epoch")
+  @VariableExpression(skipVariableExpression = true)
+  long createdAt;
 
   @Builder
   public AccountDTO(String identifier, String name, String companyName, String cluster,
       DefaultExperience defaultExperience, AuthenticationMechanism authenticationMechanism,
       ServiceAccountConfig serviceAccountConfig, boolean isNextGenEnabled, boolean isProductLed,
-      boolean isTwoFactorAdminEnforced) {
+      boolean isTwoFactorAdminEnforced, long createdAt) {
     this.identifier = identifier;
     this.name = name;
     this.companyName = companyName;
@@ -81,5 +84,6 @@ public class AccountDTO {
     this.serviceAccountConfig = serviceAccountConfig;
     this.isProductLed = isProductLed;
     this.isTwoFactorAdminEnforced = isTwoFactorAdminEnforced;
+    this.createdAt = createdAt;
   }
 }

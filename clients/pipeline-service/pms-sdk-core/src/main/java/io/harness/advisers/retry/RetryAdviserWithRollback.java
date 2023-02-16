@@ -23,6 +23,7 @@ import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.advisers.EndPlanAdvise;
 import io.harness.pms.contracts.advisers.IgnoreFailureAdvise;
 import io.harness.pms.contracts.advisers.InterventionWaitAdvise;
+import io.harness.pms.contracts.advisers.MarkAsFailureAdvise;
 import io.harness.pms.contracts.advisers.MarkSuccessAdvise;
 import io.harness.pms.contracts.advisers.NextStepAdvise;
 import io.harness.pms.contracts.advisers.RetryAdvise;
@@ -129,6 +130,15 @@ public class RetryAdviserWithRollback implements Adviser {
         }
         return adviserResponseBuilder.setMarkSuccessAdvise(markSuccessBuilder.build())
             .setType(AdviseType.MARK_SUCCESS)
+            .build();
+      case MARK_AS_FAILURE:
+        MarkAsFailureAdvise.Builder builder = MarkAsFailureAdvise.newBuilder();
+        if (EmptyPredicate.isNotEmpty(parameters.getNextNodeId())) {
+          builder.setNextNodeId(parameters.getNextNodeId());
+        }
+        return AdviserResponse.newBuilder()
+            .setMarkAsFailureAdvise(builder.build())
+            .setType(AdviseType.MARK_AS_FAILURE)
             .build();
       default:
         throw new IllegalStateException("Unexpected value: " + parameters.getRepairActionCodeAfterRetry());

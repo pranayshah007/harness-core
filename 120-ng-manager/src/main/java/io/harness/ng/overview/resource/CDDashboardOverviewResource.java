@@ -48,6 +48,7 @@ import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
+import io.harness.ng.overview.dto.OpenTaskDetails;
 import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
 import io.harness.ng.overview.dto.ServiceDeploymentListInfo;
 import io.harness.ng.overview.dto.ServiceDeploymentListInfoV2;
@@ -445,10 +446,10 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_TYPE_KEY) EnvironmentType environmentType,
+      @QueryParam(NGCommonEntityConstants.ENVIRONMENT_TYPE_KEY) EnvironmentType environmentType,
       @QueryParam(NGCommonEntityConstants.INFRA_IDENTIFIER) String infraId,
       @QueryParam(NGCommonEntityConstants.CLUSTER_IDENTIFIER) String clusterId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ARTIFACT) String displayName) {
+      @QueryParam(NGCommonEntityConstants.ARTIFACT) String displayName) {
     return ResponseDTO.newResponse(
         cdOverviewDashboardService.getInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
             projectIdentifier, serviceId, envId, environmentType, infraId, clusterId, displayName));
@@ -562,5 +563,19 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getArtifactInstanceDetails(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
+  }
+
+  @GET
+  @Path("/getOpenTasks")
+  @ApiOperation(value = "Get list of pipelines failed and waiting for approval in 5 days", nickname = "getOpenTasks")
+  @Hidden
+  public ResponseDTO<OpenTaskDetails> getOpenTasks(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
+      @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getOpenTasks(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, startInterval));
   }
 }

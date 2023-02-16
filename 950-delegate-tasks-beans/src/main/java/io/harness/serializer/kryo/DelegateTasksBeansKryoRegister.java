@@ -954,6 +954,7 @@ import io.harness.delegate.task.terraform.TerraformVarFileInfo;
 import io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
 import io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException;
@@ -2335,6 +2336,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerraformCloudWorkspacesTaskResponse.class, 680006);
     kryo.register(TerraformCloudCommandUnit.class, 680007);
     kryo.register(PlanType.class, 680008);
+    kryo.register(TerraformCloudRunTaskResponse.class, 680009);
 
     kryo.register(AwsSamInstallationCapability.class, 10000401);
   }

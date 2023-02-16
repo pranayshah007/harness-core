@@ -37,6 +37,7 @@ import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.customDeployment.CustomDeploymentVariableResponseDTO;
 import io.harness.ng.core.customDeployment.CustomDeploymentYamlRequestDTO;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -625,7 +626,7 @@ public class NGTemplateResource {
   @Path("/entitySetupUsage/{templateIdentifier}")
   @ApiOperation(value = "Get Entities referring this template", nickname = "listTemplateUsage")
   @Hidden
-  public ResponseDTO<List<EntitySetupUsageDTO>> listTemplateEntityUsage(
+  public ResponseDTO<PageResponse<EntitySetupUsageDTO>> listTemplateEntityUsage(
       @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
       @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,

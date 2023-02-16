@@ -51,6 +51,7 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
+import io.harness.pms.pipeline.PMSInputSetListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
@@ -71,7 +72,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.ws.rs.InternalServerErrorException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.PredicateUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -92,6 +96,9 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Input set [%s] under Project[%s], Organization [%s] for Pipeline [%s] already exists";
+
+  private static final int MAX_LIST_SIZE = 1000;
+  private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
   @Override
   public InputSetEntity create(InputSetEntity inputSetEntity, boolean hasNewYamlStructure) {
@@ -126,9 +133,9 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Override
   public Optional<InputSetEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean deleted, String pipelineBranch, String pipelineRepoID,
-      boolean hasNewYamlStructure) {
-    Optional<InputSetEntity> optionalInputSetEntity =
-        getWithoutValidations(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, deleted);
+      boolean hasNewYamlStructure, boolean loadFromFallbackBranch) {
+    Optional<InputSetEntity> optionalInputSetEntity = getWithoutValidations(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, deleted, loadFromFallbackBranch);
     if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", identifier));
@@ -151,15 +158,16 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
 
   @Override
   public Optional<InputSetEntity> getWithoutValidations(String accountId, String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, String identifier, boolean deleted) {
+      String projectIdentifier, String pipelineIdentifier, String identifier, boolean deleted,
+      boolean loadFromFallbackBranch) {
     Optional<InputSetEntity> optionalInputSetEntity;
     try {
       if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
         optionalInputSetEntity = inputSetRepository.findForOldGitSync(
             accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, !deleted);
       } else {
-        optionalInputSetEntity = inputSetRepository.find(
-            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, !deleted, false);
+        optionalInputSetEntity = inputSetRepository.find(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, identifier, !deleted, false, loadFromFallbackBranch);
       }
     } catch (ExplanationException | HintException | ScmException e) {
       log.error(String.format("Error while retrieving pipeline [%s]", identifier), e);
@@ -189,7 +197,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     }
     Optional<InputSetEntity> optionalOriginalEntity = getWithoutValidations(inputSetEntity.getAccountId(),
         inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier(),
-        inputSetEntity.getPipelineIdentifier(), inputSetEntity.getIdentifier(), false);
+        inputSetEntity.getPipelineIdentifier(), inputSetEntity.getIdentifier(), false, false);
     if (!optionalOriginalEntity.isPresent()) {
       throw new InvalidRequestException(
           format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] doesn't exist.",
@@ -225,7 +233,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     String inputSetId = StringValueUtils.getStringFromStringValue(inputSetRef.getIdentifier());
     Optional<InputSetEntity> optionalInputSetEntity;
     try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(null, false)) {
-      optionalInputSetEntity = getWithoutValidations(accountId, orgId, projectId, pipelineId, inputSetId, false);
+      optionalInputSetEntity = getWithoutValidations(accountId, orgId, projectId, pipelineId, inputSetId, false, false);
     }
     if (!optionalInputSetEntity.isPresent()) {
       throw new InvalidRequestException(
@@ -265,7 +273,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   public boolean markGitSyncedInputSetInvalid(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, String invalidYaml) {
     Optional<InputSetEntity> optionalInputSetEntity = getWithoutValidations(
-        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false);
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false, false);
     if (!optionalInputSetEntity.isPresent()) {
       log.warn(String.format(
           "Marking input set [%s] as invalid failed as it does not exist or has been deleted", identifier));
@@ -322,8 +330,8 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
 
   private boolean deleteForOldGitSync(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, Long version) {
-    Optional<InputSetEntity> optionalOriginalEntity =
-        getWithoutValidations(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false);
+    Optional<InputSetEntity> optionalOriginalEntity = getWithoutValidations(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false, false);
     if (!optionalOriginalEntity.isPresent()) {
       throw new InvalidRequestException(
           format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] doesn't exist.", identifier,
@@ -453,7 +461,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   public InputSetEntity moveConfig(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String inputSetIdentifier, InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO) {
     Optional<InputSetEntity> optionalInputSetEntity = getWithoutValidations(accountIdentifier, orgIdentifier,
-        projectIdentifier, inputSetMoveConfigOperationDTO.getPipelineIdentifier(), inputSetIdentifier, false);
+        projectIdentifier, inputSetMoveConfigOperationDTO.getPipelineIdentifier(), inputSetIdentifier, false, false);
     if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
@@ -461,6 +469,20 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
 
     return moveInputSetEntity(accountIdentifier, orgIdentifier, projectIdentifier, inputSetMoveConfigOperationDTO,
         optionalInputSetEntity.get());
+  }
+
+  @Override
+  public PMSInputSetListRepoResponse getListOfRepos(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    Criteria criteria = PMSInputSetFilterHelper.buildCriteriaForRepoListing(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier);
+    List<String> inputSetRepoList = inputSetRepository.findAllUniqueInputSetRepos(criteria);
+    CollectionUtils.filter(inputSetRepoList, PredicateUtils.notNullPredicate());
+    if (inputSetRepoList.size() > MAX_LIST_SIZE) {
+      log.error(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+      throw new InternalServerErrorException(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+    }
+    return PMSInputSetListRepoResponse.builder().repositories(inputSetRepoList).build();
   }
 
   @VisibleForTesting

@@ -88,14 +88,17 @@ public class BuildTriggerHelper {
   public static final String NPM = "npm";
   public static final String NUGET = "nuget";
 
-  public Optional<String> fetchPipelineForTrigger(TriggerDetails triggerDetails) {
+  public Optional<String> fetchPipelineYamlForTrigger(TriggerDetails triggerDetails) {
+    PMSPipelineResponseDTO response = fetchPipelineForTrigger(triggerDetails);
+    return response != null ? Optional.of(response.getYamlPipeline()) : Optional.empty();
+  }
+
+  public PMSPipelineResponseDTO fetchPipelineForTrigger(TriggerDetails triggerDetails) {
     NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
     NGTriggerConfigV2 ngTriggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
-    PMSPipelineResponseDTO response = NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(
-        ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-        ngTriggerEntity.getProjectIdentifier(), ngTriggerConfigV2.getPipelineBranchName(), null, false));
-
-    return response != null ? Optional.of(response.getYamlPipeline()) : Optional.empty();
+    return NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(ngTriggerEntity.getTargetIdentifier(),
+        ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(),
+        ngTriggerConfigV2.getPipelineBranchName(), null, false));
   }
 
   public Optional<String> fetchResolvedTemplatesPipelineForTrigger(TriggerDetails triggerDetails) {

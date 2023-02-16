@@ -304,8 +304,7 @@ public class ArtifactCollectionState extends State {
 
     // if collection enabled and buildno is empty, get last collected artifact from db and return.
     if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled()) && (isBlank(evaluatedBuildNo) || isRegex())) {
-      Artifact lastCollectedArtifact =
-          artifactService.fetchLastCollectedApprovedArtifactForArtifactStream(artifactStream);
+      Artifact lastCollectedArtifact = fetchCollectedArtifact(artifactStream, evaluatedBuildNo);
       if (lastCollectedArtifact != null) {
         return prepareResponseForLastCollectedArtifact(context, artifactStream, lastCollectedArtifact);
       }

@@ -114,17 +114,8 @@ public class DeeplinkURLServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ANSUMAN)
   @Category(UnitTests.class)
-  public void deepLinkURLNotImplemented() throws IllegalAccessException {
+  public void deepLinkURLNotImplemented() {
     AppDynamicsCVConfig appDynamicsCVConfig = builderFactory.appDynamicsCVConfigBuilder().build();
-    Optional<ConnectorInfoDTO> connectorInfoDTO =
-        Optional.of(ConnectorInfoDTO.builder()
-                        .name("test_name")
-                        .identifier("conn")
-                        .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
-                        .projectIdentifier(builderFactory.getContext().getOrgIdentifier())
-                        .connectorType(ConnectorType.APP_DYNAMICS)
-                        .connectorConfig(PrometheusConnectorDTO.builder().url(BASE_PROMETHEUS_URL).build())
-                        .build());
     Optional<String> appDynamicsDeeplinkURL = deeplinkURLService.buildDeeplinkURLFromCVConfig(
         appDynamicsCVConfig, "identifier", startTimeInstant, endTimeInstant);
     assertThat(appDynamicsDeeplinkURL.isEmpty()).isEqualTo(true);

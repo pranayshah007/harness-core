@@ -8,6 +8,7 @@
 package io.harness.ngmigration.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -35,10 +36,15 @@ import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.core.variables.StringNGVariable;
 
+import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.GitFileConfig;
+import software.wings.beans.GraphNode;
+import software.wings.beans.PhaseStep;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariableType;
 import software.wings.beans.Variable;
+import software.wings.beans.Workflow;
+import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 
@@ -59,6 +65,7 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.CaseUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
@@ -69,10 +76,13 @@ public class MigratorUtility {
   public static final Pattern cgPattern = Pattern.compile("\\$\\{[\\w-.\"()]+}");
   public static final Pattern ngPattern = Pattern.compile("<\\+[\\w-.\"()]+>");
 
+  private static final String[] schemes = {"https", "http"};
+
   private static final int APPLICATION = 0;
   private static final int SECRET_MANAGER = 1;
   private static final int SECRET = 5;
   private static final int TEMPLATE = 7;
+  private static final int SERVICE_COMMAND_TEMPLATE = 8;
   private static final int CONNECTOR = 10;
   private static final int CONTAINER_TASK = 13;
   private static final int ECS_SERVICE_SPEC = 14;
@@ -95,6 +105,7 @@ public class MigratorUtility {
           .put(NGMigrationEntityType.APPLICATION, APPLICATION)
           .put(NGMigrationEntityType.SECRET_MANAGER, SECRET_MANAGER)
           .put(NGMigrationEntityType.TEMPLATE, TEMPLATE)
+          .put(NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE, SERVICE_COMMAND_TEMPLATE)
           .put(NGMigrationEntityType.CONNECTOR, CONNECTOR)
           .put(NGMigrationEntityType.CONTAINER_TASK, CONTAINER_TASK)
           .put(NGMigrationEntityType.ECS_SERVICE_SPEC, ECS_SERVICE_SPEC)
@@ -307,7 +318,7 @@ public class MigratorUtility {
           .type(NGVariableType.SECRET)
           .value(ParameterField.createValueField(
               MigratorUtility.getSecretRef(migratedEntities, serviceVariable.getEncryptedValue())))
-          .name(serviceVariable.getName())
+          .name(StringUtils.trim(serviceVariable.getName()))
           .build();
     } else {
       String value = "";
@@ -315,7 +326,7 @@ public class MigratorUtility {
         value =
             String.valueOf(MigratorExpressionUtils.render(String.valueOf(serviceVariable.getValue()), new HashMap<>()));
       }
-      String name = serviceVariable.getName();
+      String name = StringUtils.trim(serviceVariable.getName());
       name = name.replace('-', '_');
       return StringNGVariable.builder()
           .type(NGVariableType.STRING)
@@ -408,7 +419,7 @@ public class MigratorUtility {
     if (StringUtils.isBlank(str)) {
       return str;
     }
-    str = StringUtils.stripAccents(str);
+    str = StringUtils.stripAccents(str.trim());
     Pattern p = Pattern.compile("[^-0-9a-zA-Z_\\s]", Pattern.CASE_INSENSITIVE);
     Matcher m = p.matcher(str);
     String generated = m.replaceAll("_");
@@ -461,5 +472,57 @@ public class MigratorUtility {
   public static String generateFileIdentifier(String fileName) {
     String prefix = fileName + ' ';
     return MigratorUtility.generateManifestIdentifier(prefix);
+  }
+
+  public static boolean checkIfStringIsValidUrl(String value) {
+    UrlValidator urlValidator = new UrlValidator(schemes);
+    return urlValidator.isValid(value);
+  }
+
+  public static List<GraphNode> getSteps(Workflow workflow) {
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    List<GraphNode> stepYamls = new ArrayList<>();
+    PhaseStep postDeploymentPhaseStep = orchestrationWorkflow.getPostDeploymentSteps();
+    if (postDeploymentPhaseStep != null && EmptyPredicate.isNotEmpty(postDeploymentPhaseStep.getSteps())) {
+      stepYamls.addAll(postDeploymentPhaseStep.getSteps());
+    }
+    PhaseStep preDeploymentPhaseStep = orchestrationWorkflow.getPreDeploymentSteps();
+    if (preDeploymentPhaseStep != null && EmptyPredicate.isNotEmpty(preDeploymentPhaseStep.getSteps())) {
+      stepYamls.addAll(preDeploymentPhaseStep.getSteps());
+    }
+    List<WorkflowPhase> phases = orchestrationWorkflow.getWorkflowPhases();
+    if (EmptyPredicate.isNotEmpty(phases)) {
+      stepYamls.addAll(getStepsFromPhases(phases));
+    }
+    List<WorkflowPhase> rollbackPhases = getRollbackPhases(workflow);
+    if (EmptyPredicate.isNotEmpty(rollbackPhases)) {
+      stepYamls.addAll(getStepsFromPhases(rollbackPhases));
+    }
+    return stepYamls;
+  }
+
+  private static List<GraphNode> getStepsFromPhases(List<WorkflowPhase> phases) {
+    return phases.stream()
+        .filter(phase -> isNotEmpty(phase.getPhaseSteps()))
+        .flatMap(phase -> phase.getPhaseSteps().stream())
+        .filter(phaseStep -> isNotEmpty(phaseStep.getSteps()))
+        .flatMap(phaseStep -> phaseStep.getSteps().stream())
+        .collect(Collectors.toList());
+  }
+
+  public static List<WorkflowPhase> getRollbackPhases(Workflow workflow) {
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    Map<String, WorkflowPhase> rollbackWorkflowPhaseIdMap = orchestrationWorkflow.getRollbackWorkflowPhaseIdMap();
+    if (EmptyPredicate.isEmpty(orchestrationWorkflow.getWorkflowPhaseIds())) {
+      return Collections.emptyList();
+    }
+    return orchestrationWorkflow.getWorkflowPhaseIds()
+        .stream()
+        .filter(phaseId
+            -> rollbackWorkflowPhaseIdMap.containsKey(phaseId) && rollbackWorkflowPhaseIdMap.get(phaseId) != null)
+        .map(rollbackWorkflowPhaseIdMap::get)
+        .collect(Collectors.toList());
   }
 }
