@@ -206,8 +206,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       while (iterator.hasNext()) {
         DelegateToken delegateToken = iterator.next();
         try {
-          String token = delegateNgTokenService.decrypt(delegateToken);
-          decryptDelegateAuthV2Token(accountId, tokenString, token);
+          decryptDelegateAuthV2Token(accountId, tokenString, delegateNgTokenService.decrypt(delegateToken));
           return;
         } catch (Exception e) {
           log.debug("Fail to decrypt Delegate JWT using delegate token {} for the account {}", delegateToken.getName(),
