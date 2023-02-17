@@ -324,7 +324,6 @@ mkdir -p dist/migrator ;
 cd dist/migrator
 
 cp ${BAZEL_BIN}/100-migrator/module_deploy.jar migrator-capsule.jar
-cp ../../400-rest/src/main/resources/hazelcast.xml .
 cp ../../keystore.jks .
 cp ../../360-cg-manager/key.pem .
 cp ../../360-cg-manager/cert.pem .

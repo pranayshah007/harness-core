@@ -40,8 +40,7 @@ public class LookerEntityReconTask implements Runnable {
       List<Account> accountList = accountService.getAccountsWithBasicInfo(false);
       Set<String> accountIds = featureFlagService.getAccountIds(FeatureName.TIME_SCALE_CG_SYNC);
       for (Account account : accountList) {
-        if (featureFlagService.isEnabled(FeatureName.LOOKER_ENTITY_RECONCILIATION, account.getUuid())
-            && accountIds.contains(account.getUuid())) {
+        if (accountIds.contains(account.getUuid())) {
           for (TimeScaleEntity timeScaleEntity : timeScaleEntities) {
             executorService.submit(() -> {
               final long durationStartTs = startTime - 45 * 60 * 1000;

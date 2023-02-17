@@ -56,6 +56,7 @@ import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -69,6 +70,7 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -216,7 +218,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                                                                  .isErrorResponse(false)
                                                                  .completePipelineYaml(pipelineYamlWithoutTemplates)
                                                                  .build())));
-    String imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    String imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+pipeline.variables.image_path>",
         "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
@@ -231,7 +233,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   public void testGetResolvedPathWithImagePathWhenPipelineUnderConstruction() {
     assertThatThrownBy(
         ()
-            -> artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, "-1", "",
+            -> artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, "-1", "",
                 "<+pipeline.variables.image_path>",
                 "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
                 GitEntityFindInfoDTO.builder().build(), ""))
@@ -288,7 +290,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .thenReturn(Response.success(ResponseDTO.newResponse(
             TemplateMergeResponseDTO.builder().mergedPipelineYaml(pipelineYamlWithoutTemplates).build())));
 
-    String imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    String imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+pipeline.variables.image_path>",
         "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
@@ -344,40 +346,40 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     mockEnvironmentGetCall();
 
     // resolve expressions like <+service.name> in normal stage
-    String imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    String imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+service.name>", "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
     // resolve expressions like <+service.name> in parallel stage
-    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+service.name>", "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
     // fqnPath is for sidecar tag in normal stage
     imagePath =
-        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
+        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
             "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
             GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
     // fqnPath is for sidecar tag in parallel stage
     imagePath =
-        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
+        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
             "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
             GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
     // resolve env expressions in normal stage
     imagePath =
-        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+env.name>",
+        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+env.name>",
             "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
             GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("env1");
 
     // resolve env expressions in parallel stage
-    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+env.name>", "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("env1");
@@ -431,34 +433,34 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
 
     // resolve expressions like <+service.name> in normal stage
     String imagePath =
-        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
+        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
             "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
             GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
     // resolve expressions like <+service.name> in parallel stage
     imagePath =
-        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
+        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
             "pipeline.stages.test2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
             GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
     // fqnPath is for sidecar tag in normal stage
-    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+service.name>",
         "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
     // fqnPath is for sidecar tag in parallel stage
-    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+service.name>",
         "pipeline.stages.test2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
     // resolve env expressions in normal stage
-    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+env.name>",
         "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
@@ -466,7 +468,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
 
     // resolve env expressions in parallel stage
     imagePath =
-        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+env.name>",
+        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+env.name>",
             "pipeline.stages.test2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
             GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("env1");
@@ -523,12 +525,12 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     when(environmentService.get(anyString(), anyString(), anyString(), eq("env1"), anyBoolean()))
         .thenReturn(Optional.of(Environment.builder().name("env1").identifier("env1").build()));
 
-    String imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    String imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+service.name>", "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
-    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+env.name>", "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("env1");
@@ -604,11 +606,18 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   public void testGetBuildDetailsV2Custom() {
     // spy for ArtifactResourceUtils
     ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
-    CustomArtifactConfig customArtifactConfig = CustomArtifactConfig.builder()
-                                                    .identifier("test")
-                                                    .primaryArtifact(true)
-                                                    .version(ParameterField.createValueField("build-x"))
-                                                    .build();
+
+    List<TaskSelectorYaml> delegateSelectorsValue = new ArrayList<>();
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("abc");
+    delegateSelectorsValue.add(taskSelectorYaml);
+
+    CustomArtifactConfig customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .version(ParameterField.createValueField("build-x"))
+            .delegateSelectors(ParameterField.<List<TaskSelectorYaml>>builder().value(delegateSelectorsValue).build())
+            .build();
 
     doReturn(customArtifactConfig)
         .when(spyartifactResourceUtils)
@@ -827,7 +836,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   public void
   testGetResolvedImagePathWithFixed(String imagePathInput, String expectedImagePath) {
     String resolvedImagePath =
-        artifactResourceUtils.getResolvedImagePath("a", "o", "p", "p", "", imagePathInput, "fqn", null, null);
+        artifactResourceUtils.getResolvedFieldValue("a", "o", "p", "p", "", imagePathInput, "fqn", null, null);
     assertThat(resolvedImagePath).isEqualTo(expectedImagePath);
   }
 

@@ -26,6 +26,7 @@ import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.InfraProvisionerSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -36,6 +37,7 @@ import io.harness.ngmigration.service.NgMigrationService;
 
 import software.wings.beans.ARMInfrastructureProvisioner;
 import software.wings.beans.ARMSourceType;
+import software.wings.beans.CloudFormationInfrastructureProvisioner;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.beans.TerragruntInfrastructureProvisioner;
@@ -108,8 +110,7 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
                            .build());
         }
       }
-    }
-    if (provisioner instanceof TerragruntInfrastructureProvisioner) {
+    } else if (provisioner instanceof TerragruntInfrastructureProvisioner) {
       TerragruntInfrastructureProvisioner terragruntInfrastructureProvisioner =
           (TerragruntInfrastructureProvisioner) provisioner;
       if (StringUtils.isNotBlank(terragruntInfrastructureProvisioner.getSourceRepoSettingId())) {
@@ -123,6 +124,14 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
                          .type(SECRET_MANAGER)
                          .id(terragruntInfrastructureProvisioner.getSecretManagerId())
                          .build());
+      }
+    } else if (provisioner instanceof CloudFormationInfrastructureProvisioner) {
+      CloudFormationInfrastructureProvisioner cfProvisioner = (CloudFormationInfrastructureProvisioner) provisioner;
+
+      if (cfProvisioner.provisionByGit() && null != cfProvisioner.getGitFileConfig()
+          && isNotEmpty(cfProvisioner.getGitFileConfig().getConnectorId())) {
+        children.add(
+            CgEntityId.builder().type(CONNECTOR).id(cfProvisioner.getGitFileConfig().getConnectorId()).build());
       }
     }
 
@@ -146,7 +155,7 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     List<NGYamlFile> result = new ArrayList<>();
     InfrastructureProvisioner provisioner = (InfrastructureProvisioner) entities.get(entityId).getEntity();
@@ -162,11 +171,12 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
       }
     }
 
-    return result;
+    return YamlGenerationDetails.builder().yamlFileList(result).build();
   }
 
   @Override
-  protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     return null;
   }
 

@@ -10,6 +10,7 @@ package software.wings.service.impl.cloudwatch;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.govern.Switch.unhandled;
 
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 import static software.wings.delegatetasks.AbstractDelegateDataCollectionTask.PREDECTIVE_HISTORY_MINUTES;
 import static software.wings.delegatetasks.cv.CVConstants.CONTROL_HOST_NAME;
 import static software.wings.delegatetasks.cv.CVConstants.DURATION_TO_ASK_MINUTES;
@@ -17,7 +18,6 @@ import static software.wings.delegatetasks.cv.CVConstants.TEST_HOST_NAME;
 import static software.wings.service.impl.analysis.AnalysisComparisonStrategy.COMPARE_WITH_CURRENT;
 import static software.wings.service.impl.analysis.AnalysisComparisonStrategy.COMPARE_WITH_PREVIOUS;
 import static software.wings.service.impl.analysis.AnalysisComparisonStrategy.PREDICTIVE;
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import io.harness.delegate.task.common.DataCollectionExecutorService;
 import io.harness.exception.InvalidRequestException;
@@ -26,6 +26,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.AwsConfig;
+import software.wings.beans.dto.NewRelicMetricDataRecord;
 import software.wings.delegatetasks.DelegateLogService;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.delegatetasks.cv.CVConstants;
@@ -37,7 +38,6 @@ import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse.VerificationLoadResponse;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
-import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.intfc.cloudwatch.CloudWatchDelegateService;
 import software.wings.service.intfc.security.EncryptionService;
 

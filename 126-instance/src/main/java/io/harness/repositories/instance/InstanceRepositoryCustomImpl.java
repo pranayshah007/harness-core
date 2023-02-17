@@ -242,7 +242,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
             .count()
             .as(InstanceSyncConstants.COUNT);
     return secondaryMongoTemplate.aggregate(
-        newAggregation(matchStage, groupEnvId), Instance.class, EnvBuildInstanceCount.class);
+        newAggregation(matchStage, groupEnvId, EnvBuildInstanceCount.getProjection()), Instance.class,
+        EnvBuildInstanceCount.class);
   }
 
   @Override
@@ -267,7 +268,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                     .count()
                                     .as(InstanceSyncConstants.COUNT);
     return secondaryMongoTemplate.aggregate(
-        newAggregation(matchStage, groupEnvId), Instance.class, ActiveServiceInstanceInfo.class);
+        newAggregation(matchStage, groupEnvId, ActiveServiceInstanceInfo.getProjection()), Instance.class,
+        ActiveServiceInstanceInfo.class);
   }
 
   @Override
@@ -287,7 +289,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                     .count()
                                     .as(InstanceSyncConstants.COUNT);
     return secondaryMongoTemplate.aggregate(
-        newAggregation(matchStage, groupEnvId), Instance.class, ActiveServiceInstanceInfoV2.class);
+        newAggregation(matchStage, groupEnvId, ActiveServiceInstanceInfoV2.getProjection()), Instance.class,
+        ActiveServiceInstanceInfoV2.class);
   }
 
   @Override
@@ -311,25 +314,40 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     GroupOperation groupOperation;
     if (!isGitOps) {
       groupOperation =
-          group(InstanceKeys.envIdentifier, InstanceKeys.envType, InstanceKeys.infraIdentifier, DISPLAY_NAME)
-              .first(InstanceKeys.infraName)
-              .as(InstanceKeys.infraName);
+          group(InstanceKeys.envIdentifier, InstanceKeys.envType, InstanceKeys.infraIdentifier, DISPLAY_NAME);
     } else {
-      groupOperation = group(InstanceKeys.envIdentifier, InstanceKeys.envType, CLUSTER_IDENTIFIER, DISPLAY_NAME)
-                           .first(AGENT_IDENTIFIER)
-                           .as(AGENT_IDENTIFIER);
+      groupOperation = group(InstanceKeys.envIdentifier, InstanceKeys.envType, CLUSTER_IDENTIFIER, DISPLAY_NAME);
     }
 
     groupOperation = groupOperation.first(InstanceKeys.lastDeployedAt)
                          .as(InstanceKeys.lastDeployedAt)
                          .first(InstanceKeys.envName)
                          .as(InstanceKeys.envName)
+                         .first(InstanceKeys.infraName)
+                         .as(InstanceKeys.infraName)
+                         .first(AGENT_IDENTIFIER)
+                         .as(AGENT_IDENTIFIER)
                          .count()
                          .as(InstanceSyncConstants.COUNT);
 
+    ProjectionOperation projectionOperation2 =
+        Aggregation
+            .project(InstanceKeys.envName, InstanceKeys.infraName, AGENT_IDENTIFIER, InstanceKeys.lastDeployedAt,
+                InstanceSyncConstants.COUNT)
+            .andExpression("_id." + InstanceKeys.envIdentifier)
+            .as(InstanceKeys.envIdentifier)
+            .andExpression("_id." + InstanceKeys.envType)
+            .as(InstanceKeys.envType)
+            .andExpression("_id." + InstanceKeys.infraIdentifier)
+            .as(InstanceKeys.infraIdentifier)
+            .andExpression("_id." + DISPLAY_NAME)
+            .as(DISPLAY_NAME)
+            .andExpression("_id." + CLUSTER_IDENTIFIER)
+            .as(CLUSTER_IDENTIFIER);
+
     return secondaryMongoTemplate.aggregate(
-        newAggregation(sortOperation, matchStage, projectionOperation, groupOperation), INSTANCE_NG_COLLECTION,
-        ActiveServiceInstanceInfoWithEnvType.class);
+        newAggregation(sortOperation, matchStage, projectionOperation, groupOperation, projectionOperation2),
+        INSTANCE_NG_COLLECTION, ActiveServiceInstanceInfoWithEnvType.class);
   }
 
   @Override
@@ -357,7 +375,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
             .count()
             .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(
-        newAggregation(matchStage, groupClusterEnvId), INSTANCE_NG_COLLECTION, ActiveServiceInstanceInfo.class);
+        newAggregation(matchStage, groupClusterEnvId, ActiveServiceInstanceInfo.getProjection()),
+        INSTANCE_NG_COLLECTION, ActiveServiceInstanceInfo.class);
   }
 
   @Override
@@ -379,7 +398,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                            .count()
                                            .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(
-        newAggregation(matchStage, groupClusterEnvId), INSTANCE_NG_COLLECTION, ActiveServiceInstanceInfoV2.class);
+        newAggregation(matchStage, groupClusterEnvId, ActiveServiceInstanceInfoV2.getProjection()),
+        INSTANCE_NG_COLLECTION, ActiveServiceInstanceInfoV2.class);
   }
 
   @Override
@@ -515,20 +535,14 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     Criteria criteria =
         getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, null, envId);
 
-    if (infraId != null) {
-      criteria.and(InstanceKeys.infraIdentifier).is(infraId);
-    }
-    if (clusterIdentifier != null) {
-      criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).is(clusterIdentifier);
-    }
-
-    if (environmentType != null) {
-      criteria.and(InstanceKeys.envType).is(environmentType);
-    }
-
-    if (displayName != null) {
-      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME).is(displayName);
-    }
+    criteria.and(InstanceKeys.infraIdentifier)
+        .is(infraId)
+        .and(InstanceKeysAdditional.instanceInfoClusterIdentifier)
+        .is(clusterIdentifier)
+        .and(InstanceKeys.envType)
+        .is(environmentType)
+        .and(InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
+        .is(displayName);
 
     MatchOperation matchOperation = Aggregation.match(criteria);
     SortOperation sortOperation = Aggregation.sort(Sort.by(Sort.Direction.DESC, InstanceKeys.lastDeployedAt));
@@ -562,17 +576,9 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     GroupOperation groupEnvId =
         group(InstanceKeys.serviceIdentifier, InstanceKeys.envType).count().as(InstanceSyncConstants.COUNT);
 
-    ProjectionOperation projection =
-        Aggregation.project()
-            .andExpression(InstanceSyncConstants.ID + "." + InstanceSyncConstants.ENV_TYPE)
-            .as(InstanceSyncConstants.ENV_TYPE)
-            .andExpression(InstanceSyncConstants.ID + "." + InstanceSyncConstants.SERVICE_ID)
-            .as(InstanceSyncConstants.SERVICE_ID)
-            .andExpression(InstanceSyncConstants.COUNT)
-            .as(InstanceSyncConstants.COUNT);
-
     return secondaryMongoTemplate.aggregate(
-        newAggregation(matchStage, groupEnvId, projection), Instance.class, CountByServiceIdAndEnvType.class);
+        newAggregation(matchStage, groupEnvId, CountByServiceIdAndEnvType.getProjection()), Instance.class,
+        CountByServiceIdAndEnvType.class);
   }
 
   /*

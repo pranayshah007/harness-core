@@ -659,11 +659,12 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     } catch (Exception e) {
       return TaskChainResponse.builder()
           .chainEnd(true)
-          .passThroughData(StepExceptionPassThroughData.builder()
-                               .errorMessage(ExceptionUtils.getMessage(e))
-                               .unitProgressData(cdStepHelper.completeUnitProgressData(
-                                   unitProgressData, ambiance, ExceptionUtils.getMessage(e)))
-                               .build())
+          .passThroughData(
+              StepExceptionPassThroughData.builder()
+                  .errorMessage(format("Error while fetching values yaml: %s", ExceptionUtils.getMessage(e)))
+                  .unitProgressData(
+                      cdStepHelper.completeUnitProgressData(unitProgressData, ambiance, ExceptionUtils.getMessage(e)))
+                  .build())
           .build();
     }
 

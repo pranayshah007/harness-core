@@ -15,8 +15,6 @@ import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
 import io.harness.concurrent.HTimeLimiter;
-import io.harness.delegate.beans.Delegate;
-import io.harness.delegate.beans.DelegateGroup;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.ff.FeatureFlagConfig;
@@ -24,6 +22,9 @@ import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.metrics.modules.MetricsModule;
+import io.harness.module.AgentMtlsModule;
+import io.harness.module.DelegateAuthModule;
+import io.harness.module.DelegateServiceModule;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaModule;
 import io.harness.morphia.MorphiaRegistrar;
@@ -37,16 +38,12 @@ import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.persistence.HPersistence;
 import io.harness.redis.RedisConfig;
-import io.harness.redis.intfc.DelegateRedissonCacheManager;
 import io.harness.repositories.FilterRepository;
 import io.harness.repositories.outbox.OutboxEventRepository;
 import io.harness.serializer.DelegateServiceRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.PersistenceRegistrars;
-import io.harness.service.DelegateServiceModule;
-import io.harness.service.impl.DelegateCacheImpl;
-import io.harness.service.intfc.DelegateCache;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -75,8 +72,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.redisson.api.RLocalCachedMap;
-import org.redisson.api.RedissonClient;
 
 @Slf4j
 public class DelegateServiceRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin {
@@ -165,8 +160,11 @@ public class DelegateServiceRule implements MethodRule, InjectorRuleMixin, Mongo
     });
 
     modules.add(new DelegateServiceModule());
+    modules.add(new DelegateAuthModule());
     modules.add(TestMongoModule.getInstance());
     modules.add(MorphiaModule.getInstance());
+
+    modules.add(new AgentMtlsModule());
 
     modules.add(mongoTypeModule(annotations));
     modules.add(new AbstractModule() {
@@ -193,49 +191,6 @@ public class DelegateServiceRule implements MethodRule, InjectorRuleMixin, Mongo
       @Override
       public Class<? extends RemoteObserverInformer> getRemoteObserverImpl() {
         return NoOpRemoteObserverInformerImpl.class;
-      }
-    });
-    modules.add(new AbstractModule() {
-      @Override
-      protected void configure() {
-        bind(DelegateCache.class).to(DelegateCacheImpl.class).in(Singleton.class);
-      }
-    });
-    modules.add(new ProviderModule() {
-      @Provides
-      @Named("delegate")
-      @Singleton
-      public RLocalCachedMap<String, Delegate> getDelegateCache(DelegateRedissonCacheManager cacheManager) {
-        return mock(RLocalCachedMap.class);
-      }
-
-      @Provides
-      @Named("delegate_group")
-      @Singleton
-      public RLocalCachedMap<String, DelegateGroup> getDelegateGroupCache(DelegateRedissonCacheManager cacheManager) {
-        return mock(RLocalCachedMap.class);
-      }
-
-      @Provides
-      @Named("delegates_from_group")
-      @Singleton
-      public RLocalCachedMap<String, List<Delegate>> getDelegatesFromGroupCache(
-          DelegateRedissonCacheManager cacheManager) {
-        return mock(RLocalCachedMap.class);
-      }
-
-      @Provides
-      @Singleton
-      @Named("enableRedisForDelegateService")
-      boolean isEnableRedisForDelegateService() {
-        return false;
-      }
-
-      @Provides
-      @Singleton
-      @Named("redissonClient")
-      RedissonClient redissonClient() {
-        return mock(RedissonClient.class);
       }
     });
     return modules;

@@ -31,6 +31,7 @@ import static io.harness.yaml.schema.beans.SchemaConstants.REF_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.REQUIRED_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.RUNTIME_BUT_NOT_EXECUTION_TIME_PATTERN;
 import static io.harness.yaml.schema.beans.SchemaConstants.RUNTIME_INPUT_PATTERN;
+import static io.harness.yaml.schema.beans.SchemaConstants.RUNTIME_INPUT_PATTERN_EMPTY_STRING_ALLOWED;
 import static io.harness.yaml.schema.beans.SchemaConstants.SCHEMA_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.STRING_TYPE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.TYPE_NODE;
@@ -608,6 +609,10 @@ public class YamlSchemaGenerator {
         objectNode.put(TYPE_NODE, STRING_TYPE_NODE);
         objectNode.put(PATTERN_NODE, RUNTIME_INPUT_PATTERN);
         objectNode.put(MIN_LENGTH_NODE, 1);
+        return objectNode;
+      case runtimeEmptyStringAllowed:
+        objectNode.put(TYPE_NODE, STRING_TYPE_NODE);
+        objectNode.put(PATTERN_NODE, RUNTIME_INPUT_PATTERN_EMPTY_STRING_ALLOWED);
         return objectNode;
       case none:
         return null;

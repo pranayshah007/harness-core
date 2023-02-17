@@ -26,7 +26,7 @@ import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.service.impl.AgentMtlsEndpointServiceImpl;
+import io.harness.service.impl.agent.mtls.AgentMtlsEndpointServiceImpl;
 
 import software.wings.WingsBaseTest;
 

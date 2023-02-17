@@ -7,10 +7,14 @@
 
 package io.harness.delegate.task.terraformcloud;
 
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.TMACARI;
 
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
@@ -24,6 +28,10 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.DelegateFileManagerBase;
+import io.harness.delegate.beans.terraformcloud.PlanType;
+import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
+import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
@@ -31,18 +39,31 @@ import io.harness.terraformcloud.TerraformCloudApiException;
 import io.harness.terraformcloud.TerraformCloudApiTokenCredentials;
 import io.harness.terraformcloud.TerraformCloudClient;
 import io.harness.terraformcloud.TerraformCloudConfig;
+import io.harness.terraformcloud.model.ApplyData;
+import io.harness.terraformcloud.model.Attributes;
 import io.harness.terraformcloud.model.OrganizationData;
+import io.harness.terraformcloud.model.PlanData;
+import io.harness.terraformcloud.model.Relationship;
+import io.harness.terraformcloud.model.ResourceLinkage;
+import io.harness.terraformcloud.model.RunData;
+import io.harness.terraformcloud.model.RunRequest;
+import io.harness.terraformcloud.model.RunStatus;
+import io.harness.terraformcloud.model.StateVersionOutputData;
 import io.harness.terraformcloud.model.TerraformCloudResponse;
 import io.harness.terraformcloud.model.WorkspaceData;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
@@ -52,10 +73,21 @@ import org.mockito.junit.MockitoRule;
 public class TerraformCloudTaskHelperTest {
   private static String URL = "url";
   private static String TOKEN = "token";
+  private static final String WORKSPACE = "ws-123";
+  private static final String ORG = "org-123";
 
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private TerraformCloudClient terraformCloudClient;
+  @InjectMocks RunRequestCreator runRequestCreator;
+  @Mock DelegateFileManagerBase delegateFileManager;
+  @Mock LogCallback logCallback;
+
   @InjectMocks private TerraformCloudTaskHelper taskHelper;
+
+  @Before
+  public void setUp() {
+    on(taskHelper).set("runRequestCreator", runRequestCreator);
+  }
 
   @Test
   @Owner(developers = TMACARI)
@@ -236,5 +268,202 @@ public class TerraformCloudTaskHelperTest {
         .hasMessage("errorMessage5");
 
     verify(logCallback, times(4)).saveExecutionLog(any());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void createRunRefreshState() throws IOException {
+    TerraformCloudTaskParams terraformCloudTaskParams =
+        TerraformCloudTaskParams.builder()
+            .workspace(WORKSPACE)
+            .organization(ORG)
+            .terraformCloudTaskType(TerraformCloudTaskType.RUN_REFRESH_STATE)
+            .build();
+    ArgumentCaptor<RunRequest> runRequestArgumentCaptor = ArgumentCaptor.forClass(RunRequest.class);
+    doReturn(getCreateRunResponse())
+        .when(terraformCloudClient)
+        .createRun(any(), any(), runRequestArgumentCaptor.capture());
+    doReturn(getCreateRunResponse()).when(terraformCloudClient).getRun(any(), any(), any());
+    doReturn(getPlanResponse()).when(terraformCloudClient).getPlan(any(), any(), any());
+    doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
+
+    RunData runData = taskHelper.createRun("url", "token", terraformCloudTaskParams, logCallback);
+
+    assertTrue(runRequestArgumentCaptor.getValue().getData().getAttributes().isRefreshOnly());
+    assertTrue(runRequestArgumentCaptor.getValue().getData().getAttributes().isAutoApply());
+    assertThat(runRequestArgumentCaptor.getValue().getData().getRelationships().get("workspace").getData().getId())
+        .isEqualTo(WORKSPACE);
+    assertThat(runData.getId()).isEqualTo("run-123");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testCreateRunPlanOnly() throws IOException {
+    TerraformCloudTaskParams terraformCloudTaskParams =
+        TerraformCloudTaskParams.builder()
+            .workspace(WORKSPACE)
+            .organization(ORG)
+            .terraformCloudTaskType(TerraformCloudTaskType.RUN_PLAN_ONLY)
+            .build();
+
+    ArgumentCaptor<RunRequest> runRequestArgumentCaptor = ArgumentCaptor.forClass(RunRequest.class);
+    doReturn(getCreateRunResponse())
+        .when(terraformCloudClient)
+        .createRun(any(), any(), runRequestArgumentCaptor.capture());
+    doReturn(getCreateRunResponse()).when(terraformCloudClient).getRun(any(), any(), any());
+    doReturn(getPlanResponse()).when(terraformCloudClient).getPlan(any(), any(), any());
+    doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
+
+    RunData runData = taskHelper.createRun("url", "token", terraformCloudTaskParams, logCallback);
+
+    assertTrue(runRequestArgumentCaptor.getValue().getData().getAttributes().isPlanOnly());
+    assertThat(runRequestArgumentCaptor.getValue().getData().getRelationships().get("workspace").getData().getId())
+        .isEqualTo(WORKSPACE);
+    assertThat(runData.getId()).isEqualTo("run-123");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testCreateRunPlanAndApply() throws IOException {
+    TerraformCloudTaskParams terraformCloudTaskParams =
+        TerraformCloudTaskParams.builder()
+            .workspace(WORKSPACE)
+            .organization(ORG)
+            .terraformCloudTaskType(TerraformCloudTaskType.RUN_PLAN_AND_APPLY)
+            .build();
+    ArgumentCaptor<RunRequest> runRequestArgumentCaptor = ArgumentCaptor.forClass(RunRequest.class);
+    doReturn(getCreateRunResponse())
+        .when(terraformCloudClient)
+        .createRun(any(), any(), runRequestArgumentCaptor.capture());
+    doReturn(getCreateRunResponse()).when(terraformCloudClient).getRun(any(), any(), any());
+    doReturn(getPlanResponse()).when(terraformCloudClient).getPlan(any(), any(), any());
+    doReturn(getApplyResponse()).when(terraformCloudClient).getApply(any(), any(), any());
+    doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
+
+    RunData runData = taskHelper.createRun("url", "token", terraformCloudTaskParams, logCallback);
+
+    assertTrue(runRequestArgumentCaptor.getValue().getData().getAttributes().isPlanAndApply());
+    assertThat(runRequestArgumentCaptor.getValue().getData().getRelationships().get("workspace").getData().getId())
+        .isEqualTo(WORKSPACE);
+    assertThat(runData.getId()).isEqualTo("run-123");
+    verify(terraformCloudClient, times(1)).getApply(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testCreateRunPlanAndDestroy() throws IOException {
+    TerraformCloudTaskParams terraformCloudTaskParams =
+        TerraformCloudTaskParams.builder()
+            .workspace(WORKSPACE)
+            .organization(ORG)
+            .terraformCloudTaskType(TerraformCloudTaskType.RUN_PLAN_AND_DESTROY)
+            .build();
+    ArgumentCaptor<RunRequest> runRequestArgumentCaptor = ArgumentCaptor.forClass(RunRequest.class);
+    doReturn(getCreateRunResponse())
+        .when(terraformCloudClient)
+        .createRun(any(), any(), runRequestArgumentCaptor.capture());
+    doReturn(getCreateRunResponse()).when(terraformCloudClient).getRun(any(), any(), any());
+    doReturn(getPlanResponse()).when(terraformCloudClient).getPlan(any(), any(), any());
+    doReturn(getApplyResponse()).when(terraformCloudClient).getApply(any(), any(), any());
+    doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
+
+    RunData runData = taskHelper.createRun("url", "token", terraformCloudTaskParams, logCallback);
+
+    assertTrue(runRequestArgumentCaptor.getValue().getData().getAttributes().isPlanAndApply());
+    assertTrue(runRequestArgumentCaptor.getValue().getData().getAttributes().isDestroy());
+    assertThat(runRequestArgumentCaptor.getValue().getData().getRelationships().get("workspace").getData().getId())
+        .isEqualTo(WORKSPACE);
+    assertThat(runData.getId()).isEqualTo("run-123");
+    verify(terraformCloudClient, times(1)).getApply(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testCreateRunPlanWithForceExecuteRun() throws IOException {
+    TerraformCloudTaskParams terraformCloudTaskParams = TerraformCloudTaskParams.builder()
+                                                            .workspace(WORKSPACE)
+                                                            .organization(ORG)
+                                                            .accountId("accountId")
+                                                            .entityId("entityId")
+                                                            .planType(PlanType.APPLY)
+                                                            .terraformCloudTaskType(TerraformCloudTaskType.RUN_PLAN)
+                                                            .build();
+    ArgumentCaptor<RunRequest> runRequestArgumentCaptor = ArgumentCaptor.forClass(RunRequest.class);
+    doReturn(getCreateRunResponse())
+        .when(terraformCloudClient)
+        .createRun(any(), any(), runRequestArgumentCaptor.capture());
+    doReturn(getCreateRunResponse()).when(terraformCloudClient).getRun(any(), any(), any());
+    doReturn(getPlanResponse()).when(terraformCloudClient).getPlan(any(), any(), any());
+    doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
+    doReturn("json plan dummy").when(terraformCloudClient).getPlanJsonOutput(any(), any(), any());
+
+    RunData runData = taskHelper.createRun("url", "token", terraformCloudTaskParams, logCallback);
+
+    assertFalse(runRequestArgumentCaptor.getValue().getData().getAttributes().isDestroy());
+    assertThat(runRequestArgumentCaptor.getValue().getData().getRelationships().get("workspace").getData().getId())
+        .isEqualTo(WORKSPACE);
+    assertThat(runData.getId()).isEqualTo("run-123");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testApply() throws IOException {
+    doReturn(getCreateRunResponse()).when(terraformCloudClient).getRun(any(), any(), any());
+    doReturn(getApplyResponse()).when(terraformCloudClient).getApply(any(), any(), any());
+    doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
+    doReturn(getOutputResponse()).when(terraformCloudClient).getStateVersionOutputs(any(), any(), any(), anyInt());
+
+    String output = taskHelper.applyRun("url", "token", "run-123", "message", logCallback);
+
+    verify(terraformCloudClient, times(1)).applyRun(any(), any(), any(), any());
+
+    assertThat(output).isEqualTo("{ \"x1\" : { \"value\" : {\"x1\":\"y1\"}, \"sensitive\" : false } }");
+  }
+
+  private TerraformCloudResponse getCreateRunResponse() {
+    RunData runData = new RunData();
+    runData.setRelationships(new HashMap<>());
+    runData.setId("run-123");
+    Relationship relationshipPlan = new Relationship();
+    relationshipPlan.setData(Collections.singletonList(ResourceLinkage.builder().id("planId").build()));
+    runData.getRelationships().put("plan", relationshipPlan);
+
+    Relationship relationshipApply = new Relationship();
+    relationshipApply.setData(Collections.singletonList(ResourceLinkage.builder().id("applyId").build()));
+    runData.getRelationships().put("apply", relationshipApply);
+    runData.setAttributes(Attributes.builder().status(RunStatus.policy_checked).build());
+    return TerraformCloudResponse.builder().data(runData).build();
+  }
+
+  private TerraformCloudResponse getPlanResponse() {
+    PlanData planData = new PlanData();
+    planData.setAttributes(PlanData.Attributes.builder().logReadUrl("logUrl").build());
+    return TerraformCloudResponse.builder().data(planData).build();
+  }
+
+  private TerraformCloudResponse getApplyResponse() {
+    ApplyData applyData = new ApplyData();
+    applyData.setRelationships(new HashMap<>());
+    applyData.setAttributes(ApplyData.Attributes.builder().status("finished").build());
+    Relationship relationshipCv = new Relationship();
+    relationshipCv.setData(Collections.singletonList(ResourceLinkage.builder().id("cv-123").build()));
+    applyData.getRelationships().put("state-versions", relationshipCv);
+    return TerraformCloudResponse.builder().data(applyData).build();
+  }
+
+  private TerraformCloudResponse getOutputResponse() {
+    StateVersionOutputData stateVersionOutputData = new StateVersionOutputData();
+    stateVersionOutputData.setAttributes(
+        StateVersionOutputData.Attributes.builder().name("x1").value(JsonUtils.readTree("{\"x1\" : \"y1\"}")).build());
+    return TerraformCloudResponse.builder()
+        .data(Collections.singletonList(stateVersionOutputData))
+        .links(JsonUtils.readTree("{\"self\" : \"https:some.io\"}"))
+        .build();
   }
 }

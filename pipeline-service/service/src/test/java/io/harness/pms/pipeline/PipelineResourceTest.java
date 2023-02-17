@@ -107,9 +107,11 @@ public class PipelineResourceTest extends CategoryTest {
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
   private final String PIPELINE_IDENTIFIER = "basichttpFail";
+  private final String PIPELINE_NAME = "basichttpFail";
   private final String STAGE = "qaStage";
   private String yaml;
   private String simplifiedYaml;
+  private String simplifiedYamlWithoutName;
 
   PipelineEntity entity;
   PipelineEntity simplifiedEntity;
@@ -142,6 +144,8 @@ public class PipelineResourceTest extends CategoryTest {
     filename = "simplified-pipeline.yaml";
     simplifiedYaml =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    simplifiedYamlWithoutName = Resources.toString(
+        Objects.requireNonNull(classLoader.getResource("pipeline-without-name-v1.yaml")), StandardCharsets.UTF_8);
     simplifiedEntity = PipelineEntity.builder()
                            .accountId(ACCOUNT_ID)
                            .orgIdentifier(ORG_IDENTIFIER)
@@ -778,6 +782,25 @@ public class PipelineResourceTest extends CategoryTest {
   @Test
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
+  public void testCreateSimplifiedPipelineWithoutYamlName() {
+    doReturn(PipelineVersion.V1).when(pmsPipelineService).pipelineVersion(ACCOUNT_ID, simplifiedYamlWithoutName);
+    simplifiedEntityWithVersion.setYaml(simplifiedYamlWithoutName);
+    simplifiedEntity.setYaml(simplifiedYamlWithoutName);
+    doReturn(PipelineCRUDResult.builder()
+                 .pipelineEntity(simplifiedEntityWithVersion)
+                 .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
+                 .build())
+        .when(pmsPipelineService)
+        .validateAndCreatePipeline(simplifiedEntity, false);
+    ResponseDTO<PipelineSaveResponse> response = pipelineResource.createPipelineV2(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, PIPELINE_NAME, null, null, null, simplifiedYamlWithoutName);
+    assertThat(response.getData().getIdentifier()).isNotEmpty();
+    assertThat(response.getData().getIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
   public void testUpdateSimplifiedPipeline() {
     doReturn(PipelineVersion.V1).when(pmsPipelineService).pipelineVersion(ACCOUNT_ID, simplifiedYaml);
     GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
@@ -791,6 +814,47 @@ public class PipelineResourceTest extends CategoryTest {
     ResponseDTO<PipelineSaveResponse> responseDTO = pipelineResource.updatePipelineV2(
         null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, null, simplifiedYaml);
     assertThat(responseDTO.getData().getIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testUpdateSimplifiedPipelineWithoutYamlName() {
+    doReturn(PipelineVersion.V1).when(pmsPipelineService).pipelineVersion(ACCOUNT_ID, simplifiedYamlWithoutName);
+    simplifiedEntityWithVersion.setYaml(simplifiedYamlWithoutName);
+    simplifiedEntity.setYaml(simplifiedYamlWithoutName);
+    GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
+    PipelineCRUDResult pipelineCRUDResult = PipelineCRUDResult.builder()
+                                                .governanceMetadata(governanceMetadata)
+                                                .pipelineEntity(simplifiedEntityWithVersion)
+                                                .build();
+    doReturn(pipelineCRUDResult)
+        .when(pmsPipelineService)
+        .validateAndUpdatePipeline(simplifiedEntity, ChangeType.MODIFY, false);
+    ResponseDTO<PipelineSaveResponse> responseDTO = pipelineResource.updatePipelineV2(null, ACCOUNT_ID, ORG_IDENTIFIER,
+        PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, PIPELINE_NAME, null, null, null, simplifiedYamlWithoutName);
+    assertThat(responseDTO.getData().getIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testUpdateSimplifiedPipelineWithoutYamlNameFailure() {
+    doReturn(PipelineVersion.V1).when(pmsPipelineService).pipelineVersion(ACCOUNT_ID, simplifiedYamlWithoutName);
+    simplifiedEntityWithVersion.setYaml(simplifiedYamlWithoutName);
+    simplifiedEntity.setYaml(simplifiedYamlWithoutName);
+    GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
+    PipelineCRUDResult pipelineCRUDResult = PipelineCRUDResult.builder()
+                                                .governanceMetadata(governanceMetadata)
+                                                .pipelineEntity(simplifiedEntityWithVersion)
+                                                .build();
+    doReturn(pipelineCRUDResult)
+        .when(pmsPipelineService)
+        .validateAndUpdatePipeline(simplifiedEntity, ChangeType.MODIFY, false);
+    assertThatThrownBy(()
+                           -> pipelineResource.updatePipelineV2(null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               PIPELINE_IDENTIFIER, null, null, null, null, simplifiedYamlWithoutName))
+        .isInstanceOf(InvalidRequestException.class);
   }
 
   @Test

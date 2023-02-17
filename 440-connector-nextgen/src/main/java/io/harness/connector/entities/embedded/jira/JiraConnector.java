@@ -11,6 +11,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.Connector;
+import io.harness.delegate.beans.connector.jira.JiraAuthType;
 import io.harness.ng.DbAliases;
 
 import dev.morphia.annotations.Entity;
@@ -38,4 +39,6 @@ public class JiraConnector extends Connector {
   String username;
   String usernameRef;
   String passwordRef;
+  JiraAuthType authType;
+  JiraAuthentication jiraAuthentication;
 }

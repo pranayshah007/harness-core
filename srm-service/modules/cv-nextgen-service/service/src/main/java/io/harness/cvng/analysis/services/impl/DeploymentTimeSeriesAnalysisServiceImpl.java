@@ -11,6 +11,7 @@ import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.LOAD_TEST_BAS
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.LOAD_TEST_CURRENT_NODE_IDENTIFIER;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.areMetricsFromCVConfigFilteredOut;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.convertTimeSeriesRecordDtosListToMap;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.filterUnhealthyMetricsAnalyses;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getFilteredAnalysedTestDataNodes;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getFilteredMetricCVConfigs;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getHealthSourceFromCVConfig;
@@ -31,6 +32,7 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.TimeSeriesAnalysisSummary;
 import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO.HostData;
+import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO.HostInfo;
 import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData;
 import io.harness.cvng.analysis.beans.NodeRiskCountDTO;
 import io.harness.cvng.analysis.beans.Risk;
@@ -41,6 +43,10 @@ import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis;
 import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis.DeploymentTimeSeriesAnalysisKeys;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.TimeSeriesDataCollectionRecord;
+import io.harness.cvng.beans.TimeSeriesDataCollectionRecord.TimeSeriesDataRecordGroupValue;
+import io.harness.cvng.beans.TimeSeriesDataCollectionRecord.TimeSeriesDataRecordMetricValue;
+import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.cdng.beans.v2.AnalysisResult;
 import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
 import io.harness.cvng.cdng.beans.v2.HealthSource;
@@ -79,6 +85,7 @@ import dev.morphia.query.Sort;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -88,6 +95,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -267,6 +275,190 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
   }
 
   @Override
+  public void addDemoMetricsAnalysisData(String verificationTaskId, CVConfig cvConfig,
+      VerificationJobInstance verificationJobInstance, ActivityVerificationStatus activityVerificationStatus) {
+    MetricCVConfig<? extends AnalysisInfo> metricCVConfig = (MetricCVConfig<? extends AnalysisInfo>) cvConfig;
+    boolean isCustomMetric = CollectionUtils.isNotEmpty(metricCVConfig.getMetricInfos());
+    Duration verificationDuration = verificationJobInstance.getResolvedJob().getDuration();
+    Instant testDataCollectionStartTime = verificationJobInstance.getStartTime();
+    Instant testDataCollectionEndTime = testDataCollectionStartTime.plus(verificationDuration);
+    TimeRange testDataCollectionTimeRange =
+        TimeRange.builder().startTime(testDataCollectionStartTime).endTime(testDataCollectionEndTime).build();
+    TimeRange controlDataCollectionTimeRange = null;
+    AppliedDeploymentAnalysisType appliedDeploymentAnalysisType =
+        AppliedDeploymentAnalysisType.fromVerificationJobType(verificationJobInstance.getResolvedJob().getType());
+    List<String> controlHosts = new ArrayList<>();
+    List<String> testHosts = new ArrayList<>();
+    List<String> metricIdentifiers = new ArrayList<>();
+    List<String> metricNames = new ArrayList<>();
+    if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.CANARY) {
+      controlHosts.add("control-host-1");
+      controlHosts.add("control-host-2");
+      testHosts.add("test-host-1");
+      testHosts.add("test-host-2");
+      controlDataCollectionTimeRange = testDataCollectionTimeRange;
+    } else if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.ROLLING) {
+      controlHosts.add("control-host-1");
+      controlHosts.add("control-host-2");
+      testHosts.add("test-host-1");
+      testHosts.add("test-host-2");
+      controlDataCollectionTimeRange =
+          TimeRange.builder()
+              .startTime(verificationJobInstance.getDeploymentStartTime().minus(verificationDuration))
+              .endTime(verificationJobInstance.getDeploymentStartTime())
+              .build();
+    } else {
+      controlHosts.add("control-host-1");
+      testHosts.add("test-host-1");
+      Instant controlDataCollectionStartTime = verificationJobInstance.getStartTime().minus(1, ChronoUnit.DAYS);
+      controlDataCollectionTimeRange = TimeRange.builder()
+                                           .startTime(controlDataCollectionStartTime)
+                                           .endTime(controlDataCollectionStartTime.plus(verificationDuration))
+                                           .build();
+    }
+    List<String> transactionGroups = new ArrayList<>();
+    if (isCustomMetric) {
+      transactionGroups.add(metricCVConfig.maybeGetGroupName().orElse("transaction/group/1"));
+      Set<AnalysisInfo> metricInfos = metricCVConfig.getMetricInfos()
+                                          .stream()
+                                          .filter(info -> info.getDeploymentVerification().isEnabled())
+                                          .collect(Collectors.toSet());
+      for (AnalysisInfo info : metricInfos) {
+        metricIdentifiers.add(info.getIdentifier());
+        metricNames.add(info.getMetricName());
+      }
+
+    } else {
+      transactionGroups.add("transaction/group/1");
+      transactionGroups.add("transaction/group/2");
+      Set<MetricDefinition> metricDefinitions = metricCVConfig.getMetricPack()
+                                                    .getMetrics()
+                                                    .stream()
+                                                    .filter(MetricDefinition::isIncluded)
+                                                    .collect(Collectors.toSet());
+      for (MetricDefinition metricDefinition : metricDefinitions) {
+        metricIdentifiers.add(metricDefinition.getIdentifier());
+        metricNames.add(metricDefinition.getName());
+      }
+    }
+
+    int controlDataLowerBound = 20;
+    int testDataLowerBound = 25;
+    int controlDataUpperBound = 40;
+    int testDataUpperBound = 45;
+    Risk risk = Risk.HEALTHY;
+    Double score = 0.5;
+    if (activityVerificationStatus == ActivityVerificationStatus.VERIFICATION_FAILED) {
+      testDataUpperBound *= 5;
+      testDataLowerBound *= 5;
+      risk = Risk.UNHEALTHY;
+    }
+    int numberOfNormalisationBuckets = (int) Math.ceil(verificationDuration.toMinutes() / 3);
+    saveTimeSeriesRecords(controlHosts, transactionGroups, metricNames, metricIdentifiers,
+        controlDataCollectionTimeRange, controlDataLowerBound, controlDataUpperBound, verificationJobInstance,
+        verificationTaskId);
+    saveTimeSeriesRecords(testHosts, transactionGroups, metricNames, metricIdentifiers, testDataCollectionTimeRange,
+        testDataLowerBound, testDataUpperBound, verificationJobInstance, verificationTaskId);
+    List<HostInfo> hostSummaries = new ArrayList<>();
+    List<TransactionMetricHostData> transactionMetricSummaries = new ArrayList<>();
+
+    for (String controlHost : controlHosts) {
+      hostSummaries.add(HostInfo.builder().hostName(controlHost).primary(true).score(score).build());
+    }
+    for (String testHost : testHosts) {
+      hostSummaries.add(HostInfo.builder().hostName(testHost).canary(true).risk(risk.getValue()).score(score).build());
+    }
+    Random random = new Random();
+    for (int i = 0; i < metricIdentifiers.size(); ++i) {
+      for (String transactionGroup : transactionGroups) {
+        List<HostData> hostDataList = new ArrayList<>();
+        for (int j = 0; j < testHosts.size(); ++j) {
+          List<Double> controlData = new ArrayList<>();
+          List<Double> testData = new ArrayList<>();
+          for (int k = 0; k <= numberOfNormalisationBuckets; ++k) {
+            controlData.add((double) getRandomNumberUsingNextInt(random, controlDataLowerBound, controlDataUpperBound));
+            testData.add((double) getRandomNumberUsingNextInt(random, testDataLowerBound, testDataUpperBound));
+          }
+          HostData hostData = HostData.builder()
+                                  .hostName(testHosts.get(j))
+                                  .nearestControlHost(controlHosts.get(j))
+                                  .controlData(controlData)
+                                  .testData(testData)
+                                  .score(score)
+                                  .risk(risk.getValue())
+                                  .build();
+          hostDataList.add(hostData);
+        }
+        TransactionMetricHostData transactionMetricHostData = TransactionMetricHostData.builder()
+                                                                  .hostData(hostDataList)
+                                                                  .metricName(metricIdentifiers.get(i))
+                                                                  .transactionName(transactionGroup)
+                                                                  .risk(risk.getValue())
+                                                                  .score(score)
+                                                                  .build();
+
+        transactionMetricSummaries.add(transactionMetricHostData);
+      }
+    }
+    DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis =
+        DeploymentTimeSeriesAnalysis.builder()
+            .startTime(testDataCollectionStartTime)
+            .endTime(testDataCollectionEndTime)
+            .accountId(verificationJobInstance.getAccountId())
+            .risk(risk)
+            .failFast(false)
+            .verificationTaskId(verificationTaskId)
+            .hostSummaries(hostSummaries)
+            .transactionMetricSummaries(transactionMetricSummaries)
+            .build();
+    hPersistence.save(deploymentTimeSeriesAnalysis);
+  }
+
+  private void saveTimeSeriesRecords(List<String> hosts, List<String> transactionGroups, List<String> metricNames,
+      List<String> metricIdentifiers, TimeRange timeRange, int lowerBound, int upperBound,
+      VerificationJobInstance verificationJobInstance, String verificationTaskId) {
+    Random randomGenerator = new Random();
+    List<TimeSeriesDataCollectionRecord> timeSeriesDataCollectionRecords = new ArrayList<>();
+    for (String controlHost : hosts) {
+      for (long timestamp = timeRange.getStartTime().toEpochMilli(); timestamp < timeRange.getEndTime().toEpochMilli();
+           timestamp += 60000) {
+        Set<TimeSeriesDataRecordMetricValue> metricValues = new HashSet<>();
+        for (int i = 0; i < metricNames.size(); ++i) {
+          Set<TimeSeriesDataRecordGroupValue> timeSeriesValues = new HashSet<>();
+          for (String transactionGroup : transactionGroups) {
+            timeSeriesValues.add(TimeSeriesDataRecordGroupValue.builder()
+                                     .value(getRandomNumberUsingNextInt(randomGenerator, lowerBound, upperBound))
+                                     .groupName(transactionGroup)
+                                     .build());
+          }
+          TimeSeriesDataRecordMetricValue timeSeriesDataRecordMetricValue =
+              TimeSeriesDataRecordMetricValue.builder()
+                  .metricName(metricNames.get(i))
+                  .metricIdentifier(metricIdentifiers.get(i))
+                  .timeSeriesValues(timeSeriesValues)
+                  .build();
+          metricValues.add(timeSeriesDataRecordMetricValue);
+        }
+
+        TimeSeriesDataCollectionRecord timeSeriesDataCollectionRecord =
+            TimeSeriesDataCollectionRecord.builder()
+                .timeStamp(timestamp)
+                .host(controlHost)
+                .accountId(verificationJobInstance.getAccountId())
+                .verificationTaskId(verificationTaskId)
+                .metricValues(metricValues)
+                .build();
+        timeSeriesDataCollectionRecords.add(timeSeriesDataCollectionRecord);
+      }
+    }
+    timeSeriesRecordService.save(timeSeriesDataCollectionRecords);
+  }
+
+  private int getRandomNumberUsingNextInt(Random random, int min, int max) {
+    return random.nextInt(max - min) + min;
+  }
+
+  @Override
   public List<String> getTransactionNames(String accountId, String verificationJobInstanceId) {
     Set<String> transactionNameSet = new HashSet<>();
     DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter =
@@ -433,16 +625,21 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
             metricsForThisAnalysis.put(UUIDGenerator.generateUuid(), metricsAnalysis);
           }
           if (Objects.nonNull(metricsAnalysis)) {
+            if (Objects.isNull(metricsAnalysis.getTransactionGroup())) {
+              // Only applicable where the metric is neither custom nor default-metric-pack metric, ie dashboard based
+              // metrics. eg Datadog , GCP
+              metricsAnalysis.setTransactionGroup(transactionGroup);
+            }
             Optional<String> deeplinkURL = deeplinkURLService.buildDeeplinkURLFromCVConfig(
                 cvConfig, metricIdentifier, testDataTimeRange.getStartTime(), testDataTimeRange.getEndTime());
             deeplinkURL.ifPresent(metricsAnalysis::setDeeplinkURL);
             metricsAnalysis.setAnalysisResult(analysisResult);
             metricsAnalysis.setTestDataNodes(getFilteredAnalysedTestDataNodes(
                 transactionMetricHostData, deploymentTimeSeriesAnalysisFilter, metricsAnalysis.getThresholds()));
+            populateTimestampsForNormalisedData(metricsAnalysis, controlDataTimeRange, testDataTimeRange);
             populateRawMetricDataInMetricAnalysis(appliedDeploymentAnalysisType,
                 controlNodesRawData.getOrDefault(metricIdentifier, Collections.emptyMap()),
                 testNodesRawData.getOrDefault(metricIdentifier, Collections.emptyMap()), metricsAnalysis);
-            populateTimestampsForNormalisedData(metricsAnalysis, controlDataTimeRange, testDataTimeRange);
           }
         } else {
           metricsForThisAnalysis.remove(metricIdentifier);
@@ -451,6 +648,9 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
     }
     List<MetricsAnalysis> metricsAnalyses = new ArrayList<>();
     for (Map<String, MetricsAnalysis> map : mapOfCvConfigIdAndFilteredMetrics.values()) {
+      if (deploymentTimeSeriesAnalysisFilter.isAnomalousMetricsOnly()) {
+        map = filterUnhealthyMetricsAnalyses(map);
+      }
       metricsAnalyses.addAll(map.values());
     }
     sortMetricsAnalysisResults(metricsAnalyses);
@@ -490,15 +690,14 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
         .getMetrics()
         .stream()
         .filter(MetricDefinition::isIncluded)
-        .map(metricDefinition -> {
-          return MetricsAnalysis.builder()
-              .metricName(metricDefinition.getName())
-              .metricIdentifier(metricDefinition.getIdentifier())
-              .healthSource(healthSource)
-              .metricType(getMetricTypeFromCvConfigAndMetricDefinition(metricCVConfig, metricDefinition))
-              .thresholds(getThresholdsFromDefinition(metricDefinition))
-              .build();
-        })
+        .map(metricDefinition
+            -> MetricsAnalysis.builder()
+                   .metricName(metricDefinition.getName())
+                   .metricIdentifier(metricDefinition.getIdentifier())
+                   .healthSource(healthSource)
+                   .metricType(getMetricTypeFromCvConfigAndMetricDefinition(metricCVConfig, metricDefinition))
+                   .thresholds(getThresholdsFromDefinition(metricDefinition))
+                   .build())
         .collect(
             Collectors.toMap(MetricsAnalysis::getMetricIdentifier, metricsAnalysis -> metricsAnalysis, (u, v) -> v));
   }
@@ -524,6 +723,7 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
         })
         .collect(Collectors.toList());
   }
+
   private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getControlNodesRawData(
       AppliedDeploymentAnalysisType appliedDeploymentAnalysisType, VerificationJobInstance verificationJobInstance,
       String verificationTaskId, DeploymentTimeSeriesAnalysis timeSeriesAnalysis, Optional<TimeRange> timeRange) {

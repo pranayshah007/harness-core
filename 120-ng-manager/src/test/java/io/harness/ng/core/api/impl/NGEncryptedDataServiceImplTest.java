@@ -10,6 +10,7 @@ package io.harness.ng.core.api.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
@@ -764,5 +765,50 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     boolean deleted =
         ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, true);
     assertThat(deleted).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testValidateSecretPath_Success() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    String secretRefPath = randomAlphabetic(10);
+    SecretManagerConfigDTO secretManager = VaultConfigDTO.builder()
+                                               .harnessManaged(false)
+                                               .encryptionType(VAULT)
+                                               .secretId(randomAlphabetic(10))
+                                               .accountIdentifier(accountIdentifier)
+                                               .authToken(randomAlphabetic(10))
+                                               .build();
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, false))
+        .thenReturn(secretManager);
+    when(vaultEncryptor.validateReference(anyString(), anyString(), any())).thenReturn(true);
+    boolean result = ngEncryptedDataService.validateSecretRef(
+        accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, secretRefPath);
+    assertThat(result).isEqualTo(true);
+  }
+
+  @Test(expected = SecretManagementException.class)
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testValidateSecretPath_Failure() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    String secretRefPath = randomAlphabetic(10);
+    SecretManagerConfigDTO secretManager = VaultConfigDTO.builder()
+                                               .harnessManaged(false)
+                                               .encryptionType(VAULT)
+                                               .secretId(randomAlphabetic(10))
+                                               .accountIdentifier(accountIdentifier)
+                                               .authToken(randomAlphabetic(10))
+                                               .build();
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, false))
+        .thenReturn(secretManager);
+    when(vaultEncryptor.validateReference(anyString(), anyString(), any()))
+        .thenThrow(new SecretManagementException("not able to resolve path"));
+    boolean result = ngEncryptedDataService.validateSecretRef(
+        accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, secretRefPath);
+    assertThat(result).isEqualTo(false);
   }
 }

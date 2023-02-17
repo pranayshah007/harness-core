@@ -38,13 +38,9 @@ import static io.harness.delegate.message.MessageConstants.DELEGATE_STOP_ACQUIRI
 import static io.harness.delegate.message.MessageConstants.DELEGATE_STOP_GRPC;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_SWITCH_STORAGE;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_TOKEN_NAME;
-import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_NEEDED;
-import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_PENDING;
-import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_STARTED;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_VERSION;
 import static io.harness.delegate.message.MessageConstants.MIGRATE_TO_JRE_VERSION;
 import static io.harness.delegate.message.MessageConstants.UNREGISTERED;
-import static io.harness.delegate.message.MessageConstants.UPGRADING_DELEGATE;
 import static io.harness.delegate.message.MessageConstants.WATCHER_DATA;
 import static io.harness.delegate.message.MessageConstants.WATCHER_HEARTBEAT;
 import static io.harness.delegate.message.MessageConstants.WATCHER_PROCESS;
@@ -369,8 +365,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private final AtomicLong lastHeartbeatSentAt = new AtomicLong(System.currentTimeMillis());
   private final AtomicLong frozenAt = new AtomicLong(-1);
   private final AtomicLong lastHeartbeatReceivedAt = new AtomicLong(System.currentTimeMillis());
-  private final AtomicBoolean upgradePending = new AtomicBoolean(false);
-  private final AtomicBoolean upgradeNeeded = new AtomicBoolean(false);
   private final AtomicBoolean restartNeeded = new AtomicBoolean(false);
   private final AtomicBoolean acquireTasks = new AtomicBoolean(true);
   private final AtomicBoolean frozen = new AtomicBoolean(false);
@@ -384,7 +378,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private Client client;
   private Socket socket;
-  private String upgradeVersion;
   private String migrateTo;
   private long startTime;
   private long upgradeStartedAt;
@@ -706,10 +699,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       startMonitoringWatcher();
       checkForSSLCertVerification(accountId);
 
-      if (!multiVersion) {
-        startUpgradeCheck(getVersion());
-      }
-
       log.info("Delegate started with config {} ", getDelegateConfig());
       messageService.writeMessage(DELEGATE_READY);
       log.info("Manager Authority:{}, Manager Target:{}", delegateConfiguration.getManagerAuthority(),
@@ -765,14 +754,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void clearData() {
-    log.info("Clearing data for delegate process {}, Upgrade Pending {}", getProcessId(), upgradePending.get());
+    log.info("Clearing data for delegate process {}", getProcessId());
     messageService.closeData(DELEGATE_DASH + getProcessId());
     messageService.closeChannel(DELEGATE, getProcessId());
 
-    if (upgradePending.get()) {
-      removeDelegateVersionFromCapsule();
-      cleanupOldDelegateVersionFromBackup();
-    }
+    removeDelegateVersionFromCapsule();
+    cleanupOldDelegateVersionFromBackup();
   }
 
   private RequestBuilder prepareRequestBuilder() {
@@ -980,8 +967,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       if (perpetualTaskWorker != null) {
         perpetualTaskWorker.start();
       }
-      upgradePending.set(false);
-      upgradeNeeded.set(false);
       restartNeeded.set(false);
       acquireTasks.set(true);
     } catch (IOException e) {
@@ -1255,9 +1240,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private void startInputCheck() {
     inputExecutor.scheduleWithFixedDelay(
         messageService.getMessageCheckingRunnable(TimeUnit.SECONDS.toMillis(2), message -> {
-          if (UPGRADING_DELEGATE.equals(message.getMessage())) {
-            upgradeNeeded.set(false);
-          } else if (DELEGATE_STOP_ACQUIRING.equals(message.getMessage())) {
+          if (DELEGATE_STOP_ACQUIRING.equals(message.getMessage())) {
             handleStopAcquiringMessage(message.getFromProcess());
           } else if (DELEGATE_RESUME.equals(message.getMessage())) {
             resume();
@@ -1336,59 +1319,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         perpetualTaskWorker.stop();
       }
     }
-  }
-
-  private void startUpgradeCheck(String version) {
-    if (!delegateConfiguration.isDoUpgrade()) {
-      log.info("Auto upgrade is disabled in configuration");
-      log.info("Delegate stays on version: [{}]", version);
-      return;
-    }
-
-    log.info("Starting upgrade check at interval {} ms", delegateConfiguration.getHeartbeatIntervalMs());
-    healthMonitorExecutor.scheduleWithFixedDelay(() -> {
-      if (upgradePending.get()) {
-        log.info("[Old] Upgrade is pending...");
-      } else {
-        log.info("Checking for upgrade");
-        try {
-          RestResponse<DelegateScripts> restResponse =
-              HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter, Duration.ofMinutes(1),
-                  ()
-                      -> executeRestCall(delegateAgentManagerClient.getDelegateScripts(
-                          accountId, version, DEFAULT_PATCH_VERSION, DELEGATE_NAME)));
-          DelegateScripts delegateScripts = restResponse.getResource();
-          if (delegateScripts == null) {
-            log.warn("Unable to fetch scripts from manager");
-            return;
-          }
-          if (delegateScripts.isDoUpgrade()) {
-            upgradePending.set(true);
-
-            upgradeStartedAt = clock.millis();
-            Map<String, Object> upgradeData = new HashMap<>();
-            upgradeData.put(DELEGATE_UPGRADE_PENDING, true);
-            upgradeData.put(DELEGATE_UPGRADE_STARTED, upgradeStartedAt);
-            messageService.putAllData(DELEGATE_DASH + getProcessId(), upgradeData);
-
-            log.info("[Old] Replace run scripts");
-            replaceRunScripts(delegateScripts);
-            log.info("[Old] Run scripts downloaded. Upgrading delegate. Stop acquiring async tasks");
-            upgradeVersion = delegateScripts.getVersion();
-            upgradeNeeded.set(true);
-          } else {
-            log.info("Delegate up to date");
-          }
-        } catch (UncheckedTimeoutException tex) {
-          log.warn("Timed out checking for upgrade", tex);
-        } catch (Exception e) {
-          upgradePending.set(false);
-          upgradeNeeded.set(false);
-          acquireTasks.set(true);
-          log.error("Exception while checking for upgrade", e);
-        }
-      }
-    }, 0, delegateConfiguration.getHeartbeatIntervalMs(), TimeUnit.MILLISECONDS);
   }
 
   private void startTaskPolling() {
@@ -1529,8 +1459,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       statusData.put(DELEGATE_VERSION, getVersionWithPatch());
       statusData.put(DELEGATE_IS_NEW, false);
       statusData.put(DELEGATE_RESTART_NEEDED, doRestartDelegate());
-      statusData.put(DELEGATE_UPGRADE_NEEDED, upgradeNeeded.get());
-      statusData.put(DELEGATE_UPGRADE_PENDING, upgradePending.get());
       statusData.put(DELEGATE_SHUTDOWN_PENDING, !acquireTasks.get());
       // dont pass null delegateId, instead pass "Unregistered" as delegateId
       statusData.put(DELEGATE_ID, getDelegateId().orElse(UNREGISTERED));
@@ -1543,9 +1471,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       if (sendJreInformationToWatcher) {
         statusData.put(DELEGATE_JRE_VERSION, System.getProperty(JAVA_VERSION));
         statusData.put(MIGRATE_TO_JRE_VERSION, migrateToJreVersion);
-      }
-      if (upgradePending.get()) {
-        statusData.put(DELEGATE_UPGRADE_STARTED, upgradeStartedAt);
       }
       if (!acquireTasks.get()) {
         if (stoppedAcquiringAt == 0) {
@@ -1978,11 +1903,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
         if (!acquireTasks.get()) {
           log.info("[Old] Upgraded process is running. Won't acquire task while completing other tasks");
-          return;
-        }
-
-        if (upgradePending.get() && !delegateTaskEvent.isSync()) {
-          log.info("[Old] Upgrade pending, won't acquire async task");
           return;
         }
 
@@ -2427,24 +2347,23 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void cleanupOldDelegateVersionFromBackup() {
     try {
-      cleanup(new File(System.getProperty("user.dir")), getVersion(), upgradeVersion, "backup.");
+      cleanup(new File(System.getProperty("user.dir")), getVersion(), "backup.");
     } catch (Exception ex) {
-      log.error("Failed to clean delegate version [{}] from Backup", upgradeVersion, ex);
+      log.error("Failed to clean delegate version [{}] from Backup", ex);
     }
   }
 
   private void removeDelegateVersionFromCapsule() {
     try {
-      cleanup(new File(System.getProperty("capsule.dir")).getParentFile(), getVersionWithPatch(), upgradeVersion,
-          "delegate-");
+      cleanup(new File(System.getProperty("capsule.dir")).getParentFile(), getVersionWithPatch(), "delegate-");
     } catch (Exception ex) {
-      log.error("Failed to clean delegate version [{}] from Capsule", upgradeVersion, ex);
+      log.error("Failed to clean delegate version [{}] from Capsule", ex);
     }
   }
 
-  private void cleanup(File dir, String currentVersion, String newVersion, String pattern) {
+  private void cleanup(File dir, String currentVersion, String pattern) {
     FileUtils.listFilesAndDirs(dir, falseFileFilter(), FileFilterUtils.prefixFileFilter(pattern)).forEach(file -> {
-      if (!dir.equals(file) && !file.getName().contains(currentVersion) && !file.getName().contains(newVersion)) {
+      if (!dir.equals(file) && !file.getName().contains(currentVersion)) {
         log.info("[Old] File Name to be deleted = " + file.getAbsolutePath());
         FileUtils.deleteQuietly(file);
       }
@@ -2467,8 +2386,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private void initiateSelfDestruct() {
     log.info("Self destruct sequence initiated...");
     acquireTasks.set(false);
-    upgradePending.set(false);
-    upgradeNeeded.set(false);
     restartNeeded.set(false);
     selfDestruct.set(true);
 

@@ -22,7 +22,6 @@ import io.harness.ci.creator.variables.STOStageVariableCreator;
 import io.harness.ci.creator.variables.STOStepVariableCreator;
 import io.harness.ci.creator.variables.SecurityStepVariableCreator;
 import io.harness.ci.plancreator.BackgroundStepPlanCreator;
-import io.harness.ci.plancreator.GitCloneStepPlanCreator;
 import io.harness.ci.plancreator.InitializeStepPlanCreator;
 import io.harness.ci.plancreator.PluginStepPlanCreator;
 import io.harness.ci.plancreator.RunStepPlanCreator;
@@ -30,13 +29,16 @@ import io.harness.ci.plancreator.SecurityStepPlanCreator;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.filters.ExecutionPMSFilterJsonCreator;
 import io.harness.filters.ParallelGenericFilterJsonCreator;
+import io.harness.filters.StepGroupPmsFilterJsonCreator;
 import io.harness.plancreator.execution.ExecutionPmsPlanCreator;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.NGStageStepsPlanCreator;
+import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
 import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
+import io.harness.pms.sdk.core.pipeline.variables.StepGroupVariableCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
 import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
@@ -81,11 +83,10 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     planCreators.add(new BackgroundStepPlanCreator());
     planCreators.add(new SecurityStepPlanCreator());
     planCreators.add(new NGStageStepsPlanCreator());
-
+    planCreators.add(new StepGroupPMSPlanCreator());
     planCreators.add(new PluginStepPlanCreator());
     planCreators.add(new ParallelPlanCreator());
     planCreators.add(new StrategyConfigPlanCreator());
-    planCreators.add(new GitCloneStepPlanCreator());
     planCreators.add(new ExecutionPmsPlanCreator());
     planCreators.add(new InitializeStepPlanCreator());
 
@@ -98,6 +99,7 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     List<FilterJsonCreator> filterJsonCreators = new ArrayList<>();
     filterJsonCreators.add(new STOStageFilterJsonCreator());
     filterJsonCreators.add(new STOStepFilterJsonCreatorV2());
+    filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
     filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
     filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
     filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Set.of(STRATEGY, STEPS)));
@@ -112,7 +114,7 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     variableCreators.add(new STOStageVariableCreator());
     variableCreators.add(new ExecutionVariableCreator());
     variableCreators.add(new STOStepVariableCreator());
-
+    variableCreators.add(new StepGroupVariableCreator());
     variableCreators.add(new STOCommonStepVariableCreator());
     variableCreators.add(new RunStepVariableCreator());
     variableCreators.add(new BackgroundStepVariableCreator());

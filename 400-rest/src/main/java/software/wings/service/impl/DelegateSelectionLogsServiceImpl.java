@@ -8,6 +8,8 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
+import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
+import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -17,8 +19,9 @@ import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
+import io.harness.beans.FeatureName;
+import io.harness.beans.SearchFilter;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
 import io.harness.delegate.beans.DelegateSelectionLogResponse;
@@ -29,24 +32,31 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.selection.log.DelegateSelectionLog;
 import io.harness.selection.log.DelegateSelectionLog.DelegateSelectionLogKeys;
-import io.harness.selection.log.DelegateSelectionLogTaskMetadata;
 import io.harness.service.intfc.DelegateCache;
 
+import software.wings.service.intfc.DataStoreService;
 import software.wings.service.intfc.DelegateSelectionLogsService;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.fabric8.utils.Lists;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -64,6 +74,14 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
   @Inject private DelegateCache delegateCache;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private DataStoreService dataStoreService;
+  private Cache<String, List<DelegateSelectionLog>> cache =
+      Caffeine.newBuilder()
+          .executor(Executors.newSingleThreadExecutor(
+              new ThreadFactoryBuilder().setNameFormat("delegate-selection-log-write").build()))
+          .expireAfterWrite(1000, TimeUnit.MILLISECONDS)
+          .removalListener(this::dispatchSelectionLogs)
+          .build();
 
   private static final String SELECTED = "Selected";
   private static final String NON_SELECTED = "Not Selected";
@@ -87,10 +105,29 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   public static final String TASK_VALIDATION_FAILED =
       "No eligible delegate was able to confirm that it has the capability to execute ";
 
+  public DelegateSelectionLogsServiceImpl() {
+    // caffeine cache doesn't evict solely on time, it does it lazily only when new entries are added.
+    // adding this executor to continuously purge so that the records are written
+    Executors
+        .newSingleThreadScheduledExecutor(
+            new ThreadFactoryBuilder().setNameFormat("delegate-selection-log-cleanup").build())
+        .scheduleAtFixedRate(
+            this::purgeSelectionLogs, 5000, 1000, TimeUnit.MILLISECONDS); // periodic cleanup for expired keys
+  }
+
   @Override
-  public void save(DelegateSelectionLog selectionLog) {
+  public synchronized void save(DelegateSelectionLog selectionLog) {
+    Optional.ofNullable(cache.get(selectionLog.getAccountId(), log -> new ArrayList<>()))
+        .ifPresent(logs -> logs.add(selectionLog));
+  }
+
+  private void dispatchSelectionLogs(String accountId, List<DelegateSelectionLog> logs, RemovalCause removalCause) {
     try {
-      persistence.save(selectionLog);
+      dataStoreService.save(DelegateSelectionLog.class, logs, true);
+      // TODO: remove this once reading from datastore is operational
+      if (dataStoreService instanceof GoogleDataStoreServiceImpl) {
+        persistence.save(logs);
+      }
     } catch (Exception exception) {
       log.error("Error while saving into Database ", exception);
     }
@@ -212,10 +249,21 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
 
   @Override
   public List<DelegateSelectionLogParams> fetchTaskSelectionLogs(String accountId, String taskId) {
-    List<DelegateSelectionLog> delegateSelectionLogsList = persistence.createQuery(DelegateSelectionLog.class)
-                                                               .filter(DelegateSelectionLogKeys.accountId, accountId)
-                                                               .filter(DelegateSelectionLogKeys.taskId, taskId)
-                                                               .asList();
+    List<DelegateSelectionLog> delegateSelectionLogsList =
+        featureFlagService.isEnabled(FeatureName.DEL_SELECTION_LOGS_READ_FROM_GOOGLE_DATA_STORE, accountId)
+        ? dataStoreService
+              .list(DelegateSelectionLog.class,
+                  aPageRequest()
+                      .withLimit(UNLIMITED)
+                      .addFilter(DelegateSelectionLogKeys.accountId, SearchFilter.Operator.EQ, accountId)
+                      .addFilter(DelegateSelectionLogKeys.taskId, SearchFilter.Operator.EQ, taskId)
+                      .build(),
+                  false)
+              .getResponse()
+        : persistence.createQuery(DelegateSelectionLog.class)
+              .filter(DelegateSelectionLogKeys.accountId, accountId)
+              .filter(DelegateSelectionLogKeys.taskId, taskId)
+              .asList();
 
     List<DelegateSelectionLog> logList = delegateSelectionLogsList.stream()
                                              .sorted(Comparator.comparing(DelegateSelectionLog::getEventTimestamp))
@@ -227,37 +275,41 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   @Override
   public DelegateSelectionLogResponse fetchTaskSelectionLogsData(String accountId, String taskId) {
     List<DelegateSelectionLogParams> delegateSelectionLogParams = fetchTaskSelectionLogs(accountId, taskId);
-    DelegateSelectionLogTaskMetadata taskMetadata = persistence.createQuery(DelegateSelectionLogTaskMetadata.class)
-                                                        .filter(DelegateSelectionLogKeys.accountId, accountId)
-                                                        .filter(DelegateSelectionLogKeys.taskId, taskId)
-                                                        .get();
-
-    Map<String, String> previewSetupAbstractions = new HashMap<>();
-    if (taskMetadata != null && taskMetadata.getSetupAbstractions() != null) {
-      previewSetupAbstractions =
-          taskMetadata.getSetupAbstractions()
-              .entrySet()
-              .stream()
-              .filter(map
-                  -> Cd1SetupFields.APPLICATION.equals(map.getKey()) || Cd1SetupFields.SERVICE.equals(map.getKey())
-                      || Cd1SetupFields.ENVIRONMENT.equals(map.getKey())
-                      || Cd1SetupFields.ENVIRONMENT_TYPE.equals(map.getKey()))
-              .collect(Collectors.toMap(Map.Entry::getKey, map -> String.valueOf(map.getValue())));
-    }
 
     return DelegateSelectionLogResponse.builder()
         .delegateSelectionLogs(delegateSelectionLogParams)
-        .taskSetupAbstractions(previewSetupAbstractions)
+        .taskSetupAbstractions(Collections.emptyMap())
         .build();
   }
 
   @Override
   public Optional<DelegateSelectionLogParams> fetchSelectedDelegateForTask(String accountId, String taskId) {
-    DelegateSelectionLog delegateSelectionLog = persistence.createQuery(DelegateSelectionLog.class)
-                                                    .filter(DelegateSelectionLogKeys.accountId, accountId)
-                                                    .filter(DelegateSelectionLogKeys.taskId, taskId)
-                                                    .filter(DelegateSelectionLogKeys.conclusion, ASSIGNED)
-                                                    .get();
+    DelegateSelectionLog delegateSelectionLog = null;
+    if (featureFlagService.isEnabled(FeatureName.DEL_SELECTION_LOGS_READ_FROM_GOOGLE_DATA_STORE, accountId)) {
+      List<DelegateSelectionLog> logs =
+          dataStoreService
+              .list(DelegateSelectionLog.class,
+                  aPageRequest()
+                      .withLimit(UNLIMITED)
+                      .addFilter(DelegateSelectionLogKeys.accountId, SearchFilter.Operator.EQ, accountId)
+                      .addFilter(DelegateSelectionLogKeys.taskId, SearchFilter.Operator.EQ, taskId)
+                      .addFilter(DelegateSelectionLogKeys.conclusion, SearchFilter.Operator.EQ, ASSIGNED)
+                      .build(),
+                  false)
+              .getResponse();
+      if (isNotEmpty(logs)) {
+        delegateSelectionLog = logs.stream()
+                                   .filter(selectionLog -> ASSIGNED.equals(selectionLog.getConclusion()))
+                                   .findFirst()
+                                   .orElse(null);
+      }
+    } else {
+      delegateSelectionLog = persistence.createQuery(DelegateSelectionLog.class)
+                                 .filter(DelegateSelectionLogKeys.accountId, accountId)
+                                 .filter(DelegateSelectionLogKeys.taskId, taskId)
+                                 .filter(DelegateSelectionLogKeys.conclusion, ASSIGNED)
+                                 .get();
+    }
     if (delegateSelectionLog == null) {
       return Optional.empty();
     }
@@ -338,5 +390,10 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   private String getAccountId(DelegateTask delegateTask) {
     return delegateTask.isExecuteOnHarnessHostedDelegates() ? delegateTask.getSecondaryAccountId()
                                                             : delegateTask.getAccountId();
+  }
+
+  @VisibleForTesting
+  void purgeSelectionLogs() {
+    this.cache.cleanUp();
   }
 }

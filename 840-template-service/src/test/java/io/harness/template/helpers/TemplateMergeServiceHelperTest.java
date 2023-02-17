@@ -22,6 +22,7 @@ import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.dto.FetchRemoteEntityRequest;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -31,7 +32,6 @@ import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.services.NGTemplateServiceHelper;
-import io.harness.template.services.TemplateGitXService;
 import io.harness.template.utils.TemplateUtils;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -54,7 +54,8 @@ public class TemplateMergeServiceHelperTest extends TemplateServiceTestBase {
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
 
   @Mock NGTemplateServiceHelper templateServiceHelper;
-  @Mock TemplateGitXService templateGitXService;
+
+  @Mock GitAwareEntityHelper gitAwareEntityHelper;
 
   YamlNode yamlNode;
 
@@ -63,6 +64,7 @@ public class TemplateMergeServiceHelperTest extends TemplateServiceTestBase {
   public static final String PROJECT_IDENTIFIER = "projectId";
   public static final String TEMPLATE_IDENTIFIER = "jan20Stage1";
   public static final String VERSION = "v1";
+  public static final String BRANCH = "branch";
   public static final String TEMPLATE_UNIQUE_IDENTIFIER = "accountId/orgId/projectId/jan20Stage1/v1/";
   ObjectNode jsonNode = JsonNodeFactory.instance.objectNode();
 
@@ -91,7 +93,7 @@ public class TemplateMergeServiceHelperTest extends TemplateServiceTestBase {
   @Before
   public void setup() throws IOException {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
-    on(templateMergeServiceHelper).set("templateGitXService", templateGitXService);
+    on(templateMergeServiceHelper).set("gitAwareEntityHelper", gitAwareEntityHelper);
 
     yamlNode = TemplateUtils.validateAndGetYamlNode(SAMPLE_YAML);
 
@@ -139,6 +141,7 @@ public class TemplateMergeServiceHelperTest extends TemplateServiceTestBase {
 
     Map<String, TemplateEntity> getBatchTemplateMap = new HashMap<>();
     getBatchTemplateMap.put(TEMPLATE_UNIQUE_IDENTIFIER, stepTemplate);
+    when(gitAwareEntityHelper.getWorkingBranch(any())).thenReturn(BRANCH);
     when(templateServiceHelper.getBatchRemoteTemplates(any(), any())).thenReturn(getBatchTemplateMap);
 
     Queue<YamlField> yamlNodeQueue = new LinkedList<>();

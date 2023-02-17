@@ -75,8 +75,6 @@ import io.harness.event.EventsModule;
 import io.harness.event.listener.EventListener;
 import io.harness.event.reconciliation.service.DeploymentReconExecutorService;
 import io.harness.event.reconciliation.service.DeploymentReconTask;
-import io.harness.event.reconciliation.service.LookerEntityReconExecutorService;
-import io.harness.event.reconciliation.service.LookerEntityReconTask;
 import io.harness.event.usagemetrics.EventsModuleHelper;
 import io.harness.eventframework.dms.DmsEventConsumerService;
 import io.harness.eventframework.dms.DmsObserverEventProducer;
@@ -109,6 +107,7 @@ import io.harness.metrics.MetricRegistryModule;
 import io.harness.metrics.jobs.RecordMetricsJob;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.migrations.MigrationModule;
+import io.harness.module.DelegateServiceModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.QuartzCleaner;
 import io.harness.mongo.tracing.TraceMode;
@@ -162,7 +161,6 @@ import io.harness.secrets.SecretMigrationEventListener;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.harness.serializer.CurrentGenRegistrars;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.service.DelegateServiceModule;
 import io.harness.service.impl.DelegateNgTokenServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
@@ -1311,9 +1309,6 @@ public class WingsApplication extends Application<MainConfiguration> {
               configuration.getDataReconciliationConfig().getDuration(), TimeUnit.SECONDS);
     }
 
-    injector.getInstance(LookerEntityReconExecutorService.class)
-        .scheduleWithFixedDelay(
-            injector.getInstance(LookerEntityReconTask.class), random.nextInt(60), 15 * 60L, TimeUnit.SECONDS);
     ImmutableList<Class<? extends AccountDataRetentionEntity>> classes =
         ImmutableList.<Class<? extends AccountDataRetentionEntity>>builder()
             .add(WorkflowExecution.class)

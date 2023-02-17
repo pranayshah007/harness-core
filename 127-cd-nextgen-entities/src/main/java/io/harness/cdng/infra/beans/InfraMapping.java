@@ -9,6 +9,7 @@ package io.harness.cdng.infra.beans;
 
 import io.harness.annotations.StoreIn;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
+import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
@@ -44,7 +45,8 @@ import dev.morphia.annotations.Entity;
       @JsonSubTypes.Type(value = CustomDeploymentInfrastructure.class, name = "custom-deployment"),
       @JsonSubTypes.Type(value = TanzuApplicationServiceInfrastructure.class, name = "tanzu-application-service"),
       @JsonSubTypes.Type(value = AsgInfrastructure.class, name = "Asg"),
-      @JsonSubTypes.Type(value = GoogleFunctionsInfrastructure.class, name = "GoogleCloudFunctions")
+      @JsonSubTypes.Type(value = GoogleFunctionsInfrastructure.class, name = "GoogleCloudFunctions"),
+      @JsonSubTypes.Type(value = AwsSamInfrastructure.class, name = "AWS_SAM")
 })
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "infrastructureMapping")

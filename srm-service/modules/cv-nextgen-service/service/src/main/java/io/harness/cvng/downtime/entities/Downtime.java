@@ -16,7 +16,7 @@ import io.harness.cvng.downtime.beans.DowntimeDuration;
 import io.harness.cvng.downtime.beans.DowntimeRecurrence;
 import io.harness.cvng.downtime.beans.DowntimeScope;
 import io.harness.cvng.downtime.beans.DowntimeType;
-import io.harness.cvng.downtime.beans.EntityDetails;
+import io.harness.cvng.downtime.beans.EntitiesRule;
 import io.harness.cvng.downtime.beans.OnetimeDowntimeType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -78,7 +78,8 @@ public class Downtime
   @NotNull DowntimeType type;
   @NotNull String timezone;
   @NotNull DowntimeDetails downtimeDetails;
-  private List<EntityDetails> entityRefs;
+  private EntitiesRule entitiesRule;
+
   private boolean enabled;
   @SchemaIgnore @CreatedBy private EmbeddedUser createdBy;
   @SchemaIgnore @LastModifiedBy private EmbeddedUser lastUpdatedBy;

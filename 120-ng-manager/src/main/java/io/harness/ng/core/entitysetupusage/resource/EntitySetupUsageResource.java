@@ -14,12 +14,14 @@ import static io.harness.NGConstants.REFERRED_ENTITY_FQN1;
 import static io.harness.NGConstants.REFERRED_ENTITY_FQN2;
 import static io.harness.NGConstants.REFERRED_ENTITY_TYPE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntityReferencesDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -45,7 +47,6 @@ import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.springframework.data.domain.Page;
 import retrofit2.http.Body;
 
 @Api("/entitySetupUsage")
@@ -60,7 +61,7 @@ public class EntitySetupUsageResource {
 
   @GET
   @ApiOperation(value = "Get Entities referring this resource", nickname = "listReferredByEntities")
-  public ResponseDTO<Page<EntitySetupUsageDTO>> list(
+  public ResponseDTO<PageResponse<EntitySetupUsageDTO>> list(
       @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
       @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(100) int size,
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
@@ -70,29 +71,29 @@ public class EntitySetupUsageResource {
       @QueryParam(REFERRED_ENTITY_TYPE) EntityType entityType,
       @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @BeanParam GitEntityFindInfoDTO gitFindInfoDTO) {
-    return ResponseDTO.newResponse(entitySetupUsageService.list(
-        page, size, accountIdentifier, orgIdentifier, projectIdentifier, identifier, entityType, searchTerm));
+    return ResponseDTO.newResponse(getNGPageResponse(entitySetupUsageService.list(
+        page, size, accountIdentifier, orgIdentifier, projectIdentifier, identifier, entityType, searchTerm)));
   }
 
   @GET
   @Path("v2")
   @ApiOperation(value = "Get Entities referring this resource if fqn is given", nickname = "listAllEntityUsageByFqn")
-  public ResponseDTO<Page<EntitySetupUsageDTO>> listAllEntityUsageV2(
+  public ResponseDTO<PageResponse<EntitySetupUsageDTO>> listAllEntityUsageV2(
       @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
       @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(REFERRED_ENTITY_FQN) String referredEntityFQN,
       @QueryParam(REFERRED_ENTITY_TYPE) EntityType entityType,
       @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
-    return ResponseDTO.newResponse(entitySetupUsageService.listAllEntityUsage(
-        page, size, accountIdentifier, referredEntityFQN, entityType, searchTerm));
+    return ResponseDTO.newResponse(getNGPageResponse(entitySetupUsageService.listAllEntityUsage(
+        page, size, accountIdentifier, referredEntityFQN, entityType, searchTerm)));
   }
 
   @GET
   @Path("internal/listAllEntityUsageV2With2Fqn")
   @ApiOperation(value = "Get Entities referring this resource if fqns are provided",
       nickname = "listAllEntityUsageWithTwoFqns", hidden = true)
-  public ResponseDTO<Page<EntitySetupUsageDTO>>
+  public ResponseDTO<PageResponse<EntitySetupUsageDTO>>
   listAllEntityUsageWith2Fqns(@QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
       @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
@@ -100,23 +101,24 @@ public class EntitySetupUsageResource {
       @NotNull @QueryParam(REFERRED_ENTITY_FQN2) String referredEntityFQN2,
       @QueryParam(REFERRED_ENTITY_TYPE) EntityType entityType,
       @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
-    return ResponseDTO.newResponse(entitySetupUsageService.listAllEntityUsageWithSupportForTwoFqnForASingleEntity(
-        page, size, accountIdentifier, referredEntityFQN1, referredEntityFQN2, entityType, searchTerm));
+    return ResponseDTO.newResponse(
+        getNGPageResponse(entitySetupUsageService.listAllEntityUsageWithSupportForTwoFqnForASingleEntity(
+            page, size, accountIdentifier, referredEntityFQN1, referredEntityFQN2, entityType, searchTerm)));
   }
 
   @GET
   @Path("internal")
   @ApiOperation(
       value = "Get Entities referring this resource if fqn is given", nickname = "listAllEntityUsage", hidden = true)
-  public ResponseDTO<Page<EntitySetupUsageDTO>>
+  public ResponseDTO<PageResponse<EntitySetupUsageDTO>>
   listAllEntityUsage(@QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
       @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(REFERRED_ENTITY_FQN) String referredEntityFQN,
       @QueryParam(REFERRED_ENTITY_TYPE) EntityType entityType,
       @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
-    return ResponseDTO.newResponse(entitySetupUsageService.listAllEntityUsage(
-        page, size, accountIdentifier, referredEntityFQN, entityType, searchTerm));
+    return ResponseDTO.newResponse(getNGPageResponse(entitySetupUsageService.listAllEntityUsage(
+        page, size, accountIdentifier, referredEntityFQN, entityType, searchTerm)));
   }
 
   @GET

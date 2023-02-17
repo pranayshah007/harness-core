@@ -47,6 +47,7 @@ import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResponse;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResult;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResponse;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResult;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResponse;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResult;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
@@ -605,7 +606,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
       String asgName = asgRollingDeployResult.getAutoScalingGroupContainer().getAutoScalingGroupName();
       return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
           asgRollingDeployResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_ROLLING,
-          asgName, null);
+          asgName, true);
     }
 
     else if (asgCommandResponse instanceof AsgRollingRollbackResponse) {
@@ -617,7 +618,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
       }
       return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
           asgRollingRollbackResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_ROLLING,
-          asgName, null);
+          asgName, true);
     }
 
     else if (asgCommandResponse instanceof AsgCanaryDeployResponse) {
@@ -627,7 +628,11 @@ public class AsgStepCommonHelper extends CDStepHelper {
       String asgNameWithoutSuffix = asgName.substring(0, asgName.length() - 8);
       return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
           asgCanaryDeployResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_CANARY,
-          asgNameWithoutSuffix, null);
+          asgNameWithoutSuffix, true);
+    }
+
+    else if (asgCommandResponse instanceof AsgCanaryDeleteResponse) {
+      return new ArrayList<>();
     }
 
     else if (asgCommandResponse instanceof AsgBlueGreenDeployResponse) {

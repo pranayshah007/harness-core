@@ -12,6 +12,7 @@ import static software.wings.settings.SettingVariableTypes.APP_DYNAMICS;
 import static software.wings.settings.SettingVariableTypes.ARTIFACTORY;
 import static software.wings.settings.SettingVariableTypes.AWS;
 import static software.wings.settings.SettingVariableTypes.AZURE;
+import static software.wings.settings.SettingVariableTypes.AZURE_ARTIFACTS_PAT;
 import static software.wings.settings.SettingVariableTypes.DATA_DOG;
 import static software.wings.settings.SettingVariableTypes.DOCKER;
 import static software.wings.settings.SettingVariableTypes.GCP;
@@ -25,6 +26,7 @@ import static software.wings.settings.SettingVariableTypes.KUBERNETES_CLUSTER;
 import static software.wings.settings.SettingVariableTypes.NEW_RELIC;
 import static software.wings.settings.SettingVariableTypes.NEXUS;
 import static software.wings.settings.SettingVariableTypes.OCI_HELM_REPO;
+import static software.wings.settings.SettingVariableTypes.PCF;
 import static software.wings.settings.SettingVariableTypes.PROMETHEUS;
 import static software.wings.settings.SettingVariableTypes.SERVICENOW;
 import static software.wings.settings.SettingVariableTypes.SPLUNK;
@@ -51,6 +53,7 @@ public class ConnectorFactory {
   private static final BaseConnector azureConnector = new AzureConnectorImpl();
   private static final BaseConnector httpHelmConnector = new HttpHelmConnectorImpl();
   private static final BaseConnector awsConnector = new AWSConnectorImpl();
+  private static final BaseConnector pcfConnector = new PcfConnectorImpl();
   private static final BaseConnector ociHelmConnector = new OCIHelmConnectorImpl();
   private static final BaseConnector unsupportedConnector = new UnsupportedConnectorImpl();
 
@@ -68,6 +71,7 @@ public class ConnectorFactory {
   private static final BaseConnector appDynamicsConnector = new AppDynamicsConnectorImpl();
   private static final BaseConnector splunkConnector = new SplunkConnectorImpl();
   private static final BaseConnector spotConnector = new SpotConnectorImpl();
+  private static final BaseConnector azureArtifactPat = new AzureArtifactPatConnectorImpl();
 
   public static final Map<SettingVariableTypes, BaseConnector> CONNECTOR_FACTORY_MAP =
       ImmutableMap.<SettingVariableTypes, BaseConnector>builder()
@@ -80,6 +84,7 @@ public class ConnectorFactory {
           .put(AZURE, azureConnector)
           .put(HTTP_HELM_REPO, httpHelmConnector)
           .put(AWS, awsConnector)
+          .put(PCF, pcfConnector)
           .put(OCI_HELM_REPO, ociHelmConnector)
           .put(JIRA, jiraConnector)
           .put(SERVICENOW, serviceNowConnector)
@@ -94,6 +99,7 @@ public class ConnectorFactory {
           .put(APP_DYNAMICS, appDynamicsConnector)
           .put(SPLUNK, splunkConnector)
           .put(SPOT_INST, spotConnector)
+          .put(AZURE_ARTIFACTS_PAT, azureArtifactPat)
           .build();
 
   public static BaseConnector getConnector(SettingAttribute settingAttribute) {

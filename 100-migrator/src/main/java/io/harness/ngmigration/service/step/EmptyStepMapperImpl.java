@@ -7,8 +7,8 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.plancreator.steps.AbstractStepNode;
 
 import software.wings.beans.GraphNode;
@@ -16,8 +16,8 @@ import software.wings.sm.State;
 
 public class EmptyStepMapperImpl extends StepMapper {
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.IGNORE;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.IGNORE;
   }
 
   @Override

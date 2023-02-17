@@ -46,11 +46,11 @@ public class PipelineRefreshResourceTest extends PipelineServiceTestBase {
   public void testRefreshAndUpdateTemplate() {
     doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
     ResponseDTO<Boolean> responseDTO = ResponseDTO
-                                           .newResponse(pipelineRefreshResource.refreshAndUpdateTemplate(
-                                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null))
+                                           .newResponse(pipelineRefreshResource.refreshAndUpdateTemplate(ACCOUNT_ID,
+                                               ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "false", null))
                                            .getData();
     verify(pipelineRefreshService, times(1))
-        .refreshTemplateInputsInPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER);
+        .refreshTemplateInputsInPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "false");
     verifyNoMoreInteractions(pipelineRefreshService);
     assertThat(responseDTO.getData()).isEqualTo(false);
   }
@@ -73,10 +73,11 @@ public class PipelineRefreshResourceTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testGetYamlDiff() {
     ResponseDTO.newResponse(
-        pipelineRefreshResource.getYamlDiff(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null)
+        pipelineRefreshResource
+            .getYamlDiff(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "false", null)
             .getData());
     verify(pipelineRefreshService, times(1))
-        .getYamlDiff(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER);
+        .getYamlDiff(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "false");
     verifyNoMoreInteractions(pipelineRefreshService);
   }
 
@@ -86,11 +87,12 @@ public class PipelineRefreshResourceTest extends PipelineServiceTestBase {
   public void testRefreshAll() {
     doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
     ResponseDTO.newResponse(
-        pipelineRefreshResource.refreshAll(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null)
+        pipelineRefreshResource
+            .refreshAll(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "false", null)
             .getData());
     verify(pipelineRefreshService, times(1))
         .recursivelyRefreshAllTemplateInputsInPipeline(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, "false");
     verifyNoMoreInteractions(pipelineRefreshService);
   }
 }

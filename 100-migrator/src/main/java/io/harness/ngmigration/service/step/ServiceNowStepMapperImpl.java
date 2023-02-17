@@ -10,8 +10,8 @@ package io.harness.ngmigration.service.step;
 import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_INPUT;
 
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
@@ -39,8 +39,8 @@ import java.util.Map;
 
 public class ServiceNowStepMapperImpl extends StepMapper {
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 
   @Override
@@ -136,7 +136,7 @@ public class ServiceNowStepMapperImpl extends StepMapper {
                                             .connectorRef(RUNTIME_INPUT)
                                             .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
                                             .ticketType(ParameterField.createValueField(params.getTicketType()))
-                                            .ticketNumber(ParameterField.createValueField(params.getTicketId()))
+                                            .ticketNumber(ParameterField.createValueField(params.getIssueNumber()))
                                             .templateName(RUNTIME_INPUT)
                                             .useServiceNowTemplate(ParameterField.createValueField(false))
                                             .fields(getFields(params))

@@ -37,6 +37,7 @@ import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.logstreaming.LogStreamingServiceConfig;
+import io.harness.module.DelegateServiceModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
@@ -44,7 +45,6 @@ import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.consumer.AbstractRemoteObserverModule;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
-import io.harness.redis.DelegateServiceCacheModule;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.DelegateTokenAuthenticator;
@@ -52,8 +52,6 @@ import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.kryo.TestManagerKryoRegistrar;
-import io.harness.service.DelegateServiceModule;
-import io.harness.service.intfc.DelegateCache;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.testlib.module.MongoRuleMixin;
@@ -296,13 +294,6 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
     }
     CacheModule cacheModule = new CacheModule(cacheConfigBuilder.build());
     modules.add(0, cacheModule);
-
-    modules.add(new DelegateServiceCacheModule(RedisConfig.builder().redisUrl("dummyRedisUrl").build(), false) {
-      @Override
-      protected void configure() {
-        bind(DelegateCache.class).toInstance(mock(DelegateCache.class));
-      }
-    });
 
     modules.add(new AbstractModule() {
       @Override

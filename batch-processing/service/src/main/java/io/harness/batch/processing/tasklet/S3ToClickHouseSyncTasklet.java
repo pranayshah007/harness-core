@@ -57,7 +57,7 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
     log.info("isDeploymentOnPrem: " + configuration.getDeployMode());
-    if (!DeployMode.isOnPrem(configuration.getDeployMode().name())) {
+    if (!DeployMode.isOnPrem(configuration.getDeployMode().name()) || !configuration.isClickHouseEnabled()) {
       return null;
     }
     log.info("Running the S3ToClickHouseSync job");
@@ -376,12 +376,27 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
   }
 
   public void insertIntoAwsBillingTableFromS3Bucket(String awsBillingTableId, String csvFolderPath) throws Exception {
-    String insertQuery = "SET input_format_csv_skip_first_lines=1; INSERT INTO " + awsBillingTableId
-        + " SELECT * FROM s3('https://" + configuration.getAwsS3SyncConfig().getAwsS3BucketName() + ".s3.amazonaws.com/"
-        + csvFolderPath + "/*.csv.gz','" + configuration.getAwsS3SyncConfig().getAwsAccessKey() + "','"
-        + configuration.getAwsS3SyncConfig().getAwsSecretKey()
-        + "', 'CSV') SETTINGS date_time_input_format='best_effort'";
-    clickHouseService.executeClickHouseQuery(configuration.getClickHouseConfig(), insertQuery, Boolean.FALSE);
+    AWSCredentialsProvider credentials = awsClient.constructStaticBasicAwsCredentials(
+        configuration.getAwsS3SyncConfig().getAwsAccessKey(), configuration.getAwsS3SyncConfig().getAwsSecretKey());
+    S3Objects s3Objects = awsClient.getIterableS3ObjectSummaries(
+        credentials, configuration.getAwsS3SyncConfig().getAwsS3BucketName(), csvFolderPath);
+    for (S3ObjectSummary objectSummary : s3Objects) {
+      if (objectSummary.getKey().endsWith(".csv.gz")) {
+        log.info("Ingesting CSV: {}", objectSummary.getKey());
+        try {
+          String insertQuery =
+              "SET input_format_csv_skip_first_lines=1; SET max_memory_usage=1000000000000; INSERT INTO "
+              + awsBillingTableId + " SELECT * FROM s3('https://"
+              + configuration.getAwsS3SyncConfig().getAwsS3BucketName() + ".s3.amazonaws.com/" + objectSummary.getKey()
+              + "','" + configuration.getAwsS3SyncConfig().getAwsAccessKey() + "','"
+              + configuration.getAwsS3SyncConfig().getAwsSecretKey()
+              + "', 'CSV') SETTINGS date_time_input_format='best_effort'";
+          clickHouseService.executeClickHouseQuery(configuration.getClickHouseConfig(), insertQuery, Boolean.FALSE);
+        } catch (Exception e) {
+          log.error(String.format("Exception while ingesting CSV: %s", objectSummary.getKey()), e);
+        }
+      }
+    }
   }
 
   public String getMappedDataColumn(String dataType) throws Exception {

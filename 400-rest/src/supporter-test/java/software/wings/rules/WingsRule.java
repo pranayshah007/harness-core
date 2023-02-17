@@ -26,6 +26,7 @@ import static org.mockito.Mockito.mock;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.NoopStatement;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
@@ -37,8 +38,6 @@ import io.harness.cf.CfMigrationConfig;
 import io.harness.commandlibrary.client.CommandLibraryServiceHttpClient;
 import io.harness.config.PublisherConfiguration;
 import io.harness.delegate.authenticator.DelegateTokenAuthenticatorImpl;
-import io.harness.delegate.beans.Delegate;
-import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.StartupMode;
 import io.harness.event.EventsModule;
 import io.harness.event.handler.marketo.MarketoConfig;
@@ -57,6 +56,7 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfig;
 import io.harness.manage.GlobalContextManager;
 import io.harness.manage.GlobalContextManager.GlobalContextGuard;
+import io.harness.module.DelegateServiceModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
@@ -67,10 +67,7 @@ import io.harness.queue.QueueListener;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
-import io.harness.redis.DelegateServiceCacheModule;
 import io.harness.redis.RedisConfig;
-import io.harness.redis.RedissonClientFactory;
-import io.harness.redis.intfc.DelegateRedissonCacheManager;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
@@ -80,9 +77,6 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.kryo.TestManagerKryoRegistrar;
 import io.harness.serializer.morphia.ManagerTestMorphiaRegistrar;
-import io.harness.service.DelegateServiceModule;
-import io.harness.service.impl.DelegateCacheImpl;
-import io.harness.service.intfc.DelegateCache;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.testlib.RealMongo;
@@ -136,7 +130,6 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
-import com.google.inject.name.Named;
 import com.mongodb.MongoClient;
 import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Configuration;
@@ -158,8 +151,6 @@ import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProv
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.redisson.api.RLocalCachedMap;
-import org.redisson.api.RedissonClient;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
@@ -179,6 +170,9 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
   @Override
   public Statement apply(Statement statement, FrameworkMethod frameworkMethod, Object target) {
     if (isIntegrationTest(target)) {
+      return new NoopStatement();
+    }
+    if (isIgnorePropertySetAndNotAlwaysRun(frameworkMethod)) {
       return new NoopStatement();
     }
     Statement wingsStatement = new Statement() {
@@ -201,6 +195,11 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
     };
 
     return wingsStatement;
+  }
+
+  private boolean isIgnorePropertySetAndNotAlwaysRun(FrameworkMethod frameworkMethod) {
+    return frameworkMethod.getAnnotation(HarnessAlwaysRun.class) == null
+        && "true".equalsIgnoreCase(System.getenv("IGNORE_400_TESTS"));
   }
 
   protected boolean isIntegrationTest(Object target) {
@@ -422,8 +421,6 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
                                            .build());
     configuration.setLdapSyncJobConfig(
         LdapSyncJobConfig.builder().defaultCronExpression("0 0 23 ? * SAT *").poolSize(3).syncInterval(15).build());
-
-    configuration.setDelegateServiceRedisConfig(RedisConfig.builder().redisUrl("rediss://").build());
     configuration.setTotpConfig(
         TotpConfig.builder()
             .secOpsEmail("secops.fake.email@mailnator.com")
@@ -467,52 +464,14 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
       @Override
       protected void configure() {
         bind(DelegateTokenAuthenticator.class).to(DelegateTokenAuthenticatorImpl.class).in(Singleton.class);
-        bind(DelegateCache.class).to(DelegateCacheImpl.class).in(Singleton.class);
       }
     });
+
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
       PublisherConfiguration publisherConfiguration() {
         return PublisherConfiguration.allOn();
-      }
-    });
-
-    modules.add(new ProviderModule() {
-      @Provides
-      @Named("delegate")
-      @Singleton
-      public RLocalCachedMap<String, Delegate> getDelegateCache(DelegateRedissonCacheManager cacheManager) {
-        return mock(RLocalCachedMap.class);
-      }
-
-      @Provides
-      @Named("delegate_group")
-      @Singleton
-      public RLocalCachedMap<String, DelegateGroup> getDelegateGroupCache(DelegateRedissonCacheManager cacheManager) {
-        return mock(RLocalCachedMap.class);
-      }
-
-      @Provides
-      @Named("delegates_from_group")
-      @Singleton
-      public RLocalCachedMap<String, List<Delegate>> getDelegatesFromGroupCache(
-          DelegateRedissonCacheManager cacheManager) {
-        return mock(RLocalCachedMap.class);
-      }
-
-      @Provides
-      @Singleton
-      @Named("enableRedisForDelegateService")
-      boolean isEnableRedisForDelegateService() {
-        return false;
-      }
-
-      @Provides
-      @Singleton
-      @Named("redissonClient")
-      RedissonClient redissonClient() {
-        return mock(RedissonClient.class);
       }
     });
     modules.add(new AbstractRemoteObserverModule() {

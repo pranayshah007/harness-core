@@ -459,7 +459,12 @@ public enum TaskType {
   GOOGLE_CLOUD_SOURCE_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Google Cloud Source Artifact Task"),
   GCP_PROJECTS_TASK_NG(TaskGroup.GCP, "Gcp List Projects Task"),
   GCS_BUCKETS_TASK_NG(TaskGroup.GCP, "Gcs List Buckets per Project Task"),
-  AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG(TaskGroup.AWS_LAMBDA_NG, "AWS Lambda Deploy Task NG");
+  AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG(TaskGroup.AWS_LAMBDA_NG, "AWS Lambda Deploy Task NG"),
+  GOOGLE_FUNCTION_DEPLOY_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Deploy Task"),
+  GOOGLE_FUNCTION_ROLLBACK_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Rollback Task"),
+  GOOGLE_FUNCTION_PREPARE_ROLLBACK_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Prepare Rollback Task"),
+  GOOGLE_FUNCTION_DEPLOY_WITHOUT_TRAFFIC_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Deploy Without Traffic Task"),
+  GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Traffic Shift Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

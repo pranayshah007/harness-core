@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2021 Harness Inc. All rights reserved.
 # Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
@@ -26,6 +27,9 @@ else
       break
     elif [[ "${ghprbTargetBranch}" == "release/delegate/"* ]]; then
       export VERSION_FILE=260-delegate/build.properties
+      break
+    elif [[ "${ghprbTargetBranch}" == "release/sto-manager/"* ]];then
+      export VERSION_FILE=315-sto-manager/build.properties
       break
     else
       export VERSION_FILE=build.properties

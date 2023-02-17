@@ -48,6 +48,7 @@ import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.service.intfc.security.SecretManager;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -56,7 +57,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
-import javax.cache.Cache;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -263,7 +263,7 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
     if (secretsCache != null) {
       delegateMetricsService.recordDelegateMetricsPerAccount(accountId, SECRETS_CACHE_LOOKUPS);
-      EncryptedDataDetails cachedValue = secretsCache.get(String.valueOf(keyHash));
+      EncryptedDataDetails cachedValue = secretsCache.getIfPresent(String.valueOf(keyHash));
       if (cachedValue != null) {
         // Cache hit.
         delegateMetricsService.recordDelegateMetricsPerAccount(accountId, SECRETS_CACHE_HITS);

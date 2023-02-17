@@ -146,9 +146,14 @@ public class JenkinsArtifactResource {
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
       JenkinsArtifactConfig jenkinsArtifactConfig = (JenkinsArtifactConfig) artifactSpecFromService;
       if (isEmpty(jenkinsConnectorIdentifier)) {
-        jenkinsConnectorIdentifier = jenkinsArtifactConfig.getConnectorRef().getValue();
+        jenkinsConnectorIdentifier = (String) jenkinsArtifactConfig.getConnectorRef().fetchFinalValue();
       }
     }
+
+    jenkinsConnectorIdentifier =
+        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+            runtimeInputYaml, jenkinsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(jenkinsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     JenkinsJobDetailsDTO buildDetails =
@@ -180,7 +185,7 @@ public class JenkinsArtifactResource {
         jobName = jenkinsArtifactConfig.getJobName().getValue();
       }
     }
-    jobName = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    jobName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, jobName, fqnPath, gitEntityBasicInfo, serviceRef);
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(jenkinsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -217,9 +222,9 @@ public class JenkinsArtifactResource {
         artifactPath = jenkinsArtifactConfig.getArtifactPath().getValue();
       }
     }
-    jobName = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    jobName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, jobName, fqnPath, gitEntityBasicInfo, serviceRef);
-    artifactPath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    artifactPath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(jenkinsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -253,7 +258,7 @@ public class JenkinsArtifactResource {
         jobName = jenkinsArtifactConfig.getJobName().getValue();
       }
     }
-    jobName = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    jobName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, jobName, fqnPath, gitEntityBasicInfo, serviceRef);
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(jenkinsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);

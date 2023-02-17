@@ -28,11 +28,11 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.convert.CustomConversions;
-import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.guice.annotation.GuiceModule;
@@ -67,8 +67,8 @@ public class AggregatorPersistenceTestConfig extends AbstractMongoClientConfigur
 
   @Bean(name = "primary")
   @Primary
-  public MongoTemplate mongoTemplate() throws Exception {
-    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter(), MongoConfig.builder().build());
+  public MongoTemplate mongoTemplate(MongoDatabaseFactory databaseFactory, MappingMongoConverter converter) {
+    return new HMongoTemplate(databaseFactory, converter, MongoConfig.builder().build());
   }
 
   @Override
@@ -77,7 +77,7 @@ public class AggregatorPersistenceTestConfig extends AbstractMongoClientConfigur
   }
 
   @Bean
-  public CustomConversions customConversions() {
+  public MongoCustomConversions customConversions() {
     List<?> converterInstances = springConverters.stream().map(injector::getInstance).collect(Collectors.toList());
     return new MongoCustomConversions(converterInstances);
   }
@@ -88,7 +88,7 @@ public class AggregatorPersistenceTestConfig extends AbstractMongoClientConfigur
   }
 
   @Bean
-  MongoTransactionManager transactionManager(MongoDbFactory dbFactory) {
+  MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
     return new MongoTransactionManager(dbFactory);
   }
 }

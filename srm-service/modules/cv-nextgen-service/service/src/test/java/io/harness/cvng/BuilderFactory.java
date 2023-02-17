@@ -82,6 +82,7 @@ import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskBuilder;
 import io.harness.cvng.cdng.entities.CVNGStepTask.Status;
+import io.harness.cvng.core.beans.CustomChangeWebhookPayload;
 import io.harness.cvng.core.beans.CustomHealthLogDefinition;
 import io.harness.cvng.core.beans.CustomHealthMetricDefinition;
 import io.harness.cvng.core.beans.CustomHealthRequestDefinition;
@@ -186,6 +187,7 @@ import io.harness.cvng.downtime.beans.DowntimeScope;
 import io.harness.cvng.downtime.beans.DowntimeSpecDTO;
 import io.harness.cvng.downtime.beans.DowntimeType;
 import io.harness.cvng.downtime.beans.EntityDetails;
+import io.harness.cvng.downtime.beans.EntityIdentifiersRule;
 import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
@@ -1243,6 +1245,7 @@ public class BuilderFactory {
                       .user("user")
                       .startTime(1000l)
                       .endTime(2000l)
+                      .type(customChangeSourceType)
                       .customChangeEvent(CustomChangeEvent.builder()
                                              .description("description")
                                              .changeEventDetailsLink("changeEventDetailsLink")
@@ -1310,6 +1313,10 @@ public class BuilderFactory {
         .name(generateUuid())
         .enabled(true)
         .type(changeSourceType);
+  }
+
+  public ChangeSourceDTOBuilder getChangeSourceDTOBuilder_Deserialize(ChangeSourceType changeSourceType) {
+    return getChangeSourceDTOBuilder(changeSourceType);
   }
 
   public ServiceLevelObjectiveDTOBuilder getServiceLevelObjectiveDTOBuilder() {
@@ -1855,8 +1862,11 @@ public class BuilderFactory {
         .enabled(true)
         .tags(new HashMap<>())
         .scope(DowntimeScope.PROJECT)
-        .entityRefs(Collections.singletonList(
-            EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+        .entitiesRule(
+            EntityIdentifiersRule.builder()
+                .entityIdentifiers(Collections.singletonList(
+                    EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+                .build())
         .spec(DowntimeSpecDTO.builder()
                   .type(DowntimeType.ONE_TIME)
                   .spec(OnetimeDowntimeSpec.builder()
@@ -1887,8 +1897,11 @@ public class BuilderFactory {
         .enabled(true)
         .tags(new HashMap<>())
         .scope(DowntimeScope.PROJECT)
-        .entityRefs(Collections.singletonList(
-            EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+        .entitiesRule(
+            EntityIdentifiersRule.builder()
+                .entityIdentifiers(Collections.singletonList(
+                    EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+                .build())
         .spec(DowntimeSpecDTO.builder()
                   .type(DowntimeType.ONE_TIME)
                   .spec(OnetimeDowntimeSpec.builder()
@@ -1914,8 +1927,11 @@ public class BuilderFactory {
         .enabled(true)
         .tags(new HashMap<>())
         .scope(DowntimeScope.PROJECT)
-        .entityRefs(Collections.singletonList(
-            EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+        .entitiesRule(
+            EntityIdentifiersRule.builder()
+                .entityIdentifiers(Collections.singletonList(
+                    EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+                .build())
         .spec(DowntimeSpecDTO.builder()
                   .type(DowntimeType.RECURRING)
                   .spec(RecurringDowntimeSpec.builder()
@@ -1961,5 +1977,18 @@ public class BuilderFactory {
         .projectIdentifier(context.getProjectIdentifier())
         .orgIdentifier(context.getOrgIdentifier())
         .build();
+  }
+
+  public CustomChangeWebhookPayload.CustomChangeWebhookPayloadBuilder getCustomChangeWebhookPayloadBuilder() {
+    return CustomChangeWebhookPayload.builder()
+        .endTime(1000l)
+        .startTime(1000l)
+        .user("testUser")
+        .eventDetail(CustomChangeWebhookPayload.CustomChangeWebhookEventDetail.builder()
+                         .changeEventDetailsLink("testLink")
+                         .externalLinkToEntity("externalLink")
+                         .description("desc")
+                         .name("name")
+                         .build());
   }
 }

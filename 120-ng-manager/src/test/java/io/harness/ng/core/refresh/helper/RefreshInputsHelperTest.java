@@ -21,7 +21,6 @@ import io.harness.NgManagerTestBase;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.customdeployment.helper.CustomDeploymentEntitySetupHelper;
 import io.harness.cdng.gitops.service.ClusterService;
@@ -35,7 +34,6 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.service.services.impl.ServiceEntitySetupUsageHelper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
-import io.harness.ng.core.yaml.CDYamlFacade;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
@@ -44,7 +42,6 @@ import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
 import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
@@ -76,8 +73,6 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
   @Mock TransactionTemplate transactionTemplate;
   @Mock OutboxService outboxService;
   @Mock ServiceOverrideService serviceOverrideService;
-  @Mock private NGFeatureFlagHelperService featureFlagHelperService;
-  CDYamlFacade cdYamlFacade = new CDYamlFacade();
   @Mock ServiceEntitySetupUsageHelper entitySetupUsageHelper;
   @Mock ClusterService clusterService;
   @Mock CustomDeploymentEntitySetupHelper customDeploymentEntitySetupHelper;
@@ -99,14 +94,9 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService,
         serviceEntityService, accountClient, settingsClient));
-
-    doReturn(true).when(featureFlagHelperService).isEnabled("", FeatureName.CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS);
-    on(cdYamlFacade).set("featureFlagHelperService", featureFlagHelperService);
-
-    environmentRefreshHelper = spy(new EnvironmentRefreshHelper(
-        environmentService, infrastructureEntityService, serviceOverrideService, cdYamlFacade));
+    environmentRefreshHelper =
+        spy(new EnvironmentRefreshHelper(environmentService, infrastructureEntityService, serviceOverrideService));
     on(entityFetchHelper).set("serviceEntityService", serviceEntityService);
-    on(refreshInputsHelper).set("cdYamlFacade", cdYamlFacade);
     on(refreshInputsHelper).set("serviceEntityService", serviceEntityService);
     on(refreshInputsHelper).set("entityFetchHelper", entityFetchHelper);
     on(refreshInputsHelper).set("environmentRefreshHelper", environmentRefreshHelper);

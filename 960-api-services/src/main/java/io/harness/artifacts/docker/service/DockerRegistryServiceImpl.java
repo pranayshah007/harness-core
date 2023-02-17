@@ -494,7 +494,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
       if (tokens != null) {
         DockerRegistryToken registryToken = fetchTokenWithRetry(registryRestClient, basicAuthHeader, tokens);
         if (registryToken != null) {
-          if (dockerRegistryUtils.isAcrContainerRegistry(config)) {
+          if (dockerRegistryUtils.isAcrContainerRegistry(config) && isEmpty(registryToken.getToken())) {
             tokens.putIfAbsent(authHeaderValue, registryToken.getAccess_token());
           } else {
             tokens.putIfAbsent(authHeaderValue, registryToken.getToken());

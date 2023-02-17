@@ -15,10 +15,13 @@ import io.harness.subscription.dto.PriceCollectionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
 import io.harness.subscription.params.BillingParams;
 import io.harness.subscription.params.CustomerParams;
-import io.harness.subscription.params.SubscriptionParams;
+import io.harness.subscription.params.StripeSubscriptionRequest;
+import io.harness.subscription.params.SubscriptionItemRequest;
+import io.harness.subscription.params.SubscriptionRequest;
 
 import com.stripe.model.Price;
 import java.util.List;
+import java.util.Optional;
 
 public interface StripeHelper {
   CustomerDetailDTO createCustomer(CustomerParams customerParams);
@@ -29,17 +32,16 @@ public interface StripeHelper {
   CustomerDetailDTO getCustomer(String customerId);
 
   PriceCollectionDTO getPrices(ModuleType moduleType);
-  Price getPrice(ModuleType moduleType, String type, String edition, String paymentFrequency);
-  Price getPrice(ModuleType moduleType, String type, String edition, String paymentFrequency, int quantity);
+  Optional<Price> getPrice(SubscriptionRequest subscriptionRequest, SubscriptionItemRequest subscriptionItemRequest);
   Price getPrice(String lookupKey);
   PriceCollectionDTO listPrices(List<String> lookupKeys);
-  SubscriptionDetailDTO createSubscription(SubscriptionParams subscriptionParams);
-  SubscriptionDetailDTO updateSubscription(SubscriptionParams subscriptionParams);
-  SubscriptionDetailDTO updateSubscriptionDefaultPayment(SubscriptionParams subscriptionParams);
-  void cancelSubscription(SubscriptionParams subscriptionParams);
-  SubscriptionDetailDTO retrieveSubscription(SubscriptionParams subscriptionParams);
+  SubscriptionDetailDTO createSubscription(StripeSubscriptionRequest stripeSubscriptionRequest);
+  SubscriptionDetailDTO updateSubscription(StripeSubscriptionRequest stripeSubscriptionRequest);
+  SubscriptionDetailDTO updateSubscriptionDefaultPayment(StripeSubscriptionRequest stripeSubscriptionRequest);
+  void cancelSubscription(StripeSubscriptionRequest stripeSubscriptionRequest);
+  SubscriptionDetailDTO retrieveSubscription(StripeSubscriptionRequest stripeSubscriptionRequest);
   InvoiceDetailDTO getUpcomingInvoice(String invoiceParams);
-  InvoiceDetailDTO previewInvoice(SubscriptionParams subscriptionParams);
+  InvoiceDetailDTO previewInvoice(StripeSubscriptionRequest stripeSubscriptionRequest);
   void payInvoice(String invoiceId);
 
   PaymentMethodCollectionDTO listPaymentMethods(String customerId);

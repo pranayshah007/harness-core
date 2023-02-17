@@ -152,11 +152,9 @@ public class GoogleFunctionsDeployWithoutTrafficStep
     List<ServerInstanceInfo> serverInstanceInfoList =
         googleFunctionsHelper.getServerInstanceInfo(googleFunctionDeployWithoutTrafficResponse,
             gcpGoogleFunctionInfraConfig, infrastructureOutcome.getInfrastructureKey());
-    StepResponse.StepOutcome stepOutcome =
-        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+    instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
 
     return stepResponseBuilder.status(Status.SUCCEEDED)
-        .stepOutcome(stepOutcome)
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutcomeExpressionConstants.OUTPUT)
                          .outcome(googleFunctionDeployOutcome)

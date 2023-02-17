@@ -4612,6 +4612,44 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "JiraAuthCredentialsDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "JiraAuthenticationDTO": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "UsernamePassword"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "UsernamePassword"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JiraUserNamePasswordDTO"
+              }
+            }
+          }
+        }
+      ]
+    },
     "JiraConnector": {
       "allOf": [
         {
@@ -4624,6 +4662,9 @@
             "passwordRef"
           ],
           "properties": {
+            "auth": {
+              "$ref": "#/definitions/JiraAuthenticationDTO"
+            },
             "delegateSelectors": {
               "type": "array",
               "uniqueItems": true,
@@ -4634,6 +4675,45 @@
             "jiraUrl": {
               "type": "string"
             },
+            "passwordRef": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "usernameRef": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "usernameRef"
+              ]
+            },
+            {
+              "required": [
+                "username"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "JiraUserNamePasswordDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/JiraAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "passwordRef"
+          ],
+          "properties": {
             "passwordRef": {
               "type": "string"
             },

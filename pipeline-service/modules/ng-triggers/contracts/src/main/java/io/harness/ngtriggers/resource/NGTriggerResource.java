@@ -32,10 +32,13 @@ import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
 import io.harness.ngtriggers.beans.dto.ValidatePipelineInputsResponseDTO;
+import io.harness.ngtriggers.beans.source.GitMoveOperationType;
+import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.PipelineResourceConstants;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.rest.RestResponse;
+import io.harness.security.annotations.InternalApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -329,4 +332,17 @@ public interface NGTriggerResource {
   @ApiOperation(value = "This is dummy api to expose NGTriggerConfigV2", nickname = "NGTriggerConfigV2")
   @Hidden
   ResponseDTO<NGTriggerConfigV2> getNGTriggerConfigV2();
+
+  @PUT
+  @Hidden
+  @Path("/update-branch-name")
+  @InternalApi
+  ResponseDTO<TriggerUpdateCount> updateBranchName(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
+          "targetIdentifier") @ResourceIdentifier String targetIdentifier,
+      @QueryParam("operationType") GitMoveOperationType operationType,
+      @QueryParam("pipelineBranchName") String pipelineBranchName);
 }

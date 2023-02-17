@@ -329,6 +329,7 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
                 }
               }
             }
+            validateExportedVariables(envVariablesMap);
             saveExecutionLog("Command finished with status " + commandExecutionStatus, commandExecutionStatus);
             executionDataBuilder.sweepingOutputEnvVariables(envVariablesMap);
             executeCommandResponseBuilder.status(commandExecutionStatus);

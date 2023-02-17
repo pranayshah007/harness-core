@@ -7,8 +7,19 @@
 
 package io.harness.aws.lambda;
 
+import io.harness.aws.beans.AwsInternalConfig;
+
+import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
+import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse;
+import software.amazon.awssdk.services.lambda.model.DeleteFunctionRequest;
+import software.amazon.awssdk.services.lambda.model.DeleteFunctionResponse;
+import software.amazon.awssdk.services.lambda.model.InvokeRequest;
+import software.amazon.awssdk.services.lambda.model.InvokeResponse;
+
 public interface AwsLambdaClient {
-  void createFunction();
-  void deleteFunction();
-  void deployFunction();
+  CreateFunctionResponse createFunction(
+      AwsInternalConfig awsInternalConfig, CreateFunctionRequest createFunctionRequest);
+  DeleteFunctionResponse deleteFunction(
+      AwsInternalConfig awsInternalConfig, DeleteFunctionRequest deleteFunctionRequest);
+  InvokeResponse invokeFunction(AwsInternalConfig awsInternalConfig, InvokeRequest invokeRequest);
 }

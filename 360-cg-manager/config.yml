@@ -158,7 +158,7 @@ redisLockConfig:
   nettyThreads: 16
   useScriptCache: true
 
-atmosphereBroadcaster: HAZELCAST
+atmosphereBroadcaster: MEMORY
 
 redisAtmosphereConfig:
   sentinel: false
@@ -397,7 +397,7 @@ totp:
     durationUnit: MINUTES
 
 cacheConfig:
-  cacheBackend: HAZELCAST
+  cacheBackend: NOOP
   cacheNamespace: ""
   disabledCaches: []
 
