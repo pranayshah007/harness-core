@@ -700,7 +700,7 @@ cg:
     topic: "delegate-service"
     enableQueueAndDequeue: false
 
-redisConfig:
+redisDelegateConfig:
   sentinel: false
   masterName: "test"
   redisUrl: "redis://localhost:6379"
