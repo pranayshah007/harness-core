@@ -127,14 +127,14 @@ public class DeploymentLogAnalysisDTO {
   }
 
   @Value
-  @Builder
+  @Builder(toBuilder = true)
   public static class TimestampFrequencyCount {
     Long timeStamp;
     Double count;
   }
 
   @Value
-  @Builder
+  @Builder(toBuilder = true)
   public static class HostFrequencyData {
     List<TimestampFrequencyCount> frequencies;
     String host;
@@ -174,7 +174,7 @@ public class DeploymentLogAnalysisDTO {
   }
 
   @Value
-  @Builder
+  @Builder(toBuilder = true)
   public static class ClusterHostFrequencyData {
     List<HostFrequencyData> frequencyData;
     int label;
@@ -235,7 +235,7 @@ public class DeploymentLogAnalysisDTO {
   }
 
   @Value
-  @Builder
+  @Builder(toBuilder = true)
   public static class HostSummary {
     String host;
     ResultSummary resultSummary;
