@@ -38,5 +38,5 @@ public class AwsSamPublishBaseStepInfo {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> publishCommandOptions;
-  @JsonIgnore String awsSamPackageFnq;
+  @JsonIgnore String awsSamBuildAndPackageFnq;
 }

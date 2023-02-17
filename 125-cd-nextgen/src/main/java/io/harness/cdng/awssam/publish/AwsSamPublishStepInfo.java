@@ -7,41 +7,53 @@
 
 package io.harness.cdng.awssam.publish;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
-
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
+import io.harness.cdng.visitor.helpers.cdstepinfo.awssam.AwsSamPublishStepInfoVisitorHelper;
+import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
-import io.harness.yaml.YamlSchemaTypes;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
-@TypeAlias("awsSamPublishStepInfo")
-@FieldNameConstants(innerTypeName = "AwsSamPublishStepInfoKeys")
+@EqualsAndHashCode(callSuper = true)
+@SimpleVisitorHelper(helperClass = AwsSamPublishStepInfoVisitorHelper.class)
+@JsonTypeName(StepSpecTypeConstants.AWS_SAM_PUBLISH)
+@TypeAlias("AwsSamPublishStepInfo")
+@RecasterAlias("io.harness.cdng.awssam.AwsSamPublishStepInfo")
 public class AwsSamPublishStepInfo extends AwsSamPublishBaseStepInfo implements CDAbstractStepInfo, Visitable {
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private String uuid;
+  // For Visitor Framework Impl
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
-  @JsonIgnore String awsSamPackageFnq;
+  @Builder(builderMethodName = "infoBuilder")
+  public AwsSamPublishStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<String> awsSamPackageFnq, String publishCommandOptions) {
+    super(delegateSelectors, awsSamPackageFnq, publishCommandOptions);
+  }
 
   @Override
   public StepType getStepType() {

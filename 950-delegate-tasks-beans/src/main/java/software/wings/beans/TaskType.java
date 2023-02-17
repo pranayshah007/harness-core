@@ -464,7 +464,8 @@ public enum TaskType {
   GOOGLE_FUNCTION_ROLLBACK_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Rollback Task"),
   GOOGLE_FUNCTION_PREPARE_ROLLBACK_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Prepare Rollback Task"),
   GOOGLE_FUNCTION_DEPLOY_WITHOUT_TRAFFIC_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Deploy Without Traffic Task"),
-  GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Traffic Shift Task");
+  GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Traffic Shift Task"),
+  AWS_SAM_PUBLISH(TaskGroup.AWS_SAM, "AWS SAM Publish Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

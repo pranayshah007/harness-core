@@ -62,9 +62,8 @@ public class AwsSamPublishCommandTaskHandler extends AwsSamCommandTaskHandler {
     if (!(awsSamPublishRequest.getAwsSamInfraConfig() instanceof AwsSamInfraConfig)) {
       throw new InvalidArgumentsException(Pair.of("AwsSamInfraConfig", "Must be instance of AwsSamInfraConfig"));
     }
-    if (!(awsSamPublishRequest.getServerlessManifestConfig() instanceof AwsSamManifestConfig)) {
-      throw new InvalidArgumentsException(
-          Pair.of("ServerlessManifestConfig", "Must be instance of ServerlessAwsLambdaManifestConfig"));
+    if (!(awsSamPublishRequest.getAwsSamManifestConfig() instanceof AwsSamManifestConfig)) {
+      throw new InvalidArgumentsException(Pair.of("AwsSamManifestConfig", "Must be instance of AwsSamManifestConfig"));
     }
 
     AwsSamInfraConfig awsSamInfraConfig = awsSamPublishRequest.getAwsSamInfraConfig();

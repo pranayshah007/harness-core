@@ -30,7 +30,7 @@ public class AwsSamPublishRequest implements AwsSamCommandRequest {
   AwsSamCommandType awsSamCommandType;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
-  @NonFinal @Expression(ALLOW_SECRETS) AwsSamManifestConfig serverlessManifestConfig;
+  @NonFinal @Expression(ALLOW_SECRETS) AwsSamManifestConfig awsSamManifestConfig;
   @NonFinal @Expression(ALLOW_SECRETS) AwsSamInfraConfig awsSamInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) AwsSamPublishConfig awsSamPublishConfig;
   Integer timeoutIntervalInMin;

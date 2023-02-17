@@ -221,4 +221,5 @@ public class EntityYamlRootNames {
   public static final String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
 
   public static final String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
+  public static final String AWS_SAM_PUBLISH = "AWS_SAM_PUBLISH";
 }

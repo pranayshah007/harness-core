@@ -35,7 +35,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("awsSamPublishStepNode")
 @RecasterAlias("io.harness.cdng.awssam.AwsSamPublishStepNode")
 public class AwsSamPublishStepNode extends CdAbstractStepNode {
-  @JsonProperty("type") @NotNull AwsSamPublishStepNode.StepType type = AwsSamPublishStepNode.StepType.AwsSamPublish;
+  @JsonProperty("type") @NotNull AwsSamPublishStepNode.StepType type = AwsSamPublishStepNode.StepType.AWS_SAM_PUBLISH;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   AwsSamPublishStepInfo awsSamPublishStepInfo;
@@ -50,7 +50,7 @@ public class AwsSamPublishStepNode extends CdAbstractStepNode {
   }
 
   enum StepType {
-    AwsSamPublish(StepSpecTypeConstants.AWS_SAM_PUBLISH);
+    AWS_SAM_PUBLISH(StepSpecTypeConstants.AWS_SAM_PUBLISH);
     @Getter String name;
     StepType(String name) {
       this.name = name;

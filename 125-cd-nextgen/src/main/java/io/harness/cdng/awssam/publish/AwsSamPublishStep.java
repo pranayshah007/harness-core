@@ -50,6 +50,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
@@ -60,7 +62,7 @@ public class AwsSamPublishStep extends CdTaskExecutable<AwsSamCommandResponse> {
                                                .setType(ExecutionNodeType.AWS_SAM_PUBLISH.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
-  private final String AWS_SAM_PUBLISH_COMMAND_NAME = "AwsSamPublish";
+  private final String AWS_SAM_PUBLISH_COMMAND_NAME = "AWS_SAM_PUBLISH";
 
   @Inject AwsSamStepCommonHelper awsSamStepCommonHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
@@ -126,13 +128,13 @@ public class AwsSamPublishStep extends CdTaskExecutable<AwsSamCommandResponse> {
     AwsSamPublishStepParameters awsSamPublishStepParameters =
         (AwsSamPublishStepParameters) stepElementParameters.getSpec();
 
-    if (EmptyPredicate.isEmpty(awsSamPublishStepParameters.getAwsSamPackageFnq())) {
+    if (EmptyPredicate.isEmpty(awsSamPublishStepParameters.getAwsSamBuildAndPackageFnq())) {
       // toDo throw error or skip
       throw new InvalidRequestException("AWS SAM Build and Package Step Missing", USER);
     }
 
     OptionalSweepingOutput awsSamPublishDataOptionalOutput = executionSweepingOutputService.resolveOptional(ambiance,
-        RefObjectUtils.getSweepingOutputRefObject(awsSamPublishStepParameters.getAwsSamPackageFnq() + "."
+        RefObjectUtils.getSweepingOutputRefObject(awsSamPublishStepParameters.getAwsSamBuildAndPackageFnq() + "."
             + OutcomeExpressionConstants.AWS_SAM_PACKAGE_OUTCOME));
 
     if (!awsSamPublishDataOptionalOutput.isFound()) {
@@ -167,7 +169,8 @@ public class AwsSamPublishStep extends CdTaskExecutable<AwsSamCommandResponse> {
     // toDo task type
     return awsSamStepCommonHelper
         .queueTask(stepElementParameters, awsSamCommandRequest, ambiance,
-            AwsSamExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true, null)
+            AwsSamExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
+            TaskType.AWS_SAM_PUBLISH)
         .getTaskRequest();
   }
 

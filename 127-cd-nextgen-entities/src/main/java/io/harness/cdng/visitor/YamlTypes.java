@@ -204,4 +204,5 @@ public interface YamlTypes {
 
   String AWS_LAMBDA_DEPLOY = StepSpecTypeConstants.AWS_LAMBDA_DEPLOY;
   String AWS_SAM_PUBLISH = StepSpecTypeConstants.AWS_SAM_PUBLISH;
+  String AWS_SAM_BUILD_PACKAGE = StepSpecTypeConstants.AWS_SAM_BUILD_PACKAGE;
 }
