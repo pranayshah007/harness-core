@@ -18,11 +18,13 @@ import com.google.common.annotations.VisibleForTesting;
 import io.debezium.embedded.EmbeddedEngineChangeEvent;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.connect.source.SourceRecord;
 
@@ -64,7 +66,6 @@ public abstract class EventsFrameworkChangeConsumer implements MongoCollectionCh
     for (ChangeEvent<String, String> record : recordsMap.values()) {
       cnt++;
       Optional<OpType> opType = getOperationType(((EmbeddedEngineChangeEvent<String, String>) record).sourceRecord());
-      log.info("optype is present: {}", opType.isPresent());
       if (opType.isPresent()) {
         DebeziumChangeEvent debeziumChangeEvent = DebeziumChangeEvent.newBuilder()
                                                       .setKey(getKeyOrDefault(record))
@@ -72,27 +73,12 @@ public abstract class EventsFrameworkChangeConsumer implements MongoCollectionCh
                                                       .setOptype(opType.get().toString())
                                                       .setTimestamp(System.currentTimeMillis())
                                                       .build();
-        log.info("checking for the FF {}", FeatureName.DEBEZIUM_ENABLED);
-        boolean debeziumEnabled =
-            cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(), Target.builder().build(), false);
-        log.info("getting redis producer");
-        Producer producer = null;
-        try {
-          producer = producerFactory.get(record.destination(), redisStreamSize, mode, configuration);
-        } catch (Exception ex) {
-          log.error("error in getting producer", ex);
-        }
-        log.info("found redis producer {}", producer);
+        String collection = Arrays.stream(collectionName.split("\\.")).collect(Collectors.toList()).get(1);
+        boolean debeziumEnabled = cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(),
+            Target.builder().identifier(collection + "." + mode).build(), false);
+        Producer producer = producerFactory.get(record.destination(), redisStreamSize, mode, configuration);
         if (debeziumEnabled) {
-          log.info("producing in redis");
-          try {
-            producer.send(Message.newBuilder().setData(debeziumChangeEvent.toByteString()).build());
-          } catch (Exception ex) {
-            log.error(String.format("could not produce event in redis"), ex);
-          }
-          log.info("successfully produced event in redis");
-        } else {
-          log.info("FF {} is off", FeatureName.DEBEZIUM_ENABLED);
+          producer.send(Message.newBuilder().setData(debeziumChangeEvent.toByteString()).build());
         }
       }
       try {
