@@ -131,7 +131,7 @@ datadogConfig:
 
 distributedLockImplementation: REDIS
 
-redisConfig:
+redisDelegateConfig:
   sentinel: false
   masterName: "test"
   redisUrl: "redis://localhost:6379"

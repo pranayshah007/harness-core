@@ -387,7 +387,7 @@ totp:
     duration: 5
     durationUnit: MINUTES
 
-redisConfig:
+redisDelegateConfig:
   sentinel: false
   masterName: "test"
   redisUrl: "redis://localhost:6379"

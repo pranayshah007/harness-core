@@ -275,7 +275,6 @@ import io.harness.polling.service.impl.PollingServiceImpl;
 import io.harness.polling.service.intfc.PollingPerpetualTaskService;
 import io.harness.polling.service.intfc.PollingService;
 import io.harness.redis.RedisConfig;
-import io.harness.redis.RedissonClientFactory;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.CEAwsSetupConfig;
 import io.harness.remote.CEAzureSetupConfig;
@@ -360,7 +359,6 @@ import javax.validation.ValidatorFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
 import org.jooq.ExecuteListener;
-import org.redisson.api.RedissonClient;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
@@ -553,13 +551,6 @@ public class NextGenModule extends AbstractModule {
   @Named("gitServiceConfiguration")
   public GitServiceConfiguration getGitServiceConfiguration() {
     return this.appConfig.getGitServiceConfiguration();
-  }
-
-  @Provides
-  @Singleton
-  @Named("redissonClient")
-  RedissonClient redissonClient() {
-    return RedissonClientFactory.getClient(appConfig.getRedisLockConfig());
   }
 
   @Override
