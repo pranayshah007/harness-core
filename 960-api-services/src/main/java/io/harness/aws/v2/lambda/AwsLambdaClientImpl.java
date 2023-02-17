@@ -16,7 +16,6 @@ import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.AwsClientHelper;
 import io.harness.exception.InvalidRequestException;
 
-import com.google.api.gax.rpc.NotFoundException;
 import com.google.inject.Singleton;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -29,13 +28,20 @@ import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.DeleteFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.DeleteFunctionResponse;
+import software.amazon.awssdk.services.lambda.model.GetFunctionConfigurationRequest;
+import software.amazon.awssdk.services.lambda.model.GetFunctionConfigurationResponse;
 import software.amazon.awssdk.services.lambda.model.GetFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.InvokeRequest;
 import software.amazon.awssdk.services.lambda.model.InvokeResponse;
 import software.amazon.awssdk.services.lambda.model.LambdaException;
-import software.amazon.awssdk.services.lambda.model.LambdaResponse;
+import software.amazon.awssdk.services.lambda.model.PublishVersionRequest;
+import software.amazon.awssdk.services.lambda.model.PublishVersionResponse;
 import software.amazon.awssdk.services.lambda.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest;
+import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeResponse;
+import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationRequest;
+import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationResponse;
 import software.amazon.awssdk.services.lambda.waiters.LambdaWaiter;
 
 @OwnedBy(CDP)
@@ -81,6 +87,7 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
     }
   }
 
+  @Override
   public Optional<GetFunctionResponse> getFunction(
       AwsInternalConfig awsInternalConfig, GetFunctionRequest getFunctionRequest) {
     try {
@@ -91,6 +98,61 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
       if (lambdaException instanceof ResourceNotFoundException) {
         return Optional.empty();
       }
+      logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
+      throw new InvalidRequestException(lambdaException.getMessage());
+    }
+  }
+
+  @Override
+  public Optional<GetFunctionConfigurationResponse> getFunctionConfiguration(
+      AwsInternalConfig awsInternalConfig, GetFunctionConfigurationRequest getFunctionConfigurationRequest) {
+    try {
+      logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
+      return Optional.ofNullable(((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion()))
+                                     .getFunctionConfiguration(getFunctionConfigurationRequest));
+    } catch (LambdaException lambdaException) {
+      if (lambdaException instanceof ResourceNotFoundException) {
+        return Optional.empty();
+      }
+      logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
+      throw new InvalidRequestException(lambdaException.getMessage());
+    }
+  }
+
+  @Override
+  public UpdateFunctionCodeResponse updateFunctionCode(
+      AwsInternalConfig awsInternalConfig, UpdateFunctionCodeRequest updateFunctionCodeRequest) {
+    try {
+      logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion()))
+          .updateFunctionCode(updateFunctionCodeRequest);
+    } catch (LambdaException lambdaException) {
+      logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
+      throw new InvalidRequestException(lambdaException.getMessage());
+    }
+  }
+
+  @Override
+  public UpdateFunctionConfigurationResponse updateFunctionConfiguration(
+      AwsInternalConfig awsInternalConfig, UpdateFunctionConfigurationRequest updateFunctionConfigurationRequest) {
+    try {
+      logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion()))
+          .updateFunctionConfiguration(updateFunctionConfigurationRequest);
+    } catch (LambdaException lambdaException) {
+      logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
+      throw new InvalidRequestException(lambdaException.getMessage());
+    }
+  }
+
+  @Override
+  public PublishVersionResponse publishVersion(
+      AwsInternalConfig awsInternalConfig, PublishVersionRequest publishVersionRequest) {
+    try {
+      logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion()))
+          .publishVersion(publishVersionRequest);
+    } catch (LambdaException lambdaException) {
       logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
       throw new InvalidRequestException(lambdaException.getMessage());
     }

@@ -41,7 +41,6 @@ import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
-import io.harness.delegate.task.aws.lambda.request.AwsLambdaPrepareRollbackRequest;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.gitcommon.GitRequestFileConfig;
@@ -72,6 +71,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.TaskRequestsUtils;
@@ -233,7 +233,7 @@ public class AwsLambdaHelper extends CDStepHelper {
         .build();
   }
 
-  public static StepResponse.StepResponseBuilder getFailureResponseBuilder(
+  public static StepResponseBuilder getFailureResponseBuilder(
       AwsLambdaDeployResponse awsLambdaDeployResponse, StepResponse.StepResponseBuilder stepResponseBuilder) {
     stepResponseBuilder.status(Status.FAILED)
         .failureInfo(
@@ -248,6 +248,8 @@ public class AwsLambdaHelper extends CDStepHelper {
     return AwsLambdaStepOutcome.builder()
         .functionName(awsLambda.getFunctionName())
         .runtime(awsLambda.getRuntime())
+        .version(awsLambda.getVersion())
+        .functionArn(awsLambda.getFunctionArn())
         .build();
   }
 

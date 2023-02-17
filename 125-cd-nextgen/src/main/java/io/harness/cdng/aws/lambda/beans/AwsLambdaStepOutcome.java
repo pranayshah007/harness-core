@@ -27,4 +27,6 @@ import org.springframework.data.annotation.TypeAlias;
 public class AwsLambdaStepOutcome implements Outcome, ExecutionSweepingOutput {
   String functionName;
   String runtime;
+  String version;
+  String functionArn;
 }

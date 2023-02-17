@@ -19,7 +19,6 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
-import software.amazon.awssdk.regions.Region;
 
 @Value
 @Builder

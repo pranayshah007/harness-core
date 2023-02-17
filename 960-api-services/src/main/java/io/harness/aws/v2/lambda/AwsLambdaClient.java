@@ -17,10 +17,18 @@ import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.DeleteFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.DeleteFunctionResponse;
+import software.amazon.awssdk.services.lambda.model.GetFunctionConfigurationRequest;
+import software.amazon.awssdk.services.lambda.model.GetFunctionConfigurationResponse;
 import software.amazon.awssdk.services.lambda.model.GetFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.InvokeRequest;
 import software.amazon.awssdk.services.lambda.model.InvokeResponse;
+import software.amazon.awssdk.services.lambda.model.PublishVersionRequest;
+import software.amazon.awssdk.services.lambda.model.PublishVersionResponse;
+import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest;
+import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeResponse;
+import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationRequest;
+import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationResponse;
 
 @OwnedBy(CDP)
 public interface AwsLambdaClient {
@@ -30,4 +38,16 @@ public interface AwsLambdaClient {
       AwsInternalConfig awsInternalConfig, DeleteFunctionRequest deleteFunctionRequest);
   InvokeResponse invokeFunction(AwsInternalConfig awsInternalConfig, InvokeRequest invokeRequest);
   Optional<GetFunctionResponse> getFunction(AwsInternalConfig awsInternalConfig, GetFunctionRequest getFunctionRequest);
+
+  Optional<GetFunctionConfigurationResponse> getFunctionConfiguration(
+      AwsInternalConfig awsInternalConfig, GetFunctionConfigurationRequest getFunctionConfigurationRequest);
+
+  UpdateFunctionCodeResponse updateFunctionCode(
+      AwsInternalConfig awsInternalConfig, UpdateFunctionCodeRequest updateFunctionCodeRequest);
+
+  UpdateFunctionConfigurationResponse updateFunctionConfiguration(
+      AwsInternalConfig awsInternalConfig, UpdateFunctionConfigurationRequest updateFunctionConfigurationRequest);
+
+  PublishVersionResponse publishVersion(
+      AwsInternalConfig awsInternalConfig, PublishVersionRequest publishVersionRequest);
 }

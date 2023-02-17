@@ -26,6 +26,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
@@ -72,7 +73,7 @@ public class AwsLambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac 
       log.error("Error while processing AWS Lambda Function response: {}", e.getCause(), e);
       return awsLambdaHelper.handleStepFailureException(ambiance, awsLambdaStepPassThroughData, e);
     }
-    StepResponse.StepResponseBuilder stepResponseBuilder =
+    StepResponseBuilder stepResponseBuilder =
         StepResponse.builder().unitProgressList(awsLambdaDeployResponse.getUnitProgressData().getUnitProgresses());
     if (awsLambdaDeployResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       return AwsLambdaHelper.getFailureResponseBuilder(awsLambdaDeployResponse, stepResponseBuilder).build();

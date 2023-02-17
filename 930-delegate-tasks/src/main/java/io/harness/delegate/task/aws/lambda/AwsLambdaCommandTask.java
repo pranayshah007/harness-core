@@ -22,7 +22,6 @@ import io.harness.delegate.task.aws.lambda.response.AwsLambdaCommandResponse;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.secret.SecretSanitizerThreadLocal;
-import io.harness.security.encryption.SecretDecryptionService;
 
 import com.google.inject.Inject;
 import java.util.Map;
