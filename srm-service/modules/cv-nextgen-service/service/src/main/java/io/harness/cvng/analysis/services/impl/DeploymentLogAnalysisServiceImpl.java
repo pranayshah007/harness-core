@@ -874,6 +874,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
       } else {
         avg = countList.stream().mapToDouble(i -> i).sum() / countList.size();
       }
+      avg = Math.round(avg * 100) / 100.00;
       TimestampFrequencyCount timestampFrequencyCount =
           TimestampFrequencyCount.builder().count(avg).timeStamp(time * SECONDS_PER_MINUTE).build();
       timestampFrequencyCountList.add(timestampFrequencyCount);
