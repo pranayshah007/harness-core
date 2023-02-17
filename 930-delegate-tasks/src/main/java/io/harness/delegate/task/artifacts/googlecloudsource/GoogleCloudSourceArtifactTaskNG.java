@@ -41,7 +41,7 @@ public class GoogleCloudSourceArtifactTaskNG extends AbstractDelegateRunnableTas
   }
 
   @Override
-  public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
+  public DelegateResponseData run(TaskParameters parameters) {
     ArtifactTaskParameters taskParameters = (ArtifactTaskParameters) parameters;
     return googleCloudSourceArtifactTaskHelper.getArtifactCollectResponse(taskParameters, null);
   }

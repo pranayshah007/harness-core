@@ -41,7 +41,7 @@ public class GoogleCloudStorageArtifactTaskNG extends AbstractDelegateRunnableTa
   }
 
   @Override
-  public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
+  public DelegateResponseData run(TaskParameters parameters) {
     ArtifactTaskParameters taskParameters = (ArtifactTaskParameters) parameters;
     return googleCloudStorageArtifactTaskHelper.getArtifactCollectResponse(taskParameters, null);
   }
