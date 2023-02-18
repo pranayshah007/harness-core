@@ -1277,6 +1277,21 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                           .build())
                                      .setFeatureFlag(FeatureName.TERRAFORM_CLOUD.name())
                                      .build();
+    StepInfo awsSamDeploy =
+        StepInfo.newBuilder()
+            .setName("AWS SAM Deploy")
+            .setType(StepSpecTypeConstants.AWS_SAM_DEPLOY)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("AwsSamDeploy").setFolderPath("AWS SAM").build())
+            .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
+            .build();
+
+    StepInfo awsSamRollback =
+        StepInfo.newBuilder()
+            .setName("AWS SAM Rollback")
+            .setType(StepSpecTypeConstants.AWS_SAM_ROLLBACK)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("AwsSamRollback").setFolderPath("AWS SAM").build())
+            .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
+            .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();
 
@@ -1357,6 +1372,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(asgBlueGreenSwapService);
     stepInfos.add(terraformCloudRun);
     stepInfos.add(awsLambdaDeploy);
+    stepInfos.add(awsSamDeploy);
+    stepInfos.add(awsSamRollback);
     return stepInfos;
   }
 }
