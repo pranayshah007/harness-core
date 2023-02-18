@@ -6,10 +6,19 @@
  */
 package io.harness;
 
+import static io.harness.licensing.Edition.COMMUNITY;
 import static io.harness.licensing.Edition.ENTERPRISE;
 import static io.harness.licensing.Edition.FREE;
 import static io.harness.licensing.Edition.TEAM;
 
+import io.harness.beans.FeatureName;
+import io.harness.enforcement.beans.metadata.RestrictionMetadataDTO;
+import io.harness.enforcement.beans.metadata.StaticLimitRestrictionMetadataDTO;
+import io.harness.enforcement.client.services.EnforcementClientService;
+import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.enforcement.constants.RestrictionType;
+import io.harness.enforcement.exceptions.EnforcementServiceConnectionException;
+import io.harness.enforcement.exceptions.WrongFeatureStateException;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
@@ -18,6 +27,7 @@ import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -25,17 +35,22 @@ import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Singleton
 public class PipelineSettingsServiceImpl implements PipelineSettingsService {
   @Inject PlanExecutionService planExecutionService;
+  @Inject EnforcementClientService enforcementClientService;
 
   @Inject NgLicenseHttpClient ngLicenseHttpClient;
   @Inject NGSettingsClient ngSettingsClient;
   @Inject OrchestrationRestrictionConfiguration orchestrationRestrictionConfiguration;
+  @Inject private PmsFeatureFlagService pmsFeatureFlagService;
 
   private final LoadingCache<String, List<ModuleLicenseDTO>> moduleLicensesCache =
       CacheBuilder.newBuilder()
@@ -67,36 +82,21 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
   }
 
   // We can use FF to figure out whether, or not to queue execution based on max limit.
-  // Currently, we are using config value
   @Override
   public PlanExecutionSettingResponse shouldQueuePlanExecution(String accountId, String pipelineIdentifier) {
     try {
       Edition edition = getEdition(accountId);
-      // Sending only accountId here because this setting only exists at account level
-      long maxConcurrentExecutions =
-          Long.parseLong(NGRestUtils
-                             .getResponse(ngSettingsClient.getSetting(
-                                 SettingConstants.CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS, accountId, null, null))
-                             .getValue());
-
-      switch (edition) {
-        case FREE:
-          if (orchestrationRestrictionConfiguration.isUseRestrictionForFree()) {
-            return shouldQueueInternal(accountId, pipelineIdentifier, maxConcurrentExecutions);
-          }
-          break;
-        case ENTERPRISE:
-          if (orchestrationRestrictionConfiguration.isUseRestrictionForEnterprise()) {
-            return shouldQueueInternal(accountId, pipelineIdentifier, maxConcurrentExecutions);
-          }
-          break;
-        case TEAM:
-          if (orchestrationRestrictionConfiguration.isUseRestrictionForTeam()) {
-            return shouldQueueInternal(accountId, pipelineIdentifier, maxConcurrentExecutions);
-          }
-          break;
-        default:
-          PlanExecutionSettingResponse.builder().shouldQueue(false).useNewFlow(false).build();
+      if (edition != COMMUNITY) {
+        // Sending only accountId here because this setting only exists at account level
+        long maxConcurrentExecutions =
+            Long.parseLong(NGRestUtils
+                               .getResponse(ngSettingsClient.getSetting(
+                                   SettingConstants.CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS, accountId, null, null))
+                               .getValue());
+        if (!pmsFeatureFlagService.isEnabled(
+                accountId, FeatureName.DO_NOT_ENFORCE_LIMITS_ON_CONCURRENT_PIPELINE_EXECUTIONS)) {
+          return shouldQueueInternal(accountId, pipelineIdentifier, maxConcurrentExecutions);
+        }
       }
     } catch (Exception ex) {
       return PlanExecutionSettingResponse.builder().shouldQueue(false).useNewFlow(false).build();
@@ -135,49 +135,34 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     return Long.MAX_VALUE;
   }
 
-  // The max values for this can be fetched from enforcement client service rather than from config.yml
   @Override
   public int getMaxConcurrencyBasedOnEdition(String accountId, long childCount) {
+    int maxConcurrencyLimitBasedOnPlan = 20;
     try {
       Edition edition = getEdition(accountId);
-      switch (edition) {
-        case FREE:
-          if (orchestrationRestrictionConfiguration.isUseRestrictionForFree()) {
-            if (childCount > orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getFree()) {
-              throw new InvalidRequestException(String.format(
-                  "Trying to run more than %s concurrent stages/steps. Please upgrade your plan to Team (Paid) or reduce concurrency",
-                  orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getFree()));
-            }
-            return (int) orchestrationRestrictionConfiguration.getMaxConcurrencyRestriction().getFree();
+      if (edition != COMMUNITY) {
+        if (enforcementClientService.isEnforcementEnabled()) {
+          Optional<RestrictionMetadataDTO> restrictionMetadataDTO = enforcementClientService.getRestrictionMetadata(
+              FeatureRestrictionName.MAX_PARALLEL_STEP_IN_A_PIPELINE, accountId);
+          if (restrictionMetadataDTO.isPresent()
+              && restrictionMetadataDTO.get().getRestrictionType() == RestrictionType.STATIC_LIMIT) {
+            StaticLimitRestrictionMetadataDTO staticLimitRestrictionDTO =
+                (StaticLimitRestrictionMetadataDTO) restrictionMetadataDTO.get();
+            maxConcurrencyLimitBasedOnPlan = staticLimitRestrictionDTO.getLimit().intValue();
           }
-          return 20;
-        case ENTERPRISE:
-          if (orchestrationRestrictionConfiguration.isUseRestrictionForEnterprise()) {
-            if (childCount
-                > orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getEnterprise()) {
-              throw new InvalidRequestException(String.format(
-                  "Trying to run more than %s concurrent stages/steps. Please contact sales if you want to run more",
-                  orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getEnterprise()));
-            }
-            return (int) orchestrationRestrictionConfiguration.getMaxConcurrencyRestriction().getEnterprise();
+          if (childCount > maxConcurrencyLimitBasedOnPlan) {
+            throw new InvalidRequestException(String.format(
+                "Trying to run more than %s concurrent stages/steps. Please upgrade your plan or reduce concurrency",
+                maxConcurrencyLimitBasedOnPlan));
           }
-          return 100;
-        case TEAM:
-          if (orchestrationRestrictionConfiguration.isUseRestrictionForTeam()) {
-            if (childCount > orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getTeam()) {
-              throw new InvalidRequestException(String.format(
-                  "Trying to run more than %s concurrent stages/steps. Please upgrade your plan to Enterprise (Paid) or reduce concurrency",
-                  orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getTeam()));
-            }
-            return (int) orchestrationRestrictionConfiguration.getMaxConcurrencyRestriction().getTeam();
-          }
-          return 50;
-        default:
-          return 20;
+        }
       }
+    } catch (EnforcementServiceConnectionException | WrongFeatureStateException e) {
+      log.error("Got exception while talking to enforcement service, taking default limit of 100 for maxConcurrency");
     } catch (ExecutionException e) {
-      return 20;
+      return maxConcurrencyLimitBasedOnPlan;
     }
+    return maxConcurrencyLimitBasedOnPlan;
   }
 
   private PlanExecutionSettingResponse shouldQueueInternal(String accountId, String pipelineIdentifier, long maxCount) {

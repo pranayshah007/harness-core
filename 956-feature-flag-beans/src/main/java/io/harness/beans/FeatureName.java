@@ -617,7 +617,9 @@ public enum FeatureName {
   SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE(
       "To silent ignore org.modelmapper.MappingException inside state machine executor", HarnessTeam.SPG),
   PL_AUDIT_LOG_STREAMING_ENABLED("Enables AuditLogStreaming tab on AuditTrails page in account scope", HarnessTeam.PL),
-  SRM_ELK_LOGS_V2("Will enable Elasticsearch logs v2 health source in SRM", HarnessTeam.CV);
+  SRM_ELK_LOGS_V2("Will enable Elasticsearch logs v2 health source in SRM", HarnessTeam.CV),
+  DO_NOT_ENFORCE_LIMITS_ON_CONCURRENT_PIPELINE_EXECUTIONS(
+      "Enabling this FF won't enforce any limits on concurrent pipeline executions", HarnessTeam.PIPELINE);
 
   @Deprecated
   FeatureName() {
