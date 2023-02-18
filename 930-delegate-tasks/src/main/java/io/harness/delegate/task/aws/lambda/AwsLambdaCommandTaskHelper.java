@@ -75,8 +75,6 @@ public class AwsLambdaCommandTaskHelper {
 
     CreateFunctionRequest createFunctionRequest = (CreateFunctionRequest) createFunctionRequestBuilder.build();
 
-    CreateFunctionResponse createFunctionResponse;
-    FunctionCode functionCode;
     String functionName = createFunctionRequest.functionName();
     GetFunctionRequest getFunctionRequest =
         (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
@@ -88,100 +86,138 @@ public class AwsLambdaCommandTaskHelper {
               getFunctionRequest);
 
       if (existingFunctionOptional.isEmpty()) {
-        // create new function
-        logCallback.saveExecutionLog(format("Creating Function: %s in region: %s %n", functionName,
-            awsLambdaFunctionsInfraConfig.getRegion(), LogLevel.INFO));
-
-        functionCode = prepareFunctionCode(awsLambdaArtifactConfig);
-        createFunctionRequestBuilder.code(functionCode);
-        createFunctionRequestBuilder.publish(true);
-        createFunctionResponse =
-            awsLambdaClient.createFunction(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
-                                               awsLambdaFunctionsInfraConfig.getRegion()),
-                createFunctionRequest);
-        logCallback.saveExecutionLog(format("Created Function: %s in region: %s %n", functionName,
-            awsLambdaFunctionsInfraConfig.getRegion(), LogLevel.INFO));
-
-        logCallback.saveExecutionLog(
-            format("Created Function Code Sha256: [%s]", createFunctionResponse.codeSha256(), INFO));
-
-        logCallback.saveExecutionLog(format("Created Function ARN: [%s]", createFunctionResponse.functionArn(), INFO));
-
-        logCallback.saveExecutionLog(format("Successfully deployed lambda function: [%s]", functionName));
-        logCallback.saveExecutionLog("=================");
-
-        return createFunctionResponse;
+        return createFunction(awsLambdaArtifactConfig, logCallback, awsLambdaFunctionsInfraConfig,
+            createFunctionRequestBuilder, createFunctionRequest, functionName);
       } else {
-        logCallback.saveExecutionLog(format("Function: [%s] exists. Update and Publish", functionName));
-        GetFunctionResponse functionResponse = existingFunctionOptional.get();
-        logCallback.saveExecutionLog(
-            format("Existing Lambda Function Code Sha256: [%s].", functionResponse.configuration().codeSha256()));
-
-        // Update Function Code
-        functionCode = prepareFunctionCode(awsLambdaArtifactConfig);
-
-        UpdateFunctionCodeRequest updateFunctionCodeRequest =
-            (UpdateFunctionCodeRequest) UpdateFunctionCodeRequest.builder()
-                .functionName(functionName)
-                .s3Bucket(functionCode.s3Bucket())
-                .s3Key(functionCode.s3Key())
-                .build();
-
-        UpdateFunctionCodeResponse updateFunctionCodeResponse =
-            awsLambdaClient.updateFunctionCode(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
-                                                   awsLambdaFunctionsInfraConfig.getRegion()),
-                updateFunctionCodeRequest);
-        waitForFunctionToUpdate(functionName, awsLambdaFunctionsInfraConfig, logCallback);
-
-        logCallback.saveExecutionLog(
-            format("Updated Function Code Sha256: [%s]", updateFunctionCodeResponse.codeSha256()));
-
-        logCallback.saveExecutionLog(format("Updated Function ARN: [%s]", updateFunctionCodeResponse.functionArn()));
-
-        // Update Function Configuration
-
-        UpdateFunctionConfigurationRequest.Builder updateFunctionConfigurationRequestBuilder =
-            parseYamlAsObject(awsLambdaManifestContent, UpdateFunctionConfigurationRequest.serializableBuilderClass());
-
-        UpdateFunctionConfigurationResponse updateFunctionConfigurationResponse =
-            awsLambdaClient.updateFunctionConfiguration(
-                getAwsInternalConfig(
-                    awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion()),
-                (UpdateFunctionConfigurationRequest) updateFunctionConfigurationRequestBuilder.build());
-
-        waitForFunctionToUpdate(functionName, awsLambdaFunctionsInfraConfig, logCallback);
-
-        // Publish New version
-        logCallback.saveExecutionLog("Publishing new version", INFO);
-
-        PublishVersionRequest publishVersionRequest =
-            (PublishVersionRequest) PublishVersionRequest.builder()
-                .functionName(updateFunctionConfigurationResponse.functionName())
-                .codeSha256(updateFunctionConfigurationResponse.codeSha256())
-                .build();
-
-        PublishVersionResponse publishVersionResponse =
-            awsLambdaClient.publishVersion(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
-                                               awsLambdaFunctionsInfraConfig.getRegion()),
-                publishVersionRequest);
-
-        logCallback.saveExecutionLog(format("Published new version: [%s]", publishVersionResponse.version()));
-
-        logCallback.saveExecutionLog(format("Published function ARN: [%s]", publishVersionResponse.functionArn()));
-
-        logCallback.saveExecutionLog(format("Successfully deployed lambda function: [%s]", functionName));
-        logCallback.saveExecutionLog("=================");
-
-        return (CreateFunctionResponse) CreateFunctionResponse.builder()
-            .functionName(updateFunctionConfigurationResponse.functionName())
-            .functionArn(updateFunctionConfigurationResponse.functionArn())
-            .runtime(updateFunctionConfigurationResponse.runtimeAsString())
-            .version(publishVersionResponse.version())
-            .build();
+        return updateFunction(awsLambdaArtifactConfig, awsLambdaManifestContent, logCallback,
+            awsLambdaFunctionsInfraConfig, functionName, existingFunctionOptional.get());
       }
     } catch (Exception e) {
       throw new InvalidRequestException(e.getMessage());
     }
+  }
+
+  private CreateFunctionResponse createFunction(AwsLambdaArtifactConfig awsLambdaArtifactConfig,
+      LogCallback logCallback, AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig,
+      CreateFunctionRequest.Builder createFunctionRequestBuilder, CreateFunctionRequest createFunctionRequest,
+      String functionName) {
+    CreateFunctionResponse createFunctionResponse;
+    FunctionCode functionCode;
+    // create new function
+    logCallback.saveExecutionLog(format("Creating Function: %s in region: %s %n", functionName,
+        awsLambdaFunctionsInfraConfig.getRegion(), LogLevel.INFO));
+
+    functionCode = prepareFunctionCode(awsLambdaArtifactConfig);
+    createFunctionRequestBuilder.code(functionCode);
+    createFunctionRequestBuilder.publish(true);
+    createFunctionResponse =
+        awsLambdaClient.createFunction(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
+                                           awsLambdaFunctionsInfraConfig.getRegion()),
+            createFunctionRequest);
+    logCallback.saveExecutionLog(format("Created Function: %s in region: %s %n", functionName,
+        awsLambdaFunctionsInfraConfig.getRegion(), LogLevel.INFO));
+
+    logCallback.saveExecutionLog(
+        format("Created Function Code Sha256: [%s]", createFunctionResponse.codeSha256(), INFO));
+
+    logCallback.saveExecutionLog(format("Created Function ARN: [%s]", createFunctionResponse.functionArn(), INFO));
+
+    logCallback.saveExecutionLog(format("Successfully deployed lambda function: [%s]", functionName));
+    logCallback.saveExecutionLog("=================");
+
+    return createFunctionResponse;
+  }
+
+  private CreateFunctionResponse updateFunction(AwsLambdaArtifactConfig awsLambdaArtifactConfig,
+      String awsLambdaManifestContent, LogCallback logCallback,
+      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, String functionName,
+      GetFunctionResponse existingFunction) {
+    logCallback.saveExecutionLog(format("Function: [%s] exists. Update and Publish", functionName));
+
+    logCallback.saveExecutionLog(
+        format("Existing Lambda Function Code Sha256: [%s].", existingFunction.configuration().codeSha256()));
+
+    // Update Function Code
+    updateFunctionCode(awsLambdaArtifactConfig, logCallback, awsLambdaFunctionsInfraConfig, functionName);
+
+    // Update Function Configuration
+
+    UpdateFunctionConfigurationResponse updateFunctionConfigurationResponse =
+        getUpdateFunctionConfigurationResponse(awsLambdaManifestContent, awsLambdaFunctionsInfraConfig);
+
+    waitForFunctionToUpdate(functionName, awsLambdaFunctionsInfraConfig, logCallback);
+
+    // Publish New version
+    PublishVersionResponse publishVersionResponse =
+        getPublishVersionResponse(logCallback, awsLambdaFunctionsInfraConfig, updateFunctionConfigurationResponse);
+
+    logCallback.saveExecutionLog(format("Successfully deployed lambda function: [%s]", functionName));
+    logCallback.saveExecutionLog("=================");
+
+    return (CreateFunctionResponse) CreateFunctionResponse.builder()
+        .functionName(updateFunctionConfigurationResponse.functionName())
+        .functionArn(updateFunctionConfigurationResponse.functionArn())
+        .runtime(updateFunctionConfigurationResponse.runtimeAsString())
+        .version(publishVersionResponse.version())
+        .build();
+  }
+
+  private void updateFunctionCode(AwsLambdaArtifactConfig awsLambdaArtifactConfig, LogCallback logCallback,
+      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, String functionName) {
+    FunctionCode functionCode;
+    functionCode = prepareFunctionCode(awsLambdaArtifactConfig);
+
+    UpdateFunctionCodeRequest updateFunctionCodeRequest =
+        (UpdateFunctionCodeRequest) UpdateFunctionCodeRequest.builder()
+            .functionName(functionName)
+            .s3Bucket(functionCode.s3Bucket())
+            .s3Key(functionCode.s3Key())
+            .build();
+
+    UpdateFunctionCodeResponse updateFunctionCodeResponse =
+        awsLambdaClient.updateFunctionCode(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
+                                               awsLambdaFunctionsInfraConfig.getRegion()),
+            updateFunctionCodeRequest);
+    waitForFunctionToUpdate(functionName, awsLambdaFunctionsInfraConfig, logCallback);
+
+    logCallback.saveExecutionLog(format("Updated Function Code Sha256: [%s]", updateFunctionCodeResponse.codeSha256()));
+
+    logCallback.saveExecutionLog(format("Updated Function ARN: [%s]", updateFunctionCodeResponse.functionArn()));
+  }
+
+  private UpdateFunctionConfigurationResponse getUpdateFunctionConfigurationResponse(
+      String awsLambdaManifestContent, AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig) {
+    UpdateFunctionConfigurationRequest.Builder updateFunctionConfigurationRequestBuilder =
+        parseYamlAsObject(awsLambdaManifestContent, UpdateFunctionConfigurationRequest.serializableBuilderClass());
+
+    UpdateFunctionConfigurationResponse updateFunctionConfigurationResponse =
+        awsLambdaClient.updateFunctionConfiguration(
+            getAwsInternalConfig(
+                awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion()),
+            (UpdateFunctionConfigurationRequest) updateFunctionConfigurationRequestBuilder.build());
+    return updateFunctionConfigurationResponse;
+  }
+
+  private PublishVersionResponse getPublishVersionResponse(LogCallback logCallback,
+      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig,
+      UpdateFunctionConfigurationResponse updateFunctionConfigurationResponse) {
+    logCallback.saveExecutionLog("Publishing new version", INFO);
+
+    PublishVersionRequest publishVersionRequest = (PublishVersionRequest) PublishVersionRequest.builder()
+                                                      .functionName(updateFunctionConfigurationResponse.functionName())
+                                                      .codeSha256(updateFunctionConfigurationResponse.codeSha256())
+                                                      .build();
+
+    PublishVersionResponse publishVersionResponse =
+        awsLambdaClient.publishVersion(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
+                                           awsLambdaFunctionsInfraConfig.getRegion()),
+            publishVersionRequest);
+
+    logCallback.saveExecutionLog(format("Published new version: [%s]", publishVersionResponse.version()));
+
+    logCallback.saveExecutionLog(format("Published function ARN: [%s]", publishVersionResponse.functionArn()));
+
+    return publishVersionResponse;
   }
 
   private FunctionCode prepareFunctionCode(AwsLambdaArtifactConfig awsLambdaArtifactConfig) {

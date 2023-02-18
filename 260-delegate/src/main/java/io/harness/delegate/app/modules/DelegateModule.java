@@ -2153,8 +2153,8 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_ROLLBACK_TASK).toInstance(GoogleFunctionRollbackTask.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK).toInstance(GoogleFunctionTrafficShiftTask.class);
 
-      // AWS Lambda
-      mapBinder.addBinding(TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG).toInstance(AwsLambdaCommandTask.class);
+    // AWS Lambda
+    mapBinder.addBinding(TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG).toInstance(AwsLambdaCommandTask.class);
   }
 
   private void registerSecretManagementBindings() {
