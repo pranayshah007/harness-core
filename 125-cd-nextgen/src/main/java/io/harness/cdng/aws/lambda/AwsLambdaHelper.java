@@ -234,7 +234,7 @@ public class AwsLambdaHelper extends CDStepHelper {
   }
 
   public static StepResponseBuilder getFailureResponseBuilder(
-      AwsLambdaDeployResponse awsLambdaDeployResponse, StepResponse.StepResponseBuilder stepResponseBuilder) {
+      AwsLambdaDeployResponse awsLambdaDeployResponse, StepResponseBuilder stepResponseBuilder) {
     stepResponseBuilder.status(Status.FAILED)
         .failureInfo(
             FailureInfo.newBuilder()
