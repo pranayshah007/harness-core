@@ -28,7 +28,7 @@ import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStep;
 import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStep;
-import io.harness.cdng.awssam.publish.AwsSamPublishStep;
+import io.harness.cdng.aws.sam.publish.AwsSamPublishStep;
 import io.harness.cdng.azure.webapp.ApplicationSettingsStep;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;

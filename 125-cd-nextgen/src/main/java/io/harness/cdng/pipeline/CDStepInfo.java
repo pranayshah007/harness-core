@@ -17,7 +17,7 @@ import io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo;
 import io.harness.cdng.aws.asg.AsgRollingDeployStepInfo;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStepInfo;
-import io.harness.cdng.awssam.publish.AwsSamPublishStepInfo;
+import io.harness.cdng.aws.sam.publish.AwsSamPublishStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepInfo;

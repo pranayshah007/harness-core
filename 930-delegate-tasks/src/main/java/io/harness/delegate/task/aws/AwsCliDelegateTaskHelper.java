@@ -18,6 +18,7 @@ import static software.wings.beans.LogHelper.color;
 import static java.lang.String.format;
 
 import io.harness.aws.beans.AwsCliCredentialConfig;
+import io.harness.aws.beans.AwsCliCredentialConfig.AwsCliCredentialConfigBuilder;
 import io.harness.awscli.AwsCliClient;
 import io.harness.cli.CliResponse;
 import io.harness.delegate.beans.aws.AwsCliStsAssumeRoleCommandOutputSchema;
@@ -129,8 +130,7 @@ public class AwsCliDelegateTaskHelper {
   }
 
   public AwsCliCredentialConfig getAwsCliConfigFromManualCreds(AwsManualConfigSpecDTO awsManualConfigSpecDTO) {
-    AwsCliCredentialConfig.AwsCliCredentialConfigBuilder awsCliCredentialConfigBuilder =
-        AwsCliCredentialConfig.builder();
+    AwsCliCredentialConfigBuilder awsCliCredentialConfigBuilder = AwsCliCredentialConfig.builder();
     awsCliCredentialConfigBuilder.provider("aws");
     awsCliCredentialConfigBuilder.accessKey(getSecretAsStringFromPlainTextOrSecretRef(
         awsManualConfigSpecDTO.getAccessKey(), awsManualConfigSpecDTO.getAccessKeyRef()));

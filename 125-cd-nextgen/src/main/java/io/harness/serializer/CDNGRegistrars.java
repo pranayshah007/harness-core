@@ -19,7 +19,7 @@ import io.harness.cdng.aws.asg.AsgCanaryDeployStepNode;
 import io.harness.cdng.aws.asg.AsgRollingDeployStepNode;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStepNode;
 import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepNode;
-import io.harness.cdng.awssam.publish.AwsSamPublishStepNode;
+import io.harness.cdng.aws.sam.publish.AwsSamPublishStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepNode;
