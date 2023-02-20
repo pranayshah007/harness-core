@@ -8,6 +8,7 @@
 package io.harness.steps.approval.step.harness.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -34,7 +35,7 @@ import lombok.experimental.FieldDefaults;
 public class Approvers {
   @NotNull
   @Size(min = 1)
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {runtime, expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<String>> userGroups;
 
