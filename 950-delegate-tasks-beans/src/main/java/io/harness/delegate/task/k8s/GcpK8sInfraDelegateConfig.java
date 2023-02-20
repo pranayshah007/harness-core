@@ -8,9 +8,12 @@
 package io.harness.delegate.task.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.k8s.K8sConstants.AUTH_PLUGIN_VERSION_COMMAND;
+import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_BINARY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
@@ -25,4 +28,9 @@ public class GcpK8sInfraDelegateConfig implements K8sInfraDelegateConfig {
   String cluster;
   GcpConnectorDTO gcpConnectorDTO;
   List<EncryptedDataDetail> encryptionDataDetails;
+
+  @Override
+  public boolean isAuthPluginBinaryAvailable() {
+    return KubeConfigAuthPluginHelper.isAuthPluginBinaryAvailable(GCP_AUTH_PLUGIN_BINARY);
+  }
 }

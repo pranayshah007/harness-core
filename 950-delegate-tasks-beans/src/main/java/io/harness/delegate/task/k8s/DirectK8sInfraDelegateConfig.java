@@ -20,4 +20,9 @@ public class DirectK8sInfraDelegateConfig implements K8sInfraDelegateConfig {
   String namespace;
   KubernetesClusterConfigDTO kubernetesClusterConfigDTO;
   List<EncryptedDataDetail> encryptionDataDetails;
+
+  @Override
+  public boolean isAuthPluginBinaryAvailable() {
+    return false;
+  }
 }

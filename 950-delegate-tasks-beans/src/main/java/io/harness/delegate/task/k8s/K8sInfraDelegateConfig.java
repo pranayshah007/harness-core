@@ -18,4 +18,5 @@ import java.util.List;
 public interface K8sInfraDelegateConfig {
   String getNamespace();
   List<EncryptedDataDetail> getEncryptionDataDetails();
+  boolean isAuthPluginBinaryAvailable();
 }
