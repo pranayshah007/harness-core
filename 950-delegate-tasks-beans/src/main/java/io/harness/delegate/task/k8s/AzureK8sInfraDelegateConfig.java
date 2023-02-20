@@ -8,7 +8,6 @@
 package io.harness.delegate.task.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.k8s.K8sConstants.AUTH_PLUGIN_VERSION_COMMAND;
 import static io.harness.k8s.K8sConstants.AZURE_AUTH_PLUGIN_BINARY;
 
 import io.harness.annotations.dev.OwnedBy;
