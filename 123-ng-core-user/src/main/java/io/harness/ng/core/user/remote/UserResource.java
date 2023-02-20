@@ -589,11 +589,8 @@ public class UserResource {
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     if (isUserExternallyManaged(userId)
-        && (ScopeLevel.ACCOUNT.equals(ScopeLevel.of(accountIdentifier, orgIdentifier, projectIdentifier))
-            || !ngFeatureFlagHelperService.isEnabled(
-                accountIdentifier, FeatureName.PL_REMOVE_EXTERNAL_USER_ORG_PROJECT))) {
-      // throw error when an externally managed user is being removed from account or the FF is disabled for org and
-      // project levels
+        && (ScopeLevel.ACCOUNT.equals(ScopeLevel.of(accountIdentifier, orgIdentifier, projectIdentifier)))) {
+      // throw error when an externally managed user is being removed from account
       log.error("User is externally managed, cannot delete user - userId: {}", userId);
       throw new InvalidRequestException(
           "User is externally managed by your Identity Provider and cannot be deleted via UI / API. To delete the user from Harness, delete it from your Identity Provider.");
