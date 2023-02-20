@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -9,12 +9,15 @@ package io.harness.cvng.statemachine.services.api;
 
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.services.api.LogAnalysisService;
+import io.harness.cvng.analysis.services.api.TimeSeriesAnalysisService;
+import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.DeploymentLogAnalysisState;
-import io.harness.cvng.statemachine.entities.LogAnalysisState;
+import io.harness.cvng.statemachine.entities.DeploymentLogFeedbackState;
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
+import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -23,16 +26,26 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public abstract class LogAnalysisStateExecutor<T extends LogAnalysisState> extends AnalysisStateExecutor<T> {
-  @Inject protected transient LogAnalysisService logAnalysisService;
-
-  public abstract void handleFinalStatuses(DeploymentLogAnalysisState analysisState);
-
-  protected abstract String scheduleAnalysis(AnalysisInput analysisInput);
+public class DeploymentLogFeedbackStateExecutor extends LogAnalysisStateExecutor<DeploymentLogFeedbackState> {
+  @Inject private VerificationJobInstanceService verificationJobInstanceService;
+  @Inject private TimeSeriesRecordService timeSeriesRecordService;
+  @Inject private TimeSeriesAnalysisService timeSeriesAnalysisService;
+  @Inject private LogAnalysisService logAnalysisService;
 
   @Override
-  public AnalysisState execute(T analysisState) {
-    analysisState.setWorkerTaskId(scheduleAnalysis(analysisState.getInputs()));
+  public void handleFinalStatuses(DeploymentLogAnalysisState analysisState) {
+    logAnalysisService.logDeploymentVerificationProgress(analysisState.getInputs(), analysisState.getStatus());
+  }
+
+  @Override
+  protected String scheduleAnalysis(AnalysisInput analysisInput) {
+    return logAnalysisService.scheduleDeploymentLogFeedbackTask(analysisInput);
+  }
+
+  @Override
+  public AnalysisState execute(DeploymentLogFeedbackState analysisState) {
+    String workerTaskId = logAnalysisService.scheduleDeploymentLogAnalysisTask(analysisState.getInputs());
+    analysisState.setWorkerTaskId(workerTaskId);
     Preconditions.checkNotNull(analysisState.getWorkerTaskId(), "workerId can not be null");
     analysisState.setStatus(AnalysisStatus.RUNNING);
     log.info("Executing service guard log analysis for {}", analysisState.getInputs());
@@ -40,7 +53,7 @@ public abstract class LogAnalysisStateExecutor<T extends LogAnalysisState> exten
   }
 
   @Override
-  public AnalysisStatus getExecutionStatus(T analysisState) {
+  public AnalysisStatus getExecutionStatus(DeploymentLogFeedbackState analysisState) {
     if (analysisState.getStatus() != AnalysisStatus.SUCCESS) {
       Map<String, LearningEngineTask.ExecutionStatus> taskStatuses =
           logAnalysisService.getTaskStatus(Arrays.asList(analysisState.getWorkerTaskId()));
@@ -64,25 +77,36 @@ public abstract class LogAnalysisStateExecutor<T extends LogAnalysisState> exten
   }
 
   @Override
-  public AnalysisState handleRerun(T analysisState) {
-    // increment the retryCount without caring for the max
-    // clean up state in underlying worker and then execute
-
+  public AnalysisState handleRerun(DeploymentLogFeedbackState analysisState) {
     analysisState.setRetryCount(analysisState.getRetryCount() + 1);
-    log.info("In serviceguard log analysis for Inputs {}, cleaning up worker task. Old taskID: {}",
-        analysisState.getInputs(), analysisState.getWorkerTaskId());
-    analysisState.setWorkerTaskId(null);
+    analysisState.setStatus(AnalysisStatus.RUNNING);
     return execute(analysisState);
   }
 
   @Override
-  public AnalysisState handleRunning(T analysisState) {
+  public AnalysisState handleRunning(DeploymentLogFeedbackState analysisState) {
     return analysisState;
   }
 
   @Override
-  public AnalysisState handleSuccess(T analysisState) {
+  public AnalysisState handleSuccess(DeploymentLogFeedbackState analysisState) {
     analysisState.setStatus(AnalysisStatus.SUCCESS);
+    return analysisState;
+  }
+
+  @Override
+  public AnalysisState handleTransition(DeploymentLogFeedbackState analysisState) {
+    analysisState.setStatus(AnalysisStatus.SUCCESS);
+    return analysisState;
+  }
+
+  @Override
+  public AnalysisState handleRetry(DeploymentLogFeedbackState analysisState) {
+    if (analysisState.getRetryCount() >= getMaxRetry()) {
+      analysisState.setStatus(AnalysisStatus.FAILED);
+    } else {
+      return handleRerun(analysisState);
+    }
     return analysisState;
   }
 }

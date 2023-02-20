@@ -14,6 +14,7 @@ import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.core.beans.LogFeedback;
 import io.harness.cvng.core.beans.LogFeedbackHistory;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectPathParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
 import io.harness.cvng.core.entities.LogFeedbackEntity;
 import io.harness.cvng.core.entities.LogFeedbackHistoryEntity;
@@ -36,7 +37,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private DeploymentLogAnalysisService deploymentLogAnalysisService;
 
-  private void updateDeploymentLogAnalysis(ProjectParams projectParams, LogFeedback logFeedback) {
+  private void updateDeploymentLogAnalysis(ProjectPathParams projectParams, LogFeedback logFeedback) {
     DeploymentLogAnalysisFilter deploymentLogAnalysisFilter =
         DeploymentLogAnalysisFilter.builder().clusterId(logFeedback.getClusterId()).build();
     List<DeploymentLogAnalysis> deploymentLogAnalyses = deploymentLogAnalysisService.getLatestDeploymentLogAnalysis(
@@ -60,7 +61,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
   }
 
   @Override
-  public LogFeedback create(ProjectParams projectParams, LogFeedback logFeedback) {
+  public LogFeedback create(ProjectPathParams projectParams, LogFeedback logFeedback) {
     UserPrincipal userPrincipal = (UserPrincipal) SecurityContextBuilder.getPrincipal();
     LogFeedbackEntity.LogFeedbackEntityBuilder logFeedbackEntityBuilder =
         LogFeedbackEntity.builder()
@@ -82,7 +83,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
   }
 
   @Override
-  public LogFeedback update(ProjectParams projectParams, String feedbackId, LogFeedback logFeedback) {
+  public LogFeedback update(ProjectPathParams projectParams, String feedbackId, LogFeedback logFeedback) {
     UserPrincipal userPrincipal = (UserPrincipal) SecurityContextBuilder.getPrincipal();
     LogFeedbackEntity logFeedbackEntity = getLogFeedback(projectParams, feedbackId);
     logFeedbackEntity.setFeedbackScore(logFeedback.getFeedbackScore().toString());
@@ -99,14 +100,14 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
   }
 
   @Override
-  public boolean delete(ProjectParams projectParams, String feedbackId) {
+  public boolean delete(ProjectPathParams projectParams, String feedbackId) {
     LogFeedbackEntity.LogFeedbackEntityBuilder logFeedbackEntityBuilder =
         LogFeedbackEntity.builder().feedbackId(feedbackId);
     return hPersistence.delete(logFeedbackEntityBuilder.build());
   }
 
   @Override
-  public LogFeedback get(ProjectParams projectParams, String feedbackId) {
+  public LogFeedback get(ProjectPathParams projectParams, String feedbackId) {
     LogFeedbackEntity logFeedbackEntity = getLogFeedback(projectParams, feedbackId);
     if (logFeedbackEntity == null)
       return null;
@@ -124,7 +125,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
         .build();
   }
 
-  public void createHistory(ProjectParams projectParams, String userId, LogFeedbackEntity logFeedbackEntity) {
+  public void createHistory(ProjectPathParams projectParams, String userId, LogFeedbackEntity logFeedbackEntity) {
     LogFeedbackHistoryEntity.LogFeedbackHistoryEntityBuilder logFeedbackHistoryEntityBuilder =
         LogFeedbackHistoryEntity.builder();
 
@@ -139,7 +140,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
     hPersistence.save(logFeedbackHistoryEntityBuilder.build());
   }
 
-  public void updateHistory(ProjectParams projectParams, String userId, LogFeedbackEntity logFeedbackEntity) {
+  public void updateHistory(ProjectPathParams projectParams, String userId, LogFeedbackEntity logFeedbackEntity) {
     LogFeedbackHistoryEntity.LogFeedbackHistoryEntityBuilder logFeedbackHistoryEntityBuilder =
         LogFeedbackHistoryEntity.builder();
 
@@ -155,7 +156,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
   }
 
   @Override
-  public List<LogFeedbackHistory> history(ProjectParams projectParams, String feedbackId) {
+  public List<LogFeedbackHistory> history(ProjectPathParams projectParams, String feedbackId) {
     List<LogFeedbackHistoryEntity> logFeedbackHistoryEntities =
         hPersistence.createQuery(LogFeedbackHistoryEntity.class)
             .filter(LogFeedbackHistoryEntity.LogFeedbackHistoryKeys.feedbackId, feedbackId)
@@ -212,7 +213,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
     return logFeedbackHistoryList;
   }
 
-  public LogFeedbackEntity getLogFeedback(ProjectParams projectParams, String feedbackId) {
+  public LogFeedbackEntity getLogFeedback(ProjectPathParams projectParams, String feedbackId) {
     return hPersistence.createQuery(LogFeedbackEntity.class)
         .filter(LogFeedbackEntity.LogFeedbackKeys.feedbackId, feedbackId)
         .get();

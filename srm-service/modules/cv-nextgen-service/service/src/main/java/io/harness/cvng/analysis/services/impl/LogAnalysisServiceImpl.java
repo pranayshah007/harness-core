@@ -39,6 +39,7 @@ import io.harness.cvng.analysis.entities.LogAnalysisResult;
 import io.harness.cvng.analysis.entities.LogAnalysisResult.AnalysisResult.AnalysisResultKeys;
 import io.harness.cvng.analysis.entities.LogAnalysisResult.LogAnalysisResultKeys;
 import io.harness.cvng.analysis.entities.LogAnalysisResult.LogAnalysisTag;
+import io.harness.cvng.analysis.entities.LogFeedbackAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.ServiceGuardLogAnalysisTask;
 import io.harness.cvng.analysis.entities.TestLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
@@ -102,6 +103,14 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
   @Inject private LogFeedbackService logFeedbackService;
 
   @Inject private FeatureFlagService featureFlagService;
+
+  @Override
+  public String scheduleDeploymentLogFeedbackTask(AnalysisInput analysisInput) {
+    LogFeedbackAnalysisLearningEngineTask task =
+        (LogFeedbackAnalysisLearningEngineTask) createLogCanaryAnalysisLearningEngineTask_v2(analysisInput);
+    task.setFeedbackUrl(getLogFeedbackForDeploymentLog(analysisInput));
+    return learningEngineTaskService.createLearningEngineTask(task);
+  }
 
   @Override
   public String scheduleServiceGuardLogAnalysisTask(AnalysisInput input) {
@@ -292,6 +301,12 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
     } else {
       uriBuilder.addParameter("hosts", "");
     }
+    return getUriString(uriBuilder);
+  }
+
+  private String getLogFeedbackForDeploymentLog(AnalysisInput input) {
+    URIBuilder uriBuilder = new URIBuilder();
+    uriBuilder.setPath(SERVICE_BASE_URL + "/" + LOG_ANALYSIS_RESOURCE + TEST_DATA_PATH);
     return getUriString(uriBuilder);
   }
 
