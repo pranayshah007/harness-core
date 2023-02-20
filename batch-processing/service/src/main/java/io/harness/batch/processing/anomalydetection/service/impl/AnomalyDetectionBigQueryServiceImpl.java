@@ -88,6 +88,7 @@ public class AnomalyDetectionBigQueryServiceImpl {
     } else {
       queryStatement =
           queryStatement.replace("`<Project>.<DataSet>.<TableName>`", String.format("ccm.%s", preAggregated))
+              .replace("CONCAT(", "CONCAT('',")
               .replace("T00:00:00Z'", " 00:00:00')")
               .replace(".startTime <= ", ".startTime <= toDateTime(")
               .replace(".startTime >= ", ".startTime >= toDateTime(");
@@ -167,6 +168,7 @@ public class AnomalyDetectionBigQueryServiceImpl {
     } else {
       queryStatement =
           queryStatement.replace("`<Project>.<DataSet>.<TableName>`", String.format("ccm.%s", preAggregated))
+              .replace("CONCAT(", "CONCAT('',")
               .replace("T00:00:00Z'", " 00:00:00')")
               .replace(".startTime <= ", ".startTime <= toDateTime(")
               .replace(".startTime >= ", ".startTime >= toDateTime(");

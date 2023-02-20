@@ -87,6 +87,7 @@ public class AnomalyDetectionBigQueryServiceImplNG {
       queryStatement =
           queryStatement
               .replace("`<Project>.<DataSet>.<TableName>`", String.format("ccm.%s", CloudBillingHelper.unified))
+              .replace("CONCAT(", "CONCAT('',")
               .replace("T00:00:00Z'", " 00:00:00')")
               .replace(".startTime <= ", ".startTime <= toDateTime(")
               .replace(".startTime >= ", ".startTime >= toDateTime(");
@@ -167,6 +168,7 @@ public class AnomalyDetectionBigQueryServiceImplNG {
       queryStatement =
           queryStatement
               .replace("`<Project>.<DataSet>.<TableName>`", String.format("ccm.%s", CloudBillingHelper.unified))
+              .replace("CONCAT(", "CONCAT('',")
               .replace("T00:00:00Z'", " 00:00:00')")
               .replace(".startTime <= ", ".startTime <= toDateTime(")
               .replace(".startTime >= ", ".startTime >= toDateTime(");
