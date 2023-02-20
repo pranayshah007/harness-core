@@ -9,6 +9,8 @@ package io.harness.cdng.creator.plan.steps.aws.sam;
 
 import static io.harness.cdng.visitor.YamlTypes.AWS_SAM_PUBLISH;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.aws.sam.publish.AwsSamPublishStepNode;
 import io.harness.cdng.aws.sam.publish.AwsSamPublishStepParameters;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
@@ -21,6 +23,7 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import com.google.common.collect.Sets;
 import java.util.Set;
 
+@OwnedBy(HarnessTeam.CDP)
 public class AwsSamPublishStepPlanCreator extends CDPMSStepPlanCreatorV2<AwsSamPublishStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {

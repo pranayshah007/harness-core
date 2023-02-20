@@ -222,4 +222,5 @@ public class EntityYamlRootNames {
 
   public static final String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
   public static final String AWS_SAM_PUBLISH = "AWS_SAM_PUBLISH";
+  public static final String AWS_SAM_VALIDATE_BUILD_PACKAGE = "AWS_SAM_VALIDATE_BUILD_PACKAGE";
 }

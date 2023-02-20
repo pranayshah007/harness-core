@@ -25,5 +25,23 @@ public enum AwsSamCommandUnitConstants {
     public String toString() {
       return "Publish";
     }
+  },
+  validate {
+    @Override
+    public String toString() {
+      return "Validate";
+    }
+  },
+  build {
+    @Override
+    public String toString() {
+      return "Build";
+    }
+  },
+  Package {
+    @Override
+    public String toString() {
+      return "Package";
+    }
   }
 }

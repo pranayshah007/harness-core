@@ -216,4 +216,5 @@ public interface EntityTypeConstants {
 
   String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
   String AWS_SAM_PUBLISH = "AWS_SAM_PUBLISH";
+  String AWS_SAM_VALIDATE_BUILD_PACKAGE = "AWS_SAM_VALIDATE_BUILD_PACKAGE";
 }

@@ -540,7 +540,10 @@ public enum EntityType {
       ModuleType.CD, EntityTypeConstants.AWS_LAMBDA_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_LAMBDA_DEPLOY),
   @JsonProperty(EntityTypeConstants.AWS_SAM_PUBLISH)
   AWS_SAM_PUBLISH(
-      ModuleType.CD, EntityTypeConstants.AWS_SAM_PUBLISH, IdentifierRef.class, EntityYamlRootNames.AWS_SAM_PUBLISH);
+      ModuleType.CD, EntityTypeConstants.AWS_SAM_PUBLISH, IdentifierRef.class, EntityYamlRootNames.AWS_SAM_PUBLISH),
+  @JsonProperty(EntityTypeConstants.AWS_SAM_VALIDATE_BUILD_PACKAGE)
+  AWS_SAM_VALIDATE_BUILD_PACKAGE(ModuleType.CD, EntityTypeConstants.AWS_SAM_VALIDATE_BUILD_PACKAGE, IdentifierRef.class,
+      EntityYamlRootNames.AWS_SAM_VALIDATE_BUILD_PACKAGE);
 
   private final ModuleType moduleType;
   String yamlName;
