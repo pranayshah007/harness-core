@@ -60,7 +60,6 @@ public class AwsLambdaCommandTaskHelper {
   private YamlUtils yamlUtils = new YamlUtils();
 
   String ACTIVE_LAST_UPDATE_STATUS = "Successful";
-  String PENDING_LAST_UPDATE_STATUS = "InProgress";
   String FAILED_LAST_UPDATE_STATUS = "Failed";
 
   long TIMEOUT_IN_SECONDS = 60 * 60L;
@@ -190,12 +189,10 @@ public class AwsLambdaCommandTaskHelper {
     UpdateFunctionConfigurationRequest.Builder updateFunctionConfigurationRequestBuilder =
         parseYamlAsObject(awsLambdaManifestContent, UpdateFunctionConfigurationRequest.serializableBuilderClass());
 
-    UpdateFunctionConfigurationResponse updateFunctionConfigurationResponse =
-        awsLambdaClient.updateFunctionConfiguration(
-            getAwsInternalConfig(
-                awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion()),
-            (UpdateFunctionConfigurationRequest) updateFunctionConfigurationRequestBuilder.build());
-    return updateFunctionConfigurationResponse;
+    return awsLambdaClient.updateFunctionConfiguration(
+        getAwsInternalConfig(
+            awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion()),
+        (UpdateFunctionConfigurationRequest) updateFunctionConfigurationRequestBuilder.build());
   }
 
   private PublishVersionResponse getPublishVersionResponse(LogCallback logCallback,
