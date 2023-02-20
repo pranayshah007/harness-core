@@ -16,6 +16,7 @@ import io.harness.batch.processing.dao.intfc.BillingDataPipelineRecordDao;
 import io.harness.batch.processing.service.intfc.BillingDataPipelineHealthStatusService;
 import io.harness.batch.processing.service.intfc.BillingDataPipelineService;
 import io.harness.ccm.bigQuery.BigQueryService;
+import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.entities.batch.BatchJobScheduledData;
 import io.harness.ccm.commons.entities.billing.BillingDataPipelineRecord;
@@ -34,10 +35,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -51,9 +54,14 @@ public class BillingDataPipelineHealthStatusServiceImpl implements BillingDataPi
   private BillingDataPipelineService billingDataPipelineService;
   private BatchJobScheduledDataDao batchJobScheduledDataDao;
   @Autowired private BigQueryService bigQueryService;
+  @Autowired private ClickHouseService clickHouseService;
 
   private static final String BQ_PRE_AGG_TABLE_DATACHECK_TEMPLATE =
       "SELECT count(*) as count FROM `%s.preAggregated` WHERE DATE(startTime) "
+      + ">= DATE_SUB(@run_date , INTERVAL 3 DAY) AND cloudProvider = \"%s\";%n";
+
+  private static final String CH_PRE_AGG_TABLE_DATACHECK_TEMPLATE =
+      "SELECT count(*) as count FROM `ccm.preAggregated` WHERE DATE(startTime) "
       + ">= DATE_SUB(@run_date , INTERVAL 3 DAY) AND cloudProvider = \"%s\";%n";
 
   @Autowired
@@ -199,6 +207,11 @@ public class BillingDataPipelineHealthStatusServiceImpl implements BillingDataPi
   }
 
   private boolean isDataPresentPreAgg(String datasetId, String cloudProvider) {
+    return mainConfig.isClickHouseEnabled() ? isDataPresentPreAggCH(cloudProvider)
+                                            : isDataPresentPreAggBQ(datasetId, cloudProvider);
+  }
+
+  private boolean isDataPresentPreAggBQ(String datasetId, String cloudProvider) {
     BigQuery bigquery = bigQueryService.get();
     String gcpProjectId = mainConfig.getBillingDataPipelineConfig().getGcpProjectId();
     String tablePrefix = gcpProjectId + "." + datasetId;
@@ -223,6 +236,27 @@ public class BillingDataPipelineHealthStatusServiceImpl implements BillingDataPi
       if (count > 0) {
         return true;
       }
+    }
+    return false;
+  }
+
+  private boolean isDataPresentPreAggCH(String cloudProvider) {
+    String query = String.format(CH_PRE_AGG_TABLE_DATACHECK_TEMPLATE, cloudProvider);
+    // Get the results.
+    ResultSet resultSet;
+    try (Connection connection = clickHouseService.getConnection(mainConfig.getClickHouseConfig());
+         Statement statement = connection.createStatement()) {
+      resultSet = statement.executeQuery(query);
+      while (resultSet != null && resultSet.next()) {
+        long count = resultSet.getLong("count");
+        if (count > 0) {
+          return true;
+        }
+      }
+    } catch (SQLException e) {
+      log.error("Failed to check for data. {}", e);
+      Thread.currentThread().interrupt();
+      return false;
     }
     return false;
   }
