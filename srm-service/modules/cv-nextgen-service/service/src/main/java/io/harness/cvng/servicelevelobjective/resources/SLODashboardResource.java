@@ -222,8 +222,7 @@ public class SLODashboardResource {
       @Parameter(description = CVConstants.SLO_PARAM_MESSAGE) @ApiParam(required = true) @NotNull @PathParam(
           "identifier") @ResourceIdentifier String identifier,
       @NotNull @Valid @QueryParam("startTime") Long startTime, @NotNull @Valid @QueryParam("endTime") Long endTime,
-      @Valid @BeanParam ProjectPathParams projectPathParams) {
-    ProjectParams projectParams = ProjectParams.fromProjectPathParams(projectPathParams);
+      @Valid @BeanParam ProjectParams projectParams) {
     return ResponseDTO.newResponse(
         sloDashboardService.getUnavailabilityInstances(projectParams, startTime, endTime, identifier));
   }

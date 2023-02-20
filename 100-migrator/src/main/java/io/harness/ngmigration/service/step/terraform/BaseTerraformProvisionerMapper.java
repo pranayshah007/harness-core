@@ -81,7 +81,8 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
     return SupportStatus.MANUAL_EFFORT;
   }
 
-  public List<CgEntityId> getReferencedEntities(GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+  public List<CgEntityId> getReferencedEntities(
+      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     TerraformProvisionState state = (TerraformProvisionState) getState(graphNode);
 
     List<CgEntityId> references = new ArrayList<>();

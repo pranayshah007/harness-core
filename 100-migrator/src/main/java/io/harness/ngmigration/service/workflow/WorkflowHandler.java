@@ -100,7 +100,9 @@ public abstract class WorkflowHandler {
       return Collections.emptyList();
     }
     return steps.stream()
-        .map(step -> stepMapperFactory.getStepMapper(step.getType()).getReferencedEntities(step, stepIdToServiceIdMap))
+        .map(step
+            -> stepMapperFactory.getStepMapper(step.getType())
+                   .getReferencedEntities(workflow.getAccountId(), step, stepIdToServiceIdMap))
         .filter(EmptyPredicate::isNotEmpty)
         .flatMap(Collection::stream)
         .collect(Collectors.toList());
@@ -356,7 +358,8 @@ public abstract class WorkflowHandler {
     if (EmptyPredicate.isEmpty(stepYamls)) {
       return Collections.emptyList();
     }
-    MigratorExpressionUtils.render(phaseStep, getExpressions(phase, context.getStepExpressionFunctors()));
+    MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(), phaseStep,
+        getExpressions(phase, context.getStepExpressionFunctors()));
     List<StepSkipStrategy> cgSkipConditions = phaseStep.getStepSkipStrategies();
     Map<String, String> skipStrategies = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(cgSkipConditions)
@@ -389,7 +392,8 @@ public abstract class WorkflowHandler {
   JsonNode getStepElementConfig(WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep,
       GraphNode step, String skipCondition, boolean addLoopingStrategy) {
     StepMapper stepMapper = stepMapperFactory.getStepMapper(step.getType());
-    MigratorExpressionUtils.render(step, getExpressions(phase, context.getStepExpressionFunctors()));
+    MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(), step,
+        getExpressions(phase, context.getStepExpressionFunctors()));
     List<StepExpressionFunctor> expressionFunctors = stepMapper.getExpressionFunctor(context, phase, phaseStep, step);
     if (isNotEmpty(expressionFunctors)) {
       context.getStepExpressionFunctors().addAll(expressionFunctors);

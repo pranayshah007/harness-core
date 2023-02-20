@@ -15,6 +15,7 @@ import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.plancreator.customDeployment.CustomDeploymentExecutionConfig;
 import io.harness.pms.yaml.ParameterField;
@@ -54,7 +55,8 @@ public class CustomDeploymentTemplateService implements NgTemplateService {
   }
 
   @Override
-  public JsonNode getNgTemplateConfigSpec(Template template, String orgIdentifier, String projectIdentifier) {
+  public JsonNode getNgTemplateConfigSpec(
+      MigrationContext context, Template template, String orgIdentifier, String projectIdentifier) {
     CustomDeploymentTypeTemplate customDeploymentTypeTemplate =
         (CustomDeploymentTypeTemplate) template.getTemplateObject();
 

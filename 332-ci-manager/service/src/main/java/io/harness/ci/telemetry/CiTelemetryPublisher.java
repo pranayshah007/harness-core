@@ -23,10 +23,10 @@ import io.harness.repositories.CITelemetryStatusRepository;
 import io.harness.repositories.ModuleLicenseRepository;
 
 import com.google.inject.Inject;
-import java.lang.instrument.Instrumentation;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -50,10 +50,11 @@ public class CiTelemetryPublisher {
   public void recordTelemetry() {
     log.info("CiTelemetryPublisher recordTelemetry execute started.");
     try {
-      List<AccountDTO> accountDTOList = getAllAccounts();
+      List<String> accountIdentifiers = getAllAccounts();
       log.info("Memory before telemetry is {} ", getMemoryUse());
-      for (AccountDTO accountDTO : accountDTOList) {
-        String accountId = accountDTO.getIdentifier();
+      log.info("Size of the account list is {} ", accountIdentifiers.size());
+
+      for (String accountId : accountIdentifiers) {
         if (EmptyPredicate.isNotEmpty(accountId) && !accountId.equals(GLOBAL_ACCOUNT_ID)) {
           if (ciTelemetryStatusRepository.updateTimestampIfOlderThan(
                   accountId, System.currentTimeMillis() - A_DAY_MINUS_TEN_MINS, System.currentTimeMillis())) {
@@ -62,6 +63,7 @@ public class CiTelemetryPublisher {
             HashMap<String, Object> map = new HashMap<>();
             map.put(GROUP_TYPE, ACCOUNT);
             map.put(GROUP_ID, accountId);
+            map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
             long developersCount = ciOverviewDashboardService.getActiveCommitterCount(accountId);
             if (existing.size() != 0 || developersCount != 0) {
               map.put(COUNT_ACTIVE_DEVELOPERS, developersCount);
@@ -74,7 +76,6 @@ public class CiTelemetryPublisher {
                   TelemetryOption.builder().sendForCommunity(true).build());
               log.info("Account {} does not have CI Module, sending null as count", accountId);
             }
-            map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
           } else {
             log.info("Skipping already sent account {} in past 24 hours", accountId);
           }
@@ -88,8 +89,12 @@ public class CiTelemetryPublisher {
     }
   }
 
-  List<AccountDTO> getAllAccounts() {
-    return CGRestUtils.getResponse(accountClient.getAllAccounts());
+  List<String> getAllAccounts() {
+    List<AccountDTO> accountDTOList = CGRestUtils.getResponse(accountClient.getAllAccounts());
+    return accountDTOList.stream()
+        .filter(AccountDTO::isNextGenEnabled)
+        .map(AccountDTO::getIdentifier)
+        .collect(Collectors.toList());
   }
 
   private long getMemoryUse() {

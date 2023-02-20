@@ -652,7 +652,9 @@ public class DowntimeServiceImpl implements DowntimeService {
     }
     updateOperations.set(DowntimeKeys.entitiesRule, downtimeDTO.getEntitiesRule());
     updateOperations.set(DowntimeKeys.category, downtimeDTO.getCategory());
-    updateOperations.set(DowntimeKeys.description, downtimeDTO.getDescription());
+    if (downtimeDTO.getDescription() != null) {
+      updateOperations.set(DowntimeKeys.description, downtimeDTO.getDescription());
+    }
     updateOperations.set(DowntimeKeys.enabled, downtimeDTO.isEnabled());
     updateOperations.set(DowntimeKeys.name, downtimeDTO.getName());
     updateOperations.set(DowntimeKeys.downtimeDetails, getDowntimeDetails(downtimeDTO.getSpec()));

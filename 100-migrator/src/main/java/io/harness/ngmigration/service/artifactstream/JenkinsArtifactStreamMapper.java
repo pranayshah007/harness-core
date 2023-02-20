@@ -38,7 +38,6 @@ public class JenkinsArtifactStreamMapper implements ArtifactStreamMapper {
     return PrimaryArtifact.builder()
         .sourceType(ArtifactSourceType.JENKINS)
         .spec(JenkinsArtifactConfig.builder()
-                  .primaryArtifact(true)
                   .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
                   .jobName(ParameterField.createValueField(jenkinsArtifactStream.getJobname()))
                   .artifactPath(jenkinsArtifactStream.getArtifactPaths() != null

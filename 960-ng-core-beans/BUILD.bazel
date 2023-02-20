@@ -12,6 +12,8 @@ java_library(
     visibility = ["//visibility:public"],
     exports = [
         "//:lombok",
+        "//960-ng-core-beans/src/main/java/io/harness/beans:module",
+        "//960-ng-core-beans/src/main/java/io/harness/cdng/service/beans:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/account:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/activityhistory:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/activityhistory/dto:module",
@@ -27,6 +29,8 @@ java_library(
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/filestore:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/filestore/dto:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/gitsync:module",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/infrastructure:module",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/infrastructure/dto:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/invites:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/invites/dto:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/k8s:module",

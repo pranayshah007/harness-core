@@ -300,7 +300,8 @@ public class MigratorUtility {
   public static NGVariable getNGVariable(Variable variable) {
     String value = "<+input>";
     if (EmptyPredicate.isNotEmpty(variable.getValue())) {
-      value = String.valueOf(MigratorExpressionUtils.render(variable.getValue(), new HashMap<>()));
+      value = String.valueOf(
+          MigratorExpressionUtils.render(new HashMap<>(), new HashMap<>(), variable.getValue(), new HashMap<>()));
     }
     String name = variable.getName();
     name = name.replace('-', '_');
@@ -323,8 +324,8 @@ public class MigratorUtility {
     } else {
       String value = "";
       if (EmptyPredicate.isNotEmpty(serviceVariable.getValue())) {
-        value =
-            String.valueOf(MigratorExpressionUtils.render(String.valueOf(serviceVariable.getValue()), new HashMap<>()));
+        value = String.valueOf(MigratorExpressionUtils.render(
+            new HashMap<>(), new HashMap<>(), String.valueOf(serviceVariable.getValue()), new HashMap<>()));
       }
       String name = StringUtils.trim(serviceVariable.getName());
       name = name.replace('-', '_');
