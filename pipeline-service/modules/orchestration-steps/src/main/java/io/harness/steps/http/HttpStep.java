@@ -98,7 +98,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     }
 
     if (httpStepParameters.getRequestBody() != null) {
-      httpTaskParametersNgBuilder.body(httpStepParameters.getRequestBody().getValue());
+      httpTaskParametersNgBuilder.body((String) httpStepParameters.getRequestBody().fetchFinalValue());
     }
 
     boolean shouldAvoidCapabilityUsingHeaders = pmsFeatureFlagHelper.isEnabled(
