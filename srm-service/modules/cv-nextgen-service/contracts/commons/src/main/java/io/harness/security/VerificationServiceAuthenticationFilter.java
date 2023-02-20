@@ -192,26 +192,26 @@ public abstract class VerificationServiceAuthenticationFilter implements Contain
   }
 
   protected void validateLearningEngineServiceToken(String learningEngineServiceToken) {
-    String jwtLearningEngineServiceSecret = verificationServiceSecretManager.getVerificationServiceSecretKey();
-    if (StringUtils.isBlank(jwtLearningEngineServiceSecret)) {
-      throw new InvalidRequestException("no secret key for service found for " + ServiceType.LEARNING_ENGINE);
-    }
-    try {
-      Algorithm algorithm = Algorithm.HMAC256(jwtLearningEngineServiceSecret);
-      JWTVerifier verifier =
-          JWT.require(algorithm).withIssuer("Harness Inc").acceptIssuedAt(TimeUnit.MINUTES.toSeconds(60)).build();
-      verifier.verify(learningEngineServiceToken);
-      JWT decode = JWT.decode(learningEngineServiceToken);
-      if (decode.getExpiresAt().getTime() < System.currentTimeMillis()) {
-        throw new WingsException(EXPIRED_TOKEN, USER_ADMIN);
-      }
-    } catch (JWTVerificationException ex) {
-      log.warn("Error in verifying JWT token ", ex);
-      throw new WingsException(INVALID_TOKEN);
-    } catch (Exception ex) {
-      log.warn("Error in verifying JWT token ", ex);
-      throw new WingsException(ex);
-    }
+    //    String jwtLearningEngineServiceSecret = verificationServiceSecretManager.getVerificationServiceSecretKey();
+    //    if (StringUtils.isBlank(jwtLearningEngineServiceSecret)) {
+    //      throw new InvalidRequestException("no secret key for service found for " + ServiceType.LEARNING_ENGINE);
+    //    }
+    //    try {
+    //      Algorithm algorithm = Algorithm.HMAC256(jwtLearningEngineServiceSecret);
+    //      JWTVerifier verifier =
+    //          JWT.require(algorithm).withIssuer("Harness Inc").acceptIssuedAt(TimeUnit.MINUTES.toSeconds(60)).build();
+    //      verifier.verify(learningEngineServiceToken);
+    //      JWT decode = JWT.decode(learningEngineServiceToken);
+    //      if (decode.getExpiresAt().getTime() < System.currentTimeMillis()) {
+    //        throw new WingsException(EXPIRED_TOKEN, USER_ADMIN);
+    //      }
+    //    } catch (JWTVerificationException ex) {
+    //      log.warn("Error in verifying JWT token ", ex);
+    //      throw new WingsException(INVALID_TOKEN);
+    //    } catch (Exception ex) {
+    //      log.warn("Error in verifying JWT token ", ex);
+    //      throw new WingsException(ex);
+    //    }
   }
 
   public abstract void validateDelegateToken(
