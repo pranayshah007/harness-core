@@ -8,6 +8,18 @@
 package io.harness.aws.sam.command;
 
 public enum AwsSamCommandUnitConstants {
+  setupDirectory {
+    @Override
+    public String toString() {
+      return "Setup AWS SAM Directory";
+    }
+  },
+  configureCred {
+    @Override
+    public String toString() {
+      return "Configure Credentials";
+    }
+  },
   publish {
     @Override
     public String toString() {

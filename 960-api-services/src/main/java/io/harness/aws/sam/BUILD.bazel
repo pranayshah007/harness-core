@@ -11,12 +11,12 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//:lombok",
         "//960-api-services:module",
         "//970-api-services-beans/src/main/java/io/harness/logging:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//980-commons/src/main/java/io/harness/logging:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
-        "//:lombok",
         "@maven//:org_apache_commons_commons_lang3",
         "@maven//:org_zeroturnaround_zt_exec",
     ],

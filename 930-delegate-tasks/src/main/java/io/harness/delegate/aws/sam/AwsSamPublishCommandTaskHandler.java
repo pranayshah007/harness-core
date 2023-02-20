@@ -55,9 +55,7 @@ public class AwsSamPublishCommandTaskHandler extends AwsSamCommandTaskHandler {
       AwsSamDelegateTaskParams awsSamDelegateTaskParams, ILogStreamingTaskClient iLogStreamingTaskClient,
       CommandUnitsProgress commandUnitsProgress) throws Exception {
     if (!(awsSamCommandRequest instanceof AwsSamPublishRequest)) {
-      throw new InvalidArgumentsException(Pair.of("(awsSamCommandRequest",
-          "Must be instance of "
-              + "AwsSamPublishRequest"));
+      throw new InvalidArgumentsException(Pair.of("(awsSamCommandRequest", "Must be instance of AwsSamPublishRequest"));
     }
     AwsSamPublishRequest awsSamPublishRequest = (AwsSamPublishRequest) awsSamCommandRequest;
     if (!(awsSamPublishRequest.getAwsSamInfraConfig() instanceof AwsSamInfraConfig)) {
@@ -65,15 +63,12 @@ public class AwsSamPublishCommandTaskHandler extends AwsSamCommandTaskHandler {
     }
 
     if (isEmpty(awsSamPublishRequest.getTemplateFileContent())) {
-      throw new InvalidArgumentsException("Invalid AwsSamPublishRequest");
+      throw new InvalidArgumentsException(Pair.of("AwsSamPublishRequest", "Template File Content shouldn't be empty"));
     }
 
     AwsSamInfraConfig awsSamInfraConfig = awsSamPublishRequest.getAwsSamInfraConfig();
     AwsSamPublishConfig awsSamPublishConfig = awsSamPublishRequest.getAwsSamPublishConfig();
-    LogCallback executionLogCallback = new NGDelegateLogCallback(
-        iLogStreamingTaskClient, AwsSamCommandUnitConstants.publish.toString(), true, commandUnitsProgress);
 
-    executionLogCallback.saveExecutionLog(format("Deploying..%n%n"), LogLevel.INFO);
     timeoutInMillis = awsSamPublishRequest.getTimeoutIntervalInMin() * 60000;
     awsSamClient = new AwsSamClient();
     envVariables =
@@ -82,38 +77,47 @@ public class AwsSamPublishCommandTaskHandler extends AwsSamCommandTaskHandler {
     String awsSamCredentialType = awsSamInfraConfigHelper.getAwsSamCredentialType(awsSamInfraConfig);
     AwsCliConfig awsCliConfig = awsSamCommandTaskHelper.getAwsCliConfigFromAwsSamInfra(awsSamInfraConfig);
 
+    LogCallback setupDirectoryLogCallback = new NGDelegateLogCallback(
+        iLogStreamingTaskClient, AwsSamCommandUnitConstants.setupDirectory.toString(), true, commandUnitsProgress);
     try {
-      try {
-        awsSamCommandTaskHelper.saveTemplateAndConfigFileToDirectory(awsSamDelegateTaskParams.getWorkingDirectory(),
-            awsSamPublishRequest.getTemplateFileContent(), awsSamPublishRequest.getConfigFileContent());
-      } catch (Exception ex) {
-        awsSamCommandTaskHelper.errorHandling(ex, executionLogCallback, "Saving files failed with error");
-      }
-
-      try {
-        awsSamCommandTaskHelper.setUpConfigureCredential(awsSamDelegateTaskParams.getWorkingDirectory(),
-            awsSamCredentialType, timeoutInMillis, envVariables, awsCliConfig, executionLogCallback);
-        executionLogCallback.saveExecutionLog(format("Done...%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-      } catch (Exception ex) {
-        awsSamCommandTaskHelper.errorHandling(ex, executionLogCallback, "Configure credentials failed with error");
-      }
-
-      awsSamCommandTaskHelper.printPublishFilesContent(awsSamPublishRequest, executionLogCallback);
-
-      try {
-        awsSamCommandTaskHelper.publish(awsSamClient, awsSamPublishConfig.getPublishCommandOptions(),
-            awsSamDelegateTaskParams, awsSamInfraConfig, timeoutInMillis, envVariables, executionLogCallback);
-      } catch (Exception ex) {
-        awsSamCommandTaskHelper.errorHandling(ex, executionLogCallback, "Publish failed with error");
-      }
-
-      return AwsSamPublishResponse.builder()
-          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-          .build();
+      // Setup Directory
+      setupDirectoryLogCallback.saveExecutionLog(format("Setting up AWS SAM directory..%n%n"), LogLevel.INFO);
+      awsSamCommandTaskHelper.saveTemplateAndConfigFileToDirectory(awsSamDelegateTaskParams.getWorkingDirectory(),
+          awsSamPublishRequest.getTemplateFileContent(), awsSamPublishRequest.getConfigFileContent(),
+          setupDirectoryLogCallback);
+      setupDirectoryLogCallback.saveExecutionLog("Done ..", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     } catch (Exception ex) {
-      executionLogCallback.saveExecutionLog("Publish Failed .", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-      throw ex;
+      awsSamCommandTaskHelper.saveErrorLogAndCloseLogStream(
+          ex, setupDirectoryLogCallback, "Failed to setup AWS SAM directory ");
     }
+
+    LogCallback configureCredLogCallback = new NGDelegateLogCallback(
+        iLogStreamingTaskClient, AwsSamCommandUnitConstants.configureCred.toString(), true, commandUnitsProgress);
+    try {
+      // Configure Credentials
+      awsSamCommandTaskHelper.setUpConfigureCredential(awsSamDelegateTaskParams.getWorkingDirectory(),
+          awsSamCredentialType, timeoutInMillis, envVariables, awsCliConfig, configureCredLogCallback);
+      configureCredLogCallback.saveExecutionLog(format("Done...%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    } catch (Exception ex) {
+      awsSamCommandTaskHelper.saveErrorLogAndCloseLogStream(
+          ex, configureCredLogCallback, "Configure Credentials failed");
+    }
+
+    LogCallback publishLogCallback = new NGDelegateLogCallback(
+        iLogStreamingTaskClient, AwsSamCommandUnitConstants.publish.toString(), true, commandUnitsProgress);
+    try {
+      // Publish
+      awsSamCommandTaskHelper.printPublishFilesContent(awsSamPublishRequest, publishLogCallback);
+      awsSamCommandTaskHelper.publish(awsSamClient, awsSamPublishConfig.getPublishCommandOptions(),
+          awsSamDelegateTaskParams, awsSamInfraConfig, timeoutInMillis, envVariables, publishLogCallback);
+      publishLogCallback.saveExecutionLog(format("Done...%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    } catch (Exception ex) {
+      awsSamCommandTaskHelper.saveErrorLogAndCloseLogStream(ex, publishLogCallback, "Publish Failed");
+    }
+
+    return AwsSamPublishResponse.builder()
+        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+        .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+        .build();
   }
 }

@@ -13,8 +13,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.aws.sam.AwsSamStepCommonHelper;
-import io.harness.cdng.aws.sam.beans.AwsSamBuildPackageDataOutcome;
 import io.harness.cdng.aws.sam.beans.AwsSamExecutionPassThroughData;
+import io.harness.cdng.aws.sam.beans.AwsSamValidateBuildPackageDataOutcome;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.sam.AwsSamEntityHelper;
@@ -128,16 +128,16 @@ public class AwsSamPublishStep extends CdTaskExecutable<AwsSamCommandResponse> {
     AwsSamPublishStepParameters awsSamPublishStepParameters =
         (AwsSamPublishStepParameters) stepElementParameters.getSpec();
 
-    if (EmptyPredicate.isEmpty(awsSamPublishStepParameters.getAwsSamBuildAndPackageFnq())) {
+    if (EmptyPredicate.isEmpty(awsSamPublishStepParameters.getAwsSamValidateBuildPackageFnq())) {
       throw new InvalidRequestException("AWS SAM Build and Package Step Missing", USER);
     }
 
-    OptionalSweepingOutput awsSamBuildPackageDataOptionalOutput =
+    OptionalSweepingOutput awsSamValidateBuildPackageDataOptionalOutput =
         executionSweepingOutputService.resolveOptional(ambiance,
-            RefObjectUtils.getSweepingOutputRefObject(awsSamPublishStepParameters.getAwsSamBuildAndPackageFnq() + "."
-                + OutcomeExpressionConstants.AWS_SAM_BUILD_PACKAGE_OUTCOME));
+            RefObjectUtils.getSweepingOutputRefObject(awsSamPublishStepParameters.getAwsSamValidateBuildPackageFnq()
+                + "." + OutcomeExpressionConstants.AWS_SAM_VALIDATE_BUILD_PACKAGE_OUTCOME));
 
-    if (!awsSamBuildPackageDataOptionalOutput.isFound()) {
+    if (!awsSamValidateBuildPackageDataOptionalOutput.isFound()) {
       return skipTaskRequestOrThrowException(ambiance);
     }
 
@@ -150,8 +150,8 @@ public class AwsSamPublishStep extends CdTaskExecutable<AwsSamCommandResponse> {
         AwsSamPublishConfig.builder()
             .publishCommandOptions(awsSamPublishStepParameters.getPublishCommandOptions().getValue())
             .build();
-    AwsSamBuildPackageDataOutcome awsSamBuildPackageDataOutcome =
-        (AwsSamBuildPackageDataOutcome) awsSamBuildPackageDataOptionalOutput.getOutput();
+    AwsSamValidateBuildPackageDataOutcome awsSamValidateBuildPackageDataOutcome =
+        (AwsSamValidateBuildPackageDataOutcome) awsSamValidateBuildPackageDataOptionalOutput.getOutput();
 
     AwsSamPublishRequest awsSamCommandRequest =
         AwsSamPublishRequest.builder()
@@ -162,11 +162,10 @@ public class AwsSamPublishStep extends CdTaskExecutable<AwsSamCommandResponse> {
             .awsSamInfraConfig(awsSamInfraConfig)
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .awsSamPublishConfig(awsSamPublishConfig)
-            .templateFileContent(awsSamBuildPackageDataOutcome.getTemplateFileContent())
-            .configFileContent(awsSamBuildPackageDataOutcome.getConfigFileContent())
+            .templateFileContent(awsSamValidateBuildPackageDataOutcome.getTemplateFileContent())
+            .configFileContent(awsSamValidateBuildPackageDataOutcome.getConfigFileContent())
             .build();
 
-    // toDo task type
     return awsSamStepCommonHelper
         .queueTask(stepElementParameters, awsSamCommandRequest, ambiance,
             AwsSamExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,

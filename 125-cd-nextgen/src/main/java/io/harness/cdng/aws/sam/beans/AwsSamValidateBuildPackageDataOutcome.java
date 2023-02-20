@@ -21,10 +21,10 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@TypeAlias("awsSamPackageDataOutcom")
-@JsonTypeName("awsSamPackageDataOutcom")
-@RecasterAlias("io.harness.cdng.aws.sam.beans.AwsSamPackageDataOutcom")
-public class AwsSamBuildPackageDataOutcome implements Outcome, ExecutionSweepingOutput {
+@TypeAlias("awsSamValidateBuildPackageDataOutcome")
+@JsonTypeName("awsSamValidateBuildPackageDataOutcome")
+@RecasterAlias("io.harness.cdng.aws.sam.beans.AwsSamValidateBuildPackageDataOutcome")
+public class AwsSamValidateBuildPackageDataOutcome implements Outcome, ExecutionSweepingOutput {
   String templateFileContent;
   String configFileContent;
 }

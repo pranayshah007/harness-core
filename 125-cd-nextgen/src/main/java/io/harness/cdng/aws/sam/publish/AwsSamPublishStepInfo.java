@@ -39,8 +39,8 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @SimpleVisitorHelper(helperClass = AwsSamPublishStepInfoVisitorHelper.class)
 @JsonTypeName(StepSpecTypeConstants.AWS_SAM_PUBLISH)
-@TypeAlias("AwsSamPublishStepInfo")
-@RecasterAlias("io.harness.cdng.aws.sam.AwsSamPublishStepInfo")
+@TypeAlias("awsSamPublishStepInfo")
+@RecasterAlias("io.harness.cdng.aws.sam.publish.AwsSamPublishStepInfo")
 public class AwsSamPublishStepInfo extends AwsSamPublishBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -51,8 +51,8 @@ public class AwsSamPublishStepInfo extends AwsSamPublishBaseStepInfo implements 
 
   @Builder(builderMethodName = "infoBuilder")
   public AwsSamPublishStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<String> awsSamPackageFnq, String publishCommandOptions) {
-    super(delegateSelectors, awsSamPackageFnq, publishCommandOptions);
+      String awsSamValidateBuildPackageFnq, ParameterField<String> publishCommandOptions) {
+    super(delegateSelectors, awsSamValidateBuildPackageFnq, publishCommandOptions);
   }
 
   @Override

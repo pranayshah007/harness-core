@@ -7,9 +7,14 @@
 
 package io.harness.delegate.task.aws.sam;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
+import io.harness.annotations.dev.OwnedBy;
+
 import lombok.Builder;
 import lombok.Value;
 
+@OwnedBy(CDP)
 @Value
 @Builder
 public class AwsSamPublishConfig {

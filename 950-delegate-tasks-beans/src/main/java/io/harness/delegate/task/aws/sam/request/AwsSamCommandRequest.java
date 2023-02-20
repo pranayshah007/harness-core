@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
-import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
 import io.harness.delegate.beans.executioncapability.AwsSamInstallationCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -46,13 +45,11 @@ public interface AwsSamCommandRequest extends TaskParameters, ExecutionCapabilit
             cloudProviderEncryptionDetails, maskingEvaluator));
 
     AwsConnectorDTO awsConnectorDTO = awsSamInfraConfig.getAwsConnectorDTO();
-    capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(awsConnectorDTO, maskingEvaluator));
-    CrossAccountAccessDTO crossAccountAccess = awsConnectorDTO.getCredential().getCrossAccountAccess();
-    if (crossAccountAccess != null && crossAccountAccess.getCrossAccountRoleArn() != null) {
-      capabilities.add(AwsCliInstallationCapability.builder().criteria("AWS Cli Installed").build());
-    }
 
+    capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(awsConnectorDTO, maskingEvaluator));
+    capabilities.add(AwsCliInstallationCapability.builder().criteria("AWS Cli Installed").build());
     capabilities.add(AwsSamInstallationCapability.builder().criteria("Aws Sam Installed").build());
+
     return capabilities;
   }
 }

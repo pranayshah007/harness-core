@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.convertBase64UuidToCanonicalForm;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.beans.LogColor.White;
@@ -41,7 +42,6 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
-import io.harness.logging.LogLevel;
 import io.harness.serializer.YamlUtils;
 
 import software.wings.beans.LogColor;
@@ -86,27 +86,21 @@ public class AwsSamCommandTaskHelper {
       Map<String, String> environmentVariables, AwsCliConfig awsCliConfig, LogCallback executionLogCallback)
       throws Exception {
     boolean crossAccountAccessFlag = awsCliDelegateTaskHelper.getAwsCrossAccountFlag(awsCliConfig.getCredential());
-    try {
-      executionLogCallback.saveExecutionLog("Setting up AWS config credentials..\n");
-      if (awsSamCredentialType.equals(AwsCredentialType.MANUAL_CREDENTIALS.name())) {
-        AwsCliCredentialConfig awsCliCredentialConfig = awsCliDelegateTaskHelper.getAwsCliConfigFromManualCreds(
-            (AwsManualConfigSpecDTO) awsCliConfig.getCredential().getConfig());
 
-        awsCliDelegateTaskHelper.configureAwsCredentials(awsCliClient, executionLogCallback, awsCliCredentialConfig,
-            timeoutInMillis, environmentVariables, workingDirectory, awsCliConfig);
-      }
-      if (crossAccountAccessFlag) {
-        awsCliDelegateTaskHelper.awsStsAssumeRole(
-            awsCliClient, executionLogCallback, timeoutInMillis, environmentVariables, workingDirectory, awsCliConfig);
-      }
-      executionLogCallback.saveExecutionLog(
-          color(format("%nConfig Credential command executed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
-    } catch (Exception ex) {
-      executionLogCallback.saveExecutionLog(
-          color(format("%n configure credential failed with error: %s", ex.getMessage()), LogColor.Red, LogWeight.Bold),
-          LogLevel.ERROR);
-      throw ex;
+    executionLogCallback.saveExecutionLog("Setting up AWS config credentials..\n");
+    if (awsSamCredentialType.equals(AwsCredentialType.MANUAL_CREDENTIALS.name())) {
+      AwsCliCredentialConfig awsCliCredentialConfig = awsCliDelegateTaskHelper.getAwsCliConfigFromManualCreds(
+          (AwsManualConfigSpecDTO) awsCliConfig.getCredential().getConfig());
+
+      awsCliDelegateTaskHelper.configureAwsCredentials(awsCliClient, executionLogCallback, awsCliCredentialConfig,
+          timeoutInMillis, environmentVariables, workingDirectory, awsCliConfig);
     }
+    if (crossAccountAccessFlag) {
+      awsCliDelegateTaskHelper.awsStsAssumeRole(
+          awsCliClient, executionLogCallback, timeoutInMillis, environmentVariables, workingDirectory, awsCliConfig);
+    }
+    executionLogCallback.saveExecutionLog(
+        color(format("%nConfig Credential command executed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
   }
 
   public AwsCliConfig getAwsCliConfigFromAwsSamInfra(AwsSamInfraConfig awsSamInfraConfig) {
@@ -126,8 +120,8 @@ public class AwsSamCommandTaskHelper {
     return environmentVariables;
   }
 
-  public void saveTemplateAndConfigFileToDirectory(
-      String workingDirectory, String templateFileContent, String configFileContent) throws IOException {
+  public void saveTemplateAndConfigFileToDirectory(String workingDirectory, String templateFileContent,
+      String configFileContent, LogCallback logCallback) throws Exception {
     String templateFilePath = Paths.get(workingDirectory, "template.yaml").toString();
     String configFilePath = Paths.get(workingDirectory, "samconfig.toml").toString();
     FileIo.writeUtf8StringToFile(templateFilePath, templateFileContent);
@@ -139,8 +133,7 @@ public class AwsSamCommandTaskHelper {
 
   public AwsSamCliResponse publish(AwsSamClient awsSamClient, String commandOptions,
       AwsSamDelegateTaskParams awsSamDelegateTaskParams, AwsSamInfraConfig awsSamInfraConfig, long timeoutInMillis,
-      Map<String, String> envVariables, LogCallback executionLogCallback)
-      throws IOException, InterruptedException, TimeoutException {
+      Map<String, String> envVariables, LogCallback executionLogCallback) throws Exception {
     AwsSamPublishCommand command = awsSamClient.publish().options(commandOptions).region(awsSamInfraConfig.getRegion());
 
     AwsSamCliResponse awsSamCliResponse = AwsSamCommandExecuteHelper.executeCommand(command,
@@ -162,13 +155,13 @@ public class AwsSamCommandTaskHelper {
     }
   }
 
-  public void errorHandling(Exception ex, LogCallback executionLogCallback, String message) throws Exception {
+  public void saveErrorLogAndCloseLogStream(Exception ex, LogCallback executionLogCallback, String message)
+      throws Exception {
     Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+    String error = ExceptionUtils.getMessage(sanitizedException);
     executionLogCallback.saveExecutionLog(
-        color(format("%n " + message + ": %s", ExceptionUtils.getMessage(sanitizedException)), LogColor.Red,
-            LogWeight.Bold),
-        LogLevel.ERROR);
-    log.error(format("%n " + message + ": %s", ExceptionUtils.getMessage(sanitizedException)));
+        format("%n " + message + ": %s", error), ERROR, CommandExecutionStatus.FAILURE);
+    log.error(format(message + "%n%s", ExceptionUtils.getMessage(sanitizedException)));
     throw ex;
   }
 }

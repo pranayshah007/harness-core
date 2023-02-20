@@ -28,12 +28,12 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @TypeAlias("awsSamPublishStepParameters")
-@RecasterAlias("io.harness.cdng.aws.sam.AwsSamPublishStepParameters")
+@RecasterAlias("io.harness.cdng.aws.sam.publish.AwsSamPublishStepParameters")
 public class AwsSamPublishStepParameters extends AwsSamPublishBaseStepInfo implements AwsSamSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public AwsSamPublishStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<String> publishCommandOptions, String awsSamPackageFnq) {
-    super(delegateSelectors, publishCommandOptions, awsSamPackageFnq);
+      String awsSamValidateBuildPackageFnq, ParameterField<String> publishCommandOptions) {
+    super(delegateSelectors, awsSamValidateBuildPackageFnq, publishCommandOptions);
   }
 
   public List<String> getCommandUnits() {

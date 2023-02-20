@@ -114,5 +114,5 @@ public interface StepSpecTypeConstants {
 
   String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
   String AWS_SAM_PUBLISH = "AWS_SAM_PUBLISH";
-  String AWS_SAM_BUILD_PACKAGE = "AWS_SAM_BUILD_PACKAGE";
+  String AWS_SAM_VALIDATE_BUILD_PACKAGE = "AWS_SAM_VALIDATE_BUILD_PACKAGE";
 }

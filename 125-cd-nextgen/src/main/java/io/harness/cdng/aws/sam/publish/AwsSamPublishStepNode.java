@@ -33,7 +33,7 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(StepSpecTypeConstants.AWS_SAM_PUBLISH)
 @TypeAlias("awsSamPublishStepNode")
-@RecasterAlias("io.harness.cdng.aws.sam.AwsSamPublishStepNode")
+@RecasterAlias("io.harness.cdng.aws.sam.publish.AwsSamPublishStepNode")
 public class AwsSamPublishStepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull AwsSamPublishStepNode.StepType type = AwsSamPublishStepNode.StepType.AWS_SAM_PUBLISH;
   @JsonProperty("spec")
