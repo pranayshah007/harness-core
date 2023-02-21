@@ -275,7 +275,7 @@ public class NgStepRegistrar {
 
     // AWS Lambda
     engineSteps.put(AwsLambdaDeployStep.STEP_TYPE, AwsLambdaDeployStep.class);
-    engineSteps.put(AwsLambdaDeployStep.STEP_TYPE, AwsLambdaRollbackStep.class);
+    engineSteps.put(AwsLambdaRollbackStep.STEP_TYPE, AwsLambdaRollbackStep.class);
 
     return engineSteps;
   }

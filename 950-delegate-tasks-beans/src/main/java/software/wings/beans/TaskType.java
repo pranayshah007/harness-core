@@ -464,7 +464,8 @@ public enum TaskType {
   GOOGLE_FUNCTION_ROLLBACK_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Rollback Task"),
   GOOGLE_FUNCTION_PREPARE_ROLLBACK_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Prepare Rollback Task"),
   GOOGLE_FUNCTION_DEPLOY_WITHOUT_TRAFFIC_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Deploy Without Traffic Task"),
-  GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Traffic Shift Task");
+  GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Traffic Shift Task"),
+  AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG(TaskGroup.AWS_LAMBDA_NG, "AWS Lambda Rollback Task NG");
 
   private final TaskGroup taskGroup;
   private final String displayName;

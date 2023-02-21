@@ -107,7 +107,7 @@ public class AwsLambdaHelper extends CDStepHelper {
   private final String AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_NAME = "PrepareRollbackAwsLambda";
   private final String AWS_LAMBDA_DEPLOY_COMMAND_NAME = "DeployAwsLambda";
 
-  private AwsLambdaFunctionsInfraConfig getInfraConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
+  public AwsLambdaFunctionsInfraConfig getInfraConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
     return awsLambdaEntityHelper.getInfraConfig(infrastructure, AmbianceUtils.getNgAccess(ambiance));
   }
 

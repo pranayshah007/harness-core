@@ -24,4 +24,10 @@ public enum AwsLambdaCommandUnitConstants {
       return "Fetch Manifests";
     }
   },
+  rollback {
+    @Override
+    public String toString() {
+      return "Rollback";
+    }
+  },
 }

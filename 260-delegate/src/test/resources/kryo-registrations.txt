@@ -2676,3 +2676,4 @@
 10000451:io.harness.delegate.beans.connector.jira.JiraAuthType
 10000452:io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO
 10000453:io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO
+10000411:io.harness.delegate.exception.AwsLambdaException

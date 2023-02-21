@@ -12,7 +12,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.aws.lambda.AwsLambdaHelper;
-import io.harness.cdng.aws.lambda.AwsLambdaStepExecutor;
 import io.harness.cdng.aws.lambda.AwsLambdaStepPassThroughData;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome;
 import io.harness.cdng.executables.CdTaskExecutable;
@@ -111,7 +110,7 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
     }
 
     String stepFnq = awsLambdaRollbackStepParameters.getAwsLambdaDeployStepFnq();
-    OptionalSweepingOutput googleFunctionPrepareRollbackDataOptional =
+    OptionalSweepingOutput awsLambdaPrepareRollbackDataOptional =
             executionSweepingOutputService.resolveOptional(ambiance,
                     RefObjectUtils.getSweepingOutputRefObject(
                             stepFnq + "." + OutcomeExpressionConstants.AWS_LAMBDA_PREPARE_ROLLBACK_OUTCOME));
@@ -122,27 +121,13 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
             ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
-//    GoogleFunctionRollbackRequest googleFunctionRollbackRequest =
-//            GoogleFunctionRollbackRequest.builder()
-//                    .googleFunctionCommandType(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_ROLLBACK)
-//                    .commandName(GOOGLE_CLOUD_FUNCTIONS_ROLLBACK_COMMAND_NAME)
-//                    .googleFunctionInfraConfig(googleFunctionsHelper.getInfraConfig(infrastructureOutcome, ambiance))
-//                    .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-//                    .googleCloudRunServiceAsString(googleFunctionPrepareRollbackOutcome.getCloudRunServiceAsString())
-//                    .googleFunctionAsString(googleFunctionPrepareRollbackOutcome.getCloudFunctionAsString())
-//                    .isFirstDeployment(googleFunctionPrepareRollbackOutcome.isFirstDeployment())
-//                    .commandUnitsProgress(CommandUnitsProgress.builder().build())
-//                    .googleFunctionDeployManifestContent(googleFunctionPrepareRollbackOutcome.getManifestContent())
-//                    .build();
-
     AwsLambdaRollbackRequest awsLambdaRollbackRequest =
-            AwsLambdaRollbackStep.builder()
+            AwsLambdaRollbackRequest.builder()
                     .awsLambdaCommandTypeNG(AwsLambdaCommandTypeNG.AWS_LAMBDA_ROLLBACK)
                     .commandName(AWS_LAMBDA_ROLLBACK_COMMAND_NAME)
                     .commandUnitsProgress(CommandUnitsProgress.builder().build())
-                    .awsLambdaFunctionsInfraConfig(awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance))
+                    .awsLambdaInfraConfig(awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance))
                     .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-//                    .awsLambdaDeployManifestContent(awsLambdaStepPassThroughData.getManifestContent())
                     .build();
 
     return awsLambdaHelper.queueTask(

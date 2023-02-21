@@ -101,6 +101,7 @@ import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.app.DelegateApplication;
 import io.harness.delegate.aws.lambda.AwsLambdaCommandTaskHandler;
 import io.harness.delegate.aws.lambda.AwsLambdaDeployTaskCommandHandler;
+import io.harness.delegate.aws.lambda.AwsLambdaRollbackTaskCommandHandler;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.cf.PcfApplicationDetailsCommandTaskHandler;
@@ -2083,6 +2084,8 @@ public class DelegateModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), String.class, AwsLambdaCommandTaskHandler.class);
     awsCommandTaskHandler.addBinding(AwsLambdaCommandTypeNG.AWS_LAMBDA_DEPLOY.name())
         .to(AwsLambdaDeployTaskCommandHandler.class);
+    awsCommandTaskHandler.addBinding(AwsLambdaCommandTypeNG.AWS_LAMBDA_ROLLBACK.name())
+              .to(AwsLambdaRollbackTaskCommandHandler.class);
 
     // AWS ASG NG
     mapBinder.addBinding(TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG).toInstance(AsgCanaryDeployTaskNG.class);
@@ -2155,6 +2158,7 @@ public class DelegateModule extends AbstractModule {
 
     // AWS Lambda
     mapBinder.addBinding(TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG).toInstance(AwsLambdaCommandTask.class);
+    mapBinder.addBinding(TaskType.AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG).toInstance(AwsLambdaCommandTask.class);
   }
 
   private void registerSecretManagementBindings() {
