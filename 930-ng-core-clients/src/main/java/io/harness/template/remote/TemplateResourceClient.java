@@ -82,7 +82,7 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
       @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
       @Header(value = "Load-From-Cache") String loadFromCache, @Body TemplateApplyRequestDTO templateApplyRequestDTO,
-      @Query(value = "AppendInputSetValidator") boolean appendInputSetValidator);
+      @Query(value = "AppendInputSetValidator") Boolean appendInputSetValidator);
 
   @POST(TEMPLATE_ENDPOINT + "v2/applyTemplates")
   Call<ResponseDTO<TemplateMergeResponseDTO>> applyTemplatesOnGivenYamlV2(
