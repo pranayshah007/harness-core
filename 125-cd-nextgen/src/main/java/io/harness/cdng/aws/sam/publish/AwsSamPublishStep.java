@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.aws.sam.AwsSamStepCommonHelper;
 import io.harness.cdng.aws.sam.beans.AwsSamExecutionPassThroughData;
-import io.harness.cdng.aws.sam.beans.AwsSamValidateBuildPackageDataOutcome;
+import io.harness.cdng.aws.sam.beans.AwsSamValidateBuildPackageDataOutput;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.sam.AwsSamEntityHelper;
@@ -150,8 +150,8 @@ public class AwsSamPublishStep extends CdTaskExecutable<AwsSamCommandResponse> {
         AwsSamPublishConfig.builder()
             .publishCommandOptions(awsSamPublishStepParameters.getPublishCommandOptions().getValue())
             .build();
-    AwsSamValidateBuildPackageDataOutcome awsSamValidateBuildPackageDataOutcome =
-        (AwsSamValidateBuildPackageDataOutcome) awsSamValidateBuildPackageDataOptionalOutput.getOutput();
+    AwsSamValidateBuildPackageDataOutput awsSamValidateBuildPackageDataOutput =
+        (AwsSamValidateBuildPackageDataOutput) awsSamValidateBuildPackageDataOptionalOutput.getOutput();
 
     AwsSamPublishRequest awsSamCommandRequest =
         AwsSamPublishRequest.builder()
@@ -162,8 +162,8 @@ public class AwsSamPublishStep extends CdTaskExecutable<AwsSamCommandResponse> {
             .awsSamInfraConfig(awsSamInfraConfig)
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .awsSamPublishConfig(awsSamPublishConfig)
-            .templateFileContent(awsSamValidateBuildPackageDataOutcome.getTemplateFileContent())
-            .configFileContent(awsSamValidateBuildPackageDataOutcome.getConfigFileContent())
+            .templateFileContent(awsSamValidateBuildPackageDataOutput.getTemplateFileContent())
+            .configFileContent(awsSamValidateBuildPackageDataOutput.getConfigFileContent())
             .build();
 
     return awsSamStepCommonHelper

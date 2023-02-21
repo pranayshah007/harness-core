@@ -37,6 +37,7 @@ public class AwsSamPublishStepParameters extends AwsSamPublishBaseStepInfo imple
   }
 
   public List<String> getCommandUnits() {
-    return Arrays.asList(AwsSamCommandUnitConstants.publish.toString());
+    return Arrays.asList(AwsSamCommandUnitConstants.setupDirectory.toString(),
+        AwsSamCommandUnitConstants.configureCred.toString(), AwsSamCommandUnitConstants.publish.toString());
   }
 }
