@@ -50,7 +50,7 @@ public class KubernetesConfig {
       char[] clientKey, char[] clientKeyPassphrase, Supplier<String> serviceAccountTokenSupplier, String clientKeyAlgo,
       String namespace, String accountId, KubernetesClusterAuthType authType, char[] oidcClientId, char[] oidcSecret,
       String oidcIdentityProviderUrl, String oidcUsername, char[] oidcPassword, String oidcScopes,
-      OidcGrantType oidcGrantType, String clusterName, KubernetesAzureConfig azureConfig) {
+      OidcGrantType oidcGrantType, String clusterName, KubernetesAzureConfig azureConfig, boolean shouldUseExecFormat) {
     this.masterUrl = masterUrl;
     this.username = username == null ? null : username.clone();
     this.password = password == null ? null : password.clone();
@@ -71,6 +71,7 @@ public class KubernetesConfig {
     this.oidcScopes = oidcScopes;
     this.oidcGrantType = oidcGrantType == null ? OidcGrantType.password : oidcGrantType;
     this.azureConfig = azureConfig;
+    this.shouldUseExecFormat = shouldUseExecFormat;
   }
 
   public Optional<String> getGcpAccountKeyFileContent() {

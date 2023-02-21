@@ -8,11 +8,9 @@
 package io.harness.delegate.task.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.k8s.K8sConstants.AZURE_AUTH_PLUGIN_BINARY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
-import io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
@@ -30,9 +28,4 @@ public class AzureK8sInfraDelegateConfig implements K8sInfraDelegateConfig {
   AzureConnectorDTO azureConnectorDTO;
   List<EncryptedDataDetail> encryptionDataDetails;
   boolean useClusterAdminCredentials;
-
-  @Override
-  public boolean isAuthPluginBinaryAvailable() {
-    return KubeConfigAuthPluginHelper.isAuthPluginBinaryAvailable(AZURE_AUTH_PLUGIN_BINARY);
-  }
 }

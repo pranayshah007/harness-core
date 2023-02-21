@@ -106,12 +106,13 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
                                                           .username("master1".toCharArray())
                                                           .password("password1".toCharArray());
     KubernetesConfig config = kubernetesConfigBuilder.build();
-    when(gkeClusterHelper.getCluster(serviceAccountKey, false, ZONE_CLUSTER, "default")).thenReturn(config);
+    when(gkeClusterHelper.getCluster(serviceAccountKey, false, ZONE_CLUSTER, "default", , )).thenReturn(config);
 
     KubernetesConfig result = gkeClusterService.getCluster(
         COMPUTE_PROVIDER_SETTING.toDTO(), Collections.emptyList(), ZONE_CLUSTER, "default", false);
 
-    verify(gkeClusterHelper, times(1)).getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"));
+    verify(gkeClusterHelper, times(1))
+        .getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"), , );
     assertThat(result).isEqualTo(config);
   }
 
@@ -119,7 +120,7 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
   @Owner(developers = BRETT)
   @Category(UnitTests.class)
   public void shouldNotGetClusterIfError() {
-    when(gkeClusterHelper.getCluster(serviceAccountKey, false, ZONE_CLUSTER, "default"))
+    when(gkeClusterHelper.getCluster(serviceAccountKey, false, ZONE_CLUSTER, "default", , ))
         .thenThrow(WingsException.class);
 
     try {
@@ -130,7 +131,8 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
       // Expected
     }
 
-    verify(gkeClusterHelper, times(1)).getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"));
+    verify(gkeClusterHelper, times(1))
+        .getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"), , );
   }
 
   @Test

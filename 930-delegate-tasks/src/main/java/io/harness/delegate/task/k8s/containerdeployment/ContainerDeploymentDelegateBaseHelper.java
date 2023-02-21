@@ -14,6 +14,8 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.INHERIT_FROM_DELEGATE;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.MANUAL_CREDENTIALS;
+import static io.harness.k8s.K8sConstants.AZURE_AUTH_PLUGIN_BINARY;
+import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_BINARY;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static java.lang.String.format;
@@ -38,6 +40,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -121,7 +124,7 @@ public class ContainerDeploymentDelegateBaseHelper {
     return controllers.size();
   }
 
-  public KubernetesConfig createKubernetesConfig(K8sInfraDelegateConfig clusterConfigDTO) {
+  public KubernetesConfig createKubernetesConfig(K8sInfraDelegateConfig clusterConfigDTO, LogCallback logCallback) {
     if (clusterConfigDTO instanceof DirectK8sInfraDelegateConfig) {
       return k8sYamlToDelegateDTOMapper.createKubernetesConfigFromClusterConfig(
           ((DirectK8sInfraDelegateConfig) clusterConfigDTO).getKubernetesClusterConfigDTO(),
@@ -129,9 +132,13 @@ public class ContainerDeploymentDelegateBaseHelper {
     } else if (clusterConfigDTO instanceof GcpK8sInfraDelegateConfig) {
       GcpK8sInfraDelegateConfig gcpK8sInfraDelegateConfig = (GcpK8sInfraDelegateConfig) clusterConfigDTO;
       GcpConnectorCredentialDTO gcpCredentials = gcpK8sInfraDelegateConfig.getGcpConnectorDTO().getCredential();
-      return gkeClusterHelper.getCluster(getGcpServiceAccountKeyFileContent(gcpCredentials),
-          gcpCredentials.getGcpCredentialType() == INHERIT_FROM_DELEGATE, gcpK8sInfraDelegateConfig.getCluster(),
-          gcpK8sInfraDelegateConfig.getNamespace());
+      KubernetesConfig kubernetesConfig =
+          gkeClusterHelper.getCluster(getGcpServiceAccountKeyFileContent(gcpCredentials),
+              gcpCredentials.getGcpCredentialType() == INHERIT_FROM_DELEGATE, gcpK8sInfraDelegateConfig.getCluster(),
+              gcpK8sInfraDelegateConfig.getNamespace());
+      kubernetesConfig.setShouldUseExecFormat(
+          KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(GCP_AUTH_PLUGIN_BINARY, logCallback));
+      return kubernetesConfig;
     } else if (clusterConfigDTO instanceof AzureK8sInfraDelegateConfig) {
       try (LazyAutoCloseableWorkingDirectory workingDirectory =
                new LazyAutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_AUTH_CERT_DIR_PATH)) {
@@ -146,6 +153,8 @@ public class ContainerDeploymentDelegateBaseHelper {
                 .namespace(azureK8sInfraDelegateConfig.getNamespace())
                 .useClusterAdminCredentials(azureK8sInfraDelegateConfig.isUseClusterAdminCredentials())
                 .certificateWorkingDirectory(workingDirectory)
+                .shouldUseExecFormat(
+                    KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(AZURE_AUTH_PLUGIN_BINARY, logCallback))
                 .build();
         return azureAsyncTaskHelper.getClusterConfig(azureConfigContext);
       } catch (IOException ioe) {
@@ -168,7 +177,7 @@ public class ContainerDeploymentDelegateBaseHelper {
 
   public String getKubeconfigFileContent(K8sInfraDelegateConfig k8sInfraDelegateConfig) {
     decryptK8sInfraDelegateConfig(k8sInfraDelegateConfig);
-    return kubernetesContainerService.getConfigFileContent(createKubernetesConfig(k8sInfraDelegateConfig));
+    return kubernetesContainerService.getConfigFileContent(createKubernetesConfig(k8sInfraDelegateConfig, null));
   }
 
   public void persistKubernetesConfig(KubernetesConfig kubernetesConfig, String directory) throws IOException {
@@ -177,7 +186,7 @@ public class ContainerDeploymentDelegateBaseHelper {
 
   public KubernetesConfig decryptAndGetKubernetesConfig(K8sInfraDelegateConfig k8sInfraDelegateConfig) {
     decryptK8sInfraDelegateConfig(k8sInfraDelegateConfig);
-    return createKubernetesConfig(k8sInfraDelegateConfig);
+    return createKubernetesConfig(k8sInfraDelegateConfig, null);
   }
 
   public void decryptK8sInfraDelegateConfig(K8sInfraDelegateConfig k8sInfraDelegateConfig) {

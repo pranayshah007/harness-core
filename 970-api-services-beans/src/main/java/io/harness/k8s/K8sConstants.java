@@ -197,7 +197,6 @@ public interface K8sConstants {
   String KUBECFG_CLUSTER_INFO = "provideClusterInfo";
   String KUBECFG_INSTALL_HINT = "installHint";
 
-  String AUTH_PLUGIN_VERSION_COMMAND = "/opt/harness-delegate/auth-plugin/${AUTH_PLUGIN_BINARY} --version";
   String AZURE_AUTH_PLUGIN_BINARY = "kubelogin";
   String GCP_AUTH_PLUGIN_BINARY = "gke-gcloud-auth-plugin";
 }

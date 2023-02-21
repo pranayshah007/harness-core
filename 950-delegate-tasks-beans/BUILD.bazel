@@ -48,7 +48,6 @@ java_library(
         "//970-api-services-beans/src/main/java/io/harness/jira:module",
         "//970-api-services-beans/src/main/java/io/harness/k8s:module",
         "//970-api-services-beans/src/main/java/io/harness/k8s/model:module",
-        "//970-api-services-beans/src/main/java/io/harness/k8s/model/kubeconfig:module",
         "//970-api-services-beans/src/main/java/io/harness/logging:module",
         "//970-api-services-beans/src/main/java/io/harness/manifest:module",
         "//970-api-services-beans/src/main/java/io/harness/ngtriggers:module",

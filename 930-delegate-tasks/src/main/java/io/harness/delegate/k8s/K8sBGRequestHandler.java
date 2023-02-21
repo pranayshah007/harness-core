@@ -253,8 +253,8 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     executionLogCallback.saveExecutionLog("Initializing..\n");
     executionLogCallback.saveExecutionLog(color(String.format("Release Name: [%s]", releaseName), Yellow, Bold));
 
-    kubernetesConfig =
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(request.getK8sInfraDelegateConfig());
+    kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+        request.getK8sInfraDelegateConfig(), executionLogCallback);
 
     client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
     releaseHistory = releaseHandler.getReleaseHistory(kubernetesConfig, request.getReleaseName());

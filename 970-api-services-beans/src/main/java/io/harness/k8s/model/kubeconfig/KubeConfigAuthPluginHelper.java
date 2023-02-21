@@ -7,42 +7,41 @@
 
 package io.harness.k8s.model.kubeconfig;
 
-import static io.harness.k8s.K8sConstants.AUTH_PLUGIN_VERSION_COMMAND;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.ProcessResult;
-import org.zeroturnaround.exec.stream.LogOutputStream;
 
-@Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class KubeConfigAuthPluginHelper {
   private static final int TIMEOUT_IN_MINUTES = 1;
 
-  public static boolean isAuthPluginBinaryAvailable(String binaryName) {
-    String authPluginVersionCommand = AUTH_PLUGIN_VERSION_COMMAND.replace("${AUTH_PLUGIN_BINARY}", binaryName);
-    if (!runCommand(authPluginVersionCommand)) {
-      log.warn(String.format("Command failed: %s \n", authPluginVersionCommand));
-      if (!runCommand(binaryName + " --version")) {
-        log.warn(String.format("binary not found in the environment: %s \n", binaryName));
-        return false;
-      }
+  public static boolean isExecAuthPluginBinaryAvailable(String binaryName, LogCallback logCallback) {
+    boolean shouldUseExecFormat = runCommand(binaryName + " --version", logCallback);
+    if (!shouldUseExecFormat && logCallback != null) {
+      logCallback.saveExecutionLog(
+          "Auth Plugin is removed for kubernetes>=1.26. Please install %s on the delegate and add the binary in your PATH",
+          LogLevel.WARN);
     }
-    return true;
+    return shouldUseExecFormat;
   }
 
-  private static boolean runCommand(final String command) {
+  private static boolean runCommand(final String command, LogCallback logCallback) {
     try {
       return executeShellCommand(command);
-    } catch (final Exception e) {
-      log.error("Failed running command: {}", command, ExceptionMessageSanitizer.sanitizeException(e));
+    } catch (Exception e) {
+      if (logCallback != null) {
+        logCallback.saveExecutionLog(String.format("Failed executing command: %s %n %s", command,
+                                         ExceptionMessageSanitizer.sanitizeException(e)),
+            LogLevel.WARN);
+      }
       return false;
     }
   }
@@ -53,28 +52,12 @@ public class KubeConfigAuthPluginHelper {
                                                 .timeout(TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
                                                 .directory(null)
                                                 .command("/bin/bash", "-c", command)
-                                                .readOutput(true)
-                                                .redirectOutput(new LogOutputStream() {
-                                                  @Override
-                                                  protected void processLine(final String line) {
-                                                    log.info(line);
-                                                  }
-                                                })
-                                                .redirectError(new LogOutputStream() {
-                                                  @Override
-                                                  protected void processLine(final String line) {
-                                                    log.error(line);
-                                                  }
-                                                });
+                                                .readOutput(true);
 
     final ProcessResult result = processExecutor.execute();
-
-    if (result.getExitValue() == 0) {
-      log.info(result.outputUTF8());
-      return true;
-    } else {
-      log.error(result.outputUTF8());
+    if (result.getExitValue() != 0) {
       return false;
     }
+    return true;
   }
 }
