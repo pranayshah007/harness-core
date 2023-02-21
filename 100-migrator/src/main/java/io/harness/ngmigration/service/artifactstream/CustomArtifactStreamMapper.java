@@ -36,7 +36,7 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -59,11 +59,12 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
               .getVersionLabel());
       return PrimaryArtifact.builder()
           .primaryArtifactRef(ParameterField.createValueField("<+input>"))
-          .sources(Arrays.asList(ArtifactSource.builder()
-                                     .name(MigratorUtility.generateName(artifactStream.getName()))
-                                     .identifier(MigratorUtility.generateIdentifier(artifactStream.getName()))
-                                     .template(templateLinkConfig)
-                                     .build()))
+          .sources(
+              Collections.singletonList(ArtifactSource.builder()
+                                            .name(MigratorUtility.generateName(artifactStream.getName()))
+                                            .identifier(MigratorUtility.generateIdentifier(artifactStream.getName()))
+                                            .template(templateLinkConfig)
+                                            .build()))
           .build();
     } else {
       CustomArtifactStream.Script primaryScript = customArtifactStream.getScripts().get(0);
@@ -71,7 +72,6 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
           .sourceType(ArtifactSourceType.CUSTOM_ARTIFACT)
           .spec(CustomArtifactConfig.builder()
                     .timeout(ParameterField.createValueField(Timeout.fromString(primaryScript.getTimeout() + "s")))
-                    .primaryArtifact(true)
                     .scripts(CustomArtifactScripts.builder()
                                  .fetchAllArtifacts(
                                      FetchAllArtifacts.builder()

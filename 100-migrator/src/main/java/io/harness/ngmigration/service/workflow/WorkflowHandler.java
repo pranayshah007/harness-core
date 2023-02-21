@@ -44,7 +44,6 @@ import io.harness.pms.yaml.validation.InputSetValidator;
 import io.harness.steps.customstage.CustomStageConfig;
 import io.harness.steps.customstage.CustomStageNode;
 import io.harness.steps.template.TemplateStepNode;
-import io.harness.steps.wait.WaitStepInfo;
 import io.harness.steps.wait.WaitStepNode;
 import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
@@ -100,7 +99,9 @@ public abstract class WorkflowHandler {
       return Collections.emptyList();
     }
     return steps.stream()
-        .map(step -> stepMapperFactory.getStepMapper(step.getType()).getReferencedEntities(step, stepIdToServiceIdMap))
+        .map(step
+            -> stepMapperFactory.getStepMapper(step.getType())
+                   .getReferencedEntities(workflow.getAccountId(), step, stepIdToServiceIdMap))
         .filter(EmptyPredicate::isNotEmpty)
         .flatMap(Collection::stream)
         .collect(Collectors.toList());
@@ -328,11 +329,7 @@ public abstract class WorkflowHandler {
     // Handle Wait Interval
     Integer waitInterval = phaseStep.getWaitInterval();
     if (waitInterval != null && waitInterval > 0) {
-      WaitStepNode waitStepNode = new WaitStepNode();
-      waitStepNode.setName("Wait");
-      waitStepNode.setIdentifier("wait");
-      waitStepNode.setWaitStepInfo(
-          WaitStepInfo.infoBuilder().duration(MigratorUtility.getTimeout(waitInterval * 1000)).build());
+      WaitStepNode waitStepNode = MigratorUtility.getWaitStepNode("Wait", waitInterval);
       ExecutionWrapperConfig waitStep =
           ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(waitStepNode)).build();
       allSteps.add(waitStep);
@@ -356,7 +353,8 @@ public abstract class WorkflowHandler {
     if (EmptyPredicate.isEmpty(stepYamls)) {
       return Collections.emptyList();
     }
-    MigratorExpressionUtils.render(phaseStep, getExpressions(phase, context.getStepExpressionFunctors()));
+    MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(), phaseStep,
+        getExpressions(phase, context.getStepExpressionFunctors()));
     List<StepSkipStrategy> cgSkipConditions = phaseStep.getStepSkipStrategies();
     Map<String, String> skipStrategies = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(cgSkipConditions)
@@ -389,7 +387,8 @@ public abstract class WorkflowHandler {
   JsonNode getStepElementConfig(WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep,
       GraphNode step, String skipCondition, boolean addLoopingStrategy) {
     StepMapper stepMapper = stepMapperFactory.getStepMapper(step.getType());
-    MigratorExpressionUtils.render(step, getExpressions(phase, context.getStepExpressionFunctors()));
+    MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(), step,
+        getExpressions(phase, context.getStepExpressionFunctors()));
     List<StepExpressionFunctor> expressionFunctors = stepMapper.getExpressionFunctor(context, phase, phaseStep, step);
     if (isNotEmpty(expressionFunctors)) {
       context.getStepExpressionFunctors().addAll(expressionFunctors);

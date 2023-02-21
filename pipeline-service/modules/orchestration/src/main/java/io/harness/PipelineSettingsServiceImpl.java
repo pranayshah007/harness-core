@@ -88,11 +88,11 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
       Edition edition = getEdition(accountId);
       if (edition != COMMUNITY) {
         // Sending only accountId here because this setting only exists at account level
-        long maxConcurrentExecutions =
-            Long.parseLong(NGRestUtils
-                               .getResponse(ngSettingsClient.getSetting(
-                                   SettingConstants.CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS, accountId, null, null))
-                               .getValue());
+        long maxConcurrentExecutions = Long.parseLong(
+            NGRestUtils
+                .getResponse(ngSettingsClient.getSetting(
+                    PipelineSettingsConstants.CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS, accountId, null, null))
+                .getValue());
         if (!pmsFeatureFlagService.isEnabled(
                 accountId, FeatureName.DO_NOT_ENFORCE_LIMITS_ON_CONCURRENT_PIPELINE_EXECUTIONS)) {
           return shouldQueueInternal(accountId, pipelineIdentifier, maxConcurrentExecutions);

@@ -66,9 +66,11 @@ import io.harness.delegate.beans.ci.pod.PVCVolume;
 import io.harness.delegate.beans.ci.pod.PodToleration;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
+import io.harness.exception.GeneralException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -83,6 +85,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerDetailsSweepingOutput;
+import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.steps.plugin.ContainerStepInfo;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
@@ -97,6 +100,7 @@ import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -123,6 +127,8 @@ public class K8sPodInitUtils {
 
   @Inject private PmsFeatureFlagHelper featureFlagHelper;
   @Inject private LogStreamingServiceConfiguration logStreamingServiceConfiguration;
+  @Inject ContainerExecutionConfig containerExecutionConfig;
+  @Inject LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
@@ -395,19 +401,31 @@ public class K8sPodInitUtils {
 
   public Map<String, String> getLogServiceEnvVariables(ContainerDetailsSweepingOutput k8PodDetails, String accountID) {
     Map<String, String> envVars = new HashMap<>();
-    final String logServiceBaseUrl = logStreamingServiceConfiguration.getBaseUrl();
-
+    final String logServiceBaseUrl = containerExecutionConfig.getLogStreamingContainerStepBaseUrl();
+    log.info("log base url {}", logServiceBaseUrl);
     RetryPolicy<Object> retryPolicy =
         getRetryPolicy(format("[Retrying failed call to fetch log service token attempt: {}"),
             format("Failed to fetch log service token after retrying {} times"));
 
     // Make a call to the log service and get back the token
-    String logServiceToken = Failsafe.with(retryPolicy).get(() -> logStreamingServiceConfiguration.getServiceToken());
+    String logServiceToken = Failsafe.with(retryPolicy)
+                                 .get(()
+                                          -> getLogServiceToken(accountID, logServiceBaseUrl,
+                                              logStreamingServiceConfiguration.getServiceToken()));
 
     envVars.put(LOG_SERVICE_TOKEN_VARIABLE, logServiceToken);
     envVars.put(LOG_SERVICE_ENDPOINT_VARIABLE, logServiceBaseUrl);
 
     return envVars;
+  }
+
+  public String getLogServiceToken(String accountID, String url, String token) {
+    log.info("Initiating token request to log service: {}", url);
+    try {
+      return logStreamingStepClientFactory.retrieveLogStreamingAccountToken(accountID);
+    } catch (IOException e) {
+      throw new GeneralException("Token request to log service call failed", e);
+    }
   }
 
   public Map<String, String> getCommonStepEnvVariables(

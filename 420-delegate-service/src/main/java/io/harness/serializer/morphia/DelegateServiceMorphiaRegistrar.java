@@ -9,6 +9,7 @@ package io.harness.serializer.morphia;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
+import io.harness.agent.beans.AgentMtlsEndpoint;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateFeedback;
@@ -38,6 +39,7 @@ public class DelegateServiceMorphiaRegistrar implements MorphiaRegistrar {
     set.add(DelegateFeedback.class);
     set.add(VersionOverride.class);
     set.add(DelegateConnectionResult.class);
+    set.add(AgentMtlsEndpoint.class);
   }
 
   @Override

@@ -24,4 +24,5 @@ public class ExpansionResponse {
   ExpansionPlacementStrategy placement;
   boolean success;
   String errorMessage;
+  String fqn;
 }

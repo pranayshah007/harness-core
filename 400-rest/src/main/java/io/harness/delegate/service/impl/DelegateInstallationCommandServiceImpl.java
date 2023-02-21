@@ -37,6 +37,7 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
       + "  -e DELEGATE_TYPE=\"DOCKER\" \\\n"
       + "  -e ACCOUNT_ID=${account_id} \\\n"
       + "  -e DELEGATE_TOKEN=${token} \\\n"
+      + "  -e LOG_STREAMING_SERVICE_URL=${manager_url}/log-service/ \\\n"
       + "  -e MANAGER_HOST_AND_PORT=${manager_url} ${image}";
 
   private static final String HELM_COMMAND =

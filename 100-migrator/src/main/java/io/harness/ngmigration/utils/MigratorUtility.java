@@ -30,6 +30,8 @@ import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.steps.wait.WaitStepInfo;
+import io.harness.steps.wait.WaitStepNode;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
@@ -300,7 +302,8 @@ public class MigratorUtility {
   public static NGVariable getNGVariable(Variable variable) {
     String value = "<+input>";
     if (EmptyPredicate.isNotEmpty(variable.getValue())) {
-      value = String.valueOf(MigratorExpressionUtils.render(variable.getValue(), new HashMap<>()));
+      value = String.valueOf(
+          MigratorExpressionUtils.render(new HashMap<>(), new HashMap<>(), variable.getValue(), new HashMap<>()));
     }
     String name = variable.getName();
     name = name.replace('-', '_');
@@ -323,8 +326,8 @@ public class MigratorUtility {
     } else {
       String value = "";
       if (EmptyPredicate.isNotEmpty(serviceVariable.getValue())) {
-        value =
-            String.valueOf(MigratorExpressionUtils.render(String.valueOf(serviceVariable.getValue()), new HashMap<>()));
+        value = String.valueOf(MigratorExpressionUtils.render(
+            new HashMap<>(), new HashMap<>(), String.valueOf(serviceVariable.getValue()), new HashMap<>()));
       }
       String name = StringUtils.trim(serviceVariable.getName());
       name = name.replace('-', '_');
@@ -524,5 +527,14 @@ public class MigratorUtility {
             -> rollbackWorkflowPhaseIdMap.containsKey(phaseId) && rollbackWorkflowPhaseIdMap.get(phaseId) != null)
         .map(rollbackWorkflowPhaseIdMap::get)
         .collect(Collectors.toList());
+  }
+
+  public static WaitStepNode getWaitStepNode(String name, int waitInterval) {
+    WaitStepNode waitStepNode = new WaitStepNode();
+    waitStepNode.setName(name);
+    waitStepNode.setIdentifier(generateIdentifier(name));
+    waitStepNode.setWaitStepInfo(
+        WaitStepInfo.infoBuilder().duration(MigratorUtility.getTimeout(waitInterval * 1000)).build());
+    return waitStepNode;
   }
 }

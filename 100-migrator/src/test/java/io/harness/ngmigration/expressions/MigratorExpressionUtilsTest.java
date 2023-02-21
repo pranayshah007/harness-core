@@ -17,6 +17,7 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.HashMap;
 import org.joor.Reflect;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,7 +29,7 @@ public class MigratorExpressionUtilsTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   ExpressionEvaluator expressionEvaluator = new ExpressionEvaluator();
   MigratorResolveFunctor migratorResolveFunctor = new MigratorResolveFunctor(MigratorExpressionUtils.prepareContextMap(
-      ImmutableMap.of("workflow.variables.var2", "<+pqr>", "app.name", "<+org.name>")));
+      new HashMap<>(), ImmutableMap.of("workflow.variables.var2", "<+pqr>", "app.name", "<+org.name>")));
 
   @Test
   @Owner(developers = VAIBHAV_SI)

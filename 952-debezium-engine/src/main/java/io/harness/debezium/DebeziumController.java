@@ -76,7 +76,7 @@ public class DebeziumController<T extends MongoCollectionChangeConsumer> impleme
           // Randomly releasing lock after 25-30 mins so that load can be distributed among the pods
           int result = new Random().nextInt(5) + 25;
           if (System.currentTimeMillis() - start >= result * 60 * 1000) {
-            log.info("releasing lock after {} minutes", result);
+            log.info("releasing lock {} after {} minutes", getLockName(), result);
             break;
           }
         }

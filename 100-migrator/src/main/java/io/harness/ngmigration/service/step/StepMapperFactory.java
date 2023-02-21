@@ -16,6 +16,7 @@ import io.harness.ngmigration.service.step.azure.webapp.AzureSlotSwapMapperImpl;
 import io.harness.ngmigration.service.step.cloudformation.CloudformationCreateStepMapperImpl;
 import io.harness.ngmigration.service.step.cloudformation.CloudformationDeleteStepMapperImpl;
 import io.harness.ngmigration.service.step.cloudformation.CloudformationRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.cv.NewRelicDeploymentMarkerStepMapperImpl;
 import io.harness.ngmigration.service.step.ecs.EcsServiceRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.ecs.EcsServiceSetupStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupDeployStepMapperImpl;
@@ -143,6 +144,7 @@ public class StepMapperFactory {
   @Inject AzureSlotSetupMapperImpl azureSlotSetupMapper;
   @Inject AzureSlotShiftTrafficMapperImpl azureSlotShiftTrafficMapper;
   @Inject AzureSlotSwapMapperImpl azureSlotSwapMapper;
+  @Inject NewRelicDeploymentMarkerStepMapperImpl newRelicDeploymentMarkerStepMapper;
   @Inject UnsupportedStepMapperImpl unsupportedStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
@@ -294,6 +296,8 @@ public class StepMapperFactory {
         return azureSlotSwapMapper;
       case "AZURE_WEBAPP_SLOT_ROLLBACK":
         return azureSlotRollbackStepMapper;
+      case "NEW_RELIC_DEPLOYMENT_MARKER":
+        return newRelicDeploymentMarkerStepMapper;
       default:
         return unsupportedStepMapper;
     }

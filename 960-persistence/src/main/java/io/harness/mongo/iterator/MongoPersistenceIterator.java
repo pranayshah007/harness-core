@@ -54,6 +54,7 @@ import java.util.concurrent.Semaphore;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.client.RedisException;
 
 @OwnedBy(HarnessTeam.PL)
 @Builder
@@ -84,7 +85,9 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   private Duration maximumDelayForCheck;
   private Duration acceptableNoAlertDelay;
   private Duration acceptableExecutionTime;
+  private Duration threadPoolIntervalInSeconds;
   private Duration throttleInterval;
+  private int redisModeBatchSize;
   private Handler<T> handler;
   @Getter private ExecutorService executorService;
   @Getter private ScheduledThreadPoolExecutor threadPoolExecutor;
@@ -285,35 +288,30 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   /**
    * Process method for Redis Batch mode iterator.
    *
-   *  1. Determine the batch-size by taking into account the number of worker
-   *     threads available and multiplying it by the BATCH_SIZE_MULTIPLY_FACTOR.
-   *  2. Update the batch-size by finding a limit which will take into account the number
+   *  1. Update the batch-size by finding a limit which will take into account the number
    *     of docs still not processed in the jobQ which ensures that the Q doesn't overflow.
-   *  3. If the batch-size limit is not positive then pause for a while. This allows the
+   *  2. If the batch-size limit is not positive then pause for a while. This allows the
    *     workers to process the remaining docs in the jobQ and doesn't cause Q overflow.
-   *  4. Try to acquire a Redis distributed lock so that this process gets an exclusive
+   *  3. Try to acquire a Redis distributed lock so that this process gets an exclusive
    *     access to a batch of Mongo docs that it can update and work on.
-   *  5. Once the Redis lock is acquired fetch a batch of documents. The number of docs
+   *  4. Once the Redis lock is acquired fetch a batch of documents. The number of docs
    *     to fetch will be the batch-size limit value that was computed earlier.
-   *  6. Iterator over the fetched docs and submit it to the workers jobQ without waiting
+   *  5. Iterator over the fetched docs and submit it to the workers jobQ without waiting
    *     to ensure that the Redis lock is released at the earliest.
-   *  7. Collect the doc Ids of each doc that was submitted to the worker jobQ and update
+   *  6. Collect the doc Ids of each doc that was submitted to the worker jobQ and update
    *     the nextIteration fields of these docs in bulk using Mongo's bulkWrite operation.
-   *  8. Release the Redis distributed lock so that the other processes can work on another
+   *  7. Release the Redis distributed lock so that the other processes can work on another
    *     batch of Mongo docs.
    */
   public void redisBatchProcess() {
-    boolean docsAvailable = true;
-    // Set the batchSize to fetch documents as 2x number of worker threads.
-    // The main thread is fetching documents so worker thread count is N-1.
-    int batchSize = Math.max(BATCH_SIZE_MULTIPLY_FACTOR * (threadPoolExecutor.getCorePoolSize() - 1), 1);
     long movingAverage = 0;
     long previous = 0;
 
-    while (docsAvailable) {
+    while (true) {
       // Check if iterators should run or not.
       if (!shouldProcess()) {
-        return;
+        sleep(ofSeconds(1));
+        continue;
       }
 
       long base = currentTimeMillis();
@@ -325,7 +323,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
 
       // Compute a limit value that takes into account the number of unprocessed
       // docs in the jobQ to ensure that the Q doesn't overflow.
-      int limit = Math.min(batchSize, batchSize - threadPoolExecutor.getQueue().size());
+      int limit = Math.min(redisModeBatchSize, redisModeBatchSize - threadPoolExecutor.getQueue().size());
 
       if (limit <= 0) {
         // The Queue is full, so try after sometime
@@ -334,23 +332,12 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         continue;
       }
 
-      // Acquiring Semaphore to reduce the number of worker
-      // threads that can run processShardEntity by 1.
-      try {
-        semaphore.acquire();
-      } catch (InterruptedException e) {
-        log.error(SEMAPHORE_ACQUIRE_ERROR, e);
-        iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
-        Thread.currentThread().interrupt();
-        return;
-      }
-
       long totalTimeStart = currentTimeMillis();
       long startTime = currentTimeMillis();
 
       AcquiredLock acquiredLock = null;
       long processTime = 0;
-
+      List<String> docIds = new ArrayList<>();
       try {
         // Acquire the distributed lock
         acquiredLock = acquireLock();
@@ -364,7 +351,6 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         log.debug("Redis Batch Iterator Mode - time to acquire {} docs is {}", limit, processTime);
 
         // Iterate over the fetched documents - submit it to workers and prepare bulkWrite operations
-        List<String> docIds = new ArrayList<>();
         while (docItr.hasNext()) {
           T entity = docItr.next();
           submitEntityForProcessingWithoutWait(entity);
@@ -374,17 +360,18 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         // Update the documents next iteration field
         updateDocumentNextIteration(docIds, base);
 
-        // If there were no documents available to process then break from loop
-        docsAvailable = !docIds.isEmpty();
-
       } finally {
         // Release the distributed lock - acquiredLock cannot be null
-        acquiredLock.release();
+        releaseLock(acquiredLock);
 
-        // Release the semaphore
-        semaphore.release();
         processTime = currentTimeMillis() - totalTimeStart;
         log.debug("Redis Batch Iterator Mode - time to carryout the entire processing is {}", processTime);
+      }
+
+      // If there were no docs available then sleep for
+      // the configured threadPool interval duration.
+      if (docIds.isEmpty()) {
+        sleep(threadPoolIntervalInSeconds);
       }
     }
   }
@@ -475,6 +462,23 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
           log.warn("Failed to acquire distributed lock - attempting to reacquire");
         }
       }
+    }
+  }
+
+  /**
+   * Method to release the lock.
+   */
+  private void releaseLock(AcquiredLock acquiredLock) {
+    // Note - We might have to try acquiring the lock again before releasing it.
+    // If the lock got acquired by some other process then it might cause undefined behaviour.
+    // Will try handling it if the issue is observed since now the lock timeout is at 5 secs
+    // which is a lot and trying to acquire the lock again will cause additional delays.
+    try {
+      acquiredLock.release();
+    } catch (RedisException ex) {
+      log.error(" Received an exception while release lock {} ", ex.getStackTrace());
+    } catch (RuntimeException ex) {
+      log.error(" Received an exception while release lock {} ", ex.getStackTrace());
     }
   }
 

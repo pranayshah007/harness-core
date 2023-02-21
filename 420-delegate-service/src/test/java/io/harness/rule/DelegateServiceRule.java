@@ -22,6 +22,9 @@ import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.metrics.modules.MetricsModule;
+import io.harness.module.AgentMtlsModule;
+import io.harness.module.DelegateAuthModule;
+import io.harness.module.DelegateServiceModule;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaModule;
 import io.harness.morphia.MorphiaRegistrar;
@@ -41,7 +44,6 @@ import io.harness.serializer.DelegateServiceRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.PersistenceRegistrars;
-import io.harness.service.DelegateServiceModule;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -158,8 +160,11 @@ public class DelegateServiceRule implements MethodRule, InjectorRuleMixin, Mongo
     });
 
     modules.add(new DelegateServiceModule());
+    modules.add(new DelegateAuthModule());
     modules.add(TestMongoModule.getInstance());
     modules.add(MorphiaModule.getInstance());
+
+    modules.add(new AgentMtlsModule());
 
     modules.add(mongoTypeModule(annotations));
     modules.add(new AbstractModule() {

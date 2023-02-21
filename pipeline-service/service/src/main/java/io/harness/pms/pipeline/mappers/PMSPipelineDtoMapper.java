@@ -72,6 +72,7 @@ public class PMSPipelineDtoMapper {
         .gitDetails(getEntityGitDetails(pipelineEntity))
         .entityValidityDetails(getEntityValidityDetails(pipelineEntity))
         .cacheResponse(getCacheResponse(pipelineEntity))
+        .storeType(pipelineEntity.getStoreType())
         .build();
   }
 

@@ -20,4 +20,5 @@ enum RepairActionCode {
   STAGE_ROLLBACK = 7;
   STEP_GROUP_ROLLBACK = 8;
   CUSTOM_FAILURE = 9;
+  MARK_AS_FAILURE = 10;
 }
