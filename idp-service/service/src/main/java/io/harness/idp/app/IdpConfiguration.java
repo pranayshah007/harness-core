@@ -62,7 +62,7 @@ public class IdpConfiguration extends Configuration {
 
   public IdpConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();
-    defaultServerFactory.setJerseyRootPath("/");
+    defaultServerFactory.setJerseyRootPath("/api");
     defaultServerFactory.setRegisterDefaultExceptionMappers(Boolean.FALSE);
     defaultServerFactory.setAdminContextPath("/admin");
     defaultServerFactory.setAdminConnectors(singletonList(getDefaultAdminConnectorFactory()));
@@ -82,15 +82,15 @@ public class IdpConfiguration extends Configuration {
     ((DefaultServerFactory) getServerFactory()).setMaxThreads(defaultServerFactory.getMaxThreads());
   }
 
-  private ConnectorFactory getDefaultAdminConnectorFactory() {
+  private ConnectorFactory getDefaultApplicationConnectorFactory() {
     final HttpConnectorFactory factory = new HttpConnectorFactory();
-    factory.setPort(15002);
+    factory.setPort(12003);
     return factory;
   }
 
-  private ConnectorFactory getDefaultApplicationConnectorFactory() {
+  private ConnectorFactory getDefaultAdminConnectorFactory() {
     final HttpConnectorFactory factory = new HttpConnectorFactory();
-    factory.setPort(15001);
+    factory.setPort(12004);
     return factory;
   }
 
