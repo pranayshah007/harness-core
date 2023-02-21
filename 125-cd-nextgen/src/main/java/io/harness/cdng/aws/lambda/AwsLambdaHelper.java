@@ -107,7 +107,7 @@ public class AwsLambdaHelper extends CDStepHelper {
   private final String AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_NAME = "PrepareRollbackAwsLambda";
   private final String AWS_LAMBDA_DEPLOY_COMMAND_NAME = "DeployAwsLambda";
 
-  private AwsLambdaFunctionsInfraConfig getInfraConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
+  public AwsLambdaFunctionsInfraConfig getInfraConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
     return awsLambdaEntityHelper.getInfraConfig(infrastructure, AmbianceUtils.getNgAccess(ambiance));
   }
 
@@ -322,7 +322,7 @@ public class AwsLambdaHelper extends CDStepHelper {
       ManifestOutcome manifestOutcome, Ambiance ambiance) {
     StoreConfig storeConfig = manifestOutcome.getStore();
     if (!ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
-      throw new InvalidRequestException("Invalid kind of storeConfig for Ecs step", USER);
+      throw new InvalidRequestException("Invalid kind of storeConfig for AwsLambda step", USER);
     }
     GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig;
     return getGitFetchFilesConfig(ambiance, gitStoreConfig, manifestOutcome);
