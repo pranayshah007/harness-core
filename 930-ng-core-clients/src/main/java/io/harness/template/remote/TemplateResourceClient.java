@@ -98,7 +98,7 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_ORG_IDENTIFIER) String parentEntityOrgIdentifier,
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_PROJECT_IDENTIFIER) String parentEntityProjectIdentifier,
       @Header(value = "Load-From-Cache") String loadFromCache, @Body TemplateApplyRequestDTO templateApplyRequestDTO,
-      @Query(value = "AppendInputSetValidator") boolean appendInputSetValidator);
+      @Query(value = "AppendInputSetValidator") Boolean appendInputSetValidator);
 
   @POST(TEMPLATE_ENDPOINT + "templateReferences")
   Call<ResponseDTO<List<EntityDetailProtoDTO>>> getTemplateReferenceForGivenYaml(

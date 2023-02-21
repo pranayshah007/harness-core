@@ -95,7 +95,7 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     doReturn(callRequest)
         .when(templateResourceClient)
         .applyTemplatesOnGivenYamlV2(anyString(), anyString(), anyString(), any(), any(), any(), any(), any(), any(),
-            any(), any(), any(), any(TemplateApplyRequestDTO.class), true);
+            any(), any(), any(), any(TemplateApplyRequestDTO.class), any());
     when(callRequest.execute())
         .thenReturn(Response.success(
             ResponseDTO.newResponse(TemplateMergeResponseDTO.builder().mergedPipelineYaml(givenYaml).build())));
