@@ -178,6 +178,7 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
       while (iterator.hasNext()) {
         DelegateToken delegateToken = iterator.next();
         try {
+          decryptDelegateAuthV2Token(accountId, tokenString, delegateToken.getValue());
           if (delegateToken.isNg()) {
             decryptDelegateAuthV2Token(accountId, tokenString, decodeBase64ToString(delegateToken.getValue()));
           } else {

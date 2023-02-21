@@ -8,7 +8,6 @@
 package io.harness.delegate.authenticator;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
-import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
@@ -299,11 +298,8 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       while (iterator.hasNext()) {
         DelegateToken delegateToken = iterator.next();
         try {
-          if (delegateToken.isNg()) {
-            decryptDelegateToken(encryptedJWT, decodeBase64ToString(delegateToken.getValue()));
-          } else {
-            decryptDelegateToken(encryptedJWT, delegateToken.getValue());
-          }
+          decryptDelegateToken(encryptedJWT,
+              delegateNgTokenService.getDelegateTokenValue(delegateToken.getAccountId(), delegateToken.getName()));
           if (DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())) {
             setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken.getName());
           }
@@ -327,11 +323,8 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       return false;
     }
     try {
-      if (delegateToken.isNg()) {
-        decryptDelegateToken(encryptedJWT, decodeBase64ToString(delegateToken.getValue()));
-      } else {
-        decryptDelegateToken(encryptedJWT, delegateToken.getValue());
-      }
+      decryptDelegateToken(encryptedJWT,
+          delegateNgTokenService.getDelegateTokenValue(delegateToken.getAccountId(), delegateToken.getName()));
       if (DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())) {
         setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken.getName());
       }
