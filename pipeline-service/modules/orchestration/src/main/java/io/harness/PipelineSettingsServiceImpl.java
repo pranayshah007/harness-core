@@ -28,7 +28,9 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Singleton
 public class PipelineSettingsServiceImpl implements PipelineSettingsService {
   @Inject PlanExecutionService planExecutionService;
@@ -71,9 +73,10 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
   @Override
   public PlanExecutionSettingResponse shouldQueuePlanExecution(String accountId, String pipelineIdentifier) {
     try {
+      long maxConcurrentExecutions;
       Edition edition = getEdition(accountId);
       // Sending only accountId here because this setting only exists at account level
-      long maxConcurrentExecutions = Long.parseLong(
+      maxConcurrentExecutions = Long.parseLong(
           NGRestUtils
               .getResponse(ngSettingsClient.getSetting(
                   PipelineSettingsConstants.CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS, accountId, null, null))
@@ -98,8 +101,11 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
         default:
           PlanExecutionSettingResponse.builder().shouldQueue(false).useNewFlow(false).build();
       }
-    } catch (Exception ex) {
+    } catch (ExecutionException ex) {
       return PlanExecutionSettingResponse.builder().shouldQueue(false).useNewFlow(false).build();
+    } catch (Exception ex) {
+      log.error(
+          "Error while executing the pipeline: Failed to fetch max concurrent executions limit for the given account plan");
     }
     return PlanExecutionSettingResponse.builder().shouldQueue(false).useNewFlow(false).build();
   }

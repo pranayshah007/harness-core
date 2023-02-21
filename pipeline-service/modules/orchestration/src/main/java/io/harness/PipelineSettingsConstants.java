@@ -7,6 +7,10 @@
 
 package io.harness;
 
-public class PipelineSettingsConstants {
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+
+@OwnedBy(HarnessTeam.PIPELINE)
+public final class PipelineSettingsConstants {
   public final static String CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS = "concurrent_active_pipeline_executions";
 }
