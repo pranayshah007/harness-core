@@ -24,6 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome;
 import io.harness.cdng.provision.terraformcloud.steps.TerraformCloudRunStep;
+import io.harness.connector.helper.EncryptionHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
@@ -41,6 +42,7 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
@@ -74,6 +76,7 @@ public class TerraformCloudRunStepTest extends CategoryTest {
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @Mock private StepHelper stepHelper;
   @Mock private TerraformCloudParamsMapper mapper;
+  @Mock private EncryptionHelper encryptionHelper;
   @InjectMocks private TerraformCloudRunStep terraformCloudRunStep;
 
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
@@ -117,6 +120,9 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     when(mapper.mapRunSpecToTaskParams(any(), any()))
         .thenReturn(utils.getTerraformCloudTaskParams(TerraformCloudTaskType.RUN_PLAN));
     when(helper.getTerraformCloudConnector(any(), any())).thenReturn(utils.getTerraformCloudConnector());
+    when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any()))
+        .thenReturn(Collections.singletonList(EncryptedDataDetail.builder().build()));
+
     Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -166,7 +172,6 @@ public class TerraformCloudRunStepTest extends CategoryTest {
   public void handleTaskResultWithSecurityContextPlanOnly() throws Exception {
     doReturn("provisionerId").when(helper).getProvisionIdentifier(any());
     doReturn(true).when(helper).isExportTfPlanJson(any());
-    doReturn("jsonFileId").when(helper).saveTerraformPlanJsonOutput(any(), any(), any());
 
     TerraformCloudRunTaskResponse response =
         getResponseBuilder().tfPlanJsonFileId("tfPlanJsonFieldId").runId("run-123").build();
@@ -176,12 +181,11 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
 
     TerraformCloudRunOutcome terraformCloudRunOutcome = getOutcomeFromResponse(stepResponse);
-    assertThat(terraformCloudRunOutcome.getJsonFilePath()).isEqualTo("<+terraformPlanJson.\"jsonFileId\">");
+    assertThat(terraformCloudRunOutcome.getJsonFilePath()).isEqualTo("<+terraformPlanJson.\"provisionerId\">");
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
     verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
     verify(helper, times(1)).isExportTfPlanJson(any());
     verify(helper, times(1)).saveTerraformPlanExecutionDetails(any(), any(), any());
-    verify(helper, times(1)).saveTerraformPlanJsonOutput(any(), any(), any());
   }
 
   @Test
@@ -202,11 +206,10 @@ public class TerraformCloudRunStepTest extends CategoryTest {
 
     assertThat(terraformCloudRunOutcome.getJsonFilePath()).isNull();
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
-    assertThat(terraformCloudRunOutcome.getOutcome().get("x1")).isEqualTo("y1");
+    assertThat(terraformCloudRunOutcome.getOutputs().get("x1")).isEqualTo("y1");
     verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
     verify(helper, times(1)).isExportTfPlanJson(any());
     verify(helper, times(0)).saveTerraformPlanExecutionDetails(any(), any(), any());
-    verify(helper, times(0)).saveTerraformPlanJsonOutput(any(), any(), any());
     verify(helper, times(1)).parseTerraformOutputs(any());
   }
 
@@ -215,7 +218,10 @@ public class TerraformCloudRunStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void handleTaskResultWithSecurityContextPlanAndDestroy() throws Exception {
     doReturn(false).when(helper).isExportTfPlanJson(any());
-    TerraformCloudRunTaskResponse terraformCloudRunTaskResponse = getResponseBuilder().runId("run-123").build();
+    doReturn(Collections.singletonMap("x1", "y1")).when(helper).parseTerraformOutputs(any());
+
+    TerraformCloudRunTaskResponse terraformCloudRunTaskResponse =
+        getResponseBuilder().runId("run-123").tfOutput("{x1 : y1}").build();
     StepResponse stepResponse = terraformCloudRunStep.handleTaskResultWithSecurityContext(
         ambiance, getStepElementParams(TerraformCloudRunType.PLAN_AND_DESTROY), () -> terraformCloudRunTaskResponse);
 
@@ -224,11 +230,10 @@ public class TerraformCloudRunStepTest extends CategoryTest {
 
     assertThat(terraformCloudRunOutcome.getJsonFilePath()).isNull();
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
-    assertThat(terraformCloudRunOutcome.getOutcome()).isNull();
+    assertThat(terraformCloudRunOutcome.getOutputs().get("x1")).isEqualTo("y1");
     verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
     verify(helper, times(0)).saveTerraformPlanExecutionDetails(any(), any(), any());
-    verify(helper, times(0)).saveTerraformPlanJsonOutput(any(), any(), any());
-    verify(helper, times(0)).parseTerraformOutputs(any());
+    verify(helper, times(1)).parseTerraformOutputs(any());
   }
 
   @Test
@@ -237,7 +242,6 @@ public class TerraformCloudRunStepTest extends CategoryTest {
   public void handleTaskResultWithSecurityContextPlan() throws Exception {
     doReturn("provisionerId").when(helper).getProvisionIdentifier(any());
     doReturn(true).when(helper).isExportTfPlanJson(any());
-    doReturn("jsonFileId").when(helper).saveTerraformPlanJsonOutput(any(), any(), any());
     TerraformCloudRunTaskResponse terraformCloudRunTaskResponse =
         getResponseBuilder().runId("run-123").tfPlanJsonFileId("jsonFileId").build();
     StepResponse stepResponse = terraformCloudRunStep.handleTaskResultWithSecurityContext(
@@ -246,12 +250,11 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     TerraformCloudRunOutcome terraformCloudRunOutcome = getOutcomeFromResponse(stepResponse);
 
-    assertThat(terraformCloudRunOutcome.getJsonFilePath()).isEqualTo("<+terraformPlanJson.\"jsonFileId\">");
+    assertThat(terraformCloudRunOutcome.getJsonFilePath()).isEqualTo("<+terraformPlanJson.\"provisionerId\">");
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
-    assertThat(terraformCloudRunOutcome.getOutcome()).isNull();
+    assertThat(terraformCloudRunOutcome.getOutputs()).isNull();
     verify(helper, times(1)).saveTerraformCloudPlanOutput(any(), any(), any());
     verify(helper, times(1)).saveTerraformPlanExecutionDetails(any(), any(), any());
-    verify(helper, times(1)).saveTerraformPlanJsonOutput(any(), any(), any());
     verify(helper, times(0)).parseTerraformOutputs(any());
   }
 
@@ -271,10 +274,9 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     TerraformCloudRunOutcome terraformCloudRunOutcome = getOutcomeFromResponse(stepResponse);
     assertThat(terraformCloudRunOutcome.getJsonFilePath()).isNull();
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
-    assertThat(terraformCloudRunOutcome.getOutcome().get("x1")).isEqualTo("y1");
+    assertThat(terraformCloudRunOutcome.getOutputs().get("x1")).isEqualTo("y1");
     verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
     verify(helper, times(0)).saveTerraformPlanExecutionDetails(any(), any(), any());
-    verify(helper, times(0)).saveTerraformPlanJsonOutput(any(), any(), any());
     verify(helper, times(1)).parseTerraformOutputs(any());
   }
 

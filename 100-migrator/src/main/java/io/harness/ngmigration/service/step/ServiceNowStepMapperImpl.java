@@ -10,8 +10,12 @@ package io.harness.ngmigration.service.step;
 import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_INPUT;
 
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.beans.StepOutput;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
+import io.harness.ngmigration.expressions.step.ServiceNowFunctor;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
@@ -27,20 +31,24 @@ import io.harness.steps.servicenow.update.ServiceNowUpdateStepInfo;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStepNode;
 
 import software.wings.beans.GraphNode;
+import software.wings.beans.PhaseStep;
+import software.wings.beans.WorkflowPhase;
 import software.wings.beans.servicenow.ServiceNowCreateUpdateParams;
 import software.wings.beans.servicenow.ServiceNowFields;
 import software.wings.sm.State;
 import software.wings.sm.states.collaboration.ServiceNowCreateUpdateState;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ServiceNowStepMapperImpl extends StepMapper {
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 
   @Override
@@ -87,6 +95,24 @@ public class ServiceNowStepMapperImpl extends StepMapper {
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     // TODO
     return false;
+  }
+
+  @Override
+  public List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
+    String sweepingOutputName = getSweepingOutputName(graphNode);
+
+    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
+        .stream()
+        .map(exp
+            -> StepOutput.builder()
+                   .stageIdentifier(MigratorUtility.generateIdentifier(phase.getName()))
+                   .stepIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()))
+                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
+                   .expression(exp)
+                   .build())
+        .map(ServiceNowFunctor::new)
+        .collect(Collectors.toList());
   }
 
   private ServiceNowCreateStepNode buildCreate(ServiceNowCreateUpdateState state) {
@@ -136,7 +162,7 @@ public class ServiceNowStepMapperImpl extends StepMapper {
                                             .connectorRef(RUNTIME_INPUT)
                                             .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
                                             .ticketType(ParameterField.createValueField(params.getTicketType()))
-                                            .ticketNumber(ParameterField.createValueField(params.getTicketId()))
+                                            .ticketNumber(ParameterField.createValueField(params.getIssueNumber()))
                                             .templateName(RUNTIME_INPUT)
                                             .useServiceNowTemplate(ParameterField.createValueField(false))
                                             .fields(getFields(params))

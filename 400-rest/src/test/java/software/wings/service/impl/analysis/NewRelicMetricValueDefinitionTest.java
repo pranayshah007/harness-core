@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -63,7 +64,8 @@ public class NewRelicMetricValueDefinitionTest extends WingsBaseTest {
                                                               .metricValueName(NewRelicMetricValueDefinition.ERROR)
                                                               .metricType(MetricType.ERROR)
                                                               .build();
-    final List<NewRelicMetricHostAnalysisValue> testHostValues = metricValueDefinition.getTestHostValues(records);
+    final List<NewRelicMetricHostAnalysisValue> testHostValues = metricValueDefinition.getTestHostValues(
+        records.stream().map(record -> record.toDto()).collect(Collectors.toSet()));
     assertThat(testHostValues.size()).isEqualTo(numOfHosts);
     testHostValues.forEach(
         testHostValue -> assertThat(testHostValue.getTestValues().size()).isEqualTo(numOfRecordsPerHost));

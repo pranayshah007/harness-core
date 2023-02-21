@@ -70,7 +70,9 @@ public class TasStageValidatorHelper implements StageValidatorHelper {
     Map<String, Integer> stepTypeToCount = new HashMap<>();
     Map<Scope, List<String>> stepTemplateScopeToIds = new EnumMap<>(Scope.class);
     allSteps.addAll(executionElementConfig.getSteps());
-    allSteps.addAll(executionElementConfig.getRollbackSteps());
+    if (!isNull(executionElementConfig.getRollbackSteps())) {
+      allSteps.addAll(executionElementConfig.getRollbackSteps());
+    }
     SecurityContextBuilder.setContext(new ServicePrincipal(TEMPLATE_SERVICE.getServiceId()));
     getCountByStepType(
         accountIdentifier, orgIdentifier, projectIdentifier, allSteps, stepTypeToCount, stepTemplateScopeToIds);

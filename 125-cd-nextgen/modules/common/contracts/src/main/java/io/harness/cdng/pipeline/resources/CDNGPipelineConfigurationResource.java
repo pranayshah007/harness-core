@@ -81,7 +81,7 @@ public class CDNGPipelineConfigurationResource {
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) throws IOException {
     return ResponseDTO.newResponse(cdngPipelineConfigurationHelper.getExecutionStrategyYaml(
-        serviceDefinitionType, executionStrategyType, includeVerify, accountIdentifier));
+        serviceDefinitionType, executionStrategyType, includeVerify));
   }
 
   @GET

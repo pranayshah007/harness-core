@@ -496,7 +496,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           serviceLevelObjectiveV2Service.getReferencedMonitoredServices(serviceLevelObjectiveList);
     }
     List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
-        entityUnavailabilityStatusesService.getAllInstances(projectParams, startTime, endTime);
+        entityUnavailabilityStatusesService.getAllInstances(projectParams, startTime / 1000, endTime / 1000);
 
     // Adding downtime Instances
     List<EntityUnavailabilityStatusesDTO> failureInstances =

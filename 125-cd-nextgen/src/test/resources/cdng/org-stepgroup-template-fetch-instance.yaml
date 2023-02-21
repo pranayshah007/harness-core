@@ -19,3 +19,15 @@ template:
                     type: FetchInstanceScript
                     timeout: 10m
                     spec: { }
+                - stepGroup:
+                    name: stp
+                    identifier: stp
+                    template:
+                      templateRef: account.accountStepGroupTemplate
+                      versionLabel: v1
+                - stepGroup:
+                    name: stp
+                    identifier: stp
+                    template:
+                      templateRef: account.emptyStepGroupTemplate
+                      versionLabel: v1

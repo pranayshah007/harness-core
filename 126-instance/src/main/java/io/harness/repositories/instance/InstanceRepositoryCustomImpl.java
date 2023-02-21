@@ -314,25 +314,40 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     GroupOperation groupOperation;
     if (!isGitOps) {
       groupOperation =
-          group(InstanceKeys.envIdentifier, InstanceKeys.envType, InstanceKeys.infraIdentifier, DISPLAY_NAME)
-              .first(InstanceKeys.infraName)
-              .as(InstanceKeys.infraName);
+          group(InstanceKeys.envIdentifier, InstanceKeys.envType, InstanceKeys.infraIdentifier, DISPLAY_NAME);
     } else {
-      groupOperation = group(InstanceKeys.envIdentifier, InstanceKeys.envType, CLUSTER_IDENTIFIER, DISPLAY_NAME)
-                           .first(AGENT_IDENTIFIER)
-                           .as(AGENT_IDENTIFIER);
+      groupOperation = group(InstanceKeys.envIdentifier, InstanceKeys.envType, CLUSTER_IDENTIFIER, DISPLAY_NAME);
     }
 
     groupOperation = groupOperation.first(InstanceKeys.lastDeployedAt)
                          .as(InstanceKeys.lastDeployedAt)
                          .first(InstanceKeys.envName)
                          .as(InstanceKeys.envName)
+                         .first(InstanceKeys.infraName)
+                         .as(InstanceKeys.infraName)
+                         .first(AGENT_IDENTIFIER)
+                         .as(AGENT_IDENTIFIER)
                          .count()
                          .as(InstanceSyncConstants.COUNT);
 
+    ProjectionOperation projectionOperation2 =
+        Aggregation
+            .project(InstanceKeys.envName, InstanceKeys.infraName, AGENT_IDENTIFIER, InstanceKeys.lastDeployedAt,
+                InstanceSyncConstants.COUNT)
+            .andExpression("_id." + InstanceKeys.envIdentifier)
+            .as(InstanceKeys.envIdentifier)
+            .andExpression("_id." + InstanceKeys.envType)
+            .as(InstanceKeys.envType)
+            .andExpression("_id." + InstanceKeys.infraIdentifier)
+            .as(InstanceKeys.infraIdentifier)
+            .andExpression("_id." + DISPLAY_NAME)
+            .as(DISPLAY_NAME)
+            .andExpression("_id." + CLUSTER_IDENTIFIER)
+            .as(CLUSTER_IDENTIFIER);
+
     return secondaryMongoTemplate.aggregate(
-        newAggregation(sortOperation, matchStage, projectionOperation, groupOperation), INSTANCE_NG_COLLECTION,
-        ActiveServiceInstanceInfoWithEnvType.class);
+        newAggregation(sortOperation, matchStage, projectionOperation, groupOperation, projectionOperation2),
+        INSTANCE_NG_COLLECTION, ActiveServiceInstanceInfoWithEnvType.class);
   }
 
   @Override
@@ -404,8 +419,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                         .count()
                                         .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(
-        newAggregation(matchStage, groupOperation, EnvironmentInstanceCountModel.getProjection()),
-        INSTANCE_NG_COLLECTION, EnvironmentInstanceCountModel.class);
+        newAggregation(matchStage, groupOperation), INSTANCE_NG_COLLECTION, EnvironmentInstanceCountModel.class);
   }
 
   @Override
@@ -491,15 +505,13 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
       String pipelineExecutionId, String buildId, int limit) {
     Criteria criteria = getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier);
 
-    if (envId != null) {
-      criteria.and(InstanceKeys.envIdentifier).is(envId);
-    }
-    if (serviceId != null) {
-      criteria.and(InstanceKeys.serviceIdentifier).is(serviceId);
-    }
-    if (buildId != null) {
-      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG).is(buildId);
-    }
+    criteria.and(InstanceKeys.envIdentifier)
+        .is(envId)
+        .and(InstanceKeys.serviceIdentifier)
+        .is(serviceId)
+        .and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
+        .is(buildId);
+
     if (infraId != null) {
       criteria.and(InstanceKeys.infraIdentifier).is(infraId);
     }
@@ -521,20 +533,14 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     Criteria criteria =
         getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, null, envId);
 
-    if (infraId != null) {
-      criteria.and(InstanceKeys.infraIdentifier).is(infraId);
-    }
-    if (clusterIdentifier != null) {
-      criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).is(clusterIdentifier);
-    }
-
-    if (environmentType != null) {
-      criteria.and(InstanceKeys.envType).is(environmentType);
-    }
-
-    if (displayName != null) {
-      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME).is(displayName);
-    }
+    criteria.and(InstanceKeys.infraIdentifier)
+        .is(infraId)
+        .and(InstanceKeysAdditional.instanceInfoClusterIdentifier)
+        .is(clusterIdentifier)
+        .and(InstanceKeys.envType)
+        .is(environmentType)
+        .and(InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
+        .is(displayName);
 
     MatchOperation matchOperation = Aggregation.match(criteria);
     SortOperation sortOperation = Aggregation.sort(Sort.by(Sort.Direction.DESC, InstanceKeys.lastDeployedAt));

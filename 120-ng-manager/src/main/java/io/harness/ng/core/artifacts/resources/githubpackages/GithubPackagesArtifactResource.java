@@ -62,8 +62,6 @@ public class GithubPackagesArtifactResource {
 
   private final ArtifactResourceUtils artifactResourceUtils;
 
-  private String emptyConnectorMessage = "Connector reference cannot be empty";
-
   // GET Api to fetch Github Packages from an account or an org
   @GET
   @Path("packages")
@@ -75,7 +73,7 @@ public class GithubPackagesArtifactResource {
       @NotNull @QueryParam("packageType") String packageType, @QueryParam("org") String org,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     if (StringUtils.isBlank(gitConnectorIdentifier)) {
-      throw new InvalidRequestException(emptyConnectorMessage);
+      throw new InvalidRequestException("Connector reference cannot be empty");
     }
 
     IdentifierRef connectorRef =
@@ -122,16 +120,16 @@ public class GithubPackagesArtifactResource {
     }
 
     // Getting the resolved org in case of expressions
-    String resolvedOrg = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    String resolvedOrg = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, org, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved packageType in case of expressions
-    String resolvedPackageType = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, packageType, fqnPath, gitEntityBasicInfo, serviceRef);
+    String resolvedPackageType = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, runtimeInputYaml, packageType, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved ConnectorRef in case of expressions
     String resolvedConnectorRef =
-        artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
             runtimeInputYaml, gitConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
 
     IdentifierRef connectorRef =
@@ -156,7 +154,7 @@ public class GithubPackagesArtifactResource {
       @QueryParam("versionRegex") String versionRegex, @QueryParam("org") String org,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     if (StringUtils.isBlank(gitConnectorIdentifier)) {
-      throw new InvalidRequestException(emptyConnectorMessage);
+      throw new InvalidRequestException("Connector reference cannot be empty");
     }
 
     IdentifierRef connectorRef =
@@ -212,25 +210,25 @@ public class GithubPackagesArtifactResource {
     }
 
     // Getting the resolved org in case of expressions
-    String resolvedOrg = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    String resolvedOrg = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, org, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved packageType in case of expressions
-    String resolvedPackageType = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, packageType, fqnPath, gitEntityBasicInfo, serviceRef);
+    String resolvedPackageType = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, runtimeInputYaml, packageType, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved ConnectorRef in case of expressions
     String resolvedConnectorRef =
-        artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
             runtimeInputYaml, gitConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved versionRegex in case of expressions
-    String resolvedVersionRegex = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier,
+    String resolvedVersionRegex = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier,
         projectIdentifier, pipelineIdentifier, runtimeInputYaml, versionRegex, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved packageName in case of expressions
-    String resolvedPackageName = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, packageName, fqnPath, gitEntityBasicInfo, serviceRef);
+    String resolvedPackageName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, runtimeInputYaml, packageName, fqnPath, gitEntityBasicInfo, serviceRef);
 
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(resolvedConnectorRef, accountId, orgIdentifier, projectIdentifier);
@@ -254,7 +252,7 @@ public class GithubPackagesArtifactResource {
       @QueryParam("version") String version, @QueryParam("versionRegex") String versionRegex,
       @QueryParam("org") String org, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     if (StringUtils.isBlank(gitConnectorIdentifier)) {
-      throw new InvalidRequestException(emptyConnectorMessage);
+      throw new InvalidRequestException("Connector reference cannot be empty");
     }
 
     IdentifierRef connectorRef =
@@ -316,28 +314,28 @@ public class GithubPackagesArtifactResource {
     }
 
     // Getting the resolved org in case of expressions
-    String resolvedOrg = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    String resolvedOrg = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, org, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved packageType in case of expressions
-    String resolvedPackageType = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, packageType, fqnPath, gitEntityBasicInfo, serviceRef);
+    String resolvedPackageType = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, runtimeInputYaml, packageType, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved ConnectorRef in case of expressions
     String resolvedConnectorRef =
-        artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
             runtimeInputYaml, gitConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved versionRegex in case of expressions
-    String resolvedVersionRegex = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier,
+    String resolvedVersionRegex = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier,
         projectIdentifier, pipelineIdentifier, runtimeInputYaml, versionRegex, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved packageName in case of expressions
-    String resolvedPackageName = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, packageName, fqnPath, gitEntityBasicInfo, serviceRef);
+    String resolvedPackageName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, runtimeInputYaml, packageName, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved version in case of expressions
-    String resolvedVersion = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    String resolvedVersion = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, version, fqnPath, gitEntityBasicInfo, serviceRef);
 
     IdentifierRef connectorRef =

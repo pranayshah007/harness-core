@@ -7,8 +7,6 @@
 
 package io.harness.migrations.all;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
 import static software.wings.beans.InfrastructureMapping.InfrastructureMappingKeys;
 import static software.wings.beans.Service.ServiceKeys;
 
@@ -36,7 +34,7 @@ public class CleanupInfraMappingsForDeletedServices implements Migration {
   @Inject private AccountService accountService;
   @Inject private WingsPersistence wingsPersistence;
 
-  private static final String DEBUG_LINE = "CLEANUP_ORPHAN_IM_FOR_DELETED_SERVICES";
+  private static final String DEBUG_LINE = "LOG_ORPHAN_IM_FOR_DELETED_SERVICES";
 
   @Override
   public void migrate() {
@@ -44,36 +42,36 @@ public class CleanupInfraMappingsForDeletedServices implements Migration {
 
     final List<Account> allAccounts = accountService.getAccountsWithBasicInfo(false);
 
+    Set<String> orphanedInfraMappings = new HashSet<>();
     for (Account account : allAccounts) {
       final String accountId = account.getUuid();
       log.info(DEBUG_LINE + " Beginning of migration for account ID: " + accountId);
+
       try {
         Query<InfrastructureMapping> infrastructureMappingQuery =
             wingsPersistence.createQuery(InfrastructureMapping.class)
                 .field(InfrastructureMappingKeys.accountId)
                 .equal(accountId);
         final Set<String> serviceIds = getServiceIdsForAccount(accountId);
-        Set<String> infraMappingsToDelete = new HashSet<>();
 
         try (HIterator<InfrastructureMapping> iterator = new HIterator<>(infrastructureMappingQuery.fetch())) {
           for (InfrastructureMapping infrastructureMapping : iterator) {
             if (shouldDeleteInfraMapping(serviceIds, infrastructureMapping)) {
               log.info(format("%s Cleaning up infra mapping %s for account ID: %s", DEBUG_LINE,
                   infrastructureMapping.getUuid(), accountId));
-              infraMappingsToDelete.add(infrastructureMapping.getUuid());
+              orphanedInfraMappings.add(infrastructureMapping.getUuid());
             }
           }
         }
 
-        if (isNotEmpty(infraMappingsToDelete)) {
-          deleteInfraMappings(accountId, infraMappingsToDelete);
-        }
         log.info(DEBUG_LINE + " End of migration for account ID : " + accountId);
 
       } catch (Exception e) {
-        log.error(DEBUG_LINE + " Exception in deleting infra mappings for account: " + accountId);
+        log.error(DEBUG_LINE + " Exception in marking orphaned infra mappings for account: " + accountId);
       }
     }
+
+    log.info(format("The following orphaned infra mappings need to be deleted: %s", orphanedInfraMappings));
 
     log.info(DEBUG_LINE + " End of migration");
   }
@@ -87,21 +85,6 @@ public class CleanupInfraMappingsForDeletedServices implements Migration {
         .stream()
         .map(Service::getUuid)
         .collect(Collectors.toSet());
-  }
-
-  private void deleteInfraMappings(String accountId, Set<String> infraMappingsToDelete) {
-    final boolean done = wingsPersistence.delete(wingsPersistence.createQuery(InfrastructureMapping.class)
-                                                     .field(InfrastructureMappingKeys.accountId)
-                                                     .equal(accountId)
-                                                     .field("_id")
-                                                     .in(infraMappingsToDelete));
-
-    if (done) {
-      log.info(format(
-          "%s Deleted %d Orphan InfraMappings for account %s", DEBUG_LINE, infraMappingsToDelete.size(), accountId));
-    } else {
-      log.error(format("%s DB error in deleting Orphan InfraMappings for account %s", DEBUG_LINE, accountId));
-    }
   }
 
   private boolean shouldDeleteInfraMapping(Set<String> serviceIds, InfrastructureMapping infrastructureMapping) {

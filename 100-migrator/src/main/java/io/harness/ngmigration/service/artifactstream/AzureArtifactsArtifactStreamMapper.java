@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.artifactstream;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
 import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
@@ -36,16 +38,20 @@ public class AzureArtifactsArtifactStreamMapper implements ArtifactStreamMapper 
         migratedEntities
             .get(CgEntityId.builder().type(CONNECTOR).id(azureArtifactsArtifactStream.getSettingId()).build())
             .getNgEntityDetail();
+    String scope = "org";
+    if (isNotEmpty(azureArtifactsArtifactStream.getProject())) {
+      scope = "project";
+    }
     return PrimaryArtifact.builder()
         .sourceType(ArtifactSourceType.AZURE_ARTIFACTS)
         .spec(AzureArtifactsConfig.builder()
-                  .primaryArtifact(true)
                   .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
                   .packageType(ParameterField.createValueField(azureArtifactsArtifactStream.getProtocolType()))
                   .packageName(ParameterField.createValueField(azureArtifactsArtifactStream.getPackageName()))
                   .project(ParameterField.createValueField(azureArtifactsArtifactStream.getProject()))
                   .feed(ParameterField.createValueField(azureArtifactsArtifactStream.getFeed()))
-                  .version(ParameterField.createValueField("<+input>"))
+                  .scope(ParameterField.createValueField(scope))
+                  .version(MigratorUtility.RUNTIME_INPUT)
                   .build())
         .build();
   }

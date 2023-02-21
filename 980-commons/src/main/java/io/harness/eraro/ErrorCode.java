@@ -662,7 +662,8 @@ public enum ErrorCode {
   TERRAGRUNT_EXECUTION_ERROR,
   ADFS_ERROR,
   TERRAFORM_CLOUD_ERROR,
-  CLUSTER_CREDENTIALS_NOT_FOUND;
+  CLUSTER_CREDENTIALS_NOT_FOUND,
+  SCM_API_ERROR;
 
   private Status status = BAD_REQUEST;
   private String description;

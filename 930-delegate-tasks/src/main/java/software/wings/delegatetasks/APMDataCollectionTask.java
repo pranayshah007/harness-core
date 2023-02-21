@@ -12,13 +12,13 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.threading.Morpheus.sleep;
 
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 import static software.wings.delegatetasks.cv.CVConstants.AZURE_BASE_URL;
 import static software.wings.delegatetasks.cv.CVConstants.AZURE_TOKEN_URL;
 import static software.wings.delegatetasks.cv.CVConstants.CONTROL_HOST_NAME;
 import static software.wings.delegatetasks.cv.CVConstants.DATA_COLLECTION_RETRY_SLEEP;
 import static software.wings.delegatetasks.cv.CVConstants.TEST_HOST_NAME;
 import static software.wings.delegatetasks.cv.CVConstants.VERIFICATION_HOST_PLACEHOLDER;
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -34,6 +34,7 @@ import io.harness.serializer.JsonUtils;
 import io.harness.time.Timestamp;
 
 import software.wings.beans.TaskType;
+import software.wings.beans.dto.NewRelicMetricDataRecord;
 import software.wings.delegatetasks.cv.CVAWSAuthHeaderSigner;
 import software.wings.delegatetasks.cv.CVAWSS4SignerBase;
 import software.wings.delegatetasks.cv.RequestExecutor;
@@ -47,7 +48,6 @@ import software.wings.service.impl.analysis.DataCollectionTaskResult.DataCollect
 import software.wings.service.impl.apm.APMDataCollectionInfo;
 import software.wings.service.impl.apm.APMMetricInfo;
 import software.wings.service.impl.apm.APMResponseParser;
-import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.intfc.analysis.ClusterLevel;
 
 import com.google.common.base.Preconditions;

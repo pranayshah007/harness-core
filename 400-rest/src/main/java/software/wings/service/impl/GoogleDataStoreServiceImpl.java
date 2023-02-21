@@ -63,7 +63,7 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
   public GoogleDataStoreServiceImpl(WingsPersistence wingsPersistence) {
     String googleCredentialsPath = System.getenv(GOOGLE_APPLICATION_CREDENTIALS_PATH);
     boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv(ENV_VARIABLE_WORKLOAD_IDENTITY));
-    if (!usingWorkloadIdentity && isEmpty(googleCredentialsPath) || !new File(googleCredentialsPath).exists()) {
+    if (!usingWorkloadIdentity && (isEmpty(googleCredentialsPath) || !new File(googleCredentialsPath).exists())) {
       throw new WingsException("Invalid credentials found at " + googleCredentialsPath);
     }
     mongoDataStoreService = new MongoDataStoreServiceImpl(wingsPersistence);

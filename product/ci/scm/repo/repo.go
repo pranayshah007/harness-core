@@ -62,6 +62,10 @@ func CreateWebhook(ctx context.Context, request *pb.CreateWebhookRequest, log *z
 		// NB we use scm events not native events like the others.
 		events := convertGitlabEnumToHookEvents(request.GetNativeEvents().GetGitlab())
 		inputParams.Events = events
+	case *pb.Provider_Harness:
+		// only native events for harness
+		eventStrings := convertHarnessEnumToStrings(request.GetNativeEvents().GetHarness())
+		inputParams.NativeEvents = eventStrings
 	default:
 		return nil, fmt.Errorf("there is no logic to convertEnumsToStrings, for this provider %s", gitclient.GetProvider(*request.GetProvider()))
 	}
@@ -252,6 +256,9 @@ func nativeEventsFromStrings(sliceOfStrings []string, p pb.Provider) (nativeEven
 	case *pb.Provider_Azure:
 		azureEvents := convertStringsToAzureEnum(sliceOfStrings)
 		nativeEvents = &pb.NativeEvents{NativeEvents: &azureEvents}
+	case *pb.Provider_Harness:
+		harnessEvents := convertStringsToHarnessEnum(sliceOfStrings)
+		nativeEvents = &pb.NativeEvents{NativeEvents: &harnessEvents}
 	default:
 		return nil, fmt.Errorf("there is no logic to convertStringsToEnums, for this provider %s", gitclient.GetProvider(p))
 	}
@@ -368,6 +375,36 @@ func convertBitbucketCloudEnumToStrings(enums *pb.BitbucketCloudWebhookEvents) (
 		}
 	}
 	return strings
+}
+
+func convertHarnessEnumToStrings(enums *pb.HarnessWebhookEvents) (strings []string) {
+	for _, e := range enums.GetEvents() {
+		switch e {
+		case pb.HarnessWebhookEvent_HARNESS_PULLREQ_BRANCH_UPDATED:
+			strings = append(strings, "pullreq_branch_updated")
+		case pb.HarnessWebhookEvent_HARNESS_PULLREQ_CREATED:
+			strings = append(strings, "pullreq_created")
+		case pb.HarnessWebhookEvent_HARNESS_PULLREQ_REOPENED:
+			strings = append(strings, "pullreq_reopened")
+		}
+	}
+	return strings
+}
+
+func convertStringsToHarnessEnum(strings []string) (enums pb.NativeEvents_Harness) {
+	var array []pb.HarnessWebhookEvent
+	for i := 0; i < len(strings); i++ {
+		switch strings[i] {
+		case "pullreq_branch_updated":
+			array = append(array, pb.HarnessWebhookEvent_HARNESS_PULLREQ_BRANCH_UPDATED)
+		case "pullreq_created":
+			array = append(array, pb.HarnessWebhookEvent_HARNESS_PULLREQ_CREATED)
+		case "pullreq_reopened":
+			array = append(array, pb.HarnessWebhookEvent_HARNESS_PULLREQ_REOPENED)
+		}
+	}
+	enums.Harness = &pb.HarnessWebhookEvents{Events: array}
+	return enums
 }
 
 func convertAzureEnumToStrings(enums *pb.AzureWebhookEvents) (strings []string) {

@@ -74,7 +74,7 @@ public class EcsPerpetualTaskServiceClientTest extends WingsBaseTest {
     PerpetualTaskClientContext perpetualTaskClientContext =
         PerpetualTaskClientContext.builder().clientParams(clientParamsMap).build();
     EcsPerpetualTaskParams ecsPerpetualTaskParams =
-        ecsPerpetualTaskServiceClient.getTaskParams(perpetualTaskClientContext);
+        ecsPerpetualTaskServiceClient.getTaskParams(perpetualTaskClientContext, true);
     assertThat(ecsPerpetualTaskParams.getClusterId()).isEqualTo(CLUSTER_ID);
     assertThat(ecsPerpetualTaskParams.getClusterName()).isEqualTo(CLUSTER_NAME);
     assertThat(ecsPerpetualTaskParams.getRegion()).isEqualTo(REGION);

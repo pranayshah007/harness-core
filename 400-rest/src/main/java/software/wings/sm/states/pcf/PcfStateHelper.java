@@ -372,7 +372,7 @@ public class PcfStateHelper {
                             .tagList(renderedTags)
                             .build());
 
-    delegateService.queueTaskV2(delegateTask);
+    delegateService.queueTask(delegateTask);
     appendDelegateTaskDetails(delegateTask, stateExecutionInstanceId);
 
     return ExecutionResponse.builder()
@@ -390,7 +390,8 @@ public class PcfStateHelper {
     stateExecutionService.appendDelegateTaskDetails(stateExecutionInstanceId,
         DelegateTaskDetails.builder()
             .delegateTaskId(delegateTask.getUuid())
-            .taskDescription(delegateTask.calcDescription())
+            .taskDescription(
+                delegateTask.getData() != null ? delegateTask.calcDescription() : delegateTask.calcDescriptionV2())
             .setupAbstractions(delegateTask.getSetupAbstractions())
             .build());
   }

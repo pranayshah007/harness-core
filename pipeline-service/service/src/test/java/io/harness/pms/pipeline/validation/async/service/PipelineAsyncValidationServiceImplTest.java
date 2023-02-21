@@ -15,6 +15,7 @@ import static org.mockito.Mockito.doReturn;
 
 import io.harness.PipelineServiceTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
@@ -93,5 +94,18 @@ public class PipelineAsyncValidationServiceImplTest extends PipelineServiceTestB
     assertThat(optionalLatest.isPresent()).isTrue();
     PipelineValidationEvent latestEvent = optionalLatest.get();
     assertThat(latestEvent.getUuid()).isEqualTo(newEventUuid);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testCreateRecordForSuccessfulSyncValidation() {
+    GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setStatus("PASS").build();
+    PipelineValidationEvent validationEvent =
+        asyncValidationService.createRecordForSuccessfulSyncValidation(pipeline, null, governanceMetadata, Action.CRUD);
+    assertThat(validationEvent.getStatus()).isEqualTo(ValidationStatus.SUCCESS);
+    assertThat(validationEvent.getFqn()).isEqualTo(fqn);
+    assertThat(validationEvent.getParams().getPipelineEntity()).isEqualTo(pipeline);
+    assertThat(validationEvent.getResult().getGovernanceMetadata()).isEqualTo(governanceMetadata);
   }
 }

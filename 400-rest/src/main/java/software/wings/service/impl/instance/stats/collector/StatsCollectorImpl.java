@@ -87,6 +87,31 @@ public class StatsCollectorImpl implements StatsCollector {
   }
 
   @Override
+  public boolean createStatsAtIfMissing(String accountId, long timestamp) {
+    Instant snapshotTimestamp = Instant.ofEpochMilli(timestamp);
+    Instant lastSnapshotTimestamp = statService.getLastSnapshotTime(accountId);
+    if (lastSnapshotTimestamp != null && lastSnapshotTimestamp.isAfter(snapshotTimestamp)) {
+      log.info(
+          "Instance stats snapshots already exist for account {}, lastSnapshotTimestamp: {}, snapshotTimestamp: {}",
+          accountId, lastSnapshotTimestamp, snapshotTimestamp);
+      return true;
+    } else {
+      log.info(
+          "Start creating instance stats snapshot for account {}, lastSnapshotTimestamp: {}, snapshotTimestamp: {}",
+          accountId, lastSnapshotTimestamp, snapshotTimestamp);
+      boolean statsSaved = createStats(accountId, alignedWithMinute(snapshotTimestamp, SYNC_INTERVAL_MINUTES));
+      if (statsSaved) {
+        log.info("Instance stats snapshot is created successfully for account {}", accountId);
+      }
+      if (!statsSaved) {
+        log.info("Failed to create instance stats for account {}", accountId);
+      }
+
+      return statsSaved;
+    }
+  }
+
+  @Override
   public boolean createServerlessStats(String accountId) {
     Instant lastSnapshot = serverlessInstanceStatService.getLastSnapshotTime(accountId);
     if (null == lastSnapshot) {

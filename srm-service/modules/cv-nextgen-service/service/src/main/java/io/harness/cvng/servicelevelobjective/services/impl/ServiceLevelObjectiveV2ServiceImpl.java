@@ -300,15 +300,20 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .filter(ServiceLevelObjectiveV2Keys.accountId, accountId)
             .filter(ServiceLevelObjectiveV2Keys.orgIdentifier, orgIdentifier)
             .filter(ServiceLevelObjectiveV2Keys.projectIdentifier, projectIdentifier)
+            .filter(ServiceLevelObjectiveV2Keys.type, ServiceLevelObjectiveType.COMPOSITE)
             .asList();
 
-    serviceLevelObjectives.forEach(serviceLevelObjective
-        -> delete(ProjectParams.builder()
-                      .accountIdentifier(serviceLevelObjective.getAccountId())
-                      .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
-                      .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
-                      .build(),
-            serviceLevelObjective.getIdentifier()));
+    deleteAll(serviceLevelObjectives);
+
+    serviceLevelObjectives =
+        hPersistence.createQuery(AbstractServiceLevelObjective.class)
+            .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.accountId, accountId)
+            .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.orgIdentifier, orgIdentifier)
+            .filter(ServiceLevelObjectiveV2Keys.projectIdentifier, projectIdentifier)
+            .filter(ServiceLevelObjectiveV2Keys.type, ServiceLevelObjectiveType.SIMPLE)
+            .asList();
+
+    deleteAll(serviceLevelObjectives);
   }
 
   @Override
@@ -318,15 +323,19 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
         hPersistence.createQuery(AbstractServiceLevelObjective.class)
             .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.accountId, accountId)
             .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.orgIdentifier, orgIdentifier)
+            .filter(ServiceLevelObjectiveV2Keys.type, ServiceLevelObjectiveType.COMPOSITE)
             .asList();
 
-    serviceLevelObjectives.forEach(serviceLevelObjective
-        -> delete(ProjectParams.builder()
-                      .accountIdentifier(serviceLevelObjective.getAccountId())
-                      .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
-                      .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
-                      .build(),
-            serviceLevelObjective.getIdentifier()));
+    deleteAll(serviceLevelObjectives);
+
+    serviceLevelObjectives =
+        hPersistence.createQuery(AbstractServiceLevelObjective.class)
+            .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.accountId, accountId)
+            .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.orgIdentifier, orgIdentifier)
+            .filter(ServiceLevelObjectiveV2Keys.type, ServiceLevelObjectiveType.SIMPLE)
+            .asList();
+
+    deleteAll(serviceLevelObjectives);
   }
 
   @Override
@@ -334,8 +343,20 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     List<AbstractServiceLevelObjective> serviceLevelObjectives =
         hPersistence.createQuery(AbstractServiceLevelObjective.class)
             .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.accountId, accountId)
+            .filter(ServiceLevelObjectiveV2Keys.type, ServiceLevelObjectiveType.COMPOSITE)
             .asList();
 
+    deleteAll(serviceLevelObjectives);
+
+    serviceLevelObjectives = hPersistence.createQuery(AbstractServiceLevelObjective.class)
+                                 .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.accountId, accountId)
+                                 .filter(ServiceLevelObjectiveV2Keys.type, ServiceLevelObjectiveType.SIMPLE)
+                                 .asList();
+
+    deleteAll(serviceLevelObjectives);
+  }
+
+  private void deleteAll(List<AbstractServiceLevelObjective> serviceLevelObjectives) {
     serviceLevelObjectives.forEach(serviceLevelObjective
         -> delete(ProjectParams.builder()
                       .accountIdentifier(serviceLevelObjective.getAccountId())
@@ -344,7 +365,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                       .build(),
             serviceLevelObjective.getIdentifier()));
   }
-
   @Override
   public boolean delete(ProjectParams projectParams, String identifier) {
     AbstractServiceLevelObjective serviceLevelObjectiveV2 = checkIfSLOPresent(projectParams, identifier);

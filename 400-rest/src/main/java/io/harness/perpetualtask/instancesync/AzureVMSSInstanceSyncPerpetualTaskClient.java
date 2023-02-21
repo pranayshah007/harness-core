@@ -17,10 +17,10 @@ import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.azure.request.AzureVMSSListVMDataParameters;
+import io.harness.perpetualtask.PerpetualTaskClientBase;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AzureConfig;
 import software.wings.beans.AzureVMSSInfrastructureMapping;
@@ -43,21 +43,22 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class AzureVMSSInstanceSyncPerpetualTaskClient implements PerpetualTaskServiceClient {
+public class AzureVMSSInstanceSyncPerpetualTaskClient
+    extends PerpetualTaskClientBase implements PerpetualTaskServiceClient {
   private static final String VMSS_ID = "vmssId";
   @Inject InfrastructureMappingService infraMappingService;
   @Inject SettingsService settingsService;
   @Inject SecretManager secretManager;
-  @Inject KryoSerializer kryoSerializer;
   @Inject private transient AzureVMSSStateHelper azureVMSSStateHelper;
 
   @Override
-  public Message getTaskParams(PerpetualTaskClientContext clientContext) {
+  public Message getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalse) {
     PerpetualTaskData perpetualTaskData = getPerpetualTaskData(clientContext);
 
-    ByteString azureConfigBytes = ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskData.getAzureConfig()));
+    ByteString azureConfigBytes =
+        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(perpetualTaskData.getAzureConfig()));
     ByteString encryptedDataBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskData.getEncryptedDataDetails()));
+        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(perpetualTaskData.getEncryptedDataDetails()));
 
     return AzureVmssInstanceSyncPerpetualTaskParams.newBuilder()
         .setSubscriptionId(perpetualTaskData.getSubscriptionId())

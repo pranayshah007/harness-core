@@ -15,8 +15,8 @@ set -e
 export TargetBranch=$(echo "${ghprbTargetBranch}")
 export SourceBranch=$(echo "${ghprbSourceBranch}")
 
-PR_Name=("SmartPRChecks-ti2" "SmartPRChecks-tin4" "SmartPRChecks-tin0" "SmartPRChecks-tin1" "SmartPRChecks-tin3" "SmartPRChecks-Functional_tests"
-  "SmartPRChecks-Functional_tests1" "SmartPRChecks-PMD" "SmartPRChecks-codebasehashcheck")
+PR_Name=("SmartPRChecks-Functional_tests" "SmartPRChecks-Functional_tests1" "SmartPRChecks-PMD" "SmartPRChecks-codebasehashcheck")
+PR_TI=("TIAll-tin0" "TIAll-tin1" "TIAll-tin2" "TIAll-tin3" "TIAll-tin4")
 
 merge_summary=""
 bazelignore_array=($(cat bazelignore))
@@ -30,7 +30,7 @@ compile="true"
 function compile_check() {
   for file_name in "${merge_summary[@]}"; do
     for i in "${bazelignore_array[@]}"; do
-      if [[ $file_name =~ ^$i ]]; then
+      if [[ $file_name =~ ^$i  ]]; then
         printf >&2 "Compilation is not required for file $file_name :REGEX=$i \n"
         compile=False
         break
@@ -53,6 +53,9 @@ function print_log() {
   for checks in "${PR_Name[@]}"; do
     printf "$checks\t NotRequired \n"
   done
+  for checks in "${PR_TI[@]}"; do
+    printf "$checks\t NotRequired \n"
+  done
   echo "Merge Summary:" "${merge_summary[@]}"
   printf "\n\n\n##################################\n\n"
   export COMPILE="false"
@@ -72,9 +75,27 @@ function send_webhook() {
 "context": "'"$i"'"
 }'
   done
+  for i in "${PR_TI[@]}"; do
+      curl --silent --output /dev/null --location --request POST 'https://api.github.com/repos/harness/harness-core/statuses/'"$COMMIT_SHA"'' \
+        --header 'Accept: application/vnd.github+json' \
+        --header 'Authorization: Bearer '"$BOT_PWD"'' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+  "state": "success",
+  "target_url": "https://app.harness.io/ng/#/account/VRuJ8-dqQH6QZgAtoBr66g/ci/orgs/default/projects/PRCHECKS/pipelines/TIAll/executions/'"$Execution_Id"'/pipeline",
+  "description": "Skipped the check as compilation is not required!",
+  "context": "'"$i"'"
+  }'
+    done
+
 }
 
-COMPILE=$( compile_check )
+if [ -z "${merge_summary}" ]; then
+  echo "THIS IS AN EMPTY COMMIT"
+  COMPILE=False
+  else
+    COMPILE=$( compile_check )
+fi
 
 echo Overall Result: "$COMPILE"
 if [[ $COMPILE == False ]]; then

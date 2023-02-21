@@ -147,6 +147,9 @@ public class HintException extends WingsException {
       "Please check the artifact data (package name, project, package type, feed, version...) and credentials.";
   public static final String HINT_DECRYPTED_SECRET_VALUE = "Please ensure secret with identifier %s exist.";
 
+  public static final String HINT_INPUT_SET_ACCOUNT_SETTING =
+      "1) Please check if account level setting is expected to be enabled. \n2) Please check if requested input-set is in same repository as the linked pipeline.";
+
   public HintException(String message) {
     super(message, null, HINT, INFO, null, null);
     super.excludeReportTarget(EXPLANATION, EnumSet.of(ReportTarget.LOG_SYSTEM));

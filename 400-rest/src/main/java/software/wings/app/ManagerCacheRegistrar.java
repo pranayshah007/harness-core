@@ -9,8 +9,6 @@ package software.wings.app;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import static javax.cache.expiry.Duration.THIRTY_MINUTES;
-
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
@@ -19,7 +17,6 @@ import io.harness.version.VersionInfoManager;
 import software.wings.beans.ApiKeyEntry;
 import software.wings.beans.AuthToken;
 import software.wings.beans.security.access.WhitelistConfig;
-import software.wings.expression.EncryptedDataDetails;
 import software.wings.security.UserPermissionInfo;
 import software.wings.security.UserRestrictionInfo;
 import software.wings.service.impl.newrelic.NewRelicApplication.NewRelicApplications;
@@ -49,7 +46,6 @@ public class ManagerCacheRegistrar extends AbstractModule {
   public static final String APIKEY_RESTRICTION_CACHE = "apiKeyRestrictionCache";
   public static final String WHITELIST_CACHE = "whitelistCache";
   public static final String PRIMARY_CACHE_PREFIX = "primary_";
-  public static final String SECRET_CACHE = "secretCache";
   public static final String DEPLOYMENT_RECONCILIATION_CACHE = "deploymentReconciliationCache";
 
   @Provides
@@ -123,15 +119,6 @@ public class ManagerCacheRegistrar extends AbstractModule {
   }
 
   @Provides
-  @Named(SECRET_CACHE)
-  @Singleton
-  public Cache<String, EncryptedDataDetails> getSecretTokenCache(
-      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
-    return harnessCacheManager.getCache(SECRET_CACHE, String.class, EncryptedDataDetails.class,
-        CreatedExpiryPolicy.factoryOf(THIRTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
-  }
-
-  @Provides
   @Named(DEPLOYMENT_RECONCILIATION_CACHE)
   @Singleton
   public Cache<String, DeploymentReconRecord> getDeploymentReconCache(
@@ -166,8 +153,6 @@ public class ManagerCacheRegistrar extends AbstractModule {
     }, Names.named(APIKEY_RESTRICTION_CACHE)));
     mapBinder.addBinding(WHITELIST_CACHE).to(Key.get(new TypeLiteral<Cache<String, WhitelistConfig>>() {
     }, Names.named(WHITELIST_CACHE)));
-    mapBinder.addBinding(SECRET_CACHE).to(Key.get(new TypeLiteral<Cache<String, EncryptedDataDetails>>() {
-    }, Names.named(SECRET_CACHE)));
   }
 
   private void registerRequiredBindings() {

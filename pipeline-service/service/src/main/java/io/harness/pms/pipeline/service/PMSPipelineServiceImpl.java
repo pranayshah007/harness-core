@@ -161,6 +161,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       PipelineEntity createdEntity;
       PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
       createdEntity = pipelineCRUDResult.getPipelineEntity();
+      try {
+        pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(
+            createdEntity, GitAwareContextHelper.getBranchInRequest(), governanceMetadata, Action.CRUD);
+      } catch (Exception e) {
+        log.error("Unable to save validation event for Pipeline: " + e.getMessage(), e);
+      }
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(createdEntity).build();
     } catch (IOException ex) {
       log.error(format(INVALID_YAML_IN_NODE, YamlUtils.getErrorNodePartialFQN(ex)), ex);
@@ -348,6 +354,18 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     return optionalPipelineEntity;
   }
 
+  @Override
+  public PipelineEntity getPipelineMetadata(String accountId, String orgIdentifier, String projectIdentifier,
+      String identifier, boolean deleted, boolean getMetadataOnly) {
+    Optional<PipelineEntity> pipelineEntityOnlyMetadata =
+        getPipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, getMetadataOnly, false, false);
+    if (pipelineEntityOnlyMetadata.isEmpty()) {
+      throw new InvalidRequestException(
+          PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgIdentifier, projectIdentifier, identifier));
+    }
+    return pipelineEntityOnlyMetadata.get();
+  }
+
   PipelineGetResult getPipelineAndAsyncValidationId(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
       boolean loadFromCache) {
@@ -393,6 +411,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
     }
     PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
+    try {
+      pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(
+          updatedEntity, GitAwareContextHelper.getBranchInRequest(), governanceMetadata, Action.CRUD);
+    } catch (Exception e) {
+      log.error("Unable to save validation event for Pipeline: " + e.getMessage(), e);
+    }
     return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(updatedEntity).build();
   }
 

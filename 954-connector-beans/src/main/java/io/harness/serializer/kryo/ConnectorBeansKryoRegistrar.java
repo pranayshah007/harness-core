@@ -114,7 +114,11 @@ import io.harness.delegate.beans.connector.jenkins.JenkinsAuthenticationDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
+import io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.jira.JiraAuthType;
+import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthType;
@@ -470,5 +474,10 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(TerraformCloudCredentialSpecDTO.class, 10000302);
     kryo.register(TerraformCloudTokenCredentialsDTO.class, 10000303);
     kryo.register(TerraformCloudCredentialType.class, 10000304);
+
+    kryo.register(JiraAuthenticationDTO.class, 10000450);
+    kryo.register(JiraAuthType.class, 10000451);
+    kryo.register(JiraAuthCredentialsDTO.class, 10000452);
+    kryo.register(JiraUserNamePasswordDTO.class, 10000453);
   }
 }

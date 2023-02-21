@@ -262,23 +262,36 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     // env
     List<YamlProperties> envOutputProperties =
         variableCreationResponseList.get(0).getYamlExtraProperties().get(keys.get(0)).getOutputPropertiesList();
-    List<String> envFqnPropertiesList =
+    List<String> envLocalNamePropertiesList =
         envOutputProperties.stream().map(YamlProperties::getLocalName).collect(Collectors.toList());
-
-    assertThat(envFqnPropertiesList)
+    assertThat(envLocalNamePropertiesList)
         .containsExactly("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
             "env.variables", "env.envGroupRef", "env.envGroupName");
 
-    // no infra vars
-    // service
+    List<String> envFQNPropertiesList =
+        envOutputProperties.stream().map(YamlProperties::getFqn).collect(Collectors.toList());
+    assertThat(envFQNPropertiesList)
+        .containsExactlyInAnyOrder("pipeline.stages.deployStage.spec.env.name",
+            "pipeline.stages.deployStage.spec.env.identifier", "pipeline.stages.deployStage.spec.env.description",
+            "pipeline.stages.deployStage.spec.env.type", "pipeline.stages.deployStage.spec.env.tags",
+            "pipeline.stages.deployStage.spec.env.environmentRef", "pipeline.stages.deployStage.spec.env.variables",
+            "pipeline.stages.deployStage.spec.env.envGroupRef", "pipeline.stages.deployStage.spec.env.envGroupName");
+
     List<YamlProperties> serviceOutputProperties =
         variableCreationResponseList.get(1).getYamlExtraProperties().get(keys.get(1)).getOutputPropertiesList();
-    List<String> serviceFqnPropertiesList =
+    List<String> serviceLocalNamePropertiesList =
         serviceOutputProperties.stream().map(YamlProperties::getLocalName).collect(Collectors.toList());
-
-    assertThat(serviceFqnPropertiesList)
+    assertThat(serviceLocalNamePropertiesList)
         .containsExactly("service.identifier", "service.name", "service.description", "service.type", "service.tags",
             "service.gitOpsEnabled");
+
+    List<String> serviceFQNPropertiesList =
+        serviceOutputProperties.stream().map(YamlProperties::getFqn).collect(Collectors.toList());
+    assertThat(serviceFQNPropertiesList)
+        .containsExactlyInAnyOrder("pipeline.stages.deployStage.spec.service.identifier",
+            "pipeline.stages.deployStage.spec.service.name", "pipeline.stages.deployStage.spec.service.description",
+            "pipeline.stages.deployStage.spec.service.type", "pipeline.stages.deployStage.spec.service.tags",
+            "pipeline.stages.deployStage.spec.service.gitOpsEnabled");
   }
 
   @Test

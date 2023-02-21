@@ -33,6 +33,7 @@ public class AccountMapper {
         .serviceAccountConfig(account.getServiceAccountConfig())
         .isProductLed(account.isProductLed())
         .isTwoFactorAdminEnforced(account.isTwoFactorAdminEnforced())
+        .createdAt(account.getCreatedAt())
         .build();
   }
 

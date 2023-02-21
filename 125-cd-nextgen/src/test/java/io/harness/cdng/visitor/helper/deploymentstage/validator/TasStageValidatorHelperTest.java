@@ -18,17 +18,19 @@ import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLBACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLING_DEPLOY;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLING_ROLLBACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_SWAP_ROUTES;
+import static io.harness.ng.core.template.TemplateListType.STABLE_TEMPLATE_TYPE;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.RISHABH;
 
+import static java.util.Objects.isNull;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
-import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -36,12 +38,15 @@ import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.TasStageValidatorHelper;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.rule.Owner;
+import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.remote.TemplateResourceClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -52,6 +57,8 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.junit.Before;
@@ -284,6 +291,38 @@ public class TasStageValidatorHelperTest extends CategoryTest {
   @Test
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
+  public void testValidateMultipleRollback() {
+    List<ExecutionWrapperConfig> steps = new ArrayList<>();
+    steps.add(ExecutionWrapperConfig.builder().step(getAppSetup(TAS_BG_APP_SETUP)).build());
+    List<ExecutionWrapperConfig> rollbackSteps = new ArrayList<>();
+    rollbackSteps.add(ExecutionWrapperConfig.builder().step(getAppRollback(TAS_ROLLBACK)).build());
+    rollbackSteps.add(ExecutionWrapperConfig.builder().step(getSwapRollback(SWAP_ROLLBACK)).build());
+    DeploymentStageConfig stageConfig =
+        DeploymentStageConfig.builder()
+            .deploymentType(ServiceDefinitionType.TAS)
+            .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
+            .build();
+    assertThatThrownBy(() -> tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId))
+        .hasMessage("Only one Rollback step out of [AppRollback, SwapRollback, TasRollingRollback] is supported");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testValidateNullSteps() {
+    List<ExecutionWrapperConfig> steps = new ArrayList<>();
+    steps.add(ExecutionWrapperConfig.builder().step(getAppSetup(TAS_APP_RESIZE)).build());
+    DeploymentStageConfig stageConfig = DeploymentStageConfig.builder()
+                                            .deploymentType(ServiceDefinitionType.TAS)
+                                            .execution(ExecutionElementConfig.builder().steps(steps).build())
+                                            .build();
+    assertThatThrownBy(() -> tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId))
+        .hasMessage("Only one App Setup or Rolling Deploy is supported");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
   public void testValidateStepGroupAndParallel() {
     List<ExecutionWrapperConfig> steps = new ArrayList<>();
     steps.add(ExecutionWrapperConfig.builder().step(getAppSetup(TAS_BG_APP_SETUP)).build());
@@ -313,8 +352,102 @@ public class TasStageValidatorHelperTest extends CategoryTest {
     List<ExecutionWrapperConfig> steps = new ArrayList<>();
     steps.add(ExecutionWrapperConfig.builder().step(getAppSetup(TAS_BG_APP_SETUP)).build());
 
+    assertTemplateGet("orgStepGrpTemplate", "org-stepgroup-template-app-setup.yaml");
+    assertTemplateGet("emptyStepGrpTemplate", null);
+    assertTemplateGet("accountStepGrpTemplate", "account-stepgroup-template-app-setup.yaml");
+    assertTemplateGet("projectStepGrpTemplate", "project-stepgroup-template-app-setup.yaml");
+
+    steps.add(ExecutionWrapperConfig.builder()
+                  .stepGroup(getStepGroupTemplate("stepGroup", "projectStepGrpTemplate", "v1"))
+                  .build());
+
+    List<ExecutionWrapperConfig> rollbackSteps = new ArrayList<>();
+    rollbackSteps.add(ExecutionWrapperConfig.builder().step(getSwapRollback(SWAP_ROLLBACK)).build());
+    DeploymentStageConfig stageConfig =
+        DeploymentStageConfig.builder()
+            .deploymentType(ServiceDefinitionType.TAS)
+            .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
+            .build();
+    assertThatThrownBy(() -> tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId))
+        .hasMessage("Only one BG App Setup step is valid, found: 4");
+  }
+
+  private void assertTemplateGet(String templateRef, String fileName) throws IOException {
+    String stepGrpTemplate = isNull(fileName) ? null : readFile("cdng/" + fileName);
+    Call<ResponseDTO<TemplateResponseDTO>> callRequest = mock(Call.class);
+    doReturn(callRequest).when(templateResourceClient).get(eq(templateRef), any(), any(), any(), any(), anyBoolean());
+    when(callRequest.execute())
+        .thenReturn(
+            Response.success(ResponseDTO.newResponse(TemplateResponseDTO.builder()
+                                                         .templateEntityType(TemplateEntityType.STEPGROUP_TEMPLATE)
+                                                         .childType(DEPLOYMENT_STAGE)
+                                                         .yaml(stepGrpTemplate)
+                                                         .build())));
+  }
+
+  private void assertTemplateMetadata(String accountId, String orgId, String projectId, String templateRef)
+      throws IOException {
+    TemplateFilterPropertiesDTO templateFilterPropertiesDTO =
+        TemplateFilterPropertiesDTO.builder()
+            .templateEntityTypes(Collections.singletonList(TemplateEntityType.STEP_TEMPLATE))
+            .templateIdentifiers(Arrays.asList(templateRef))
+            .build();
+    Call callRequest = mock(Call.class);
+    when(templateResourceClient.listTemplateMetadata(
+             accountId, orgId, projectId, STABLE_TEMPLATE_TYPE, 0, 1, templateFilterPropertiesDTO))
+        .thenReturn(callRequest);
+    PageResponse<TemplateMetadataSummaryResponseDTO> pageResponse =
+        PageResponse.<TemplateMetadataSummaryResponseDTO>builder()
+            .content(Collections.singletonList(TemplateMetadataSummaryResponseDTO.builder()
+                                                   .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
+                                                   .childType(TAS_BG_APP_SETUP)
+                                                   .build()))
+            .totalPages(1)
+            .pageIndex(0)
+            .pageSize(1)
+            .build();
+    when(callRequest.execute()).thenReturn(Response.success(ResponseDTO.newResponse(pageResponse)));
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testValidateStepTemplate() throws IOException {
+    List<ExecutionWrapperConfig> steps = new ArrayList<>();
+    steps.add(ExecutionWrapperConfig.builder().step(getAppSetup(TAS_BG_APP_SETUP)).build());
+    steps.add(ExecutionWrapperConfig.builder()
+                  .step(getStepGroupTemplate("stepTemplate", "account.accountStepTemplate", "v1"))
+                  .build());
+    steps.add(ExecutionWrapperConfig.builder()
+                  .step(getStepGroupTemplate("stepTemplate", "org.orgStepTemplate", "v1"))
+                  .build());
+    steps.add(ExecutionWrapperConfig.builder()
+                  .step(getStepGroupTemplate("stepTemplate", "projectStepTemplate", "v1"))
+                  .build());
+    steps.add(ExecutionWrapperConfig.builder().stepGroup(null).build());
+    assertTemplateMetadata(accountId, null, null, "accountStepTemplate");
+    assertTemplateMetadata(accountId, orgId, null, "orgStepTemplate");
+    assertTemplateMetadata(accountId, orgId, projectId, "projectStepTemplate");
+
+    List<ExecutionWrapperConfig> rollbackSteps = new ArrayList<>();
+    rollbackSteps.add(ExecutionWrapperConfig.builder().step(getSwapRollback(SWAP_ROLLBACK)).build());
+    DeploymentStageConfig stageConfig =
+        DeploymentStageConfig.builder()
+            .deploymentType(ServiceDefinitionType.TAS)
+            .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
+            .build();
+    assertThatThrownBy(() -> tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId))
+        .hasMessage("Only one BG App Setup step is valid, found: 4");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testValidateStepGroupTemplateDiffTemplateChildType() throws IOException {
+    List<ExecutionWrapperConfig> steps = new ArrayList<>();
+    steps.add(ExecutionWrapperConfig.builder().step(getAppSetup(TAS_BG_APP_SETUP)).build());
+
     String accountStepGrp = readFile("cdng/account-stepgroup-template-app-setup.yaml");
-    String orgStepGrp = readFile("cdng/org-stepgroup-template-app-setup.yaml");
 
     Call<ResponseDTO<TemplateResponseDTO>> callRequestAccount = mock(Call.class);
     doReturn(callRequestAccount)
@@ -324,20 +457,8 @@ public class TasStageValidatorHelperTest extends CategoryTest {
         .thenReturn(
             Response.success(ResponseDTO.newResponse(TemplateResponseDTO.builder()
                                                          .templateEntityType(TemplateEntityType.STEPGROUP_TEMPLATE)
-                                                         .childType(DEPLOYMENT_STAGE)
+                                                         .childType("CI")
                                                          .yaml(accountStepGrp)
-                                                         .build())));
-
-    Call<ResponseDTO<TemplateResponseDTO>> callRequestOrg = mock(Call.class);
-    doReturn(callRequestOrg)
-        .when(templateResourceClient)
-        .get(eq("orgStepGrpTemplate"), any(), any(), any(), any(), anyBoolean());
-    when(callRequestOrg.execute())
-        .thenReturn(
-            Response.success(ResponseDTO.newResponse(TemplateResponseDTO.builder()
-                                                         .templateEntityType(TemplateEntityType.STEPGROUP_TEMPLATE)
-                                                         .childType(DEPLOYMENT_STAGE)
-                                                         .yaml(orgStepGrp)
                                                          .build())));
 
     steps.add(ExecutionWrapperConfig.builder()
@@ -351,8 +472,7 @@ public class TasStageValidatorHelperTest extends CategoryTest {
             .deploymentType(ServiceDefinitionType.TAS)
             .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
             .build();
-    assertThatThrownBy(() -> tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId))
-        .hasMessage("Only one BG App Setup step is valid, found: 3");
+    tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId);
   }
 
   private String readFile(String filename) {

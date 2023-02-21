@@ -26,6 +26,7 @@ import static org.mockito.Mockito.mock;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.NoopStatement;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
@@ -55,6 +56,7 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfig;
 import io.harness.manage.GlobalContextManager;
 import io.harness.manage.GlobalContextManager.GlobalContextGuard;
+import io.harness.module.DelegateServiceModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
@@ -75,7 +77,6 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.kryo.TestManagerKryoRegistrar;
 import io.harness.serializer.morphia.ManagerTestMorphiaRegistrar;
-import io.harness.service.DelegateServiceModule;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.testlib.RealMongo;
@@ -171,6 +172,9 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
     if (isIntegrationTest(target)) {
       return new NoopStatement();
     }
+    if (isIgnorePropertySetAndNotAlwaysRun(frameworkMethod)) {
+      return new NoopStatement();
+    }
     Statement wingsStatement = new Statement() {
       @Override
       public void evaluate() throws Throwable {
@@ -191,6 +195,11 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
     };
 
     return wingsStatement;
+  }
+
+  private boolean isIgnorePropertySetAndNotAlwaysRun(FrameworkMethod frameworkMethod) {
+    return frameworkMethod.getAnnotation(HarnessAlwaysRun.class) == null
+        && "true".equalsIgnoreCase(System.getenv("IGNORE_400_TESTS"));
   }
 
   protected boolean isIntegrationTest(Object target) {

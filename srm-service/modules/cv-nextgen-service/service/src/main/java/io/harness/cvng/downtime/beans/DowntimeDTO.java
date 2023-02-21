@@ -14,7 +14,6 @@ import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
 import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.ws.rs.DefaultValue;
@@ -45,7 +44,7 @@ public class DowntimeDTO implements YamlDTO {
   @ApiModelProperty(required = true) @DefaultValue("Project") DowntimeScope scope;
   @Valid @NotNull DowntimeSpecDTO spec;
 
-  @ApiModelProperty(required = true) @NotNull @NotEmpty EntitiesRule entitiesRule;
+  @ApiModelProperty(required = true) @NotNull EntitiesRule entitiesRule;
 
   boolean enabled;
 }

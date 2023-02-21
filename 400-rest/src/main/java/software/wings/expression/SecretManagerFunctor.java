@@ -44,6 +44,7 @@ import software.wings.beans.ServiceVariable;
 import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
@@ -51,7 +52,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
-import javax.cache.Cache;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Value;
@@ -185,7 +185,7 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
 
     if (secretsCache != null) {
       delegateMetricsService.recordDelegateMetricsPerAccount(accountId, SECRETS_CACHE_LOOKUPS);
-      EncryptedDataDetails cachedValue = secretsCache.get(encryptedData.getUuid());
+      EncryptedDataDetails cachedValue = secretsCache.getIfPresent(encryptedData.getUuid());
       if (cachedValue != null) {
         // Cache hit.
         delegateMetricsService.recordDelegateMetricsPerAccount(accountId, SECRETS_CACHE_HITS);

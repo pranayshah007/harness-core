@@ -29,6 +29,7 @@ You can run multiple PR check triggers by comma separating them in a single comm
 - PMD: `trigger pmd`
 - Copyright Check: `trigger copyrightcheck`
 - Feature Name Check: `trigger featurenamecheck`
+- TI-ALL: `trigger tiAll`
 - TI-bootstrap: `trigger ti0`
 - TI-bootstrap1: `trigger ti1`
 - TI-bootstrap2: `trigger ti2`

@@ -82,6 +82,7 @@ import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskBuilder;
 import io.harness.cvng.cdng.entities.CVNGStepTask.Status;
+import io.harness.cvng.core.beans.CustomChangeWebhookPayload;
 import io.harness.cvng.core.beans.CustomHealthLogDefinition;
 import io.harness.cvng.core.beans.CustomHealthMetricDefinition;
 import io.harness.cvng.core.beans.CustomHealthRequestDefinition;
@@ -1244,6 +1245,7 @@ public class BuilderFactory {
                       .user("user")
                       .startTime(1000l)
                       .endTime(2000l)
+                      .type(customChangeSourceType)
                       .customChangeEvent(CustomChangeEvent.builder()
                                              .description("description")
                                              .changeEventDetailsLink("changeEventDetailsLink")
@@ -1311,6 +1313,10 @@ public class BuilderFactory {
         .name(generateUuid())
         .enabled(true)
         .type(changeSourceType);
+  }
+
+  public ChangeSourceDTOBuilder getChangeSourceDTOBuilder_Deserialize(ChangeSourceType changeSourceType) {
+    return getChangeSourceDTOBuilder(changeSourceType);
   }
 
   public ServiceLevelObjectiveDTOBuilder getServiceLevelObjectiveDTOBuilder() {
@@ -1971,5 +1977,18 @@ public class BuilderFactory {
         .projectIdentifier(context.getProjectIdentifier())
         .orgIdentifier(context.getOrgIdentifier())
         .build();
+  }
+
+  public CustomChangeWebhookPayload.CustomChangeWebhookPayloadBuilder getCustomChangeWebhookPayloadBuilder() {
+    return CustomChangeWebhookPayload.builder()
+        .endTime(1000l)
+        .startTime(1000l)
+        .user("testUser")
+        .eventDetail(CustomChangeWebhookPayload.CustomChangeWebhookEventDetail.builder()
+                         .changeEventDetailsLink("testLink")
+                         .externalLinkToEntity("externalLink")
+                         .description("desc")
+                         .name("name")
+                         .build());
   }
 }

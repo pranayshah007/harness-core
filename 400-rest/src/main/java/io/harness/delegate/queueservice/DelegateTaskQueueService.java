@@ -19,7 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
-import io.harness.hsqs.client.HsqsServiceClient;
+import io.harness.hsqs.client.HsqsClient;
 import io.harness.hsqs.client.model.AckRequest;
 import io.harness.hsqs.client.model.AckResponse;
 import io.harness.hsqs.client.model.DequeueRequest;
@@ -51,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTask>, Runnable {
-  @Inject private HsqsServiceClient hsqsServiceClient;
+  @Inject private HsqsClient hsqsServiceClient;
   @Inject private DelegateQueueServiceConfig delegateQueueServiceConfig;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
   @Inject private ResourceBasedDelegateSelectionCheckForTask delegateSelectionCheckForTask;
@@ -59,7 +59,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Inject
-  public DelegateTaskQueueService(HsqsServiceClient hsqsServiceClient) {
+  public DelegateTaskQueueService(HsqsClient hsqsServiceClient) {
     this.hsqsServiceClient = hsqsServiceClient;
   }
 

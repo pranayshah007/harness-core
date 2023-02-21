@@ -68,7 +68,7 @@ public class AwsAmiInstanceSyncPerpetualTaskClientTest extends WingsBaseTest {
     AwsConfig awsConfig = AwsConfig.builder().accountId(ACCOUNT_ID).tag("tag").build();
     prepareTaskData(awsConfig);
     final AwsAmiInstanceSyncPerpetualTaskParams taskParams =
-        (AwsAmiInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext());
+        (AwsAmiInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext(), true);
 
     assertThat(taskParams.getAsgName()).isEqualTo("asg");
     assertThat(taskParams.getAwsConfig()).isNotNull();

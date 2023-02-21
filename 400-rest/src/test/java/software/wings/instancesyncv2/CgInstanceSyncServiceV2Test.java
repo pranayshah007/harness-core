@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.AccountId;
 import io.harness.ff.FeatureFlagService;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.lock.AcquiredLock;
@@ -54,6 +55,7 @@ import software.wings.service.impl.SettingsServiceImpl;
 import software.wings.service.impl.instance.ContainerInstanceHandler;
 import software.wings.service.impl.instance.InstanceHandlerFactoryService;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskService;
+import software.wings.service.impl.instance.Status;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.instance.DeploymentService;
 import software.wings.service.intfc.instance.InstanceService;
@@ -281,6 +283,19 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
         .when(taskDetailsService)
         .getForId(anyString());
 
+    doReturn(Arrays.asList(InstanceSyncTaskDetails.builder()
+                               .perpetualTaskId("perpetualTaskId")
+                               .uuid("taskId")
+                               .accountId("accountId")
+                               .appId("appId")
+                               .lastSuccessfulRun(System.currentTimeMillis())
+                               .infraMappingId("infraMappingId")
+                               .releaseIdentifiers(newIdentifiers)
+                               .cloudProviderId("cpId")
+                               .build()))
+        .when(taskDetailsService)
+        .fetchAllForPerpetualTask(anyString(), anyString());
+
     doReturn(SettingAttribute.Builder.aSettingAttribute()
                  .withAccountId("accountId")
                  .withAppId("appId")
@@ -292,9 +307,38 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
     infraMapping.setComputeProviderSettingId("varID");
     doReturn(infraMapping).when(infrastructureMappingService).get(anyString(), anyString());
     doReturn(k8sHandler).when(handlerFactory).getHelper(any(SettingVariableTypes.class));
+    doReturn(Status.builder().success(true).build()).when(containerInstanceHandler).getStatus(any(), any());
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
     cgInstanceSyncServiceV2.processInstanceSyncResult("perpetualTaskId", builder.build());
     verify(taskDetailsService, times(1)).updateLastRun(captor.capture(), any(), any());
     assertThat(captor.getValue()).isEqualTo("taskId");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testProcessInstanceSyncResultCleanUp() {
+    CgInstanceSyncResponse.Builder builder = CgInstanceSyncResponse.newBuilder()
+                                                 .setPerpetualTaskId("taskId")
+                                                 .setExecutionStatus(CommandExecutionStatus.SKIPPED.name())
+                                                 .setAccountId("accountId");
+
+    doReturn(false).when(taskDetailsService).isInstanceSyncTaskDetailsExist(anyString(), anyString());
+
+    doReturn(SettingAttribute.Builder.aSettingAttribute()
+                 .withAccountId("accountId")
+                 .withAppId("appId")
+                 .withValue(KubernetesClusterConfig.builder().accountId("accountId").masterUrl("masterURL").build())
+                 .build())
+        .when(cloudProviderService)
+        .get(anyString());
+    InfrastructureMapping infraMapping = new DirectKubernetesInfrastructureMapping();
+    infraMapping.setComputeProviderSettingId("varID");
+    doReturn(infraMapping).when(infrastructureMappingService).get(anyString(), anyString());
+    doReturn(k8sHandler).when(handlerFactory).getHelper(any(SettingVariableTypes.class));
+    ArgumentCaptor<PerpetualTaskId> captor = ArgumentCaptor.forClass(PerpetualTaskId.class);
+    cgInstanceSyncServiceV2.processInstanceSyncResult("perpetualTaskId", builder.build());
+    verify(delegateServiceClient, times(1)).deletePerpetualTask(any(AccountId.class), captor.capture());
+    assertThat(captor.getValue().getId()).isEqualTo("perpetualTaskId");
   }
 }

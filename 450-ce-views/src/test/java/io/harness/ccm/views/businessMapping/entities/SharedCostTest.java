@@ -31,7 +31,7 @@ public class SharedCostTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testConstructor() {
     final SharedCost sharedCost =
-        new SharedCost(TEST_NAME, BusinessMappingHelper.getRules(), SharingStrategy.FIXED, null);
+        new SharedCost(TEST_NAME, BusinessMappingHelper.getRules(), SharingStrategy.EQUAL, null);
     assertThat(sharedCost).isNotNull();
   }
 
@@ -55,12 +55,12 @@ public class SharedCostTest extends CategoryTest {
     final String sharedCostJsonString = "{\n"
         + "\t\"name\": \"" + TEST_NAME + "\",\n"
         + "\t\"rules\": " + new ObjectMapper().writeValueAsString(rules) + ",\n"
-        + "\t\"strategy\": \"" + SharingStrategy.FIXED.toString() + "\"\n"
+        + "\t\"strategy\": \"" + SharingStrategy.EQUAL + "\"\n"
         + "}";
     final SharedCost sharedCost = new ObjectMapper().readValue(sharedCostJsonString, SharedCost.class);
     assertThat(sharedCost.getName()).isEqualTo(TEST_NAME);
     assertThat(sharedCost.getRules()).isEqualTo(rules);
-    assertThat(sharedCost.getStrategy()).isEqualTo(SharingStrategy.FIXED);
+    assertThat(sharedCost.getStrategy()).isEqualTo(SharingStrategy.EQUAL);
     assertThat(sharedCost.getSplits()).isNull();
   }
 
@@ -69,9 +69,9 @@ public class SharedCostTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testEqualsAndHashCode() {
     final SharedCost sharedCost1 =
-        BusinessMappingHelper.getSharedCost(TEST_NAME, BusinessMappingHelper.getRules(), SharingStrategy.FIXED, null);
+        BusinessMappingHelper.getSharedCost(TEST_NAME, BusinessMappingHelper.getRules(), SharingStrategy.EQUAL, null);
     final SharedCost sharedCost2 =
-        BusinessMappingHelper.getSharedCost(TEST_NAME, BusinessMappingHelper.getRules(), SharingStrategy.FIXED, null);
+        BusinessMappingHelper.getSharedCost(TEST_NAME, BusinessMappingHelper.getRules(), SharingStrategy.EQUAL, null);
     final SharedCost sharedCost3 = BusinessMappingHelper.getSharedCost(TEST_NAME, BusinessMappingHelper.getRules(),
         SharingStrategy.PROPORTIONAL, BusinessMappingHelper.getSharedCostSplits());
     assertThat(sharedCost1).isEqualTo(sharedCost2);
@@ -85,9 +85,9 @@ public class SharedCostTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testToString() {
     final SharedCost sharedCost1 =
-        BusinessMappingHelper.getSharedCost(TEST_NAME, BusinessMappingHelper.getRules(), SharingStrategy.FIXED, null);
+        BusinessMappingHelper.getSharedCost(TEST_NAME, BusinessMappingHelper.getRules(), SharingStrategy.EQUAL, null);
     final SharedCost sharedCost2 =
-        BusinessMappingHelper.getSharedCost(TEST_NAME, BusinessMappingHelper.getRules(), SharingStrategy.FIXED, null);
+        BusinessMappingHelper.getSharedCost(TEST_NAME, BusinessMappingHelper.getRules(), SharingStrategy.EQUAL, null);
     final SharedCost sharedCost3 = BusinessMappingHelper.getSharedCost(TEST_NAME, BusinessMappingHelper.getRules(),
         SharingStrategy.PROPORTIONAL, BusinessMappingHelper.getSharedCostSplits());
     assertThat(sharedCost1.toString()).isEqualTo(sharedCost2.toString());
