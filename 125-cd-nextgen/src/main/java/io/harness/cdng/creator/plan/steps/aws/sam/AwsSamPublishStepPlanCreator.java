@@ -41,12 +41,12 @@ public class AwsSamPublishStepPlanCreator extends CDPMSStepPlanCreatorV2<AwsSamP
   protected StepParameters getStepParameters(PlanCreationContext ctx, AwsSamPublishStepNode stepElement) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
 
-    String awsSamValidateBuildPackageFnq =
+    String awsSamValidateBuildPackageFqn =
         getExecutionStepFqn(ctx.getCurrentField(), YamlTypes.AWS_SAM_VALIDATE_BUILD_PACKAGE);
 
     AwsSamPublishStepParameters awsSamPublishStepParameters =
         (AwsSamPublishStepParameters) ((StepElementParameters) stepParameters).getSpec();
-    awsSamPublishStepParameters.setAwsSamValidateBuildPackageFnq(awsSamValidateBuildPackageFnq);
+    awsSamPublishStepParameters.setAwsSamValidateBuildPackageFqn(awsSamValidateBuildPackageFqn);
     awsSamPublishStepParameters.setPublishCommandOptions(
         stepElement.getAwsSamPublishStepInfo().getPublishCommandOptions());
     awsSamPublishStepParameters.setDelegateSelectors(stepElement.getAwsSamPublishStepInfo().getDelegateSelectors());

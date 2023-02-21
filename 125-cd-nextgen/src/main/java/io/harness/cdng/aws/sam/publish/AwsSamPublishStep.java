@@ -128,13 +128,13 @@ public class AwsSamPublishStep extends CdTaskExecutable<AwsSamCommandResponse> {
     AwsSamPublishStepParameters awsSamPublishStepParameters =
         (AwsSamPublishStepParameters) stepElementParameters.getSpec();
 
-    if (EmptyPredicate.isEmpty(awsSamPublishStepParameters.getAwsSamValidateBuildPackageFnq())) {
+    if (EmptyPredicate.isEmpty(awsSamPublishStepParameters.getAwsSamValidateBuildPackageFqn())) {
       throw new InvalidRequestException("AWS SAM Build and Package Step Missing", USER);
     }
 
     OptionalSweepingOutput awsSamValidateBuildPackageDataOptionalOutput =
         executionSweepingOutputService.resolveOptional(ambiance,
-            RefObjectUtils.getSweepingOutputRefObject(awsSamPublishStepParameters.getAwsSamValidateBuildPackageFnq()
+            RefObjectUtils.getSweepingOutputRefObject(awsSamPublishStepParameters.getAwsSamValidateBuildPackageFqn()
                 + "." + OutcomeExpressionConstants.AWS_SAM_VALIDATE_BUILD_PACKAGE_OUTCOME));
 
     if (!awsSamValidateBuildPackageDataOptionalOutput.isFound()) {

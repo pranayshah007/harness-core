@@ -783,5 +783,5 @@ io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig
 io.harness.cdng.aws.sam.beans.AwsSamExecutionPassThroughData
 io.harness.cdng.aws.sam.publish.AwsSamPublishStepNode
 io.harness.cdng.aws.sam.publish.AwsSamPublishStepInfo
-io.harness.cdng.aws.sam.beans.AwsSamValidateBuildPackageDataOutcome
+io.harness.cdng.aws.sam.beans.AwsSamValidateBuildPackageDataOutput
 io.harness.cdng.aws.sam.publish.AwsSamPublishStepParameters

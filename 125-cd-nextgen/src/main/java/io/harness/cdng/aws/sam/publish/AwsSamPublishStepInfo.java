@@ -51,8 +51,8 @@ public class AwsSamPublishStepInfo extends AwsSamPublishBaseStepInfo implements 
 
   @Builder(builderMethodName = "infoBuilder")
   public AwsSamPublishStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      String awsSamValidateBuildPackageFnq, ParameterField<String> publishCommandOptions) {
-    super(delegateSelectors, awsSamValidateBuildPackageFnq, publishCommandOptions);
+      String awsSamValidateBuildPackageFqn, ParameterField<String> publishCommandOptions) {
+    super(delegateSelectors, awsSamValidateBuildPackageFqn, publishCommandOptions);
   }
 
   @Override

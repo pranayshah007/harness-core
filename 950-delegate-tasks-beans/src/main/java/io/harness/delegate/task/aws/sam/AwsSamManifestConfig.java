@@ -20,7 +20,6 @@ import lombok.experimental.NonFinal;
 @Value
 @Builder
 public class AwsSamManifestConfig implements ExpressionReflectionUtils.NestedAnnotationResolver {
-  @NonFinal @Expression(ALLOW_SECRETS) String manifestPath;
   @NonFinal @Expression(ALLOW_SECRETS) String samTemplateFilePath;
   @NonFinal @Expression(ALLOW_SECRETS) String samConfigFilePath;
   GitStoreDelegateConfig gitStoreDelegateConfig;

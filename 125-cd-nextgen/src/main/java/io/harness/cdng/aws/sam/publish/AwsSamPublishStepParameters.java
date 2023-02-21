@@ -32,8 +32,8 @@ import org.springframework.data.annotation.TypeAlias;
 public class AwsSamPublishStepParameters extends AwsSamPublishBaseStepInfo implements AwsSamSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public AwsSamPublishStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      String awsSamValidateBuildPackageFnq, ParameterField<String> publishCommandOptions) {
-    super(delegateSelectors, awsSamValidateBuildPackageFnq, publishCommandOptions);
+      String awsSamValidateBuildPackageFqn, ParameterField<String> publishCommandOptions) {
+    super(delegateSelectors, awsSamValidateBuildPackageFqn, publishCommandOptions);
   }
 
   public List<String> getCommandUnits() {

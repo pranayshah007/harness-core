@@ -8,15 +8,18 @@
 package io.harness.delegate.task.aws.sam;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.expression.Expression;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.NonFinal;
 
 @OwnedBy(CDP)
 @Value
 @Builder
 public class AwsSamPublishConfig {
-  String publishCommandOptions;
+  @NonFinal @Expression(ALLOW_SECRETS) String publishCommandOptions;
 }
