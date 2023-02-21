@@ -95,7 +95,7 @@ public class DeploymentLogAnalysisDTO {
   }
 
   @Value
-  @Builder
+  @Builder(toBuilder = true)
   public static class ClusterSummary {
     int label;
     ClusterType clusterType;
@@ -181,7 +181,7 @@ public class DeploymentLogAnalysisDTO {
   }
 
   @Value
-  @Builder
+  @Builder(toBuilder = true)
   public static class ResultSummary {
     int risk;
     public Risk getRiskLevel() {
