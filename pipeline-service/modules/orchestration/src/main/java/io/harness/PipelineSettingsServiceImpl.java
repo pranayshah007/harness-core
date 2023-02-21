@@ -81,20 +81,19 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     return edition;
   }
 
-  // We can use FF to figure out whether, or not to queue execution based on max limit.
   @Override
   public PlanExecutionSettingResponse shouldQueuePlanExecution(String accountId, String pipelineIdentifier) {
     try {
       Edition edition = getEdition(accountId);
       if (edition != COMMUNITY) {
-        // Sending only accountId here because this setting only exists at account level
-        long maxConcurrentExecutions = Long.parseLong(
-            NGRestUtils
-                .getResponse(ngSettingsClient.getSetting(
-                    PipelineSettingsConstants.CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS, accountId, null, null))
-                .getValue());
         if (!pmsFeatureFlagService.isEnabled(
                 accountId, FeatureName.DO_NOT_ENFORCE_LIMITS_ON_CONCURRENT_PIPELINE_EXECUTIONS)) {
+          // Sending only accountId here because this setting only exists at account level
+          long maxConcurrentExecutions = Long.parseLong(
+              NGRestUtils
+                  .getResponse(ngSettingsClient.getSetting(
+                      PipelineSettingsConstants.CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS, accountId, null, null))
+                  .getValue());
           return shouldQueueInternal(accountId, pipelineIdentifier, maxConcurrentExecutions);
         }
       }
