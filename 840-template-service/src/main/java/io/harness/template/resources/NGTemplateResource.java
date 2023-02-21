@@ -800,7 +800,7 @@ public class NGTemplateResource {
       @RequestBody(required = true, description = "Template YAML") @NotNull @ApiParam(hidden = true) String yaml) {
     log.info("Creating variables for template.");
     String appliedTemplateYaml =
-        templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId, yaml, false, false, true)
+        templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId, yaml, false, false, false)
             .getMergedPipelineYaml();
     TemplateEntity templateEntity =
         NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, appliedTemplateYaml);
@@ -844,7 +844,7 @@ public class NGTemplateResource {
       @RequestBody(required = true, description = "Template YAML") @NotNull @ApiParam(hidden = true) String yaml) {
     log.info("Creating variables for template.");
     String appliedTemplateYaml =
-        templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId, yaml, false, false, true)
+        templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId, yaml, false, false, false)
             .getMergedPipelineYaml();
     TemplateEntity templateEntity =
         NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, appliedTemplateYaml);
