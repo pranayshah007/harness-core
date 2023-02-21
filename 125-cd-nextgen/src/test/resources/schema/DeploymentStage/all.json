@@ -8350,7 +8350,7 @@
             "AsgScalingPolicy",
             "AsgScheduledUpdateGroupAction",
             "GoogleCloudFunctionDefinition",
-            "AwsLambda",
+            "AwsLambdaFunctionDefinition",
             "AwsSamDirectory"
           ]
         }
@@ -8425,7 +8425,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AwsLambda"
+                "const": "AwsLambdaFunctionDefinition"
               }
             }
           },
