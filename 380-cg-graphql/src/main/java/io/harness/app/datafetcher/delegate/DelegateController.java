@@ -63,6 +63,7 @@ public class DelegateController {
         .excludeScopes(delegate.getExcludeScopes())
         .supportedTasks(delegate.getSupportedTaskTypes())
         .tags(delegate.getTags())
+        .disconnected(delegate.isDisconnected())
         .build();
   }
 

@@ -15,6 +15,7 @@ java_library(
     deps = [
         "//:lombok",
         "//960-persistence/src/main/java/io/harness/annotation:module",
+        "//960-persistence/src/main/java/io/harness/mongo/index:module",
         "//960-persistence/src/main/java/io/harness/mongo/index/annotation:module",
         "//960-persistence/src/main/java/io/harness/ng:module",
         "//960-persistence/src/main/java/io/harness/persistence/api:module",
@@ -22,6 +23,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/morphia:module",
         "//999-annotations:module",
         "//idp-service/contracts:module",
+        "//idp-service/contracts/openapi/v1:idp-service-server-spec-module",
         "@maven//:com_google_inject_guice",
         "@maven//:org_mongodb_morphia_morphia",
         "@maven//:org_springframework_data_spring_data_commons",

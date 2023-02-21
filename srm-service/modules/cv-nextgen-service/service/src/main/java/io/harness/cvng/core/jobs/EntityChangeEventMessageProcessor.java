@@ -26,15 +26,12 @@ import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.downtime.entities.Downtime;
 import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.downtime.services.api.DowntimeService;
-import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.UserJourney;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.persistence.PersistentEntity;
@@ -64,7 +61,6 @@ public abstract class EntityChangeEventMessageProcessor implements ConsumerMessa
     // Add the service for project level custom deletion
     ENTITIES_MAP.put(MonitoringSourcePerpetualTask.class, MonitoringSourcePerpetualTaskService.class);
     ENTITIES_MAP.put(Downtime.class, DowntimeService.class);
-    ENTITIES_MAP.put(ServiceLevelObjective.class, ServiceLevelObjectiveService.class);
     ENTITIES_MAP.put(AbstractServiceLevelObjective.class, ServiceLevelObjectiveV2Service.class);
     ENTITIES_MAP.put(MonitoredService.class, MonitoredServiceService.class);
     ENTITIES_MAP.put(CVConfig.class, CVConfigService.class);

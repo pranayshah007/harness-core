@@ -97,15 +97,11 @@ public class JenkinsStepMapperImpl extends StepMapper {
   @Override
   public List<StepExpressionFunctor> getExpressionFunctor(
       WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
-    JenkinsState state = (JenkinsState) getState(graphNode);
-
-    if (StringUtils.isBlank(state.getSweepingOutputName())) {
+    String sweepingOutputName = getSweepingOutputName(graphNode);
+    if (StringUtils.isEmpty(sweepingOutputName)) {
       return Collections.emptyList();
     }
-
-    return Lists
-        .newArrayList(String.format("context.%s", state.getSweepingOutputName()),
-            String.format("%s", state.getSweepingOutputName()))
+    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
         .stream()
         .map(exp
             -> StepOutput.builder()

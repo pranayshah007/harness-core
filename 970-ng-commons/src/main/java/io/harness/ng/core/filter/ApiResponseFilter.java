@@ -61,6 +61,7 @@ public class ApiResponseFilter implements ContainerResponseFilter {
         } else if (isaResourceNotFound(responseContext)) {
           ErrorDTOBase errorDTOBase = (ErrorDTOBase) responseContext.getEntity();
           errorResponse.setMessage(String.format("Not Found. %s", errorDTOBase.getMessage()));
+          errorResponse.setCode(ErrorResponse.CodeEnum.RESOURCE_NOT_FOUND);
           responseContext.setStatus(404);
         } else if (isaDuplicateField(responseContext)) {
           ErrorDTOBase errorDTOBase = (ErrorDTOBase) responseContext.getEntity();
@@ -86,6 +87,9 @@ public class ApiResponseFilter implements ContainerResponseFilter {
         break;
       case 404:
         errorResponse.setMessage("Not Found.");
+        if (isaEntityNotFound(responseContext)) {
+          errorResponse.setCode(ErrorResponse.CodeEnum.ENTITY_NOT_FOUND);
+        }
         break;
       case 412:
         errorResponse.setMessage("Precondition Failed.");
@@ -115,5 +119,10 @@ public class ApiResponseFilter implements ContainerResponseFilter {
   private boolean isaDuplicateField(ContainerResponseContext responseContext) {
     return responseContext.getEntity() instanceof ErrorDTOBase
         && ErrorCode.DUPLICATE_FIELD.equals(((ErrorDTOBase) responseContext.getEntity()).getCode());
+  }
+
+  private boolean isaEntityNotFound(ContainerResponseContext responseContext) {
+    return responseContext.getEntity() instanceof ErrorDTOBase
+        && ErrorCode.ENTITY_NOT_FOUND.equals(((ErrorDTOBase) responseContext.getEntity()).getCode());
   }
 }

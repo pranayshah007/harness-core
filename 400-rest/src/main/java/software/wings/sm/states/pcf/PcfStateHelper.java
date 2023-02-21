@@ -86,6 +86,7 @@ import io.harness.delegate.task.pcf.request.CfCommandRouteUpdateRequest;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfDeployCommandResponse;
 import io.harness.delegate.task.pcf.response.CfRouteUpdateCommandResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.deployment.InstanceDetails;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
@@ -229,6 +230,7 @@ public class PcfStateHelper {
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject private SettingsService settingsService;
   @Inject private FileService fileService;
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   public DelegateTask getDelegateTask(PcfDelegateTaskCreationData taskCreationData) {
     return DelegateTask.builder()
@@ -384,7 +386,7 @@ public class PcfStateHelper {
 
   private void appendDelegateTaskDetails(DelegateTask delegateTask, String stateExecutionInstanceId) {
     if (isBlank(delegateTask.getUuid())) {
-      delegateTask.setUuid(generateUuid());
+      delegateTask.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
 
     stateExecutionService.appendDelegateTaskDetails(stateExecutionInstanceId,

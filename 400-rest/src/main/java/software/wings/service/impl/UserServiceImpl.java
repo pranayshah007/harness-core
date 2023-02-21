@@ -2545,6 +2545,9 @@ public class UserServiceImpl implements UserService {
 
   private void updatePasswordAndPostSteps(User existingUser, char[] password) {
     User user = resetUserPassword(existingUser, password);
+    log.info("UPDATE_USER_LOCKOUTINFO: Clearing and re-setting lockout info for user {} post password reset",
+        user.getUuid());
+    loginSettingsService.updateUserLockoutInfo(user, accountService.get(user.getDefaultAccountId()), 0);
     sendPasswordChangeEmail(user);
     user.getAccounts().forEach(account
         -> auditServiceHelper.reportForAuditingUsingAccountId(account.getUuid(), null, user, Type.RESET_PASSWORD));

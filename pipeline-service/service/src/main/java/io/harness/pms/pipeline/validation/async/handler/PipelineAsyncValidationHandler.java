@@ -88,7 +88,8 @@ public class PipelineAsyncValidationHandler implements Runnable {
     ValidationResult governanceValidationResult = templateValidationResult.withGovernanceMetadata(governanceMetadata);
     if (governanceMetadata.getDeny()) {
       validationService.updateEvent(validationEvent.getUuid(), ValidationStatus.FAILURE, governanceValidationResult);
+    } else {
+      validationService.updateEvent(validationEvent.getUuid(), ValidationStatus.SUCCESS, governanceValidationResult);
     }
-    validationService.updateEvent(validationEvent.getUuid(), ValidationStatus.SUCCESS, governanceValidationResult);
   }
 }

@@ -107,4 +107,6 @@ public final class TerraformConstants {
 
   public static final String TF_S3_FILE_DIR_FOR_VARIABLES_AND_TARGETS =
       "./s3_bucket/${REPO_TYPE}/${ACCOUNT_ID}/${BUCKET_NAME}";
+
+  public static final long SECONDS_TO_WAIT_FOR_GRACEFUL_SHUTDOWN = 30;
 }

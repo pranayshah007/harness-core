@@ -131,6 +131,7 @@ import io.harness.delegate.utilities.DelegateDeleteResponse;
 import io.harness.delegate.utilities.DelegateGroupDeleteResponse;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.delegate.utils.DelegateJreVersionHelper;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.environment.SystemEnvironment;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -402,6 +403,8 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private DelegateVersionService delegateVersionService;
   @Inject private AgentMtlsEndpointService agentMtlsEndpointService;
   @Inject private DelegateJreVersionHelper jreVersionHelper;
+
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   private final LoadingCache<String, String> delegateVersionCache =
       CacheBuilder.newBuilder()
@@ -3971,7 +3974,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public String queueTask(DelegateTask task) {
     if (task.getUuid() == null) {
-      task.setUuid(generateUuid());
+      task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
     log.debug("Task id [{}] has wait Id [{}], task Object: [{}]", task.getUuid(), task.getWaitId(), task);
     return delegateTaskServiceClassic.queueTask(task);
@@ -3980,7 +3983,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public String queueTaskV2(DelegateTask task) {
     if (task.getUuid() == null) {
-      task.setUuid(generateUuid());
+      task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
     copyTaskDataToTaskDataV2(task);
     log.debug("Task id [{}] has wait Id [{}], task Object: [{}]", task.getUuid(), task.getWaitId(), task);
@@ -4001,7 +4004,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public <T extends DelegateResponseData> T executeTask(DelegateTask task) throws InterruptedException {
     if (task.getUuid() == null) {
-      task.setUuid(generateUuid());
+      task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
     return delegateTaskServiceClassic.executeTask(task);
   }
@@ -4009,7 +4012,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public <T extends DelegateResponseData> T executeTaskV2(DelegateTask task) throws InterruptedException {
     if (task.getUuid() == null) {
-      task.setUuid(generateUuid());
+      task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
     copyTaskDataToTaskDataV2(task);
     return delegateTaskServiceClassic.executeTaskV2(task);

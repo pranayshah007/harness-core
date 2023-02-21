@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -128,6 +129,9 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   InputSetEntity overlayInputSetEntity;
   PipelineEntity pipelineEntity;
 
+  String REPO_NAME = "testRepo";
+  String REPO_NAME2 = "testRepo2";
+
   @Before
   public void setUp() throws IOException {
     ClassLoader classLoader = getClass().getClassLoader();
@@ -216,6 +220,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                          .yaml(pipelineYaml)
                          .build();
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    on(pmsInputSetService).set("inputSetsApiUtils", inputSetsApiUtils);
   }
 
   @Test
@@ -302,6 +307,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testList() {
     MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
+    when(inputSetsApiUtils.isSameRepoForPipelineAndInputSetsAccountSettingEnabled(any())).thenReturn(false);
     pmsInputSetService.create(inputSetEntity, false);
     pmsInputSetService.create(overlayInputSetEntity, false);
 
@@ -931,5 +937,79 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     InputSetEntity movedInputSet = pmsInputSetServiceMock.moveInputSetEntity(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, inputSetMoveConfigOperationDTO, inputSetEntity);
     assertEquals(movedInputSet.getIdentifier(), INPUT_SET_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testValidateIndependentInputSetSettingIsOffForSameRepo() {
+    InputSetEntity inputSet = InputSetEntity.builder()
+                                  .accountId(ACCOUNT_ID)
+                                  .orgIdentifier(ORG_IDENTIFIER)
+                                  .projectIdentifier(PROJ_IDENTIFIER)
+                                  .identifier(INPUT_SET_IDENTIFIER)
+                                  .pipelineIdentifier(PIPELINE_IDENTIFIER)
+                                  .build();
+    when(inputSetsApiUtils.isSameRepoForPipelineAndInputSetsAccountSettingEnabled(any())).thenReturn(false);
+    PipelineEntity pipeline = PipelineEntity.builder().identifier(PIPELINE_IDENTIFIER).repo(REPO_NAME).build();
+
+    GitEntityInfo gitEntityInfo = GitEntityInfo.builder()
+                                      .repoName(REPO_NAME)
+                                      .connectorRef("connectorRef")
+                                      .isNewBranch(true)
+                                      .branch("branch")
+                                      .build();
+    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+
+    Assertions.assertDoesNotThrow(() -> pmsInputSetServiceMock.validateInputSetSetting(inputSet, pipeline));
+  }
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testValidateIndependentInputSetSettingIsOffForDiffRepo() {
+    InputSetEntity inputSet = InputSetEntity.builder()
+                                  .accountId(ACCOUNT_ID)
+                                  .orgIdentifier(ORG_IDENTIFIER)
+                                  .projectIdentifier(PROJ_IDENTIFIER)
+                                  .identifier(INPUT_SET_IDENTIFIER)
+                                  .pipelineIdentifier(PIPELINE_IDENTIFIER)
+                                  .build();
+    when(inputSetsApiUtils.isSameRepoForPipelineAndInputSetsAccountSettingEnabled(any())).thenReturn(true);
+    PipelineEntity pipeline = PipelineEntity.builder().identifier(PIPELINE_IDENTIFIER).repo(REPO_NAME).build();
+
+    GitEntityInfo gitEntityInfo = GitEntityInfo.builder()
+                                      .repoName(REPO_NAME2)
+                                      .connectorRef("connectorRef")
+                                      .isNewBranch(true)
+                                      .branch("branch")
+                                      .build();
+    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+
+    assertThrows(HintException.class, () -> pmsInputSetServiceMock.validateInputSetSetting(inputSet, pipeline));
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testValidateIndependentInputSetSettingIsOnForDiffRepo() {
+    InputSetEntity inputSet = InputSetEntity.builder()
+                                  .accountId(ACCOUNT_ID)
+                                  .orgIdentifier(ORG_IDENTIFIER)
+                                  .projectIdentifier(PROJ_IDENTIFIER)
+                                  .identifier(INPUT_SET_IDENTIFIER)
+                                  .pipelineIdentifier(PIPELINE_IDENTIFIER)
+                                  .build();
+    when(inputSetsApiUtils.isSameRepoForPipelineAndInputSetsAccountSettingEnabled(any())).thenReturn(false);
+    PipelineEntity pipeline = PipelineEntity.builder().identifier(PIPELINE_IDENTIFIER).repo(REPO_NAME).build();
+
+    GitEntityInfo gitEntityInfo = GitEntityInfo.builder()
+                                      .repoName(REPO_NAME2)
+                                      .connectorRef("connectorRef")
+                                      .isNewBranch(true)
+                                      .branch("branch")
+                                      .build();
+    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+
+    Assertions.assertDoesNotThrow(() -> pmsInputSetServiceMock.validateInputSetSetting(inputSet, pipeline));
   }
 }
