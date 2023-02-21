@@ -100,6 +100,8 @@ import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.app.DelegateApplication;
 import io.harness.delegate.aws.lambda.AwsLambdaDeployTaskCommandHandler;
+import io.harness.delegate.awssam.AwsSamCommandTaskHandler;
+import io.harness.delegate.awssam.AwsSamPublishCommandTaskHandler;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.cf.PcfApplicationDetailsCommandTaskHandler;
@@ -238,6 +240,7 @@ import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackTaskNG;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
+import io.harness.delegate.task.awssam.AwsSamCommandType;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.appservice.webapp.AzureWebAppTaskNG;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppFetchPreDeploymentDataRequestHandler;
@@ -1613,6 +1616,12 @@ public class DelegateModule extends AbstractModule {
         .to(WinRmCleanupCommandHandler.class);
     commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.DOWNLOAD_ARTIFACT, ScriptType.POWERSHELL.name()))
         .to(WinRmDownloadArtifactCommandHandler.class);
+
+    // AWS SAM task handlers
+    MapBinder<String, AwsSamCommandTaskHandler> awsSamTaskTypeToTaskHandlerMap =
+        MapBinder.newMapBinder(binder(), String.class, AwsSamCommandTaskHandler.class);
+    awsSamTaskTypeToTaskHandlerMap.addBinding(AwsSamCommandType.AWS_SAM_PUBLISH.name())
+        .to(AwsSamPublishCommandTaskHandler.class);
 
     // Artifact handlers
     MapBinder<SshWinRmArtifactType, ArtifactDownloadHandler> artifactHandlers =

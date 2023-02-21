@@ -204,4 +204,5 @@ public interface YamlTypes {
   String K8S_DRY_RUN_MANIFEST = StepSpecTypeConstants.K8S_DRY_RUN_MANIFEST;
 
   String AWS_LAMBDA_DEPLOY = StepSpecTypeConstants.AWS_LAMBDA_DEPLOY;
+  String AWS_SAM_PUBLISH = StepSpecTypeConstants.AWS_SAM_PUBLISH;
 }

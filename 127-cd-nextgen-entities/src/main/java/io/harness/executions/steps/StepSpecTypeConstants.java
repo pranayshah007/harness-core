@@ -114,4 +114,5 @@ public interface StepSpecTypeConstants {
 
   String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
   String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
+  String AWS_SAM_PUBLISH = "AwsSamPublish";
 }
