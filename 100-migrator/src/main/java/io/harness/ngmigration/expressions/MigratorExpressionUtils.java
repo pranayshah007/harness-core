@@ -125,6 +125,8 @@ public class MigratorExpressionUtils {
     // Application Expressions
     context.put("app.name", "<+project.name>");
     context.put("app.description", "<+project.description>");
+    context.put("pipeline.name", "<+pipeline.name>");
+    context.put("workflow.name", "<+stage.name>");
 
     // Variables
     context.put("workflow.variables", new WorkflowVariablesMigratorFunctor());

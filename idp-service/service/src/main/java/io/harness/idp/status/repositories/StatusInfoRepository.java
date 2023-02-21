@@ -10,10 +10,13 @@ package io.harness.idp.status.repositories;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.status.beans.IDPStatus;
+import io.harness.idp.status.beans.StatusInfoEntity;
 
+import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 
 @HarnessRepo
 @OwnedBy(HarnessTeam.IDP)
-public interface IDPStatusRepository extends CrudRepository<IDPStatus, String> {}
+public interface StatusInfoRepository extends CrudRepository<StatusInfoEntity, String>, StatusInfoRepositoryCustom {
+  Optional<StatusInfoEntity> findByAccountIdentifierAndType(String accountIdentifier, String type);
+}

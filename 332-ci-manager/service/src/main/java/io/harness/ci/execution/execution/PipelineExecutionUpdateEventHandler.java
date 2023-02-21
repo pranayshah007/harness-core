@@ -117,6 +117,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
               // ack the request so that its not processed again.
               AckRequest ackRequest = AckRequest.builder()
                                           .itemID(ciExecutionMetadata.getQueueId())
+                                          .consumerName(SERVICE_NAME_CI)
                                           .topic(SERVICE_NAME_CI)
                                           .subTopic(accountId)
                                           .build();

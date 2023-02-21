@@ -78,17 +78,11 @@ public class InputSetValidationHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testValidateInputSetForInvalidStoreType() {
-    doReturn(Optional.of(PipelineEntity.builder().storeType(StoreType.INLINE).build()))
-        .when(pipelineService)
-        .getPipeline(accountId, orgId, projectId, pipelineId, false, true);
     setupGitContext(GitEntityInfo.builder().storeType(StoreType.REMOTE).build());
-    InputSetEntity inputSetEntity = InputSetEntity.builder()
-                                        .accountId(accountId)
-                                        .orgIdentifier(orgId)
-                                        .projectIdentifier(projectId)
-                                        .pipelineIdentifier(pipelineId)
-                                        .build();
-    assertThatThrownBy(() -> InputSetValidationHelper.checkForPipelineStoreType(inputSetEntity, pipelineService))
+
+    assertThatThrownBy(()
+                           -> InputSetValidationHelper.checkForPipelineStoreType(
+                               PipelineEntity.builder().storeType(StoreType.INLINE).build()))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Input Set should have the same Store Type as the Pipeline it is for");
   }

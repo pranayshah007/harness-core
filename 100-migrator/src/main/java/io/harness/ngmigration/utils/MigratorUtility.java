@@ -30,6 +30,8 @@ import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.steps.wait.WaitStepInfo;
+import io.harness.steps.wait.WaitStepNode;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
@@ -525,5 +527,14 @@ public class MigratorUtility {
             -> rollbackWorkflowPhaseIdMap.containsKey(phaseId) && rollbackWorkflowPhaseIdMap.get(phaseId) != null)
         .map(rollbackWorkflowPhaseIdMap::get)
         .collect(Collectors.toList());
+  }
+
+  public static WaitStepNode getWaitStepNode(String name, int waitInterval) {
+    WaitStepNode waitStepNode = new WaitStepNode();
+    waitStepNode.setName(name);
+    waitStepNode.setIdentifier(generateIdentifier(name));
+    waitStepNode.setWaitStepInfo(
+        WaitStepInfo.infoBuilder().duration(MigratorUtility.getTimeout(waitInterval * 1000)).build());
+    return waitStepNode;
   }
 }

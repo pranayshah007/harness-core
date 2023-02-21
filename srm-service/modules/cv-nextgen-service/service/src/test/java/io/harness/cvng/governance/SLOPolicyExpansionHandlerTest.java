@@ -7,26 +7,37 @@
 
 package io.harness.cvng.governance;
 
-import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
+import static io.harness.rule.OwnerRule.DHRUVX;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.reflect.FieldUtils.writeField;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.cdng.services.api.CDStageMetaDataService;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.monitoredService.SloHealthIndicatorDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.governance.beans.SLOPolicyDTO;
 import io.harness.cvng.governance.beans.SLOPolicyDTO.MonitoredServiceStatus;
 import io.harness.cvng.governance.services.SLOPolicyExpansionHandler;
+import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.ng.core.dto.CDStageMetaDataDTO;
+import io.harness.ng.core.dto.CDStageMetaDataDTO.ServiceEnvRef;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.contracts.governance.ExpansionPlacementStrategy;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.sdk.core.governance.ExpansionResponse;
@@ -35,17 +46,15 @@ import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
@@ -53,16 +62,21 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
   @Inject MonitoredServiceService monitoredServiceService;
   @Inject ServiceLevelObjectiveService serviceLevelObjectiveService;
   @Inject SLOHealthIndicatorService sloHealthIndicatorService;
+  @Mock CDStageMetaDataService cdStageMetaDataService;
+  @Mock MonitoredServiceService mockedMonitoredServiceService;
+  @Mock SLOHealthIndicatorService mockedSloHealthIndicatorService;
   private BuilderFactory builderFactory;
   private Map<String, SloHealthIndicatorDTO> sloMappedToTheirHealthIndicators;
-  private String pipelineYaml;
   private static final String SLO_POLICY = "sloPolicy";
+  private ExpansionRequestMetadata metadataProject;
+  private List<SLOHealthIndicator> sloHealthIndicatorList;
+  private MonitoredServiceDTO monitoredServiceDTO;
+  ResponseDTO<CDStageMetaDataDTO> responseDTO;
 
   @Before
   public void setUp() throws IllegalAccessException, IOException {
     MockitoAnnotations.initMocks(this);
-    pipelineYaml = IOUtils.resourceToString("governance/SLOPolicyExpansionHandlerFromStagePipeline.yaml",
-        StandardCharsets.UTF_8, this.getClass().getClassLoader());
+    writeField(sloPolicyExpansionHandler, "cdStageMetaDataService", cdStageMetaDataService, true);
     BuilderFactory.Context context = BuilderFactory.Context.builder()
                                          .projectParams(ProjectParams.builder()
                                                             .accountIdentifier(randomAlphabetic(20))
@@ -73,12 +87,12 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
                                          .serviceIdentifier("service")
                                          .build();
     builderFactory = BuilderFactory.builder().context(context).build();
-    MonitoredServiceDTO monitoredServiceDTO =
+    monitoredServiceDTO =
         builderFactory.monitoredServiceDTOBuilder().sources(MonitoredServiceDTO.Sources.builder().build()).build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
     ServiceLevelObjectiveDTO serviceLevelObjectiveDTO = builderFactory.getServiceLevelObjectiveDTOBuilder().build();
     serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjectiveDTO);
-    List<SLOHealthIndicator> sloHealthIndicatorList = sloHealthIndicatorService.getByMonitoredServiceIdentifiers(
+    sloHealthIndicatorList = sloHealthIndicatorService.getByMonitoredServiceIdentifiers(
         builderFactory.getProjectParams(), Collections.singletonList(monitoredServiceDTO.getIdentifier()));
     sloMappedToTheirHealthIndicators = new HashMap<>();
     for (SLOHealthIndicator sloHealthIndicator : sloHealthIndicatorList) {
@@ -94,6 +108,7 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
       sloMappedToTheirHealthIndicators.put(
           sloHealthIndicator.getServiceLevelObjectiveIdentifier(), sloHealthIndicatorDTO);
     }
+    metadataProject = getExpansionRequestMetaData();
   }
 
   @Test
@@ -105,40 +120,14 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
                                     .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
                                     .slos(sloMappedToTheirHealthIndicators)
                                     .build();
-    final String yaml = IOUtils.resourceToString(
-        "governance/SLOPolicyExpansionHandlerInput.json", StandardCharsets.UTF_8, this.getClass().getClassLoader());
-    JsonNode jsonNode = JsonUtils.asObject(yaml, JsonNode.class);
-    ExpansionRequestMetadata metadataProject =
-        ExpansionRequestMetadata.newBuilder()
-            .setAccountId(builderFactory.getProjectParams().getAccountIdentifier())
-            .setOrgId(builderFactory.getProjectParams().getOrgIdentifier())
-            .setProjectId(builderFactory.getProjectParams().getProjectIdentifier())
-            .build();
-    ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject, null);
-    assertThat(expansionResponse.isSuccess()).isTrue();
-    assertThat(expansionResponse.getKey()).isEqualTo(SLO_POLICY);
-    assertThat(expansionResponse.getValue().toJson()).isEqualTo(JsonUtils.asJson(sloPolicyDTO));
-    assertThat(expansionResponse.getPlacement()).isEqualTo(ExpansionPlacementStrategy.APPEND);
-  }
+    JsonNode jsonNode = getJsonfromString("governance/SLOPolicyExpansionHandlerInput.json");
+    responseDTO = ResponseDTO.newResponse(
+        CDStageMetaDataDTO.builder()
+            .serviceEnvRefList(
+                Collections.singletonList(ServiceEnvRef.builder().serviceRef("service").environmentRef("env").build()))
+            .build());
+    when(cdStageMetaDataService.getServiceAndEnvironmentRef(any(), any())).thenReturn(responseDTO);
 
-  @Test
-  @Owner(developers = ARPITJ)
-  @Category(UnitTests.class)
-  public void testExpand_withServiceKeyInput() throws IOException {
-    SLOPolicyDTO sloPolicyDTO = SLOPolicyDTO.builder()
-                                    .sloErrorBudgetRemainingPercentage(100D)
-                                    .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
-                                    .slos(sloMappedToTheirHealthIndicators)
-                                    .build();
-    final String yaml = IOUtils.resourceToString("governance/SLOPolicyExpansionHandlerWithServiceKey.json",
-        StandardCharsets.UTF_8, this.getClass().getClassLoader());
-    JsonNode jsonNode = JsonUtils.asObject(yaml, JsonNode.class);
-    ExpansionRequestMetadata metadataProject =
-        ExpansionRequestMetadata.newBuilder()
-            .setAccountId(builderFactory.getProjectParams().getAccountIdentifier())
-            .setOrgId(builderFactory.getProjectParams().getOrgIdentifier())
-            .setProjectId(builderFactory.getProjectParams().getProjectIdentifier())
-            .build();
     ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject, null);
     assertThat(expansionResponse.isSuccess()).isTrue();
     assertThat(expansionResponse.getKey()).isEqualTo(SLO_POLICY);
@@ -152,15 +141,13 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
   public void testExpand_notConfigured() throws IOException {
     SLOPolicyDTO sloPolicyDTO =
         SLOPolicyDTO.builder().statusOfMonitoredService(MonitoredServiceStatus.NOT_CONFIGURED).build();
-    final String yaml = IOUtils.resourceToString("governance/SLOPolicyExpansionHandlerWrongInput.json",
-        StandardCharsets.UTF_8, this.getClass().getClassLoader());
-    JsonNode jsonNode = JsonUtils.asObject(yaml, JsonNode.class);
-    ExpansionRequestMetadata metadataProject =
-        ExpansionRequestMetadata.newBuilder()
-            .setAccountId(builderFactory.getProjectParams().getAccountIdentifier())
-            .setOrgId(builderFactory.getProjectParams().getOrgIdentifier())
-            .setProjectId(builderFactory.getProjectParams().getProjectIdentifier())
-            .build();
+    JsonNode jsonNode = getJsonfromString("governance/SLOPolicyExpansionHandlerWrongInput.json");
+    responseDTO = ResponseDTO.newResponse(
+        CDStageMetaDataDTO.builder()
+            .serviceEnvRefList(Collections.singletonList(
+                ServiceEnvRef.builder().serviceRef("service_wrong").environmentRef("env_wrong").build()))
+            .build());
+    when(cdStageMetaDataService.getServiceAndEnvironmentRef(any(), any())).thenReturn(responseDTO);
     ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject, null);
     assertThat(expansionResponse.isSuccess()).isTrue();
     assertThat(expansionResponse.getKey()).isEqualTo(SLO_POLICY);
@@ -169,80 +156,57 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = DEEPAK_CHHIKARA)
+  @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
-  public void testExpand_withFromStage() throws IOException {
+  public void testExpand_multipleServiceEnvRefs() throws IOException, IllegalAccessException {
+    writeField(sloPolicyExpansionHandler, "monitoredServiceService", mockedMonitoredServiceService, true);
+    writeField(sloPolicyExpansionHandler, "sloHealthIndicatorService", mockedSloHealthIndicatorService, true);
+    JsonNode jsonNode = getJsonfromString("governance/SLOPolicyExpansionHandlerInput.json");
+    responseDTO = ResponseDTO.newResponse(
+        CDStageMetaDataDTO.builder()
+            .serviceEnvRef(ServiceEnvRef.builder().serviceRef("service1").environmentRef("env1").build())
+            .serviceEnvRef(ServiceEnvRef.builder().serviceRef("service2").environmentRef("env2").build())
+            .build());
+    MonitoredServiceResponse monitoredServiceResponse =
+        MonitoredServiceResponse.builder().monitoredService(monitoredServiceDTO).build();
+    when(cdStageMetaDataService.getServiceAndEnvironmentRef(any(), any())).thenReturn(responseDTO);
+    when(mockedMonitoredServiceService.getApplicationMonitoredServiceResponse(any()))
+        .thenReturn(monitoredServiceResponse);
+    when(mockedSloHealthIndicatorService.getByMonitoredServiceIdentifiers(any(), any()))
+        .thenReturn(sloHealthIndicatorList);
+    Map<String, SloHealthIndicatorDTO> sloHealthIndicatorDTOMap = new HashMap<>();
+    sloHealthIndicatorDTOMap.put("sloIdentifier",
+        SloHealthIndicatorDTO.builder()
+            .errorBudgetBurnRate(0.0)
+            .errorBudgetRisk(ErrorBudgetRisk.HEALTHY)
+            .errorBudgetRemainingMinutes(8640)
+            .errorBudgetRemainingPercentage(100.0)
+            .monitoredServiceIdentifier("service_env")
+            .serviceLevelObjectiveIdentifier("sloIdentifier")
+            .build());
     SLOPolicyDTO sloPolicyDTO = SLOPolicyDTO.builder()
-                                    .sloErrorBudgetRemainingPercentage(100D)
                                     .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
-                                    .slos(sloMappedToTheirHealthIndicators)
+                                    .sloErrorBudgetRemainingPercentage(100D)
+                                    .slos(sloHealthIndicatorDTOMap)
                                     .build();
-    final String stageYaml = IOUtils.resourceToString(
-        "governance/SLOPolicyExpansionHandlerFromStage.json", StandardCharsets.UTF_8, this.getClass().getClassLoader());
-    JsonNode jsonNode = JsonUtils.asObject(stageYaml, JsonNode.class);
-    ExpansionRequestMetadata metadataProject =
-        ExpansionRequestMetadata.newBuilder()
-            .setAccountId(builderFactory.getProjectParams().getAccountIdentifier())
-            .setOrgId(builderFactory.getProjectParams().getOrgIdentifier())
-            .setProjectId(builderFactory.getProjectParams().getProjectIdentifier())
-            .setYaml(ByteString.copyFromUtf8(pipelineYaml))
-            .build();
     ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject, null);
+    verify(mockedMonitoredServiceService, times(2)).getApplicationMonitoredServiceResponse(any());
     assertThat(expansionResponse.isSuccess()).isTrue();
     assertThat(expansionResponse.getKey()).isEqualTo(SLO_POLICY);
     assertThat(expansionResponse.getValue().toJson()).isEqualTo(JsonUtils.asJson(sloPolicyDTO));
     assertThat(expansionResponse.getPlacement()).isEqualTo(ExpansionPlacementStrategy.APPEND);
   }
 
-  @Test
-  @Owner(developers = DEEPAK_CHHIKARA)
-  @Category(UnitTests.class)
-  public void testExpand_withServiceIdentifier() throws IOException {
-    SLOPolicyDTO sloPolicyDTO = SLOPolicyDTO.builder()
-                                    .sloErrorBudgetRemainingPercentage(100D)
-                                    .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
-                                    .slos(sloMappedToTheirHealthIndicators)
-                                    .build();
-    final String stageYaml = IOUtils.resourceToString("governance/SLOPolicyExpansionHandlerServiceIdentifier.json",
-        StandardCharsets.UTF_8, this.getClass().getClassLoader());
-    JsonNode jsonNode = JsonUtils.asObject(stageYaml, JsonNode.class);
-    ExpansionRequestMetadata metadataProject =
-        ExpansionRequestMetadata.newBuilder()
-            .setAccountId(builderFactory.getProjectParams().getAccountIdentifier())
-            .setOrgId(builderFactory.getProjectParams().getOrgIdentifier())
-            .setProjectId(builderFactory.getProjectParams().getProjectIdentifier())
-            .setYaml(ByteString.copyFromUtf8(pipelineYaml))
-            .build();
-    ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject, null);
-    assertThat(expansionResponse.isSuccess()).isTrue();
-    assertThat(expansionResponse.getKey()).isEqualTo(SLO_POLICY);
-    assertThat(expansionResponse.getValue().toJson()).isEqualTo(JsonUtils.asJson(sloPolicyDTO));
-    assertThat(expansionResponse.getPlacement()).isEqualTo(ExpansionPlacementStrategy.APPEND);
+  private ExpansionRequestMetadata getExpansionRequestMetaData() {
+    return ExpansionRequestMetadata.newBuilder()
+        .setAccountId(builderFactory.getProjectParams().getAccountIdentifier())
+        .setOrgId(builderFactory.getProjectParams().getOrgIdentifier())
+        .setProjectId(builderFactory.getProjectParams().getProjectIdentifier())
+        .build();
   }
 
-  @Test(expected = IllegalStateException.class)
-  @Owner(developers = DEEPAK_CHHIKARA)
-  @Category(UnitTests.class)
-  public void testExpand_withoutFromStage() throws IOException {
-    SLOPolicyDTO sloPolicyDTO = SLOPolicyDTO.builder()
-                                    .sloErrorBudgetRemainingPercentage(100D)
-                                    .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
-                                    .slos(sloMappedToTheirHealthIndicators)
-                                    .build();
-    final String stageYaml = IOUtils.resourceToString("governance/SLOPolicyExpansionHandlerInValidStage.json",
-        StandardCharsets.UTF_8, this.getClass().getClassLoader());
-    JsonNode jsonNode = JsonUtils.asObject(stageYaml, JsonNode.class);
-    ExpansionRequestMetadata metadataProject =
-        ExpansionRequestMetadata.newBuilder()
-            .setAccountId(builderFactory.getProjectParams().getAccountIdentifier())
-            .setOrgId(builderFactory.getProjectParams().getOrgIdentifier())
-            .setProjectId(builderFactory.getProjectParams().getProjectIdentifier())
-            .setYaml(ByteString.copyFromUtf8(pipelineYaml))
-            .build();
-    ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject, null);
-    assertThat(expansionResponse.isSuccess()).isTrue();
-    assertThat(expansionResponse.getKey()).isEqualTo(SLO_POLICY);
-    assertThat(expansionResponse.getValue().toJson()).isEqualTo(JsonUtils.asJson(sloPolicyDTO));
-    assertThat(expansionResponse.getPlacement()).isEqualTo(ExpansionPlacementStrategy.APPEND);
+  private JsonNode getJsonfromString(String file) throws IOException {
+    final String yaml = getResource(file);
+    return JsonUtils.asObject(yaml, JsonNode.class);
   }
 }

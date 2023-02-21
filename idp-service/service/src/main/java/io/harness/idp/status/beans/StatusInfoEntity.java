@@ -10,14 +10,20 @@ package io.harness.idp.status.beans;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.mongo.index.FdUniqueIndex;
+import io.harness.idp.status.enums.Status;
+import io.harness.idp.status.enums.StatusType;
+import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
+import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -25,16 +31,28 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @StoreIn(DbAliases.IDP)
-@Entity(value = "idpStatus", noClassnameStored = true)
-@Document("idpStatus")
+@Entity(value = "statusInfo", noClassnameStored = true)
+@FieldNameConstants(innerTypeName = "StatusInfoEntityKeys")
+@Document("statusInfo")
 @Persistent
 @OwnedBy(HarnessTeam.IDP)
-public class IDPStatus implements PersistentEntity {
+public class StatusInfoEntity implements PersistentEntity {
   @Id @org.mongodb.morphia.annotations.Id private String id;
-  @FdUniqueIndex private String accountIdentifier;
-  private StatusEnum status;
-  private String comments;
+  private String accountIdentifier;
+  private StatusType type;
+  private Status status;
+  private String reason;
   @LastModifiedDate Long lastModifiedAt;
   private boolean isDeleted;
   private long deletedAt;
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("unique_account_type")
+                 .unique(true)
+                 .field(StatusInfoEntityKeys.accountIdentifier)
+                 .field(StatusInfoEntityKeys.type)
+                 .build())
+        .build();
+  }
 }

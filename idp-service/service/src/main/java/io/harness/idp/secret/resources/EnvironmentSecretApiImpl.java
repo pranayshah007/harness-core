@@ -9,6 +9,7 @@ package io.harness.idp.secret.resources;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.secret.mappers.EnvironmentSecretMapper;
 import io.harness.idp.secret.service.EnvironmentSecretService;
 import io.harness.spec.server.idp.v1.EnvironmentSecretApi;
 import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
@@ -45,6 +46,22 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
   }
 
   @Override
+  public Response createEnvironmentSecrets(@Valid List<EnvironmentSecretRequest> body, String harnessAccount) {
+    final List<EnvironmentSecret> requestSecrets = new ArrayList<>();
+    body.forEach(environmentSecretRequest -> requestSecrets.add(environmentSecretRequest.getSecret()));
+    List<EnvironmentSecret> responseSecrets;
+    try {
+      responseSecrets = environmentSecretService.saveAndSyncK8sSecrets(requestSecrets, harnessAccount);
+    } catch (Exception e) {
+      log.error("Could not create all environment secrets", e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+    }
+    return Response.status(Response.Status.CREATED)
+        .entity(EnvironmentSecretMapper.toResponseList(responseSecrets))
+        .build();
+  }
+
+  @Override
   public Response deleteEnvironmentSecret(String secretIdentifier, String harnessAccount) {
     try {
       environmentSecretService.delete(secretIdentifier, harnessAccount);
@@ -72,9 +89,7 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
   public Response getEnvironmentSecrets(
       @Valid EnvironmentSecretRequest body, String harnessAccount, Integer page, Integer limit, String sort) {
     List<EnvironmentSecret> secrets = environmentSecretService.findByAccountIdentifier(harnessAccount);
-    List<EnvironmentSecretResponse> response = new ArrayList<>();
-    secrets.forEach(secret -> response.add(new EnvironmentSecretResponse().secret(secret)));
-    return Response.status(Response.Status.OK).entity(response).build();
+    return Response.status(Response.Status.OK).entity(EnvironmentSecretMapper.toResponseList(secrets)).build();
   }
 
   @Override
@@ -90,5 +105,21 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
     EnvironmentSecretResponse secretResponse = new EnvironmentSecretResponse();
     secretResponse.setSecret(secret);
     return Response.status(Response.Status.OK).entity(secretResponse).build();
+  }
+
+  @Override
+  public Response updateEnvironmentSecrets(@Valid List<EnvironmentSecretRequest> body, String accountIdentifier) {
+    final List<EnvironmentSecret> requestSecrets = new ArrayList<>();
+    body.forEach(environmentSecretRequest -> requestSecrets.add(environmentSecretRequest.getSecret()));
+    List<EnvironmentSecret> responseSecrets;
+    try {
+      responseSecrets = environmentSecretService.updateAndSyncK8sSecrets(requestSecrets, accountIdentifier);
+    } catch (Exception e) {
+      log.error("Could not create all environment secrets", e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+    }
+    return Response.status(Response.Status.CREATED)
+        .entity(EnvironmentSecretMapper.toResponseList(responseSecrets))
+        .build();
   }
 }

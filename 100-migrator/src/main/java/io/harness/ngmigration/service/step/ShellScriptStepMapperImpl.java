@@ -11,7 +11,7 @@ import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
-import io.harness.ngmigration.expressions.step.ShellScripStepFunctor;
+import io.harness.ngmigration.expressions.step.ShellScriptStepFunctor;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.ngmigration.utils.SecretRefUtils;
@@ -181,15 +181,9 @@ public class ShellScriptStepMapperImpl extends StepMapper {
   @Override
   public List<StepExpressionFunctor> getExpressionFunctor(
       WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
-    ShellScriptState state = (ShellScriptState) getState(graphNode);
+    String sweepingOutputName = getSweepingOutputName(graphNode);
 
-    if (StringUtils.isBlank(state.getSweepingOutputName())) {
-      return Collections.emptyList();
-    }
-
-    return Lists
-        .newArrayList(String.format("context.%s", state.getSweepingOutputName()),
-            String.format("%s", state.getSweepingOutputName()))
+    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
         .stream()
         .map(exp
             -> StepOutput.builder()
@@ -198,7 +192,7 @@ public class ShellScriptStepMapperImpl extends StepMapper {
                    .stepGroupIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
                    .expression(exp)
                    .build())
-        .map(ShellScripStepFunctor::new)
+        .map(ShellScriptStepFunctor::new)
         .collect(Collectors.toList());
   }
 

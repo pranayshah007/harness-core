@@ -13,19 +13,22 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.events.EventsFrameworkModule;
 import io.harness.idp.config.resource.ConfigManagerResource;
 import io.harness.idp.config.resources.ConfigManagerResourceImpl;
 import io.harness.idp.config.service.AppConfigService;
 import io.harness.idp.config.service.AppConfigServiceImpl;
+import io.harness.idp.gitintegration.factory.ConnectorProcessorFactory;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.namespace.service.NamespaceServiceImpl;
 import io.harness.idp.secret.eventlisteners.SecretCrudListener;
 import io.harness.idp.secret.resources.EnvironmentSecretApiImpl;
 import io.harness.idp.secret.service.EnvironmentSecretService;
 import io.harness.idp.secret.service.EnvironmentSecretServiceImpl;
-import io.harness.idp.status.resource.IDPStatusResource;
-import io.harness.idp.status.resources.IDPStatusResourceImpl;
+import io.harness.idp.status.resources.StatusInfoApiImpl;
+import io.harness.idp.status.service.StatusInfoService;
+import io.harness.idp.status.service.StatusInfoServiceImpl;
 import io.harness.k8s.client.K8sApiClient;
 import io.harness.k8s.client.K8sClient;
 import io.harness.metrics.modules.MetricsModule;
@@ -42,6 +45,7 @@ import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.serializer.IdpServiceRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.spec.server.idp.v1.EnvironmentSecretApi;
+import io.harness.spec.server.idp.v1.StatusInfoApi;
 import io.harness.threading.ThreadPool;
 import io.harness.version.VersionModule;
 
@@ -144,6 +148,8 @@ public class IdpModule extends AbstractModule {
     });
     install(new SecretNGManagerClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new ConnectorResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
 
     bind(IdpConfiguration.class).toInstance(appConfig);
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
@@ -157,12 +163,14 @@ public class IdpModule extends AbstractModule {
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
     bind(AppConfigService.class).to(AppConfigServiceImpl.class);
     bind(EnvironmentSecretService.class).to(EnvironmentSecretServiceImpl.class);
+    bind(StatusInfoService.class).to(StatusInfoServiceImpl.class);
     bind(NamespaceService.class).to(NamespaceServiceImpl.class);
     bind(ConfigManagerResource.class).to(ConfigManagerResourceImpl.class);
     bind(EnvironmentSecretApi.class).to(EnvironmentSecretApiImpl.class);
-    bind(IDPStatusResource.class).to(IDPStatusResourceImpl.class);
+    bind(StatusInfoApi.class).to(StatusInfoApiImpl.class);
     bind(K8sClient.class).to(K8sApiClient.class);
     bind(MessageListener.class).annotatedWith(Names.named(SECRET_ENTITY + ENTITY_CRUD)).to(SecretCrudListener.class);
+    bind(ConnectorProcessorFactory.class);
   }
 
   @Provides

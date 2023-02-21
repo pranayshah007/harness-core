@@ -11,20 +11,19 @@ import io.harness.ngmigration.beans.StepOutput;
 
 import org.apache.commons.lang3.StringUtils;
 
-public class ShellScripStepFunctor extends StepExpressionFunctor {
+public class JiraFunctor extends StepExpressionFunctor {
   private StepOutput stepOutput;
-  public ShellScripStepFunctor(StepOutput stepOutput) {
+  public JiraFunctor(StepOutput stepOutput) {
     this.stepOutput = stepOutput;
   }
 
   @Override
   public synchronized Object get(Object key) {
     if (StringUtils.equals(stepOutput.getStageIdentifier(), getCurrentStageIdentifier())) {
-      return String.format("<+execution.steps.%s.steps.%s.output.outputVariables.%s>",
-          stepOutput.getStepGroupIdentifier(), stepOutput.getStepIdentifier(), key);
+      return String.format("<+execution.steps.%s.steps.%s.issue.%s>", stepOutput.getStepGroupIdentifier(),
+          stepOutput.getStepIdentifier(), key);
     }
-
-    return String.format("<+pipeline.stages.%s.spec.execution.steps.%s.steps.%s.output.outputVariables.%s>",
+    return String.format("<+pipeline.stages.%s.spec.execution.steps.%s.steps.%s.issue.%s>",
         stepOutput.getStageIdentifier(), stepOutput.getStepGroupIdentifier(), stepOutput.getStepIdentifier(), key);
   }
 

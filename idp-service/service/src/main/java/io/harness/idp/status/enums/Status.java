@@ -5,6 +5,8 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.status.beans;
+package io.harness.idp.status.enums;
 
-public enum StatusEnum { SUCCESS, FAILED, RUNNING }
+//  Wiki page specifying different statuses
+//  https://harness.atlassian.net/wiki/spaces/IDP/pages/21301300949/IDP+App+Status+logic+-+Tech+Spec#Different-Statuses
+public enum Status { COMPLETED, RUNNING, PENDING, FAILED }

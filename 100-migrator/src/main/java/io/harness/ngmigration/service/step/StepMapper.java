@@ -33,6 +33,7 @@ import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
+import software.wings.sm.states.mixin.SweepingOutputStateMixin;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -58,6 +59,14 @@ public abstract class StepMapper {
   public abstract String getStepType(GraphNode stepYaml);
 
   public abstract State getState(GraphNode stepYaml);
+
+  String getSweepingOutputName(GraphNode graphNode) {
+    State state = getState(graphNode);
+    if (state instanceof SweepingOutputStateMixin) {
+      return ((SweepingOutputStateMixin) state).getSweepingOutputName();
+    }
+    return null;
+  }
 
   public List<StepExpressionFunctor> getExpressionFunctor(
       WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {

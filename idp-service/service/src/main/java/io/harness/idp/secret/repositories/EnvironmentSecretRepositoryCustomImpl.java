@@ -24,10 +24,12 @@ public class EnvironmentSecretRepositoryCustomImpl implements EnvironmentSecretR
 
   @Override
   public EnvironmentSecretEntity update(EnvironmentSecretEntity environmentSecretEntity) {
-    Criteria criteria = Criteria.where(EnvironmentSecretsEntityKeys.id).is(environmentSecretEntity.getId());
+    Criteria criteria = Criteria.where(EnvironmentSecretsEntityKeys.accountIdentifier)
+                            .is(environmentSecretEntity.getAccountIdentifier())
+                            .and(EnvironmentSecretsEntityKeys.name)
+                            .is(environmentSecretEntity.getName());
     Query query = new Query(criteria);
     Update update = new Update();
-    update.set(EnvironmentSecretsEntityKeys.name, environmentSecretEntity.getName());
     update.set(EnvironmentSecretsEntityKeys.secretIdentifier, environmentSecretEntity.getSecretIdentifier());
     return mongoTemplate.findAndModify(query, update, EnvironmentSecretEntity.class);
   }

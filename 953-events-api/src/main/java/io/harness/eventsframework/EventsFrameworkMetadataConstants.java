@@ -93,4 +93,5 @@ public final class EventsFrameworkMetadataConstants {
 
   // CCM
   public static final String CCM_FOLDER = "ccmFolder";
+  public static final String CCM_RULE = "ccmRule";
 }

@@ -18,7 +18,11 @@ public interface EnvironmentSecretService {
   List<EnvironmentSecret> findByAccountIdentifier(String accountIdentifier);
   EnvironmentSecret saveAndSyncK8sSecret(EnvironmentSecret environmentSecret, String accountIdentifier)
       throws Exception;
+  List<EnvironmentSecret> saveAndSyncK8sSecrets(List<EnvironmentSecret> requestSecrets, String harnessAccount)
+      throws Exception;
   EnvironmentSecret updateAndSyncK8sSecret(EnvironmentSecret environmentSecret, String accountIdentifier)
+      throws Exception;
+  List<EnvironmentSecret> updateAndSyncK8sSecrets(List<EnvironmentSecret> requestSecrets, String accountIdentifier)
       throws Exception;
   void processSecretUpdate(EntityChangeDTO entityChangeDTO, String action) throws Exception;
   void delete(String secretIdentifier, String harnessAccount);
