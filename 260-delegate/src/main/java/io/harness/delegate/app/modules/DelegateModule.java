@@ -235,7 +235,6 @@ import io.harness.delegate.task.aws.asg.AsgCanaryDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackTaskNG;
-import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTask;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
 import io.harness.delegate.task.aws.lambda.AwsLambdaDeployTask;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;

@@ -56,7 +56,7 @@ public interface AwsLambdaCommandRequest extends TaskParameters, ExecutionCapabi
           awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), maskingEvaluator));
     }
 
-    if (awsLambdaArtifactConfig != null && awsLambdaArtifactConfig instanceof AwsLambdaS3ArtifactConfig) {
+    if (awsLambdaArtifactConfig instanceof AwsLambdaS3ArtifactConfig) {
       AwsConnectorDTO connectorConfigDTO = (AwsConnectorDTO) ((AwsLambdaS3ArtifactConfig) awsLambdaArtifactConfig)
                                                .getConnectorDTO()
                                                .getConnectorConfig();
