@@ -2893,6 +2893,8 @@
 680007:io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit
 680008:io.harness.delegate.beans.terraformcloud.PlanType
 680009:io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse
+680010:io.harness.delegate.beans.terraformcloud.RollbackType
+680011:io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse
 878001:io.harness.steps.matrix.StrategyMetadata
 878018:io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultAdviserParameters
 878019:io.harness.pms.sdk.core.execution.AsyncTimeoutResponseData

@@ -9,6 +9,7 @@ package io.harness.ngmigration.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -240,11 +241,11 @@ public class MigratorUtility {
   public static SecretRefData getSecretRef(
       Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
     if (entityId == null) {
-      return SecretRefData.builder().identifier("__PLEASE_FIX_ME__").scope(Scope.PROJECT).build();
+      return SecretRefData.builder().identifier(PLEASE_FIX_ME).scope(Scope.PROJECT).build();
     }
     CgEntityId secretEntityId = CgEntityId.builder().id(entityId).type(entityType).build();
     if (!migratedEntities.containsKey(secretEntityId)) {
-      return SecretRefData.builder().identifier("__PLEASE_FIX_ME__").scope(Scope.PROJECT).build();
+      return SecretRefData.builder().identifier(PLEASE_FIX_ME).scope(Scope.PROJECT).build();
     }
     NgEntityDetail migratedSecret = migratedEntities.get(secretEntityId).getNgEntityDetail();
     return SecretRefData.builder()
@@ -257,7 +258,7 @@ public class MigratorUtility {
       Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
     NGYamlFile detail = migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build());
     if (detail == null) {
-      return "__PLEASE_FIX_ME__";
+      return PLEASE_FIX_ME;
     }
     return getIdentifierWithScope(detail.getNgEntityDetail());
   }
