@@ -373,6 +373,77 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   @Test
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
+  public void testMergeTemplateSpecToPipelineYaml_StageTemplateWithAppendInputSetValidatorAsTrue() {
+    String stageTemplateFileName = "stage-template.yaml";
+    String stageTemplateYaml = readFile(stageTemplateFileName);
+    TemplateEntity stageTemplateEntity = TemplateEntity.builder()
+                                             .accountId(ACCOUNT_ID)
+                                             .orgIdentifier(ORG_ID)
+                                             .projectIdentifier(PROJECT_ID)
+                                             .yaml(stageTemplateYaml)
+                                             .templateScope(Scope.PROJECT)
+                                             .identifier("stageTemplate")
+                                             .deleted(false)
+                                             .build();
+
+    String httpTemplateFileName = "http-step-template.yaml";
+    String httpTemplateYaml = readFile(httpTemplateFileName);
+    TemplateEntity httpTemplateEntity = TemplateEntity.builder()
+                                            .accountId(ACCOUNT_ID)
+                                            .orgIdentifier(ORG_ID)
+                                            .projectIdentifier(PROJECT_ID)
+                                            .yaml(httpTemplateYaml)
+                                            .identifier("httpTemplate")
+                                            .templateScope(Scope.PROJECT)
+                                            .deleted(false)
+                                            .build();
+
+    String approvalTemplateFileName = "approval-step-template.yaml";
+    String approvalTemplateYaml = readFile(approvalTemplateFileName);
+    TemplateEntity approvalTemplateEntity = TemplateEntity.builder()
+                                                .accountId(ACCOUNT_ID)
+                                                .orgIdentifier(ORG_ID)
+                                                .projectIdentifier(PROJECT_ID)
+                                                .yaml(approvalTemplateYaml)
+                                                .identifier("approvalTemplate")
+                                                .templateScope(Scope.PROJECT)
+                                                .deleted(false)
+                                                .build();
+
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1", false, false))
+        .thenReturn(Optional.of(stageTemplateEntity));
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false, false))
+        .thenReturn(Optional.of(httpTemplateEntity));
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "1", false, false))
+        .thenReturn(Optional.of(approvalTemplateEntity));
+
+    String pipelineYamlFile = "pipeline-with-stage-template.yaml";
+    String pipelineYaml = readFile(pipelineYamlFile);
+    TemplateMergeResponseDTO pipelineMergeResponse =
+        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false, true);
+    String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYaml();
+    assertThat(finalPipelineYaml).isNotNull();
+    assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull().hasSize(1);
+    assertThat(pipelineMergeResponse.getTemplateReferenceSummaries())
+        .contains(TemplateReferenceSummary.builder()
+                      .templateIdentifier("stageTemplate")
+                      .versionLabel("1")
+                      .scope(Scope.PROJECT)
+                      .fqn("pipeline.stages.qaStage")
+                      .moduleInfo(new HashSet<>())
+                      .build());
+
+    String resFile = "pipeline-with-stage-template-replaced-inputset-validator-appended.yaml";
+    String resPipeline = readFile(resFile);
+    assertThat(finalPipelineYaml).isEqualTo(resPipeline);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
   public void testmergeTemplateInputsInObjectWithInfiniteRecursion() {
     String filename = "stage-temp-inf-rec.yaml";
     String yaml = readFile(filename);
