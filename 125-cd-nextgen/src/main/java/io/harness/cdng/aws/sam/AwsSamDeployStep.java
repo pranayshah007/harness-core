@@ -7,6 +7,7 @@
 
 package io.harness.cdng.aws.sam;
 
+import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -33,6 +34,9 @@ public class AwsSamDeployStep extends TaskChainExecutableWithRollbackAndRbac {
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
+  @Inject
+  private AwsSamStepHelper awsSamStepHelper;
+
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
     // nothing
@@ -55,7 +59,7 @@ public class AwsSamDeployStep extends TaskChainExecutableWithRollbackAndRbac {
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return TaskChainResponse.builder().build();
+    return awsSamStepHelper.startChainLinkDeploy(ambiance, stepParameters, inputPackage);
   }
 
   @Override

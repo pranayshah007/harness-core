@@ -50,8 +50,11 @@ public class AwsSamDeployStepInfo extends AwsSamDeployBaseStepInfo implements CD
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public AwsSamDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public AwsSamDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+                              ParameterField<String> stackName,
+                              ParameterField<String> deployCommandOptions,
+                              ParameterField<Integer> samCliPollDelay) {
+    super(delegateSelectors, stackName, deployCommandOptions, samCliPollDelay);
   }
   @Override
   public StepType getStepType() {

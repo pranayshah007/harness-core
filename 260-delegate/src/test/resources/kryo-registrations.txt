@@ -2672,6 +2672,15 @@
 10000304:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType
 
 10000401:io.harness.delegate.beans.executioncapability.AwsSamInstallationCapability
+10000402:io.harness.delegate.task.aws.sam.request.AwsSamDeployRequest
+10000403:io.harness.delegate.task.aws.sam.response.AwsSamDeployResponse
+10000404:io.harness.delegate.task.aws.sam.AwsSamArtifactConfig
+10000405:io.harness.delegate.task.aws.sam.AwsSamS3ArtifactConfig
+10000406:io.harness.delegate.task.aws.sam.AwsSamInfraConfig
+10000407:io.harness.delegate.task.aws.sam.AwsSamInfraType
+10000408:io.harness.delegate.task.aws.sam.AwsSamDeployConfig
+10000409:io.harness.delegate.task.aws.sam.AwsSamCommandType
+
 10000450:io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO
 10000451:io.harness.delegate.beans.connector.jira.JiraAuthType
 10000452:io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO

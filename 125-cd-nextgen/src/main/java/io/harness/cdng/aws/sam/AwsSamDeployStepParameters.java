@@ -28,7 +28,10 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.aws.sam.AwsSamDeployStepParameters")
 public class AwsSamDeployStepParameters extends AwsSamDeployBaseStepInfo implements AwsSamSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public AwsSamDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public AwsSamDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+                                    ParameterField<String> stackName,
+                                    ParameterField<String> deployCommandOptions,
+                                    ParameterField<Integer> samCliPollDelay) {
+    super(delegateSelectors, stackName, deployCommandOptions, samCliPollDelay);
   }
 }

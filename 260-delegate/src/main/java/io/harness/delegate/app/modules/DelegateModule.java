@@ -356,6 +356,7 @@ import io.harness.delegate.task.pagerduty.PagerDutySenderDelegateTask;
 import io.harness.delegate.task.pcf.CfCommandRequest.PcfCommandType;
 import io.harness.delegate.task.pcf.TasConnectorValidationTask;
 import io.harness.delegate.task.pdc.HostConnectivityValidationDelegateTask;
+import io.harness.delegate.task.sam.AwsSamDeployTask;
 import io.harness.delegate.task.scm.ScmBatchGetFileTask;
 import io.harness.delegate.task.scm.ScmDelegateClientImpl;
 import io.harness.delegate.task.scm.ScmGitFileTask;
@@ -2150,6 +2151,9 @@ public class DelegateModule extends AbstractModule {
         .toInstance(GoogleFunctionPrepareRollbackTask.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_ROLLBACK_TASK).toInstance(GoogleFunctionRollbackTask.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK).toInstance(GoogleFunctionTrafficShiftTask.class);
+
+    // AWS SAM
+    mapBinder.addBinding(TaskType.AWS_SAM_DEPLOY_TASK).toInstance(AwsSamDeployTask.class);
   }
 
   private void registerSecretManagementBindings() {

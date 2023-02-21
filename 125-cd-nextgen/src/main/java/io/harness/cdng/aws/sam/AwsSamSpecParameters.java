@@ -9,6 +9,7 @@ package io.harness.cdng.aws.sam;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.sam.AwsSamCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
@@ -25,6 +26,6 @@ public interface AwsSamSpecParameters extends SpecParameters {
   @Nonnull
   @JsonIgnore
   default List<String> getCommandUnits() {
-    return Arrays.asList();
+    return Arrays.asList(AwsSamCommandUnitConstants.artifact.toString(), AwsSamCommandUnitConstants.configureCred.toString(),AwsSamCommandUnitConstants.deploy.toString());
   }
 }

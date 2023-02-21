@@ -34,4 +34,8 @@ public class AwsSamDeployBaseStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> stackName;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> deployCommandOptions;
+  @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH) ParameterField<Integer> samCliPollDelay;
 }
