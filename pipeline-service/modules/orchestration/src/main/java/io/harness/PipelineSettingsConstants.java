@@ -7,6 +7,6 @@
 
 package io.harness;
 
-public class SettingConstants {
+public class PipelineSettingsConstants {
   public final static String CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS = "concurrent_active_pipeline_executions";
 }

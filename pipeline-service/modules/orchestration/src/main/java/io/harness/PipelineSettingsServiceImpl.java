@@ -73,11 +73,11 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     try {
       Edition edition = getEdition(accountId);
       // Sending only accountId here because this setting only exists at account level
-      long maxConcurrentExecutions =
-          Long.parseLong(NGRestUtils
-                             .getResponse(ngSettingsClient.getSetting(
-                                 SettingConstants.CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS, accountId, null, null))
-                             .getValue());
+      long maxConcurrentExecutions = Long.parseLong(
+          NGRestUtils
+              .getResponse(ngSettingsClient.getSetting(
+                  PipelineSettingsConstants.CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS, accountId, null, null))
+              .getValue());
 
       switch (edition) {
         case FREE:
