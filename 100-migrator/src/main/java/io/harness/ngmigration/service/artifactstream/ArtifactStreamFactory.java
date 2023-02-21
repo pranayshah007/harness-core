@@ -36,9 +36,7 @@ public class ArtifactStreamFactory {
 
   private static final ArtifactStreamMapper acrMapper = new ACRArtifactStreamMapper();
   private static final ArtifactStreamMapper amiMapper = new AmiArtifactStreamMapper();
-  private static final ArtifactStreamMapper azureMapper = new AzureArtifactStreamMapper();
-
-  public static final Map<ArtifactStreamType, ArtifactStreamMapper> ARTIFACT_STREAM_MAPPER_MAP =
+  private static final Map<ArtifactStreamType, ArtifactStreamMapper> ARTIFACT_STREAM_MAPPER_MAP =
       ImmutableMap.<ArtifactStreamType, ArtifactStreamMapper>builder()
           .put(ArtifactStreamType.ARTIFACTORY, artifactoryMapper)
           .put(ArtifactStreamType.DOCKER, dockerMapper)
@@ -51,7 +49,6 @@ public class ArtifactStreamFactory {
           .put(ArtifactStreamType.AMAZON_S3, amazonS3Mapper)
           .put(ArtifactStreamType.ACR, acrMapper)
           .put(ArtifactStreamType.AMI, amiMapper)
-          .put(ArtifactStreamType.AZURE_ARTIFACTS, azureMapper)
           .build();
 
   public static ArtifactStreamMapper getArtifactStreamMapper(ArtifactStream artifactStream) {

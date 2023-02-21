@@ -38,6 +38,8 @@ import io.harness.cvng.analysis.entities.TimeSeriesLoadTestLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesRiskSummary;
 import io.harness.cvng.analysis.entities.TimeSeriesShortTermHistory;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
+import io.harness.cvng.core.beans.LogFeedback;
+import io.harness.cvng.core.beans.LogFeedbackHistory;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.AwsPrometheusCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
@@ -55,6 +57,8 @@ import io.harness.cvng.core.entities.EntityDisableTime;
 import io.harness.cvng.core.entities.ErrorTrackingCVConfig;
 import io.harness.cvng.core.entities.HostRecord;
 import io.harness.cvng.core.entities.LogCVConfig;
+import io.harness.cvng.core.entities.LogFeedbackEntity;
+import io.harness.cvng.core.entities.LogFeedbackHistoryEntity;
 import io.harness.cvng.core.entities.LogRecord;
 import io.harness.cvng.core.entities.MetricCVConfig;
 import io.harness.cvng.core.entities.MetricPack;
@@ -87,6 +91,7 @@ import io.harness.cvng.core.entities.changeSource.KubernetesChangeSource;
 import io.harness.cvng.core.entities.changeSource.PagerDutyChangeSource;
 import io.harness.cvng.core.entities.demo.CVNGDemoDataIndex;
 import io.harness.cvng.core.entities.demo.CVNGDemoPerpetualTask;
+import io.harness.cvng.core.services.api.LogFeedbackService;
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.downtime.entities.Downtime;
 import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
@@ -240,6 +245,8 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(NextGenLogCVConfig.class);
     set.add(Downtime.class);
     set.add(EntityUnavailabilityStatuses.class);
+    set.add(LogFeedbackEntity.class);
+    set.add(LogFeedbackHistoryEntity.class);
   }
 
   @Override

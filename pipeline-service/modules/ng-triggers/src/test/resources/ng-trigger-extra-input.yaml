@@ -1,0 +1,33 @@
+trigger:
+  name: bsbsb
+  identifier: bsbsb
+  enabled: false
+  orgIdentifier: default
+  projectIdentifier: gfnfn
+  pipelineIdentifier: sbsbsb
+  source:
+    type: Scheduled
+    spec:
+      type: Cron
+      spec:
+        expression: 0/5 * * * *
+  inputYaml: |
+    pipeline:
+        identifier: sbsbsb
+        stages:
+            - stage:
+                  identifier: nsnsnsn
+                  type: Deployment
+                  spec:
+                      service:
+                          serviceRef: ""
+        variables:
+            - name: var1
+              type: String
+              value: nmjkk
+            - name: var2
+              type: String
+              value: nmjkk
+            - name: var3
+              type: String
+              value: nmjkk

@@ -24,6 +24,7 @@ public class ServiceV2Factory {
   private static final ServiceV2Mapper ecsServiceV2Mapper = new EcsServiceV2Mapper();
   private static final ServiceV2Mapper azureWebappServiceV2Mapper = new AzureWebappServiceV2Mapper();
   private static final ServiceV2Mapper elastigroupServiceV2Mapper = new ElastigroupServiceV2Mapper();
+  private static final ServiceV2Mapper pcfServiceV2Mapper = new PcfServiceV2Mapper();
   private static final ServiceV2Mapper customDeploymentServiceV2Mapper = new CustomDeploymentServiceV2Mapper();
   private static final ServiceV2Mapper unsupportedServiceV2Mapper = new UnsupportedServiceV2Mapper();
 
@@ -54,6 +55,9 @@ public class ServiceV2Factory {
     }
     if (DeploymentType.AMI.equals(deploymentType)) {
       return elastigroupServiceV2Mapper;
+    }
+    if (DeploymentType.PCF.equals(deploymentType)) {
+      return pcfServiceV2Mapper;
     }
     if (DeploymentType.CUSTOM.equals(deploymentType)) {
       return customDeploymentServiceV2Mapper;

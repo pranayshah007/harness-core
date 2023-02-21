@@ -94,6 +94,10 @@ public class VariableCreatorService
         String message = format("Invalid yaml path [%s] during execution variable creation", yamlField.getYamlPath());
         log.error(message, ex);
         throw new InvalidRequestException(message, ex);
+      } catch (Throwable t) {
+        String message = format("Error for [%s] during execution variable creation", yamlField.getYamlPath());
+        log.error(message, t);
+        throw new InvalidRequestException(message);
       }
     } else {
       response = variableCreator.createVariablesForField(

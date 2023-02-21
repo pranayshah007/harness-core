@@ -16,7 +16,7 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.expressions.step.ShellScripStepFunctor;
+import io.harness.ngmigration.expressions.step.JenkinsStepFunctor;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -30,11 +30,9 @@ import software.wings.sm.states.JenkinsState;
 
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
 
 public class JenkinsStepMapperImpl extends StepMapper {
   @Override
@@ -97,15 +95,9 @@ public class JenkinsStepMapperImpl extends StepMapper {
   @Override
   public List<StepExpressionFunctor> getExpressionFunctor(
       WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
-    JenkinsState state = (JenkinsState) getState(graphNode);
+    String sweepingOutputName = getSweepingOutputName(graphNode);
 
-    if (StringUtils.isBlank(state.getSweepingOutputName())) {
-      return Collections.emptyList();
-    }
-
-    return Lists
-        .newArrayList(String.format("context.%s", state.getSweepingOutputName()),
-            String.format("%s", state.getSweepingOutputName()))
+    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
         .stream()
         .map(exp
             -> StepOutput.builder()
@@ -114,7 +106,7 @@ public class JenkinsStepMapperImpl extends StepMapper {
                    .stepGroupIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
                    .expression(exp)
                    .build())
-        .map(ShellScripStepFunctor::new)
+        .map(JenkinsStepFunctor::new)
         .collect(Collectors.toList());
   }
 }

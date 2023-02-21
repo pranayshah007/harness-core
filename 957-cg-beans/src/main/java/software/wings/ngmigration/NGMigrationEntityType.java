@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 public enum NGMigrationEntityType {
   WORKFLOW_EXECUTION,
   TEMPLATE,
+  SERVICE_COMMAND_TEMPLATE,
   ACCOUNT,
   APPLICATION,
   DUMMY_HEAD,

@@ -18,6 +18,7 @@ import io.harness.ng.overview.dto.ArtifactInstanceDetails;
 import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
+import io.harness.ng.overview.dto.ServicePipelineInfo;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -482,6 +483,15 @@ public class DashboardServiceHelper {
     });
   }
 
+  public void sortServicePipelineInfoList(List<ServicePipelineInfo> servicePipelineInfoList) {
+    // sort based on last deployed time
+    Collections.sort(servicePipelineInfoList, new Comparator<ServicePipelineInfo>() {
+      public int compare(ServicePipelineInfo o1, ServicePipelineInfo o2) {
+        return (int) (o2.getLastExecutedAt() - o1.getLastExecutedAt());
+      }
+    });
+  }
+
   public void constructEnvironmentNameAndTypeMap(List<Environment> environments, Map<String, String> envIdToNameMap,
       Map<String, EnvironmentType> envIdToEnvTypeMap) {
     for (Environment environment : environments) {
@@ -576,9 +586,10 @@ public class DashboardServiceHelper {
     return map;
   }
 
-  public String buildOpenTaskQuery(String accountId, String orgId, String projectId, long startInterval) {
+  public String buildOpenTaskQuery(
+      String accountId, String orgId, String projectId, String serviceId, long startInterval) {
     return String.format(
-        "select pipeline_execution_summary_cd_id from service_infra_info where accountid = '%s' and orgidentifier = '%s' and projectidentifier = '%s' and service_startts > %s",
-        accountId, orgId, projectId, startInterval);
+        "select pipeline_execution_summary_cd_id from service_infra_info where accountid = '%s' and orgidentifier = '%s' and projectidentifier = '%s' and service_id = '%s' and service_startts > %s",
+        accountId, orgId, projectId, serviceId, startInterval);
   }
 }

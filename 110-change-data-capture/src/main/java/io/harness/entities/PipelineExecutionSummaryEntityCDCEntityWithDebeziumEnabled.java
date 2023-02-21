@@ -32,8 +32,8 @@ public class PipelineExecutionSummaryEntityCDCEntityWithDebeziumEnabled
       planExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew;
   @Override
   public ChangeHandler getChangeHandler(String handlerClass) {
-    boolean debeziumEnabled =
-        cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(), Target.builder().build(), false);
+    boolean debeziumEnabled = cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(),
+        Target.builder().identifier("planExecutionsSummary.STREAMING").build(), false);
     if (handlerClass.contentEquals("PipelineExecutionSummaryEntity")) {
       return planExecutionSummaryChangeDataHandler;
     } else if (handlerClass.contentEquals("PipelineExecutionSummaryEntityCD")) {

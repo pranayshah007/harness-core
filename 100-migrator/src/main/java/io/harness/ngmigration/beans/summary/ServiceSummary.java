@@ -26,15 +26,12 @@ public class ServiceSummary extends BaseSummary {
   Map<String, Long> artifactTypeSummary;
 
   Map<String, TypeSummary> deploymentsSummary;
-  Map<String, TypeSummary> artifactsSummary;
-
   @Builder
   public ServiceSummary(int count, Map<String, Long> deploymentTypeSummary, Map<String, Long> artifactTypeSummary,
-      Map<String, TypeSummary> deploymentsSummary, Map<String, TypeSummary> artifactsSummary) {
+      Map<String, TypeSummary> deploymentsSummary) {
     super(count);
     this.deploymentTypeSummary = deploymentTypeSummary;
     this.artifactTypeSummary = artifactTypeSummary;
     this.deploymentsSummary = deploymentsSummary;
-    this.artifactsSummary = artifactsSummary;
   }
 }

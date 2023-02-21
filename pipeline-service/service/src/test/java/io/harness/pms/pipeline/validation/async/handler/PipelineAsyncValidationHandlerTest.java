@@ -17,6 +17,7 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
@@ -105,5 +106,49 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
                 .templateInputsResponse(ValidateTemplateInputsResponseDTO.builder().validYaml(true).build())
                 .build());
     assertThat(pipelineEntity.getTemplateModules()).containsExactly("CD", "CI");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testEvaluatePoliciesAndUpdateResultForFailure() {
+    doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
+        .when(pipelineGovernanceService)
+        .validateGovernanceRules("acc", "org", "proj", "yaml");
+    pipelineAsyncValidationHandler.evaluatePoliciesAndUpdateResult(pipelineEntity,
+        TemplateMergeResponseDTO.builder().mergedPipelineYamlWithTemplateRef("yaml").build(),
+        ValidationResult.builder().build());
+    verify(validationService, times(1))
+        .updateEvent("abc123", ValidationStatus.FAILURE,
+            ValidationResult.builder()
+                .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(true).build())
+                .build());
+    verify(validationService, times(0))
+        .updateEvent("abc123", ValidationStatus.SUCCESS,
+            ValidationResult.builder()
+                .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(true).build())
+                .build());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testEvaluatePoliciesAndUpdateResultForSuccess() {
+    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(pipelineGovernanceService)
+        .validateGovernanceRules("acc", "org", "proj", "yaml");
+    pipelineAsyncValidationHandler.evaluatePoliciesAndUpdateResult(pipelineEntity,
+        TemplateMergeResponseDTO.builder().mergedPipelineYamlWithTemplateRef("yaml").build(),
+        ValidationResult.builder().build());
+    verify(validationService, times(0))
+        .updateEvent("abc123", ValidationStatus.FAILURE,
+            ValidationResult.builder()
+                .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
+                .build());
+    verify(validationService, times(1))
+        .updateEvent("abc123", ValidationStatus.SUCCESS,
+            ValidationResult.builder()
+                .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
+                .build());
   }
 }

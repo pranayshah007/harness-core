@@ -172,8 +172,13 @@ public class BitbucketConnectorDTO
 
   private GitRepositoryDTO getGitRepositoryDetailsForBitbucketServer() {
     final String HOST_URL_AND_ORG_SEPARATOR = "scm";
+
+    if (GitConnectionType.ACCOUNT.equals(connectionType)) {
+      return GitRepositoryDTO.builder().org(GitClientHelper.getGitOwner(url, true)).build();
+    }
+
     String repoName = GitClientHelper.getGitRepo(url);
-    String orgName = GitClientHelper.getGitOwner(url, true);
+    String orgName = GitClientHelper.getGitOwner(url, GitConnectionType.ACCOUNT.equals(connectionType));
     if (GitAuthType.SSH.equals(authentication.getAuthType())) {
       return GitRepositoryDTO.builder().org(orgName).name(repoName).build();
     }

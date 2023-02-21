@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
-import com.hazelcast.internal.util.Preconditions;
+import com.google.common.base.Preconditions;
 import com.healthmarketscience.sqlbuilder.Condition;
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -117,6 +117,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
               // ack the request so that its not processed again.
               AckRequest ackRequest = AckRequest.builder()
                                           .itemID(ciExecutionMetadata.getQueueId())
+                                          .consumerName(SERVICE_NAME_CI)
                                           .topic(SERVICE_NAME_CI)
                                           .subTopic(accountId)
                                           .build();
@@ -150,8 +151,11 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           // like in k8s node pressure evictions) - then this is where we move all of them to blob storage.
           ciLogServiceUtils.closeLogStream(AmbianceUtils.getAccountId(ambiance), logKey, true, true);
           // Now Delete the build from db while cleanup is happening. \
+        } else if (level.getStepType().getStepCategory() == StepCategory.STAGE) {
+          log.info("Skipping cleanup for stageExecutionID {} and stepCategory {} with status and pipeline {}",
+              ambiance.getStageExecutionId(), level.getStepType().getStepCategory(), status,
+              ambiance.getMetadata().getPipelineIdentifier());
         }
-        log.info("Not Calling Cleanup as status is {} for stageExecutionID {}", status, ambiance.getStageExecutionId());
       });
     } catch (Exception ex) {
       log.error("Failed to send cleanup call for node {}", level.getRuntimeId(), ex);

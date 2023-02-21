@@ -161,13 +161,11 @@ public class RuleDAO {
   }
 
   public List<Rule> check(String accountId, List<String> rulesIdentifier) {
-    List<Rule> rules = hPersistence.createQuery(Rule.class)
-                           .field(RuleId.accountId)
-                           .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID))
-                           .field(RuleId.uuid)
-                           .in(rulesIdentifier)
-                           .asList();
-    log.info("{} ", rules);
-    return rules;
+    return hPersistence.createQuery(Rule.class)
+        .field(RuleId.accountId)
+        .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID))
+        .field(RuleId.uuid)
+        .in(rulesIdentifier)
+        .asList();
   }
 }

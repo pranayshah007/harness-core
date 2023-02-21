@@ -38,6 +38,8 @@ import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.plan.execution.StagesExecutionHelper;
 import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.yaml.PipelineVersion;
+import io.harness.utils.PipelineExceptionsHelper;
+import io.harness.utils.PipelineGitXHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -208,6 +210,7 @@ public class ValidateAndMergeHelper {
       String projectIdentifier, String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch,
       String pipelineRepoID, List<String> stageIdentifiers, String lastYamlToMerge) {
     Set<String> inputSetVersions = new HashSet<>();
+    PipelineGitXHelper.setupGitParentEntityDetails(accountId, orgIdentifier, projectIdentifier);
     PipelineEntity pipelineEntity = getPipelineEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false);
     String pipelineYaml = pipelineEntity.getYaml();
@@ -226,7 +229,7 @@ public class ValidateAndMergeHelper {
     if (inputSetReferences != null) {
       inputSetReferences.forEach(identifier -> {
         Optional<InputSetEntity> entity = pmsInputSetService.getWithoutValidations(
-            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false);
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false, false);
         if (entity.isEmpty()) {
           return;
         }
@@ -239,7 +242,7 @@ public class ValidateAndMergeHelper {
           List<String> overlayReferences = inputSet.getInputSetReferences();
           overlayReferences.forEach(id -> {
             Optional<InputSetEntity> entity2 = pmsInputSetService.getWithoutValidations(
-                accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, id, false);
+                accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, id, false, false);
             entity2.ifPresent(inputSetEntity -> {
               checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(pipelineEntity, entity2.get());
               inputSetYamlList.add(inputSetEntity.getYaml());

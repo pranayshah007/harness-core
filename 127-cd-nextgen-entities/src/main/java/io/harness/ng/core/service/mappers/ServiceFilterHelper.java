@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import lombok.experimental.UtilityClass;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -46,14 +47,7 @@ public class ServiceFilterHelper {
         accountId, orgIdentifier, projectIdentifier, deleted, includeAllServicesAccessibleAtScope);
     final List<Criteria> andCriterias = new ArrayList<>();
     if (isNotEmpty(searchTerm)) {
-      Criteria searchCriteria = new Criteria().orOperator(
-          where(ServiceEntityKeys.name).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-          where(ServiceEntityKeys.identifier)
-              .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-          where(ServiceEntityKeys.tags + "." + NGTagKeys.key)
-              .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-          where(ServiceEntityKeys.tags + "." + NGTagKeys.value)
-              .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
+      Criteria searchCriteria = createSearchTermCriteria(searchTerm);
       andCriterias.add(searchCriteria);
     }
 
@@ -66,6 +60,17 @@ public class ServiceFilterHelper {
     }
 
     return applyBooleanFilter(criteria, gitOpsEnabled, ServiceEntityKeys.gitOpsEnabled);
+  }
+
+  @NotNull
+  private Criteria createSearchTermCriteria(String searchTerm) {
+    return new Criteria().orOperator(
+        where(ServiceEntityKeys.name).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+        where(ServiceEntityKeys.identifier).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+        where(ServiceEntityKeys.tags + "." + NGTagKeys.key)
+            .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+        where(ServiceEntityKeys.tags + "." + NGTagKeys.value)
+            .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
   }
 
   public Update getUpdateOperations(ServiceEntity serviceEntity) {
@@ -152,6 +157,28 @@ public class ServiceFilterHelper {
     } else {
       throw new InvalidRequestException("Account identifier cannot be null for services list");
     }
+  }
+
+  /**
+   * Criteria for listing services across all organizations and projects within account
+   */
+  public Criteria createCriteriaForListingAllServices(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String searchTerm, boolean deleted) {
+    Criteria criteria = new Criteria();
+    criteria.and(ServiceEntityKeys.accountId).is(accountIdentifier);
+    if (isNotEmpty(orgIdentifier)) {
+      criteria.and(ServiceEntityKeys.orgIdentifier).is(orgIdentifier);
+    }
+    if (isNotEmpty(projectIdentifier)) {
+      criteria.and(ServiceEntityKeys.projectIdentifier).is(projectIdentifier);
+    }
+    criteria.and(DELETED).is(deleted);
+
+    if (isNotEmpty(searchTerm)) {
+      criteria.andOperator(createSearchTermCriteria(searchTerm));
+    }
+
+    return criteria;
   }
 
   private Criteria getCriteriaToReturnAllAccessibleServicesAtScope(String orgIdentifier, String projectIdentifier) {

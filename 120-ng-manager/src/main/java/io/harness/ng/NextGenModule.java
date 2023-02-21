@@ -57,7 +57,6 @@ import io.harness.accesscontrol.AccessControlAdminClientModule;
 import io.harness.account.AbstractAccountModule;
 import io.harness.account.AccountClientModule;
 import io.harness.account.AccountConfig;
-import io.harness.agent.AgentMtlsModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
@@ -130,6 +129,7 @@ import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.logstreaming.NGLogStreamingClientFactory;
 import io.harness.manage.ManagedScheduledExecutorService;
+import io.harness.module.AgentMtlsModule;
 import io.harness.modules.ModulesClientModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
@@ -656,7 +656,7 @@ public class NextGenModule extends AbstractModule {
     install(new DefaultOrganizationModule());
     install(new NGAggregateModule());
     install(new DelegateServiceModule());
-    install(new io.harness.service.DelegateServiceModule());
+    install(new io.harness.module.DelegateServiceModule());
     install(NGModule.getInstance());
     install(ExceptionModule.getInstance());
     install(new EventsFrameworkModule(

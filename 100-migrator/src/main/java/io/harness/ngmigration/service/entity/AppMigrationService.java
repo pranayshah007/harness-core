@@ -72,6 +72,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -245,11 +246,12 @@ public class AppMigrationService extends NgMigrationService {
     for (Map.Entry<String, String> entry : application.getDefaults().entrySet()) {
       String name = entry.getKey();
       String value = entry.getValue();
-      Map<String, String> variableSpec =
-          ImmutableMap.<String, String>builder()
-              .put("valueType", "FIXED")
-              .put("fixedValue", (String) MigratorExpressionUtils.render(value, inputDTO.getCustomExpressions()))
-              .build();
+      Map<String, String> variableSpec = ImmutableMap.<String, String>builder()
+                                             .put("valueType", "FIXED")
+                                             .put("fixedValue",
+                                                 (String) MigratorExpressionUtils.render(new HashMap<>(),
+                                                     new HashMap<>(), value, inputDTO.getCustomExpressions()))
+                                             .build();
       Map<String, Object> variable =
           ImmutableMap.<String, Object>builder()
               .put(YAMLFieldNameConstants.NAME, name)
@@ -298,7 +300,8 @@ public class AppMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected YamlDTO getNGEntity(CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     return null;
   }
 

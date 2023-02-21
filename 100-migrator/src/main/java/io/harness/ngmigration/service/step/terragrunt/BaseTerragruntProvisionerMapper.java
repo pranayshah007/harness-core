@@ -79,7 +79,8 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
     return SupportStatus.MANUAL_EFFORT;
   }
 
-  public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
+  public List<CgEntityId> getReferencedEntities(
+      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     TerragruntProvisionState state = (TerragruntProvisionState) getState(graphNode);
 
     List<CgEntityId> references = new ArrayList<>();
@@ -246,7 +247,7 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
         storeBuilder.branch(ParameterField.createValueField(state.getTfVarGitFileConfig().getBranch()));
       } else {
         storeBuilder.gitFetchType(FetchType.COMMIT);
-        storeBuilder.branch(ParameterField.createValueField(state.getTfVarGitFileConfig().getCommitId()));
+        storeBuilder.commitId(ParameterField.createValueField(state.getTfVarGitFileConfig().getCommitId()));
       }
       storeBuilder.paths(ParameterField.createValueField(
           Arrays.stream(state.getTfVarGitFileConfig().getFilePath().split(",")).collect(Collectors.toList())));
@@ -308,7 +309,7 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
       storeBuilder.branch(ParameterField.createValueField(provisioner.getSourceRepoBranch()));
     } else {
       storeBuilder.gitFetchType(FetchType.COMMIT);
-      storeBuilder.branch(ParameterField.createValueField(provisioner.getCommitId()));
+      storeBuilder.commitId(ParameterField.createValueField(provisioner.getCommitId()));
     }
     storeBuilder.folderPath(ParameterField.createValueField(provisioner.getPath()));
     return storeBuilder.build();
