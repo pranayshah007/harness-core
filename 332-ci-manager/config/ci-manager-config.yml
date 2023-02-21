@@ -103,7 +103,7 @@ scmConnectionConfig:
 
 logServiceConfig:
   internalUrl: ""
-  baseUrl: https://qa.harness.io/log-service/
+  baseUrl: https://7200-34-93-204-95.ngrok.io
   globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
 
 tiServiceConfig:
@@ -166,9 +166,9 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.5
-  liteEngineImage: harness/ci-lite-engine:1.16.5
-  isLocal: false
+  addonImage: harness/ci-addon:1.16.4
+  liteEngineImage: harness/ci-lite-engine:1.16.4
+  isLocal: true
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
@@ -261,13 +261,13 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.4.7
+      image: plugins/cache:1.4.6
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.4.7
+      image: plugins/cache:1.4.6
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
@@ -283,8 +283,8 @@ ciExecutionServiceConfig:
       s3Upload: plugins/s3:1.2.0
       security: harness/sto-plugin:dev
       artifactoryUpload: plugins/artifactory:1.2.0
-      cacheGCS: plugins/cache:1.4.7
-      cacheS3: plugins/cache:1.4.7
+      cacheGCS: plugins/cache:1.4.6
+      cacheS3: plugins/cache:1.4.6
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
@@ -315,7 +315,7 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-true}
 
 enableDashboardTimescale: false
 

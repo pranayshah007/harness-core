@@ -9,11 +9,12 @@ package io.harness.delegate.beans.ci.vm.runner;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
-import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Value;
+
+import java.util.List;
+import java.util.Map;
 
 @Value
 @Builder
@@ -26,7 +27,7 @@ public class SetupVmRequest {
   @JsonProperty("tags") Map<String, String> tags;
   @JsonProperty("setup_request") Config config;
   @JsonProperty("infra_type") String infraType;
-
+  @JsonProperty("ovh") String ovh;
   @Data
   @Builder
   @JsonIgnoreProperties(ignoreUnknown = true)

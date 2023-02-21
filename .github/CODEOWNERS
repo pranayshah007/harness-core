@@ -40,6 +40,7 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /320-ci-execution/src/**/Security*.java @harness/sto
 /320-ci-execution/src/**/STO*.java @harness/sto
 /332-ci-manager/service/src/**/Security*.java @harness/sto
+/332-ci-manager/ harsh.jain@harness.io
 
 ### All BUILD.bazel files 260-delegate depends on - to avoid the introduction of new, unnecessary dependencies increasing the delegate JAR size.
 /260-delegate/BUILD.bazel @harness/del-team
