@@ -354,6 +354,18 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     return optionalPipelineEntity;
   }
 
+  @Override
+  public PipelineEntity getPipelineMetadata(String accountId, String orgIdentifier, String projectIdentifier,
+      String identifier, boolean deleted, boolean getMetadataOnly) {
+    Optional<PipelineEntity> pipelineEntityOnlyMetadata =
+        getPipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, getMetadataOnly, false, false);
+    if (pipelineEntityOnlyMetadata.isEmpty()) {
+      throw new InvalidRequestException(
+          PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgIdentifier, projectIdentifier, identifier));
+    }
+    return pipelineEntityOnlyMetadata.get();
+  }
+
   PipelineGetResult getPipelineAndAsyncValidationId(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
       boolean loadFromCache) {

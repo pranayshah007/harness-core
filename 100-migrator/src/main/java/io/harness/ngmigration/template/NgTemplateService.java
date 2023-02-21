@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
@@ -40,7 +41,8 @@ public interface NgTemplateService {
     return false;
   }
 
-  JsonNode getNgTemplateConfigSpec(Template template, String orgIdentifier, String projectIdentifier);
+  JsonNode getNgTemplateConfigSpec(
+      MigrationContext context, Template template, String orgIdentifier, String projectIdentifier);
 
   String getNgTemplateStepName(Template template);
 

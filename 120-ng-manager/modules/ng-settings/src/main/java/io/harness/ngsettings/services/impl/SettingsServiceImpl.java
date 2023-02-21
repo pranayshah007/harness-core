@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.ws.rs.InternalServerErrorException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -347,7 +348,11 @@ public class SettingsServiceImpl implements SettingsService {
       deleteSettingInSubScopes(scope, settingRequestDTO);
     }
     SettingUtils.validate(newSettingDTO);
-    customValidation(accountIdentifier, oldSettingDTO, newSettingDTO);
+    try {
+      customValidation(accountIdentifier, oldSettingDTO, newSettingDTO);
+    } catch (InternalServerErrorException ex) {
+      throw new InternalServerErrorException("Error while updating the setting: " + ex.getMessage());
+    }
 
     return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       Setting setting = settingRepository.upsert(settingsMapper.toSetting(accountIdentifier, newSettingDTO));
@@ -394,7 +399,11 @@ public class SettingsServiceImpl implements SettingsService {
       settingDTO = settingsMapper.writeNewDTO(
           orgIdentifier, projectIdentifier, settingRequestDTO, settingConfiguration, true, defaultValue);
     }
-    customValidation(accountIdentifier, oldSettingDTO, settingDTO);
+    try {
+      customValidation(accountIdentifier, oldSettingDTO, settingDTO);
+    } catch (InternalServerErrorException ex) {
+      throw new InternalServerErrorException("Error while restoring the setting: " + ex.getMessage());
+    }
     return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       setting.ifPresent(settingRepository::delete);
       Setting parentSetting = getSettingFromParentScope(Scope.of(accountIdentifier, orgIdentifier, projectIdentifier),

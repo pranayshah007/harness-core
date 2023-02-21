@@ -1230,13 +1230,13 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
 
     List<UnavailabilityInstancesResponse> unavailabilityInstancesResponses =
         sloDashboardService.getUnavailabilityInstances(
-            builderFactory.getProjectParams(), startTime, endTime, serviceLevelObjective.getIdentifier());
+            builderFactory.getProjectParams(), startTime * 1000, endTime * 1000, serviceLevelObjective.getIdentifier());
     assertThat(unavailabilityInstancesResponses.size()).isEqualTo(53);
     assertThat(unavailabilityInstancesResponses.get(0).getEntityIdentifier()).isEqualTo(downtimeDTO.getIdentifier());
     assertThat(unavailabilityInstancesResponses.get(0).getEntityType()).isEqualTo(EntityType.MAINTENANCE_WINDOW);
 
     unavailabilityInstancesResponses = sloDashboardService.getUnavailabilityInstances(builderFactory.getProjectParams(),
-        startTime, startTime + Duration.ofDays(6).toSeconds(), serviceLevelObjective.getIdentifier());
+        startTime * 1000, startTime * 1000 + Duration.ofDays(6).toMillis(), serviceLevelObjective.getIdentifier());
     assertThat(unavailabilityInstancesResponses.size()).isEqualTo(1);
   }
 
@@ -1319,12 +1319,12 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
 
     List<UnavailabilityInstancesResponse> unavailabilityInstancesResponses =
         sloDashboardService.getUnavailabilityInstances(
-            builderFactory.getProjectParams(), startTime, endTime, compositeSLO.getIdentifier());
+            builderFactory.getProjectParams(), startTime * 1000, endTime * 1000, compositeSLO.getIdentifier());
     assertThat(unavailabilityInstancesResponses.size()).isEqualTo(54);
     assertThat(unavailabilityInstancesResponses.get(0).getEntityType()).isEqualTo(EntityType.MAINTENANCE_WINDOW);
 
     unavailabilityInstancesResponses = sloDashboardService.getUnavailabilityInstances(builderFactory.getProjectParams(),
-        startTime, startTime + Duration.ofDays(6).toSeconds(), compositeSLO.getIdentifier());
+        startTime * 1000, startTime * 1000 + Duration.ofDays(6).toMillis(), compositeSLO.getIdentifier());
     assertThat(unavailabilityInstancesResponses.size()).isEqualTo(2);
   }
   private void createData(Instant startTime, List<SLIRecord.SLIState> sliStates, String sliId) {

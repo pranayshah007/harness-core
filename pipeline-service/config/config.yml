@@ -303,6 +303,8 @@ orchestrationStepConfig:
     addonImage: harness/ci-addon:1.14.19
     liteEngineImage: harness/ci-lite-engine:1.14.22
     isLocal: false
+    logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
+
 
 shouldDeployWithGitSync: true
 

@@ -79,15 +79,16 @@ public class CDLicenseUsageResource {
 
   @GET
   @Path("services")
-  @ApiOperation(value = "List all Services", nickname = "getServiceList")
-  @Operation(operationId = "getServiceList", summary = "Get Service list",
+  @ApiOperation(value = "Get all services", nickname = "getAllServices")
+  @Operation(operationId = "getAllServices",
+      summary = "Get all services across organizations and projects within account",
       responses =
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the list of all Services") },
       hidden = true)
   @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
   public ResponseDTO<PageResponse<ServiceResponse>>
-  listServices(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+  getAllServices(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(

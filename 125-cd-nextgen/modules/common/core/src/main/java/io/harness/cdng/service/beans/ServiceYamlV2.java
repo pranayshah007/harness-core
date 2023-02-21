@@ -10,6 +10,7 @@ package io.harness.cdng.service.beans;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtimeEmptyStringAllowed;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -48,7 +49,7 @@ public class ServiceYamlV2 implements Visitable {
   private ParameterField<ServiceUseFromStageV2> useFromStage;
 
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)
-  @YamlSchemaTypes(expression)
+  @YamlSchemaTypes({runtimeEmptyStringAllowed})
   ParameterField<Map<String, Object>> serviceInputs;
 
   // For Visitor Framework Impl

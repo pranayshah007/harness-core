@@ -11,7 +11,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.secret.beans.entity.EnvironmentSecretEntity;
 import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
+import io.harness.spec.server.idp.v1.model.EnvironmentSecretResponse;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.IDP)
@@ -19,6 +22,7 @@ import lombok.experimental.UtilityClass;
 public class EnvironmentSecretMapper {
   public EnvironmentSecret toDTO(EnvironmentSecretEntity environmentSecretEntity) {
     EnvironmentSecret secret = new EnvironmentSecret();
+    secret.identifier(environmentSecretEntity.getId());
     secret.setName(environmentSecretEntity.getName());
     secret.setSecretIdentifier(environmentSecretEntity.getSecretIdentifier());
     secret.setCreated(environmentSecretEntity.getCreatedAt());
@@ -26,10 +30,20 @@ public class EnvironmentSecretMapper {
     return secret;
   }
 
-  public EnvironmentSecretEntity fromDTO(EnvironmentSecret secret) {
+  public EnvironmentSecretEntity fromDTO(EnvironmentSecret envSecret, String accountIdentifier) {
     return EnvironmentSecretEntity.builder()
-        .name(secret.getName())
-        .secretIdentifier(secret.getSecretIdentifier())
+        .id(envSecret.getIdentifier())
+        .name(envSecret.getName())
+        .secretIdentifier(envSecret.getSecretIdentifier())
+        .accountIdentifier(accountIdentifier)
+        .createdAt(envSecret.getCreated())
+        .lastModifiedAt(envSecret.getUpdated())
         .build();
+  }
+
+  public static List<EnvironmentSecretResponse> toResponseList(List<EnvironmentSecret> secrets) {
+    List<EnvironmentSecretResponse> response = new ArrayList<>();
+    secrets.forEach(secret -> response.add(new EnvironmentSecretResponse().secret(secret)));
+    return response;
   }
 }

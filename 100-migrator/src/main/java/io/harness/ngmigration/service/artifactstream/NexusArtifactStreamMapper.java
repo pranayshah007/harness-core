@@ -97,7 +97,6 @@ public class NexusArtifactStreamMapper implements ArtifactStreamMapper {
   private static ArtifactConfig getNexus3ArtifactConfig(NexusArtifactStream nexusArtifactStream,
       NexusRegistryConfigSpec nexusRegistryConfigSpec, NgEntityDetail ngConnector) {
     return NexusRegistryArtifactConfig.builder()
-        .primaryArtifact(true)
         .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(ngConnector)))
         .repository(ParameterField.createValueField(nexusArtifactStream.getJobname()))
         .repositoryFormat(ParameterField.createValueField(nexusArtifactStream.getRepositoryFormat()))
@@ -109,7 +108,6 @@ public class NexusArtifactStreamMapper implements ArtifactStreamMapper {
   private static Nexus2RegistryArtifactConfig getNexus2RegistryArtifactConfig(NexusArtifactStream nexusArtifactStream,
       NexusRegistryConfigSpec nexusRegistryConfigSpec, NgEntityDetail ngConnector) {
     return Nexus2RegistryArtifactConfig.builder()
-        .primaryArtifact(true)
         .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(ngConnector)))
         .repository(ParameterField.createValueField(nexusArtifactStream.getJobname()))
         .repositoryFormat(ParameterField.createValueField(nexusArtifactStream.getRepositoryFormat()))

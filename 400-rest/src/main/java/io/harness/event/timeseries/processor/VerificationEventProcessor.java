@@ -19,9 +19,9 @@ import software.wings.common.VerificationConstants;
 import software.wings.service.impl.analysis.ContinuousVerificationExecutionMetaData;
 import software.wings.service.impl.analysis.ContinuousVerificationService;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.hazelcast.internal.util.Preconditions;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;

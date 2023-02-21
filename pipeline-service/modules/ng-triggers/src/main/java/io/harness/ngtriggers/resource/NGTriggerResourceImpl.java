@@ -41,6 +41,8 @@ import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory.TriggerEventHistoryKeys;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
+import io.harness.ngtriggers.beans.source.GitMoveOperationType;
+import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.ngtriggers.exceptions.InvalidTriggerYamlException;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.mapper.NGTriggerEventHistoryMapper;
@@ -50,6 +52,7 @@ import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.rest.RestResponse;
+import io.harness.security.annotations.InternalApi;
 import io.harness.utils.CryptoUtils;
 import io.harness.utils.PageUtils;
 
@@ -328,5 +331,15 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   @Hidden
   public ResponseDTO<NGTriggerConfigV2> getNGTriggerConfigV2() {
     return null;
+  }
+
+  @Override
+  @InternalApi
+  public ResponseDTO<TriggerUpdateCount> updateBranchName(@NotNull @AccountIdentifier String accountIdentifier,
+      @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
+      @NotNull @ResourceIdentifier String targetIdentifier, GitMoveOperationType operationType,
+      String pipelineBranchName) {
+    return ResponseDTO.newResponse(ngTriggerService.updateBranchName(
+        accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, operationType, pipelineBranchName));
   }
 }

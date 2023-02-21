@@ -454,7 +454,6 @@ public class GovernanceRuleResource {
       query = listDTO.getGovernanceRuleFilter();
     }
     query.setAccountId(accountId);
-    log.info("assigned {} {}", query.getAccountId(), query.getIsOOTB());
     return ResponseDTO.newResponse(governanceRuleService.list(query));
   }
 

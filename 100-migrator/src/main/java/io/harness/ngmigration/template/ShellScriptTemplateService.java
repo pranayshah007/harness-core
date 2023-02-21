@@ -8,6 +8,7 @@
 package io.harness.ngmigration.template;
 
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.serializer.JsonUtils;
@@ -41,7 +42,8 @@ public class ShellScriptTemplateService implements NgTemplateService {
   }
 
   @Override
-  public JsonNode getNgTemplateConfigSpec(Template template, String orgIdentifier, String projectIdentifier) {
+  public JsonNode getNgTemplateConfigSpec(
+      MigrationContext context, Template template, String orgIdentifier, String projectIdentifier) {
     ShellScriptTemplate shellScriptTemplate = (ShellScriptTemplate) template.getTemplateObject();
     List<Map<String, String>> outputVariables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(shellScriptTemplate.getOutputVars())) {

@@ -12,12 +12,15 @@ import static java.lang.String.format;
 import io.harness.ModuleType;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.bigQuery.BigQueryService;
+import io.harness.ccm.clickHouse.ClickHouseService;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.beans.usage.CELicenseUsageDTO;
 import io.harness.ccm.commons.utils.CCMLicenseUsageHelper;
 import io.harness.licensing.usage.beans.UsageDataDTO;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.licensing.usage.params.PageableUsageRequestParams;
 import io.harness.licensing.usage.params.UsageRequestParams;
+import io.harness.timescaledb.DBUtils;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -25,10 +28,16 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.TableResult;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.File;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -39,12 +48,18 @@ import org.springframework.data.domain.Page;
 public class LicenseUsageInterfaceImpl implements LicenseUsageInterface<CELicenseUsageDTO, UsageRequestParams> {
   @Inject BigQueryService bigQueryService;
   @Inject CENextGenConfiguration configuration;
+  @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
+  @Inject @Nullable @Named("clickHouseConfig") ClickHouseConfig clickHouseConfig;
+  @Inject ClickHouseService clickHouseService;
 
   public static final String DATA_SET_NAME = "CE_INTERNAL";
   public static final String TABLE_NAME = "costAggregated";
   public static final String QUERY_TEMPLATE =
       "SELECT SUM(cost) AS cost, TIMESTAMP_TRUNC(day, month) AS month, cloudProvider FROM `%s` "
       + "WHERE day >= TIMESTAMP_MILLIS(%s) AND day <= TIMESTAMP_MILLIS(%s) AND accountId = '%s' GROUP BY month, cloudProvider";
+  public static final String QUERY_TEMPLATE_CLICKHOUSE =
+      "SELECT SUM(cost) AS cost, date_trunc('month',day) AS month, cloudProvider FROM %s "
+      + "WHERE day >= toDateTime(%s) AND day <= toDateTime(%s) GROUP BY month, cloudProvider";
 
   private final Cache<CacheKey, CELicenseUsageDTO> licenseUsageCache =
       Caffeine.newBuilder().expireAfterWrite(8, TimeUnit.HOURS).build();
@@ -65,7 +80,8 @@ public class LicenseUsageInterfaceImpl implements LicenseUsageInterface<CELicens
       return cachedCELicenseUsageDTO;
     }
 
-    Long activeSpend = getActiveSpend(timestamp, accountIdentifier);
+    Long activeSpend = isClickHouseEnabled ? getActiveSpendClickHouse(timestamp, accountIdentifier)
+                                           : getActiveSpend(timestamp, accountIdentifier);
     CELicenseUsageDTO ceLicenseUsageDTO =
         CELicenseUsageDTO.builder()
             .activeSpend(UsageDataDTO.builder().count(activeSpend).displayName("").build())
@@ -104,5 +120,23 @@ public class LicenseUsageInterfaceImpl implements LicenseUsageInterface<CELicens
       return null;
     }
     return CCMLicenseUsageHelper.computeDeduplicatedActiveSpend(result);
+  }
+
+  private Long getActiveSpendClickHouse(long timestamp, String accountIdentifier) {
+    String cloudProviderTableName = format("%s.%s", "ccm", TABLE_NAME);
+    long endOfDay = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS).toEpochMilli();
+    String query = format(QUERY_TEMPLATE_CLICKHOUSE, cloudProviderTableName, timestamp / 1000, endOfDay / 1000);
+    log.info("Query: {}", query);
+    ResultSet resultSet = null;
+    try (Connection connection = clickHouseService.getConnection(clickHouseConfig);
+         Statement statement = connection.createStatement()) {
+      resultSet = statement.executeQuery(query);
+      return CCMLicenseUsageHelper.computeDeduplicatedActiveSpend(resultSet);
+    } catch (SQLException e) {
+      log.error("Failed to getActiveSpend for Account:{}, {}", accountIdentifier, e);
+    } finally {
+      DBUtils.close(resultSet);
+    }
+    return 0L;
   }
 }

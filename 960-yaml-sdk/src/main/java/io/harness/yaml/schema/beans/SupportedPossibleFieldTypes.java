@@ -25,6 +25,13 @@ public enum SupportedPossibleFieldTypes {
   numberStringWithEmptyValue,
   runtime, // to support runtime field type, like <+input>. It also includes executionInput field, like
            // <+input>.executionInput()
+  /*
+   Supports runtimeInputs and executionTimeInputs along with empty strings
+   To avoid schema issues when runtime object inputs are provided as empty string("")
+   As which is behaviour of UI when user switch from visual to yaml without giving inputs
+   */
+  runtimeEmptyStringAllowed,
+
   /**
    * Only used for setting default.
    */

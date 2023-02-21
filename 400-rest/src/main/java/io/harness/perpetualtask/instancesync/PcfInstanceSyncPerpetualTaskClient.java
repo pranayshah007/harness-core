@@ -22,10 +22,10 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.pcf.CfInternalConfig;
 import io.harness.delegate.task.pcf.CfCommandRequest;
 import io.harness.delegate.task.pcf.request.CfInstanceSyncRequest;
+import io.harness.perpetualtask.PerpetualTaskClientBase;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.PcfConfig;
 import software.wings.beans.PcfInfrastructureMapping;
@@ -51,23 +51,23 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(CDP)
-public class PcfInstanceSyncPerpetualTaskClient implements PerpetualTaskServiceClient {
+public class PcfInstanceSyncPerpetualTaskClient extends PerpetualTaskClientBase implements PerpetualTaskServiceClient {
   public static final String PCF_APPLICATION_NAME = "pcfApplicationName";
 
   @Inject SecretManager secretManager;
   @Inject SettingsService settingsService;
   @Inject InfrastructureMappingService infraMappingService;
-  @Inject private KryoSerializer kryoSerializer;
 
   @Override
-  public Message getTaskParams(PerpetualTaskClientContext clientContext) {
+  public Message getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalse) {
     PcfInstanceSyncPTDelegateParams perpetualTaskParams = getPcfInstanceSyncPTDelegateParams(clientContext);
 
     List<EncryptedDataDetail> encryptionDetails =
         secretManager.getEncryptionDetails(perpetualTaskParams.getPcfConfig(), null, null);
 
-    ByteString configBytes = ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskParams.getPcfConfig()));
-    ByteString encryptedConfigBytes = ByteString.copyFrom(kryoSerializer.asBytes(encryptionDetails));
+    ByteString configBytes =
+        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(perpetualTaskParams.getPcfConfig()));
+    ByteString encryptedConfigBytes = ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(encryptionDetails));
 
     return PcfInstanceSyncPerpetualTaskParams.newBuilder()
         .setApplicationName(perpetualTaskParams.getApplicationName())

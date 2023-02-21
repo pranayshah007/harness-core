@@ -25,6 +25,7 @@ import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +35,8 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class PlanCreatorUtilsCommon {
+  private static final int MAX_DEPTH = 5;
+
   public List<FailureStrategyConfig> getFailureStrategies(YamlNode node) {
     YamlField failureStrategy = node.getField(FAILURE_STRATEGIES);
     ParameterField<List<FailureStrategyConfig>> failureStrategyConfigs = null;
@@ -57,7 +60,20 @@ public class PlanCreatorUtilsCommon {
 
   public List<FailureStrategyConfig> getFieldFailureStrategies(
       YamlField currentField, String fieldName, boolean isStepInsideRollback) {
-    YamlNode fieldNode = YamlUtils.getGivenYamlNodeFromParentPath(currentField.getNode(), fieldName);
+    return getFieldFailureStrategies(currentField.getNode(), fieldName, isStepInsideRollback, MAX_DEPTH);
+  }
+
+  // NOTE: Depth is added to not allow user to cause stack overflow by having too much of nesting in stepGroup
+  public List<FailureStrategyConfig> getFieldFailureStrategies(
+      YamlNode yamlNode, String fieldName, boolean isStepInsideRollback, int depth) {
+    if (yamlNode == null || depth == 0) {
+      return Collections.emptyList();
+    }
+    YamlNode fieldNode = YamlUtils.getGivenYamlNodeFromParentPath(yamlNode.getParentNode(), fieldName);
+
+    if (yamlNode.equals(fieldNode)) {
+      return Collections.emptyList();
+    }
     if (isStepInsideRollback && fieldNode != null) {
       // Check if found fieldNode is within rollbackSteps section
       YamlNode rollbackNode = YamlUtils.findParentNode(fieldNode, ROLLBACK_STEPS);
@@ -66,7 +82,12 @@ public class PlanCreatorUtilsCommon {
       }
     }
     if (fieldNode != null) {
-      return getFailureStrategies(fieldNode);
+      List<FailureStrategyConfig> failureStrategyConfigs = getFailureStrategies(fieldNode);
+      if (failureStrategyConfigs == null) {
+        failureStrategyConfigs = new ArrayList<>();
+      }
+      failureStrategyConfigs.addAll(getFieldFailureStrategies(fieldNode, fieldName, isStepInsideRollback, depth - 1));
+      return failureStrategyConfigs;
     }
     return Collections.emptyList();
   }

@@ -7,4 +7,10 @@
 
 package io.harness.idp.secret.repositories;
 
-public interface EnvironmentSecretRepositoryCustom {}
+import io.harness.idp.secret.beans.entity.EnvironmentSecretEntity;
+
+import com.mongodb.client.result.UpdateResult;
+
+public interface EnvironmentSecretRepositoryCustom {
+  EnvironmentSecretEntity update(EnvironmentSecretEntity environmentSecretEntity);
+}

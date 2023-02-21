@@ -386,7 +386,8 @@ public class WorkflowMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected YamlDTO getNGEntity(CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     Workflow workflow = (Workflow) cgEntityNode.getEntity();
     WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
     TemplateEntityType templateType = workflowHandler.getTemplateType(workflow);

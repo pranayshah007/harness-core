@@ -11,12 +11,18 @@ import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.resources.DummyResource;
 import io.harness.delegate.utils.DelegateServiceSwaggerGenerator;
+import io.harness.dms.configuration.DelegateServiceConfiguration;
+import io.harness.dms.module.DelegateServiceModule;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Module;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
@@ -25,6 +31,8 @@ import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.serializer.HObjectMapper;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,7 +56,21 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
             delegateServiceConfig.getCommonPoolConfig().getMaxPoolSize(),
             delegateServiceConfig.getCommonPoolConfig().getIdleTime(), TimeUnit.MILLISECONDS,
             new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
-    // Modules to be added as needed.
+
+    List<Module> modules = new ArrayList<>();
+    modules.add(new DelegateServiceModule(delegateServiceConfig));
+    Injector injector = Guice.createInjector(modules);
+
+    registerResources(environment, injector);
+    registerAuthenticationFilter(environment, injector);
+  }
+
+  private void registerAuthenticationFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(DelegateServiceAuthFilter.class));
+  }
+
+  private void registerResources(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(DummyResource.class));
   }
 
   @Override

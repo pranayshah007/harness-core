@@ -16,4 +16,5 @@ public interface NGMigrationConstants {
   String PLEASE_FIX_ME = "__PLEASE_FIX_ME__";
   String SERVICE_COMMAND_TEMPLATE_SEPARATOR = "::";
   String UNKNOWN_SERVICE = "UNKNOWN_S";
+  String SECRET_FORMAT = "<+secrets.getValue(\"%s\")>";
 }

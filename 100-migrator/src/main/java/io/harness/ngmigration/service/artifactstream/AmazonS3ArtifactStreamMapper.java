@@ -39,7 +39,6 @@ public class AmazonS3ArtifactStreamMapper implements ArtifactStreamMapper {
     return PrimaryArtifact.builder()
         .sourceType(ArtifactSourceType.AMAZONS3)
         .spec(AmazonS3ArtifactConfig.builder()
-                  .primaryArtifact(true)
                   .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
                   .bucketName(ParameterField.createValueField(amazonS3ArtifactStream.getJobname()))
                   .filePath(EmptyPredicate.isNotEmpty(amazonS3ArtifactStream.getArtifactPaths())

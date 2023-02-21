@@ -293,6 +293,7 @@ public class AmbianceUtils {
               .map(String::valueOf)
               .collect(Collectors.joining("_"));
   }
+
   public boolean isCurrentStrategyLevelAtStage(Ambiance ambiance) {
     int levelsCount = ambiance.getLevelsCount();
     // Parent of current level is stages.
@@ -300,11 +301,26 @@ public class AmbianceUtils {
       return true;
     }
     // Parent is Parallel and Its parent of parent is STAGES.
-    if (levelsCount >= 3 && ambiance.getLevels(levelsCount - 2).getStepType().getStepCategory() == StepCategory.FORK
-        && ambiance.getLevels(levelsCount - 3).getGroup().equals("STAGES")) {
-      return true;
+    return levelsCount >= 3 && ambiance.getLevels(levelsCount - 2).getStepType().getStepCategory() == StepCategory.FORK
+        && ambiance.getLevels(levelsCount - 3).getGroup().equals("STAGES");
+  }
+
+  public boolean isCurrentNodeUnderStageStrategy(Ambiance ambiance) {
+    Optional<Level> stageLevel = getStageLevelFromAmbiance(ambiance);
+    return stageLevel.isPresent() && stageLevel.get().hasStrategyMetadata();
+  }
+
+  public boolean isCurrentLevelAtStep(Ambiance ambiance) {
+    StepType currentStepType = getCurrentStepType(ambiance);
+    if (currentStepType == null) {
+      return false;
     }
-    return false;
+    return currentStepType.getStepCategory() == StepCategory.STEP;
+  }
+
+  public boolean isCurrentLevelInsideStage(Ambiance ambiance) {
+    Optional<Level> stageLevel = getStageLevelFromAmbiance(ambiance);
+    return stageLevel.isPresent();
   }
 
   public String getEmail(Ambiance ambiance) {

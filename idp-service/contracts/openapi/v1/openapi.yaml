@@ -5,6 +5,10 @@ info:
   title: IDP
   version: '1.0'
   description: Harness Internal Developer Portal API Reference
+  contact:
+    name: API Support
+    email: contact@harness.io
+    url: 'https://harness.io/'
 servers:
   - url: 'https://api.harness.io'
 paths:
@@ -92,6 +96,75 @@ paths:
       responses:
         '204':
           description: No Content
+  /v1/environment-secrets/batch:
+    post:
+      summary: Creates Multiple Environment Secret
+      operationId: create-environment-secrets
+      responses:
+        '201':
+          $ref: '#/components/responses/EnvironmentSecretResponseList'
+      description: Creates multiple environment secret
+      x-internal: true
+      requestBody:
+        $ref: '#/components/requestBodies/EnvironmentSecretRequestList'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      tags:
+        - EnvironmentSecret
+    put:
+      summary: Updates Multiple Environment Secret
+      operationId: update-environment-secrets
+      responses:
+        '200':
+          $ref: '#/components/responses/EnvironmentSecretResponseList'
+      description: Updates the multiple environment secrets specified in the request
+      x-internal: true
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/EnvironmentSecretRequestList'
+      tags:
+        - EnvironmentSecret
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+  '/v1/status-info/{type}':
+    get:
+      summary: Gets Status Info by type
+      tags:
+        - StatusInfo
+      operationId: get-status-info-by-type
+      description: Get status info for the given type
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/StatusInfoResponse'
+      x-internal: true
+    parameters:
+      - schema:
+          type: string
+        name: type
+        in: path
+        required: true
+    post:
+      summary: 'Saves Status Info by type'
+      tags:
+        - StatusInfo
+      operationId: save-status-info-by-type
+      responses:
+        '201':
+          $ref: '#/components/responses/StatusInfoResponse'
+      description: Saves status info for the given type
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/StatusInfoRequest'
 components:
   schemas:
     EnvironmentSecret:
@@ -100,6 +173,8 @@ components:
         id: c62d4d8f19081
       type: object
       properties:
+        identifier:
+          type: string
         name:
           type: string
         secret_identifier:
@@ -126,6 +201,35 @@ components:
       properties:
         secret:
           $ref: '#/components/schemas/EnvironmentSecret'
+    StatusInfo:
+      title: StatusInfo
+      x-stoplight:
+        id: ae1f1702dd443
+      type: object
+      properties:
+        currentStatus:
+          type: string
+        reason:
+          type: string
+        updatedAt:
+          type: integer
+          format: int64
+    StatusInfoResponse:
+      title: StatusInfoResponse
+      x-stoplight:
+        id: d5b32dc406018
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusInfo'
+    StatusInfoRequest:
+      title: StatusInfoRequest
+      x-stoplight:
+        id: m2r87gp8mfed7
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusInfo'
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -171,6 +275,26 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/EnvironmentSecretRequest'
+    EnvironmentSecretRequestList:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/EnvironmentSecretRequest'
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/EnvironmentSecretRequest'
+    StatusInfoRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StatusInfoRequest'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/StatusInfoRequest'
   responses:
     EnvironmentSecretResponse:
       description: Example response
@@ -207,8 +331,20 @@ components:
           schema:
             type: integer
           description: Maximum page size in Paginated response.
+    StatusInfoResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StatusInfoResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/StatusInfoResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key
       type: apiKey
       in: header
+tags:
+  - name: EnvironmentSecret
+    description: Mapping of Environment Variables to Secrets

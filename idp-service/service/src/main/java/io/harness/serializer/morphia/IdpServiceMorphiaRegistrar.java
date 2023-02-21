@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.config.beans.entity.AppConfig;
 import io.harness.idp.namespace.beans.entity.NamespaceEntity;
 import io.harness.idp.secret.beans.entity.EnvironmentSecretEntity;
-import io.harness.idp.status.beans.IDPStatus;
+import io.harness.idp.status.beans.StatusInfoEntity;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 
@@ -24,7 +24,7 @@ public class IdpServiceMorphiaRegistrar implements MorphiaRegistrar {
   public void registerClasses(Set<Class> set) {
     set.add(AppConfig.class);
     set.add(EnvironmentSecretEntity.class);
-    set.add(IDPStatus.class);
+    set.add(StatusInfoEntity.class);
     set.add(NamespaceEntity.class);
   }
 

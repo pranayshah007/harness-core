@@ -150,7 +150,7 @@ public class InstanceStatsDataFetcher
         }
       }
 
-      Query<Instance> query = wingsPersistence.createQuery(Instance.class);
+      Query<Instance> query = wingsPersistence.createAnalyticsQuery(Instance.class);
       query.filter("accountId", accountId);
       query.filter("isDeleted", false);
 
@@ -163,7 +163,7 @@ public class InstanceStatsDataFetcher
           String entityNameColumn = getNameField(firstLevelAggregation);
           List<QLDataPoint> dataPoints = new ArrayList<>();
 
-          wingsPersistence.getDatastore(Instance.class)
+          wingsPersistence.getDefaultAnalyticsDatastore(Instance.class)
               .createAggregation(Instance.class)
               .match(query)
               .group(Group.id(grouping(entityIdColumn)), grouping("count", accumulator("$sum", 1)),
@@ -188,7 +188,7 @@ public class InstanceStatsDataFetcher
           String secondLevelEntityNameColumn = getNameField(secondLevelAggregation);
 
           List<TwoLevelAggregatedData> aggregatedDataList = new ArrayList<>();
-          wingsPersistence.getDatastore(query.getEntityClass())
+          wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
               .createAggregation(Instance.class)
               .match(query)
               .group(Group.id(grouping(entityIdColumn), grouping(secondLevelEntityIdColumn)),

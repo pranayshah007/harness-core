@@ -21,5 +21,7 @@ import org.springframework.data.repository.CrudRepository;
 public interface EnvironmentSecretRepository
     extends CrudRepository<EnvironmentSecretEntity, String>, EnvironmentSecretRepositoryCustom {
   Optional<EnvironmentSecretEntity> findByIdAndAccountIdentifier(String identifier, String accountIdentifier);
+  Optional<EnvironmentSecretEntity> findByAccountIdentifierAndSecretIdentifier(
+      String secretIdentifier, String accountIdentifier);
   List<EnvironmentSecretEntity> findByAccountIdentifier(String accountIdentifier);
 }

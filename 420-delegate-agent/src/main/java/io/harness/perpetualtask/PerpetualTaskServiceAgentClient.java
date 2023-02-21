@@ -41,7 +41,7 @@ public class PerpetualTaskServiceAgentClient {
   public PerpetualTaskExecutionContext perpetualTaskContext(PerpetualTaskId taskId, String accountId) {
     try {
       Call<PerpetualTaskContextResponse> perpetualTaskContextResponseCall =
-          delegateAgentManagerClient.perpetualTaskContext(taskId.getId(), accountId);
+          delegateAgentManagerClient.perpetualTaskContextV2(taskId.getId(), accountId);
       PerpetualTaskContextResponse response = DelegateRestUtils.executeRestCall(perpetualTaskContextResponseCall);
       if (response != null && response.getPerpetualTaskContext() != null) {
         PerpetualTaskExecutionContext perpetualTaskExecutionContext = response.getPerpetualTaskContext();

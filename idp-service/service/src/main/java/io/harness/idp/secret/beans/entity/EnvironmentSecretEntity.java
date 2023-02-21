@@ -43,7 +43,6 @@ public class EnvironmentSecretEntity implements PersistentEntity {
                  .unique(true)
                  .field(EnvironmentSecretsEntityKeys.accountIdentifier)
                  .field(EnvironmentSecretsEntityKeys.name)
-                 .field(EnvironmentSecretsEntityKeys.secretIdentifier)
                  .build())
         .build();
   }
