@@ -720,8 +720,7 @@ public class NGTemplateResource {
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull TemplateApplyRequestDTO templateApplyRequestDTO,
       @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
-      @QueryParam("AppendInputSetValidator") @DefaultValue("false") @ApiParam(
-          hidden = true) boolean appendInputSetValidator) {
+      @QueryParam("AppendInputSetValidator") @DefaultValue("false") boolean appendInputSetValidator) {
     log.info("Applying templates to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
     long start = System.currentTimeMillis();
     TemplateMergeResponseDTO templateMergeResponseDTO =
@@ -750,8 +749,7 @@ public class NGTemplateResource {
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull TemplateApplyRequestDTO templateApplyRequestDTO,
       @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
-      @QueryParam("AppendInputSetValidator") @DefaultValue("false") @ApiParam(
-          hidden = true) boolean appendInputSetValidator) {
+      @QueryParam("AppendInputSetValidator") @DefaultValue("false") boolean appendInputSetValidator) {
     log.info("Applying templates V2 to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
     long start = System.currentTimeMillis();
     TemplateMergeResponseDTO templateMergeResponseDTO =
