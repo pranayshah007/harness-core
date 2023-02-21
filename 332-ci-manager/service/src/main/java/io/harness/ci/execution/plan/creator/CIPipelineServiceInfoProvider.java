@@ -61,7 +61,9 @@ import io.harness.ci.plancreator.S3UploadStepPlanCreator;
 import io.harness.ci.plancreator.SaveCacheGCSStepPlanCreator;
 import io.harness.ci.plancreator.SaveCacheS3StepPlanCreator;
 import io.harness.ci.plancreator.SecurityStepPlanCreator;
+import io.harness.ci.plancreator.V1.ActionStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.BackgroundStepPlanCreatorV1;
+import io.harness.ci.plancreator.V1.BitriseStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.PluginStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.RunStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.TestStepPlanCreator;
@@ -137,6 +139,8 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new PluginStepPlanCreatorV1());
     planCreators.add(new TestStepPlanCreator());
     planCreators.add(new BackgroundStepPlanCreatorV1());
+    planCreators.add(new BitriseStepPlanCreatorV1());
+    planCreators.add(new ActionStepPlanCreatorV1());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;

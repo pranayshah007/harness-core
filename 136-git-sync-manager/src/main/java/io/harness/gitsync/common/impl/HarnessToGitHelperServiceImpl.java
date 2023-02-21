@@ -842,8 +842,21 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
 
     scmGetBatchFilesResponseDTO.getScmGetFileResponseV2DTOMap().forEach((requestIdentifier, fileResponse) -> {
       GetFileRequest fileRequest = getFileRequestMap.get(requestIdentifier.getIdentifier());
-      GetFileResponse getFileResponse = prepareGetFileResponse(fileRequest.getScopeIdentifiers(),
-          fileRequest.getRepoName(), fileRequest.getFilePath(), fileRequest.getConnectorRef(), fileResponse);
+      GetFileResponse getFileResponse;
+      if (!fileResponse.isErrorResponse()) {
+        getFileResponse = prepareGetFileResponse(fileRequest.getScopeIdentifiers(), fileRequest.getRepoName(),
+            fileRequest.getFilePath(), fileRequest.getConnectorRef(), fileResponse);
+      } else {
+        getFileResponse = GetFileResponse.newBuilder()
+                              .setStatusCode(fileResponse.getScmErrorDetails().getStatusCode())
+                              .setGitMetaData(getGitMetadata(fileResponse.getScmErrorDetails().getGitErrorMetadata()))
+                              .setError(ErrorDetails.newBuilder()
+                                            .setErrorMessage(fileResponse.getScmErrorDetails().getError())
+                                            .setExplanationMessage(fileResponse.getScmErrorDetails().getExplanation())
+                                            .setHintMessage(fileResponse.getScmErrorDetails().getHint())
+                                            .build())
+                              .build();
+      }
       getFileResponseMap.put(requestIdentifier.getIdentifier(), getFileResponse);
     });
     return GetBatchFilesResponse.newBuilder()

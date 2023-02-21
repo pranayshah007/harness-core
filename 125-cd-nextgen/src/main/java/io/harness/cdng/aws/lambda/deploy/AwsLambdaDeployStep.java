@@ -45,29 +45,32 @@ public class AwsLambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac 
   private final String AWS_LAMBDA_DEPLOY_COMMAND_NAME = "DeployAwsLambda";
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
-    return null;
+    return StepElementParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+    // nothing
+  }
 
   @Override
   public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
       throws Exception {
-    return null;
+    log.info("Calling executeNextLink");
+    return TaskChainResponse.builder().build();
   }
 
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
-    return null;
+    return StepResponse.builder().build();
   }
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return null;
+    return TaskChainResponse.builder().build();
   }
 
   @Override

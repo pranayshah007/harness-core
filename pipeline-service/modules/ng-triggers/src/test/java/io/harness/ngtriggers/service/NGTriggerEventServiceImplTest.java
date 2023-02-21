@@ -22,6 +22,7 @@ import io.harness.pms.execution.ExecutionStatus;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
 import io.harness.rule.Owner;
 
+import com.mongodb.client.result.DeleteResult;
 import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Before;
@@ -96,5 +97,17 @@ public class NGTriggerEventServiceImplTest {
   public void testDeleteAllForPipeline() {
     ngTriggerEventService.deleteAllForPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER);
     verify(triggerEventHistoryRepository, times(1)).deleteBatch(any());
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testDeleteTriggerEventHistory() {
+    DeleteResult deleteResult = DeleteResult.acknowledged(0);
+    when(triggerEventHistoryRepository.deleteTriggerEventHistoryForTriggerIdentifier(any(Criteria.class)))
+        .thenReturn(deleteResult);
+    ngTriggerEventService.deleteTriggerEventHistory(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER);
+    verify(triggerEventHistoryRepository, times(1)).deleteTriggerEventHistoryForTriggerIdentifier(any());
   }
 }

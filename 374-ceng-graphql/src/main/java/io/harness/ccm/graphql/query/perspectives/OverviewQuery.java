@@ -64,6 +64,8 @@ public class OverviewQuery {
   @Inject @Nullable @Named("clickHouseConfig") ClickHouseConfig clickHouseConfig;
   @Inject ClickHouseQueryResponseHelper clickHouseQueryResponseHelper;
 
+  private static final String CLICKHOUSE_UNIFIED_TABLE = "ccm.unifiedTable";
+
   @GraphQLQuery(name = "overviewTimeSeriesStats", description = "Table for perspective")
   public PerspectiveTimeSeriesData overviewTimeSeriesStats(
       @GraphQLArgument(name = "aggregateFunction") List<QLCEViewAggregation> aggregateFunction,
@@ -71,8 +73,6 @@ public class OverviewQuery {
       @GraphQLArgument(name = "groupBy") List<QLCEViewGroupBy> groupBy,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
-    BigQuery bigQuery = bigQueryService.get();
     long timePeriod = perspectiveTimeSeriesHelper.getTimePeriod(groupBy);
     List<QLCEViewTimeFilter> timeFilters = filters.stream()
                                                .filter(filter -> filter.getTimeFilter() != null)
@@ -81,6 +81,8 @@ public class OverviewQuery {
 
     if (!isClickHouseEnabled) {
       TableResult result;
+      String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
+      BigQuery bigQuery = bigQueryService.get();
       SelectQuery query = viewsQueryBuilder.getCostByProvidersOverviewQuery(
           timeFilters, groupBy, aggregateFunction, cloudProviderTableName);
       QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
@@ -94,9 +96,8 @@ public class OverviewQuery {
       return perspectiveTimeSeriesHelper.fetch(result, timePeriod, groupBy);
     } else {
       ResultSet resultSet = null;
-      cloudProviderTableName = "ccm.unifiedTable";
       SelectQuery query = viewsQueryBuilder.getCostByProvidersOverviewQuery(
-          timeFilters, groupBy, aggregateFunction, cloudProviderTableName);
+          timeFilters, groupBy, aggregateFunction, CLICKHOUSE_UNIFIED_TABLE);
       try (Connection connection = clickHouseService.getConnection(clickHouseConfig);
            Statement statement = connection.createStatement()) {
         resultSet = statement.executeQuery(query.toString());

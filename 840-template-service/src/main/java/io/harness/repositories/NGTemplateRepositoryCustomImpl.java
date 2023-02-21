@@ -256,7 +256,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     }
     if (savedEntity.getStoreType() == StoreType.REMOTE) {
       // fetch yaml from git
-      String branchName = templateGitXService.getWorkingBranch(savedEntity.getRepoURL());
+      String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepoURL());
       if (loadFromFallbackBranch) {
         savedEntity = fetchRemoteEntityWithFallBackBranch(
             accountId, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);

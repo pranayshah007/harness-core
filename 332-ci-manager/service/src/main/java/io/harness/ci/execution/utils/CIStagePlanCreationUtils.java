@@ -43,7 +43,7 @@ public class CIStagePlanCreationUtils {
     stageBuilder.failureStrategies(
         stageNode.getFailureStrategies() != null ? stageNode.getFailureStrategies().getValue() : null);
     stageBuilder.skipCondition(stageNode.getSkipCondition());
-    stageBuilder.when(stageNode.getWhen());
+    stageBuilder.when(stageNode.getWhen() != null ? stageNode.getWhen().getValue() : null);
     stageBuilder.type(stageNode.getType());
     stageBuilder.uuid(stageNode.getUuid());
     stageBuilder.variables(

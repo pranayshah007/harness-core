@@ -9,14 +9,16 @@ package io.harness.ccm.views.service;
 
 import io.harness.ccm.views.dto.DefaultViewIdDto;
 import io.harness.ccm.views.entities.CEView;
+import io.harness.ccm.views.entities.CEViewFolder;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewState;
 import io.harness.ccm.views.graphql.QLCEView;
 import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
 
-import com.google.cloud.bigquery.BigQuery;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface CEViewService {
   CEView save(CEView ceView, boolean clone);
@@ -26,8 +28,10 @@ public interface CEViewService {
 
   CEView get(String uuid);
   CEView update(CEView ceView);
+  Set<String> getPerspectiveFolderIds(String accountId, List<String> ceViewIds);
+  HashMap<String, String> getPerspectiveIdAndFolderId(String accountId, List<String> ceViewIds);
   void updateBusinessMappingName(String accountId, String buinessMappingUuid, String newBusinessMappingName);
-  CEView updateTotalCost(CEView ceView, BigQuery bigQuery, String cloudProviderTableName);
+  CEView updateTotalCost(CEView ceView);
   boolean delete(String uuid, String accountId);
   List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria);
   List<QLCEView> getAllViews(
@@ -41,4 +45,8 @@ public interface CEViewService {
 
   void updateDefaultClusterViewVisualization(String viewId);
   Map<String, String> getPerspectiveIdToNameMapping(String accountId, List<String> perspectiveIds);
+
+  String getDefaultFolderId(String accountId);
+  boolean setFolderId(
+      CEView ceView, Set<String> allowedFolderIds, List<CEViewFolder> ceViewFolders, String defaultFolderId);
 }

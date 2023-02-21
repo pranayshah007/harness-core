@@ -8,6 +8,7 @@
 package io.harness.yaml.schema.beans;
 
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -97,6 +98,26 @@ public class YamlSchemaConstantsTest extends CategoryTest {
     assertThat(checkPattern(SchemaConstants.RUNTIME_INPUT_PATTERN, "<+input>a")).isFalse();
     assertThat(checkPattern(SchemaConstants.RUNTIME_INPUT_PATTERN, "<+input>.executionInput()s")).isFalse();
     assertThat(checkPattern(SchemaConstants.RUNTIME_INPUT_PATTERN, "<+input>.default(val).")).isFalse();
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testExecutionInputPatternEmptyStringAllowed() {
+    // True, normal runtime input string.
+    assertThat(checkPattern(SchemaConstants.RUNTIME_INPUT_PATTERN_EMPTY_STRING_ALLOWED, "<+input>")).isTrue();
+    // True, execution input.
+    assertThat(checkPattern(SchemaConstants.RUNTIME_INPUT_PATTERN_EMPTY_STRING_ALLOWED, "<+input>.executionInput()"))
+        .isTrue();
+    assertThat(checkPattern(SchemaConstants.RUNTIME_INPUT_PATTERN_EMPTY_STRING_ALLOWED, "<+input>.default(val)"))
+        .isTrue();
+    assertThat(checkPattern(SchemaConstants.RUNTIME_INPUT_PATTERN_EMPTY_STRING_ALLOWED,
+                   "<+input>.default(val).executionInput()"))
+        .isTrue();
+    assertThat(checkPattern(SchemaConstants.RUNTIME_INPUT_PATTERN_EMPTY_STRING_ALLOWED,
+                   "<+input>.executionInput().default(val)"))
+        .isTrue();
+    assertThat(checkPattern(SchemaConstants.RUNTIME_INPUT_PATTERN_EMPTY_STRING_ALLOWED, "")).isTrue();
   }
 
   @Test

@@ -378,8 +378,23 @@ public class YamlUtils {
     return qualifiedNameList;
   }
 
-  public String getStageFqnPath(YamlNode yamlNode) {
-    List<String> qualifiedNames = getQualifiedNameList(yamlNode, "pipeline", false);
+  private String getStageFQNPathForV1Yaml(List<String> qualifiedNames, YamlNode yamlNode) {
+    if (qualifiedNames.size() == 1) {
+      if (!EmptyPredicate.isEmpty(yamlNode.getName())) {
+        return qualifiedNames.get(0) + "." + yamlNode.getName();
+      }
+      return qualifiedNames.get(0);
+    }
+    return qualifiedNames.get(0) + "." + qualifiedNames.get(1);
+  }
+
+  public String getStageFqnPath(YamlNode yamlNode, String yamlVersion) {
+    // If yamlVersion is V1 then use stages as root fieldName because stages is the root. If it's V0, then pipeline.
+    List<String> qualifiedNames = getQualifiedNameList(yamlNode,
+        PipelineVersion.isV1(yamlVersion) ? YAMLFieldNameConstants.STAGES : YAMLFieldNameConstants.PIPELINE, false);
+    if (qualifiedNames.size() > 0 && PipelineVersion.isV1(yamlVersion)) {
+      return getStageFQNPathForV1Yaml(qualifiedNames, yamlNode);
+    }
     if (qualifiedNames.size() <= 2) {
       return String.join(".", qualifiedNames);
     }

@@ -16,6 +16,7 @@ import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
 import io.harness.pms.sdk.core.adviser.fail.OnFailAdviser;
 import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviser;
 import io.harness.pms.sdk.core.adviser.manualintervention.ManualInterventionAdviser;
+import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviser;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviser;
 import io.harness.pms.sdk.core.adviser.retry.RetryAdviser;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviser;
@@ -38,6 +39,7 @@ public class PmsSdkAdviserRegistrar {
     engineAdvisers.put(OnAbortAdviser.ADVISER_TYPE, OnAbortAdviser.class);
     engineAdvisers.put(OnMarkSuccessAdviser.ADVISER_TYPE, OnMarkSuccessAdviser.class);
     engineAdvisers.put(RetryAdviser.ADVISER_TYPE, RetryAdviser.class);
+    engineAdvisers.put(OnMarkFailureAdviser.ADVISER_TYPE, OnMarkFailureAdviser.class);
 
     return engineAdvisers;
   }

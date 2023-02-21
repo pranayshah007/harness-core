@@ -2015,11 +2015,14 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
     sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
+    compositeSLODTO.setOrgIdentifier(projectParamsTest.getOrgIdentifier());
+    compositeSLODTO.setProjectIdentifier(projectParamsTest.getProjectIdentifier());
+    mockServiceLevelObjectiveService.create(projectParamsTest, compositeSLODTO);
     mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
     mockServiceLevelObjectiveService.deleteByProjectIdentifier(AbstractServiceLevelObjective.class,
         projectParamsTest.getAccountIdentifier(), projectParamsTest.getOrgIdentifier(),
         projectParamsTest.getProjectIdentifier());
-    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any());
   }
 
   @Test
@@ -2043,9 +2046,12 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
+    compositeSLODTO.setOrgIdentifier(projectParamsTest.getOrgIdentifier());
+    compositeSLODTO.setProjectIdentifier(projectParamsTest.getProjectIdentifier());
+    mockServiceLevelObjectiveService.create(projectParamsTest, compositeSLODTO);
     mockServiceLevelObjectiveService.deleteByOrgIdentifier(AbstractServiceLevelObjective.class,
         projectParamsTest.getAccountIdentifier(), projectParamsTest.getOrgIdentifier());
-    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any());
   }
 
   @Test
@@ -2066,12 +2072,15 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.create(projectParamsTest.getAccountIdentifier(), monitoredServiceDTO);
     ServiceLevelObjectiveV2Service mockServiceLevelObjectiveService = spy(serviceLevelObjectiveV2Service);
     mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
+    compositeSLODTO.setOrgIdentifier(projectParamsTest.getOrgIdentifier());
+    compositeSLODTO.setProjectIdentifier(projectParamsTest.getProjectIdentifier());
+    mockServiceLevelObjectiveService.create(projectParamsTest, compositeSLODTO);
     sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParamsTest, sloDTO);
     mockServiceLevelObjectiveService.deleteByAccountIdentifier(
         AbstractServiceLevelObjective.class, projectParamsTest.getAccountIdentifier());
-    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any());
   }
 
   @Test

@@ -18,5 +18,5 @@ import lombok.Data;
 @Builder
 @Data
 public class RunRequest {
-  private RunData data;
+  private CreateRunData data;
 }

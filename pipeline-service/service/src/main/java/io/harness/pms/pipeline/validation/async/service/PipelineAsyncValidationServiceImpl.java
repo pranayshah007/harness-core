@@ -10,6 +10,7 @@ package io.harness.pms.pipeline.validation.async.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.manage.ManagedExecutorService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
@@ -66,6 +67,23 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
                                .pipelineGovernanceService(pipelineGovernanceService)
                                .build());
     return savedPipelineValidationEvent;
+  }
+
+  @Override
+  public PipelineValidationEvent createRecordForSuccessfulSyncValidation(
+      PipelineEntity pipelineEntity, String branch, GovernanceMetadata governanceMetadata, Action action) {
+    String fqn = PipelineAsyncValidationHelper.buildFQN(pipelineEntity, branch);
+    PipelineValidationEvent pipelineValidationEvent =
+        PipelineValidationEvent.builder()
+            .status(ValidationStatus.SUCCESS)
+            .fqn(fqn)
+            .action(action)
+            .params(ValidationParams.builder().pipelineEntity(pipelineEntity).build())
+            .result(ValidationResult.builder().governanceMetadata(governanceMetadata).build())
+            .startTs(System.currentTimeMillis())
+            .endTs(System.currentTimeMillis())
+            .build();
+    return pipelineValidationEventRepository.save(pipelineValidationEvent);
   }
 
   @Override

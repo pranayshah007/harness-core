@@ -553,8 +553,16 @@ public class UserResource {
   @GET
   @Path("reset-two-factor-auth/{userId}")
   @ApiOperation(value = "resend email for two factor authorization", nickname = "resetTwoFactorAuth")
+  @Operation(operationId = "reset2fa", summary = "Reset two factor authorization",
+      description = "Reset Two-Factor authorization.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Successfully reset two factor authorization for an account")
+      })
   @FeatureRestrictionCheck(FeatureRestrictionName.TWO_FACTOR_AUTH_SUPPORT)
-  public RestResponse<Boolean> reset2fa(@PathParam("userId") @NotEmpty String userId,
+  public RestResponse<Boolean>
+  reset2fa(@PathParam("userId") @NotEmpty String userId,
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountIdentifier, null, null), Resource.of(USER, userId), MANAGE_USER_PERMISSION);

@@ -21,6 +21,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -209,6 +210,50 @@ public class CfRollbackCommandTaskHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
+  public void testExecuteTaskInternalWithCompleteRollback() throws Exception {
+    TasApplicationInfo oldAppInfo = TasApplicationInfo.builder()
+                                        .applicationName(APP_NAME_INACTIVE)
+                                        .oldName(APP_NAME)
+                                        .applicationGuid(APP_INACTIVE_ID)
+                                        .runningCount(1)
+                                        .build();
+    TasApplicationInfo newAppInfo =
+        TasApplicationInfo.builder().applicationName(APP_NAME).applicationGuid(APP_ID).runningCount(2).build();
+    CfRollbackCommandRequestNG cfRollbackCommandRequestNG =
+        CfRollbackCommandRequestNG.builder()
+            .tasInfraConfig(tasInfraConfig)
+            .cfCommandTypeNG(CfCommandTypeNG.APP_RESIZE)
+            .cfCliVersion(CfCliVersion.V7)
+            .commandUnitsProgress(CommandUnitsProgress.builder().build())
+            .accountId(ACCOUNT)
+            .useAppAutoScalar(false)
+            .cfAppNamePrefix(APP_NAME)
+            .activeApplicationDetails(oldAppInfo)
+            .newApplicationDetails(newAppInfo)
+            .build();
+
+    InstanceDetail instanceDetail = InstanceDetail.builder().index("idx1").build();
+    ApplicationDetail applicationDetailForOldApp = getApplicationDetail(List.of(instanceDetail));
+    ApplicationDetail applicationDetailForNewApp = getApplicationDetail(Collections.emptyList());
+    when(cfDeploymentManager.getApplicationByName(any()))
+        .thenReturn(applicationDetailForNewApp)
+        .thenReturn(applicationDetailForOldApp);
+    ArgumentCaptor<CfRequestConfig> cfRequestConfigArgumentCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
+    CfRollbackCommandResponseNG cfRollbackCommandResponseNG =
+        (CfRollbackCommandResponseNG) cfRollbackCommandTaskHandlerNG.executeTaskInternal(
+            cfRollbackCommandRequestNG, logStreamingTaskClient, CommandUnitsProgress.builder().build());
+
+    assertThat(cfRollbackCommandResponseNG.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+
+    verify(cfDeploymentManager, times(1)).deleteApplication(cfRequestConfigArgumentCaptor.capture());
+    CfRequestConfig cfRequestConfig = cfRequestConfigArgumentCaptor.getValue();
+    assertThat(cfRequestConfig.getApplicationName()).isEqualTo(APP_NAME + "__interim");
+    assertForCfRequestConfig(cfRequestConfig);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
   public void testExecuteTaskInternalWithExceptionThrownInBetween() throws Exception {
     TasApplicationInfo oldAppInfo = TasApplicationInfo.builder()
                                         .applicationName(APP_NAME_INACTIVE)
@@ -339,7 +384,7 @@ public class CfRollbackCommandTaskHandlerTest extends CategoryTest {
         .stack("stack")
         .runningInstances(1)
         .requestedState("RUNNING")
-        .instances(2)
+        .instances(instances.size())
         .instanceDetails(instances)
         .build();
   }

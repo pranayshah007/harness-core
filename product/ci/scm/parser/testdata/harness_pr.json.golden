@@ -1,0 +1,37 @@
+{
+  "pr": {
+    "action": 1,
+    "repo": {
+      "id": "aba",
+      "branch": "main",
+      "link": "http://localhost:3000/git/kmpySmUISimoRrJL6NL73w/myOrg/myProject/aba.git",
+      "created": "0001-01-01T00:00:00Z",
+      "updated": "0001-01-01T00:00:00Z"
+    },
+    "pr": {
+      "number": 4,
+      "title": "aw",
+      "body": "",
+      "sha": "d74b1ebfe520ac01b209dd9085f005884cc9f4cd",
+      "source": "13",
+      "target": "13",
+      "fork":"fork",
+      "link": "http://localhost:3000/git/kmpySmUISimoRrJL6NL73w/myOrg/myProject/aba.git",
+      "closed": false,
+      "merged": false,
+      "base": {},
+      "head": {},
+      "author": {
+        "created": "0001-01-01T00:00:00Z",
+        "updated": "0001-01-01T00:00:00Z"
+      },
+      "created": "0001-01-01T00:00:00Z",
+      "updated": "0001-01-01T00:00:00Z"
+    },
+    "sender": {
+      "email": "default@harness.io",
+      "created": "0001-01-01T00:00:00Z",
+      "updated": "0001-01-01T00:00:00Z"
+    }
+  }
+}

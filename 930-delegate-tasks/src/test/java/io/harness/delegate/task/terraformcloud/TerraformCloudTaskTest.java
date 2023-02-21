@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.TMACARI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -33,15 +34,21 @@ import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
 import io.harness.encryption.SecretRefData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
+import io.harness.terraformcloud.TerraformCloudApiTokenCredentials;
+import io.harness.terraformcloud.TerraformCloudConfig;
+import io.harness.terraformcloud.model.RunData;
+import io.harness.terraformcloud.model.RunStatus;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -65,6 +72,16 @@ public class TerraformCloudTaskTest {
   private TerraformCloudTaskNG task = new TerraformCloudTaskNG(
       DelegateTaskPackage.builder().delegateId("delegateId").data(TaskData.builder().build()).build(), null, null,
       null);
+
+  private TerraformCloudConfig terraformCloudConfig;
+
+  @Before
+  public void setUp() {
+    terraformCloudConfig =
+        TerraformCloudConfig.builder()
+            .terraformCloudCredentials(TerraformCloudApiTokenCredentials.builder().token(token).url(url).build())
+            .build();
+  }
 
   @Test
   @Owner(developers = BUHA)
@@ -158,6 +175,118 @@ public class TerraformCloudTaskTest {
     assertThat(terraformCloudWorkspacesTaskResponse.getWorkspaces()).isEqualTo(workspacesMap);
     assertThat(terraformCloudWorkspacesTaskResponse.getCommandExecutionStatus())
         .isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testRunRefreshStateTaskType() throws IOException {
+    doReturn(terraformCloudConfig).when(terraformCloudConfigMapper).mapTerraformCloudConfigWithDecryption(any(), any());
+    TaskParameters taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.RUN_REFRESH_STATE);
+
+    DelegateResponseData delegateResponseData = task.run(taskParameters);
+
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudRunTaskResponse.class);
+    verify(terraformCloudTaskHelper, times(1)).createRun(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testRunPlanOnlyTaskType() throws IOException {
+    doReturn(terraformCloudConfig).when(terraformCloudConfigMapper).mapTerraformCloudConfigWithDecryption(any(), any());
+    TaskParameters taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.RUN_PLAN_ONLY);
+    RunData runData = new RunData();
+    runData.setId("run-123");
+    doReturn(runData).when(terraformCloudTaskHelper).createRun(any(), any(), any(), any());
+
+    DelegateResponseData delegateResponseData = task.run(taskParameters);
+
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudRunTaskResponse.class);
+    TerraformCloudRunTaskResponse tfcResponse = (TerraformCloudRunTaskResponse) delegateResponseData;
+    assertThat(tfcResponse.getRunId()).isEqualTo("run-123");
+    assertThat(tfcResponse.getTfPlanJsonFileId()).isNull();
+    assertThat(tfcResponse.getTfOutput()).isNull();
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testRunPlanAndApplyTaskType() throws IOException {
+    doReturn(terraformCloudConfig).when(terraformCloudConfigMapper).mapTerraformCloudConfigWithDecryption(any(), any());
+    TaskParameters taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.RUN_PLAN_AND_APPLY);
+    RunData runData = new RunData();
+    runData.setId("run-123");
+    doReturn(runData).when(terraformCloudTaskHelper).createRun(any(), any(), any(), any());
+    doReturn("output").when(terraformCloudTaskHelper).getApplyOutput(any(), any(), any());
+
+    DelegateResponseData delegateResponseData = task.run(taskParameters);
+
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudRunTaskResponse.class);
+    TerraformCloudRunTaskResponse tfcResponse = (TerraformCloudRunTaskResponse) delegateResponseData;
+    assertThat(tfcResponse.getRunId()).isEqualTo("run-123");
+    assertThat(tfcResponse.getTfPlanJsonFileId()).isNull();
+    assertThat(tfcResponse.getTfOutput()).isEqualTo("output");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testRunPlanAndDestroyTaskType() throws IOException {
+    doReturn(terraformCloudConfig).when(terraformCloudConfigMapper).mapTerraformCloudConfigWithDecryption(any(), any());
+    TaskParameters taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.RUN_PLAN_AND_DESTROY);
+    RunData runData = new RunData();
+    runData.setId("run-123");
+    doReturn(runData).when(terraformCloudTaskHelper).createRun(any(), any(), any(), any());
+    doReturn("output").when(terraformCloudTaskHelper).getApplyOutput(any(), any(), any());
+
+    DelegateResponseData delegateResponseData = task.run(taskParameters);
+
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudRunTaskResponse.class);
+    TerraformCloudRunTaskResponse tfcResponse = (TerraformCloudRunTaskResponse) delegateResponseData;
+    assertThat(tfcResponse.getRunId()).isEqualTo("run-123");
+    assertThat(tfcResponse.getTfPlanJsonFileId()).isNull();
+    assertThat(tfcResponse.getTfOutput()).isEqualTo("output");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testRunPlanTaskType() throws IOException {
+    doReturn(terraformCloudConfig).when(terraformCloudConfigMapper).mapTerraformCloudConfigWithDecryption(any(), any());
+    TerraformCloudTaskParams taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.RUN_PLAN);
+    taskParameters.setExportJsonTfPlan(true);
+    RunData runData = new RunData();
+    runData.setId("run-123");
+    doReturn(runData).when(terraformCloudTaskHelper).createRun(any(), any(), any(), any());
+    doReturn("jsonPlan").when(terraformCloudTaskHelper).getJsonPlan(any(), any(), any());
+    doReturn("tfPlanId").when(terraformCloudTaskHelper).uploadTfPlanJson(any(), any(), any(), any(), any(), any());
+    DelegateResponseData delegateResponseData = task.run(taskParameters);
+
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudRunTaskResponse.class);
+    TerraformCloudRunTaskResponse tfcResponse = (TerraformCloudRunTaskResponse) delegateResponseData;
+    assertThat(tfcResponse.getRunId()).isEqualTo("run-123");
+    assertThat(tfcResponse.getTfPlanJsonFileId()).isEqualTo("tfPlanId");
+    assertThat(tfcResponse.getTfOutput()).isNull();
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testRunApplyTaskTypeWhenItPolicyCheckedStatus() throws IOException {
+    doReturn(terraformCloudConfig).when(terraformCloudConfigMapper).mapTerraformCloudConfigWithDecryption(any(), any());
+    TerraformCloudTaskParams taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.RUN_APPLY);
+    taskParameters.setRunId("run-123");
+    doReturn(RunStatus.policy_checked).when(terraformCloudTaskHelper).getRunStatus(any(), any(), any());
+    doReturn("output").when(terraformCloudTaskHelper).applyRun(any(), any(), any(), any(), any());
+
+    DelegateResponseData delegateResponseData = task.run(taskParameters);
+
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudRunTaskResponse.class);
+    TerraformCloudRunTaskResponse tfcResponse = (TerraformCloudRunTaskResponse) delegateResponseData;
+    assertThat(tfcResponse.getRunId()).isEqualTo("run-123");
+    assertThat(tfcResponse.getTfPlanJsonFileId()).isNull();
+    assertThat(tfcResponse.getTfOutput()).isEqualTo("output");
   }
 
   private TerraformCloudTaskParams getTerraformCloudTaskParams(TerraformCloudTaskType taskType) {

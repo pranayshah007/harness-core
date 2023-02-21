@@ -10,10 +10,9 @@ package io.harness.ngmigration.service.workflow;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.plancreator.stages.StageElementWrapperConfig;
 
 import software.wings.beans.CanaryOrchestrationWorkflow;
-import software.wings.beans.GraphNode;
-import software.wings.beans.MultiServiceOrchestrationWorkflow;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
 import software.wings.ngmigration.CgEntityId;
@@ -33,14 +32,6 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
     return TemplateEntityType.PIPELINE_TEMPLATE;
   }
 
-  @Override
-  public List<GraphNode> getSteps(Workflow workflow) {
-    MultiServiceOrchestrationWorkflow orchestrationWorkflow =
-        (MultiServiceOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
-    return getSteps(orchestrationWorkflow.getWorkflowPhases(), orchestrationWorkflow.getPreDeploymentSteps(),
-        orchestrationWorkflow.getPostDeploymentSteps());
-  }
-
   PhaseStep getPreDeploymentPhase(Workflow workflow) {
     CanaryOrchestrationWorkflow orchestrationWorkflow =
         (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
@@ -51,6 +42,12 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
     CanaryOrchestrationWorkflow orchestrationWorkflow =
         (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
     return orchestrationWorkflow.getPostDeploymentSteps();
+  }
+
+  @Override
+  public List<StageElementWrapperConfig> asStages(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
+    return getStagesForMultiServiceWorkflow(WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow));
   }
 
   @Override

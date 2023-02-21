@@ -36,7 +36,6 @@ public class ArtifactStreamFactory {
 
   private static final ArtifactStreamMapper acrMapper = new ACRArtifactStreamMapper();
   private static final ArtifactStreamMapper amiMapper = new AmiArtifactStreamMapper();
-
   private static final Map<ArtifactStreamType, ArtifactStreamMapper> ARTIFACT_STREAM_MAPPER_MAP =
       ImmutableMap.<ArtifactStreamType, ArtifactStreamMapper>builder()
           .put(ArtifactStreamType.ARTIFACTORY, artifactoryMapper)

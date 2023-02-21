@@ -23,4 +23,7 @@ public interface NGTriggerEventsService {
 
   void deleteAllForPipeline(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
+
+  void deleteTriggerEventHistory(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String triggerIdentifier);
 }

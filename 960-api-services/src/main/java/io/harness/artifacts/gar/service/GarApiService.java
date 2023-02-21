@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.gar.beans.GarInternalConfig;
+import io.harness.artifacts.gar.beans.GarPackageVersionResponse;
 
 import java.util.List;
 
@@ -20,4 +21,6 @@ public interface GarApiService {
   BuildDetailsInternal getLastSuccessfulBuildFromRegex(GarInternalConfig garinternalConfig, String versionRegex);
 
   BuildDetailsInternal verifyBuildNumber(GarInternalConfig garInternalConfig, String version);
+  List<BuildDetailsInternal> processPage(
+      GarPackageVersionResponse tagsPage, String versionRegex, GarInternalConfig garinternalConfig);
 }

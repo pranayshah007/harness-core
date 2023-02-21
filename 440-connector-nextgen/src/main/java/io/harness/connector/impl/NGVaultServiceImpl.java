@@ -624,9 +624,7 @@ public class NGVaultServiceImpl implements NGVaultService {
     Optional<String> xVaultAwsIamServerId =
         Optional.ofNullable(specDTO)
             .filter(x -> x.getAccessType() == AccessType.AWS_IAM)
-            .map(x
-                -> String.valueOf(
-                    ((VaultAwsIamRoleCredentialDTO) (x.getSpec())).getXVaultAwsIamServerId().getDecryptedValue()))
+            .map(x -> getDecryptedValueOfXheader((VaultAwsIamRoleCredentialDTO) (x.getSpec())))
             .filter(x -> !x.isEmpty());
     xVaultAwsIamServerId.ifPresent(x -> { vaultConfig.setXVaultAwsIamServerId(x); });
   }
@@ -806,8 +804,10 @@ public class NGVaultServiceImpl implements NGVaultService {
         secretRefData = ((VaultAppRoleCredentialDTO) spec.getSpec()).getSecretId();
         secretRefDataList.add(secretRefData);
       } else if (AWS_IAM == spec.getAccessType()) {
-        secretRefData = ((VaultAwsIamRoleCredentialDTO) spec.getSpec()).getXVaultAwsIamServerId();
-        secretRefDataList.add(secretRefData);
+        VaultAwsIamRoleCredentialDTO vaultCredentialDTO = (VaultAwsIamRoleCredentialDTO) spec.getSpec();
+        if (null != checkIfXHeaderExistOfReturnNull(vaultCredentialDTO)) {
+          secretRefDataList.add(checkIfXHeaderExistOfReturnNull(vaultCredentialDTO));
+        }
       } else {
         // n case of VAULT_AGENT we don't have any secretref
         return null;
@@ -981,5 +981,19 @@ public class NGVaultServiceImpl implements NGVaultService {
         ngConnectorSecretManagerService.getPerpetualTaskId(vaultConnector.getAccountIdentifier(),
             vaultConnector.getOrgIdentifier(), vaultConnector.getProjectIdentifier(), vaultConnector.getIdentifier());
     ngConnectorSecretManagerService.resetHeartBeatTask(vaultConnector.getAccountIdentifier(), heartBeatPerpetualTaskId);
+  }
+
+  private String getDecryptedValueOfXheader(VaultAwsIamRoleCredentialDTO specDTO) {
+    if (null != specDTO.getXVaultAwsIamServerId()) {
+      return String.valueOf(specDTO.getXVaultAwsIamServerId().getDecryptedValue());
+    }
+    return null;
+  }
+
+  private SecretRefData checkIfXHeaderExistOfReturnNull(VaultAwsIamRoleCredentialDTO specDTO) {
+    if (null != specDTO.getXVaultAwsIamServerId()) {
+      return specDTO.getXVaultAwsIamServerId();
+    }
+    return null;
   }
 }

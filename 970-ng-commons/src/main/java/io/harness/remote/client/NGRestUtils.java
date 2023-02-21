@@ -7,8 +7,6 @@
 
 package io.harness.remote.client;
 
-import static java.lang.String.format;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -49,8 +47,19 @@ public class NGRestUtils {
     }
   }
 
+  // This method handles all call requests not using ResponseDTO
+  public static <T> T getGeneralResponse(Call<T> request) {
+    RetryPolicy<Response<T>> retryPolicy = getRetryPolicyForResponse("Request failed");
+    try {
+      Response<T> response = Failsafe.with(retryPolicy).get(() -> executeGeneralRequest(request));
+      return handleGeneralResponse(response, "");
+    } catch (FailsafeException ex) {
+      throw new UnexpectedException(DEFAULT_ERROR_MESSAGE, ex.getCause());
+    }
+  }
+
   public static <T> T getResponse(Call<ResponseDTO<T>> request, String defaultErrorMessage) {
-    RetryPolicy<Response<ResponseDTO<T>>> retryPolicy = getRetryPolicy(format(defaultErrorMessage));
+    RetryPolicy<Response<ResponseDTO<T>>> retryPolicy = getRetryPolicy(defaultErrorMessage);
     try {
       Response<ResponseDTO<T>> response = Failsafe.with(retryPolicy).get(() -> executeRequest(request));
       return handleResponse(response, defaultErrorMessage);
@@ -67,6 +76,43 @@ public class NGRestUtils {
       String url = Optional.ofNullable(request.request()).map(x -> x.url().encodedPath()).orElse(null);
       log.error("IO error while connecting to the service: {}", url, ioException);
       throw ioException;
+    }
+  }
+
+  // Execute general response (not using ResponseDTO)
+  private static <T> Response<T> executeGeneralRequest(Call<T> request) throws IOException {
+    try {
+      Call<T> cloneRequest = request.clone();
+      return cloneRequest == null ? request.execute() : cloneRequest.execute();
+    } catch (IOException ioException) {
+      String url = Optional.ofNullable(request.request()).map(x -> x.url().encodedPath()).orElse(null);
+      log.error("IO error while connecting to the service: {}", url, ioException);
+      throw ioException;
+    }
+  }
+
+  // Handles for general response (not using ResponseDTO)
+  private static <T> T handleGeneralResponse(Response<T> response, String defaultErrorMessage) {
+    if (response.isSuccessful()) {
+      return response.body();
+    }
+
+    log.error("Error response received: {}", response);
+    String errorMessage = "";
+    try {
+      ErrorDTO restResponse = JsonUtils.asObject(response.errorBody().string(), new TypeReference<ErrorDTO>() {});
+      errorMessage = restResponse.getMessage();
+      throw new InvalidRequestException(
+          StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage, restResponse.getMetadata());
+    } catch (InvalidRequestException e) {
+      throw e;
+    } catch (Exception e) {
+      log.error("Error while converting rest response to ErrorDTO", e);
+      throw new InvalidRequestException(StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage);
+    } finally {
+      if (!response.isSuccessful() && response.errorBody() != null) {
+        response.errorBody().close();
+      }
     }
   }
 
@@ -103,8 +149,28 @@ public class NGRestUtils {
         .onFailedAttempt(event -> handleFailure(event, failureMessage));
   }
 
+  // Returns retry policy for general response (not using ResponseDTO)
+  private <T> RetryPolicy<Response<T>> getRetryPolicyForResponse(String failureMessage) {
+    return new RetryPolicy<Response<T>>()
+        .withBackoff(1, 10, ChronoUnit.SECONDS)
+        .handle(IOException.class)
+        .handleResultIf(result -> !result.isSuccessful() && isRetryableHttpCode(result.code()))
+        .withMaxAttempts(MAX_ATTEMPTS)
+        .onFailedAttempt(event -> handleFailureForResponse(event, failureMessage));
+  }
+
   private static <T> void handleFailure(
       ExecutionAttemptedEvent<Response<ResponseDTO<T>>> event, String failureMessage) {
+    if (event.getLastResult() == null) {
+      log.warn(String.format("%s. Attempt : %d.", failureMessage, event.getAttemptCount()), event.getLastFailure());
+    } else {
+      log.warn(String.format(
+                   "%s. Attempt : %d. Response : %s", failureMessage, event.getAttemptCount(), event.getLastResult()),
+          event.getLastFailure());
+    }
+  }
+
+  private static <T> void handleFailureForResponse(ExecutionAttemptedEvent<Response<T>> event, String failureMessage) {
     if (event.getLastResult() == null) {
       log.warn(String.format("%s. Attempt : %d.", failureMessage, event.getAttemptCount()), event.getLastFailure());
     } else {

@@ -10,6 +10,7 @@ package io.harness.pms.approval.jira;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.OrchestrationPublisherName;
@@ -163,8 +164,16 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
                                     .projectIdentifier(projectIdentifier)
                                     .build();
 
-    NGAccessWithEncryptionConsumer ngAccessWithEncryptionConsumer =
-        NGAccessWithEncryptionConsumer.builder().ngAccess(baseNGAccess).decryptableEntity(jiraConnectorDTO).build();
+    NGAccessWithEncryptionConsumer ngAccessWithEncryptionConsumer;
+    if (!isNull(jiraConnectorDTO.getAuth()) && !isNull(jiraConnectorDTO.getAuth().getCredentials())) {
+      ngAccessWithEncryptionConsumer = NGAccessWithEncryptionConsumer.builder()
+                                           .ngAccess(baseNGAccess)
+                                           .decryptableEntity(jiraConnectorDTO.getAuth().getCredentials())
+                                           .build();
+    } else {
+      ngAccessWithEncryptionConsumer =
+          NGAccessWithEncryptionConsumer.builder().ngAccess(baseNGAccess).decryptableEntity(jiraConnectorDTO).build();
+    }
     List<EncryptedDataDetail> encryptionDataDetails = NGRestUtils.getResponse(
         secretManagerClient.getEncryptionDetails(accountIdentifier, ngAccessWithEncryptionConsumer));
 

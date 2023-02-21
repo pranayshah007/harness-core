@@ -6,6 +6,8 @@
  */
 package io.harness.cvng.downtime.transformer;
 
+import static java.lang.Math.max;
+
 import io.harness.cvng.downtime.beans.DowntimeDuration;
 import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec;
 import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec.OnetimeDurationBasedSpec;
@@ -94,16 +96,22 @@ public class OnetimeDowntimeSpecDetailsTransformer
 
   @Override
   public List<Pair<Long, Long>> getStartAndEndTimesForFutureInstances(OnetimeDowntimeSpec spec) {
-    if (spec.getStartTime() < clock.millis() / 1000) {
-      return Collections.emptyList();
-    }
+    long startTime = spec.getStartTime();
+    long endTime;
+    long currentTime = clock.millis() / 1000;
     switch (spec.getSpec().getType()) {
       case DURATION:
-        return Collections.singletonList(Pair.of(spec.getStartTime(),
-            getEndTime(spec.getStartTime(), ((OnetimeDurationBasedSpec) spec.getSpec()).getDowntimeDuration())));
+        endTime = getEndTime(spec.getStartTime(), ((OnetimeDurationBasedSpec) spec.getSpec()).getDowntimeDuration());
+        if (endTime >= startTime && endTime >= currentTime) {
+          return Collections.singletonList(Pair.of(max(startTime, currentTime), endTime));
+        }
+        return Collections.emptyList();
       case END_TIME:
-        return Collections.singletonList(
-            Pair.of(spec.getStartTime(), ((OnetimeEndTimeBasedSpec) spec.getSpec()).getEndTime()));
+        endTime = ((OnetimeEndTimeBasedSpec) spec.getSpec()).getEndTime();
+        if (endTime >= startTime && endTime >= currentTime) {
+          return Collections.singletonList(Pair.of(max(startTime, currentTime), endTime));
+        }
+        return Collections.emptyList();
       default:
         throw new IllegalStateException("type: " + spec.getSpec().getType() + " is not handled");
     }
