@@ -246,7 +246,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
                     .checkForAccess(true)
                     .getMergedYamlWithTemplateField(false)
                     .build(),
-                true));
+                false));
         return templateMergeResponseDTO.getMergedPipelineYaml();
       } catch (InvalidRequestException e) {
         if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
