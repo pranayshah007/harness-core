@@ -5,8 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.status.enums;
+package io.harness.idp.status.k8s;
 
-//  Wiki page specifying different statuses
-//  https://harness.atlassian.net/wiki/spaces/IDP/pages/21301300949/IDP+App+Status+logic+-+Tech+Spec#Different-Statuses
-public enum Status { COMPLETED, RUNNING, PENDING, FAILED, NOT_FOUND }
+import io.harness.spec.server.idp.v1.model.StatusInfo;
+
+import java.util.Optional;
+
+public interface HealthCheck {
+  Optional<StatusInfo> getCurrentStatus(String accountId);
+}

@@ -143,7 +143,7 @@ public class ArtifactResourceUtils {
     TemplateMergeResponseDTO response = NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYaml(
         accountId, orgIdentifier, projectIdentifier, gitEntityBasicInfo.getBranch(),
         gitEntityBasicInfo.getYamlGitConfigId(), gitEntityBasicInfo.getDefaultFromOtherRepo(), BOOLEAN_FALSE_VALUE,
-        TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).build()));
+        TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).build(), false));
     return response.getMergedPipelineYaml();
   }
 

@@ -26,6 +26,8 @@ import io.harness.idp.secret.eventlisteners.SecretCrudListener;
 import io.harness.idp.secret.resources.EnvironmentSecretApiImpl;
 import io.harness.idp.secret.service.EnvironmentSecretService;
 import io.harness.idp.secret.service.EnvironmentSecretServiceImpl;
+import io.harness.idp.status.k8s.HealthCheck;
+import io.harness.idp.status.k8s.PodHealthCheck;
 import io.harness.idp.status.resources.StatusInfoApiImpl;
 import io.harness.idp.status.service.StatusInfoService;
 import io.harness.idp.status.service.StatusInfoServiceImpl;
@@ -169,6 +171,7 @@ public class IdpModule extends AbstractModule {
     bind(EnvironmentSecretApi.class).to(EnvironmentSecretApiImpl.class);
     bind(StatusInfoApi.class).to(StatusInfoApiImpl.class);
     bind(K8sClient.class).to(K8sApiClient.class);
+    bind(HealthCheck.class).to(PodHealthCheck.class);
     bind(MessageListener.class).annotatedWith(Names.named(SECRET_ENTITY + ENTITY_CRUD)).to(SecretCrudListener.class);
     bind(ConnectorProcessorFactory.class);
   }

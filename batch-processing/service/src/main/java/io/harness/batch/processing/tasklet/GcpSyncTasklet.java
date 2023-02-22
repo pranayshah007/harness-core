@@ -94,6 +94,7 @@ public class GcpSyncTasklet implements Tasklet {
     private String accountId;
     private String projectId;
     private String datasetId;
+    private String tableId;
   }
 
   @Override
@@ -178,7 +179,7 @@ public class GcpSyncTasklet implements Tasklet {
           lastModifiedTime = lastModifiedTime != null ? lastModifiedTime : table.getCreationTime();
           log.info("Sync condition {} {}", lastModifiedTime, endTime);
           if (lastModifiedTime > endTime || firstSync) {
-            CacheKey cacheKey = new CacheKey(accountId, projectId, datasetId);
+            CacheKey cacheKey = new CacheKey(accountId, projectId, datasetId, table.getTableId().getTable());
             gcpSyncInfo.get(cacheKey,
                 key
                 -> publishMessage(sourceCredentials, billingDataPipelineConfig.getGcpProjectId(),
@@ -196,7 +197,7 @@ public class GcpSyncTasklet implements Tasklet {
       lastModifiedTime = lastModifiedTime != null ? lastModifiedTime : tableGranularData.getCreationTime();
       log.info("Sync condition {} {}", lastModifiedTime, endTime);
       if (lastModifiedTime > endTime || firstSync) {
-        CacheKey cacheKey = new CacheKey(accountId, projectId, datasetId);
+        CacheKey cacheKey = new CacheKey(accountId, projectId, datasetId, tableName);
         gcpSyncInfo.get(cacheKey,
             key
             -> publishMessage(sourceCredentials, billingDataPipelineConfig.getGcpProjectId(),

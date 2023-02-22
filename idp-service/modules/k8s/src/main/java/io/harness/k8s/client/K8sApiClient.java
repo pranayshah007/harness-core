@@ -134,7 +134,7 @@ public class K8sApiClient implements K8sClient {
     return true;
   }
 
-  private KubernetesConfig getKubernetesConfig(String namespace) {
+  public static KubernetesConfig getKubernetesConfig(String namespace) {
     if (StringUtils.isBlank(namespace)) {
       throw new InvalidRequestException("Empty namespace");
     }
