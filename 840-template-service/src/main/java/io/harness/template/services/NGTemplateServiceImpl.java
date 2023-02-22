@@ -279,7 +279,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     TemplateMergeResponseDTO templateMergeResponseDTO = null;
     templateMergeResponseDTO =
         templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
-            templateEntity.getProjectIdentifier(), templateEntity.getYaml(), false, false);
+            templateEntity.getProjectIdentifier(), templateEntity.getYaml(), false, false, false);
     populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
     checkLinkedTemplateAccess(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
         templateEntity.getProjectIdentifier(), templateMergeResponseDTO);

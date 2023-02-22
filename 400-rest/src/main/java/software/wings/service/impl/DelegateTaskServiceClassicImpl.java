@@ -64,7 +64,6 @@ import io.harness.delegate.DelegateGlobalAccountController;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.NoGlobalDelegateAccountException;
 import io.harness.delegate.beans.Delegate;
-import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateProgressData;
@@ -97,6 +96,7 @@ import io.harness.delegate.task.pcf.request.CfCommandTaskParameters;
 import io.harness.delegate.task.pcf.request.CfCommandTaskParameters.CfCommandTaskParametersBuilder;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequest;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.environment.SystemEnvironment;
 import io.harness.eraro.ErrorCode;
 import io.harness.event.handler.impl.EventPublishHelper;
@@ -281,6 +281,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject @Named(EXPRESSION_EVALUATOR_EXECUTOR) ExecutorService expressionEvaluatorExecutor;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
   @Inject private DelegateTaskQueueService delegateTaskQueueService;
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   private static final SecureRandom random = new SecureRandom();
   private HarnessCacheManager harnessCacheManager;
@@ -477,7 +478,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   public String queueTask(DelegateTask task) {
     task.getData().setAsync(true);
     if (task.getUuid() == null) {
-      task.setUuid(generateUuid());
+      task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
 
     try (AutoLogContext ignore1 = new TaskLogContext(task.getUuid(), task.getData().getTaskType(),
@@ -494,7 +495,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   public String queueTaskV2(DelegateTask task) {
     task.getTaskDataV2().setAsync(true);
     if (task.getUuid() == null) {
-      task.setUuid(generateUuid());
+      task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
 
     try (
@@ -511,7 +512,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   public void scheduleSyncTask(DelegateTask task) {
     task.getData().setAsync(false);
     if (task.getUuid() == null) {
-      task.setUuid(generateUuid());
+      task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
 
     try (AutoLogContext ignore1 = new TaskLogContext(task.getUuid(), task.getData().getTaskType(),
@@ -526,7 +527,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   public void scheduleSyncTaskV2(DelegateTask task) {
     task.getTaskDataV2().setAsync(false);
     if (task.getUuid() == null) {
-      task.setUuid(generateUuid());
+      task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
 
     try (
@@ -573,7 +574,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
     // For forward compatibility set the wait id to the uuid
     if (task.getUuid() == null) {
-      task.setUuid(generateUuid());
+      task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
 
     if (task.getWaitId() == null) {
@@ -678,7 +679,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
     // For forward compatibility set the wait id to the uuid
     if (task.getUuid() == null) {
-      task.setUuid(generateUuid());
+      task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
 
     if (task.getWaitId() == null) {
@@ -803,9 +804,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private void handleTaskFailureResponse(DelegateTask task, Exception exception) {
-    Query<DelegateTask> taskQuery = persistence.createQuery(DelegateTask.class)
-                                        .filter(DelegateTaskKeys.accountId, task.getAccountId())
-                                        .filter(DelegateTaskKeys.uuid, task.getUuid());
+    Query<DelegateTask> taskQuery =
+        persistence
+            .createQuery(DelegateTask.class, delegateTaskMigrationHelper.isMigrationEnabledForTask(task.getUuid()))
+            .filter(DelegateTaskKeys.accountId, task.getAccountId())
+            .filter(DelegateTaskKeys.uuid, task.getUuid());
     WingsException ex = null;
     if (exception instanceof WingsException) {
       ex = (WingsException) exception;
@@ -824,9 +827,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private void handleTaskFailureResponseV2(DelegateTask task, Exception exception) {
-    Query<DelegateTask> taskQuery = persistence.createQuery(DelegateTask.class)
-                                        .filter(DelegateTaskKeys.accountId, task.getAccountId())
-                                        .filter(DelegateTaskKeys.uuid, task.getUuid());
+    Query<DelegateTask> taskQuery =
+        persistence
+            .createQuery(DelegateTask.class, delegateTaskMigrationHelper.isMigrationEnabledForTask(task.getUuid()))
+            .filter(DelegateTaskKeys.accountId, task.getAccountId())
+            .filter(DelegateTaskKeys.uuid, task.getUuid());
     WingsException ex = null;
     if (exception instanceof WingsException) {
       ex = (WingsException) exception;
@@ -888,10 +893,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   @Override
   public String queueParkedTask(String accountId, String taskId) {
-    DelegateTask task = persistence.createQuery(DelegateTask.class)
-                            .filter(DelegateTaskKeys.accountId, accountId)
-                            .filter(DelegateTaskKeys.uuid, taskId)
-                            .get();
+    DelegateTask task =
+        persistence.createQuery(DelegateTask.class, delegateTaskMigrationHelper.isMigrationEnabledForTask(taskId))
+            .filter(DelegateTaskKeys.accountId, accountId)
+            .filter(DelegateTaskKeys.uuid, taskId)
+            .get();
 
     task.getData().setAsync(true);
 
@@ -907,10 +913,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   @Override
   public String queueParkedTaskV2(String accountId, String taskId) {
-    DelegateTask task = persistence.createQuery(DelegateTask.class)
-                            .filter(DelegateTaskKeys.accountId, accountId)
-                            .filter(DelegateTaskKeys.uuid, taskId)
-                            .get();
+    DelegateTask task =
+        persistence.createQuery(DelegateTask.class, delegateTaskMigrationHelper.isMigrationEnabledForTask(taskId))
+            .filter(DelegateTaskKeys.accountId, accountId)
+            .filter(DelegateTaskKeys.uuid, taskId)
+            .get();
 
     task.getTaskDataV2().setAsync(true);
 
@@ -1092,17 +1099,19 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     try (AutoLogContext ignore =
              new TaskLogContext(taskId, taskType, TaskType.valueOf(taskType).getTaskGroup().name(), OVERRIDE_ERROR)) {
       log.info("Delegate completed validating {} task", async ? ASYNC : SYNC);
+      boolean migrationEnabledForDelegateTask =
+          delegateTaskMigrationHelper.isMigrationEnabledForTask(delegateTask.getUuid());
 
       UpdateOperations<DelegateTask> updateOperations =
-          persistence.createUpdateOperations(DelegateTask.class)
+          persistence.createUpdateOperations(DelegateTask.class, migrationEnabledForDelegateTask)
               .addToSet(DelegateTaskKeys.validationCompleteDelegateIds, delegateId);
-      Query<DelegateTask> updateQuery = persistence.createQuery(DelegateTask.class)
+      Query<DelegateTask> updateQuery = persistence.createQuery(DelegateTask.class, migrationEnabledForDelegateTask)
                                             .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
                                             .filter(DelegateTaskKeys.uuid, delegateTask.getUuid())
                                             .filter(DelegateTaskKeys.status, QUEUED)
                                             .field(DelegateTaskKeys.delegateId)
                                             .doesNotExist();
-      persistence.update(updateQuery, updateOperations);
+      persistence.update(updateQuery, updateOperations, migrationEnabledForDelegateTask);
 
       long requiredDelegateCapabilities = 0;
       if (delegateTask.getExecutionCapabilities() != null) {
@@ -1163,40 +1172,50 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     boolean async =
         delegateTask.getData() != null ? delegateTask.getData().isAsync() : delegateTask.getTaskDataV2().isAsync();
     log.debug("Delegate to validate {} task", async ? ASYNC : SYNC);
-    UpdateOperations<DelegateTask> updateOperations = persistence.createUpdateOperations(DelegateTask.class)
-                                                          .addToSet(DelegateTaskKeys.validatingDelegateIds, delegateId);
-    Query<DelegateTask> updateQuery = persistence.createQuery(DelegateTask.class)
+    boolean migrationEnabledForDelegateTask =
+        delegateTaskMigrationHelper.isMigrationEnabledForTask(delegateTask.getUuid());
+
+    UpdateOperations<DelegateTask> updateOperations =
+        persistence.createUpdateOperations(DelegateTask.class, migrationEnabledForDelegateTask)
+            .addToSet(DelegateTaskKeys.validatingDelegateIds, delegateId);
+    Query<DelegateTask> updateQuery = persistence.createQuery(DelegateTask.class, migrationEnabledForDelegateTask)
                                           .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
                                           .filter(DelegateTaskKeys.uuid, delegateTask.getUuid())
                                           .filter(DelegateTaskKeys.status, QUEUED)
                                           .field(DelegateTaskKeys.delegateId)
                                           .doesNotExist();
-    persistence.update(updateQuery, updateOperations);
+    persistence.update(updateQuery, updateOperations, migrationEnabledForDelegateTask);
 
     persistence.update(updateQuery.field(DelegateTaskKeys.validationStartedAt).doesNotExist(),
-        persistence.createUpdateOperations(DelegateTask.class)
-            .set(DelegateTaskKeys.validationStartedAt, clock.millis()));
+        persistence.createUpdateOperations(DelegateTask.class, migrationEnabledForDelegateTask)
+            .set(DelegateTaskKeys.validationStartedAt, clock.millis()),
+        migrationEnabledForDelegateTask);
   }
 
   private void clearFromValidationCache(DelegateTask delegateTask) {
-    UpdateOperations<DelegateTask> updateOperations = persistence.createUpdateOperations(DelegateTask.class)
-                                                          .unset(DelegateTaskKeys.validatingDelegateIds)
-                                                          .unset(DelegateTaskKeys.validationCompleteDelegateIds);
-    Query<DelegateTask> updateQuery = persistence.createQuery(DelegateTask.class)
+    boolean migrationEnabledForDelegateTask =
+        delegateTaskMigrationHelper.isMigrationEnabledForTask(delegateTask.getUuid());
+
+    UpdateOperations<DelegateTask> updateOperations =
+        persistence.createUpdateOperations(DelegateTask.class, migrationEnabledForDelegateTask)
+            .unset(DelegateTaskKeys.validatingDelegateIds)
+            .unset(DelegateTaskKeys.validationCompleteDelegateIds);
+    Query<DelegateTask> updateQuery = persistence.createQuery(DelegateTask.class, migrationEnabledForDelegateTask)
                                           .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
                                           .filter(DelegateTaskKeys.uuid, delegateTask.getUuid())
                                           .filter(DelegateTaskKeys.status, QUEUED)
                                           .field(DelegateTaskKeys.delegateId)
                                           .doesNotExist();
-    persistence.update(updateQuery, updateOperations);
+    persistence.update(updateQuery, updateOperations, migrationEnabledForDelegateTask);
   }
 
   @VisibleForTesting
   DelegateTask getUnassignedDelegateTask(String accountId, String taskId, String delegateInstanceId) {
-    DelegateTask delegateTask = persistence.createQuery(DelegateTask.class)
-                                    .filter(DelegateTaskKeys.accountId, accountId)
-                                    .filter(DelegateTaskKeys.uuid, taskId)
-                                    .get();
+    DelegateTask delegateTask =
+        persistence.createQuery(DelegateTask.class, delegateTaskMigrationHelper.isMigrationEnabledForTask(taskId))
+            .filter(DelegateTaskKeys.accountId, accountId)
+            .filter(DelegateTaskKeys.uuid, taskId)
+            .get();
 
     if (delegateTask != null) {
       copyTaskDataV2ToTaskData(delegateTask);
@@ -1342,9 +1361,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       return delegateTaskPackageBuilder.build();
     } catch (CriticalExpressionEvaluationException exception) {
       log.error("Exception in ManagerPreExecutionExpressionEvaluator ", exception);
-      Query<DelegateTask> taskQuery = persistence.createQuery(DelegateTask.class)
-                                          .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
-                                          .filter(DelegateTaskKeys.uuid, delegateTask.getUuid());
+      Query<DelegateTask> taskQuery =
+          persistence
+              .createQuery(
+                  DelegateTask.class, delegateTaskMigrationHelper.isMigrationEnabledForTask(delegateTask.getUuid()))
+              .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
+              .filter(DelegateTaskKeys.uuid, delegateTask.getUuid());
       DelegateTaskResponse response =
           DelegateTaskResponse.builder()
               .response(ErrorNotifyResponseData.builder().errorMessage(ExceptionUtils.getMessage(exception)).build())
@@ -1454,9 +1476,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       return delegateTaskPackageBuilder.build();
     } catch (CriticalExpressionEvaluationException exception) {
       log.error("Exception in ManagerPreExecutionExpressionEvaluator ", exception);
-      Query<DelegateTask> taskQuery = persistence.createQuery(DelegateTask.class)
-                                          .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
-                                          .filter(DelegateTaskKeys.uuid, delegateTask.getUuid());
+      Query<DelegateTask> taskQuery =
+          persistence
+              .createQuery(
+                  DelegateTask.class, delegateTaskMigrationHelper.isMigrationEnabledForTask(delegateTask.getUuid()))
+              .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
+              .filter(DelegateTaskKeys.uuid, delegateTask.getUuid());
       DelegateTaskResponse response =
           DelegateTaskResponse.builder()
               .response(ErrorNotifyResponseData.builder().errorMessage(ExceptionUtils.getMessage(exception)).build())
@@ -1562,7 +1587,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     clearFromValidationCache(delegateTask);
     // QUESTION? Do we need a metric for this
     log.debug("Assigning {} task to delegate", delegateTask.getData().isAsync() ? ASYNC : SYNC);
-    Query<DelegateTask> query = persistence.createQuery(DelegateTask.class)
+    boolean migrationEnabledForDelegateTask = delegateTaskMigrationHelper.isMigrationEnabledForTask(taskId);
+
+    Query<DelegateTask> query = persistence.createQuery(DelegateTask.class, migrationEnabledForDelegateTask)
                                     .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
                                     .filter(DelegateTaskKeys.uuid, taskId)
                                     .filter(DelegateTaskKeys.status, QUEUED)
@@ -1572,12 +1599,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                                     .doesNotExist()
                                     .project(DelegateTaskKeys.data_parameters, false);
     UpdateOperations<DelegateTask> updateOperations =
-        persistence.createUpdateOperations(DelegateTask.class)
+        persistence.createUpdateOperations(DelegateTask.class, migrationEnabledForDelegateTask)
             .set(DelegateTaskKeys.delegateId, delegateId)
             .set(DelegateTaskKeys.delegateInstanceId, delegateInstanceId)
             .set(DelegateTaskKeys.status, STARTED)
             .set(DelegateTaskKeys.expiry, currentTimeMillis() + delegateTask.getData().getTimeout());
-    DelegateTask task = persistence.findAndModifySystemData(query, updateOperations, HPersistence.returnNewOptions);
+    DelegateTask task = persistence.findAndModifySystemData(
+        query, updateOperations, HPersistence.returnNewOptions, migrationEnabledForDelegateTask);
     // If the task wasn't updated because delegateId already exists then query for the task with the delegateId in
     // case client is retrying the request
     copyTaskDataV2ToTaskData(task);
@@ -1604,7 +1632,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
       return resolvePreAssignmentExpressions(task, SecretManagerMode.APPLY);
     }
-    task = persistence.createQuery(DelegateTask.class)
+    task = persistence.createQuery(DelegateTask.class, migrationEnabledForDelegateTask)
                .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
                .filter(DelegateTaskKeys.uuid, taskId)
                .filter(DelegateTaskKeys.status, STARTED)
@@ -1624,7 +1652,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   @Override
   public boolean filter(String delegateId, DelegateTaskAbortEvent taskAbortEvent) {
-    return persistence.createQuery(DelegateTask.class)
+    return persistence
+               .createQuery(DelegateTask.class,
+                   delegateTaskMigrationHelper.isMigrationEnabledForTask(taskAbortEvent.getDelegateTaskId()))
                .filter(DelegateTaskKeys.accountId, taskAbortEvent.getAccountId())
                .filter(DelegateTaskKeys.uuid, taskAbortEvent.getDelegateTaskId())
                .filter(DelegateTaskKeys.delegateId, delegateId)
@@ -1749,11 +1779,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   private DelegateTask endTask(
       String accountId, String delegateTaskId, Query<DelegateTask> delegateTaskQuery, DelegateTask.Status status) {
+    boolean migrationEnabledForDelegateTask = delegateTaskMigrationHelper.isMigrationEnabledForTask(delegateTaskId);
     UpdateOperations updateOperations =
-        persistence.createUpdateOperations(DelegateTask.class).set(DelegateTaskKeys.status, status);
+        persistence.createUpdateOperations(DelegateTask.class, migrationEnabledForDelegateTask)
+            .set(DelegateTaskKeys.status, status);
 
-    DelegateTask oldTask =
-        persistence.findAndModify(delegateTaskQuery, updateOperations, HPersistence.returnOldOptions);
+    DelegateTask oldTask = persistence.findAndModify(
+        delegateTaskQuery, updateOperations, HPersistence.returnOldOptions, migrationEnabledForDelegateTask);
 
     broadcasterFactory.lookup(STREAM_DELEGATE + accountId, true)
         .broadcast(aDelegateTaskAbortEvent().withAccountId(accountId).withDelegateTaskId(delegateTaskId).build());
@@ -1763,13 +1795,16 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   private DelegateTask endTaskV2(
       String accountId, String delegateTaskId, Query<DelegateTask> delegateTaskQuery, DelegateTask.Status status) {
+    boolean migrationEnabledForDelegateTask = delegateTaskMigrationHelper.isMigrationEnabledForTask(delegateTaskId);
+
     UpdateOperations updateOperations =
-        persistence.createUpdateOperations(DelegateTask.class).set(DelegateTaskKeys.status, status);
+        persistence.createUpdateOperations(DelegateTask.class, migrationEnabledForDelegateTask)
+            .set(DelegateTaskKeys.status, status);
 
     DelegateTask oldTask =
         delegateTaskQuery.asList().stream().filter(task -> task.getTaskDataV2().isAsync()).findFirst().orElse(null);
     if (oldTask != null) {
-      persistence.update(oldTask, updateOperations);
+      persistence.update(oldTask, updateOperations, migrationEnabledForDelegateTask);
     }
     broadcasterFactory.lookup(STREAM_DELEGATE + accountId, true)
         .broadcast(aDelegateTaskAbortEvent().withAccountId(accountId).withDelegateTaskId(delegateTaskId).build());
@@ -1778,7 +1813,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private Query<DelegateTask> getRunningTaskQuery(String accountId, String delegateTaskId) {
-    return persistence.createQuery(DelegateTask.class)
+    return persistence
+        .createQuery(DelegateTask.class, delegateTaskMigrationHelper.isMigrationEnabledForTask(delegateTaskId))
         .filter(DelegateTaskKeys.uuid, delegateTaskId)
         .filter(DelegateTaskKeys.accountId, accountId)
         .filter(DelegateTaskKeys.data_async, Boolean.TRUE)
@@ -1787,7 +1823,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private Query<DelegateTask> getRunningTaskQueryV2(String accountId, String delegateTaskId) {
-    return persistence.createQuery(DelegateTask.class)
+    return persistence
+        .createQuery(DelegateTask.class, delegateTaskMigrationHelper.isMigrationEnabledForTask(delegateTaskId))
         .filter(DelegateTaskKeys.uuid, delegateTaskId)
         .filter(DelegateTaskKeys.accountId, accountId)
         .field(DelegateTaskKeys.taskDataV2)
@@ -1812,21 +1849,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private List<DelegateTaskEvent> getQueuedEvents(String accountId, String delegateId, boolean sync) {
-    // TODO - add assignment filter here (scopes. selectors, ...)
-    Query<DelegateTask> delegateTaskQuery = persistence.createQuery(DelegateTask.class)
-                                                .filter(DelegateTaskKeys.accountId, accountId)
-                                                .filter(DelegateTaskKeys.status, QUEUED)
-                                                .field(DelegateTaskKeys.delegateId)
-                                                .doesNotExist()
-                                                .field(DelegateTaskKeys.expiry)
-                                                .greaterThan(currentTimeMillis());
-    List<DelegateTask> delegateTasks =
-        delegateTaskQuery.asList()
-            .stream()
-            .map(this::copyTaskDataV2ToTaskData)
-            .filter(delegateTask -> !sync == delegateTask.getData().isAsync())
-            .filter(delegateTask -> delegateTask.getEligibleToExecuteDelegateIds().contains(delegateId))
-            .collect(toList());
+    List<DelegateTask> delegateTasks = getQueuedDelegateTasks(accountId, delegateId, sync, false);
+
+    if (delegateTaskMigrationHelper.isDelegateTaskMigrationEnabled()) {
+      delegateTasks.addAll(getQueuedDelegateTasks(accountId, delegateId, sync, true));
+    }
+
     return delegateTasks.stream()
         .map(delegateTask
             -> aDelegateTaskEvent()
@@ -1838,23 +1866,30 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         .collect(toList());
   }
 
+  private List<DelegateTask> getQueuedDelegateTasks(
+      String accountId, String delegateId, boolean sync, boolean isDelegateTaskMigrationEnabled) {
+    // TODO - add assignment filter here (scopes. selectors, ...)
+    Query<DelegateTask> delegateTaskQuery = persistence.createQuery(DelegateTask.class, isDelegateTaskMigrationEnabled)
+                                                .filter(DelegateTaskKeys.accountId, accountId)
+                                                .filter(DelegateTaskKeys.status, QUEUED)
+                                                .field(DelegateTaskKeys.delegateId)
+                                                .doesNotExist()
+                                                .field(DelegateTaskKeys.expiry)
+                                                .greaterThan(currentTimeMillis());
+    return delegateTaskQuery.asList()
+        .stream()
+        .map(this::copyTaskDataV2ToTaskData)
+        .filter(delegateTask -> !sync == delegateTask.getData().isAsync())
+        .filter(delegateTask -> delegateTask.getEligibleToExecuteDelegateIds().contains(delegateId))
+        .collect(toList());
+  }
+
   private List<DelegateTaskEvent> getAbortedEvents(String accountId, String delegateId) {
-    Query<DelegateTask> abortedQuery = persistence.createQuery(DelegateTask.class)
-                                           .filter(DelegateTaskKeys.accountId, accountId)
-                                           .filter(DelegateTaskKeys.status, ABORTED)
-                                           .filter(DelegateTaskKeys.delegateId, delegateId);
+    List<DelegateTask> delegateTasks = getAbortedDelegateTasks(accountId, delegateId, false);
 
-    UpdateOperations<DelegateTask> updateOperations =
-        persistence.createUpdateOperations(DelegateTask.class).unset(DelegateTaskKeys.delegateId);
-
-    List<DelegateTask> delegateTasks = abortedQuery.asList()
-                                           .stream()
-                                           .map(this::copyTaskDataV2ToTaskData)
-                                           .filter(delegateTask -> delegateTask.getData().isAsync())
-                                           .collect(Collectors.toList());
-
-    // Send abort event only once by clearing delegateId
-    delegateTasks.stream().forEach(delegateTask -> persistence.update(delegateTask, updateOperations));
+    if (delegateTaskMigrationHelper.isDelegateTaskMigrationEnabled()) {
+      delegateTasks.addAll(getAbortedDelegateTasks(accountId, delegateId, true));
+    }
 
     return delegateTasks.stream()
         .map(delegateTask
@@ -1866,21 +1901,53 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         .collect(toList());
   }
 
+  private List<DelegateTask> getAbortedDelegateTasks(
+      String accountId, String delegateId, boolean isDelegateTaskMigrationEnabled) {
+    Query<DelegateTask> abortedQuery = persistence.createQuery(DelegateTask.class, isDelegateTaskMigrationEnabled)
+                                           .filter(DelegateTaskKeys.accountId, accountId)
+                                           .filter(DelegateTaskKeys.status, ABORTED)
+                                           .filter(DelegateTaskKeys.delegateId, delegateId);
+
+    UpdateOperations<DelegateTask> updateOperations =
+        persistence.createUpdateOperations(DelegateTask.class, isDelegateTaskMigrationEnabled)
+            .unset(DelegateTaskKeys.delegateId);
+
+    List<DelegateTask> delegateTasks = abortedQuery.asList()
+                                           .stream()
+                                           .map(this::copyTaskDataV2ToTaskData)
+                                           .filter(delegateTask -> delegateTask.getData().isAsync())
+                                           .collect(Collectors.toList());
+
+    // Send abort event only once by clearing delegateId
+    delegateTasks.stream().forEach(
+        delegateTask -> persistence.update(delegateTask, updateOperations, isDelegateTaskMigrationEnabled));
+
+    return delegateTasks;
+  }
+
   private String getVersion() {
     return versionInfoManager.getVersionInfo().getVersion();
   }
 
   @Override
   public void deleteByAccountId(String accountId) {
-    persistence.delete(persistence.createQuery(Delegate.class).filter(DelegateKeys.accountId, accountId));
+    log.info("Account {} deleted. Deleting all delegate tasks owned by account.", accountId);
+    persistence.deleteOnServer(
+        persistence.createQuery(DelegateTask.class).filter(DelegateTaskKeys.accountId, accountId));
+
+    if (delegateTaskMigrationHelper.isDelegateTaskMigrationEnabled()) {
+      persistence.deleteOnServer(
+          persistence.createQuery(DelegateTask.class, true).filter(DelegateTaskKeys.accountId, accountId), true);
+    }
   }
 
   @Override
   public Optional<DelegateTask> fetchDelegateTask(String accountId, String taskId) {
-    return Optional.ofNullable(persistence.createQuery(DelegateTask.class)
-                                   .filter(DelegateTaskKeys.accountId, accountId)
-                                   .filter(DelegateTaskKeys.uuid, taskId)
-                                   .get());
+    return Optional.ofNullable(
+        persistence.createQuery(DelegateTask.class, delegateTaskMigrationHelper.isMigrationEnabledForTask(taskId))
+            .filter(DelegateTaskKeys.accountId, accountId)
+            .filter(DelegateTaskKeys.uuid, taskId)
+            .get());
   }
 
   @VisibleForTesting
@@ -1925,11 +1992,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   @Override
   public void markAllTasksFailedForDelegate(String accountId, String delegateId) {
-    final List<DelegateTask> delegateTasks = persistence.createQuery(DelegateTask.class)
-                                                 .filter(DelegateTaskKeys.accountId, accountId)
-                                                 .filter(DelegateTaskKeys.delegateId, delegateId)
-                                                 .filter(DelegateTaskKeys.status, STARTED)
-                                                 .asList();
+    List<DelegateTask> delegateTasks = getDelegateTasksForFailing(accountId, delegateId, false);
+
+    if (delegateTaskMigrationHelper.isDelegateTaskMigrationEnabled()) {
+      delegateTasks.addAll(getDelegateTasksForFailing(accountId, delegateId, true));
+    }
+
     if (isEmpty(delegateTasks)) {
       return;
     }
@@ -1951,6 +2019,15 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     delegateTasks.forEach(delegateTask -> {
       delegateTaskService.processDelegateResponse(accountId, delegateId, delegateTask.getUuid(), delegateTaskResponse);
     });
+  }
+
+  private List<DelegateTask> getDelegateTasksForFailing(
+      String accountId, String delegateId, boolean isDelegateTaskMigrationEnabled) {
+    return persistence.createQuery(DelegateTask.class, isDelegateTaskMigrationEnabled)
+        .filter(DelegateTaskKeys.accountId, accountId)
+        .filter(DelegateTaskKeys.delegateId, delegateId)
+        .filter(DelegateTaskKeys.status, STARTED)
+        .asList();
   }
 
   public void addToTaskActivityLog(DelegateTask task, String message) {
@@ -1984,9 +2061,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   @Override
   public String saveAndBroadcastDelegateTaskV2(DelegateTask delegateTask) {
+    if (delegateTask.getUuid() == null) {
+      delegateTask.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
+    }
     delegateTask.setBroadcastToDelegateIds(Lists.newArrayList(delegateTask.getEligibleToExecuteDelegateIds().get(0)));
     delegateTask.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
-    String key = persistence.save(delegateTask);
+    String key =
+        persistence.save(delegateTask, delegateTaskMigrationHelper.isMigrationEnabledForTask(delegateTask.getUuid()));
     if (delegateTask.getTaskDataV2().isAsync()) {
       broadcastHelper.broadcastNewDelegateTaskAsyncV2(delegateTask);
     } else {
@@ -1997,9 +2078,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   @Override
   public String saveAndBroadcastDelegateTask(DelegateTask delegateTask) {
+    if (delegateTask.getUuid() == null) {
+      delegateTask.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
+    }
     delegateTask.setBroadcastToDelegateIds(Lists.newArrayList(delegateTask.getEligibleToExecuteDelegateIds().get(0)));
     delegateTask.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
-    String taskId = persistence.save(delegateTask);
+    String taskId =
+        persistence.save(delegateTask, delegateTaskMigrationHelper.isMigrationEnabledForTask(delegateTask.getUuid()));
     if (delegateTask.getData().isAsync()) {
       broadcastHelper.broadcastNewDelegateTaskAsync(delegateTask);
     } else {
@@ -2021,7 +2106,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   private void saveDelegateTask(DelegateTask delegateTask, String accountId) {
     if (mainConfiguration.getQueueServiceConfig() != null
         && !mainConfiguration.getQueueServiceConfig().isEnableQueueAndDequeue()) {
-      persistence.save(delegateTask);
+      persistence.save(delegateTask, delegateTaskMigrationHelper.isMigrationEnabledForTask(delegateTask.getUuid()));
       return;
     }
 
@@ -2029,7 +2114,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         && !delegateTaskQueueService.isResourceAvailableToAssignTask(delegateTask)) {
       delegateTaskQueueService.enqueue(delegateTask);
     } else {
-      persistence.save(delegateTask);
+      persistence.save(delegateTask, delegateTaskMigrationHelper.isMigrationEnabledForTask(delegateTask.getUuid()));
     }
   }
 

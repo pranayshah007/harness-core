@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 
 import software.wings.beans.GraphNode;
@@ -32,7 +33,7 @@ public class EmptyStepMapperImpl extends StepMapper {
 
   @Override
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
-    return null;
+    return MigratorUtility.getWaitStepNode(graphNode.getName(), 60);
   }
 
   @Override

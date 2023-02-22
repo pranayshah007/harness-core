@@ -315,7 +315,7 @@ public class TerragruntTaskService {
   }
 
   public static <T extends AbstractTerragruntCliRequest> boolean executeWithErrorHandling(
-      TerragruntExecutable<T> commandExecutor, T request, LogCallback logCallback) {
+      TerragruntExecutable<T> commandExecutor, T request, LogCallback logCallback) throws InterruptedException {
     try {
       CliResponse response = commandExecutor.execute(request, logCallback);
       if (response.getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED) {
@@ -335,7 +335,7 @@ public class TerragruntTaskService {
           e);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      throw new TerragruntCliRuntimeException("Terragrunt command execution was interrupted", e);
+      throw e;
     } catch (TimeoutException e) {
       throw new TerragruntCliRuntimeException("Terragrunt command execution timed out", e);
     }

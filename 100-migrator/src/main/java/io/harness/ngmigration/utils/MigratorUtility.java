@@ -9,6 +9,7 @@ package io.harness.ngmigration.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -30,6 +31,8 @@ import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.steps.wait.WaitStepInfo;
+import io.harness.steps.wait.WaitStepNode;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
@@ -153,7 +156,7 @@ public class MigratorUtility {
       return ParameterField.createValueField(Timeout.builder().timeoutString("10m").build());
     }
     long t = timeoutInMillis / 1000;
-    String timeoutString = t + "s";
+    String timeoutString = Math.max(60, t) + "s";
     return ParameterField.createValueField(Timeout.builder().timeoutString(timeoutString).build());
   }
 
@@ -238,11 +241,11 @@ public class MigratorUtility {
   public static SecretRefData getSecretRef(
       Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
     if (entityId == null) {
-      return SecretRefData.builder().identifier("__PLEASE_FIX_ME__").scope(Scope.PROJECT).build();
+      return SecretRefData.builder().identifier(PLEASE_FIX_ME).scope(Scope.PROJECT).build();
     }
     CgEntityId secretEntityId = CgEntityId.builder().id(entityId).type(entityType).build();
     if (!migratedEntities.containsKey(secretEntityId)) {
-      return SecretRefData.builder().identifier("__PLEASE_FIX_ME__").scope(Scope.PROJECT).build();
+      return SecretRefData.builder().identifier(PLEASE_FIX_ME).scope(Scope.PROJECT).build();
     }
     NgEntityDetail migratedSecret = migratedEntities.get(secretEntityId).getNgEntityDetail();
     return SecretRefData.builder()
@@ -255,7 +258,7 @@ public class MigratorUtility {
       Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
     NGYamlFile detail = migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build());
     if (detail == null) {
-      return "__PLEASE_FIX_ME__";
+      return PLEASE_FIX_ME;
     }
     return getIdentifierWithScope(detail.getNgEntityDetail());
   }
@@ -525,5 +528,14 @@ public class MigratorUtility {
             -> rollbackWorkflowPhaseIdMap.containsKey(phaseId) && rollbackWorkflowPhaseIdMap.get(phaseId) != null)
         .map(rollbackWorkflowPhaseIdMap::get)
         .collect(Collectors.toList());
+  }
+
+  public static WaitStepNode getWaitStepNode(String name, int waitInterval) {
+    WaitStepNode waitStepNode = new WaitStepNode();
+    waitStepNode.setName(name);
+    waitStepNode.setIdentifier(generateIdentifier(name));
+    waitStepNode.setWaitStepInfo(
+        WaitStepInfo.infoBuilder().duration(MigratorUtility.getTimeout(waitInterval * 1000)).build());
+    return waitStepNode;
   }
 }

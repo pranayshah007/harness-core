@@ -81,7 +81,8 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.BRANCH_KEY) String branch,
       @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
       @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
-      @Header(value = "Load-From-Cache") String loadFromCache, @Body TemplateApplyRequestDTO templateApplyRequestDTO);
+      @Header(value = "Load-From-Cache") String loadFromCache, @Body TemplateApplyRequestDTO templateApplyRequestDTO,
+      @Query(value = "AppendInputSetValidator") Boolean appendInputSetValidator);
 
   @POST(TEMPLATE_ENDPOINT + "v2/applyTemplates")
   Call<ResponseDTO<TemplateMergeResponseDTO>> applyTemplatesOnGivenYamlV2(
@@ -96,7 +97,8 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_ACCOUNT_IDENTIFIER) String parentEntityAccountIdentifier,
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_ORG_IDENTIFIER) String parentEntityOrgIdentifier,
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_PROJECT_IDENTIFIER) String parentEntityProjectIdentifier,
-      @Header(value = "Load-From-Cache") String loadFromCache, @Body TemplateApplyRequestDTO templateApplyRequestDTO);
+      @Header(value = "Load-From-Cache") String loadFromCache, @Body TemplateApplyRequestDTO templateApplyRequestDTO,
+      @Query(value = "AppendInputSetValidator") Boolean appendInputSetValidator);
 
   @POST(TEMPLATE_ENDPOINT + "templateReferences")
   Call<ResponseDTO<List<EntityDetailProtoDTO>>> getTemplateReferenceForGivenYaml(

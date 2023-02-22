@@ -33,8 +33,8 @@ public class AwsLambdaDeployRequest implements AwsLambdaCommandRequest, NestedAn
   @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaInfraConfig awsLambdaInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) String awsLambdaDeployManifestContent;
   @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaArtifactConfig awsLambdaArtifactConfig;
-  String functionName;
-  String qualifier;
+  @NonFinal @Expression(ALLOW_SECRETS) String functionName;
+  @NonFinal @Expression(ALLOW_SECRETS) String qualifier;
 
   @Override
   public AwsLambdaCommandTypeNG getAwsLambdaCommandType() {

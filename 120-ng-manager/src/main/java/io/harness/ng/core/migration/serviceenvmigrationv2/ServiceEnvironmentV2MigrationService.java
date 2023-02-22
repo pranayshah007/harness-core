@@ -203,10 +203,11 @@ public class ServiceEnvironmentV2MigrationService {
       try {
         pipelineYaml =
             NGRestUtils
-                .getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId,
-                    requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), null, null, null, null, null,
-                    null, null, null, null,
-                    TemplateApplyRequestDTO.builder().originalEntityYaml(pipelineYaml).checkForAccess(true).build()))
+                .getResponse(
+                    templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, requestDto.getOrgIdentifier(),
+                        requestDto.getProjectIdentifier(), null, null, null, null, null, null, null, null, null,
+                        TemplateApplyRequestDTO.builder().originalEntityYaml(pipelineYaml).checkForAccess(true).build(),
+                        false))
                 .getMergedPipelineYaml();
       } catch (Exception ex) {
         throw new InvalidRequestException(
@@ -420,7 +421,7 @@ public class ServiceEnvironmentV2MigrationService {
         NGRestUtils
             .getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, requestDto.getOrgIdentifier(),
                 requestDto.getProjectIdentifier(), null, null, null, null, null, null, null, null, null,
-                TemplateApplyRequestDTO.builder().originalEntityYaml(stageYaml).checkForAccess(true).build()))
+                TemplateApplyRequestDTO.builder().originalEntityYaml(stageYaml).checkForAccess(true).build(), false))
             .getMergedPipelineYaml();
     YamlField stageField = getYamlField(stageYaml, "stage");
     YamlField resolvedStageField = getYamlField(resolvedStageYaml, "stage");

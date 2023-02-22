@@ -9,6 +9,7 @@ package io.harness.cdng.pipeline.helpers;
 
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,6 +20,7 @@ import io.harness.cdng.pipeline.StepCategory;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.rule.Owner;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -67,5 +69,14 @@ public class CDNGPipelineConfigurationHelperTest extends CategoryTest {
     assertThat(result.getName()).isEqualTo(CDNGPipelineConfigurationHelper.LIBRARY);
     assertThat(result.getStepsData()).isEqualTo(new ArrayList<>());
     assertThat(result.getStepCategories().size()).isEqualTo(7);
+  }
+
+  @Test
+  @Owner(developers = VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void shouldGetGiOopsStepTemplate() throws IOException {
+    String yaml = cdngPipelineConfigurationHelper.getExecutionStrategyYaml(
+        ServiceDefinitionType.KUBERNETES, ExecutionStrategyType.GITOPS, false);
+    assertThat(yaml).contains("GitOpsFetchLinkedApps");
   }
 }

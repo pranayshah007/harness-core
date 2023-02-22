@@ -236,8 +236,8 @@ import io.harness.delegate.task.aws.asg.AsgCanaryDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackTaskNG;
-import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTask;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
+import io.harness.delegate.task.aws.lambda.AwsLambdaDeployTask;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.appservice.webapp.AzureWebAppTaskNG;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppFetchPreDeploymentDataRequestHandler;
@@ -2157,7 +2157,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK).toInstance(GoogleFunctionTrafficShiftTask.class);
 
     // AWS Lambda
-    mapBinder.addBinding(TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG).toInstance(AwsLambdaCommandTask.class);
+    mapBinder.addBinding(TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG).toInstance(AwsLambdaDeployTask.class);
     mapBinder.addBinding(TaskType.AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG).toInstance(AwsLambdaCommandTask.class);
   }
 

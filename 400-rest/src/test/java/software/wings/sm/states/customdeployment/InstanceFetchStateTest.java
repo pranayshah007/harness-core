@@ -56,6 +56,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskData.TaskDataKeys;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.deployment.InstanceDetails;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.rule.Owner;
@@ -129,6 +130,7 @@ public class InstanceFetchStateTest extends WingsBaseTest {
   @Mock private ServiceTemplateService mockServiceTemplateService;
   @Mock private ServiceTemplateHelper serviceTemplateHelper;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 

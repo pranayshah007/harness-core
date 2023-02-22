@@ -10,6 +10,7 @@ package io.harness.delegate.task.aws.lambda;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
@@ -21,4 +22,5 @@ public class AwsLambda {
   String runtime;
   String functionArn;
   String version;
+  Map<String, String> tags;
 }

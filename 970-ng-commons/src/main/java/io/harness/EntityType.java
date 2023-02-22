@@ -522,6 +522,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.TERRAFORM_CLOUD_RUN)
   TERRAFORM_CLOUD_RUN(ModuleType.CD, EntityTypeConstants.TERRAFORM_CLOUD_RUN, IdentifierRef.class,
       EntityYamlRootNames.TERRAFORM_CLOUD_RUN),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_CLOUD_ROLLBACK)
+  TERRAFORM_CLOUD_ROLLBACK(ModuleType.CD, EntityTypeConstants.TERRAFORM_CLOUD_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.TERRAFORM_CLOUD_ROLLBACK),
   @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY)
   GOOGLE_CLOUD_FUNCTIONS_DEPLOY(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY, IdentifierRef.class,
       EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_DEPLOY),

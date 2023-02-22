@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.step;
 
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -33,6 +34,7 @@ import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
+import software.wings.sm.states.mixin.SweepingOutputStateMixin;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -50,6 +52,10 @@ public abstract class StepMapper {
   @Inject WorkflowHandlerFactory workflowHandlerFactory;
   @Inject SecretRefUtils secretRefUtils;
 
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return null;
+  }
+
   public List<CgEntityId> getReferencedEntities(
       String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     return secretRefUtils.getSecretRefFromExpressions(accountId, getExpressions(graphNode));
@@ -58,6 +64,14 @@ public abstract class StepMapper {
   public abstract String getStepType(GraphNode stepYaml);
 
   public abstract State getState(GraphNode stepYaml);
+
+  String getSweepingOutputName(GraphNode graphNode) {
+    State state = getState(graphNode);
+    if (state instanceof SweepingOutputStateMixin) {
+      return ((SweepingOutputStateMixin) state).getSweepingOutputName();
+    }
+    return null;
+  }
 
   public List<StepExpressionFunctor> getExpressionFunctor(
       WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {

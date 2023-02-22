@@ -9,6 +9,7 @@ package io.harness.cdng.creator.plan.steps;
 
 import static io.harness.cdng.ssh.SshWinRmConstants.FILE_STORE_SCRIPT_ERROR_MSG;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,6 +27,9 @@ import io.harness.cdng.ssh.CommandUnitWrapper;
 import io.harness.cdng.ssh.ScriptCommandUnitSpec;
 import io.harness.cdng.ssh.SshWinRmConfigFileHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
+import io.harness.plancreator.strategy.HarnessForConfig;
+import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.yaml.ParameterField;
@@ -89,5 +93,47 @@ public class CDPMSCommandStepFilterJsonCreatorTest extends CDNGTestBase {
     assertThatThrownBy(() -> cdpmsCommandStepFilterJsonCreator.handleNode(context, commandStepNode))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(format(FILE_STORE_SCRIPT_ERROR_MSG, scopedFilePath));
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testHandleNodeFailsValidationStrategy() {
+    String errMsg = "Command step support repeat strategy with items syntax.";
+    FilterCreationContext context =
+        FilterCreationContext.builder().currentField(new YamlField("Command", new YamlNode(null))).build();
+    context.setSetupMetadata(
+        SetupMetadata.newBuilder().setAccountId(ACCOUNT_ID).setOrgId(ORG_ID).setProjectId(PROJECT_ID).build());
+    CommandUnitWrapper commandUnitWrapper = CommandUnitWrapper.builder().build();
+
+    CommandStepNode commandStepNode = new CommandStepNode();
+    commandStepNode.setCommandStepInfo(
+        CommandStepInfo.infoBuilder().commandUnits(Collections.singletonList(commandUnitWrapper)).build());
+
+    // with repeat.times
+    StrategyConfig strategy = StrategyConfig.builder()
+                                  .repeat(HarnessForConfig.builder().times(ParameterField.createValueField(1)).build())
+                                  .build();
+    commandStepNode.setStrategy(strategy);
+
+    assertThatThrownBy(() -> cdpmsCommandStepFilterJsonCreator.handleNode(context, commandStepNode))
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessage(errMsg);
+
+    // without repeat
+    strategy = StrategyConfig.builder().build();
+    commandStepNode.setStrategy(strategy);
+
+    assertThatThrownBy(() -> cdpmsCommandStepFilterJsonCreator.handleNode(context, commandStepNode))
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessage(errMsg);
+
+    // without repeat.items
+    strategy = StrategyConfig.builder().repeat(HarnessForConfig.builder().build()).build();
+    commandStepNode.setStrategy(strategy);
+
+    assertThatThrownBy(() -> cdpmsCommandStepFilterJsonCreator.handleNode(context, commandStepNode))
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessage(errMsg);
   }
 }

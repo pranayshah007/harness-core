@@ -98,6 +98,9 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.TERRAFORM_CLOUD_RUN)
   TERRAFORM_CLOUD_RUN("Terraform Cloud Run", Arrays.asList(ServiceDefinitionType.values()),
       "Infrastructure Provisioners/Terraform Cloud", StepSpecTypeConstants.TERRAFORM_CLOUD_RUN),
+  @JsonProperty(StepSpecTypeConstants.TERRAFORM_CLOUD_ROLLBACK)
+  TERRAFORM_CLOUD_ROLLBACK("Terraform Cloud Rollback", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/Terraform Cloud", StepSpecTypeConstants.TERRAFORM_CLOUD_ROLLBACK),
   // Issue Tracking
   @JsonProperty("JIRA")
   JIRA("Jira", Arrays.asList(ServiceDefinitionType.values()), "Issue Tracking", StepSpecTypeConstants.PLACEHOLDER),

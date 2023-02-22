@@ -29,12 +29,16 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS;
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.AZURE_ARM_CONFIG_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CLOUDFORMATION_CONFIG_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENVIRONMENT_GROUP_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SERVICEACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.TEMPLATE_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.TERRAFORM_CONFIG_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.TERRAGRUNT_CONFIG_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_SCOPE_RECONCILIATION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.VARIABLE_ENTITY;
@@ -173,6 +177,8 @@ import io.harness.ng.core.entitysetupusage.event.SetupUsageChangeEventMessageLis
 import io.harness.ng.core.entitysetupusage.event.SetupUsageChangeEventMessageProcessor;
 import io.harness.ng.core.event.AccountSetupListener;
 import io.harness.ng.core.event.ApiKeyEventListener;
+import io.harness.ng.core.event.AzureARMConfigEntityCRUDStreamListener;
+import io.harness.ng.core.event.CloudformationConfigEntityCRUDStreamListener;
 import io.harness.ng.core.event.ConnectorEntityCRUDStreamListener;
 import io.harness.ng.core.event.EnvironmentGroupEntityCrudStreamListener;
 import io.harness.ng.core.event.FilterEventListener;
@@ -184,6 +190,8 @@ import io.harness.ng.core.event.ProjectEntityCRUDStreamListener;
 import io.harness.ng.core.event.SecretEntityCRUDStreamListener;
 import io.harness.ng.core.event.ServiceAccountEntityCRUDStreamListener;
 import io.harness.ng.core.event.SettingsEventListener;
+import io.harness.ng.core.event.TerraformConfigEntityCRUDStreamListener;
+import io.harness.ng.core.event.TerragruntConfigEntityCRUDStreamListener;
 import io.harness.ng.core.event.UserGroupEntityCRUDStreamListener;
 import io.harness.ng.core.event.UserMembershipReconciliationMessageProcessor;
 import io.harness.ng.core.event.UserMembershipStreamListener;
@@ -983,6 +991,18 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(SERVICEACCOUNT_ENTITY + ENTITY_CRUD))
         .to(ServiceAccountEntityCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(TERRAFORM_CONFIG_ENTITY + ENTITY_CRUD))
+        .to(TerraformConfigEntityCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(TERRAGRUNT_CONFIG_ENTITY + ENTITY_CRUD))
+        .to(TerragruntConfigEntityCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(CLOUDFORMATION_CONFIG_ENTITY + ENTITY_CRUD))
+        .to(CloudformationConfigEntityCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(AZURE_ARM_CONFIG_ENTITY + ENTITY_CRUD))
+        .to(AzureARMConfigEntityCRUDStreamListener.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(VARIABLE_ENTITY + ENTITY_CRUD))
         .to(VariableEntityCRUDStreamListener.class);

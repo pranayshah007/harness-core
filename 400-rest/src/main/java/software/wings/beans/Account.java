@@ -64,6 +64,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 
@@ -132,6 +133,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @Getter @Setter private String migratedToClusterUrl;
 
   @Getter @Setter DefaultExperience defaultExperience;
+
+  @Accessors(fluent = true) @Getter @Setter Boolean isCrossGenerationAccessEnabled = Boolean.FALSE;
 
   @Getter @Setter boolean createdFromNG;
 
@@ -601,6 +604,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private boolean immutableDelegateEnabled = true;
     private AccountPreferences accountPreferences;
     private DefaultExperience defaultExperience;
+    private Boolean isCrossGenerationAccessEnabled = Boolean.FALSE;
     private boolean createdFromNG;
     private boolean isProductLed;
     private boolean accountActivelyUsed;
@@ -631,6 +635,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
     public Builder withDefaultExperience(DefaultExperience defaultExperience) {
       this.defaultExperience = defaultExperience;
+      return this;
+    }
+
+    public Builder withIsCrossGenerationAccessEnabled(Boolean isCrossGenerationAccessEnabled) {
+      this.isCrossGenerationAccessEnabled = isCrossGenerationAccessEnabled;
       return this;
     }
 
@@ -815,6 +824,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
           .withRingName(ringName)
           .withBackgroundJobsDisabled(backgroundJobsDisabled)
           .withDefaultExperience(defaultExperience)
+          .withIsCrossGenerationAccessEnabled(isCrossGenerationAccessEnabled)
           .withCreatedFromNG(createdFromNG)
           .withIsProductLed(isProductLed)
           .withAccountActivelyUsed(accountActivelyUsed)
@@ -852,6 +862,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       account.setHarnessSupportAccessAllowed(isHarnessSupportAccessAllowed);
       account.setBackgroundJobsDisabled(backgroundJobsDisabled);
       account.setDefaultExperience(defaultExperience);
+      account.isCrossGenerationAccessEnabled(isCrossGenerationAccessEnabled);
       account.setCreatedFromNG(createdFromNG);
       account.setProductLed(isProductLed);
       account.setAccountActivelyUsed(accountActivelyUsed);

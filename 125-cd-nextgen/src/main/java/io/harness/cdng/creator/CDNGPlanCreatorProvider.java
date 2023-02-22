@@ -155,6 +155,7 @@ import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsRollbac
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsTrafficShiftStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.terraformcloud.TerraformCloudRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terraformcloud.TerraformCloudRunStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntApplyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntDestroyStepPlanCreator;
@@ -233,6 +234,7 @@ import io.harness.cdng.provision.terraform.variablecreator.TerraformApplyStepVar
 import io.harness.cdng.provision.terraform.variablecreator.TerraformDestroyStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformPlanStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformRollbackStepVariableCreator;
+import io.harness.cdng.provision.terraformcloud.variablecreator.TerraformCloudRollbackStepVariableCreator;
 import io.harness.cdng.provision.terraformcloud.variablecreator.TerraformCloudRunStepVariableCreator;
 import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntApplyStepVariableCreator;
 import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntDestroyStepVariableCreator;
@@ -330,8 +332,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
       ManifestType.HelmChart, ManifestType.ReleaseRepo, ManifestType.DeploymentRepo, ManifestType.OpenshiftTemplate,
       ManifestType.OpenshiftParam, ManifestType.TAS_MANIFEST, ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER,
       ManifestType.AsgLaunchTemplate, ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy,
-      ManifestType.AsgScheduledUpdateGroupAction, ManifestType.GoogleCloudFunctionDefinition, ManifestType.AwsLambda,
-      ManifestType.AwsSamDirectory);
+      ManifestType.AsgScheduledUpdateGroupAction, ManifestType.GoogleCloudFunctionDefinition,
+      ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsSamDirectory);
   private static final Set<String> EMPTY_ENVIRONMENT_TYPES =
       Sets.newHashSet(YamlTypes.ENV_PRODUCTION, YamlTypes.ENV_PRE_PRODUCTION);
   private static final Set<String> EMPTY_PRIMARY_TYPES =
@@ -462,6 +464,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new GoogleFunctionsRollbackStepPlanCreator());
     // Terraform Cloud
     planCreators.add(new TerraformCloudRunStepPlanCreator());
+    planCreators.add(new TerraformCloudRollbackStepPlanCreator());
 
     // AWS Lambda
     planCreators.add(new AwsLambdaDeployStepPlanCreator());
@@ -599,6 +602,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new GoogleFunctionsRollbackStepVariableCreator());
     // Terraform Cloud
     variableCreators.add(new TerraformCloudRunStepVariableCreator());
+    variableCreators.add(new TerraformCloudRollbackStepVariableCreator());
 
     // AWS Lambda
     variableCreators.add(new AwsLambdaDeployStepVariableCreator());
@@ -637,7 +641,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("GitOps Fetch Linked Apps")
             .setType(StepSpecTypeConstants.GITOPS_FETCH_LINKED_APPS)
-            .setFeatureFlag(FeatureName.GITOPS_FETCH_LINKED_APPS.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
             .build();
 
@@ -1271,6 +1274,18 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                      .setFeatureFlag(FeatureName.TERRAFORM_CLOUD.name())
                                      .build();
 
+    StepInfo terraformCloudRollback =
+        StepInfo.newBuilder()
+            .setName("Terraform Cloud Rollback")
+            .setType(StepSpecTypeConstants.TERRAFORM_CLOUD_ROLLBACK)
+            .setFeatureRestrictionName(FeatureRestrictionName.TERRAFORM_CLOUD_ROLLBACK.name())
+            .setStepMetaData(StepMetaData.newBuilder()
+                                 .addAllCategory(TERRAFORM_CLOUD_CATEGORY)
+                                 .setFolderPath(TERRAFORM_CLOUD_STEP_METADATA)
+                                 .build())
+            .setFeatureFlag(FeatureName.TERRAFORM_CLOUD.name())
+            .build();
+
     StepInfo awsLambdaRollback =
         StepInfo.newBuilder()
             .setName("Aws Lambda Rollback")
@@ -1358,6 +1373,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(asgBlueGreenSwapService);
     stepInfos.add(terraformCloudRun);
     stepInfos.add(awsLambdaDeploy);
+    stepInfos.add(terraformCloudRollback);
     stepInfos.add(awsLambdaRollback);
     return stepInfos;
   }

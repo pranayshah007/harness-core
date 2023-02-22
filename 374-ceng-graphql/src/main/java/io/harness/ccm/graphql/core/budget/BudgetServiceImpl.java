@@ -54,6 +54,7 @@ public class BudgetServiceImpl implements BudgetService {
     BudgetUtils.validateBudget(budget, budgetDao.list(budget.getAccountId(), budget.getName()));
     removeEmailDuplicates(budget);
     validatePerspective(budget);
+    validateParent(budget);
     updateBudgetStartTime(budget);
     updateBudgetEndTime(budget);
     updateBudgetCosts(budget);
@@ -107,6 +108,7 @@ public class BudgetServiceImpl implements BudgetService {
     BudgetUtils.validateBudget(budget, budgetDao.list(budget.getAccountId(), budget.getName()));
     removeEmailDuplicates(budget);
     validatePerspective(budget);
+    validateParent(budget);
     updateBudgetEndTime(budget);
     updateBudgetCosts(budget);
     budgetDao.update(budgetId, budget);
@@ -167,6 +169,13 @@ public class BudgetServiceImpl implements BudgetService {
     log.debug("entityIds is {}", entityIds);
     if (ceViewService.get(entityIds[0]) == null) {
       throw new InvalidRequestException(BudgetUtils.INVALID_ENTITY_ID_EXCEPTION);
+    }
+  }
+
+  private void validateParent(Budget budget) {
+    BudgetGroup parentBudgetGroup = budgetGroupDao.get(budget.getParentBudgetGroupId(), budget.getAccountId());
+    if (parentBudgetGroup == null) {
+      throw new InvalidRequestException(BudgetGroupUtils.INVALID_PARENT_EXCEPTION);
     }
   }
 

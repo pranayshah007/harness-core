@@ -2893,6 +2893,8 @@
 680007:io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit
 680008:io.harness.delegate.beans.terraformcloud.PlanType
 680009:io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse
+680010:io.harness.delegate.beans.terraformcloud.RollbackType
+680011:io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse
 878001:io.harness.steps.matrix.StrategyMetadata
 878018:io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultAdviserParameters
 878019:io.harness.pms.sdk.core.execution.AsyncTimeoutResponseData
@@ -3084,4 +3086,14 @@
 10000451:io.harness.delegate.beans.connector.jira.JiraAuthType
 10000452:io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO
 10000453:io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO
-10000411:io.harness.delegate.exception.AwsLambdaException
+
+10000502:io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest
+10000503:io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse
+10000504:io.harness.delegate.task.aws.lambda.request.AwsLambdaPrepareRollbackRequest
+10000505:io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG
+10000506:io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig
+10000507:io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig
+10000508:io.harness.delegate.task.aws.lambda.AwsLambdaArtifactConfig
+10000509:io.harness.delegate.task.aws.lambda.AwsLambdaS3ArtifactConfig
+10000510:io.harness.delegate.task.aws.lambda.AwsLambda
+10000511:io.harness.delegate.exception.AwsLambdaException

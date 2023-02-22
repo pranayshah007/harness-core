@@ -52,6 +52,7 @@ public class TerraformCloudTaskParams
   @Expression(DISALLOW_SECRETS) List<String> targets;
   String runId;
 
+  RollbackType rollbackType;
   String message;
 
   @Override

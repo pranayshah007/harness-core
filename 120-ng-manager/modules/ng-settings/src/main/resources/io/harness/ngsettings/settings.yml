@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 12
+version : 13
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -69,6 +69,14 @@ settings :
     allowOverrides: false
     allowedScopes:
       - ACCOUNT
+  - identifier: same_repo_for_pipeline_and_input_sets
+    name: Enforce same repo for Pipeline and InputSets
+    category: GIT_EXPERIENCE
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+        - ACCOUNT
   - identifier: enable_force_delete
     name: Enable Force Delete of Harness Resources
     category: CORE

@@ -56,7 +56,6 @@ import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.utils.CEViewPreferenceUtils;
 import io.harness.exception.InvalidRequestException;
 
-import com.google.cloud.bigquery.BigQuery;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -311,7 +310,7 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   @Override
-  public CEView updateTotalCost(CEView ceView, BigQuery bigQuery, String cloudProviderTableName) {
+  public CEView updateTotalCost(CEView ceView) {
     if (ceView.getViewState() != null && ceView.getViewState() == ViewState.COMPLETED) {
       List<QLCEViewAggregation> totalCostAggregationFunction = Collections.singletonList(
           QLCEViewAggregation.builder().columnName("cost").operationType(QLCEViewAggregateOperation.SUM).build());

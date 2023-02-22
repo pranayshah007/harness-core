@@ -263,6 +263,8 @@ public interface AccountService {
 
   Void setDefaultExperience(String accountId, DefaultExperience defaultExperience);
 
+  Account updateCrossGenerationAccessEnabled(String accountId, boolean isCrossGenerationAccessEnabled);
+
   AuthenticationInfo getAuthenticationInfo(String accountId);
 
   boolean isAccountActivelyUsed(String accountId);
