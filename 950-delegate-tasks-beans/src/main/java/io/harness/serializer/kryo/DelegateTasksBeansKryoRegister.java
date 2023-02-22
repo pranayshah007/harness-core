@@ -631,6 +631,9 @@ import io.harness.delegate.task.ecs.request.EcsRunTaskArnRequest;
 import io.harness.delegate.task.ecs.request.EcsRunTaskRequest;
 import io.harness.delegate.task.ecs.request.EcsS3FetchRequest;
 import io.harness.delegate.task.ecs.request.EcsS3FetchRunTaskRequest;
+import io.harness.delegate.task.ecs.request.EcsTaskArnBlueGreenCreateServiceRequest;
+import io.harness.delegate.task.ecs.request.EcsTaskArnCanaryDeployRequest;
+import io.harness.delegate.task.ecs.request.EcsTaskArnRollingDeployRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenPrepareRollbackDataResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse;
@@ -2135,6 +2138,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsRunTaskRequest.class, 573542);
     kryo.register(EcsRunTaskResponse.class, 573543);
     kryo.register(EcsRunTaskResult.class, 573544);
+    kryo.register(EcsTaskArnRollingDeployRequest.class, 573645);
+    kryo.register(EcsTaskArnCanaryDeployRequest.class, 573646);
+    kryo.register(EcsTaskArnBlueGreenCreateServiceRequest.class, 573647);
 
     // ASG
     kryo.register(AsgCanaryDeployRequest.class, 573571);

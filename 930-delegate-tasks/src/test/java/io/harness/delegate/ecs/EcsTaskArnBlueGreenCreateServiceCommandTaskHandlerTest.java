@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -7,7 +7,7 @@
 
 package io.harness.delegate.ecs;
 
-import static io.harness.rule.OwnerRule.ALLU_VAMSI;
+import static io.harness.rule.OwnerRule.PRAGYESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -26,9 +26,9 @@ import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsInfraType;
 import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.delegate.task.ecs.EcsTaskHelperBase;
-import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
 import io.harness.delegate.task.ecs.request.EcsCommandRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingRollbackRequest;
+import io.harness.delegate.task.ecs.request.EcsTaskArnBlueGreenCreateServiceRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.InvalidArgumentsException;
@@ -46,7 +46,7 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-public class EcsBlueGreenCreateServiceCommandTaskHandlerTest extends CategoryTest {
+public class EcsTaskArnBlueGreenCreateServiceCommandTaskHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   private final String prodListenerArn = "prodListenerArn";
@@ -68,35 +68,37 @@ public class EcsBlueGreenCreateServiceCommandTaskHandlerTest extends CategoryTes
   @Mock private LogCallback createServiceLogCallback;
   @Mock private EcsDeploymentHelper ecsDeploymentHelper;
 
-  @Spy @InjectMocks private EcsBlueGreenCreateServiceCommandTaskHandler ecsBlueGreenCreateServiceCommandTaskHandler;
+  @Spy
+  @InjectMocks
+  private EcsTaskArnBlueGreenCreateServiceCommandTaskHandler ecsTaskArnBlueGreenCreateServiceCommandTaskHandler;
 
   @Test(expected = InvalidArgumentsException.class)
-  @Owner(developers = ALLU_VAMSI)
+  @Owner(developers = PRAGYESH)
   @Category(UnitTests.class)
-  public void executeTaskInternalNotEcsBlueGreenCreateServiceRequestTest() throws Exception {
+  public void executeTaskInternalNotEcsTaskArnBlueGreenCreateServiceRequestTest() throws Exception {
     EcsRollingRollbackRequest ecsRollingRollbackRequest = EcsRollingRollbackRequest.builder().build();
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
-    ecsBlueGreenCreateServiceCommandTaskHandler.executeTaskInternal(
+    ecsTaskArnBlueGreenCreateServiceCommandTaskHandler.executeTaskInternal(
         ecsRollingRollbackRequest, iLogStreamingTaskClient, commandUnitsProgress);
   }
 
   @Test
-  @Owner(developers = ALLU_VAMSI)
+  @Owner(developers = PRAGYESH)
   @Category(UnitTests.class)
-  public void executeTaskInternalEcsBlueGreenCreateServiceRequestTest() throws Exception {
+  public void executeTaskInternalEcsTaskArnBlueGreenCreateServiceRequestTest() throws Exception {
     EcsInfraConfig ecsInfraConfig = EcsInfraConfig.builder()
                                         .region("us-east-1")
                                         .ecsInfraType(EcsInfraType.ECS)
                                         .cluster("cluster")
                                         .awsConnectorDTO(AwsConnectorDTO.builder().build())
                                         .build();
-    EcsCommandRequest ecsCommandRequest = EcsBlueGreenCreateServiceRequest.builder()
+    EcsCommandRequest ecsCommandRequest = EcsTaskArnBlueGreenCreateServiceRequest.builder()
                                               .ecsInfraConfig(ecsInfraConfig)
                                               .timeoutIntervalInMin(10)
-                                              .ecsTaskDefinitionManifestContent("taskDef")
+                                              .ecsTaskDefinitionArn("testArn")
                                               .ecsServiceDefinitionManifestContent("serviceDef")
                                               .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
-                                              .ecsCommandType(EcsCommandTypeNG.ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE)
+                                              .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_CREATE_SERVICE)
                                               .ecsScalableTargetManifestContentList(Lists.newArrayList())
                                               .ecsScalingPolicyManifestContentList(Lists.newArrayList())
                                               .targetGroupArnKey("testarn")
@@ -118,11 +120,11 @@ public class EcsBlueGreenCreateServiceCommandTaskHandlerTest extends CategoryTes
 
     doReturn(ecsBlueGreenCreateServiceResponse)
         .when(ecsDeploymentHelper)
-        .deployStageService(eq(createServiceLogCallback), eq(ecsCommandRequest), anyList(), anyList(), anyString(),
-            anyString(), eq(null), eq(ecsLoadBalancerConfig), anyString());
+        .deployStageService(eq(createServiceLogCallback), eq(ecsCommandRequest), anyList(), anyList(), eq(null),
+            anyString(), eq("testArn"), eq(ecsLoadBalancerConfig), anyString());
 
     EcsBlueGreenCreateServiceResponse actualEcsBlueGreenCreateServiceResponse =
-        (EcsBlueGreenCreateServiceResponse) ecsBlueGreenCreateServiceCommandTaskHandler.executeTaskInternal(
+        (EcsBlueGreenCreateServiceResponse) ecsTaskArnBlueGreenCreateServiceCommandTaskHandler.executeTaskInternal(
             ecsCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
 
     assertThat(actualEcsBlueGreenCreateServiceResponse.getCommandExecutionStatus())

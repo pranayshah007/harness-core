@@ -2425,6 +2425,9 @@
 573613:io.harness.delegate.task.elastigroup.request.AwsLoadBalancerConfig
 573614:io.harness.delegate.task.spot.elastigroup.rollback.ElastigroupRollbackTaskParameters
 573615:io.harness.delegate.task.spot.elastigroup.rollback.ElastigroupRollbackTaskResponse
+573645:io.harness.delegate.task.ecs.request.EcsTaskArnRollingDeployRequest
+573646:io.harness.delegate.task.ecs.request.EcsTaskArnCanaryDeployRequest
+573647:io.harness.delegate.task.ecs.request.EcsTaskArnBlueGreenCreateServiceRequest
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

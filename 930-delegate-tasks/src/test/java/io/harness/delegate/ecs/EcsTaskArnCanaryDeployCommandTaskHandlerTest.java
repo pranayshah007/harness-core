@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -7,7 +7,7 @@
 
 package io.harness.delegate.ecs;
 
-import static io.harness.rule.OwnerRule.ALLU_VAMSI;
+import static io.harness.rule.OwnerRule.PRAGYESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,8 +28,8 @@ import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsInfraType;
 import io.harness.delegate.task.ecs.EcsTaskHelperBase;
-import io.harness.delegate.task.ecs.request.EcsCanaryDeployRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingRollbackRequest;
+import io.harness.delegate.task.ecs.request.EcsTaskArnCanaryDeployRequest;
 import io.harness.delegate.task.ecs.response.EcsCanaryDeployResponse;
 import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.InvalidArgumentsException;
@@ -47,37 +47,35 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-public class EcsCanaryDeployCommandTaskHandlerTest extends CategoryTest {
+public class EcsTaskArnCanaryDeployCommandTaskHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
-
-  private final String taskDefinitionName = "family:1";
-  private final String taskDefinitionArn = "arn";
 
   @Mock ILogStreamingTaskClient iLogStreamingTaskClient;
   @Mock EcsTaskHelperBase ecsTaskHelperBase;
   @Mock LogCallback deployLogCallback;
   @Mock private EcsDeploymentHelper ecsDeploymentHelper;
 
-  @Spy @InjectMocks private EcsCanaryDeployCommandTaskHandler ecsCanaryDeployCommandTaskHandler;
+  @Spy @InjectMocks private EcsTaskArnCanaryDeployCommandTaskHandler ecsTaskArnCanaryDeployCommandTaskHandler;
 
   @Test
-  @Owner(developers = ALLU_VAMSI)
+  @Owner(developers = PRAGYESH)
   @Category(UnitTests.class)
   public void executeTaskInternalTest() throws Exception {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     EcsInfraConfig ecsInfraConfig = EcsInfraConfig.builder().region("us-east-1").ecsInfraType(EcsInfraType.ECS).build();
-    EcsCanaryDeployRequest ecsCanaryDeployRequest = EcsCanaryDeployRequest.builder()
-                                                        .timeoutIntervalInMin(10)
-                                                        .commandUnitsProgress(commandUnitsProgress)
-                                                        .ecsInfraConfig(ecsInfraConfig)
-                                                        .ecsTaskDefinitionManifestContent("taskDef")
-                                                        .ecsServiceDefinitionManifestContent("serviceDef")
-                                                        .desiredCountOverride(1L)
-                                                        .ecsScalableTargetManifestContentList(Lists.newArrayList())
-                                                        .ecsScalingPolicyManifestContentList(Lists.newArrayList())
-                                                        .ecsServiceNameSuffix("canary")
-                                                        .ecsCommandType(EcsCommandTypeNG.ECS_CANARY_DEPLOY)
-                                                        .build();
+    EcsTaskArnCanaryDeployRequest ecsTaskArnCanaryDeployRequest =
+        EcsTaskArnCanaryDeployRequest.builder()
+            .timeoutIntervalInMin(10)
+            .commandUnitsProgress(commandUnitsProgress)
+            .ecsInfraConfig(ecsInfraConfig)
+            .ecsTaskDefinitionArn("taskArn")
+            .ecsServiceDefinitionManifestContent("serviceDef")
+            .desiredCountOverride(1L)
+            .ecsScalableTargetManifestContentList(Lists.newArrayList())
+            .ecsScalingPolicyManifestContentList(Lists.newArrayList())
+            .ecsServiceNameSuffix("canary")
+            .ecsCommandType(EcsCommandTypeNG.ECS_CANARY_DEPLOY)
+            .build();
     EcsCanaryDeployResponse ecsCanaryDeployResponse =
         EcsCanaryDeployResponse.builder()
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
@@ -91,27 +89,27 @@ public class EcsCanaryDeployCommandTaskHandlerTest extends CategoryTest {
 
     doReturn(ecsCanaryDeployResponse)
         .when(ecsDeploymentHelper)
-        .deployCanaryService(
-            eq(deployLogCallback), any(), eq(ecsCanaryDeployRequest), anyList(), anyList(), anyLong(), anyString());
+        .deployCanaryService(eq(deployLogCallback), any(), eq(ecsTaskArnCanaryDeployRequest), anyList(), anyList(),
+            anyLong(), anyString());
 
     EcsCanaryDeployResponse actualEcsCanaryDeployResponse =
-        (EcsCanaryDeployResponse) ecsCanaryDeployCommandTaskHandler.executeTaskInternal(
-            ecsCanaryDeployRequest, iLogStreamingTaskClient, commandUnitsProgress);
+        (EcsCanaryDeployResponse) ecsTaskArnCanaryDeployCommandTaskHandler.executeTaskInternal(
+            ecsTaskArnCanaryDeployRequest, iLogStreamingTaskClient, commandUnitsProgress);
     assertThat(actualEcsCanaryDeployResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(actualEcsCanaryDeployResponse.getEcsCanaryDeployResult().getCanaryServiceName()).isEqualTo("ecscanary");
     assertThat(actualEcsCanaryDeployResponse.getEcsCanaryDeployResult().getRegion()).isEqualTo("us-east-1");
     verify(ecsDeploymentHelper, times(1))
         .createServiceDefinitionRequest(
-            eq(deployLogCallback), eq(ecsInfraConfig), anyString(), anyString(), anyList(), anyList(), eq(null));
+            eq(deployLogCallback), eq(ecsInfraConfig), eq(null), anyString(), anyList(), anyList(), anyString());
   }
 
   @Test(expected = InvalidArgumentsException.class)
-  @Owner(developers = ALLU_VAMSI)
+  @Owner(developers = PRAGYESH)
   @Category(UnitTests.class)
-  public void executeTaskInternalEcsRollingDeployRequestTest() throws Exception {
+  public void executeTaskInternalEcsTaskArnRollingDeployRequestTest() throws Exception {
     EcsRollingRollbackRequest ecsRollingRollbackRequest = EcsRollingRollbackRequest.builder().build();
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
-    ecsCanaryDeployCommandTaskHandler.executeTaskInternal(
+    ecsTaskArnCanaryDeployCommandTaskHandler.executeTaskInternal(
         ecsRollingRollbackRequest, iLogStreamingTaskClient, commandUnitsProgress);
   }
 }

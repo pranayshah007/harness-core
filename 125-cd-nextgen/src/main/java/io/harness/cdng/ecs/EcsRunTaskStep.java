@@ -45,6 +45,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -157,8 +159,8 @@ public class EcsRunTaskStep extends TaskChainExecutableWithRollbackAndRbac imple
                   ecsStepExecutorParams.getEcsRunTaskRequestDefinitionManifestContent())
               .skipSteadyStateCheck(ecsRunTaskStepParameters.getSkipSteadyStateCheck().getValue())
               .build();
-      return ecsStepCommonHelper.queueEcsTask(
-          stepElementParameters, ecsRunTaskRequest, ambiance, executionPassThroughData, true);
+      return ecsStepCommonHelper.queueEcsTask(stepElementParameters, ecsRunTaskRequest, ambiance,
+          executionPassThroughData, true, TaskType.ECS_COMMAND_TASK_NG);
     } else {
       EcsRunTaskArnRequest ecsRunTaskArnRequest =
           EcsRunTaskArnRequest.builder()
