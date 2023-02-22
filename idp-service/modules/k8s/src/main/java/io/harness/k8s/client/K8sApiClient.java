@@ -150,9 +150,8 @@ public class K8sApiClient implements K8sClient {
     builder.masterUrl(backstageMasterUrl);
     builder.serviceAccountTokenSupplier(() -> backstageSaToken);
 
-    String caCert = System.getenv(backstageSaCaCrt);
-    if (StringUtils.isNotBlank(caCert)) {
-      builder.clientCert(caCert.toCharArray());
+    if (StringUtils.isNotBlank(backstageSaCaCrt)) {
+      builder.clientCert(backstageSaCaCrt.toCharArray());
     }
     return builder.build();
   }
