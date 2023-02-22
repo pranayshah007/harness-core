@@ -294,7 +294,7 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
   public void testGetBuildDetailsWithException() {
     try {
       doReturn(dockerRegistryRestClient).when(dockerRestClientFactory).getDockerRegistryRestClient(dockerConfig);
-      dockerRegistryService.getBuilds(dockerConfig, "image", 10);
+      dockerRegistryService.getBuilds(dockerConfig, "image", 10, null);
       fail("Should not reach here");
     } catch (Exception ex) {
       assertThat(getMessage(ex))
@@ -324,7 +324,7 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
       }
       GlobalContextManager.upsertGlobalContextRecord(
           ErrorHandlingGlobalContextData.builder().isSupportedErrorFramework(true).build());
-      dockerRegistryService.getBuilds(dockerConfig, "image", 10);
+      dockerRegistryService.getBuilds(dockerConfig, "image", 10, null);
       fail("Should not reach here");
     } catch (Exception ex) {
       GlobalContextManager.unset();
@@ -342,7 +342,7 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
     wireMockRule.stubFor(
         get(urlEqualTo("/v2/image/tags/list"))
             .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(dockerImageTagResponse))));
-    List<BuildDetailsInternal> builds = dockerRegistryService.getBuilds(dockerConfig, "image", 10);
+    List<BuildDetailsInternal> builds = dockerRegistryService.getBuilds(dockerConfig, "image", 10, null);
     assertThat(builds).isNotNull();
     assertThat(builds.size()).isEqualTo(2);
     assertThat(builds.get(0).getNumber()).isEqualTo("tag1");
@@ -372,7 +372,7 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
     wireMockRule.stubFor(
         get(urlEqualTo("/oauth2/token?service=test.azurecr.io&scope=somevalue"))
             .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(acrDockerRegistryToken))));
-    List<BuildDetailsInternal> builds = dockerRegistryService.getBuilds(dockerConfig, "image", 10);
+    List<BuildDetailsInternal> builds = dockerRegistryService.getBuilds(dockerConfig, "image", 10, null);
     assertThat(builds).isNotNull();
     assertThat(builds.size()).isEqualTo(2);
     assertThat(builds.get(0).getNumber()).isEqualTo("tag1");
@@ -405,7 +405,7 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
             .withBasicAuth(dockerConfig.getUsername(), dockerConfig.getPassword())
             .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(dockerImageTagResponsePaginated))));
 
-    List<BuildDetailsInternal> builds = dockerRegistryService.getBuilds(dockerConfig, "image", 10);
+    List<BuildDetailsInternal> builds = dockerRegistryService.getBuilds(dockerConfig, "image", 10, null);
     assertThat(builds).isNotNull();
     assertThat(builds.get(0).getNumber()).isEqualTo("tag1");
     assertThat(builds.get(0).getBuildUrl()).isEqualTo(url + "image/tags/tag1");
@@ -456,7 +456,7 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
             .withHeader("Authorization", equalTo("Bearer dockerRegistryToken"))
             .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(dockerImageTagResponsePaginated))));
 
-    List<BuildDetailsInternal> builds = dockerRegistryService.getBuilds(dockerConfig, "image", 10);
+    List<BuildDetailsInternal> builds = dockerRegistryService.getBuilds(dockerConfig, "image", 10, null);
     assertThat(builds).isNotNull();
     assertThat(builds.get(0).getNumber()).isEqualTo("tag1");
     assertThat(builds.get(0).getBuildUrl()).isEqualTo(url + "image/tags/tag1");
@@ -561,7 +561,7 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
   public void testIsSuccessfulErrorCode500() {
     try {
       doReturn(dockerRegistryRestClient).when(dockerRestClientFactory).getDockerRegistryRestClient(dockerConfig);
-      dockerRegistryService.getBuilds(dockerConfig, "image_500", 10);
+      dockerRegistryService.getBuilds(dockerConfig, "image_500", 10, null);
       fail("Should not reach here");
     } catch (Exception ex) {
       assertThat(getMessage(ex))

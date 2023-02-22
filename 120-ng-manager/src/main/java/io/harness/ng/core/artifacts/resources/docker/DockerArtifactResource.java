@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.InputSetValidatorType;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerBuildDetailsDTO;
@@ -74,7 +75,7 @@ public class DockerArtifactResource {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(dockerConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     DockerResponseDTO buildDetails =
-        dockerResourceService.getBuildDetails(connectorRef, imagePath, orgIdentifier, projectIdentifier);
+        dockerResourceService.getBuildDetails(connectorRef, imagePath, orgIdentifier, projectIdentifier, null);
     return ResponseDTO.newResponse(buildDetails);
   }
 
@@ -91,6 +92,7 @@ public class DockerArtifactResource {
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @NotNull @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @NotNull String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    String tagRegex = null;
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
@@ -100,6 +102,12 @@ public class DockerArtifactResource {
       }
       if (isEmpty(dockerConnectorIdentifier)) {
         dockerConnectorIdentifier = (String) dockerHubArtifactConfig.getConnectorRef().fetchFinalValue();
+      }
+      if (dockerHubArtifactConfig.getTag().getExpressionValue() != null
+          && dockerHubArtifactConfig.getTag().getInputSetValidator() != null
+          && dockerHubArtifactConfig.getTag().getInputSetValidator().getValidatorType()
+              == InputSetValidatorType.REGEX) {
+        tagRegex = dockerHubArtifactConfig.getTag().getInputSetValidator().getParameters();
       }
     }
 
@@ -112,7 +120,7 @@ public class DockerArtifactResource {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(dockerConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     DockerResponseDTO buildDetails =
-        dockerResourceService.getBuildDetails(connectorRef, imagePath, orgIdentifier, projectIdentifier);
+        dockerResourceService.getBuildDetails(connectorRef, imagePath, orgIdentifier, projectIdentifier, tagRegex);
     return ResponseDTO.newResponse(buildDetails);
   }
 
