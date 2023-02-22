@@ -1825,7 +1825,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
               notificationRuleConditionTypeTemplateDataGeneratorMap.get(condition.getType());
           Map<String, String> templateData = notificationRuleTemplateDataGenerator.getTemplateData(projectParams,
               monitoredService.getName(), monitoredService.getIdentifier(), monitoredService.getServiceIdentifier(),
-              condition, notificationData.getTemplateDataMap());
+              monitoredService.getIdentifier(), condition, notificationData.getTemplateDataMap());
           String templateId = notificationRuleTemplateDataGenerator.getTemplateId(
               notificationRule.getType(), notificationChannel.getType());
           try {
