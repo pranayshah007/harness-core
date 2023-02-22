@@ -55,9 +55,6 @@ public class KubeConfigAuthPluginHelper {
                                                 .readOutput(true);
 
     final ProcessResult result = processExecutor.execute();
-    if (result.getExitValue() != 0) {
-      return false;
-    }
-    return true;
+    return result.getExitValue() == 0;
   }
 }
