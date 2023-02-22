@@ -24,6 +24,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -193,6 +194,7 @@ public class HarnessNgUrl {
   public String convertInstantToDate(Instant instant) {
     Date myDate = Date.from(instant);
     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+    formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     return formatter.format(myDate);
   }
 }
