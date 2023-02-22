@@ -663,7 +663,8 @@ public enum ErrorCode {
   ADFS_ERROR,
   TERRAFORM_CLOUD_ERROR,
   CLUSTER_CREDENTIALS_NOT_FOUND,
-  SCM_API_ERROR;
+  SCM_API_ERROR,
+  PIPELINE_SETTINGS_FETCH_ERROR;
 
   private Status status = BAD_REQUEST;
   private String description;

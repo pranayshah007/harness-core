@@ -12,6 +12,7 @@ import static io.harness.licensing.Edition.TEAM;
 
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.PipelineSettingsException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
@@ -104,7 +105,7 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     } catch (ExecutionException ex) {
       return PlanExecutionSettingResponse.builder().shouldQueue(false).useNewFlow(false).build();
     } catch (Exception ex) {
-      log.error(
+      throw new PipelineSettingsException(
           "Error while executing the pipeline: Failed to fetch max concurrent executions limit for the given account plan");
     }
     return PlanExecutionSettingResponse.builder().shouldQueue(false).useNewFlow(false).build();
