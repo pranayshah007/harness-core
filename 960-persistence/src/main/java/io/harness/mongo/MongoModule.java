@@ -31,15 +31,12 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
-import com.mongodb.ConnectionString;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoClientURI;
 import com.mongodb.ReadPreference;
 import com.mongodb.Tag;
 import com.mongodb.TagSet;
-import com.mongodb.client.MongoClients;
 import dev.morphia.AdvancedDatastore;
 import dev.morphia.Morphia;
 import dev.morphia.ObjectFactory;
@@ -51,7 +48,6 @@ import java.security.KeyStore;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -61,11 +57,6 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class MongoModule extends AbstractModule {
   private static volatile MongoModule instance;
-  public static final int DEFAULT_CONNECTION_TIMEOUT = 30000;
-  public static final int DEFAULT_SERVER_SELECTION_TIMEOUT = 90000;
-  public static final int DEFAULT_SOCKET_TIMEOUT = 360000;
-  public static final int DEFAULT_MAX_CONNECTION_IDLE_TIME = 600000;
-  public static final int DEFAULT_CONNECTIONS_PER_HOST = 300;
 
   static MongoModule getInstance() {
     if (instance == null) {
@@ -91,11 +82,11 @@ public class MongoModule extends AbstractModule {
     } else {
       defaultMongoClientOptions = MongoClientOptions.builder()
                                       .retryWrites(true)
-                                      .connectTimeout(DEFAULT_CONNECTION_TIMEOUT)
-                                      .serverSelectionTimeout(DEFAULT_SERVER_SELECTION_TIMEOUT)
-                                      .socketTimeout(DEFAULT_SOCKET_TIMEOUT)
-                                      .maxConnectionIdleTime(DEFAULT_MAX_CONNECTION_IDLE_TIME)
-                                      .connectionsPerHost(DEFAULT_CONNECTIONS_PER_HOST)
+                                      .connectTimeout(30000)
+                                      .serverSelectionTimeout(90000)
+                                      .socketTimeout(360000)
+                                      .maxConnectionIdleTime(600000)
+                                      .connectionsPerHost(300)
                                       .build();
     }
     return defaultMongoClientOptions;
@@ -130,40 +121,6 @@ public class MongoModule extends AbstractModule {
     return new MongoClient(uri);
   }
 
-  @Provides
-  @Named("primaryMongoClient")
-  @Singleton
-  public com.mongodb.client.MongoClient primaryNewMongoClient(
-      MongoConfig mongoConfig, HarnessConnectionPoolListener harnessConnectionPoolListener) {
-    MongoClientSettings primaryMongoClientSettings;
-    MongoSSLConfig mongoSSLConfig = mongoConfig.getMongoSSLConfig();
-    if (mongoSSLConfig != null && mongoSSLConfig.isMongoSSLEnabled()) {
-      primaryMongoClientSettings = getMongoSslContextClientSettings(mongoConfig);
-    } else {
-      primaryMongoClientSettings =
-          MongoClientSettings.builder()
-              .applyConnectionString(new ConnectionString(mongoConfig.getUri()))
-              .retryWrites(true)
-              .applyToSocketSettings(
-                  builder -> builder.connectTimeout(mongoConfig.getConnectTimeout(), TimeUnit.MILLISECONDS))
-              .applyToClusterSettings(builder
-                  -> builder.serverSelectionTimeout(mongoConfig.getServerSelectionTimeout(), TimeUnit.MILLISECONDS))
-              .applyToSocketSettings(
-                  builder -> builder.readTimeout(mongoConfig.getSocketTimeout(), TimeUnit.MILLISECONDS))
-              .applyToConnectionPoolSettings(builder
-                  -> builder.maxConnectionIdleTime(mongoConfig.getMaxConnectionIdleTime(), TimeUnit.MILLISECONDS))
-              .applyToConnectionPoolSettings(builder -> builder.maxSize(mongoConfig.getConnectionsPerHost()))
-              .readPreference(mongoConfig.getReadPreference())
-              .build();
-    }
-
-    return MongoClients.create(
-        MongoClientSettings.builder(primaryMongoClientSettings)
-            .applyToConnectionPoolSettings(builder -> builder.addConnectionPoolListener(harnessConnectionPoolListener))
-            .applicationName("primary_mongo_client")
-            .build());
-  }
-
   public static AdvancedDatastore createDatastore(
       Morphia morphia, String uri, String name, HarnessConnectionPoolListener harnessConnectionPoolListener) {
     MongoConfig mongoConfig = MongoConfig.builder().build();
@@ -178,26 +135,6 @@ public class MongoModule extends AbstractModule {
     datastore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
 
     return datastore;
-  }
-
-  public static com.mongodb.client.MongoClient createNewMongoCLient(
-      String uri, String name, HarnessConnectionPoolListener harnessConnectionPoolListener) {
-    MongoClientSettings mongoClientSettings =
-        MongoClientSettings.builder()
-            .applyConnectionString(new ConnectionString(uri))
-            .retryWrites(true)
-            .applyToSocketSettings(builder -> builder.connectTimeout(DEFAULT_CONNECTION_TIMEOUT, TimeUnit.MILLISECONDS))
-            .applyToClusterSettings(
-                builder -> builder.serverSelectionTimeout(DEFAULT_SERVER_SELECTION_TIMEOUT, TimeUnit.MILLISECONDS))
-            .applyToSocketSettings(builder -> builder.readTimeout(DEFAULT_SOCKET_TIMEOUT, TimeUnit.MILLISECONDS))
-            .applyToConnectionPoolSettings(
-                builder -> builder.maxConnectionIdleTime(DEFAULT_MAX_CONNECTION_IDLE_TIME, TimeUnit.MILLISECONDS))
-            .applyToConnectionPoolSettings(builder -> builder.maxSize(DEFAULT_CONNECTIONS_PER_HOST))
-            .applyToConnectionPoolSettings(builder -> builder.addConnectionPoolListener(harnessConnectionPoolListener))
-            .applicationName("mongo_client_" + name)
-            .build();
-
-    return MongoClients.create(mongoClientSettings);
   }
 
   private MongoModule() {
@@ -238,30 +175,6 @@ public class MongoModule extends AbstractModule {
                                     .sslContext(sslContext(trustStorePath, trustStorePassword))
                                     .build();
     return primaryMongoClientOptions;
-  }
-
-  private static MongoClientSettings getMongoSslContextClientSettings(MongoConfig mongoConfig) {
-    validateSSLMongoConfig(mongoConfig);
-    MongoSSLConfig mongoSSLConfig = mongoConfig.getMongoSSLConfig();
-    String trustStorePath = mongoSSLConfig.getMongoTrustStorePath();
-    String trustStorePassword = mongoSSLConfig.getMongoTrustStorePassword();
-
-    return MongoClientSettings.builder()
-        .applyConnectionString(new ConnectionString(mongoConfig.getUri()))
-        .retryWrites(true)
-        .applyToSocketSettings(
-            builder -> builder.connectTimeout(mongoConfig.getConnectTimeout(), TimeUnit.MILLISECONDS))
-        .applyToClusterSettings(
-            builder -> builder.serverSelectionTimeout(mongoConfig.getServerSelectionTimeout(), TimeUnit.MILLISECONDS))
-        .applyToSocketSettings(builder -> builder.readTimeout(mongoConfig.getSocketTimeout(), TimeUnit.MILLISECONDS))
-        .applyToConnectionPoolSettings(
-            builder -> builder.maxConnectionIdleTime(mongoConfig.getMaxConnectionIdleTime(), TimeUnit.MILLISECONDS))
-        .applyToConnectionPoolSettings(builder -> builder.maxSize(mongoConfig.getConnectionsPerHost()))
-        .readPreference(mongoConfig.getReadPreference())
-        .applyToSslSettings(builder -> builder.enabled(mongoSSLConfig.isMongoSSLEnabled()))
-        .applyToSslSettings(builder -> builder.invalidHostNameAllowed(true))
-        .applyToSslSettings(builder -> builder.context(sslContext(trustStorePath, trustStorePassword)))
-        .build();
   }
 
   private static void validateSSLMongoConfig(MongoConfig mongoConfig) {

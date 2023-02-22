@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Harness Inc. All rights reserved.
+ * Copyright 2020 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -10,17 +10,13 @@ package io.harness.testlib.module;
 import io.harness.exception.GeneralException;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.mongodb.MongoClientSettings;
+import com.mongodb.MongoClient;
 import com.mongodb.ServerAddress;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
 import de.bwaldvogel.mongo.MongoServer;
-import de.bwaldvogel.mongo.ServerVersion;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
 import java.io.Closeable;
 import java.net.InetSocketAddress;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -49,13 +45,10 @@ public class FakeMongoCreator {
   }
 
   private static FakeMongo fakeMongo() {
-    MongoServer mongoServer = new MongoServer(new MemoryBackend().version(ServerVersion.MONGO_3_6));
+    MongoServer mongoServer = new MongoServer(new MemoryBackend());
     mongoServer.bind("localhost", 0);
     InetSocketAddress serverAddress = mongoServer.getLocalAddress();
-    MongoClient mongoClient = MongoClients.create(
-        MongoClientSettings.builder()
-            .applyToClusterSettings(builder -> builder.hosts(Arrays.asList(new ServerAddress(serverAddress))))
-            .build());
+    MongoClient mongoClient = new MongoClient(new ServerAddress(serverAddress));
     return FakeMongo.builder().mongoServer(mongoServer).mongoClient(mongoClient).build();
   }
 

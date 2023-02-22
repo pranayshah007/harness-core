@@ -24,7 +24,6 @@ import com.mongodb.MongoSocketReadException;
 import com.mongodb.ReadPreference;
 import com.mongodb.Tag;
 import com.mongodb.TagSet;
-import com.mongodb.client.MongoClient;
 import dev.morphia.AdvancedDatastore;
 import dev.morphia.FindAndModifyOptions;
 import dev.morphia.query.CountOptions;
@@ -68,8 +67,6 @@ public interface HPersistence extends HealthMonitor {
    * @return         the datastore
    */
   AdvancedDatastore getDatastore(Store store);
-
-  MongoClient getNewMongoClient(Store store);
 
   /**
    * Gets the datastore.

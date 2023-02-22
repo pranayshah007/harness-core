@@ -9,7 +9,9 @@ package io.harness.pms.outbox;
 
 import static io.harness.rule.OwnerRule.BRIJESH;
 
+import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.joor.Reflect.on;
 import static org.mockito.Mockito.spy;
@@ -32,6 +34,8 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.InjectionPoint;
 import com.google.inject.spi.TypeConverterBinding;
+import com.mongodb.MongoClient;
+import com.mongodb.ReadPreference;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.List;
@@ -71,7 +75,14 @@ public class PipelineOutboxPersistenceConfigTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetMongoClient() {
     on(persistenceConfig).set("mongoConfig", mongoConfig);
-    assertThatCode(() -> persistenceConfig.mongoClient()).doesNotThrowAnyException();
+    MongoClient mongoClient = persistenceConfig.mongoClient();
+
+    assertEquals(mongoClient.getMongoClientOptions().getConnectTimeout(), connectTimeout);
+    assertEquals(mongoClient.getMongoClientOptions().getServerSelectionTimeout(), serverSelectionTimeout);
+    assertEquals(mongoClient.getMongoClientOptions().getMaxConnectionIdleTime(), maxConnectionIdleTime);
+    assertEquals(mongoClient.getMongoClientOptions().getConnectionsPerHost(), connectionsPerHost);
+    assertEquals(mongoClient.getMongoClientOptions().getReadPreference(), ReadPreference.secondary());
+    assertTrue(mongoClient.getMongoClientOptions().getRetryWrites());
   }
 
   @Test
