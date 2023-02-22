@@ -17,14 +17,14 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
+import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
-import com.mongodb.client.MongoClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
-import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
+import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
@@ -34,7 +34,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
                              "io.harness.ng.accesscontrol.mockserver.repositories"},
     includeFilters = @ComponentScan.Filter(HarnessRepo.class))
 @OwnedBy(HarnessTeam.PL)
-public class AccessControlMigrationPersistenceConfig extends AbstractMongoClientConfiguration {
+public class AccessControlMigrationPersistenceConfig extends AbstractMongoConfiguration {
   private final MongoConfig mongoBackendConfiguration;
   protected final MongoClient mongoClient;
 

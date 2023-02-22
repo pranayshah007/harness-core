@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
+import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
 
 @Configuration
 @Slf4j
@@ -40,8 +41,8 @@ public class BatchMongoConfiguration {
   public MongoDatabaseFactory mongoDbFactory(HPersistence hPersistence, BatchMainConfig config) {
     registerEventsStore(hPersistence, config);
     AdvancedDatastore eventsDatastore = hPersistence.getDatastore(EVENTS_STORE);
-    return new SimpleMongoClientDatabaseFactory(
-        hPersistence.getNewMongoClient(EVENTS_STORE), eventsDatastore.getDB().getName());
+
+    return new SimpleMongoDbFactory(eventsDatastore.getMongo(), eventsDatastore.getDB().getName());
   }
 
   @Bean
