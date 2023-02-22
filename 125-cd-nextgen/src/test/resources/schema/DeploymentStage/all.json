@@ -12354,22 +12354,6 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AWS_SAM_PUBLISH"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/AwsSamPublishStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
                 "const": "AppResize"
               }
             }
@@ -12522,6 +12506,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AwsLambdaDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AwsSamPublish"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsSamPublishStepInfo"
               }
             }
           }
