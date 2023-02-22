@@ -827,7 +827,7 @@ public class ArtifactCollectionUtils {
     Function<Artifact, String> keyFn = getArtifactKeyFn(artifactStreamType, artifactStreamAttributes);
     Set<String> artifactKeys = new HashSet<>();
     try (HIterator<Artifact> artifacts =
-             new HIterator<>(artifactService.prepareArtifactWithMetadataQuery(artifactStream).fetch())) {
+             new HIterator<>(artifactService.prepareArtifactWithMetadataQuery(artifactStream, true).fetch())) {
       for (Artifact artifact : artifacts) {
         String key = keyFn.apply(artifact);
         if (key != null) {

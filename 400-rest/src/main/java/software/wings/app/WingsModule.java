@@ -72,7 +72,9 @@ import io.harness.ccm.health.HealthStatusServiceImpl;
 import io.harness.ccm.ngperpetualtask.service.K8sWatchTaskService;
 import io.harness.ccm.ngperpetualtask.service.K8sWatchTaskServiceImpl;
 import io.harness.ccm.setup.CESetupServiceModule;
+import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingHistoryServiceImpl;
 import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceImpl;
+import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingHistoryService;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEReportTemplateBuilderService;
@@ -1223,6 +1225,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(CEViewService.class).to(CEViewServiceImpl.class);
     bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
+    bind(BusinessMappingHistoryService.class).to(BusinessMappingHistoryServiceImpl.class);
     bind(CECommunicationsService.class).to(CECommunicationsServiceImpl.class);
     bind(CESlackWebhookService.class).to(CESlackWebhookServiceImpl.class);
     bind(CEReportScheduleService.class).to(CEReportScheduleServiceImpl.class);

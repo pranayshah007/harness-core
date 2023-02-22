@@ -255,6 +255,7 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
 
     List<Budget> budgets = budgetDao.list(accountId);
     budgets = budgets.stream().filter(BudgetUtils::isPerspectiveBudget).collect(Collectors.toList());
+    unsetInvalidParents(budgetGroups, budgets);
     budgets.sort(Comparator.comparing(Budget::getLastUpdatedAt).reversed());
     List<Budget> budgetsPartOfBudgetGroups =
         budgets.stream().filter(budget -> budget.getParentBudgetGroupId() != null).collect(Collectors.toList());
@@ -573,5 +574,15 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
       }
     }
     budgetGroup.setBudgetGroupHistory(budgetGroupHistory);
+  }
+
+  private void unsetInvalidParents(List<BudgetGroup> budgetGroups, List<Budget> budgets) {
+    List<String> validParentIds = budgetGroups.stream().map(BudgetGroup::getUuid).collect(Collectors.toList());
+    List<String> budgetsWithInvalidParents =
+        budgets.stream()
+            .filter(budget -> !validParentIds.contains(budget.getParentBudgetGroupId()))
+            .map(Budget::getUuid)
+            .collect(Collectors.toList());
+    budgetDao.unsetParent(budgetsWithInvalidParents);
   }
 }

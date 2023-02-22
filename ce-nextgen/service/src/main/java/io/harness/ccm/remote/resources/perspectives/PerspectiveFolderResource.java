@@ -11,7 +11,9 @@ import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_FOLDER;
+import static io.harness.ccm.rbac.CCMRbacPermissions.FOLDER_CREATE_AND_EDIT;
 import static io.harness.ccm.rbac.CCMRbacPermissions.FOLDER_VIEW;
+import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_CREATE_AND_EDIT;
 import static io.harness.ccm.remote.resources.TelemetryConstants.FOLDER_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.FOLDER_ID;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
@@ -196,6 +198,11 @@ public class PerspectiveFolderResource {
                                  .collect(Collectors.toList());
     }
 
+    if ((allowedCeViewFolders == null || allowedCeViewFolders.size() == 0)
+        && (ceViewFolders != null && ceViewFolders.size() > 0)) {
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, FOLDER_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
+    }
     return ResponseDTO.newResponse(allowedCeViewFolders);
   }
 
@@ -280,10 +287,19 @@ public class PerspectiveFolderResource {
     perspectiveFolderIds.add(newFolderId);
 
     Set<String> permittedPerspectiveFolderIds =
-        rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, perspectiveFolderIds, FOLDER_VIEW);
+        rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, perspectiveFolderIds, FOLDER_CREATE_AND_EDIT);
     if (permittedPerspectiveFolderIds.size() != perspectiveFolderIds.size()) {
       throw new NGAccessDeniedException(
-          String.format(PERMISSION_MISSING_MESSAGE, FOLDER_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
+          String.format(PERMISSION_MISSING_MESSAGE, FOLDER_CREATE_AND_EDIT, RESOURCE_FOLDER), WingsException.USER,
+          null);
+    }
+
+    permittedPerspectiveFolderIds = rbacHelper.checkFolderIdsGivenPermission(
+        accountId, null, null, perspectiveFolderIds, PERSPECTIVE_CREATE_AND_EDIT);
+    if (permittedPerspectiveFolderIds.size() != perspectiveFolderIds.size()) {
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, PERSPECTIVE_CREATE_AND_EDIT, RESOURCE_FOLDER), WingsException.USER,
+          null);
     }
     return ResponseDTO.newResponse(ceViewFolderService.moveMultipleCEViews(accountId, perspectiveIds, newFolderId));
   }

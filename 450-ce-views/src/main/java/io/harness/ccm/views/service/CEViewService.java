@@ -15,7 +15,6 @@ import io.harness.ccm.views.entities.ViewState;
 import io.harness.ccm.views.graphql.QLCEView;
 import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
 
-import com.google.cloud.bigquery.BigQuery;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +31,7 @@ public interface CEViewService {
   Set<String> getPerspectiveFolderIds(String accountId, List<String> ceViewIds);
   HashMap<String, String> getPerspectiveIdAndFolderId(String accountId, List<String> ceViewIds);
   void updateBusinessMappingName(String accountId, String buinessMappingUuid, String newBusinessMappingName);
-  CEView updateTotalCost(CEView ceView, BigQuery bigQuery, String cloudProviderTableName);
+  CEView updateTotalCost(CEView ceView);
   boolean delete(String uuid, String accountId);
   List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria);
   List<QLCEView> getAllViews(

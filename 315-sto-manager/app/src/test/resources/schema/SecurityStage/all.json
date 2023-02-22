@@ -459,6 +459,15 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "Attestation": {
+      "type": "object",
+      "properties": {
+        "privateKey": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AwsEcrStepInfo": {
       "allOf": [
         {
@@ -3842,6 +3851,45 @@
           "type": "string"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ImageSbomSource": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SbomSourceSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "connector": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "image": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "Infrastructure": {
@@ -8193,6 +8241,43 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SbomSource": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "image"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "image"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ImageSbomSource"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SbomSourceSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ScriptStepInfo": {
       "allOf": [
         {
@@ -9219,6 +9304,56 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SscaOrchestrationStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "format",
+            "source",
+            "tool"
+          ],
+          "properties": {
+            "attestation": {
+              "$ref": "#/definitions/Attestation"
+            },
+            "format": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "source": {
+              "$ref": "#/definitions/SbomSource"
+            },
+            "tool": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "StageRollbackFailureActionConfig": {
       "allOf": [
         {
@@ -10152,6 +10287,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/SonarqubeStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "SscaOrchestration"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SscaOrchestrationStepInfo"
               }
             }
           }

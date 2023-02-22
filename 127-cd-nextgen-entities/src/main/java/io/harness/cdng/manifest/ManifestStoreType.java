@@ -61,6 +61,6 @@ public interface ManifestStoreType {
 
   Set<String> HelmChartRepo = ImmutableSet.of(HTTP, GCS, S3, OCI, CUSTOM_REMOTE);
   Set<String> HelmAllRepo =
-      ImmutableSet.of(HTTP, GCS, S3, GIT, GITHUB, GITLAB, BITBUCKET, OCI, CUSTOM_REMOTE, AZURE_REPO);
+      ImmutableSet.of(HTTP, GCS, S3, GIT, GITHUB, GITLAB, BITBUCKET, OCI, CUSTOM_REMOTE, AZURE_REPO, HARNESS);
   Set<String> GitSubsetRepo = ImmutableSet.of(GIT, GITHUB, GITLAB, BITBUCKET, AZURE_REPO);
 }

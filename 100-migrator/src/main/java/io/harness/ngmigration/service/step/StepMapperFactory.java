@@ -9,6 +9,10 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.ngmigration.service.step.arm.AzureCreateARMResourceStepMapperImpl;
 import io.harness.ngmigration.service.step.arm.AzureRollbackARMResourceStepMapperImpl;
+import io.harness.ngmigration.service.step.asg.AsgBlueGreenRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.asg.AsgBlueGreenSwapStepMapperImpl;
+import io.harness.ngmigration.service.step.asg.AsgRollingDeployStepMapperImpl;
+import io.harness.ngmigration.service.step.asg.AsgRollingRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.azure.webapp.AzureSlotRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.azure.webapp.AzureSlotSetupMapperImpl;
 import io.harness.ngmigration.service.step.azure.webapp.AzureSlotShiftTrafficMapperImpl;
@@ -16,6 +20,7 @@ import io.harness.ngmigration.service.step.azure.webapp.AzureSlotSwapMapperImpl;
 import io.harness.ngmigration.service.step.cloudformation.CloudformationCreateStepMapperImpl;
 import io.harness.ngmigration.service.step.cloudformation.CloudformationDeleteStepMapperImpl;
 import io.harness.ngmigration.service.step.cloudformation.CloudformationRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.cv.NewRelicDeploymentMarkerStepMapperImpl;
 import io.harness.ngmigration.service.step.ecs.EcsServiceRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.ecs.EcsServiceSetupStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupDeployStepMapperImpl;
@@ -143,6 +148,11 @@ public class StepMapperFactory {
   @Inject AzureSlotSetupMapperImpl azureSlotSetupMapper;
   @Inject AzureSlotShiftTrafficMapperImpl azureSlotShiftTrafficMapper;
   @Inject AzureSlotSwapMapperImpl azureSlotSwapMapper;
+  @Inject NewRelicDeploymentMarkerStepMapperImpl newRelicDeploymentMarkerStepMapper;
+  @Inject AsgRollingDeployStepMapperImpl asgRollingDeployStepMapper;
+  @Inject AsgRollingRollbackStepMapperImpl asgRollingRollbackStepMapper;
+  @Inject AsgBlueGreenSwapStepMapperImpl asgBlueGreenSwapStepMapper;
+  @Inject AsgBlueGreenRollbackStepMapperImpl asgBlueGreenRollbackStepMapper;
   @Inject UnsupportedStepMapperImpl unsupportedStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
@@ -294,6 +304,23 @@ public class StepMapperFactory {
         return azureSlotSwapMapper;
       case "AZURE_WEBAPP_SLOT_ROLLBACK":
         return azureSlotRollbackStepMapper;
+      case "NEW_RELIC_DEPLOYMENT_MARKER":
+        return newRelicDeploymentMarkerStepMapper;
+      case "AWS_AMI_SERVICE_SETUP":
+        return asgRollingDeployStepMapper;
+      case "AWS_AMI_SERVICE_ROLLBACK":
+        return asgRollingRollbackStepMapper;
+      case "AWS_AMI_SWITCH_ROUTES":
+        return asgBlueGreenSwapStepMapper;
+      case "AWS_AMI_ROLLBACK_SWITCH_ROUTES":
+        return asgBlueGreenRollbackStepMapper;
+      case "AWS_AMI_SERVICE_DEPLOY":
+        return emptyStepMapper;
+      case "ASG_AMI_ALB_SHIFT_SWITCH_ROUTES":
+      case "ASG_AMI_SERVICE_ALB_SHIFT_DEPLOY":
+      case "ASG_AMI_SERVICE_ALB_SHIFT_SETUP":
+      case "ASG_AMI_ROLLBACK_ALB_SHIFT_SWITCH_ROUTES":
+        return unsupportedStepMapper;
       default:
         return unsupportedStepMapper;
     }

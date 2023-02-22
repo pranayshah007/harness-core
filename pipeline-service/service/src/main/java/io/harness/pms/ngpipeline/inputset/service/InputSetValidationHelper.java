@@ -39,18 +39,10 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class InputSetValidationHelper {
-  public void checkForPipelineStoreType(InputSetEntity inputSetEntity, PMSPipelineService pipelineService) {
-    Optional<PipelineEntity> pipelineEntityOnlyMetadata =
-        pipelineService.getPipeline(inputSetEntity.getAccountIdentifier(), inputSetEntity.getOrgIdentifier(),
-            inputSetEntity.getProjectIdentifier(), inputSetEntity.getPipelineIdentifier(), false, true);
-    if (pipelineEntityOnlyMetadata.isEmpty()) {
-      throw new InvalidRequestException(
-          PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(inputSetEntity.getOrgIdentifier(),
-              inputSetEntity.getProjectIdentifier(), inputSetEntity.getPipelineIdentifier()));
-    }
+  public void checkForPipelineStoreType(PipelineEntity pipelineEntity) {
     StoreType storeTypeInContext = GitAwareContextHelper.getGitRequestParamsInfo().getStoreType();
     boolean isForRemote = storeTypeInContext != null && storeTypeInContext.equals(StoreType.REMOTE);
-    boolean isPipelineRemote = pipelineEntityOnlyMetadata.get().getStoreType() == StoreType.REMOTE;
+    boolean isPipelineRemote = pipelineEntity.getStoreType() == StoreType.REMOTE;
     if (isForRemote ^ isPipelineRemote) {
       throw new InvalidRequestException("Input Set should have the same Store Type as the Pipeline it is for");
     }

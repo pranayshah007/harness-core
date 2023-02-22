@@ -78,7 +78,8 @@ public class PMSPipelineTemplateHelper {
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(String accountId, String orgId, String projectId,
       String yaml, boolean checkForTemplateAccess, boolean getMergedTemplateWithTemplateReferences,
       String loadFromCache) {
-    if (TemplateRefHelper.hasTemplateRef(yaml)
+    // validating the duplicate fields in yaml field
+    if (TemplateRefHelper.hasTemplateRef(yaml, true)
         && pipelineEnforcementService.isFeatureRestricted(accountId, FeatureRestrictionName.TEMPLATE_SERVICE.name())) {
       String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given pipeline yaml.";
       long start = System.currentTimeMillis();
@@ -92,7 +93,8 @@ public class PMSPipelineTemplateHelper {
                   .originalEntityYaml(yaml)
                   .checkForAccess(checkForTemplateAccess)
                   .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
-                  .build()));
+                  .build(),
+              true));
         }
         GitSyncBranchContext gitSyncBranchContext =
             GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().build()).build();
@@ -103,7 +105,8 @@ public class PMSPipelineTemplateHelper {
                   .originalEntityYaml(yaml)
                   .checkForAccess(checkForTemplateAccess)
                   .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
-                  .build()));
+                  .build(),
+              true));
         }
       } catch (InvalidRequestException e) {
         if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {

@@ -68,6 +68,7 @@ import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformDestroyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepInfo;
+import io.harness.cdng.provision.terraformcloud.TerraformCloudRollbackStepInfo;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudRunStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntDestroyStepInfo;
@@ -120,9 +121,9 @@ import io.swagger.annotations.ApiModel;
         TasAppResizeStepInfo.class, TasRollbackStepInfo.class, AsgRollingDeployStepInfo.class,
         AsgRollingRollbackStepInfo.class, AsgBlueGreenDeployStepInfo.class, AsgBlueGreenRollbackStepInfo.class,
         TasRollingDeployStepInfo.class, TasRollingRollbackStepInfo.class, K8sDryRunManifestStepInfo.class,
-        AsgBlueGreenSwapServiceStepInfo.class, TerraformCloudRunStepInfo.class, GoogleFunctionsDeployStepInfo.class,
-        GoogleFunctionsDeployWithoutTrafficStepInfo.class, GoogleFunctionsTrafficShiftStepInfo.class,
-        GoogleFunctionsRollbackStepInfo.class})
+        AsgBlueGreenSwapServiceStepInfo.class, TerraformCloudRunStepInfo.class, TerraformCloudRollbackStepInfo.class,
+        GoogleFunctionsDeployStepInfo.class, GoogleFunctionsDeployWithoutTrafficStepInfo.class,
+        GoogleFunctionsTrafficShiftStepInfo.class, GoogleFunctionsRollbackStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 // keeping this class because of the swagger annotation and UI dependency on it

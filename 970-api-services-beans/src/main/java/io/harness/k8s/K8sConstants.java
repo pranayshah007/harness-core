@@ -139,6 +139,35 @@ public interface K8sConstants {
       + "        config-mode: \"${CONFIG_MODE}\"\n"
       + "        environment: ${ENVIRONMENT}\n"
       + "        tenant-id: ${TENANT_ID}\n";
+
+  String KUBE_CONFIG_EXEC_TEMPLATE = "apiVersion: v1\n"
+      + "clusters:\n"
+      + "- cluster:\n"
+      + "    server: ${MASTER_URL}\n"
+      + "    ${INSECURE_SKIP_TLS_VERIFY}\n"
+      + "    ${CERTIFICATE_AUTHORITY_DATA}\n"
+      + "  name: ${CLUSTER_NAME}\n"
+      + "contexts:\n"
+      + "- context:\n"
+      + "    cluster: ${CLUSTER_NAME}\n"
+      + "    user: ${CLUSTER_USER}\n"
+      + "    ${NAMESPACE}\n"
+      + "  name: ${CURRENT_CONTEXT}\n"
+      + "current-context: ${CURRENT_CONTEXT}\n"
+      + "kind: Config\n"
+      + "preferences: {}\n"
+      + "users:\n"
+      + "- name: ${CLUSTER_USER}\n"
+      + "  user:\n"
+      + "    exec:\n"
+      + "      apiVersion: client.authentication.k8s.io/${API_VERSION}\n"
+      + "      args: ${ARGS}\n"
+      + "      command: ${KUBELOGIN_BINARY}\n"
+      + "      installHint: ${INSTALL_HINT}"
+      + "      env: ${ENV}\n"
+      + "      interactiveMode: Never\n"
+      + "      provideClusterInfo: false\n";
+
   String eventOutputFormat =
       "custom-columns=KIND:involvedObject.kind,NAME:.involvedObject.name,MESSAGE:.message,REASON:.reason";
   int FETCH_FILES_DISPLAY_LIMIT = 100;
@@ -158,4 +187,13 @@ public interface K8sConstants {
   String HARNESS_KUBE_CONFIG_PATH = "HARNESS_KUBE_CONFIG_PATH";
 
   String CANARY_WORKLOAD_SUFFIX_NAME = "-canary";
+
+  String KUBECFG_EXEC = "exec";
+  String KUBECFG_API_VERSION = "apiVersion";
+  String KUBECFG_COMMAND = "command";
+  String KUBECFG_ARGS = "args";
+  String KUBECFG_ENV = "env";
+  String KUBECFG_INTERACTIVE_MODE = "interactiveMode";
+  String KUBECFG_CLUSTER_INFO = "provideClusterInfo";
+  String KUBECFG_INSTALL_HINT = "installHint";
 }

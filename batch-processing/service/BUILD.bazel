@@ -28,6 +28,7 @@ shared_dependencies = [
     "//clients/notification:module",
     "//:lombok",
     "@maven//:com_google_cloud_google_cloud_bigquerydatatransfer",
+    "@maven//:com_google_cloud_google_cloud_pubsub",
     "@maven//:com_slack_api_slack_api_client",
     "@maven//:com_slack_api_slack_api_model",
     "@maven//:io_opencensus_opencensus_api",

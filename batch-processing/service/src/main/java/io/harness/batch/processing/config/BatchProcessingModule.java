@@ -55,7 +55,9 @@ import io.harness.ccm.jira.CCMJiraHelper;
 import io.harness.ccm.jira.CCMJiraHelperImpl;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.intf.AWSOrganizationHelperService;
+import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingHistoryServiceImpl;
 import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceImpl;
+import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingHistoryService;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
@@ -175,6 +177,7 @@ public class BatchProcessingModule extends AbstractModule {
     bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(ViewCustomFieldService.class).to(ViewCustomFieldServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
+    bind(BusinessMappingHistoryService.class).to(BusinessMappingHistoryServiceImpl.class);
     bind(CeAccountExpirationChecker.class).to(CeAccountExpirationCheckerImpl.class);
     bind(AnomalyService.class).to(AnomalyServiceImpl.class);
     install(new ConnectorResourceClientModule(batchMainConfig.getNgManagerServiceHttpClientConfig(),

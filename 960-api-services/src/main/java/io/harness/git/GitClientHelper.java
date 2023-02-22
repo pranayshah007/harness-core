@@ -172,6 +172,11 @@ public class GitClientHelper {
         ownerName = StringUtils.removeEnd(ownerName, ".git");
         return StringUtils.removeStart(ownerName, "/");
       } else {
+        Matcher noOwnerMatcher = GIT_URL_NO_OWNER.matcher(url);
+        if (isAccountLevelConnector && noOwnerMatcher.find()) {
+          return null;
+        }
+
         throw new GitClientException(format("Invalid git repo url  %s", url), SRE);
       }
 

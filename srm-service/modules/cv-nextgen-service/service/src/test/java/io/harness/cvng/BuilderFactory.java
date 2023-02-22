@@ -14,6 +14,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 
 import io.harness.cvng.activity.entities.CustomChangeActivity;
+import io.harness.cvng.activity.entities.CustomChangeActivity.CustomChangeActivityBuilder;
 import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.entities.DeploymentActivity.DeploymentActivityBuilder;
 import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity;
@@ -83,6 +84,8 @@ import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskBuilder;
 import io.harness.cvng.cdng.entities.CVNGStepTask.Status;
 import io.harness.cvng.core.beans.CustomChangeWebhookPayload;
+import io.harness.cvng.core.beans.CustomChangeWebhookPayload.CustomChangeWebhookEventDetail;
+import io.harness.cvng.core.beans.CustomChangeWebhookPayload.CustomChangeWebhookPayloadBuilder;
 import io.harness.cvng.core.beans.CustomHealthLogDefinition;
 import io.harness.cvng.core.beans.CustomHealthMetricDefinition;
 import io.harness.cvng.core.beans.CustomHealthRequestDefinition;
@@ -164,6 +167,7 @@ import io.harness.cvng.core.entities.StackdriverLogCVConfig;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig.StackdriverLogCVConfigBuilder;
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
 import io.harness.cvng.core.entities.changeSource.CustomChangeSource;
+import io.harness.cvng.core.entities.changeSource.CustomChangeSource.CustomChangeSourceBuilder;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource.HarnessCDChangeSourceBuilder;
 import io.harness.cvng.core.entities.changeSource.HarnessCDCurrentGenChangeSource;
@@ -201,7 +205,6 @@ import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleDTO.NotificationRuleDTOBuilder;
-import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.channelDetails.CVNGEmailChannelSpec;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannel;
@@ -217,8 +220,6 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO.ServiceLevelIndicatorDTOBuilder;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO.ServiceLevelObjectiveDTOBuilder;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
@@ -237,9 +238,7 @@ import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator.RatioServiceLevelIndicatorBuilder;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHealthIndicatorBuilder;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.RollingSLOTarget;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.ServiceLevelObjectiveBuilder;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveBuilder;
 import io.harness.cvng.verificationjob.entities.AutoVerificationJob;
@@ -263,8 +262,6 @@ import io.harness.eventsframework.schemas.deployment.ExecutionDetails;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO.EnvironmentResponseDTOBuilder;
-import io.harness.ng.core.service.dto.ServiceResponseDTO;
-import io.harness.ng.core.service.dto.ServiceResponseDTO.ServiceResponseDTOBuilder;
 import io.harness.pms.yaml.ParameterField;
 
 import com.google.common.collect.Sets;
@@ -328,14 +325,6 @@ public class BuilderFactory {
         .orgIdentifier(context.getOrgIdentifier())
         .projectIdentifier(context.getProjectIdentifier())
         .build();
-  }
-
-  public ServiceResponseDTOBuilder serviceResponseDTOBuilder() {
-    return ServiceResponseDTO.builder()
-        .accountId(context.getAccountId())
-        .orgIdentifier(context.getOrgIdentifier())
-        .identifier(context.getServiceIdentifier())
-        .projectIdentifier(context.getProjectIdentifier());
   }
 
   public EnvironmentResponseDTOBuilder environmentResponseDTOBuilder() {
@@ -977,8 +966,7 @@ public class BuilderFactory {
         .type(ChangeSourceType.HARNESS_CD_CURRENT_GEN);
   }
 
-  public CustomChangeSource.CustomChangeSourceBuilder getCustomChangeSourceBuilder(
-      ChangeSourceType customChangeSourceType) {
+  public CustomChangeSourceBuilder getCustomChangeSourceBuilder(ChangeSourceType customChangeSourceType) {
     return CustomChangeSource.builder()
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
@@ -1072,8 +1060,7 @@ public class BuilderFactory {
         .eventEndTime(clock.instant().toEpochMilli());
   }
 
-  public CustomChangeActivity.CustomChangeActivityBuilder getCustomChangeActivity(
-      ChangeSourceType customChangeSourceType) {
+  public CustomChangeActivityBuilder getCustomChangeActivity(ChangeSourceType customChangeSourceType) {
     return CustomChangeActivity.builder()
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
@@ -1318,33 +1305,6 @@ public class BuilderFactory {
   public ChangeSourceDTOBuilder getChangeSourceDTOBuilder_Deserialize(ChangeSourceType changeSourceType) {
     return getChangeSourceDTOBuilder(changeSourceType);
   }
-
-  public ServiceLevelObjectiveDTOBuilder getServiceLevelObjectiveDTOBuilder() {
-    return ServiceLevelObjectiveDTO.builder()
-        .projectIdentifier(context.getProjectIdentifier())
-        .orgIdentifier(context.getOrgIdentifier())
-        .identifier("sloIdentifier")
-        .name("sloName")
-        .tags(new HashMap<String, String>() {
-          {
-            put("tag1", "value1");
-            put("tag2", "");
-          }
-        })
-        .description("slo description")
-        .target(SLOTargetDTO.builder()
-                    .type(SLOTargetType.ROLLING)
-                    .sloTargetPercentage(80.0)
-                    .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
-                    .build())
-        .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
-        .notificationRuleRefs(
-            Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("demo").enabled(true).build()))
-        .healthSourceRef("healthSourceIdentifier")
-        .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
-        .userJourneyRef("userJourney");
-  }
-
   public ServiceLevelObjectiveV2DTOBuilder getSimpleServiceLevelObjectiveV2DTOBuilder() {
     return ServiceLevelObjectiveV2DTO.builder()
         .type(ServiceLevelObjectiveType.SIMPLE)
@@ -1438,23 +1398,6 @@ public class BuilderFactory {
         .remainingErrorBudgetAtReset(100)
         .errorBudgetAtReset(100)
         .reason("reason");
-  }
-
-  public ServiceLevelObjectiveBuilder getServiceLevelObjectiveBuilder() {
-    return ServiceLevelObjective.builder()
-        .accountId(context.getAccountId())
-        .projectIdentifier(context.getProjectIdentifier())
-        .orgIdentifier(context.getOrgIdentifier())
-        .identifier("sloIdentifier")
-        .name("sloName")
-        .tags(Collections.singletonList(NGTag.builder().key("key").value("value").build()))
-        .desc("slo description")
-        .sloTarget(RollingSLOTarget.builder().periodLengthDays(30).build())
-        .sloTargetPercentage(80.0)
-        .serviceLevelIndicators(Collections.singletonList("sloIdentifier_metric1"))
-        .healthSourceIdentifier("healthSourceIdentifier")
-        .monitoredServiceIdentifier(context.serviceIdentifier + "_" + context.getEnvIdentifier())
-        .userJourneyIdentifier("userJourney");
   }
 
   public UserJourneyDTO getUserJourneyDTOBuilder() {
@@ -1979,12 +1922,12 @@ public class BuilderFactory {
         .build();
   }
 
-  public CustomChangeWebhookPayload.CustomChangeWebhookPayloadBuilder getCustomChangeWebhookPayloadBuilder() {
+  public CustomChangeWebhookPayloadBuilder getCustomChangeWebhookPayloadBuilder() {
     return CustomChangeWebhookPayload.builder()
         .endTime(1000l)
         .startTime(1000l)
         .user("testUser")
-        .eventDetail(CustomChangeWebhookPayload.CustomChangeWebhookEventDetail.builder()
+        .eventDetail(CustomChangeWebhookEventDetail.builder()
                          .changeEventDetailsLink("testLink")
                          .externalLinkToEntity("externalLink")
                          .description("desc")

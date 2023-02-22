@@ -7,6 +7,9 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.ngmigration.beans.SupportStatus.UNSUPPORTED;
+import static io.harness.ngmigration.connector.ConnectorFactory.CONNECTOR_FACTORY_MAP;
+
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 
@@ -110,15 +113,14 @@ public class ConnectorMigrationService extends NgMigrationService {
                                           .collect(groupingBy(entity -> entity.getValue().getType(), counting()));
 
     Map<String, TypeSummary> summaryMap = new HashMap<>();
-    summaryByType.forEach(
-        (key, value)
-            -> summaryMap.put(key,
-                TypeSummary.builder()
-                    .count(value)
-                    .status(ConnectorFactory.CONNECTOR_FACTORY_MAP.containsKey(SettingVariableTypes.valueOf(key))
-                            ? SupportStatus.SUPPORTED
-                            : SupportStatus.UNSUPPORTED)
-                    .build()));
+    summaryByType.forEach((key, value) -> {
+      SupportStatus status = UNSUPPORTED;
+      if (CONNECTOR_FACTORY_MAP.containsKey(SettingVariableTypes.valueOf(key))) {
+        BaseConnector baseConnector = CONNECTOR_FACTORY_MAP.get(SettingVariableTypes.valueOf(key));
+        status = baseConnector.getSupportStatus();
+      }
+      summaryMap.put(key, TypeSummary.builder().count(value).status(status).build());
+    });
 
     return ConnectorSummary.builder()
         .count(entities.size())

@@ -54,6 +54,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.task.TaskFailureReason;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -144,6 +145,8 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   @Inject private InfrastructureMappingService infrastructureMappingService;
   @Inject private DelegateCache delegateCache;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
+
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   private LoadingCache<ImmutablePair<String, String>, Optional<DelegateConnectionResult>>
       delegateConnectionResultCache =
@@ -1172,9 +1175,11 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
     if (!remainingConnectedDelegates.isEmpty()) {
       log.info("Requeueing task");
+      boolean migrationEnabledForTask =
+          delegateTaskMigrationHelper.isMigrationEnabledForTask(retryDelegate.getDelegateTask().getUuid());
 
       persistence.update(retryDelegate.getTaskQuery(),
-          persistence.createUpdateOperations(DelegateTask.class)
+          persistence.createUpdateOperations(DelegateTask.class, migrationEnabledForTask)
               .unset(DelegateTaskKeys.delegateId)
               .unset(DelegateTaskKeys.validationStartedAt)
               .unset(DelegateTaskKeys.lastBroadcastAt)
@@ -1182,7 +1187,8 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
               .unset(DelegateTaskKeys.validationCompleteDelegateIds)
               .set(DelegateTaskKeys.broadcastCount, 1)
               .set(DelegateTaskKeys.status, QUEUED)
-              .addToSet(DelegateTaskKeys.alreadyTriedDelegates, retryDelegate.getDelegateId()));
+              .addToSet(DelegateTaskKeys.alreadyTriedDelegates, retryDelegate.getDelegateId()),
+          migrationEnabledForTask);
 
       return RetryDelegate.builder().retryPossible(true).build();
     } else {

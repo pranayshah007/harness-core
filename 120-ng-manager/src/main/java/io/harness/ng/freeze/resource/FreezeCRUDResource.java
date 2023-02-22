@@ -33,6 +33,7 @@ import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.response.GlobalFreezeBannerDetailsResponseDTO;
 import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.entity.FreezeConfigEntity.FreezeConfigEntityKeys;
+import io.harness.freeze.entity.FreezeConstants;
 import io.harness.freeze.helpers.FreezeFilterHelper;
 import io.harness.freeze.helpers.FreezeRBACHelper;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
@@ -56,7 +57,9 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.List;
@@ -140,7 +143,10 @@ public class FreezeCRUDResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
-      @Parameter(description = "Freeze YAML") @NotNull String freezeYaml) {
+      @RequestBody(required = true, description = "Freeze YAML", content = {
+        @Content(examples = @ExampleObject(name = "Create", summary = "Sample Create Freeze YAML",
+                     value = FreezeConstants.CREATE_API_YAML, description = "Sample Freeze YAML"))
+      }) @NotNull String freezeYaml) {
     FreezeRBACHelper.checkAccess(accountId, projectId, orgId, freezeYaml, accessControlClient);
     return ResponseDTO.newResponse(freezeCRUDService.createFreezeConfig(freezeYaml, accountId, orgId, projectId));
   }
@@ -186,8 +192,12 @@ public class FreezeCRUDResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
-      @Parameter(description = "Freeze Identifier.") @PathParam("freezeIdentifier")
-      @ResourceIdentifier String freezeIdentifier, @Parameter(description = "Freeze YAML") @NotNull String freezeYaml) {
+      @Parameter(description = "Freeze Identifier.") @PathParam(
+          "freezeIdentifier") @ResourceIdentifier String freezeIdentifier,
+      @RequestBody(required = true, description = "Freeze YAML", content = {
+        @Content(examples = @ExampleObject(name = "Update", summary = "Sample Update Freeze YAML",
+                     value = FreezeConstants.UPDATE_API_YAML, description = "Sample Freeze YAML"))
+      }) @NotNull String freezeYaml) {
     return ResponseDTO.newResponse(
         freezeCRUDService.updateFreezeConfig(freezeYaml, accountId, orgId, projectId, freezeIdentifier));
   }

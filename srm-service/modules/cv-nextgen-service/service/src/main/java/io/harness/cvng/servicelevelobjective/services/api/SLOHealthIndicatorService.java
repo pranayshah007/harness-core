@@ -12,7 +12,6 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLOGraphDa
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 
 import java.util.List;
 
@@ -20,7 +19,8 @@ public interface SLOHealthIndicatorService {
   List<SLOHealthIndicator> getByMonitoredServiceIdentifiers(
       ProjectParams projectParams, List<String> monitoredServiceIdentifiers);
   SLOHealthIndicator getBySLOIdentifier(ProjectParams projectParams, String serviceLevelObjectiveIdentifier);
-  SLOHealthIndicator getBySLOEntity(ServiceLevelObjective serviceLevelObjective);
+  SLOHealthIndicator getBySLOEntity(AbstractServiceLevelObjective serviceLevelObjective);
+
   List<SLOHealthIndicator> getBySLOIdentifiers(
       ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers);
   List<SLOHealthIndicator> getBySLOIdentifiers(String accountId, List<String> serviceLevelObjectiveIdentifiers);

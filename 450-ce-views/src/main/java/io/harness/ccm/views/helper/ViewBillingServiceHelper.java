@@ -413,13 +413,10 @@ public class ViewBillingServiceHelper {
     if (isClickHouseEnabled && !isClusterTableQuery) {
       endInstant = Instant.ofEpochMilli(costData.getMaxStartTime());
     }
-    log.info("Max start time : {}", costData.getMaxStartTime());
-    log.info("Start instant for trend: {}", startInstant);
     if (costData.getMaxStartTime() == 0) {
       endInstant = Instant.ofEpochMilli(
           viewsQueryHelper.getTimeFilter(filters, QLCEViewTimeFilterOperator.BEFORE).getValue().longValue());
     }
-    log.info("End instant for trend: {}", endInstant);
     boolean isYearRequired = viewsQueryHelper.isYearRequired(startInstant, endInstant);
     String startInstantFormat = viewsQueryHelper.getTotalCostFormattedDate(startInstant, isYearRequired);
     String endInstantFormat = viewsQueryHelper.getTotalCostFormattedDate(endInstant, isYearRequired);
