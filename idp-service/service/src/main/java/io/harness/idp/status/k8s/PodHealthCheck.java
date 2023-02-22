@@ -8,11 +8,11 @@
 package io.harness.idp.status.k8s;
 
 import io.harness.exception.InvalidRequestException;
-import io.harness.idp.namespace.beans.dto.Namespace;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.status.enums.Status;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.client.K8sApiClient;
+import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
 
 import io.kubernetes.client.openapi.ApiClient;
@@ -70,7 +70,7 @@ public class PodHealthCheck implements HealthCheck {
   }
 
   private String getNamespaceForAccountId(String accountId) {
-    Optional<Namespace> namespace = namespaceService.getNamespaceForAccountIdentifier(accountId);
+    Optional<NamespaceInfo> namespace = namespaceService.getNamespaceForAccountIdentifier(accountId);
     if (namespace.isPresent()) {
       return namespace.get().getNamespace();
     }

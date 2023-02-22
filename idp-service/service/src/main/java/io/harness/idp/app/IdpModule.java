@@ -20,6 +20,8 @@ import io.harness.idp.config.resources.ConfigManagerResourceImpl;
 import io.harness.idp.config.service.AppConfigService;
 import io.harness.idp.config.service.AppConfigServiceImpl;
 import io.harness.idp.gitintegration.factory.ConnectorProcessorFactory;
+import io.harness.idp.namespace.resource.AccountInfoApiImpl;
+import io.harness.idp.namespace.resource.NamespaceApiImpl;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.namespace.service.NamespaceServiceImpl;
 import io.harness.idp.secret.eventlisteners.SecretCrudListener;
@@ -46,7 +48,9 @@ import io.harness.queue.QueueController;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.serializer.IdpServiceRegistrars;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.spec.server.idp.v1.AccountInfoApi;
 import io.harness.spec.server.idp.v1.EnvironmentSecretApi;
+import io.harness.spec.server.idp.v1.NamespaceApi;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
 import io.harness.threading.ThreadPool;
 import io.harness.version.VersionModule;
@@ -174,6 +178,8 @@ public class IdpModule extends AbstractModule {
     bind(HealthCheck.class).to(PodHealthCheck.class);
     bind(MessageListener.class).annotatedWith(Names.named(SECRET_ENTITY + ENTITY_CRUD)).to(SecretCrudListener.class);
     bind(ConnectorProcessorFactory.class);
+    bind(NamespaceApi.class).to(NamespaceApiImpl.class);
+    bind(AccountInfoApi.class).to(AccountInfoApiImpl.class);
   }
 
   @Provides

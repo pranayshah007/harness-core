@@ -17,7 +17,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptedSecretValue;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
-import io.harness.idp.namespace.beans.dto.Namespace;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.secret.beans.entity.EnvironmentSecretEntity;
 import io.harness.idp.secret.mappers.EnvironmentSecretMapper;
@@ -25,6 +24,7 @@ import io.harness.idp.secret.repositories.EnvironmentSecretRepository;
 import io.harness.k8s.client.K8sClient;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
+import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
 import com.google.common.collect.Streams;
 import com.google.inject.Inject;
@@ -182,7 +182,7 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
   }
 
   private String getNamespaceForAccount(String accountIdentifier) {
-    Optional<Namespace> namespaceOpt = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier);
+    Optional<NamespaceInfo> namespaceOpt = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier);
     if (namespaceOpt.isEmpty()) {
       throw new InvalidRequestException(format(IDP_NOT_ENABLED, accountIdentifier));
     }
