@@ -543,7 +543,7 @@ public class UserResource {
    * @return the rest response
    */
   @GET
-  @Path("user-accounts")
+  @Path("userAccounts")
   @Scope(value = ResourceType.USER, scope = LOGGED_IN)
   @Timed
   @ExceptionMetered
@@ -924,6 +924,21 @@ public class UserResource {
         throw new WingsException(ErrorCode.USER_NOT_AUTHORIZED, USER);
       }
     }
+    return new RestResponse<>(userService.enableUser(accountId, userId, true));
+  }
+
+  @PUT
+  @Hidden
+  @Path("enable-user-internal/{userId}")
+  @AuthRule(permissionType = USER_PERMISSION_MANAGEMENT)
+  public RestResponse<Boolean> enableUserInternal(
+      @PathParam("userId") @NotEmpty String userId, @QueryParam("accountId") @NotEmpty String accountId) {
+    // If the current user can Manage User(s) & is part of the Harness user group can perform the enable operation
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null || !harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      throw new WingsException(ErrorCode.USER_NOT_AUTHORIZED, USER);
+    }
+    log.info("ENABLE_USER_INTERNAL: Enabling disabled user {} for account {}", existingUser.getUuid(), accountId);
     return new RestResponse<>(userService.enableUser(accountId, userId, true));
   }
 

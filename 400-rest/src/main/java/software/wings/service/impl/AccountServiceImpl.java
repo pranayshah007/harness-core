@@ -596,6 +596,7 @@ public class AccountServiceImpl implements AccountService {
     accountDetails.setLicenseInfo(account.getLicenseInfo());
     accountDetails.setCeLicenseInfo(account.getCeLicenseInfo());
     accountDetails.setDefaultExperience(account.getDefaultExperience());
+    accountDetails.setCrossGenerationAccessEnabled(account.isCrossGenerationAccessEnabled());
     accountDetails.setCreatedFromNG(account.isCreatedFromNG());
     accountDetails.setActiveServiceCount(cgCdLicenseUsageService.getActiveServiceInTimePeriod(accountId, 60));
     if (featureFlagService.isEnabled(CG_LICENSE_USAGE, accountId)) {
@@ -932,6 +933,10 @@ public class AccountServiceImpl implements AccountService {
 
     if (account.getDefaultExperience() != null) {
       updateOperations.set(AccountKeys.defaultExperience, account.getDefaultExperience());
+    }
+
+    if (account.isCrossGenerationAccessEnabled() != null) {
+      updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, account.isCrossGenerationAccessEnabled());
     }
 
     wingsPersistence.update(account, updateOperations);
@@ -2096,6 +2101,16 @@ public class AccountServiceImpl implements AccountService {
     wingsPersistence.updateField(Account.class, accountId, DEFAULT_EXPERIENCE, defaultExperience);
     dbCache.invalidate(Account.class, account.getUuid());
     return null;
+  }
+
+  @Override
+  public Account updateCrossGenerationAccessEnabled(String accountId, boolean isCrossGenerationAccessEnabled) {
+    Account account = getFromCacheWithFallback(accountId);
+    account.isCrossGenerationAccessEnabled(isCrossGenerationAccessEnabled);
+    update(account);
+    publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
+
+    return account;
   }
 
   @Override

@@ -31,10 +31,10 @@ import io.harness.cvng.governance.beans.SLOPolicyDTO;
 import io.harness.cvng.governance.beans.SLOPolicyDTO.MonitoredServiceStatus;
 import io.harness.cvng.governance.services.SLOPolicyExpansionHandler;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.ng.core.dto.CDStageMetaDataDTO;
 import io.harness.ng.core.dto.CDStageMetaDataDTO.ServiceEnvRef;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -60,7 +60,7 @@ import org.mockito.MockitoAnnotations;
 public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
   @Inject SLOPolicyExpansionHandler sloPolicyExpansionHandler;
   @Inject MonitoredServiceService monitoredServiceService;
-  @Inject ServiceLevelObjectiveService serviceLevelObjectiveService;
+  @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject SLOHealthIndicatorService sloHealthIndicatorService;
   @Mock CDStageMetaDataService cdStageMetaDataService;
   @Mock MonitoredServiceService mockedMonitoredServiceService;
@@ -90,8 +90,9 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
     monitoredServiceDTO =
         builderFactory.monitoredServiceDTOBuilder().sources(MonitoredServiceDTO.Sources.builder().build()).build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    ServiceLevelObjectiveDTO serviceLevelObjectiveDTO = builderFactory.getServiceLevelObjectiveDTOBuilder().build();
-    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjectiveDTO);
+    ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveDTO);
     sloHealthIndicatorList = sloHealthIndicatorService.getByMonitoredServiceIdentifiers(
         builderFactory.getProjectParams(), Collections.singletonList(monitoredServiceDTO.getIdentifier()));
     sloMappedToTheirHealthIndicators = new HashMap<>();

@@ -30,7 +30,6 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLODashboa
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsRefDTO;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveResponse;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
@@ -41,7 +40,6 @@ import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObject
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.entities.UserJourney;
@@ -49,7 +47,6 @@ import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
@@ -70,7 +67,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class SLODashboardServiceImpl implements SLODashboardService {
-  @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private GraphDataService graphDataService;
@@ -84,28 +80,6 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   @Inject private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
 
   @Inject private Map<ServiceLevelObjectiveType, SLOV2Transformer> serviceLevelObjectiveTypeSLOV2TransformerMap;
-
-  @Override
-  public PageResponse<SLODashboardWidget> getSloDashboardWidgets(
-      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams) {
-    PageResponse<ServiceLevelObjectiveResponse> sloPageResponse =
-        serviceLevelObjectiveService.getSLOForDashboard(projectParams, filter, pageParams);
-
-    // sending second param as null deliberately so that this deprecated function does not break
-    List<SLODashboardWidget> sloDashboardWidgets =
-        sloPageResponse.getContent()
-            .stream()
-            .map(sloResponse -> getSloDashboardWidget(projectParams, null, null))
-            .collect(Collectors.toList());
-    return PageResponse.<SLODashboardWidget>builder()
-        .pageSize(sloPageResponse.getPageSize())
-        .pageIndex(sloPageResponse.getPageIndex())
-        .totalPages(sloPageResponse.getTotalPages())
-        .totalItems(sloPageResponse.getTotalItems())
-        .pageItemCount(sloPageResponse.getPageItemCount())
-        .content(sloDashboardWidgets)
-        .build();
-  }
 
   @Override
   public PageResponse<SLOHealthListView> getSloHealthListView(
@@ -313,7 +287,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   @Override
   public SLORiskCountResponse getRiskCount(
       ProjectParams projectParams, SLODashboardApiFilter serviceLevelObjectiveFilter) {
-    return serviceLevelObjectiveService.getRiskCount(projectParams, serviceLevelObjectiveFilter);
+    return serviceLevelObjectiveV2Service.getRiskCount(projectParams, serviceLevelObjectiveFilter);
   }
 
   private SLODashboardWidget getSloDashboardWidget(
@@ -455,10 +429,14 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   @Override
   public PageResponse<MSDropdownResponse> getSLOAssociatedMonitoredServices(
       ProjectParams projectParams, PageParams pageParams) {
-    List<ServiceLevelObjective> serviceLevelObjectiveList = serviceLevelObjectiveService.getAllSLOs(projectParams);
-    Set<String> monitoredServiceIdentifiers = serviceLevelObjectiveList.stream()
-                                                  .map(ServiceLevelObjective::getMonitoredServiceIdentifier)
-                                                  .collect(Collectors.toSet());
+    List<AbstractServiceLevelObjective> serviceLevelObjectiveList =
+        serviceLevelObjectiveV2Service.getAllSLOs(projectParams, ServiceLevelObjectiveType.SIMPLE);
+
+    Set<String> monitoredServiceIdentifiers =
+        serviceLevelObjectiveList.stream()
+            .map(serviceLevelObjective
+                -> ((SimpleServiceLevelObjective) serviceLevelObjective).getMonitoredServiceIdentifier())
+            .collect(Collectors.toSet());
     List<MonitoredServiceResponse> monitoredServiceResponseList =
         monitoredServiceService.get(projectParams, monitoredServiceIdentifiers);
 

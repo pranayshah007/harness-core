@@ -88,6 +88,7 @@ import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepInf
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepInfo;
 import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
+import io.harness.cdng.provision.terraformcloud.TerraformCloudRollbackStepInfo;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudRunStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntDestroyStepInfo;
@@ -272,5 +273,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(GoogleFunctionsInfrastructure.class, 12657);
     kryo.register(AwsSamInfrastructure.class, 12658);
     kryo.register(AwsLambdaInfrastructure.class, 12659);
+    kryo.register(TerraformCloudRollbackStepInfo.class, 12660);
   }
 }

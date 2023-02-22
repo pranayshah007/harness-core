@@ -26,6 +26,7 @@ go_library(
         "//product/ci/engine/new/executor",
         "//product/ci/engine/output",
         "//product/ci/engine/proto",
+        "//product/ci/ti-service/client",
         "//product/ci/ti-service/types",
         "//product/log-service/stream",
         "@com_github_pkg_errors//:errors",

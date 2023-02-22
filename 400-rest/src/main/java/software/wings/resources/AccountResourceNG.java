@@ -243,6 +243,17 @@ public class AccountResourceNG {
     return new RestResponse(AccountMapper.toAccountDTO(accountService.update(account)));
   }
 
+  @PUT
+  @Hidden
+  @Path("/{accountId}/cross-generation-access")
+  @InternalApi
+  public RestResponse<AccountDTO> updateCrossGenerationAccessEnabled(
+      @PathParam("accountId") @AccountIdentifier String accountId, @Body AccountDTO dto) {
+    Account account = accountService.get(accountId);
+    account.isCrossGenerationAccessEnabled(dto.isCrossGenerationAccessEnabled());
+    return new RestResponse(AccountMapper.toAccountDTO(accountService.update(account)));
+  }
+
   @GET
   @Path("/trustLevel")
   public RestResponse<Integer> getAccountTrustLevel(@QueryParam("accountId") String accountId) {

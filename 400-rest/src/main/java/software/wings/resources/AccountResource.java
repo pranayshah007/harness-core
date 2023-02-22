@@ -44,6 +44,7 @@ import io.harness.marketplace.gcp.GcpMarketPlaceApiHandler;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.rest.RestResponse;
 import io.harness.scheduler.PersistentScheduler;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.LearningEngineAuth;
 import io.harness.security.annotations.PublicApi;
 import io.harness.seeddata.SampleDataProviderService;
@@ -365,6 +366,19 @@ public class AccountResource {
   public RestResponse<Void> updateDefaultExperience(
       @PathParam("accountId") @NotEmpty String accountId, Account account) {
     return new RestResponse<>(accountService.setDefaultExperience(accountId, account.getDefaultExperience()));
+  }
+
+  @PUT
+  @Hidden
+  @Path("{accountId}/cross-generation-access")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
+  @InternalApi
+  public RestResponse<Account> updateCrossGenerationAccessEnabled(@PathParam("accountId") @NotEmpty String accountId,
+      @QueryParam("crossGenerationAccessEnabled") @DefaultValue("false") boolean isCrossGenerationAccessEnabled) {
+    return new RestResponse<>(
+        accountService.updateCrossGenerationAccessEnabled(accountId, isCrossGenerationAccessEnabled));
   }
 
   @POST

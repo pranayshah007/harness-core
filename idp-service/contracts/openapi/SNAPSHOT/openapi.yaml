@@ -129,6 +129,27 @@ paths:
         - EnvironmentSecret
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+    delete:
+      summary: Deletes Multiple Environment Secret
+      operationId: delete-environment-secrets
+      responses:
+        '204':
+          description: No Content
+      description: Deletes the multiple environment secrets specified in the request
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - schema:
+            type: array
+            items:
+              type: string
+          in: query
+          name: environment-secret
+          description: Identifier field of environment secrets
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - EnvironmentSecret
   '/v1/status-info/{type}':
     get:
       summary: Gets Status Info by type
@@ -175,9 +196,11 @@ components:
       properties:
         identifier:
           type: string
-        name:
+        env_name:
           type: string
         secret_identifier:
+          type: string
+        decrypted_value:
           type: string
         created:
           type: integer

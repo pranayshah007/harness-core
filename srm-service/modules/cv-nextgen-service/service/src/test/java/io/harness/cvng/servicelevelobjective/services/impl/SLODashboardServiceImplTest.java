@@ -37,7 +37,6 @@ import io.harness.cvng.downtime.beans.EntityDetails;
 import io.harness.cvng.downtime.beans.EntityIdentifiersRule;
 import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.services.api.DowntimeService;
-import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
@@ -51,7 +50,6 @@ import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetFilterDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
@@ -73,7 +71,6 @@ import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.ng.beans.PageResponse;
 import io.harness.persistence.HPersistence;
@@ -97,7 +94,6 @@ import org.junit.experimental.categories.Category;
 
 public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Inject private SLODashboardService sloDashboardService;
-  @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private MetricPackService metricPackService;
@@ -106,8 +102,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Inject private SLOErrorBudgetResetService sloErrorBudgetResetService;
   @Inject private CompositeSLORecordService sloRecordService;
   @Inject private GraphDataService graphDataService;
-
-  @Inject private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
 
   @Inject private DowntimeService downtimeService;
   private Instant startTime;
@@ -128,18 +122,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
 
     startTime = TIME_FOR_TESTS.minus(10, ChronoUnit.MINUTES);
     endTime = TIME_FOR_TESTS.minus(5, ChronoUnit.MINUTES);
-  }
-
-  @Test
-  @Owner(developers = KAMAL)
-  @Category(UnitTests.class)
-  public void testGetSloDashboardWidgets_emptyResponse() {
-    PageResponse<SLODashboardWidget> pageResponse =
-        sloDashboardService.getSloDashboardWidgets(builderFactory.getProjectParams(),
-            SLODashboardApiFilter.builder().build(), PageParams.builder().page(0).size(4).build());
-    assertThat(pageResponse.getPageItemCount()).isEqualTo(0);
-    assertThat(pageResponse.getTotalItems()).isEqualTo(0);
-    assertThat(pageResponse.getContent()).isEmpty();
   }
 
   @Test
@@ -1187,12 +1169,13 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
     HealthSource healthSource = monitoredServiceDTO.getSources().getHealthSources().iterator().next();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    ServiceLevelObjectiveDTO serviceLevelObjective = builderFactory.getServiceLevelObjectiveDTOBuilder()
-                                                         .monitoredServiceRef(monitoredServiceIdentifier)
-                                                         .healthSourceRef(healthSource.getIdentifier())
-                                                         .build();
-
-    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjective);
+    ServiceLevelObjectiveV2DTO serviceLevelObjective =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    SimpleServiceLevelObjectiveSpec spec = (SimpleServiceLevelObjectiveSpec) serviceLevelObjective.getSpec();
+    spec.setMonitoredServiceRef(monitoredServiceIdentifier);
+    spec.setHealthSourceRef(healthSource.getIdentifier());
+    serviceLevelObjective.setSpec(spec);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjective);
 
     SLODashboardDetail sloDashboardDetail = sloDashboardService.getSloDashboardDetail(
         builderFactory.getProjectParams(), serviceLevelObjective.getIdentifier(), null, null);
@@ -1210,12 +1193,13 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
     HealthSource healthSource = monitoredServiceDTO.getSources().getHealthSources().iterator().next();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    ServiceLevelObjectiveDTO serviceLevelObjective = builderFactory.getServiceLevelObjectiveDTOBuilder()
-                                                         .monitoredServiceRef(monitoredServiceIdentifier)
-                                                         .healthSourceRef(healthSource.getIdentifier())
-                                                         .build();
-
-    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjective);
+    ServiceLevelObjectiveV2DTO serviceLevelObjective =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    SimpleServiceLevelObjectiveSpec spec = (SimpleServiceLevelObjectiveSpec) serviceLevelObjective.getSpec();
+    spec.setMonitoredServiceRef(monitoredServiceIdentifier);
+    spec.setHealthSourceRef(healthSource.getIdentifier());
+    serviceLevelObjective.setSpec(spec);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjective);
 
     long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
     long endTime = startTime + Duration.ofDays(365).toSeconds();

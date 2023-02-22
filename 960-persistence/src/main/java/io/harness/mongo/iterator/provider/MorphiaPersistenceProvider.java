@@ -44,8 +44,9 @@ public class MorphiaPersistenceProvider<T extends PersistentIterable>
   @Inject private HPersistence persistence;
 
   @VisibleForTesting
-  Query<T> createQuery(Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander, boolean unsorted) {
-    Query<T> query = persistence.createQuery(clazz);
+  Query<T> createQuery(Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander, boolean unsorted,
+      boolean isDelegateTaskMigrationEnabled) {
+    Query<T> query = persistence.createQuery(clazz, isDelegateTaskMigrationEnabled);
     if (!unsorted) {
       query.order(Sort.ascending(fieldName));
     }
@@ -56,9 +57,9 @@ public class MorphiaPersistenceProvider<T extends PersistentIterable>
   }
 
   @VisibleForTesting
-  Query<T> createQuery(
-      long now, Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander, boolean unsorted) {
-    Query<T> query = createQuery(clazz, fieldName, filterExpander, unsorted);
+  Query<T> createQuery(long now, Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander,
+      boolean unsorted, boolean isDelegateTaskMigrationEnabled) {
+    Query<T> query = createQuery(clazz, fieldName, filterExpander, unsorted, isDelegateTaskMigrationEnabled);
     if (filterExpander == null) {
       query.or(query.criteria(fieldName).lessThan(now), query.criteria(fieldName).doesNotExist());
     } else {
@@ -75,11 +76,11 @@ public class MorphiaPersistenceProvider<T extends PersistentIterable>
 
   @Override
   public T obtainNextInstance(long base, long throttled, Class<T> clazz, String fieldName,
-      SchedulingType schedulingType, Duration targetInterval, MorphiaFilterExpander<T> filterExpander,
-      boolean unsorted) {
+      SchedulingType schedulingType, Duration targetInterval, MorphiaFilterExpander<T> filterExpander, boolean unsorted,
+      boolean isDelegateTaskMigrationEnabled) {
     long now = currentTimeMillis();
-    Query<T> query = createQuery(now, clazz, fieldName, filterExpander, unsorted);
-    UpdateOperations<T> updateOperations = persistence.createUpdateOperations(clazz);
+    Query<T> query = createQuery(now, clazz, fieldName, filterExpander, unsorted, isDelegateTaskMigrationEnabled);
+    UpdateOperations<T> updateOperations = persistence.createUpdateOperations(clazz, isDelegateTaskMigrationEnabled);
     switch (schedulingType) {
       case REGULAR:
         updateOperations.set(fieldName, base + targetInterval.toMillis());
@@ -93,12 +94,15 @@ public class MorphiaPersistenceProvider<T extends PersistentIterable>
       default:
         unhandled(schedulingType);
     }
-    return persistence.findAndModifySystemData(query, updateOperations, HPersistence.returnOldOptions);
+    return persistence.findAndModifySystemData(
+        query, updateOperations, HPersistence.returnOldOptions, isDelegateTaskMigrationEnabled);
   }
 
   @Override
-  public T findInstance(Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander) {
-    Query<T> resultQuery = createQuery(clazz, fieldName, filterExpander, false).project(fieldName, true);
+  public T findInstance(Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander,
+      boolean isDelegateTaskMigrationEnabled) {
+    Query<T> resultQuery =
+        createQuery(clazz, fieldName, filterExpander, false, isDelegateTaskMigrationEnabled).project(fieldName, true);
     return resultQuery.get();
   }
 
@@ -114,7 +118,7 @@ public class MorphiaPersistenceProvider<T extends PersistentIterable>
   public MorphiaIterator<T, T> obtainNextInstances(
       Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander, int limit) {
     long now = currentTimeMillis();
-    Query<T> query = createQuery(now, clazz, fieldName, filterExpander, false);
+    Query<T> query = createQuery(now, clazz, fieldName, filterExpander, false, false);
 
     return query.fetch(new FindOptions().limit(limit));
   }

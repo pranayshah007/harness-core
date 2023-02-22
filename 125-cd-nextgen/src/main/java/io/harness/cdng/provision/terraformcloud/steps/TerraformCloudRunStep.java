@@ -213,6 +213,8 @@ public class TerraformCloudRunStep extends CdTaskExecutable<TerraformCloudRunTas
           || runType == PLAN_AND_DESTROY) {
         terraformCloudRunOutcomeBuilder.outputs(
             new HashMap<>(helper.parseTerraformOutputs(terraformCloudRunTaskResponse.getTfOutput())));
+        helper.saveTerraformCloudConfig(
+            runStepParameters.getSpec(), terraformCloudRunTaskResponse.getRunId(), ambiance);
       }
 
       stepResponseBuilder.stepOutcome(

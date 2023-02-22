@@ -48,6 +48,7 @@ import io.harness.beans.SweepingOutputInstance.SweepingOutputInstanceBuilder;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.task.aws.LbDetailsForAlbTrafficShift;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
@@ -93,6 +94,7 @@ public class AwsAmiServiceTrafficShiftAlbSetupTest extends WingsBaseTest {
   @Mock private AwsStateHelper awsStateHelper;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService featureFlagService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Captor private ArgumentCaptor<SweepingOutputInstance> sweepingOutputInstanceArgumentCaptor;
 
   @Test
@@ -197,6 +199,7 @@ public class AwsAmiServiceTrafficShiftAlbSetupTest extends WingsBaseTest {
     on(state).set("awsStateHelper", awsStateHelper);
     on(state).set("stateExecutionService", stateExecutionService);
     on(state).set("featureFlagService", featureFlagService);
+    on(state).set("delegateTaskMigrationHelper", delegateTaskMigrationHelper);
 
     when(mockContext.renderExpression(anyString())).thenAnswer((Answer<String>) invocation -> {
       Object[] args = invocation.getArguments();

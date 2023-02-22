@@ -69,7 +69,18 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
       log.error("Could not delete environment secret for id {}", secretIdentifier, e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
     }
-    return Response.status(Response.Status.OK).build();
+    return Response.status(Response.Status.NO_CONTENT).build();
+  }
+
+  @Override
+  public Response deleteEnvironmentSecrets(List<String> environmentSecrets, String accountIdentifier) {
+    try {
+      environmentSecretService.deleteMulti(environmentSecrets, accountIdentifier);
+    } catch (Exception e) {
+      log.error("Could not delete all environment secrets [{}]", environmentSecrets, e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+    }
+    return Response.status(Response.Status.NO_CONTENT).build();
   }
 
   @Override

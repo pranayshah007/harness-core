@@ -2491,6 +2491,8 @@
 680007:io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit
 680008:io.harness.delegate.beans.terraformcloud.PlanType
 680009:io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse
+680010:io.harness.delegate.beans.terraformcloud.RollbackType
+680011:io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse
 930001:io.harness.licensing.beans.modules.CDModuleLicenseDTO
 930002:io.harness.licensing.beans.modules.CEModuleLicenseDTO
 930003:io.harness.licensing.beans.modules.CFModuleLicenseDTO

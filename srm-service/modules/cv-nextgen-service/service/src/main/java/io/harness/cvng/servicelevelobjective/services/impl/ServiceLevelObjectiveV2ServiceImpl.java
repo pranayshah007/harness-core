@@ -7,6 +7,11 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
+import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.BURN_RATE;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.COOL_OFF_DURATION;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAINING_MINUTES;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAINING_PERCENTAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -26,15 +31,22 @@ import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceServic
 import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveCreateEvent;
 import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveDeleteEvent;
 import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveUpdateEvent;
+import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.entities.NotificationRule;
+import io.harness.cvng.notification.entities.SLONotificationRule;
+import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetBurnRateCondition;
+import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleCondition;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
+import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
+import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.SLOValue;
@@ -56,7 +68,7 @@ import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjec
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.SLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveKeys;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
@@ -70,12 +82,16 @@ import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.S
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
+import io.harness.notification.notificationclient.NotificationClient;
+import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.utils.PageUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
@@ -92,6 +108,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -105,6 +122,7 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math3.util.Precision;
 
 @Slf4j
 public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjectiveV2Service {
@@ -132,6 +150,12 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject private SLIRecordServiceImpl sliRecordService;
   @Inject private CompositeSLORecordServiceImpl compositeSLORecordService;
   private Query<AbstractServiceLevelObjective> sloQuery;
+
+  @Inject private NotificationClient notificationClient;
+
+  @Inject
+  private Map<NotificationRuleConditionType, NotificationRuleTemplateDataGenerator>
+      notificationRuleConditionTypeTemplateDataGeneratorMap;
 
   @Override
   public TimeGraphResponse getOnboardingGraph(CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec) {
@@ -226,9 +250,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
           (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec();
 
       LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
-      ServiceLevelObjective.SLOTarget sloTarget =
-          sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveDTO.getSloTarget().getType())
-              .getSLOTarget(serviceLevelObjectiveDTO.getSloTarget().getSpec());
+      SLOTarget sloTarget = sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveDTO.getSloTarget().getType())
+                                .getSLOTarget(serviceLevelObjectiveDTO.getSloTarget().getSpec());
       TimePeriod timePeriod = sloTarget.getCurrentTimeRange(currentLocalDate);
       TimePeriod currentTimePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
 
@@ -512,6 +535,10 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   }
 
   @Override
+  public List<AbstractServiceLevelObjective> getAllSLOs(ProjectParams projectParams, ServiceLevelObjectiveType type) {
+    return get(projectParams, Filter.builder().sloType(type).build());
+  }
+  @Override
   public List<AbstractServiceLevelObjective> get(ProjectParams projectParams, List<String> identifiers) {
     return get(projectParams, Filter.builder().identifiers(identifiers).build());
   }
@@ -670,6 +697,120 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     return hPersistence.get(AbstractServiceLevelObjective.class, sloId);
   }
 
+  @Override
+  public List<SLOErrorBudgetResetDTO> getErrorBudgetResetHistory(ProjectParams projectParams, String sloIdentifier) {
+    return sloErrorBudgetResetService.getErrorBudgetResets(projectParams, sloIdentifier);
+  }
+
+  @Override
+  public SLOErrorBudgetResetDTO resetErrorBudget(ProjectParams projectParams, SLOErrorBudgetResetDTO resetDTO) {
+    return sloErrorBudgetResetService.resetErrorBudget(projectParams, resetDTO);
+  }
+  @Override
+  public void handleNotification(AbstractServiceLevelObjective serviceLevelObjective) {
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(serviceLevelObjective.getAccountId())
+                                      .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                                      .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                                      .build();
+    List<NotificationRule> notificationRules = getNotificationRules(serviceLevelObjective);
+    Set<String> notificationRuleRefsWithChange = new HashSet<>();
+
+    for (NotificationRule notificationRule : notificationRules) {
+      List<SLONotificationRuleCondition> conditions = ((SLONotificationRule) notificationRule).getConditions();
+      for (SLONotificationRuleCondition condition : conditions) {
+        NotificationRuleTemplateDataGenerator.NotificationData notificationData =
+            getNotificationData(serviceLevelObjective, condition);
+        if (notificationData.shouldSendNotification()) {
+          NotificationRule.CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
+          String templateId = getNotificationTemplateId(notificationRule.getType(), notificationChannel.getType());
+          MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
+              MonitoredServiceParams.builderWithProjectParams(projectParams)
+                  .monitoredServiceIdentifier(
+                      ((SimpleServiceLevelObjective) serviceLevelObjective).getMonitoredServiceIdentifier())
+                  .build());
+          Map<String, String> templateData =
+              notificationRuleConditionTypeTemplateDataGeneratorMap.get(condition.getType())
+                  .getTemplateData(projectParams, serviceLevelObjective.getName(),
+                      serviceLevelObjective.getIdentifier(), monitoredService.getServiceIdentifier(), condition,
+                      notificationData.getTemplateDataMap());
+          try {
+            NotificationResult notificationResult =
+                notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(
+                    serviceLevelObjective.getAccountId(), serviceLevelObjective.getOrgIdentifier(),
+                    serviceLevelObjective.getProjectIdentifier(), templateId, templateData));
+            log.info("Notification with Notification ID {}, Notification Rule {}, Condition {} for SLO {} sent",
+                notificationResult.getNotificationId(), notificationRule.getName(),
+                condition.getType().getDisplayName(), serviceLevelObjective.getName());
+          } catch (Exception ex) {
+            log.error("Unable to send notification because of following exception", ex);
+          }
+          notificationRuleRefsWithChange.add(notificationRule.getIdentifier());
+        }
+      }
+    }
+    updateNotificationRuleRefInSLO(
+        projectParams, serviceLevelObjective, new ArrayList<>(notificationRuleRefsWithChange));
+  }
+
+  @VisibleForTesting
+  List<NotificationRule> getNotificationRules(AbstractServiceLevelObjective serviceLevelObjective) {
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(serviceLevelObjective.getAccountId())
+                                      .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                                      .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                                      .build();
+    List<String> notificationRuleRefs = serviceLevelObjective.getNotificationRuleRefs()
+                                            .stream()
+                                            .filter(ref -> ref.isEligible(clock.instant(), COOL_OFF_DURATION))
+                                            .map(NotificationRuleRef::getNotificationRuleRef)
+                                            .collect(Collectors.toList());
+    return notificationRuleService.getEntities(projectParams, notificationRuleRefs);
+  }
+
+  @VisibleForTesting
+  NotificationRuleTemplateDataGenerator.NotificationData getNotificationData(
+      AbstractServiceLevelObjective serviceLevelObjective, SLONotificationRuleCondition condition) {
+    SLOHealthIndicator sloHealthIndicator = sloHealthIndicatorService.getBySLOEntity(serviceLevelObjective);
+
+    if (condition.getType().equals(NotificationRuleConditionType.ERROR_BUDGET_BURN_RATE)) {
+      SLOErrorBudgetBurnRateCondition conditionSpec = (SLOErrorBudgetBurnRateCondition) condition;
+      LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
+      int totalErrorBudgetMinutes = serviceLevelObjective.getTotalErrorBudgetMinutes(currentLocalDate);
+      double errorBudgetBurnRate = sliRecordService.getErrorBudgetBurnRate(
+          ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0),
+          conditionSpec.getLookBackDuration(), totalErrorBudgetMinutes);
+      sloHealthIndicator.setErrorBudgetBurnRate(errorBudgetBurnRate);
+    }
+
+    return NotificationRuleTemplateDataGenerator.NotificationData.builder()
+        .shouldSendNotification(condition.shouldSendNotification(sloHealthIndicator))
+        .templateDataMap(getTemplateData(condition, sloHealthIndicator))
+        .build();
+  }
+
+  private Map<String, String> getTemplateData(
+      SLONotificationRuleCondition condition, SLOHealthIndicator sloHealthIndicator) {
+    switch (condition.getType()) {
+      case ERROR_BUDGET_REMAINING_PERCENTAGE:
+        return new HashMap<String, String>() {
+          {
+            put(REMAINING_PERCENTAGE,
+                String.valueOf(Precision.round(sloHealthIndicator.getErrorBudgetRemainingPercentage(), 2)));
+          }
+        };
+      case ERROR_BUDGET_REMAINING_MINUTES:
+        return new HashMap<String, String>() {
+          { put(REMAINING_MINUTES, String.valueOf(sloHealthIndicator.getErrorBudgetRemainingMinutes())); }
+        };
+      case ERROR_BUDGET_BURN_RATE:
+        return new HashMap<String, String>() {
+          { put(BURN_RATE, String.valueOf(Precision.round(sloHealthIndicator.getErrorBudgetBurnRate(), 2))); }
+        };
+      default:
+        throw new InvalidArgumentsException("Not a valid Notification Rule Condition " + condition.getType());
+    }
+  }
   private AbstractServiceLevelObjective updateSLOV2Entity(ProjectParams projectParams,
       AbstractServiceLevelObjective abstractServiceLevelObjective,
       ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, List<String> serviceLevelIndicators) {
@@ -1008,7 +1149,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     String monitoredServiceIdentifier;
     String notificationRuleRef;
     String searchFilter;
-    ServiceLevelObjective.SLOTarget sloTarget;
+    SLOTarget sloTarget;
     ServiceLevelObjectiveType sloType;
     boolean childResource;
   }

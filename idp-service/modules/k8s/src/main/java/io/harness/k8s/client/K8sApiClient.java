@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Secret;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -67,6 +68,22 @@ public class K8sApiClient implements K8sClient {
     }
     configMapData.putAll(data);
     return replaceConfigMap(coreV1Api, configMap);
+  }
+
+  @Override
+  public void removeSecretData(String namespace, String secretName, List<String> envNames) throws Exception {
+    KubernetesConfig kubernetesConfig = getKubernetesConfig(namespace);
+    ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+    CoreV1Api coreV1Api = new CoreV1Api(apiClient);
+    V1Secret secret = getSecret(coreV1Api, namespace, secretName);
+    Map<String, byte[]> secretData = secret.getData();
+    if (secretData != null) {
+      envNames.forEach(secretData::remove);
+    }
+    secret.setData(secretData);
+    replaceSecret(coreV1Api, secret);
+    log.info(
+        "Successfully removed [{}] environment secrets from [{}/Secret/{}]", envNames.size(), namespace, secretName);
   }
 
   private V1Secret getSecret(CoreV1Api coreV1Api, String namespace, String secretName) throws Exception {

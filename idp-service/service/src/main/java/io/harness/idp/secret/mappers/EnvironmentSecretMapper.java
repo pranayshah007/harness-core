@@ -23,7 +23,7 @@ public class EnvironmentSecretMapper {
   public EnvironmentSecret toDTO(EnvironmentSecretEntity environmentSecretEntity) {
     EnvironmentSecret secret = new EnvironmentSecret();
     secret.identifier(environmentSecretEntity.getId());
-    secret.setName(environmentSecretEntity.getName());
+    secret.setEnvName(environmentSecretEntity.getEnvName());
     secret.setSecretIdentifier(environmentSecretEntity.getSecretIdentifier());
     secret.setCreated(environmentSecretEntity.getCreatedAt());
     secret.setUpdated(environmentSecretEntity.getLastModifiedAt());
@@ -33,7 +33,7 @@ public class EnvironmentSecretMapper {
   public EnvironmentSecretEntity fromDTO(EnvironmentSecret envSecret, String accountIdentifier) {
     return EnvironmentSecretEntity.builder()
         .id(envSecret.getIdentifier())
-        .name(envSecret.getName())
+        .envName(envSecret.getEnvName())
         .secretIdentifier(envSecret.getSecretIdentifier())
         .accountIdentifier(accountIdentifier)
         .createdAt(envSecret.getCreated())
