@@ -9,6 +9,7 @@ package io.harness.idp.secret.resources;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eraro.ResponseMessage;
 import io.harness.idp.secret.mappers.EnvironmentSecretMapper;
 import io.harness.idp.secret.service.EnvironmentSecretService;
 import io.harness.spec.server.idp.v1.EnvironmentSecretApi;
@@ -38,7 +39,9 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
       secret = environmentSecretService.saveAndSyncK8sSecret(body.getSecret(), harnessAccount);
     } catch (Exception e) {
       log.error("Could not create environment secret", e);
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
     }
     EnvironmentSecretResponse secretResponse = new EnvironmentSecretResponse();
     secretResponse.setSecret(secret);
