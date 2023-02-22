@@ -2418,6 +2418,15 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  public List<UserInvite> getInvitesFromAccountIdAndUserGroupId(String accountId, String userGroupId) {
+    Query<UserInvite> userInviteQuery = wingsPersistence.createQuery(UserInvite.class)
+                                            .filter(UserInvite.ACCOUNT_ID_KEY2, accountId)
+                                            .field(UserInviteKeys.userGroups)
+                                            .hasThisOne(userGroupId);
+    return userInviteQuery.asList();
+  }
+
+  @Override
   public boolean resetPassword(UserResource.ResetPasswordRequest resetPasswordRequest) {
     String email = resetPasswordRequest.getEmail();
     User user = getUserByEmail(email);

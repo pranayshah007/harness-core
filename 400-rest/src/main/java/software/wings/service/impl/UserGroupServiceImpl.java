@@ -552,10 +552,10 @@ public class UserGroupServiceImpl implements UserGroupService {
         : Sets.newHashSet(userGroupToUpdate.getMemberIds());
     newMemberIds.removeIf(EmptyPredicate::isEmpty);
 
-    log.info("[SAML_SYNC]: New member IDs: {}", newMemberIds);
+    log.info("[SSO_SYNC]: New member IDs: {}", newMemberIds);
 
     UserGroup existingUserGroup = get(userGroupToUpdate.getAccountId(), userGroupToUpdate.getUuid());
-    log.info("[SAML_SYNC]: Existing user group: {}", existingUserGroup);
+    log.info("[SSO_SYNC]: Existing user group: {}", existingUserGroup);
 
     if (UserGroupUtils.isAdminUserGroup(existingUserGroup) && newMemberIds.isEmpty()) {
       throw new WingsException(
@@ -570,7 +570,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     setUnset(operations, UserGroupKeys.memberIds, newMemberIds);
     UserGroup updatedUserGroup = update(userGroupToUpdate, operations);
 
-    log.info("[SAML_SYNC]: Updated user group: {}", updatedUserGroup);
+    log.info("[SSO_SYNC]: Updated user group: {}", updatedUserGroup);
 
     // auditing addition/removal of users in/from user group
     if (toBeAudited) {
@@ -1093,8 +1093,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   private void removeUserGroupFromInvites(String accountId, String userGroupId) {
-    List<UserInvite> invites = userService.getInvitesFromAccountId(accountId);
-    invites.forEach(invite -> invite.getUserGroups().removeIf(x -> x.getUuid().equals(userGroupId)));
+    List<UserInvite> invites = userService.getInvitesFromAccountIdAndUserGroupId(accountId, userGroupId);
     wingsPersistence.save(invites);
   }
 
