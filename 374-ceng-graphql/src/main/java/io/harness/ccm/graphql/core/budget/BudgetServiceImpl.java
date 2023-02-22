@@ -173,9 +173,11 @@ public class BudgetServiceImpl implements BudgetService {
   }
 
   private void validateParent(Budget budget) {
-    BudgetGroup parentBudgetGroup = budgetGroupDao.get(budget.getParentBudgetGroupId(), budget.getAccountId());
-    if (parentBudgetGroup == null) {
-      throw new InvalidRequestException(BudgetGroupUtils.INVALID_PARENT_EXCEPTION);
+    if (budget.getParentBudgetGroupId() != null) {
+      BudgetGroup parentBudgetGroup = budgetGroupDao.get(budget.getParentBudgetGroupId(), budget.getAccountId());
+      if (parentBudgetGroup == null) {
+        throw new InvalidRequestException(BudgetGroupUtils.INVALID_PARENT_EXCEPTION);
+      }
     }
   }
 
