@@ -1,4 +1,4 @@
-# Copyright 2022 Harness Inc. All rights reserved.
+# Copyright 2023 Harness Inc. All rights reserved.
 # Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -12,21 +12,13 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//260-delegate/src/main/java/io/harness/delegate/service/common/client:module",
         "//920-delegate-agent-beans:module",
-        "//920-delegate-service-beans:module",
-        "//930-delegate-tasks/src/main/java/software/wings/beans/configfile:module",
-        "//930-delegate-tasks/src/main/proto/io/harness:930_delegate_tasks_java_proto",
-        "//950-delegate-tasks-beans:module",
         "//955-delegate-beans/src/main/proto/io/harness/delegate/core:955_delegate_core_task_java_proto",
-        "//959-file-service-commons:module",
         "//960-api-services/src/main/java/io/harness/delegate/configuration:module",
-        "//970-watcher-beans:module",
         "//980-commons/src/main/java/io/harness/exception:module",
-        "//980-commons/src/main/java/io/harness/logging:module",
         "//980-commons/src/main/java/io/harness/network:module",
-        "//980-commons/src/main/java/io/harness/rest:module",
         "//980-commons/src/main/java/io/harness/security:module",
-        "//980-commons/src/main/java/io/harness/serializer/kryo:module",
         "//980-commons/src/main/java/io/harness/version:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_fasterxml_jackson_core_jackson_databind",
@@ -39,7 +31,6 @@ java_library(
         "@maven//:com_squareup_retrofit2_converter_jackson",
         "@maven//:com_squareup_retrofit2_converter_protobuf",
         "@maven//:com_squareup_retrofit2_retrofit",
-        "@maven//:javax_ws_rs_javax_ws_rs_api",
         "@maven//:org_apache_commons_commons_lang3",
     ],
 )

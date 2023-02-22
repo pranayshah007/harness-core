@@ -68,6 +68,7 @@ import io.harness.delegate.heartbeat.stream.DelegateStreamHeartbeatService;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
 import io.harness.delegate.resources.DelegateTaskResource;
 import io.harness.delegate.resources.DelegateTaskResourceV2;
+import io.harness.delegate.resources.core.CoreDelegateResource;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.telemetry.DelegateTelemetryPublisher;
 import io.harness.dms.DmsModule;
@@ -1167,7 +1168,8 @@ public class WingsApplication extends Application<MainConfiguration> {
             .filter(klazz
                 -> StringUtils.startsWithAny(klazz.getPackage().getName(), AppResource.class.getPackage().getName(),
                     DelegateTaskResource.class.getPackage().getName(),
-                    DelegateTaskResourceV2.class.getPackage().getName()))
+                    DelegateTaskResourceV2.class.getPackage().getName(),
+                    CoreDelegateResource.class.getPackage().getName()))
             .collect(Collectors.toSet());
 
     if (!configuration.isGraphQLEnabled()) {
