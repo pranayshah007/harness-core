@@ -68,7 +68,7 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
 
   @Schema(description = "Boolean value to indicate if managed identity is used") private boolean useManagedIdentity;
   @JsonProperty("managedIdentityType") private AzureManagedIdentityType azureManagedIdentityType;
-  @Schema(description = "Client Id of the ManagedIdentity resource") @NotNull String managedClientId;
+  @Schema(description = "Client Id of the ManagedIdentity resource") String managedClientId;
 
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
 
