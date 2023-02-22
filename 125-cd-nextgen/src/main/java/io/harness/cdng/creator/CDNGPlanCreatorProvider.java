@@ -133,6 +133,7 @@ import io.harness.cdng.creator.plan.steps.aws.asg.AsgCanaryDeployStepPlanCreator
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgRollingDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgRollingRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.lambda.AwsLambdaDeployStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.aws.sam.AwsSamPublishStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotDeploymentStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotSwapSlotPlanCreator;
@@ -212,6 +213,7 @@ import io.harness.cdng.creator.variables.TasRollingRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRoutesStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.AwsLambdaDeployStepVariableCreator;
+import io.harness.cdng.creator.variables.aws.sam.AwsSamPublishStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsDeployWithoutTrafficStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsRollbackStepVariableCreator;
@@ -292,6 +294,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String ELASTIGROUP = "Elastigroup";
   private static final String TAS = "TAS";
   private static final String ASG = "AutoScalingGroup";
+  private static final String AWS_SAM = "AWS_SAM";
 
   private static final List<String> CUSTOM_DEPLOYMENT_CATEGORY = Arrays.asList(COMMANDS, CUSTOM_DEPLOYMENT);
   private static final List<String> CLOUDFORMATION_CATEGORY =
@@ -466,6 +469,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     // AWS Lambda
     planCreators.add(new AwsLambdaDeployStepPlanCreator());
 
+    // AWS SAM
+    planCreators.add(new AwsSamPublishStepPlanCreator());
+
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -602,6 +608,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     // AWS Lambda
     variableCreators.add(new AwsLambdaDeployStepVariableCreator());
+
+    // AWS SAM
+    variableCreators.add(new AwsSamPublishStepVariableCreator());
 
     return variableCreators;
   }
@@ -1280,6 +1289,13 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                  .build())
             .setFeatureFlag(FeatureName.TERRAFORM_CLOUD.name())
             .build();
+    StepInfo awsSamPublish =
+        StepInfo.newBuilder()
+            .setName("AWS SAM Publish")
+            .setType(StepSpecTypeConstants.AWS_SAM_PUBLISH)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(AWS_SAM).setFolderPath(AWS_SAM).build())
+            .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
+            .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();
 
@@ -1361,6 +1377,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(terraformCloudRun);
     stepInfos.add(awsLambdaDeploy);
     stepInfos.add(terraformCloudRollback);
+    stepInfos.add(awsSamPublish);
     return stepInfos;
   }
 }

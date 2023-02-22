@@ -1470,6 +1470,37 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AwsSamPublishStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "publishCommandOptions": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AwsSamServiceSpec": {
       "allOf": [
         {
@@ -12319,6 +12350,22 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AWS_SAM_PUBLISH"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsSamPublishStepInfo"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {

@@ -485,6 +485,11 @@ import io.harness.delegate.task.aws.asg.AsgRollingRollbackResponse;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackResult;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupInstance;
+import io.harness.delegate.task.aws.sam.AwsSamCommandType;
+import io.harness.delegate.task.aws.sam.AwsSamInfraConfig;
+import io.harness.delegate.task.aws.sam.AwsSamPublishConfig;
+import io.harness.delegate.task.aws.sam.request.AwsSamPublishRequest;
+import io.harness.delegate.task.aws.sam.response.AwsSamPublishResponse;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.AzureTaskParameters;
 import io.harness.delegate.task.azure.AzureTaskResponse;
@@ -2349,5 +2354,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerraformCloudRollbackTaskResponse.class, 680011);
 
     kryo.register(AwsSamInstallationCapability.class, 10000401);
+    kryo.register(AwsSamPublishRequest.class, 10000402);
+    kryo.register(AwsSamCommandType.class, 10000403);
+    kryo.register(AwsSamInfraConfig.class, 10000404);
+    kryo.register(AwsSamPublishConfig.class, 10000405);
+    kryo.register(AwsSamPublishResponse.class, 10000406);
   }
 }

@@ -100,8 +100,8 @@ import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.app.DelegateApplication;
 import io.harness.delegate.aws.lambda.AwsLambdaDeployTaskCommandHandler;
-import io.harness.delegate.awssam.AwsSamCommandTaskHandler;
-import io.harness.delegate.awssam.AwsSamPublishCommandTaskHandler;
+import io.harness.delegate.aws.sam.AwsSamCommandTaskHandler;
+import io.harness.delegate.aws.sam.AwsSamPublishCommandTaskHandler;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.cf.PcfApplicationDetailsCommandTaskHandler;
@@ -240,7 +240,7 @@ import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackTaskNG;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
-import io.harness.delegate.task.awssam.AwsSamCommandType;
+import io.harness.delegate.task.aws.sam.AwsSamCommandType;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.appservice.webapp.AzureWebAppTaskNG;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppFetchPreDeploymentDataRequestHandler;
@@ -365,6 +365,7 @@ import io.harness.delegate.task.pagerduty.PagerDutySenderDelegateTask;
 import io.harness.delegate.task.pcf.CfCommandRequest.PcfCommandType;
 import io.harness.delegate.task.pcf.TasConnectorValidationTask;
 import io.harness.delegate.task.pdc.HostConnectivityValidationDelegateTask;
+import io.harness.delegate.task.sam.AwsSamPublishCommandTask;
 import io.harness.delegate.task.scm.ScmBatchGetFileTask;
 import io.harness.delegate.task.scm.ScmDelegateClientImpl;
 import io.harness.delegate.task.scm.ScmGitFileTask;
@@ -2175,6 +2176,7 @@ public class DelegateModule extends AbstractModule {
         .toInstance(GoogleFunctionPrepareRollbackTask.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_ROLLBACK_TASK).toInstance(GoogleFunctionRollbackTask.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK).toInstance(GoogleFunctionTrafficShiftTask.class);
+    mapBinder.addBinding(TaskType.AWS_SAM_PUBLISH).toInstance(AwsSamPublishCommandTask.class);
   }
 
   private void registerSecretManagementBindings() {
