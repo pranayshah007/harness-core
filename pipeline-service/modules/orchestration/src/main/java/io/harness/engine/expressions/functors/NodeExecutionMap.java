@@ -151,26 +151,27 @@ public class NodeExecutionMap extends LateBindingMap {
      * c) a Pipeline Stage -> which is same as normal stage
      */
     String pipelineExecutionUrl = "<+pipeline." + OrchestrationConstants.EXECUTION_URL + ">";
-    boolean currentLevelInsideStage = AmbianceUtils.isCurrentLevelInsideStage(ambiance);
+    Ambiance nodeAmbiance = nodeExecution.getAmbiance();
+    boolean currentLevelInsideStage = AmbianceUtils.isCurrentLevelInsideStage(nodeAmbiance);
 
     // If any other node expression is called, then return pipeline execution url.
     if (!currentLevelInsideStage) {
       return Optional.of(pipelineExecutionUrl);
     }
 
-    String stageSetupId = AmbianceUtils.getStageSetupIdAmbiance(ambiance);
+    String stageSetupId = AmbianceUtils.getStageSetupIdAmbiance(nodeAmbiance);
     String stageExecutionUrl = "<+" + pipelineExecutionUrl + String.format("+'?stage=%s", stageSetupId);
 
     // Check for stage if under matrix
-    boolean currentStrategyLevelAtStage = AmbianceUtils.isCurrentNodeUnderStageStrategy(ambiance);
+    boolean currentStrategyLevelAtStage = AmbianceUtils.isCurrentNodeUnderStageStrategy(nodeAmbiance);
     if (currentStrategyLevelAtStage) {
-      String stageRuntimeId = ambiance.getStageExecutionId();
+      String stageRuntimeId = nodeAmbiance.getStageExecutionId();
       stageExecutionUrl += String.format("&stageExecId=%s", stageRuntimeId);
     }
 
-    boolean currentLevelAtStep = AmbianceUtils.isCurrentLevelAtStep(ambiance);
+    boolean currentLevelAtStep = AmbianceUtils.isCurrentLevelAtStep(nodeAmbiance);
     if (currentLevelAtStep) {
-      String stepId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+      String stepId = AmbianceUtils.obtainCurrentRuntimeId(nodeAmbiance);
       return Optional.of(stageExecutionUrl + String.format("&step=%s'>", stepId));
     }
 
