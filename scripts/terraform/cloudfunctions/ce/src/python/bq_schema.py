@@ -907,7 +907,22 @@ unifiedTableTableSchema = [
         "type": "FLOAT"
     },
     {'mode': 'NULLABLE', 'name': 'orgIdentifier', 'type': 'STRING'},
-    {'mode': 'NULLABLE', 'name': 'projectIdentifier', 'type': 'STRING'}
+    {'mode': 'NULLABLE', 'name': 'projectIdentifier', 'type': 'STRING'},
+    {
+        "fields": [
+            {
+                "name": "costCategoryName",
+                "type": "STRING"
+            },
+            {
+                "name": "costBucketName",
+                "type": "STRING"
+            }
+        ],
+        "mode": "REPEATED",
+        "name": "costCategory",
+        "type": "RECORD"
+    }
 ]
 
 currencyConversionFactorUserInputTableTableSchema = [
