@@ -732,8 +732,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
           Map<String, String> templateData =
               notificationRuleConditionTypeTemplateDataGeneratorMap.get(condition.getType())
                   .getTemplateData(projectParams, serviceLevelObjective.getName(),
-                      serviceLevelObjective.getIdentifier(), monitoredService.getServiceIdentifier(), condition,
-                      notificationData.getTemplateDataMap());
+                      serviceLevelObjective.getIdentifier(), monitoredService.getServiceIdentifier(),
+                      monitoredService.getIdentifier(), condition, notificationData.getTemplateDataMap());
           try {
             NotificationResult notificationResult =
                 notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(

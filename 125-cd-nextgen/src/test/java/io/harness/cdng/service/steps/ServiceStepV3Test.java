@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -118,6 +119,7 @@ public class ServiceStepV3Test extends CategoryTest {
   @Mock private NotificationHelper notificationHelper;
   @Mock private EngineExpressionService engineExpressionService;
   @Mock private NgExpressionHelper ngExpressionHelper;
+  @Mock private ServiceCustomSweepingOutputHelper serviceCustomSweepingOutputHelper;
 
   private static final String ACCOUNT_ID = "accountId";
   private static final String PROJECT_ID = "projectId";
@@ -143,6 +145,10 @@ public class ServiceStepV3Test extends CategoryTest {
     doReturn(AccessCheckResponseDTO.builder().accessControlList(List.of()).build())
         .when(accessControlClient)
         .checkForAccess(any(Principal.class), anyList());
+
+    doNothing()
+        .when(serviceCustomSweepingOutputHelper)
+        .saveAdditionalServiceFieldsToSweepingOutput(any(NGServiceConfig.class), any(Ambiance.class));
   }
   @After
   public void tearDown() throws Exception {

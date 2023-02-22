@@ -143,7 +143,8 @@ public class PMSInputSetElementMapper {
       String pipelineIdentifier, String yaml, InputSetEntityType inputSetEntityType) {
     JsonNode inputSetNode;
     try {
-      inputSetNode = YamlUtils.readTree(yaml).getNode().getCurrJsonNode();
+      // validating the duplicate fields in yaml fields
+      inputSetNode = YamlUtils.readTree(yaml, true).getNode().getCurrJsonNode();
     } catch (IOException exception) {
       throw new InvalidRequestException("Invalid input set yaml provided");
     }

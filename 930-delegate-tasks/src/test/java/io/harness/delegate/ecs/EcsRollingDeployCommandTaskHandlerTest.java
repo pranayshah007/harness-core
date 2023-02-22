@@ -9,20 +9,21 @@ package io.harness.delegate.ecs;
 
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 
-import static software.wings.beans.LogHelper.color;
-
-import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.ecs.EcsRollingDeployResult;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.ecs.EcsCommandTaskNGHelper;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsTaskHelperBase;
@@ -33,11 +34,7 @@ import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
-import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
-
-import software.wings.beans.LogColor;
-import software.wings.beans.LogWeight;
 
 import java.util.Arrays;
 import org.junit.Rule;
@@ -48,19 +45,15 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
-import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionRequest;
-import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionResponse;
-import software.amazon.awssdk.services.ecs.model.TaskDefinition;
 
 public class EcsRollingDeployCommandTaskHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock ILogStreamingTaskClient iLogStreamingTaskClient;
   @Mock EcsTaskHelperBase ecsTaskHelperBase;
-  @Mock EcsCommandTaskNGHelper ecsCommandTaskHelper;
   @Mock LogCallback deployLogCallback;
   @Spy @InjectMocks private EcsRollingDeployCommandTaskHandler ecsRollingDeployCommandTaskHandler;
+  @Mock private EcsDeploymentHelper ecsDeploymentHelper;
 
   @Test
   @Owner(developers = ALLU_VAMSI)
@@ -77,28 +70,27 @@ public class EcsRollingDeployCommandTaskHandlerTest extends CategoryTest {
                                                           .ecsCommandType(EcsCommandTypeNG.ECS_ROLLING_DEPLOY)
                                                           .build();
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
-    RegisterTaskDefinitionRequest.Builder registerTaskDefinitionRequestBuilder =
-        RegisterTaskDefinitionRequest.builder().family("ecs");
-    CreateServiceRequest.Builder createServiceRequestBuilder = CreateServiceRequest.builder();
+    EcsRollingDeployResponse ecsRollingDeployResponse =
+        EcsRollingDeployResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .ecsRollingDeployResult(EcsRollingDeployResult.builder().region("us-east-1").build())
+            .build();
     doReturn(deployLogCallback)
         .when(ecsTaskHelperBase)
         .getLogCallback(iLogStreamingTaskClient, EcsCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
-    doReturn(registerTaskDefinitionRequestBuilder).when(ecsCommandTaskHelper).parseYamlAsObject(eq("taskDef"), any());
-    doReturn(createServiceRequestBuilder).when(ecsCommandTaskHelper).parseYamlAsObject(eq("serviceDef"), any());
 
-    TaskDefinition taskDefinition = TaskDefinition.builder().family("ecs").revision(1).taskDefinitionArn("arn").build();
-    RegisterTaskDefinitionResponse registerTaskDefinitionResponse =
-        RegisterTaskDefinitionResponse.builder().taskDefinition(taskDefinition).build();
-    doReturn(registerTaskDefinitionResponse).when(ecsCommandTaskHelper).createTaskDefinition(any(), any(), any());
-
-    EcsRollingDeployResponse ecsCommandResponse =
+    doReturn(ecsRollingDeployResponse)
+        .when(ecsDeploymentHelper)
+        .deployRollingService(eq(deployLogCallback), any(), eq(ecsRollingDeployRequest), anyList(), anyList(),
+            anyBoolean(), anyBoolean());
+    EcsRollingDeployResponse actualEcsCommandResponse =
         (EcsRollingDeployResponse) ecsRollingDeployCommandTaskHandler.executeTaskInternal(
             ecsRollingDeployRequest, iLogStreamingTaskClient, commandUnitsProgress);
-    assertThat(ecsCommandResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
-    assertThat(ecsCommandResponse.getEcsRollingDeployResult().getRegion()).isEqualTo("us-east-1");
-    verify(deployLogCallback)
-        .saveExecutionLog(color(format("%n Deployment Successful."), LogColor.Green, LogWeight.Bold), LogLevel.INFO,
-            CommandExecutionStatus.SUCCESS);
+    assertThat(actualEcsCommandResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(actualEcsCommandResponse.getEcsRollingDeployResult().getRegion()).isEqualTo("us-east-1");
+    verify(ecsDeploymentHelper, times(1))
+        .createServiceDefinitionRequest(
+            eq(deployLogCallback), eq(ecsInfraConfig), anyString(), anyString(), anyList(), anyList(), eq(null));
   }
 
   @Test(expected = InvalidArgumentsException.class)

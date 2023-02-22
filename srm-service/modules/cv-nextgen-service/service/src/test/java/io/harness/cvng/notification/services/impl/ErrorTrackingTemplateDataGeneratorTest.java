@@ -100,8 +100,9 @@ public class ErrorTrackingTemplateDataGeneratorTest {
             .errorTrackingEventTypes(Collections.singletonList(ErrorTrackingEventType.EXCEPTION))
             .build();
 
-    final Map<String, String> templateData = errorTrackingTemplateDataGenerator.getTemplateData(projectParams,
-        MONITORED_SERVICE_NAME, MONITORED_SERVICE_ID, SERVICE_IDENTIFIER, codeErrorCondition, notificationDataMap);
+    final Map<String, String> templateData =
+        errorTrackingTemplateDataGenerator.getTemplateData(projectParams, MONITORED_SERVICE_NAME, MONITORED_SERVICE_ID,
+            SERVICE_IDENTIFIER, MONITORED_SERVICE_ID, codeErrorCondition, notificationDataMap);
 
     assertThat(templateData.get(ENVIRONMENT_NAME)).isEqualTo(ENVIRONMENT_NAME_VALUE);
     assertThat(templateData.get(MONITORED_SERVICE_URL)).contains(MONITORED_SERVICE_ID);

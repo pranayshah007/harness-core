@@ -620,6 +620,7 @@ public enum FeatureName {
   SRM_ELK_LOGS_V2("Will enable Elasticsearch logs v2 health source in SRM", HarnessTeam.CV),
   PIE_NG_GITX_CACHING("FF to enable caching on new git experience", HarnessTeam.PIPELINE),
   PL_ADD_ACL_CHECKS_NG_SCIM_API("Enable access control checks on token for NG SCIM API calls", HarnessTeam.PL),
+  CDS_QUERY_OPTIMIZATION("Feature flag to optimize CG Queries", HarnessTeam.CDC),
   CI_ENABLE_BARE_METAL("To enable bare metal cloud for infra", HarnessTeam.CI),
   PL_ALLOW_DIFFERENT_SERVICE_PRINCIPAL_IN_AUTH_TOKEN_AND_BODY(
       "Allow different Service Principal in Auth Token and Request Body. Used for Internal purpose only.",

@@ -1129,8 +1129,8 @@ public class EcsStepCommonHelperTest extends CategoryTest {
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
-    TaskChainResponse taskChainResponse = ecsStepCommonHelper.queueEcsTask(
-        stepElementParameters, ecsCommandRequest, ambiance, ecsPrepareRollbackDataPassThroughData, false);
+    TaskChainResponse taskChainResponse = ecsStepCommonHelper.queueEcsTask(stepElementParameters, ecsCommandRequest,
+        ambiance, ecsPrepareRollbackDataPassThroughData, false, TaskType.ECS_COMMAND_TASK_NG);
 
     PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
     TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
