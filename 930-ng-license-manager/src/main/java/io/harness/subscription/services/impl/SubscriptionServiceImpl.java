@@ -7,6 +7,11 @@
 
 package io.harness.subscription.services.impl;
 
+import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_ENTERPRISE_PAID;
+import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_ENTERPRISE_TRIAL;
+import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_FREE;
+import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_TEAM_PAID;
+import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_TEAM_TRIAL;
 import static io.harness.subscription.entities.SubscriptionDetail.INCOMPLETE;
 
 import io.harness.ModuleType;
@@ -14,7 +19,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.licensing.Edition;
-import io.harness.licensing.LicenseType;
+import io.harness.licensing.checks.ModuleLicenseState;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.licensing.helpers.ModuleLicenseHelper;
@@ -111,23 +116,21 @@ public class SubscriptionServiceImpl implements SubscriptionService {
           String.format("Cannot provide recommendation. No active license detected for module %s.", ModuleType.CF));
     }
 
-    ModuleLicense latestLicense = ModuleLicenseHelper.getLatestLicense(currentLicenses);
-
-    CFModuleLicense cfLicense = (CFModuleLicense) latestLicense;
+    CFModuleLicense cfLicense = (CFModuleLicense) ModuleLicenseHelper.getLatestLicense(currentLicenses);
+    ModuleLicenseState latestLicenseState = ModuleLicenseHelper.getCurrentModuleState(currentLicenses);
 
     EnumMap<UsageKey, Long> recommendedValues = new EnumMap<>(UsageKey.class);
 
-    LicenseType licenseType = latestLicense.getLicenseType();
-    Edition edition = latestLicense.getEdition();
-    if (licenseType.equals(LicenseType.TRIAL)) {
+    if (ACTIVE_ENTERPRISE_PAID.equals(latestLicenseState) || ACTIVE_TEAM_PAID.equals(latestLicenseState)
+        || ACTIVE_FREE.equals(latestLicenseState)) {
       double recommendedUsers = Math.max(cfLicense.getNumberOfUsers(), numberOfUsers) * RECOMMENDATION_MULTIPLIER;
       double recommendedMAUs = Math.max(cfLicense.getNumberOfClientMAUs(), numberOfMAUs) * RECOMMENDATION_MULTIPLIER;
 
       recommendedValues.put(UsageKey.NUMBER_OF_USERS, (long) recommendedUsers);
       recommendedValues.put(UsageKey.NUMBER_OF_MAUS, (long) recommendedMAUs);
-    } else if (licenseType.equals(LicenseType.PAID) || edition.equals(Edition.FREE)) {
-      double recommendedUsers = Math.max(cfLicense.getNumberOfUsers(), numberOfUsers);
-      double recommendedMAUs = Math.max(cfLicense.getNumberOfClientMAUs(), numberOfMAUs);
+    } else if (ACTIVE_ENTERPRISE_TRIAL.equals(latestLicenseState) || ACTIVE_TEAM_TRIAL.equals(latestLicenseState)) {
+      double recommendedUsers = numberOfUsers * RECOMMENDATION_MULTIPLIER;
+      double recommendedMAUs = numberOfMAUs * RECOMMENDATION_MULTIPLIER;
 
       recommendedValues.put(UsageKey.NUMBER_OF_USERS, (long) recommendedUsers);
       recommendedValues.put(UsageKey.NUMBER_OF_MAUS, (long) recommendedMAUs);
