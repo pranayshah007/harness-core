@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.aws.lambda.AwsLambdaHelper;
 import io.harness.cdng.aws.lambda.AwsLambdaStepPassThroughData;
+import io.harness.cdng.aws.lambda.beans.AwsLambdaPrepareRollbackOutcome;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.googlefunctions.GoogleFunctionsHelper;
@@ -114,19 +115,28 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
             executionSweepingOutputService.resolveOptional(ambiance,
                     RefObjectUtils.getSweepingOutputRefObject(
                             stepFnq + "." + OutcomeExpressionConstants.AWS_LAMBDA_PREPARE_ROLLBACK_OUTCOME));
-//
-//    GoogleFunctionPrepareRollbackOutcome googleFunctionPrepareRollbackOutcome =
-//            (GoogleFunctionPrepareRollbackOutcome) googleFunctionPrepareRollbackDataOptional.getOutput();
+
+    if (!awsLambdaPrepareRollbackDataOptional.isFound()) {
+      return skipTaskRequest(AWS_LAMBDA_DEPLOYMENT_STEP_MISSING);
+    }
+
+    AwsLambdaPrepareRollbackOutcome awsLambdaPrepareRollbackOutcome =
+            (AwsLambdaPrepareRollbackOutcome) awsLambdaPrepareRollbackDataOptional.getOutput();
 
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
             ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
     AwsLambdaRollbackRequest awsLambdaRollbackRequest =
             AwsLambdaRollbackRequest.builder()
+                    .functionName(awsLambdaPrepareRollbackOutcome.getFunctionName())
+                    .qualifier(awsLambdaPrepareRollbackOutcome.getQualifier())
+                    .firstDeployment(awsLambdaPrepareRollbackOutcome.isFirstDeployment())
                     .awsLambdaCommandTypeNG(AwsLambdaCommandTypeNG.AWS_LAMBDA_ROLLBACK)
                     .commandName(AWS_LAMBDA_ROLLBACK_COMMAND_NAME)
                     .commandUnitsProgress(CommandUnitsProgress.builder().build())
                     .awsLambdaInfraConfig(awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance))
+                    .awsLambdaArtifactConfig(awsLambdaPrepareRollbackOutcome.getAwsLambdaArtifactConfig())
+                    .awsLambdaDeployManifestContent(awsLambdaPrepareRollbackOutcome.getAwsLambdaDeployManifestContent())
                     .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
                     .build();
 

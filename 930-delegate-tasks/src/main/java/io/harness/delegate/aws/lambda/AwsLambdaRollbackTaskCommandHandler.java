@@ -63,7 +63,6 @@ public class AwsLambdaRollbackTaskCommandHandler extends AwsLambdaCommandTaskHan
       executionLogCallback.saveExecutionLog(format("Starting Rollback..%n%n"), LogLevel.INFO);
 
       if(awsLambdaRollbackRequest.isFirstDeployment()) {
-
         awsLambdaCommandTaskHelper.deleteFunction(awsLambdaRollbackRequest.getAwsLambdaInfraConfig(), awsLambdaRollbackRequest.getAwsLambdaArtifactConfig(),
                 awsLambdaRollbackRequest.getAwsLambdaDeployManifestContent(), executionLogCallback);
         executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);

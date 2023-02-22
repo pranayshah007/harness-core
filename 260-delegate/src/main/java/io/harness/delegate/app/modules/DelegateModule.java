@@ -2158,7 +2158,6 @@ public class DelegateModule extends AbstractModule {
 
     // AWS Lambda
     mapBinder.addBinding(TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG).toInstance(AwsLambdaDeployTask.class);
-    mapBinder.addBinding(TaskType.AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG).toInstance(AwsLambdaCommandTask.class);
   }
 
   private void registerSecretManagementBindings() {
