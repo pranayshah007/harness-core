@@ -85,10 +85,12 @@ public class BudgetGroupUtils {
   public static final String COST_TYPE_LAST_PERIOD = "Last period cost";
   public static final String NO_CHILD_ENTITY_PRESENT_EXCEPTION =
       "Error in performing operation. Budget group must have atleast one child budget/budget group";
+  public static final String INVALID_PARENT_EXCEPTION = "Error in creating budget group. Invalid parent Id specified";
 
   public static void validateBudgetGroup(BudgetGroup budgetGroup, List<BudgetGroup> existingBudgetGroups) {
     populateDefaultBudgetGroupBreakdown(budgetGroup);
     validateBudgetGroupName(budgetGroup, existingBudgetGroups);
+    validateBudgetGroupParent(budgetGroup, existingBudgetGroups);
   }
 
   public static void validateChildBudgets(List<Budget> childBudgets) {
@@ -577,10 +579,19 @@ public class BudgetGroupUtils {
   }
 
   private static void validateBudgetGroupName(BudgetGroup budgetGroup, List<BudgetGroup> existingBudgetGroups) {
-    log.info("Existing budget groups: {}", existingBudgetGroups);
-    log.info("Budget groups: {}", budgetGroup.getUuid());
     if (!existingBudgetGroups.isEmpty() && (!existingBudgetGroups.get(0).getUuid().equals(budgetGroup.getUuid()))) {
       throw new InvalidRequestException(BUDGET_GROUP_NAME_EXISTS_EXCEPTION);
+    }
+  }
+
+  private static void validateBudgetGroupParent(BudgetGroup budgetGroup, List<BudgetGroup> existingBudgetGroups) {
+    if (!existingBudgetGroups.isEmpty()) {
+      List<String> validParentIds =
+          existingBudgetGroups.stream().map(BudgetGroup::getParentBudgetGroupId).collect(Collectors.toList());
+      if (budgetGroup.getParentBudgetGroupId() != null
+          && !validParentIds.contains(budgetGroup.getParentBudgetGroupId())) {
+        throw new InvalidRequestException(INVALID_PARENT_EXCEPTION);
+      }
     }
   }
 
