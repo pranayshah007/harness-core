@@ -33,7 +33,6 @@ import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logging.LogCallback;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.K8sDeploymentRelease;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
@@ -92,7 +91,7 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
 
     doReturn(KubernetesConfig.builder().accountId(ACCOUNT_ID).build())
         .when(containerBaseHelper)
-        .createKubernetesConfig(any(DirectK8sInfraDelegateConfig.class), any(LogCallback.class));
+        .createKubernetesConfig(any(DirectK8sInfraDelegateConfig.class), any());
   }
 
   @Test
