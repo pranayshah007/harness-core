@@ -6,6 +6,7 @@
  */
 package io.harness;
 
+import static io.harness.PipelineSettingsConstants.CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS;
 import static io.harness.licensing.Edition.ENTERPRISE;
 import static io.harness.licensing.Edition.FREE;
 import static io.harness.licensing.Edition.TEAM;
@@ -79,8 +80,7 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
       // Sending only accountId here because this setting only exists at account level
       maxConcurrentExecutions = Long.parseLong(
           NGRestUtils
-              .getResponse(ngSettingsClient.getSetting(
-                  PipelineSettingsConstants.CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS, accountId, null, null))
+              .getResponse(ngSettingsClient.getSetting(CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS, accountId, null, null))
               .getValue());
 
       switch (edition) {
@@ -105,8 +105,8 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     } catch (ExecutionException ex) {
       return PlanExecutionSettingResponse.builder().shouldQueue(false).useNewFlow(false).build();
     } catch (Exception ex) {
-      throw new PipelineSettingsException(
-          "Error while executing the pipeline: Failed to fetch max concurrent executions limit for the given account plan");
+      throw new PipelineSettingsException("Error while executing the pipeline: Failed to fetch the value of "
+          + CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS + " setting");
     }
     return PlanExecutionSettingResponse.builder().shouldQueue(false).useNewFlow(false).build();
   }
