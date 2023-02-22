@@ -15,6 +15,8 @@ import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
 import io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo;
+import io.harness.cdng.aws.lambda.AwsLambdaStepExceptionPassThroughData;
+import io.harness.cdng.aws.lambda.AwsLambdaStepPassThroughData;
 import io.harness.cdng.azure.webapp.ApplicationSettingsParameters;
 import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
@@ -274,5 +276,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(AwsSamInfrastructure.class, 12658);
     kryo.register(AwsLambdaInfrastructure.class, 12659);
     kryo.register(TerraformCloudRollbackStepInfo.class, 12660);
+    kryo.register(AwsLambdaStepPassThroughData.class, 12661);
+    kryo.register(AwsLambdaStepExceptionPassThroughData.class, 12662);
   }
 }

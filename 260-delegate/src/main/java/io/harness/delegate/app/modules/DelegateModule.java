@@ -38,12 +38,12 @@ import io.harness.aws.AWSCloudformationClient;
 import io.harness.aws.AWSCloudformationClientImpl;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
-import io.harness.aws.lambda.AwsLambdaClient;
-import io.harness.aws.lambda.AwsLambdaClientImpl;
 import io.harness.aws.v2.ecs.EcsV2Client;
 import io.harness.aws.v2.ecs.EcsV2ClientImpl;
 import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.aws.v2.ecs.ElbV2ClientImpl;
+import io.harness.aws.v2.lambda.AwsLambdaClient;
+import io.harness.aws.v2.lambda.AwsLambdaClientImpl;
 import io.harness.awscli.AwsCliClient;
 import io.harness.awscli.AwsCliClientImpl;
 import io.harness.azure.client.AzureAuthorizationClient;
@@ -99,6 +99,7 @@ import io.harness.datacollection.impl.DataCollectionServiceImpl;
 import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.app.DelegateApplication;
+import io.harness.delegate.aws.lambda.AwsLambdaCommandTaskHandler;
 import io.harness.delegate.aws.lambda.AwsLambdaDeployTaskCommandHandler;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -238,6 +239,7 @@ import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackTaskNG;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
+import io.harness.delegate.task.aws.lambda.AwsLambdaDeployTask;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.appservice.webapp.AzureWebAppTaskNG;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppFetchPreDeploymentDataRequestHandler;
@@ -2093,9 +2095,9 @@ public class DelegateModule extends AbstractModule {
         .to(GoogleFunctionRollbackCommandTaskHandler.class);
 
     // AWS Lambda NG
-    MapBinder<String, AwsLambdaDeployTaskCommandHandler> awsLambdaDeployTaskCommandHandlerMapBinder =
-        MapBinder.newMapBinder(binder(), String.class, AwsLambdaDeployTaskCommandHandler.class);
-    awsLambdaDeployTaskCommandHandlerMapBinder.addBinding(AwsLambdaCommandTypeNG.AWS_LAMBDA_DEPLOY.name())
+    MapBinder<String, AwsLambdaCommandTaskHandler> awsCommandTaskHandler =
+        MapBinder.newMapBinder(binder(), String.class, AwsLambdaCommandTaskHandler.class);
+    awsCommandTaskHandler.addBinding(AwsLambdaCommandTypeNG.AWS_LAMBDA_DEPLOY.name())
         .to(AwsLambdaDeployTaskCommandHandler.class);
 
     // AWS ASG NG
@@ -2166,6 +2168,9 @@ public class DelegateModule extends AbstractModule {
         .toInstance(GoogleFunctionPrepareRollbackTask.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_ROLLBACK_TASK).toInstance(GoogleFunctionRollbackTask.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK).toInstance(GoogleFunctionTrafficShiftTask.class);
+
+    // AWS Lambda
+    mapBinder.addBinding(TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG).toInstance(AwsLambdaDeployTask.class);
   }
 
   private void registerSecretManagementBindings() {

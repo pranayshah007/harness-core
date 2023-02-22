@@ -7,8 +7,20 @@
 
 package io.harness.delegate.task.aws.lambda;
 
-public enum AwsLambdaCommandTypeNG {
-  AWS_LAMBDA_DEPLOY,
-  AWS_LAMBDA_PREPARE_ROLLBACK,
-  AWS_LAMBDA_ROLLBACK;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+
+import java.util.Map;
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
+@OwnedBy(HarnessTeam.CDP)
+public class AwsLambda {
+  String functionName;
+  String runtime;
+  String functionArn;
+  String version;
+  Map<String, String> tags;
 }

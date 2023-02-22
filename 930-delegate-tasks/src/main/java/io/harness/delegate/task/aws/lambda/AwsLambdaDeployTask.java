@@ -29,14 +29,15 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
+
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
-public class AwsLambdaCommandTask extends AbstractDelegateRunnableTask {
+public class AwsLambdaDeployTask extends AbstractDelegateRunnableTask {
   @Inject private Map<String, AwsLambdaCommandTaskHandler> commandTaskTypeToTaskHandlerMap;
 
   @Inject private AwsLambdaInfraConfigHelper awsLambdaInfraConfigHelper;
 
-  public AwsLambdaCommandTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
+  public AwsLambdaDeployTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
 
@@ -72,10 +73,5 @@ public class AwsLambdaCommandTask extends AbstractDelegateRunnableTask {
       throw new TaskNGDataException(
           UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
     }
-  }
-
-  @Override
-  public boolean isSupportingErrorFramework() {
-    return true;
   }
 }

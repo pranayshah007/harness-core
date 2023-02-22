@@ -14,6 +14,7 @@ java_library(
         "//:lombok",
         "//960-api-services/src/main/java/io/harness/aws/beans:module",
         "//960-api-services/src/main/java/io/harness/aws/util:module",
+        "//960-api-services/src/main/java/io/harness/aws/v2:module",
         "//960-api-services/src/main/java/software/wings/service/impl:module",
         "//970-api-services-beans:module",
         "//980-commons/src/main/java/io/harness/concurrent:module",
@@ -32,6 +33,7 @@ java_library(
         "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:software_amazon_awssdk_aws_core",
         "@maven//:software_amazon_awssdk_lambda",
+        "@maven//:software_amazon_awssdk_regions",
         "@maven//:software_amazon_awssdk_sdk_core",
     ],
 )
