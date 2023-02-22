@@ -42,6 +42,15 @@ public class PlanCreationBlobResponseUtils {
     mergeContext(builder, other.getContextMap());
     mergeLayoutNodeInfo(builder, other);
     addYamlUpdates(builder, other);
+    mergePreservedNodesInRollbackMode(builder, other);
+  }
+
+  public void mergePreservedNodesInRollbackMode(
+      PlanCreationBlobResponse.Builder builder, PlanCreationBlobResponse other) {
+    if (EmptyPredicate.isEmpty(other.getPreservedNodesInRollbackModeList())) {
+      return;
+    }
+    builder.addAllPreservedNodesInRollbackMode(other.getPreservedNodesInRollbackModeList());
   }
 
   public PlanCreationBlobResponse addYamlUpdates(

@@ -17,6 +17,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.RollbackModeBehaviour;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -26,6 +27,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -66,10 +68,11 @@ public class ExecutionRollbackPMSPlanCreator {
       return PlanCreationResponse.builder().build();
     }
 
+    String executionRollbackNodeUuid =
+        executionStepsField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_EXECUTION_NODE_ID_SUFFIX;
     PlanNode deploymentStageRollbackNode =
         PlanNode.builder()
-            .uuid(executionStepsField.getNode().getUuid()
-                + NGCommonUtilPlanCreationConstants.ROLLBACK_EXECUTION_NODE_ID_SUFFIX)
+            .uuid(executionRollbackNodeUuid)
             .name(NGCommonUtilPlanCreationConstants.EXECUTION_NODE_NAME + " "
                 + NGCommonUtilPlanCreationConstants.ROLLBACK_NODE_NAME)
             .identifier(YAMLFieldNameConstants.ROLLBACK_STEPS)
@@ -84,7 +87,9 @@ public class ExecutionRollbackPMSPlanCreator {
 
     return PlanCreationResponse.builder()
         .node(deploymentStageRollbackNode.getUuid(), deploymentStageRollbackNode)
-        .dependencies(DependenciesUtils.toDependenciesProto(dependencies))
+        .dependencies(
+            DependenciesUtils.toDependenciesProtoWithRollbackMode(dependencies, RollbackModeBehaviour.PRESERVE))
+        .preservedNodesInRollbackMode(Collections.singletonList(executionRollbackNodeUuid))
         .build();
   }
 }

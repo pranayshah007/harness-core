@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.RollbackModeBehaviour;
 import io.harness.pms.plan.creation.PlanCreationBlobResponseUtils;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
@@ -83,6 +84,7 @@ public class PlanCreatorServiceHelper {
             currentYaml, finalResponse.getYamlUpdates().getFqnToYamlMap());
         finalResponse.updateYamlInDependencies(updatedYaml);
       }
+      finalResponse.mergePreservedNodesInRollbackMode(response.getPreservedNodesInRollbackMode());
     }
     return dependencies.toBuilder()
         .setYaml(updatedYaml)
@@ -115,5 +117,9 @@ public class PlanCreatorServiceHelper {
 
   protected boolean isEmptyDependencies(Dependencies dependencies) {
     return dependencies == null || EmptyPredicate.isEmpty(dependencies.getDependenciesMap());
+  }
+
+  public boolean isBehaviourToPropagate(RollbackModeBehaviour behaviour) {
+    return behaviour == RollbackModeBehaviour.PRESERVE || behaviour == RollbackModeBehaviour.REPLACE;
   }
 }

@@ -18,6 +18,7 @@ import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.sdk.core.plan.PlanNode;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,8 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
   String startingNodeId;
   @Singular List<String> errorMessages;
 
+  List<String> preservedNodesInRollbackMode;
+
   public Dependencies getDependencies() {
     return dependencies;
   }
@@ -53,6 +56,20 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     mergeContext(other.getContextMap());
     mergeLayoutNodeInfo(other.getGraphLayoutResponse());
     addYamlUpdates(other.getYamlUpdates());
+    mergePreservedNodesInRollbackMode(other.getPreservedNodesInRollbackMode());
+  }
+
+  public void mergePreservedNodesInRollbackMode(List<String> newPreservedNodes) {
+    if (EmptyPredicate.isEmpty(newPreservedNodes)) {
+      return;
+    }
+    if (EmptyPredicate.isEmpty(preservedNodesInRollbackMode)) {
+      preservedNodesInRollbackMode = newPreservedNodes;
+    } else {
+      List<String> res = new ArrayList<>(preservedNodesInRollbackMode);
+      res.addAll(newPreservedNodes);
+      preservedNodesInRollbackMode = res;
+    }
   }
 
   private void mergeContext(Map<String, PlanCreationContextValue> contextMap) {

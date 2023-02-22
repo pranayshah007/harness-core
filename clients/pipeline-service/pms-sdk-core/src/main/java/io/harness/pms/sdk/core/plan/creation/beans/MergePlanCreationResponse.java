@@ -38,6 +38,8 @@ public class MergePlanCreationResponse implements AsyncCreatorResponse {
   String startingNodeId;
   @Singular List<String> errorMessages;
 
+  List<String> preservedNodesInRollbackMode;
+
   public void merge(PlanCreationResponse response) {
     // adding PlanNode to map of nodes
     addNode(response.getPlanNode());
@@ -48,6 +50,18 @@ public class MergePlanCreationResponse implements AsyncCreatorResponse {
     mergeContext(response.getContextMap());
     mergeLayoutNodeInfo(response.getGraphLayoutResponse());
     addYamlUpdates(response.getYamlUpdates());
+    mergePreservedNodesInRollbackMode(response.getPreservedNodesInRollbackMode());
+  }
+
+  public void mergePreservedNodesInRollbackMode(List<String> newPreservedNodes) {
+    if (EmptyPredicate.isEmpty(newPreservedNodes)) {
+      return;
+    }
+    if (EmptyPredicate.isEmpty(preservedNodesInRollbackMode)) {
+      preservedNodesInRollbackMode = newPreservedNodes;
+    } else {
+      preservedNodesInRollbackMode.addAll(newPreservedNodes);
+    }
   }
 
   public void mergeWithoutDependencies(PlanCreationResponse other) {

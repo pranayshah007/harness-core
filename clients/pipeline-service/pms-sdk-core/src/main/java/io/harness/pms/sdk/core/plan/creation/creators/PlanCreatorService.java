@@ -32,6 +32,7 @@ import io.harness.pms.contracts.plan.FilterCreationResponse;
 import io.harness.pms.contracts.plan.PlanCreationBlobRequest;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.PlanCreationServiceGrpc.PlanCreationServiceImplBase;
+import io.harness.pms.contracts.plan.RollbackModeBehaviour;
 import io.harness.pms.contracts.plan.VariablesCreationBlobRequest;
 import io.harness.pms.contracts.plan.VariablesCreationBlobResponse;
 import io.harness.pms.contracts.plan.VariablesCreationResponse;
@@ -54,11 +55,14 @@ import com.google.inject.name.Named;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -266,6 +270,29 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
               obj);
           if (!EmptyPredicate.isEmpty(executionInputTemplate)) {
             planForField.setExecutionInputTemplateInPlanNode(executionInputTemplate);
+          }
+          if (dependency != null
+              && PlanCreatorServiceHelper.isBehaviourToPropagate(dependency.getRollbackModeBehaviour())) {
+            List<String> newNodes = new ArrayList<>(planForField.getNodes().keySet());
+            newNodes.add(planForField.getPlanNode().getUuid());
+            planForField.mergePreservedNodesInRollbackMode(newNodes);
+            Set<String> newDependenciesUuids = planForField.getDependencies().getDependenciesMap().keySet();
+            Map<String, Dependency> dependencyMetadataMap =
+                new HashMap<>(planForField.getDependencies().getDependencyMetadataMap());
+            newDependenciesUuids.forEach(uuid -> {
+              if (dependencyMetadataMap.containsKey(uuid)) {
+                dependencyMetadataMap.put(uuid,
+                    dependencyMetadataMap.get(uuid)
+                        .toBuilder()
+                        .setRollbackModeBehaviour(dependency.getRollbackModeBehaviour())
+                        .build());
+              } else {
+                dependencyMetadataMap.put(uuid,
+                    Dependency.newBuilder().setRollbackModeBehaviour(dependency.getRollbackModeBehaviour()).build());
+              }
+            });
+            planForField.setDependencies(
+                planForField.getDependencies().toBuilder().putAllDependencyMetadata(dependencyMetadataMap).build());
           }
           PlanCreatorServiceHelper.decorateNodesWithStageFqn(field, planForField, ctx.getYamlVersion());
           return planForField;
