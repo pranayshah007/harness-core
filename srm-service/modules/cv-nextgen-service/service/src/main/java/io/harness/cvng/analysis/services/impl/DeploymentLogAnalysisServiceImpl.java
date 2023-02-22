@@ -65,6 +65,7 @@ import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import dev.morphia.query.Sort;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -767,7 +768,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
             LogAnalysisRadarChartListDTO.builder()
                 .clusterId(UUID.nameUUIDFromBytes(
                                    (deploymentLogAnalysis.getVerificationTaskId() + ":" + testClusterSummary.getLabel())
-                                       .getBytes(Charsets.UTF_8))
+                                       .getBytes(StandardCharsets.UTF_8))
                                .toString())
                 .message(labelToClusterMap.get(testClusterSummary.getLabel()).getText())
                 .clusterType(testClusterSummary.getClusterType())
@@ -777,6 +778,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
                 .totalTestFrequencyData(totalTestFrequencyData)
                 .testHostFrequencyData(testHostFrequencyData)
                 .count(getCountFromTotalTestFrequencyData(totalTestFrequencyData))
+                .feedback(testClusterSummary.getFeedback())
                 .averageControlFrequencyData(averageControlFrequencyData);
         if (testClusterSummary.getClusterType().equals(ClusterType.KNOWN_EVENT)
             || testClusterSummary.getClusterType().equals(ClusterType.UNEXPECTED_FREQUENCY)) {

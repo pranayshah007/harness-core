@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.services.impl;
 
+import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterSummary;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ResultSummary;
 import io.harness.cvng.analysis.entities.DeploymentLogAnalysis;
@@ -27,6 +28,7 @@ import io.harness.security.dto.UserPrincipal;
 
 import com.google.inject.Inject;
 import dev.morphia.query.UpdateOperations;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -50,8 +52,14 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
       List<ClusterSummary> clusterSummaryList = resultSummary.getTestClusterSummaries();
       List<ClusterSummary> updatedClusterSummaryList = new ArrayList<>();
       for (ClusterSummary clusterSummary : clusterSummaryList) {
+        String expectedClusterUUID =
+            UUID.nameUUIDFromBytes((deploymentLogAnalysis.getVerificationTaskId() + ":" + clusterSummary.getLabel())
+                                       .getBytes(StandardCharsets.UTF_8))
+                .toString();
         ClusterSummary.ClusterSummaryBuilder clusterSummaryBuilder = clusterSummary.toBuilder();
-        clusterSummaryBuilder.feedback(logFeedback);
+        if (expectedClusterUUID.equals(logFeedback.getClusterId())) {
+          clusterSummaryBuilder.feedback(logFeedback);
+        }
         updatedClusterSummaryList.add(clusterSummaryBuilder.build());
       }
       resultSummaryBuilder.testClusterSummaries(updatedClusterSummaryList);
@@ -60,13 +68,40 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
     }
   }
 
+  private LogFeedback updateSampleMessage(ProjectPathParams projectParams, LogFeedback logFeedback) {
+    LogFeedback.LogFeedbackBuilder logFeedbackBuilder = logFeedback.toBuilder();
+    DeploymentLogAnalysisFilter deploymentLogAnalysisFilter =
+        DeploymentLogAnalysisFilter.builder().clusterId(logFeedback.getClusterId()).build();
+    List<DeploymentLogAnalysis> deploymentLogAnalyses = deploymentLogAnalysisService.getLatestDeploymentLogAnalysis(
+        projectParams.getAccountIdentifier(), logFeedback.getVerificationJobInstanceId(), deploymentLogAnalysisFilter);
+    for (DeploymentLogAnalysis deploymentLogAnalysis : deploymentLogAnalyses) {
+      for (DeploymentLogAnalysisDTO.Cluster cluster : deploymentLogAnalysis.getClusters()) {
+        String expectedClusterUUID =
+            UUID.nameUUIDFromBytes((deploymentLogAnalysis.getVerificationTaskId() + ":" + cluster.getLabel())
+                                       .getBytes(StandardCharsets.UTF_8))
+                .toString();
+        if (expectedClusterUUID.equals(logFeedback.getClusterId())) {
+          logFeedbackBuilder.sampleMessage(cluster.getText());
+          return logFeedbackBuilder.build();
+        }
+      }
+    }
+    return logFeedbackBuilder.build();
+  }
+
   @Override
   public LogFeedback create(ProjectPathParams projectParams, LogFeedback logFeedback) {
     UserPrincipal userPrincipal = (UserPrincipal) SecurityContextBuilder.getPrincipal();
+    logFeedback = updateSampleMessage(projectParams, logFeedback);
+    logFeedback = logFeedback.toBuilder()
+                      .feedbackId(UUID.randomUUID().toString())
+                      .createdAt(System.currentTimeMillis())
+                      .createdBy(userPrincipal.getUsername())
+                      .build();
     LogFeedbackEntity.LogFeedbackEntityBuilder logFeedbackEntityBuilder =
         LogFeedbackEntity.builder()
             .feedbackScore(logFeedback.getFeedbackScore().toString())
-            .feedbackId(UUID.randomUUID().toString())
+            .feedbackId(logFeedback.getFeedbackId())
             .sampleMessage(logFeedback.getSampleMessage())
             .description(logFeedback.getDescription())
             .serviceIdentifier(logFeedback.getServiceIdentifier())
@@ -74,8 +109,8 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
             .accountIdentifier(projectParams.getAccountIdentifier())
             .orgIdentifier(projectParams.getOrgIdentifier())
             .projectIdentifier(projectParams.getProjectIdentifier())
-            .createdByUser(userPrincipal.getUsername())
-            .createdAt(System.currentTimeMillis());
+            .createdByUser(logFeedback.getCreatedBy())
+            .createdAt(logFeedback.getCreatedAt());
     hPersistence.save(logFeedbackEntityBuilder.build());
     createHistory(projectParams, userPrincipal.getEmail(), logFeedbackEntityBuilder.build());
     updateDeploymentLogAnalysis(projectParams, logFeedback);

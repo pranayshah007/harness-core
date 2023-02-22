@@ -79,5 +79,6 @@ public interface CVNextGenConstants {
   String LOG_FEEDBACK_RESOURCE_PATH = PROJECT_PATH + "/log-feedback";
   String LOG_FEEDBACK_ID = "logFeedbackId";
   String LOG_FEEDBACK_ID_RESOURCE_PATH = LOG_FEEDBACK_RESOURCE_PATH + "/{" + LOG_FEEDBACK_ID + "}";
-  String LOG_FEEDBACK_HISTORY_RESOURCE_PATH = LOG_FEEDBACK_ID_RESOURCE_PATH + "/history";
+  String LOG_FEEDBACK_HISTORY_RESOURCE_PATH = "/{" + LOG_FEEDBACK_ID + "}"
+      + "/history";
 }
