@@ -20,6 +20,7 @@ import io.harness.engine.pms.data.OutcomeException;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.engine.pms.data.SweepingOutputException;
+import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.LateBindingMap;
@@ -132,7 +133,8 @@ public class NodeExecutionMap extends LateBindingMap {
     if (!key.equals(OrchestrationConstants.EXECUTION_URL)) {
       return Optional.empty();
     }
-    if (nodeExecution == null) {
+    // if Pipeline Node then skip as it would be resolved via PipelineExecutionFunctor
+    if (nodeExecution == null || OrchestrationUtils.isPipelineNode(nodeExecution)) {
       return Optional.empty();
     }
 
