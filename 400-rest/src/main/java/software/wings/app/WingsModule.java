@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_GROUPS;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_TOKEN;
+import static io.harness.audit.ResourceTypeConstants.NG_ACCOUNT_DETAILS;
 import static io.harness.audit.ResourceTypeConstants.NG_LOGIN_SETTINGS;
 import static io.harness.audit.ResourceTypeConstants.USER;
 import static io.harness.authorization.AuthorizationServiceHeader.DELEGATE_SERVICE;
@@ -285,6 +286,7 @@ import software.wings.beans.Pipeline;
 import software.wings.beans.SftpConfig;
 import software.wings.beans.SmbConfig;
 import software.wings.beans.Workflow;
+import software.wings.beans.accountdetails.outbox.AccountDetailsOutboxEventHandler;
 import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.config.NexusConfig;
 import software.wings.beans.loginSettings.LoginSettingsService;
@@ -1565,6 +1567,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     outboxEventHandlerMapBinder.addBinding(DELEGATE_GROUPS).to(DelegateOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(USER).to(UserEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(NG_LOGIN_SETTINGS).to(LoginSettingsOutboxEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(NG_ACCOUNT_DETAILS).to(AccountDetailsOutboxEventHandler.class);
   }
 
   private void bindFeatures() {

@@ -263,8 +263,6 @@ public interface AccountService {
 
   Void setDefaultExperience(String accountId, DefaultExperience defaultExperience);
 
-  Account updateCrossGenerationAccessEnabled(String accountId, boolean isCrossGenerationAccessEnabled);
-
   AuthenticationInfo getAuthenticationInfo(String accountId);
 
   boolean isAccountActivelyUsed(String accountId);
@@ -280,4 +278,8 @@ public interface AccountService {
   boolean updateTrustLevel(String accountId, Integer trustLevel);
 
   Boolean updateIsSmpAccount(String customerAccountId, boolean isSmpAccount);
+
+  Account updateDefaultExperience(String accountIdentifier, DefaultExperience defaultExperience);
+
+  Account updateCrossGenerationAccessEnabled(String accountIdentifier, boolean isCrossGenerationAccessEnabled);
 }
