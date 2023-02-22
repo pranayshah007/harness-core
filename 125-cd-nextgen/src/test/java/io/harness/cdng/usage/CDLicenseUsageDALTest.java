@@ -12,7 +12,9 @@ import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.LICENS
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.SERVICE_INSTANCES_QUERY_PROPERTY;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -24,14 +26,19 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.usage.pojos.ActiveServiceBase;
 import io.harness.cdng.usage.pojos.ActiveServiceFetchData;
+import io.harness.cdng.usage.pojos.ServiceInstancesDateUsageFetchData;
+import io.harness.exception.InvalidArgumentsException;
+import io.harness.licensing.usage.params.filter.ServiceInstanceReportType;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.timescaledb.TimeScaleDBService;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -378,5 +385,49 @@ public class CDLicenseUsageDALTest extends CategoryTest {
         + "ORDER BY lastDeployed DESC NULLS LAST\n"
         + "LIMIT ?\n"
         + "OFFSET (? * ?)");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.IVAN)
+  @Category(UnitTests.class)
+  public void testFetchServiceInstancesDateUsage() throws SQLException {
+    Connection dbConnection = mock(Connection.class);
+    CallableStatement callableStatement = mock(CallableStatement.class);
+    ResultSet resultSet = mock(ResultSet.class);
+    when(timeScaleDBService.getDBConnection()).thenReturn(dbConnection);
+    when(dbConnection.prepareCall(any())).thenReturn(callableStatement);
+    doReturn(true).when(callableStatement).execute();
+    when(callableStatement.getResultSet()).thenReturn(resultSet);
+    when(resultSet.next()).thenReturn(false);
+
+    cdLicenseUsageDAL.fetchServiceInstancesDateUsage(ServiceInstancesDateUsageFetchData.builder()
+                                                         .reportType(ServiceInstanceReportType.DAILY)
+                                                         .accountIdentifier(accountIdentifier)
+                                                         .fromDate(LocalDate.of(2023, 1, 1))
+                                                         .toDate(LocalDate.of(2023, 2, 1))
+                                                         .build());
+
+    ArgumentCaptor<String> queryArgumentCaptor = ArgumentCaptor.forClass(String.class);
+    verify(dbConnection, times(1)).prepareCall(queryArgumentCaptor.capture());
+
+    String sqlQuery = queryArgumentCaptor.getValue();
+    assertThat(sqlQuery).isNotBlank();
+    assertThat(sqlQuery).isEqualTo("{ call get_service_instances_by_date(?,?,?,?,?)}");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.IVAN)
+  @Category(UnitTests.class)
+  public void testFetchServiceInstancesDateUsageWithInvalidAccount() {
+    assertThatThrownBy(
+        ()
+            -> cdLicenseUsageDAL.fetchServiceInstancesDateUsage(ServiceInstancesDateUsageFetchData.builder()
+                                                                    .reportType(ServiceInstanceReportType.DAILY)
+                                                                    .accountIdentifier(null)
+                                                                    .fromDate(LocalDate.of(2023, 1, 1))
+                                                                    .toDate(LocalDate.of(2023, 2, 1))
+                                                                    .build()))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("AccountIdentifier cannot be null or empty for fetching active services");
   }
 }
