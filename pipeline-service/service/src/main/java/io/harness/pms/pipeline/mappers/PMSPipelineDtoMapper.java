@@ -349,7 +349,7 @@ public class PMSPipelineDtoMapper {
         .collect(Collectors.toList());
   }
 
-  RecentExecutionInfoDTO prepareRecentExecutionInfo(RecentExecutionInfo recentExecutionInfo) {
+  public RecentExecutionInfoDTO prepareRecentExecutionInfo(RecentExecutionInfo recentExecutionInfo) {
     ExecutionTriggerInfo triggerInfo = recentExecutionInfo.getExecutionTriggerInfo();
     ExecutorInfoDTO executorInfo = ExecutorInfoDTO.builder()
                                        .triggerType(triggerInfo.getTriggerType())
@@ -362,6 +362,7 @@ public class PMSPipelineDtoMapper {
         .startTs(recentExecutionInfo.getStartTs())
         .endTs(recentExecutionInfo.getEndTs())
         .executorInfo(executorInfo)
+        .parentStageInfo(recentExecutionInfo.getParentStageInfo())
         .runSequence(recentExecutionInfo.getRunSequence())
         .build();
   }

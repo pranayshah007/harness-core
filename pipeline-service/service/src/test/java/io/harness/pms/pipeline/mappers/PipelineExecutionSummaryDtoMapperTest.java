@@ -10,16 +10,19 @@ package io.harness.pms.pipeline.mappers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.SHALINI;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.harness.PipelineServiceTestBase;
+import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.EdgeLayoutListDTO;
@@ -34,7 +37,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @OwnedBy(PIPELINE)
-public class PipelineExecutionSummaryDtoMapperTest extends PipelineServiceTestBase {
+public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
   String accountId = "acc";
   String orgId = "org";
   String projId = "proj";
@@ -329,5 +332,45 @@ public class PipelineExecutionSummaryDtoMapperTest extends PipelineServiceTestBa
     int stagesCount =
         PipelineExecutionSummaryDtoMapper.getStagesCount(layoutNodeDTOMap, startingNodeId, ExecutionStatus.ABORTED);
     assertThat(stagesCount).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testToDtoForParentStageInfo() {
+    PipelineExecutionSummaryEntity executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                .accountId(accountId)
+                                                                .orgIdentifier(orgId)
+                                                                .projectIdentifier(projId)
+                                                                .pipelineIdentifier(pipelineId)
+                                                                .runSequence(1)
+                                                                .planExecutionId(planId)
+                                                                .build();
+    PipelineExecutionSummaryDTO executionSummaryDTO =
+        PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
+    assertThat(executionSummaryDTO).isNotNull();
+    assertThat(executionSummaryDTO.getParentStageInfo()).isNull();
+    PipelineStageInfo pipelineStageInfo = PipelineStageInfo.newBuilder()
+                                              .setHasParentPipeline(true)
+                                              .setExecutionId("executionId")
+                                              .setIdentifier("id")
+                                              .setStageNodeId("stageNodeId")
+                                              .setOrgId("orgId")
+                                              .setProjectId("projectId")
+                                              .setRunSequence(4556)
+                                              .build();
+    PipelineExecutionSummaryEntity executionSummaryWithParentStage = PipelineExecutionSummaryEntity.builder()
+                                                                         .accountId(accountId)
+                                                                         .orgIdentifier(orgId)
+                                                                         .projectIdentifier(projId)
+                                                                         .pipelineIdentifier(pipelineId)
+                                                                         .runSequence(1)
+                                                                         .planExecutionId(planId)
+                                                                         .parentStageInfo(pipelineStageInfo)
+                                                                         .build();
+    executionSummaryDTO = PipelineExecutionSummaryDtoMapper.toDto(executionSummaryWithParentStage, null);
+    assertThat(executionSummaryDTO).isNotNull();
+    assertThat(executionSummaryDTO.getParentStageInfo()).isNotNull();
+    assertEquals(executionSummaryDTO.getParentStageInfo(), pipelineStageInfo);
   }
 }
