@@ -76,6 +76,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   private final String deployMode = System.getenv().get("DEPLOY_MODE");
 
+  private static final String SUBSCRIPTION_NOT_FOUND_MESSAGE = "Subscription for account ID %s does not exist.";
   private static final String PRICE_NOT_FOUND_MESSAGE =
       "No price found with metadata: {}, type: {}, edition: {}, billed: {}, max: {}";
   private static final String EDITION_CHECK_FAILED =
@@ -235,8 +236,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     isSelfServiceEnable();
 
-    // TODO: transaction control in case any race condition
-
     List<ModuleLicense> moduleLicenses =
         licenseRepository.findByAccountIdentifierAndModuleType(accountIdentifier, subscriptionRequest.getModuleType());
     if (moduleLicenses.stream().anyMatch(
@@ -324,7 +323,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     Optional<Subscription> subscription = stripeHelper.searchSubscription(accountIdentifier);
 
-    if (!subscription.isPresent()) {
+    if (subscription.isEmpty()) {
       throw new IllegalStateException("Locally saved subscription does not exist in Stripe.");
     }
 
@@ -373,8 +372,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
       return stripeHelper.retrieveSubscription(
           StripeSubscriptionRequest.builder().subscriptionId(subscriptionDetail.getSubscriptionId()).build());
+    } else {
+      throw new InvalidArgumentsException(String.format(SUBSCRIPTION_NOT_FOUND_MESSAGE, accountIdentifier));
     }
-    return null;
   }
 
   @Override
