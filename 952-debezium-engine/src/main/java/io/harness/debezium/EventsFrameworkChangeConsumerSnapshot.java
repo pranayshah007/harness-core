@@ -17,11 +17,13 @@ import io.harness.exception.InvalidRequestException;
 import io.debezium.embedded.EmbeddedEngineChangeEvent;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -55,8 +57,9 @@ public class EventsFrameworkChangeConsumerSnapshot extends EventsFrameworkChange
                                                       .setOptype(opType.get().toString())
                                                       .setTimestamp(System.currentTimeMillis())
                                                       .build();
-        boolean debeziumEnabled =
-            cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(), Target.builder().build(), false);
+        String collection = Arrays.stream(collectionName.split("\\.")).collect(Collectors.toList()).get(1);
+        boolean debeziumEnabled = cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(),
+            Target.builder().identifier(collection + "." + mode).build(), false);
         Producer producer = producerFactory.get(record.destination(), redisStreamSize, mode, configuration);
         if (debeziumEnabled) {
           producer.send(Message.newBuilder().setData(debeziumChangeEvent.toByteString()).build());
