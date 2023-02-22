@@ -7,7 +7,6 @@
 
 package io.harness.cvng.analysis.entities;
 
-import java.util.Set;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;

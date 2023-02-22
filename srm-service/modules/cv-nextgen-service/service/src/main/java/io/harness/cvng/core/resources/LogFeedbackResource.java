@@ -13,8 +13,6 @@ import static io.harness.cvng.core.services.CVNextGenConstants.LOG_FEEDBACK_RESO
 
 import io.harness.cvng.core.beans.LogFeedback;
 import io.harness.cvng.core.beans.LogFeedbackHistory;
-import io.harness.cvng.core.beans.params.ProjectParams;
-import io.harness.cvng.core.beans.params.ProjectParams.ProjectParamsBuilder;
 import io.harness.cvng.core.beans.params.ProjectPathParams;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.LogFeedbackService;
