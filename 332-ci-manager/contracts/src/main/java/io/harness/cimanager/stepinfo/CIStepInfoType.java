@@ -10,6 +10,8 @@ package io.harness.beans.steps;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_LITE_ENGINE;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_MANAGER;
 
+import io.harness.ssca.beans.SscaConstants;
+
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
@@ -78,7 +80,8 @@ public enum CIStepInfoType {
   IACM_TERRAFORM_PLAN(CI_LITE_ENGINE, "IACMTerraformPlan"),
   BACKGROUND_V1(CI_LITE_ENGINE, "background"),
   BITRISE_V1(CI_LITE_ENGINE, "bitrise"),
-  ACTION_V1(CI_LITE_ENGINE, "action");
+  ACTION_V1(CI_LITE_ENGINE, "action"),
+  SSCA_ORCHESTRATION(CI_LITE_ENGINE, SscaConstants.SSCA_ORCHESTRATION_STEP);
 
   @Getter private final CIStepExecEnvironment ciStepExecEnvironment;
   private final String displayName;

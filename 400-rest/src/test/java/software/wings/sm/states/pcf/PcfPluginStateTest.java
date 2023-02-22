@@ -74,6 +74,7 @@ import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.CommandExecutionStatus;
@@ -192,6 +193,7 @@ public class PcfPluginStateTest extends WingsBaseTest {
   @Mock private StateExecutionService stateExecutionService;
   @InjectMocks @Spy private PcfStateHelper pcfStateHelper;
   @Mock private MainConfiguration configuration;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Spy @InjectMocks private PcfPluginState pcfPluginState = new PcfPluginState("name");
   private PcfStateTestHelper pcfStateTestHelper = new PcfStateTestHelper();
   private ServiceElement serviceElement = pcfStateTestHelper.getServiceElement();

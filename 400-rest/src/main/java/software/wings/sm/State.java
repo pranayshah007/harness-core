@@ -8,7 +8,6 @@
 package software.wings.sm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -19,6 +18,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.serializer.MapperUtils;
 import io.harness.tasks.ResponseData;
@@ -54,6 +54,7 @@ public abstract class State {
   public static final Integer INFINITE_TIMEOUT = -1;
 
   @Inject private StateExecutionService stateExecutionService;
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @SchemaIgnore private String id;
 
@@ -367,7 +368,7 @@ public abstract class State {
   protected void appendDelegateTaskDetails(ExecutionContext context, DelegateTask delegateTask) {
     if (isSelectionLogsTrackingForTasksEnabled()) {
       if (isBlank(delegateTask.getUuid())) {
-        delegateTask.setUuid(generateUuid());
+        delegateTask.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
       }
 
       stateExecutionService.appendDelegateTaskDetails(context.getStateExecutionInstanceId(),

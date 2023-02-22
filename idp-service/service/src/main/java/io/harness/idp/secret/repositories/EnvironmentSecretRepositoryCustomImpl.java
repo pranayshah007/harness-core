@@ -26,8 +26,8 @@ public class EnvironmentSecretRepositoryCustomImpl implements EnvironmentSecretR
   public EnvironmentSecretEntity update(EnvironmentSecretEntity environmentSecretEntity) {
     Criteria criteria = Criteria.where(EnvironmentSecretsEntityKeys.accountIdentifier)
                             .is(environmentSecretEntity.getAccountIdentifier())
-                            .and(EnvironmentSecretsEntityKeys.name)
-                            .is(environmentSecretEntity.getName());
+                            .and(EnvironmentSecretsEntityKeys.envName)
+                            .is(environmentSecretEntity.getEnvName());
     Query query = new Query(criteria);
     Update update = new Update();
     update.set(EnvironmentSecretsEntityKeys.secretIdentifier, environmentSecretEntity.getSecretIdentifier());

@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.step.pcf;
 
 import io.harness.beans.OrchestrationWorkflowType;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.tas.TasRollbackStepInfo;
 import io.harness.cdng.tas.TasRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -32,6 +33,11 @@ public class PcfRollbackStepMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.TAS_ROLLBACK;
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.TAS;
   }
 
   @Override

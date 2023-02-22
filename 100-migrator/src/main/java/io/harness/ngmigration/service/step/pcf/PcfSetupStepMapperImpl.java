@@ -11,6 +11,7 @@ import static io.harness.delegate.beans.pcf.ResizeStrategy.DOWNSIZE_OLD_FIRST;
 import static io.harness.delegate.beans.pcf.TasResizeStrategyType.DOWNSCALE_OLD_FIRST;
 import static io.harness.delegate.beans.pcf.TasResizeStrategyType.UPSCALE_NEW_FIRST;
 
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.tas.TasBGAppSetupStepInfo;
 import io.harness.cdng.tas.TasBGAppSetupStepNode;
 import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
@@ -46,6 +47,11 @@ public class PcfSetupStepMapperImpl extends StepMapper {
     } else {
       return StepSpecTypeConstants.TAS_CANARY_APP_SETUP;
     }
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.TAS;
   }
 
   @Override

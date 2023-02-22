@@ -9,4 +9,4 @@ package io.harness.idp.status.enums;
 
 //  Wiki page specifying different statuses
 //  https://harness.atlassian.net/wiki/spaces/IDP/pages/21301300949/IDP+App+Status+logic+-+Tech+Spec#Different-Statuses
-public enum Status { COMPLETED, RUNNING, PENDING, FAILED }
+public enum Status { COMPLETED, RUNNING, PENDING, FAILED, NOT_FOUND }

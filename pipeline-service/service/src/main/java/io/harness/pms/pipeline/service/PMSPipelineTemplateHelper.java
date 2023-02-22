@@ -92,7 +92,8 @@ public class PMSPipelineTemplateHelper {
                   .originalEntityYaml(yaml)
                   .checkForAccess(checkForTemplateAccess)
                   .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
-                  .build()));
+                  .build(),
+              true));
         }
         GitSyncBranchContext gitSyncBranchContext =
             GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().build()).build();
@@ -103,7 +104,8 @@ public class PMSPipelineTemplateHelper {
                   .originalEntityYaml(yaml)
                   .checkForAccess(checkForTemplateAccess)
                   .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
-                  .build()));
+                  .build(),
+              true));
         }
       } catch (InvalidRequestException e) {
         if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {

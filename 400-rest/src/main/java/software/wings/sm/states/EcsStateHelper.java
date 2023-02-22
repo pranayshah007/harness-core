@@ -62,6 +62,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.deployment.InstanceDetails;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -186,6 +187,8 @@ public class EcsStateHelper {
   @Inject private SweepingOutputService sweepingOutputService;
   @Inject private StateExecutionService stateExecutionService;
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   public ContainerSetupParams buildContainerSetupParams(
       ExecutionContext context, EcsSetupStateConfig ecsSetupStateConfig) {
@@ -400,7 +403,7 @@ public class EcsStateHelper {
 
   private void appendDelegateTaskDetails(DelegateTask delegateTask, String stateExecutionInstanceId) {
     if (isBlank(delegateTask.getUuid())) {
-      delegateTask.setUuid(generateUuid());
+      delegateTask.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
 
     stateExecutionService.appendDelegateTaskDetails(stateExecutionInstanceId,

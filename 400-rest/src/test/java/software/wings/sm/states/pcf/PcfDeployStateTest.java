@@ -80,6 +80,7 @@ import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.task.pcf.request.CfCommandDeployRequest;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfDeployCommandResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ff.FeatureFlagService;
@@ -170,6 +171,7 @@ public class PcfDeployStateTest extends WingsBaseTest {
   @Mock private FeatureFlagService featureFlagService;
   @Mock private WorkflowExecutionService workflowExecutionService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   private PcfStateTestHelper pcfStateTestHelper = new PcfStateTestHelper();
   public static final String ORG = "ORG";
   public static final String SPACE = "SPACE";

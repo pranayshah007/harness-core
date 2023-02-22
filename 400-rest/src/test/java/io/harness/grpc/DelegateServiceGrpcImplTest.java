@@ -48,6 +48,7 @@ import io.harness.delegate.TaskType;
 import io.harness.delegate.beans.DelegateStringProgressData;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.beans.executioncapability.SystemEnvCheckerCapability;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
@@ -122,7 +123,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   @Inject @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer;
   private DelegateSyncService delegateSyncService;
   private DelegateTaskService delegateTaskService;
-
+  private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   private Server server;
   private Logger mockClientLogger;
   private Logger mockServerLogger;
@@ -149,8 +150,10 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     delegateService = mock(DelegateService.class);
     delegateTaskServiceClassic = mock(DelegateTaskServiceClassic.class);
     delegateTaskService = mock(DelegateTaskService.class);
+    delegateTaskMigrationHelper = mock(DelegateTaskMigrationHelper.class);
     delegateServiceGrpcImpl = new DelegateServiceGrpcImpl(delegateCallbackRegistry, perpetualTaskService,
-        delegateService, delegateTaskService, kryoSerializer, referenceFalseKryoSerializer, delegateTaskServiceClassic);
+        delegateService, delegateTaskService, kryoSerializer, referenceFalseKryoSerializer, delegateTaskServiceClassic,
+        delegateTaskMigrationHelper);
 
     server =
         InProcessServerBuilder.forName(serverName).directExecutor().addService(delegateServiceGrpcImpl).build().start();
@@ -162,6 +165,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   @Category(UnitTests.class)
   public void testSubmitTask() {
     ByteString kryoParams = ByteString.copyFrom(kryoSerializer.asDeflatedBytes(ScriptType.BASH));
+    when(delegateTaskMigrationHelper.generateDelegateTaskUUID()).thenReturn(generateUuid());
 
     Map<String, String> setupAbstractions = new HashMap<>();
     setupAbstractions.put(Cd1SetupFields.APP_ID_FIELD, "appId");

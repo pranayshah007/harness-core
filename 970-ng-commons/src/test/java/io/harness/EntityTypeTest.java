@@ -9,6 +9,7 @@ package io.harness;
 
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
@@ -217,11 +218,12 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(184, "ASG_BLUE_GREEN_DEPLOY_STEP");
     entityTypeOrdinalMapping.put(185, "ASG_BLUE_GREEN_ROLLBACK_STEP");
     entityTypeOrdinalMapping.put(186, "TERRAFORM_CLOUD_RUN");
-    entityTypeOrdinalMapping.put(187, "GOOGLE_CLOUD_FUNCTIONS_DEPLOY");
-    entityTypeOrdinalMapping.put(188, "GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC");
-    entityTypeOrdinalMapping.put(189, "GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT");
-    entityTypeOrdinalMapping.put(190, "GOOGLE_CLOUD_FUNCTIONS_ROLLBACK");
-    entityTypeOrdinalMapping.put(191, "AWS_LAMBDA_DEPLOY");
+    entityTypeOrdinalMapping.put(187, "TERRAFORM_CLOUD_ROLLBACK");
+    entityTypeOrdinalMapping.put(188, "GOOGLE_CLOUD_FUNCTIONS_DEPLOY");
+    entityTypeOrdinalMapping.put(189, "GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC");
+    entityTypeOrdinalMapping.put(190, "GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT");
+    entityTypeOrdinalMapping.put(191, "GOOGLE_CLOUD_FUNCTIONS_ROLLBACK");
+    entityTypeOrdinalMapping.put(192, "AWS_LAMBDA_DEPLOY");
 
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
@@ -230,6 +232,7 @@ public class EntityTypeTest extends CategoryTest {
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testMappingExistsForAllEnumConstants() {
     Arrays.stream(EntityType.values()).forEach(entityType -> {
       if (!entityType.name().equals(entityTypeOrdinalMapping.get(entityType.ordinal()))) {
@@ -242,6 +245,7 @@ public class EntityTypeTest extends CategoryTest {
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testEnumConstantAddedAtTheEndWithoutMapping() {
     if (EntityType.values().length > entityTypeOrdinalMapping.size()) {
       Arrays.stream(EntityType.values()).forEach(entityType -> {
@@ -260,6 +264,7 @@ public class EntityTypeTest extends CategoryTest {
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testEnumConstantNotAddedInBetween() {
     if (entityTypeOrdinalMapping.size() < EntityType.values().length) {
       Arrays.stream(EntityType.values()).forEach(entityType -> {
@@ -277,6 +282,7 @@ public class EntityTypeTest extends CategoryTest {
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testEnumConstantNotDeleted() {
     if (entityTypeOrdinalMapping.size() > EntityType.values().length) {
       Arrays.stream(EntityType.values()).forEach(entityType -> {

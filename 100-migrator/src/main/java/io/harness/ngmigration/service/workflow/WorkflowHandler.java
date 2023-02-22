@@ -17,6 +17,7 @@ import static software.wings.sm.StepType.CUSTOM_DEPLOYMENT_FETCH_INSTANCES;
 import static software.wings.sm.StepType.DC_NODE_SELECT;
 
 import io.harness.beans.InputSetValidatorType;
+import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
@@ -67,6 +68,7 @@ import software.wings.beans.workflow.StepSkipStrategy;
 import software.wings.beans.workflow.StepSkipStrategy.Scope;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
+import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
@@ -95,16 +97,23 @@ public abstract class WorkflowHandler {
   public List<CgEntityId> getReferencedEntities(StepMapperFactory stepMapperFactory, Workflow workflow) {
     List<GraphNode> steps = MigratorUtility.getSteps(workflow);
     Map<String, String> stepIdToServiceIdMap = getStepIdToServiceIdMap(workflow);
-    if (EmptyPredicate.isEmpty(steps)) {
-      return Collections.emptyList();
+    List<CgEntityId> referencedEntities = new ArrayList<>();
+    if (StringUtils.isNotBlank(workflow.getServiceId())) {
+      referencedEntities.add(
+          CgEntityId.builder().id(workflow.getServiceId()).type(NGMigrationEntityType.SERVICE).build());
     }
-    return steps.stream()
-        .map(step
-            -> stepMapperFactory.getStepMapper(step.getType())
-                   .getReferencedEntities(workflow.getAccountId(), step, stepIdToServiceIdMap))
-        .filter(EmptyPredicate::isNotEmpty)
-        .flatMap(Collection::stream)
-        .collect(Collectors.toList());
+    if (EmptyPredicate.isEmpty(steps)) {
+      return referencedEntities;
+    }
+    referencedEntities.addAll(
+        steps.stream()
+            .map(step
+                -> stepMapperFactory.getStepMapper(step.getType())
+                       .getReferencedEntities(workflow.getAccountId(), step, stepIdToServiceIdMap))
+            .filter(EmptyPredicate::isNotEmpty)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList()));
+    return referencedEntities;
   }
 
   public TemplateEntityType getTemplateType(Workflow workflow) {
@@ -387,8 +396,12 @@ public abstract class WorkflowHandler {
   JsonNode getStepElementConfig(WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep,
       GraphNode step, String skipCondition, boolean addLoopingStrategy) {
     StepMapper stepMapper = stepMapperFactory.getStepMapper(step.getType());
-    MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(), step,
-        getExpressions(phase, context.getStepExpressionFunctors()));
+    Map<String, Object> expressions = getExpressions(phase, context.getStepExpressionFunctors());
+    if (StringUtils.isNotBlank(skipCondition)) {
+      skipCondition = (String) MigratorExpressionUtils.render(
+          context.getEntities(), context.getMigratedEntities(), skipCondition, expressions);
+    }
+    MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(), step, expressions);
     List<StepExpressionFunctor> expressionFunctors = stepMapper.getExpressionFunctor(context, phase, phaseStep, step);
     if (isNotEmpty(expressionFunctors)) {
       context.getStepExpressionFunctors().addAll(expressionFunctors);
@@ -434,8 +447,21 @@ public abstract class WorkflowHandler {
   }
 
   // We can infer the type based on the service, infra & sometimes based on the steps used.
-  ServiceDefinitionType inferServiceDefinitionType(Workflow workflow) {
-    throw new NotImplementedException();
+  ServiceDefinitionType inferServiceDefinitionType(WorkflowMigrationContext context) {
+    OrchestrationWorkflowType workflowType = context.getWorkflow().getOrchestration().getOrchestrationWorkflowType();
+    ServiceDefinitionType defaultType = workflowType.equals(OrchestrationWorkflowType.BASIC)
+        ? ServiceDefinitionType.SSH
+        : ServiceDefinitionType.KUBERNETES;
+    List<GraphNode> steps = MigratorUtility.getSteps(context.getWorkflow());
+    if (EmptyPredicate.isEmpty(steps)) {
+      return defaultType;
+    }
+
+    return steps.stream()
+        .map(step -> stepMapperFactory.getStepMapper(step.getType()).inferServiceDef(context, step))
+        .filter(Objects::nonNull)
+        .findFirst()
+        .orElse(defaultType);
   }
 
   ParameterField<Map<String, Object>> getRuntimeInput() {
@@ -474,9 +500,9 @@ public abstract class WorkflowHandler {
         .build();
   }
 
-  DeploymentStageConfig getDeploymentStageConfig(
-      Workflow workflow, List<ExecutionWrapperConfig> steps, List<ExecutionWrapperConfig> rollbackSteps) {
-    return getDeploymentStageConfig(inferServiceDefinitionType(workflow), steps, rollbackSteps);
+  DeploymentStageConfig getDeploymentStageConfig(WorkflowMigrationContext context, List<ExecutionWrapperConfig> steps,
+      List<ExecutionWrapperConfig> rollbackSteps) {
+    return getDeploymentStageConfig(inferServiceDefinitionType(context), steps, rollbackSteps);
   }
 
   public static ParameterField<List<FailureStrategyConfig>> getDefaultFailureStrategy() {
@@ -512,13 +538,12 @@ public abstract class WorkflowHandler {
                                .collect(Collectors.toList()));
     }
 
-    Map<String, Object> templateSpec =
-        ImmutableMap.<String, Object>builder()
-            .put("type", "Deployment")
-            .put("spec", getDeploymentStageConfig(context.getWorkflow(), steps, rollbackSteps))
-            .put("failureStrategies", getDefaultFailureStrategy())
-            .put("variables", getVariables(context.getWorkflow()))
-            .build();
+    Map<String, Object> templateSpec = ImmutableMap.<String, Object>builder()
+                                           .put("type", "Deployment")
+                                           .put("spec", getDeploymentStageConfig(context, steps, rollbackSteps))
+                                           .put("failureStrategies", getDefaultFailureStrategy())
+                                           .put("variables", getVariables(context.getWorkflow()))
+                                           .build();
     return JsonPipelineUtils.asTree(templateSpec);
   }
 
@@ -673,7 +698,7 @@ public abstract class WorkflowHandler {
     Map<String, Object> templateSpec =
         ImmutableMap.<String, Object>builder()
             .put("type", "Deployment")
-            .put("spec", getDeploymentStageConfig(context.getWorkflow(), stepGroupWrappers, rollbackStepGroupWrappers))
+            .put("spec", getDeploymentStageConfig(context, stepGroupWrappers, rollbackStepGroupWrappers))
             .put("failureStrategies", getDefaultFailureStrategy())
             .put("variables", getVariables(context.getWorkflow()))
             .build();

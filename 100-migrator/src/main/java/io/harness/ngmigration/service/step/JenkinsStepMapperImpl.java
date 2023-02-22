@@ -30,9 +30,11 @@ import software.wings.sm.states.JenkinsState;
 
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 public class JenkinsStepMapperImpl extends StepMapper {
   @Override
@@ -96,7 +98,9 @@ public class JenkinsStepMapperImpl extends StepMapper {
   public List<StepExpressionFunctor> getExpressionFunctor(
       WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
     String sweepingOutputName = getSweepingOutputName(graphNode);
-
+    if (StringUtils.isEmpty(sweepingOutputName)) {
+      return Collections.emptyList();
+    }
     return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
         .stream()
         .map(exp

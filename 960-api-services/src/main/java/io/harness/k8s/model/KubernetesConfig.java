@@ -43,6 +43,7 @@ public class KubernetesConfig {
   private char[] oidcPassword;
 
   private KubernetesAzureConfig azureConfig;
+  private boolean shouldUseExecFormat;
 
   @Builder
   public KubernetesConfig(String masterUrl, char[] username, char[] password, char[] caCert, char[] clientCert,

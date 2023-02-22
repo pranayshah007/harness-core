@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,10 +86,12 @@ public class BudgetGroupUtils {
   public static final String COST_TYPE_LAST_PERIOD = "Last period cost";
   public static final String NO_CHILD_ENTITY_PRESENT_EXCEPTION =
       "Error in performing operation. Budget group must have atleast one child budget/budget group";
+  public static final String INVALID_PARENT_EXCEPTION = "Error in creating budget group. Invalid parent Id specified";
 
   public static void validateBudgetGroup(BudgetGroup budgetGroup, List<BudgetGroup> existingBudgetGroups) {
     populateDefaultBudgetGroupBreakdown(budgetGroup);
     validateBudgetGroupName(budgetGroup, existingBudgetGroups);
+    validateBudgetGroupParent(budgetGroup, existingBudgetGroups);
   }
 
   public static void validateChildBudgets(List<Budget> childBudgets) {
@@ -489,7 +492,7 @@ public class BudgetGroupUtils {
 
   private static List<ValueDataPoint> getAggregatedBudgetAmountForBudgets(List<Budget> budgets) {
     List<ValueDataPoint> aggregatedBudgetAmounts = new ArrayList<>();
-    Map<Long, Double> aggregatedBudgetAmountPerTimestamp = new HashMap<>();
+    Map<Long, Double> aggregatedBudgetAmountPerTimestamp = new TreeMap<>();
     for (Budget budget : budgets) {
       List<ValueDataPoint> budgetAmounts = budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount();
       budgetAmounts.forEach(budgetAmount -> {
@@ -514,7 +517,7 @@ public class BudgetGroupUtils {
 
   private static List<ValueDataPoint> getAggregatedBudgetGroupAmountsForBudgetGroups(List<BudgetGroup> budgetGroups) {
     List<ValueDataPoint> aggregatedBudgetGroupAmounts = new ArrayList<>();
-    Map<Long, Double> aggregatedBudgetGroupAmountPerTimestamp = new HashMap<>();
+    Map<Long, Double> aggregatedBudgetGroupAmountPerTimestamp = new TreeMap<>();
     for (BudgetGroup budgetGroup : budgetGroups) {
       List<ValueDataPoint> budgetGroupAmounts = budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetMonthlyAmount();
       budgetGroupAmounts.forEach(budgetGroupAmount -> {
@@ -577,10 +580,19 @@ public class BudgetGroupUtils {
   }
 
   private static void validateBudgetGroupName(BudgetGroup budgetGroup, List<BudgetGroup> existingBudgetGroups) {
-    log.info("Existing budget groups: {}", existingBudgetGroups);
-    log.info("Budget groups: {}", budgetGroup.getUuid());
     if (!existingBudgetGroups.isEmpty() && (!existingBudgetGroups.get(0).getUuid().equals(budgetGroup.getUuid()))) {
       throw new InvalidRequestException(BUDGET_GROUP_NAME_EXISTS_EXCEPTION);
+    }
+  }
+
+  private static void validateBudgetGroupParent(BudgetGroup budgetGroup, List<BudgetGroup> existingBudgetGroups) {
+    if (!existingBudgetGroups.isEmpty()) {
+      List<String> validParentIds =
+          existingBudgetGroups.stream().map(BudgetGroup::getParentBudgetGroupId).collect(Collectors.toList());
+      if (budgetGroup.getParentBudgetGroupId() != null
+          && !validParentIds.contains(budgetGroup.getParentBudgetGroupId())) {
+        throw new InvalidRequestException(INVALID_PARENT_EXCEPTION);
+      }
     }
   }
 

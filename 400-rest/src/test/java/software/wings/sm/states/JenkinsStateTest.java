@@ -41,6 +41,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.DelegateTaskDetails;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.rule.Owner;
 
 import software.wings.api.JenkinsExecutionData;
@@ -102,6 +103,7 @@ public class JenkinsStateTest extends CategoryTest {
   @Mock private InfrastructureMappingService infrastructureMappingService;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks private JenkinsState jenkinsState = new JenkinsState("jenkins");
 
