@@ -12,16 +12,16 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.CDP)
 public enum AwsLambdaCommandUnitConstants {
-  deploy {
-    @Override
-    public String toString() {
-      return "Deploy";
-    }
-  },
   fetchManifests {
     @Override
     public String toString() {
       return "Fetch Manifests";
     }
   },
+  deploy {
+    @Override
+    public String toString() {
+      return "Deploy";
+    }
+  }
 }

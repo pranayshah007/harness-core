@@ -91,6 +91,7 @@ public interface StepSpecTypeConstants {
   String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "CloudFunctionRollback";
 
   String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
+  String AWS_LAMBDA = "AwsLambda";
 
   String SHELL_SCRIPT_PROVISION = "ShellScriptProvision";
 

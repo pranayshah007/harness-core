@@ -1348,6 +1348,25 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AwsLambdaFunctionAliasDefinitionManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AwsLambdaInfrastructure": {
       "allOf": [
         {
@@ -8355,6 +8374,7 @@
             "AsgScheduledUpdateGroupAction",
             "GoogleCloudFunctionDefinition",
             "AwsLambdaFunctionDefinition",
+            "AwsLambdaFunctionAliasDefinition",
             "AwsSamDirectory"
           ]
         }
@@ -8421,6 +8441,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AsgScheduledUpdateGroupActionManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AwsLambdaFunctionAliasDefinition"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsLambdaFunctionAliasDefinitionManifest"
               }
             }
           }
@@ -12467,7 +12503,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AwsLambdaDeploy"
+                "const": "AwsLambda"
               }
             }
           },

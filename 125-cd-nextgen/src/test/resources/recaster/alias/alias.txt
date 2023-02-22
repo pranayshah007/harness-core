@@ -787,3 +787,5 @@ io.harness.cdng.manifest.yaml.kinds.AwsSamDirectoryManifest
 io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome
 io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig
 io.harness.cdng.service.steps.sweepingoutput.EcsServiceCustomSweepingOutput
+io.harness.cdng.manifest.yaml.kinds.AwsLambdaFunctionAliasDefinitionManifest
+io.harness.cdng.manifest.yaml.AwsLambdaAliasDefinitionManifestOutcome
