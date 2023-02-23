@@ -27,7 +27,10 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ng.core.template.refresh.ErrorNodeSummary;
 import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
+import io.harness.ng.core.template.refresh.NodeInfo;
+import io.harness.ng.core.template.refresh.TemplateInfo;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 import io.harness.reconcile.remote.NgManagerReconcileClient;
@@ -188,12 +191,27 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
         .thenReturn(Optional.of(stepTemplate));
 
     TemplateEntity stageTemplate = convertYamlToTemplateEntity(stageTemplateWithInCorrectInputs);
-    assertThatThrownBy(
-        ()
-            -> templateInputsValidator.validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
-                new TemplateEntityGetResponse(stageTemplate, EntityGitDetails.builder().build())))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("The value provided DELETE does not match any of the allowed values [POST,PUT,GET]");
+    ValidateTemplateInputsResponseDTO response =
+        templateInputsValidator.validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
+            new TemplateEntityGetResponse(stageTemplate, EntityGitDetails.builder().build()));
+    assertThat(response).isNotNull();
+    assertThat(response.isValidYaml()).isFalse();
+    assertThat(response.getErrorNodeSummary()).isNotNull();
+    assertThat(response.getErrorNodeSummary().getChildrenErrorNodes()).isEmpty();
+    ErrorNodeSummary errorNode = response.getErrorNodeSummary();
+    assertThat(errorNode.getNodeInfo())
+        .isEqualToComparingFieldByField(NodeInfo.builder()
+                                            .name(stageTemplate.getName())
+                                            .identifier(stageTemplate.getIdentifier())
+                                            .localFqn(null)
+                                            .build());
+    assertThat(errorNode.getTemplateInfo())
+        .isEqualToComparingFieldByField(TemplateInfo.builder()
+                                            .templateIdentifier(stageTemplate.getIdentifier())
+                                            .versionLabel(stageTemplate.getVersionLabel())
+                                            .templateEntityType(stageTemplate.getTemplateEntityType())
+                                            .build());
+    assertThat(errorNode.getChildrenErrorNodes()).isEmpty();
   }
 
   @Test
@@ -222,12 +240,41 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, "pipelineTemplate", "1", false, false))
         .thenReturn(Optional.of(pipelineTemplateWithIncorrectInputs));
-    assertThatThrownBy(
-        ()
-            -> templateInputsValidator.validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
-                new TemplateEntityGetResponse(pipelineTemplateWithIncorrectInputs, EntityGitDetails.builder().build())))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("The value provided DELETE does not match any of the allowed values [POST,PUT,GET]");
+
+    ValidateTemplateInputsResponseDTO response =
+        templateInputsValidator.validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
+            new TemplateEntityGetResponse(pipelineTemplateWithIncorrectInputs, EntityGitDetails.builder().build()));
+    assertThat(response).isNotNull();
+    assertThat(response.isValidYaml()).isFalse();
+    assertThat(response.getErrorNodeSummary()).isNotNull();
+    ErrorNodeSummary errorNodeSummary = response.getErrorNodeSummary();
+    assertThat(errorNodeSummary.getNodeInfo())
+        .isEqualToComparingFieldByField(NodeInfo.builder()
+                                            .name(pipelineTemplateWithIncorrectInputs.getName())
+                                            .identifier(pipelineTemplateWithIncorrectInputs.getIdentifier())
+                                            .localFqn(null)
+                                            .build());
+    assertThat(errorNodeSummary.getTemplateInfo())
+        .isEqualToComparingFieldByField(TemplateInfo.builder()
+                                            .templateIdentifier(pipelineTemplateWithIncorrectInputs.getIdentifier())
+                                            .versionLabel(pipelineTemplateWithIncorrectInputs.getVersionLabel())
+                                            .templateEntityType(TemplateEntityType.PIPELINE_TEMPLATE)
+                                            .build());
+    assertThat(errorNodeSummary.getChildrenErrorNodes()).isNotNull().isNotEmpty().hasSize(1);
+
+    ErrorNodeSummary childErrorNode = errorNodeSummary.getChildrenErrorNodes().get(0);
+    assertThat(childErrorNode.getNodeInfo())
+        .isEqualToComparingFieldByField(NodeInfo.builder()
+                                            .name("Stage 1")
+                                            .identifier("Stage_1")
+                                            .localFqn("template.spec.stages.Stage_1.template")
+                                            .build());
+    assertThat(childErrorNode.getTemplateInfo())
+        .isEqualToComparingFieldByField(TemplateInfo.builder()
+                                            .templateIdentifier(stageTemplateWithInCorrectInputs.getIdentifier())
+                                            .versionLabel(stageTemplateWithInCorrectInputs.getVersionLabel())
+                                            .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
+                                            .build());
   }
 
   @Test
@@ -251,11 +298,46 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "2", false, false))
         .thenReturn(Optional.of(stageTemplateWithCorrectInputs));
-    assertThatThrownBy(()
-                           -> templateInputsValidator.validateNestedTemplateInputsForGivenYaml(
-                               ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineWithIncorrectInputsYaml, false))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("The value provided DELETE does not match any of the allowed values [POST,PUT,GET]");
+
+    ValidateTemplateInputsResponseDTO response = templateInputsValidator.validateNestedTemplateInputsForGivenYaml(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineWithIncorrectInputsYaml, false);
+    assertThat(response).isNotNull();
+    assertThat(response.isValidYaml()).isFalse();
+    assertThat(response.getErrorNodeSummary()).isNotNull();
+    ErrorNodeSummary errorNodeSummary = response.getErrorNodeSummary();
+    assertThat(errorNodeSummary.getNodeInfo()).isNotNull();
+    assertThat(errorNodeSummary.getNodeInfo().getIdentifier()).isEqualTo("pipelineTest");
+    assertThat(errorNodeSummary.getNodeInfo().getName()).isEqualTo("Test Pipline");
+    assertThat(errorNodeSummary.getNodeInfo().getLocalFqn()).isEqualTo("pipeline");
+    assertThat(errorNodeSummary.getChildrenErrorNodes()).isNotNull().isNotEmpty().hasSize(2);
+
+    ErrorNodeSummary firstChild = errorNodeSummary.getChildrenErrorNodes().get(0);
+    assertThat(firstChild.getNodeInfo())
+        .isEqualToComparingFieldByField(NodeInfo.builder()
+                                            .name("Stage 1")
+                                            .identifier("Stage_1")
+                                            .localFqn("pipeline.stages.Stage_1.template")
+                                            .build());
+    assertThat(firstChild.getTemplateInfo())
+        .isEqualToComparingFieldByField(TemplateInfo.builder()
+                                            .templateIdentifier(stageTemplateWithInCorrectInputs.getIdentifier())
+                                            .versionLabel(stageTemplateWithInCorrectInputs.getVersionLabel())
+                                            .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
+                                            .build());
+
+    ErrorNodeSummary secondChild = errorNodeSummary.getChildrenErrorNodes().get(1);
+    assertThat(secondChild.getNodeInfo())
+        .isEqualToComparingFieldByField(NodeInfo.builder()
+                                            .name("Stage 3")
+                                            .identifier("Stage_3")
+                                            .localFqn("pipeline.stages.Stage_3.template")
+                                            .build());
+    assertThat(secondChild.getTemplateInfo())
+        .isEqualToComparingFieldByField(TemplateInfo.builder()
+                                            .templateIdentifier(stageTemplateWithInCorrectInputs.getIdentifier())
+                                            .versionLabel(stageTemplateWithInCorrectInputs.getVersionLabel())
+                                            .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
+                                            .build());
   }
 
   @Test

@@ -374,3 +374,4 @@ pmsPlanCreatorServicePoolConfig:
   timeUnit: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 enableOpentelemetry: false
+enableTelemetry: ${ENABLE_TELEMETRY:-false}

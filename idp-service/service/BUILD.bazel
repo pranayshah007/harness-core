@@ -36,6 +36,7 @@ java_binary(
         "//999-annotations:module",
         "//idp-service/contracts:module",
         "//idp-service/service/src/main/java/io/harness/idp/config:module",
+        "//idp-service/service/src/main/java/io/harness/idp/gitintegration:module",
         "//idp-service/service/src/main/java/io/harness/idp/namespace:module",
         "//idp-service/service/src/main/java/io/harness/idp/secret:module",
         "//idp-service/service/src/main/java/io/harness/idp/status:module",

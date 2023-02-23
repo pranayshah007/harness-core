@@ -458,6 +458,9 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(418, "GOOGLE_FUNCTION_PREPARE_ROLLBACK_TASK");
     taskTypeOrdinalMapping.put(419, "GOOGLE_FUNCTION_DEPLOY_WITHOUT_TRAFFIC_TASK");
     taskTypeOrdinalMapping.put(420, "GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK");
+    taskTypeOrdinalMapping.put(421, "ECS_TASK_ARN_ROLLING_DEPLOY_NG");
+    taskTypeOrdinalMapping.put(422, "ECS_TASK_ARN_CANARY_DEPLOY_NG");
+    taskTypeOrdinalMapping.put(423, "ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE_NG");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

@@ -17,8 +17,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.delegate.app.DelegateGrpcServiceModule;
 import io.harness.delegate.app.modules.common.DelegateHealthModule;
-import io.harness.delegate.app.modules.common.DelegateManagerClientModule;
-import io.harness.delegate.app.modules.common.DelegateManagerGrpcClientModule;
 import io.harness.delegate.app.modules.common.DelegateTokensModule;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.task.citasks.CITaskFactoryModule;

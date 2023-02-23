@@ -61,21 +61,12 @@ public class CDNGPipelineConfigurationHelper {
   }
 
   public String getExecutionStrategyYaml(ServiceDefinitionType serviceDefinitionType,
-      ExecutionStrategyType executionStrategyType, boolean includeVerify, String accountId) throws IOException {
+      ExecutionStrategyType executionStrategyType, boolean includeVerify) throws IOException {
     // Note: Additional condition for GitOps is added because we do not want to show the GitOps Strategy in
     // the UI but also provide the support to UI for default yaml
     ClassLoader classLoader = this.getClass().getClassLoader();
     if (ServiceDefinitionType.getExecutionStrategies(serviceDefinitionType).contains(executionStrategyType)
         || executionStrategyType == ExecutionStrategyType.GITOPS) {
-      if (executionStrategyType == ExecutionStrategyType.GITOPS
-          && featureFlagHelper.isEnabled(accountId, FeatureName.GITOPS_FETCH_LINKED_APPS)) {
-        return Resources.toString(
-            Objects.requireNonNull(
-                classLoader.getResource(String.format("executionStrategyYaml/%s-%s%s-with-linked-apps.yaml",
-                    serviceDefinitionType.getYamlName().toLowerCase(),
-                    executionStrategyType.getDisplayName().toLowerCase(), includeVerify ? "-with-verify" : ""))),
-            StandardCharsets.UTF_8);
-      }
       return Resources.toString(
           Objects.requireNonNull(classLoader.getResource(
               String.format("executionStrategyYaml/%s-%s%s.yaml", serviceDefinitionType.getYamlName().toLowerCase(),
@@ -112,7 +103,7 @@ public class CDNGPipelineConfigurationHelper {
       return cdngPipelineExecutionStrategyHelperV2.generateBasicYaml(
           accountIdentifier, serviceDefinitionType, includeVerify, strategyParameters);
     } else {
-      return getExecutionStrategyYaml(serviceDefinitionType, executionStrategyType, includeVerify, accountIdentifier);
+      return getExecutionStrategyYaml(serviceDefinitionType, executionStrategyType, includeVerify);
     }
   }
 

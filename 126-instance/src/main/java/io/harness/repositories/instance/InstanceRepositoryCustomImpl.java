@@ -505,15 +505,13 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
       String pipelineExecutionId, String buildId, int limit) {
     Criteria criteria = getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier);
 
-    if (envId != null) {
-      criteria.and(InstanceKeys.envIdentifier).is(envId);
-    }
-    if (serviceId != null) {
-      criteria.and(InstanceKeys.serviceIdentifier).is(serviceId);
-    }
-    if (buildId != null) {
-      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG).is(buildId);
-    }
+    criteria.and(InstanceKeys.envIdentifier)
+        .is(envId)
+        .and(InstanceKeys.serviceIdentifier)
+        .is(serviceId)
+        .and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
+        .is(buildId);
+
     if (infraId != null) {
       criteria.and(InstanceKeys.infraIdentifier).is(infraId);
     }

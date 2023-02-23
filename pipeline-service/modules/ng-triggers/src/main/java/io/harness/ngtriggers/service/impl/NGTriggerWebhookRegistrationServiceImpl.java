@@ -118,12 +118,10 @@ public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhook
       upsertWebhookResponseDTO = getResponse(webhookEventClient.upsertWebhook(upsertWebhookRequestDTO));
     } catch (Exception ex) {
       log.error("Failed to register webhook", ex);
-      metadataBuilder.webhookAutoRegistrationStatus(
-          WebhookAutoRegistrationStatus.builder()
-              .detailedMessage(ex.getMessage()
-                  + ". Possible reason can be webhook read and write permission is missing for selected repo.")
-              .registrationResult(WebhookRegistrationStatus.ERROR)
-              .build());
+      metadataBuilder.webhookAutoRegistrationStatus(WebhookAutoRegistrationStatus.builder()
+                                                        .detailedMessage(ex.getMessage())
+                                                        .registrationResult(WebhookRegistrationStatus.ERROR)
+                                                        .build());
 
       return metadataBuilder.build();
     }

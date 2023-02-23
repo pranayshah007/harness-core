@@ -12,8 +12,10 @@ import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.UJJAWAL;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
+import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -24,8 +26,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.user.entities.UserGroup;
+import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.rule.Owner;
+import io.harness.scim.Member;
 import io.harness.scim.ScimGroup;
 import io.harness.scim.ScimListResponse;
 
@@ -160,6 +164,41 @@ public class NGScimGroupServiceImplTest extends NgManagerTestBase {
     assertThat(response.getTotalResults()).isEqualTo(1);
     assertThat(response.getStartIndex()).isEqualTo(startIndex);
     assertThat(response.getItemsPerPage()).isEqualTo(count);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testSearchGroup_returnsNotNullRefInMembers() {
+    String accountId = "accountId";
+    Integer count = 1;
+    Integer startIndex = 1;
+
+    ScimGroup scimGroup = new ScimGroup();
+    scimGroup.setDisplayName("testDisplayName");
+    scimGroup.setId("id");
+
+    UserGroup userGroup1 = UserGroup.builder().name(scimGroup.getDisplayName()).identifier(scimGroup.getId()).build();
+    UserMetadataDTO userMetadataDTO =
+        UserMetadataDTO.builder().name("testName").email("dummy@gmail.com").uuid("UUID").build();
+
+    when(userGroupService.list(any(), any(), any())).thenReturn(new ArrayList<UserGroup>() {
+      { add(userGroup1); }
+    });
+
+    when(userGroupService.getUsersInUserGroup(any(), any())).thenReturn(new ArrayList<UserMetadataDTO>() {
+      { add(userMetadataDTO); }
+    });
+
+    ScimListResponse<ScimGroup> response = scimGroupService.searchGroup(null, accountId, count, startIndex);
+
+    assertThat(response.getTotalResults()).isEqualTo(1);
+    assertThat(response.getStartIndex()).isEqualTo(startIndex);
+    assertThat(response.getItemsPerPage()).isEqualTo(count);
+    ScimGroup scimGroup1 = response.getResources().get(0);
+    Member member = scimGroup1.getMembers().get(0);
+    assertNotNull(member);
+    assertNotNull(member.getRef());
   }
 
   @Test

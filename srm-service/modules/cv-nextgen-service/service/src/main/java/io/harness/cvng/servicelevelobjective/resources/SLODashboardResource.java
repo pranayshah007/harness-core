@@ -20,7 +20,6 @@ import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLOConsumptionBreakdown;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
-import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
 import io.harness.cvng.servicelevelobjective.beans.UnavailabilityInstancesResponse;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
@@ -84,24 +83,6 @@ public class SLODashboardResource {
 
   public static final String SLO = "SLO";
   public static final String VIEW_PERMISSION = "chi_slo_view";
-
-  @GET
-  @Path("widgets")
-  @ExceptionMetered
-  @ApiOperation(value = "get widget list", nickname = "getSLODashboardWidgets", hidden = true)
-  @Operation(operationId = "getSLODashboardWidgets", summary = "Get widget list",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Gets the SLOs for dashboard")
-      })
-  @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
-  @Deprecated
-  public ResponseDTO<PageResponse<SLODashboardWidget>>
-  getSloDashboardWidgets(@NotNull @BeanParam ProjectParams projectParams, @BeanParam SLODashboardApiFilter filter,
-      @BeanParam PageParams pageParams) {
-    return ResponseDTO.newResponse(sloDashboardService.getSloDashboardWidgets(projectParams, filter, pageParams));
-  }
 
   @GET
   @Path("widgets/list")

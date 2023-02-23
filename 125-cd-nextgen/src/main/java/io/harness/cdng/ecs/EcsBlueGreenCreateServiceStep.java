@@ -28,6 +28,7 @@ import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenPrepareRollbackRequest;
+import io.harness.delegate.task.ecs.request.EcsTaskArnBlueGreenCreateServiceRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -47,6 +48,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+
+import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -89,6 +92,11 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
             .stageTargetGroupArn(ecsStepExecutorParams.getStageTargetGroupArn())
             .build();
 
+    if (ecsStepExecutorParams.getEcsTaskDefinitionManifestContent() == null) {
+      return executeEcsTaskWithTaskArn(stepParameters, ambiance, unitProgressData, ecsStepExecutorParams,
+          executionPassThroughData, ecsLoadBalancerConfig);
+    }
+
     EcsBlueGreenCreateServiceRequest ecsBlueGreenCreateServiceRequest =
         EcsBlueGreenCreateServiceRequest.builder()
             .accountId(accountId)
@@ -105,8 +113,8 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
             .targetGroupArnKey(ecsStepExecutorParams.getTargetGroupArnKey())
             .build();
 
-    return ecsStepCommonHelper.queueEcsTask(
-        stepParameters, ecsBlueGreenCreateServiceRequest, ambiance, executionPassThroughData, true);
+    return ecsStepCommonHelper.queueEcsTask(stepParameters, ecsBlueGreenCreateServiceRequest, ambiance,
+        executionPassThroughData, true, TaskType.ECS_COMMAND_TASK_NG);
   }
 
   @Override
@@ -135,8 +143,8 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
             .build();
-    return ecsStepCommonHelper.queueEcsTask(
-        stepParameters, ecsBlueGreenPrepareRollbackRequest, ambiance, ecsStepPassThroughData, false);
+    return ecsStepCommonHelper.queueEcsTask(stepParameters, ecsBlueGreenPrepareRollbackRequest, ambiance,
+        ecsStepPassThroughData, false, TaskType.ECS_COMMAND_TASK_NG);
   }
 
   @Override
@@ -212,5 +220,30 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     return ecsStepCommonHelper.startChainLink(this, ambiance, stepParameters, ecsStepHelper);
+  }
+
+  private TaskChainResponse executeEcsTaskWithTaskArn(StepElementParameters stepElementParameters, Ambiance ambiance,
+      UnitProgressData unitProgressData, EcsStepExecutorParams ecsStepExecutorParams,
+      EcsExecutionPassThroughData executionPassThroughData, EcsLoadBalancerConfig ecsLoadBalancerConfig) {
+    InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
+    final String accountId = AmbianceUtils.getAccountId(ambiance);
+    EcsTaskArnBlueGreenCreateServiceRequest ecsTaskArnBlueGreenCreateServiceRequest =
+        EcsTaskArnBlueGreenCreateServiceRequest.builder()
+            .accountId(accountId)
+            .ecsCommandType(EcsCommandTypeNG.ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE)
+            .commandName(ECS_BLUE_GREEN__CREATE_SERVICE_COMMAND_NAME)
+            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+            .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+            .ecsTaskDefinitionArn(ecsStepCommonHelper.getTaskDefinitionArn(ambiance))
+            .ecsServiceDefinitionManifestContent(ecsStepExecutorParams.getEcsServiceDefinitionManifestContent())
+            .ecsScalableTargetManifestContentList(ecsStepExecutorParams.getEcsScalableTargetManifestContentList())
+            .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
+            .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
+            .targetGroupArnKey(ecsStepExecutorParams.getTargetGroupArnKey())
+            .build();
+
+    return ecsStepCommonHelper.queueEcsTask(stepElementParameters, ecsTaskArnBlueGreenCreateServiceRequest, ambiance,
+        executionPassThroughData, true, TaskType.ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE_NG);
   }
 }

@@ -19,7 +19,11 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.usage.dto.ServiceInstancesDateUsageDTO;
+import io.harness.cdng.usage.dto.ServiceInstancesDateUsageParams;
+import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
 import io.harness.exception.InvalidRequestException;
+import io.harness.licensing.usage.params.filter.ServiceInstanceReportType;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
@@ -31,7 +35,10 @@ import io.harness.rule.OwnerRule;
 import software.wings.beans.Service.ServiceKeys;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -55,6 +62,7 @@ public class CDLicenseUsageResourceTest extends CategoryTest {
   private ServiceResponseDTO serviceResponseDTO;
 
   @Mock private ServiceEntityService serviceEntityService;
+  @Mock private CDLicenseUsageImpl cdLicenseUsageService;
   @InjectMocks private CDLicenseUsageResource cdLicenseUsageResource;
 
   @Before
@@ -116,5 +124,66 @@ public class CDLicenseUsageResourceTest extends CategoryTest {
                                ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER, "services", 0, 10, null))
         .hasMessage(format("Invalid account identifier, %s", ACCOUNT_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.IVAN)
+  @Category(UnitTests.class)
+  public void testGetServiceInstancesDateUsage() {
+    Map<String, Integer> serviceInstancesUsage = getMonthlyServiceUsage();
+    when(cdLicenseUsageService.getServiceInstancesDateUsage(any(), any()))
+        .thenReturn(ServiceInstancesDateUsageDTO.builder()
+                        .serviceInstancesUsage(serviceInstancesUsage)
+                        .reportType(ServiceInstanceReportType.MONTHLY)
+                        .build());
+
+    ServiceInstancesDateUsageDTO serviceInstancesDateUsage = cdLicenseUsageResource
+                                                                 .getServiceInstancesDateUsage(ACCOUNT_IDENTIFIER,
+                                                                     ServiceInstancesDateUsageParams.builder()
+                                                                         .fromDate("2022-01-01")
+                                                                         .toDate("2023-01-01")
+                                                                         .reportType(ServiceInstanceReportType.MONTHLY)
+                                                                         .build())
+                                                                 .getData();
+
+    assertThat(serviceInstancesDateUsage).isNotNull();
+    assertThat(serviceInstancesDateUsage.getServiceInstancesUsage().size()).isEqualTo(12);
+    Map<String, Integer> serviceInstances = serviceInstancesDateUsage.getServiceInstancesUsage();
+    Integer serviceInstancesJanuary = serviceInstances.get("2022-01-01");
+    assertThat(serviceInstancesJanuary).isEqualTo(1);
+    Integer serviceInstancesDecember = serviceInstances.get("2022-12-01");
+    assertThat(serviceInstancesDecember).isEqualTo(18);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.IVAN)
+  @Category(UnitTests.class)
+  public void testGetServiceInstancesDateUsageWithInvalidAccountIdentifier() {
+    when(cdLicenseUsageService.getServiceInstancesDateUsage(any(), any()))
+        .thenThrow(new InvalidRequestException(format("Invalid account identifier, %s", ACCOUNT_IDENTIFIER)));
+
+    assertThatThrownBy(()
+                           -> cdLicenseUsageResource.getServiceInstancesDateUsage(
+                               ACCOUNT_IDENTIFIER, ServiceInstancesDateUsageParams.builder().build()))
+        .hasMessage(format("Invalid account identifier, %s", ACCOUNT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @NotNull
+  private Map<String, Integer> getMonthlyServiceUsage() {
+    Map<String, Integer> serviceInstancesUsage = new HashMap<>();
+    serviceInstancesUsage.put("2022-01-01", 1);
+    serviceInstancesUsage.put("2022-02-01", 2);
+    serviceInstancesUsage.put("2022-03-01", 3);
+    serviceInstancesUsage.put("2022-04-01", 4);
+    serviceInstancesUsage.put("2022-05-01", 5);
+    serviceInstancesUsage.put("2022-06-01", 1);
+    serviceInstancesUsage.put("2022-07-01", 10);
+    serviceInstancesUsage.put("2022-08-01", 11);
+    serviceInstancesUsage.put("2022-09-01", 1);
+    serviceInstancesUsage.put("2022-10-01", 1);
+    serviceInstancesUsage.put("2022-11-01", 1);
+    serviceInstancesUsage.put("2022-12-01", 18);
+    return serviceInstancesUsage;
   }
 }

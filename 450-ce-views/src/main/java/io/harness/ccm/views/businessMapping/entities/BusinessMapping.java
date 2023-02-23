@@ -64,10 +64,25 @@ public final class BusinessMapping implements PersistentEntity, UuidAware, Creat
         .costTargets(getCostTargets())
         .sharedCosts(getSharedCosts())
         .unallocatedCost(getUnallocatedCost())
+        .dataSources(getDataSources())
         .createdAt(getCreatedAt())
         .lastUpdatedAt(getLastUpdatedAt())
         .createdBy(getCreatedBy())
         .lastUpdatedBy(getLastUpdatedBy())
+        .build();
+  }
+
+  public static BusinessMapping fromHistory(BusinessMappingHistory businessMappingHistory) {
+    return BusinessMapping.builder()
+        .uuid(businessMappingHistory.getBusinessMappingId())
+        .name(businessMappingHistory.getName())
+        .accountId(businessMappingHistory.getAccountId())
+        .costTargets(businessMappingHistory.getCostTargets())
+        .sharedCosts(businessMappingHistory.getSharedCosts())
+        .unallocatedCost(businessMappingHistory.getUnallocatedCost())
+        .dataSources(businessMappingHistory.getDataSources())
+        .createdAt(businessMappingHistory.getCreatedAt())
+        .lastUpdatedAt(businessMappingHistory.getLastUpdatedAt())
         .build();
   }
 }

@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step.pcf;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.tas.TasCommandScript;
 import io.harness.cdng.tas.TasCommandStepInfo;
 import io.harness.cdng.tas.TasCommandStepNode;
@@ -36,6 +37,11 @@ public class PcfPluginStepMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.TANZU_COMMAND;
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.TAS;
   }
 
   @Override

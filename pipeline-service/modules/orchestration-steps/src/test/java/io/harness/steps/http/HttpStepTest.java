@@ -7,11 +7,11 @@
 
 package io.harness.steps.http;
 
-import static io.harness.rule.OwnerRule.NAMAN;
-import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.powermock.api.mockito.PowerMockito.when;
 
@@ -19,12 +19,16 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.http.HttpStepResponse;
+import io.harness.delegate.task.http.HttpTaskParametersNg;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.network.Http;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -36,6 +40,8 @@ import io.harness.rule.Owner;
 import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.utils.PmsFeatureFlagHelper;
+
+import software.wings.beans.TaskType;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
@@ -71,6 +77,7 @@ public class HttpStepTest extends CategoryTest {
   @Mock private ILogStreamingStepClient iLogStreamingStepClient;
   @Mock private NGLogCallback ngLogCallback;
   @InjectMocks HttpStep httpStep;
+  private String TEST_URL = "https://www.google.com";
 
   @Test
   @Owner(developers = NAMAN)
@@ -220,7 +227,7 @@ public class HttpStepTest extends CategoryTest {
     ambiance = Ambiance.newBuilder().build();
     httpStepParameters = HttpStepParameters.infoBuilder()
                              .method(ParameterField.createValueField("GET"))
-                             .url(ParameterField.createValueField("https://www.google.com"))
+                             .url(ParameterField.createValueField(TEST_URL))
                              .delegateSelectors(ParameterField.createValueField(CollectionUtils.emptyIfNull(
                                  delegateSelectors != null ? delegateSelectors.getValue() : null)))
                              .build();
@@ -258,7 +265,7 @@ public class HttpStepTest extends CategoryTest {
 
     httpStepParameters = HttpStepParameters.infoBuilder()
                              .method(ParameterField.createValueField("GET"))
-                             .url(ParameterField.createValueField("https://www.google.com"))
+                             .url(ParameterField.createValueField(TEST_URL))
                              .delegateSelectors(ParameterField.createValueField(CollectionUtils.emptyIfNull(
                                  delegateSelectors != null ? delegateSelectors.getValue() : null)))
                              .assertion(ParameterField.createValueField("<+httpResponseCode> == 200"))
@@ -276,7 +283,7 @@ public class HttpStepTest extends CategoryTest {
 
     assertThat(stepResponse.getStatus().name().equals(Status.SUCCEEDED.name())).isEqualTo(true);
     assertThat(outcome.getHttpMethod().equals("GET")).isEqualTo(true);
-    assertThat(outcome.getHttpUrl().equals("https://www.google.com")).isEqualTo(true);
+    assertThat(outcome.getHttpUrl().equals(TEST_URL)).isEqualTo(true);
     assertThat(outcome.getHttpResponseCode()).isEqualTo(200);
     assertThat(outcome.getStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(outcome.getErrorMsg()).isEqualTo("No error message");
@@ -288,5 +295,46 @@ public class HttpStepTest extends CategoryTest {
     stepResponse = httpStep.handleTaskResult(ambiance, stepElementParameters, () -> httpStepResponse);
     assertThat(stepResponse.getStatus().name().equals(Status.FAILED.name())).isEqualTo(true);
     assertThat(stepResponse.getFailureInfo().getErrorMessage()).isEqualTo("assertion failed");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testObtainTaskWithExpressionBody() {
+    MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class);
+    // expected task parameters as argument matchers
+    HttpTaskParametersNg expectedTaskParams = HttpTaskParametersNg.builder()
+                                                  .body("namespace: <+input>")
+                                                  .url(TEST_URL)
+                                                  .method("GET")
+                                                  .socketTimeoutMillis(1200000)
+                                                  .build();
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(NGTimeConversionHelper.convertTimeStringToMilliseconds("20m"))
+                                  .taskType(TaskType.HTTP_TASK_NG.name())
+                                  .parameters(new Object[] {expectedTaskParams})
+                                  .build();
+
+    aStatic.when(() -> TaskRequestsUtils.prepareTaskRequestWithTaskSelector(any(), eq(taskData), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    ambiance = Ambiance.newBuilder().build();
+    httpStepParameters = HttpStepParameters.infoBuilder()
+                             .method(ParameterField.createValueField("GET"))
+                             .url(ParameterField.createValueField(TEST_URL))
+                             .requestBody(ParameterField.createExpressionField(true, "namespace: <+input>", null, true))
+                             .delegateSelectors(ParameterField.createValueField(CollectionUtils.emptyIfNull(
+                                 delegateSelectors != null ? delegateSelectors.getValue() : null)))
+                             .build();
+    stepElementParameters = StepElementParameters.builder().spec(httpStepParameters).build();
+
+    // adding a timeout field
+    stepElementParameters = StepElementParameters.builder()
+                                .spec(httpStepParameters)
+                                .timeout(ParameterField.createValueField("20m"))
+                                .build();
+
+    // non null task request
+    assertThat(httpStep.obtainTask(ambiance, stepElementParameters, null)).isEqualTo(TaskRequest.newBuilder().build());
   }
 }

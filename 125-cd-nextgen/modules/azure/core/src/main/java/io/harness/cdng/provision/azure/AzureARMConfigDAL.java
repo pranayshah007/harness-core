@@ -7,6 +7,8 @@
 
 package io.harness.cdng.provision.azure;
 
+import static java.util.Objects.requireNonNull;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.provision.azure.beans.AzureARMConfig;
@@ -26,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class AzureARMConfigDAL {
+  private static final String NOT_NULL_MESSAGE = "%s must not be null";
+
   @Inject private HPersistence persistence;
 
   public void saveAzureARMConfig(@Nonnull AzureARMConfig azureARMConfig) {
@@ -51,5 +55,31 @@ public class AzureARMConfigDAL {
                            .filter(AzureARMConfigKeys.projectId, AmbianceUtils.getProjectIdentifier(ambiance))
                            .filter(AzureARMConfigKeys.provisionerIdentifier, provisionerIdentifier)
                            .filter(AzureARMConfigKeys.stageExecutionId, ambiance.getStageExecutionId()));
+  }
+
+  public void deleteForAccount(String accountId) {
+    requireNonNull(accountId, String.format(NOT_NULL_MESSAGE, accountId));
+
+    persistence.delete(persistence.createQuery(AzureARMConfig.class).filter(AzureARMConfigKeys.accountId, accountId));
+  }
+
+  public void deleteForOrganization(String accountId, String orgId) {
+    requireNonNull(accountId, String.format(NOT_NULL_MESSAGE, accountId));
+    requireNonNull(orgId, String.format(NOT_NULL_MESSAGE, orgId));
+
+    persistence.delete(persistence.createQuery(AzureARMConfig.class)
+                           .filter(AzureARMConfigKeys.accountId, accountId)
+                           .filter(AzureARMConfigKeys.orgId, orgId));
+  }
+
+  public void deleteForProject(String accountId, String orgId, String projectId) {
+    requireNonNull(accountId, String.format(NOT_NULL_MESSAGE, accountId));
+    requireNonNull(orgId, String.format(NOT_NULL_MESSAGE, orgId));
+    requireNonNull(projectId, String.format(NOT_NULL_MESSAGE, projectId));
+
+    persistence.delete(persistence.createQuery(AzureARMConfig.class)
+                           .filter(AzureARMConfigKeys.accountId, accountId)
+                           .filter(AzureARMConfigKeys.orgId, orgId)
+                           .filter(AzureARMConfigKeys.projectId, projectId));
   }
 }

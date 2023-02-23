@@ -86,7 +86,6 @@ import retrofit2.Response;
 public class InfraMigrationService extends NgMigrationService {
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject private ElastigroupConfigurationMigrationService elastigroupConfigurationMigrationService;
-  @Inject MigratorMappingService migratorMappingService;
   @Inject InfrastructureResourceClient infrastructureResourceClient;
 
   @Override
@@ -147,11 +146,16 @@ public class InfraMigrationService extends NgMigrationService {
     children.add(CgEntityId.builder().id(infra.getInfrastructure().getCloudProviderId()).type(CONNECTOR).build());
 
     List<String> connectorIds = InfraMapperFactory.getInfraDefMapper(infra).getConnectorIds(infra);
-    if (EmptyPredicate.isNotEmpty(connectorIds)) {
+    if (isNotEmpty(connectorIds)) {
       children.addAll(connectorIds.stream()
                           .filter(StringUtils::isNotBlank)
                           .map(connectorId -> CgEntityId.builder().id(connectorId).type(CONNECTOR).build())
                           .collect(Collectors.toList()));
+    }
+
+    if (isNotEmpty(infra.getProvisionerId())) {
+      children.add(
+          CgEntityId.builder().id(infra.getProvisionerId()).type(NGMigrationEntityType.INFRA_PROVISIONER).build());
     }
 
     if (infra.getCloudProviderType() == AWS) {

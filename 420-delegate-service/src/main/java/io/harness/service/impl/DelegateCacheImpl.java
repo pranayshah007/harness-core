@@ -26,6 +26,7 @@ import io.harness.delegate.beans.DelegateGroup.DelegateGroupKeys;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfile.DelegateProfileKeys;
 import io.harness.delegate.beans.DelegateTaskRank;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.persistence.HPersistence;
 import io.harness.redis.intfc.DelegateRedissonCacheManager;
@@ -61,6 +62,7 @@ public class DelegateCacheImpl implements DelegateCache {
   private static final int MAX_DELEGATE_META_INFO_ENTRIES = 10000;
 
   @Inject private HPersistence persistence;
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Inject @Named(DELEGATE_CACHE) RLocalCachedMap<String, Delegate> delegateRedisCache;
   @Inject @Named(DELEGATE_GROUP_CACHE) RLocalCachedMap<String, DelegateGroup> delegateGroupRedisCache;
@@ -143,10 +145,7 @@ public class DelegateCacheImpl implements DelegateCache {
           .build(new CacheLoader<String, Long>() {
             @Override
             public Long load(@NotNull String accountId) {
-              return persistence.createQuery(DelegateTask.class)
-                  .filter(DelegateTaskKeys.accountId, accountId)
-                  .filter(DelegateTaskKeys.rank, DelegateTaskRank.OPTIONAL)
-                  .count();
+              return populateDelegateTaskCount(accountId, DelegateTaskRank.OPTIONAL);
             }
           });
 
@@ -157,10 +156,7 @@ public class DelegateCacheImpl implements DelegateCache {
           .build(new CacheLoader<String, Long>() {
             @Override
             public Long load(@NotNull String accountId) {
-              return persistence.createQuery(DelegateTask.class)
-                  .filter(DelegateTaskKeys.accountId, accountId)
-                  .filter(DelegateTaskKeys.rank, DelegateTaskRank.IMPORTANT)
-                  .count();
+              return populateDelegateTaskCount(accountId, DelegateTaskRank.IMPORTANT);
             }
           });
 
@@ -296,6 +292,22 @@ public class DelegateCacheImpl implements DelegateCache {
         .project(DelegateKeys.accountId, true)
         .project(DelegateKeys.supportedTaskTypes, true)
         .asList();
+  }
+
+  private Long populateDelegateTaskCount(String accountId, DelegateTaskRank rank) {
+    long count = getDelegateTaskCount(accountId, rank, false);
+
+    if (delegateTaskMigrationHelper.isDelegateTaskMigrationEnabled()) {
+      count += getDelegateTaskCount(accountId, rank, true);
+    }
+    return count;
+  }
+
+  private long getDelegateTaskCount(String accountId, DelegateTaskRank rank, boolean isDelegateTaskMigrationEnabled) {
+    return persistence.createQuery(DelegateTask.class, isDelegateTaskMigrationEnabled)
+        .filter(DelegateTaskKeys.accountId, accountId)
+        .filter(DelegateTaskKeys.rank, rank)
+        .count();
   }
 
   private Delegate getDelegateFromRedisCache(String delegateId, boolean forceRefresh) {

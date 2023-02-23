@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.WARN;
+import static io.harness.provision.TerraformConstants.SECONDS_TO_WAIT_FOR_GRACEFUL_SHUTDOWN;
 
 import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
@@ -328,6 +329,7 @@ public class TerraformClientImpl implements TerraformClient {
     }
 
     return cliHelper.executeCliCommand(command, timeoutInMillis, envVariables, scriptDirectory, executionLogCallBack,
-        loggingCommand, logOutputStream, new TerraformCliErrorLogOutputStream(executionLogCallBack));
+        loggingCommand, logOutputStream, new TerraformCliErrorLogOutputStream(executionLogCallBack),
+        SECONDS_TO_WAIT_FOR_GRACEFUL_SHUTDOWN);
   }
 }

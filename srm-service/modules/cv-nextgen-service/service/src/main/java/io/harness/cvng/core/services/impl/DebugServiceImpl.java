@@ -34,13 +34,11 @@ import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjec
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
@@ -58,7 +56,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class DebugServiceImpl implements DebugService {
-  @Inject ServiceLevelObjectiveService serviceLevelObjectiveService;
   @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject SLOHealthIndicatorService sloHealthIndicatorService;
@@ -83,7 +80,6 @@ public class DebugServiceImpl implements DebugService {
   public SLODebugResponse getSLODebugResponse(ProjectParams projectParams, String identifier) {
     AbstractServiceLevelObjective abstractServiceLevelObjective =
         serviceLevelObjectiveV2Service.getEntity(projectParams, identifier);
-    ServiceLevelObjective serviceLevelObjective = serviceLevelObjectiveService.getEntity(projectParams, identifier);
     Preconditions.checkNotNull(abstractServiceLevelObjective, "Value of Identifier is not present in database");
 
     Preconditions.checkArgument(abstractServiceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE));
@@ -94,7 +90,7 @@ public class DebugServiceImpl implements DebugService {
         projectParams, simpleServiceLevelObjective.getServiceLevelIndicators());
 
     SLOHealthIndicator sloHealthIndicator =
-        sloHealthIndicatorService.getBySLOIdentifier(projectParams, serviceLevelObjective.getIdentifier());
+        sloHealthIndicatorService.getBySLOIdentifier(projectParams, abstractServiceLevelObjective.getIdentifier());
 
     Map<String, VerificationTask> sliIdentifierToVerificationTaskMap = new HashMap<>();
 
@@ -122,7 +118,6 @@ public class DebugServiceImpl implements DebugService {
 
     return SLODebugResponse.builder()
         .projectParams(projectParams)
-        .serviceLevelObjective(serviceLevelObjective)
         .simpleServiceLevelObjective(simpleServiceLevelObjective)
         .serviceLevelIndicatorList(serviceLevelIndicatorList)
         .sloHealthIndicator(sloHealthIndicator)

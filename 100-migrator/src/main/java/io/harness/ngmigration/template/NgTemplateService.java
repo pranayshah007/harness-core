@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
@@ -21,7 +22,6 @@ import software.wings.beans.template.Template;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,7 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.CDC)
 public interface NgTemplateService {
   default Set<String> getExpressions(Template template) {
-    return Collections.emptySet();
+    return MigratorExpressionUtils.getExpressions(template.getTemplateObject());
   }
 
   default TemplateEntityType getTemplateEntityType() {

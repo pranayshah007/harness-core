@@ -46,4 +46,5 @@ public class QLDelegate implements QLObject {
   List<DelegateScope> includeScopes;
   List<DelegateScope> excludeScopes;
   List<String> supportedTasks;
+  boolean disconnected;
 }
