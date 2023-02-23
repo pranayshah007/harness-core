@@ -29,6 +29,7 @@ import io.harness.ccm.audittrails.events.RuleCreateEvent;
 import io.harness.ccm.audittrails.events.RuleDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleUpdateEvent;
 import io.harness.ccm.governance.faktory.FaktoryProducer;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CloneRuleDTO;
 import io.harness.ccm.views.dto.CreateRuleDTO;
@@ -149,7 +150,7 @@ public class GovernanceRuleResource {
   private final GovernanceRuleService governanceRuleService;
   private final RuleSetService ruleSetService;
   private final RuleEnforcementService ruleEnforcementService;
-  //  private final CCMRbacHelper rbacHelper
+  private final CCMRbacHelper rbacHelper;
   private final ConnectorResourceClient connectorResourceClient;
   private final RuleExecutionService ruleExecutionService;
   private final TelemetryReporter telemetryReporter;
@@ -168,9 +169,9 @@ public class GovernanceRuleResource {
       ConnectorResourceClient connectorResourceClient, RuleExecutionService ruleExecutionService,
       TelemetryReporter telemetryReporter, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
       OutboxService outboxService, YamlSchemaProvider yamlSchemaProvider, YamlSchemaValidator yamlSchemaValidator,
-      CENextGenConfiguration configuration) {
+      CENextGenConfiguration configuration, CCMRbacHelper rbacHelper) {
     this.governanceRuleService = governanceRuleService;
-    //    this rbacHelper rbacHelper
+    this.rbacHelper = rbacHelper;
     this.ruleEnforcementService = ruleEnforcementService;
     this.ruleSetService = ruleSetService;
     this.connectorResourceClient = connectorResourceClient;
@@ -201,7 +202,7 @@ public class GovernanceRuleResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(
           required = true, description = "Request body containing Rule object") @Valid CreateRuleDTO createRuleDTO) {
-    // rbacHelper checkRuleEditPermission(accountId, null, null)
+    rbacHelper.checkRuleEditPermission(accountId, null, null);
     if (createRuleDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
@@ -297,7 +298,7 @@ public class GovernanceRuleResource {
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(
           required = true, description = "Request body containing rule object") @Valid CreateRuleDTO createRuleDTO) {
-    // rbacHelper checkRuleEditPermission(accountId, null, null)
+    rbacHelper.checkRuleEditPermission(accountId, null, null);
     if (createRuleDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
@@ -345,7 +346,6 @@ public class GovernanceRuleResource {
                      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(
           required = true, description = "Request body containing rule object") @Valid CreateRuleDTO createRuleDTO) {
-    // rbacHelper checkRuleEditPermission(accountId, null, null)
     if (createRuleDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
@@ -418,7 +418,7 @@ public class GovernanceRuleResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("ruleID") @Parameter(
           required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid) {
-    // rbacHelper checkRuleDeletePermission(accountId, null, null)
+    rbacHelper.checkRuleDeletePermission(accountId, null, null);
     HashMap<String, Object> properties = new HashMap<>();
     Rule rule = governanceRuleService.fetchById(accountId, uuid, false);
     properties.put(MODULE, MODULE_NAME);
@@ -446,7 +446,7 @@ public class GovernanceRuleResource {
   listRule(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing rule object") @Valid ListDTO listDTO) {
-    // rbacHelper checkRuleViewPermission(accountId, null, null)
+    rbacHelper.checkRuleViewPermission(accountId, null, null);
     GovernanceRuleFilter query;
     if (listDTO == null) {
       query = GovernanceRuleFilter.builder().build();
