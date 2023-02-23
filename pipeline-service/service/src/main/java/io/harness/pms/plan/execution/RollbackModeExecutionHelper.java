@@ -19,7 +19,10 @@ import io.harness.pms.contracts.steps.StepCategory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -34,21 +37,28 @@ public class RollbackModeExecutionHelper {
 
   public Plan transformPlanForRollbackMode(Plan plan, String previousExecutionId, List<String> nodeIDsToPreserve) {
     List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodesWithStageFQNs(previousExecutionId);
-    List<Node> updatedPlanNodes = nodeExecutions.stream()
-                                      .map(nodeExecution
-                                          -> IdentityPlanNode.mapPlanNodeToIdentityNode(nodeExecution.getNode(),
-                                              nodeExecution.getStepType(), nodeExecution.getUuid()))
-                                      .filter(node -> node.getStepType().getStepCategory() != StepCategory.STAGE)
-                                      .collect(Collectors.toList());
-    plan.getPlanNodes().forEach(planNode -> {
-      if (nodeIDsToPreserve.contains(planNode.getUuid())) {
+    Map<String, NodeExecution> planNodeIDtoNodeExecution =
+        nodeExecutions.stream().collect(Collectors.toMap(NodeExecution::getNodeId, Function.identity()));
+
+    List<Node> updatedPlanNodes = new ArrayList<>();
+    for (Node planNode : plan.getPlanNodes()) {
+      if (nodeIDsToPreserve.contains(planNode.getUuid())
+          || planNode.getStepType().getStepCategory() == StepCategory.STAGE
+          || EmptyPredicate.isEmpty(planNode.getStageFqn())) {
         updatedPlanNodes.add(planNode);
-      } else if (EmptyPredicate.isEmpty(planNode.getStageFqn())) {
-        updatedPlanNodes.add(planNode);
-      } else if (planNode.getStepType().getStepCategory() == StepCategory.STAGE) {
-        updatedPlanNodes.add(planNode);
+        continue;
       }
-    });
+      // The processed YAML used in rollback mode is the same as the one used in the original execution. Hence, the
+      // plan node IDs used will also be the same
+      NodeExecution nodeExecution = planNodeIDtoNodeExecution.get(planNode.getUuid());
+      if (nodeExecution == null) {
+        // this means that this given node was not executed in the previous execution
+        continue;
+      }
+      IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(
+          nodeExecution.getNode(), nodeExecution.getStepType(), nodeExecution.getUuid());
+      updatedPlanNodes.add(identityPlanNode);
+    }
     return Plan.builder()
         .uuid(plan.getUuid())
         .planNodes(updatedPlanNodes)
