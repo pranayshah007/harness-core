@@ -15,7 +15,7 @@ import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
-import io.harness.delegate.core.AcquireTasksResponse;
+import io.harness.delegate.core.beans.AcquireTasksResponse;
 import io.harness.rest.RestResponse;
 
 import retrofit2.Call;

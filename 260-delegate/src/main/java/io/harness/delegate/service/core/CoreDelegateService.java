@@ -14,9 +14,9 @@ import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.DelegateTaskResponse;
-import io.harness.delegate.core.ExecutionMode;
-import io.harness.delegate.core.ExecutionPriority;
-import io.harness.delegate.core.PluginDescriptor;
+import io.harness.delegate.core.beans.ExecutionMode;
+import io.harness.delegate.core.beans.ExecutionPriority;
+import io.harness.delegate.core.beans.TaskDescriptor;
 import io.harness.delegate.service.common.SimpleDelegateAgent;
 import io.harness.delegate.service.core.k8s.K8STaskRunner;
 
@@ -40,24 +40,24 @@ public class CoreDelegateService extends SimpleDelegateAgent {
   protected void abortTask(final DelegateTaskAbortEvent taskEvent) {}
 
   @Override
-  protected void executeTask(final @NonNull PluginDescriptor pluginDescriptor) {
+  protected void executeTask(final @NonNull TaskDescriptor task) {
     try {
-      validatePluginData(pluginDescriptor);
-      taskRunner.launchTask(pluginDescriptor);
+      validatePluginData(task);
+      taskRunner.launchTask(task);
     } catch (IOException e) {
-      log.error("Failed to create the task {}", pluginDescriptor.getId(), e);
+      log.error("Failed to create the task {}", task.getId(), e);
     } catch (ApiException e) {
       log.error("APIException: {}, {}, {}, {}, {}", e.getCode(), e.getResponseBody(), e.getMessage(),
           e.getResponseHeaders(), e.getCause());
-      log.error("Failed to create the task {}", pluginDescriptor.getId(), e);
+      log.error("Failed to create the task {}", task.getId(), e);
     }
   }
 
-  private void validatePluginData(final @NonNull PluginDescriptor pluginDescriptor) {
-    if (pluginDescriptor.getPriority() == ExecutionPriority.PRIORITY_UNKNOWN) {
+  private void validatePluginData(final @NonNull TaskDescriptor task) {
+    if (task.getPriority() == ExecutionPriority.PRIORITY_UNKNOWN) {
       throw new IllegalArgumentException("Task Priority must be specified");
     }
-    if (pluginDescriptor.getMode() == ExecutionMode.MODE_UNKNOWN) {
+    if (task.getMode() == ExecutionMode.MODE_UNKNOWN) {
       throw new IllegalArgumentException("Task Mode must be specified");
     }
   }

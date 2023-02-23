@@ -5,7 +5,7 @@
 
 syntax = "proto3";
 
-package io.harness.delegate.core;
+package io.harness.delegate.core.beans;
 
 option java_multiple_files = true;
 
@@ -15,16 +15,16 @@ import "google/protobuf/duration.proto";
 /*
  All data that is needed to execute the job
  */
-message PluginDescriptor {
-  string id = 1;
+message TaskDescriptor {
+  string id = 1;  // Id for the task
   ExecutionMode mode = 2;
   ExecutionPriority priority = 3;
-  ExecutionEnvironment runtime = 4;
-  PluginInput input = 5;
-  repeated PluginSecret input_secrets = 6;
-  repeated Resource resources = 7;
-  string logging_token = 8;
-  string callback_token = 9;
+  ExecutionEnvironment runtime = 4;       // Environment in which the task should run
+  TaskInput input = 5;                    // Task inputs
+  repeated TaskSecret input_secrets = 6;  // Task secrets. One instance can contain multiple secrets from same provider
+  repeated Resource resources = 7;        // Any additional resources the task might need (e.g. shared locations)
+  string logging_token = 8;               // Token for sending logs to logging service
+  string callback_token = 9;              // Token for sending notify event to the service that initiated a task
 }
 
 /*
@@ -50,8 +50,8 @@ enum ExecutionPriority {
 /*
   All the data needed to decrypt one or many secrets from specific secret manager using certain runtime environment
  */
-message PluginSecret {
-  PluginInput secrets = 1;           // PluginInput may contain any number of secrets, not necessarily just one
+message TaskSecret {
+  TaskInput secrets = 1;             // TaskInput may contain any number of secrets, not necessarily just one
   ExecutionEnvironment runtime = 2;  // Environment where the decryption should take place
   SecretConfig config = 3;           // Config that can be used to deserialize all secrets from input
 }
@@ -60,13 +60,15 @@ message PluginSecret {
   Defines the environment under which the job needs to be executed.
  */
 message ExecutionEnvironment {
-  PluginType type = 1;
+  string type = 1;  // Type of the plugin, can be anything from enum TaskType or any additional 3rd party plugins. It
+                    // can be left out if plugin can execute a single type of task
   PluginSource source = 2;
-  string using = 3;
-  ExecutionInfrastructure infra = 4;
-  ResourceRequirements resource = 5;
-  PluginInit init = 6;
-  ExecutionSchedule schedule = 7;
+  string uses = 3;  // source dependant location of the plugin (e.g. docker image tag, git repo etc...)
+  ExecutionInfrastructure infra =
+      4;  // Infra under which plugin should run. If left out delegate will use default runner
+  ResourceRequirements resource = 5;  // Resource requirements for infra types that need it (e.g. K8S CPU/Mem)
+  PluginInit init = 6;                // Any kind of init that needs to happen for the plugin (e.g. init script)
+  ExecutionSchedule schedule = 7;     // Schedule on which the plugin runs, applies only for MODE_PERPETUAL
 }
 
 /*
@@ -129,7 +131,7 @@ message ExecutionSchedule {
  Any parameters describing the job. data needs to be in byte format as delegate might be just passing it through without
  deserialization. Other fields can be interpreted by delegate.
  */
-message PluginInput {
+message TaskInput {
   // We could use only bytes, but Any gives us additional benefit of knowing the runtime data type for a negligible
   // additional size in bytes. There might also be a minimal performance penalty. There is nothing preventing users
   // using plain proto objects as bytes bypassing Any
@@ -137,13 +139,6 @@ message PluginInput {
     google.protobuf.Any proto_data = 1;  // for executions with proto spec.
     bytes binary_data = 2;               // for executions with any unstructured data formats including legacy kryo
   }
-}
-
-/*
- Type of the plugin, can be anything from enum TaskType or any additional 3rd party plugins
- */
-message PluginType {
-  string type = 1;
 }
 
 /*

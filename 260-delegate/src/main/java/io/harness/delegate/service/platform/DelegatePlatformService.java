@@ -28,7 +28,7 @@ import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.core.PluginDescriptor;
+import io.harness.delegate.core.beans.TaskDescriptor;
 import io.harness.delegate.service.common.AbstractDelegateAgentService;
 import io.harness.delegate.service.common.DelegateTaskExecutionData;
 import io.harness.logging.AutoLogContext;
@@ -92,7 +92,7 @@ public class DelegatePlatformService extends AbstractDelegateAgentService {
           .build();
 
   @Override
-  protected void executeTask(@NonNull final PluginDescriptor taskDescriptor) {
+  protected void executeTask(@NonNull final TaskDescriptor taskDescriptor) {
     final DelegateTaskPackage delegateTaskPackage =
         (DelegateTaskPackage) kryoSerializer.asInflatedObject(taskDescriptor.getInput().getBinaryData().toByteArray());
     final var taskData = delegateTaskPackage.getData();

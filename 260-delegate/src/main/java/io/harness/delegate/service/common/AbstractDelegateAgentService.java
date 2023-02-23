@@ -46,7 +46,7 @@ import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.configuration.DelegateConfiguration;
-import io.harness.delegate.core.PluginDescriptor;
+import io.harness.delegate.core.beans.TaskDescriptor;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.service.DelegateAgentService;
 import io.harness.delegate.service.core.client.DelegateCoreManagerClient;
@@ -169,7 +169,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
   private final AtomicBoolean selfDestruct = new AtomicBoolean(false);
 
   protected abstract void abortTask(DelegateTaskAbortEvent taskEvent);
-  protected abstract void executeTask(@NonNull PluginDescriptor pluginDescriptor);
+  protected abstract void executeTask(@NonNull TaskDescriptor task);
   protected abstract ImmutableList<String> getCurrentlyExecutingTaskIds();
   protected abstract ImmutableList<TaskType> getSupportedTasks();
   protected abstract void onDelegateStart();
@@ -315,7 +315,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
     }
   }
 
-  protected List<PluginDescriptor> acquireTask(final String delegateTaskId) throws IOException {
+  protected List<TaskDescriptor> acquireTask(final String delegateTaskId) throws IOException {
     final var response = executeRestCall(managerClient.acquireProtoTask(DelegateAgentCommonVariables.getDelegateId(),
         delegateTaskId, getDelegateConfiguration().getAccountId(), DELEGATE_INSTANCE_ID));
 
