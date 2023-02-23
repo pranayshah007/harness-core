@@ -10,6 +10,7 @@ package io.harness.cdng.aws.lambda.rollback;
 import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.aws.lambda.AwsLambdaHelper;
 import io.harness.cdng.aws.lambda.AwsLambdaStepPassThroughData;
@@ -60,6 +61,8 @@ import io.harness.tasks.ResponseData;
 import lombok.extern.slf4j.Slf4j;
 import software.wings.beans.TaskType;
 import software.wings.sm.states.AwsLambdaRollback;
+
+import java.util.Arrays;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -142,7 +145,7 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
                     .build();
 
     return awsLambdaHelper.queueTask(
-            stepParameters, awsLambdaRollbackRequest, TaskType.AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG, ambiance, AwsLambdaStepPassThroughData.builder().infrastructureOutcome(infrastructureOutcome).build(), true).getTaskRequest();
+            stepParameters, awsLambdaRollbackRequest, TaskType.AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG, ambiance, AwsLambdaStepPassThroughData.builder().infrastructureOutcome(infrastructureOutcome).build(), true, Arrays.asList(AwsLambdaCommandUnitConstants.rollback.toString())).getTaskRequest();
   }
 
   @Override

@@ -496,6 +496,7 @@ import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaPrepareRollbackRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaRollbackRequest;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
+import io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResponse;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaRollbackResponse;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.AzureTaskParameters;
@@ -2367,5 +2368,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
       kryo.register(AwsLambdaException.class, 10000511);
       kryo.register(AwsLambdaRollbackRequest.class, 10000512);
       kryo.register(AwsLambdaRollbackResponse.class, 10000513);
+      kryo.register(AwsLambdaPrepareRollbackResponse.class, 10000514);
   }
 }

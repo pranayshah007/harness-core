@@ -20,6 +20,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaTaskHelper;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaPrepareRollbackRequest;
@@ -76,7 +77,7 @@ public class AwsLambdaPrepareRollbackTaskHandler {
         (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
 
     AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig =
-        awsLambdaPrepareRollbackRequest.getAwsLambdaFunctionsInfraConfig();
+            (AwsLambdaFunctionsInfraConfig) awsLambdaPrepareRollbackRequest.getAwsLambdaInfraConfig();
 
     try {
       executionLogCallback.saveExecutionLog(

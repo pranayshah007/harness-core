@@ -30,17 +30,12 @@ public class AwsLambdaPrepareRollbackRequest implements AwsLambdaCommandRequest,
   AwsLambdaCommandTypeNG awsLambdaCommandTypeNG;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
-  @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig;
+  @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaInfraConfig awsLambdaInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) String awsLambdaDeployManifestContent;
   @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaArtifactConfig awsLambdaArtifactConfig;
 
   @Override
   public AwsLambdaCommandTypeNG getAwsLambdaCommandType() {
     return AwsLambdaCommandTypeNG.AWS_LAMBDA_PREPARE_ROLLBACK;
-  }
-
-  @Override
-  public AwsLambdaInfraConfig getAwsLambdaInfraConfig() {
-    return null;
   }
 }
