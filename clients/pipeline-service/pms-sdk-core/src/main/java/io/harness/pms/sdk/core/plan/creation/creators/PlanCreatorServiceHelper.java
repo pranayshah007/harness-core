@@ -120,6 +120,6 @@ public class PlanCreatorServiceHelper {
   }
 
   public boolean isBehaviourToPropagate(RollbackModeBehaviour behaviour) {
-    return behaviour == RollbackModeBehaviour.PRESERVE || behaviour == RollbackModeBehaviour.REPLACE;
+    return behaviour == RollbackModeBehaviour.PRESERVE;
   }
 }
