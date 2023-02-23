@@ -7,6 +7,8 @@
 
 package io.harness.idp.app;
 
+import static java.util.Collections.singletonList;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
@@ -16,11 +18,21 @@ import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
 
+import ch.qos.logback.access.spi.IAccessEvent;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
 import io.dropwizard.Configuration;
+import io.dropwizard.jetty.ConnectorFactory;
+import io.dropwizard.jetty.HttpConnectorFactory;
+import io.dropwizard.logging.FileAppenderFactory;
+import io.dropwizard.request.logging.LogbackAccessRequestLogFactory;
+import io.dropwizard.request.logging.RequestLogFactory;
+import io.dropwizard.server.DefaultServerFactory;
+import io.dropwizard.server.ServerFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import javax.ws.rs.Path;
 import lombok.Getter;
@@ -47,6 +59,52 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("backstageMasterUrl") private String backstageMasterUrl;
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
   public static final String IDP_SPEC_PACKAGE = "io.harness.spec.server.idp.v1";
+
+  public IdpConfiguration() {
+    DefaultServerFactory defaultServerFactory = new DefaultServerFactory();
+    defaultServerFactory.setJerseyRootPath("/");
+    defaultServerFactory.setRegisterDefaultExceptionMappers(Boolean.FALSE);
+    defaultServerFactory.setAdminContextPath("/admin");
+    defaultServerFactory.setAdminConnectors(singletonList(getDefaultAdminConnectorFactory()));
+    defaultServerFactory.setApplicationConnectors(singletonList(getDefaultApplicationConnectorFactory()));
+    defaultServerFactory.setRequestLogFactory(getDefaultLogbackAccessRequestLogFactory());
+    defaultServerFactory.setMaxThreads(512);
+    super.setServerFactory(defaultServerFactory);
+  }
+
+  @Override
+  public void setServerFactory(ServerFactory factory) {
+    DefaultServerFactory defaultServerFactory = (DefaultServerFactory) factory;
+    ((DefaultServerFactory) getServerFactory())
+        .setApplicationConnectors(defaultServerFactory.getApplicationConnectors());
+    ((DefaultServerFactory) getServerFactory()).setAdminConnectors(defaultServerFactory.getAdminConnectors());
+    ((DefaultServerFactory) getServerFactory()).setRequestLogFactory(defaultServerFactory.getRequestLogFactory());
+    ((DefaultServerFactory) getServerFactory()).setMaxThreads(defaultServerFactory.getMaxThreads());
+  }
+
+  private ConnectorFactory getDefaultApplicationConnectorFactory() {
+    final HttpConnectorFactory factory = new HttpConnectorFactory();
+    factory.setPort(12003);
+    return factory;
+  }
+
+  private ConnectorFactory getDefaultAdminConnectorFactory() {
+    final HttpConnectorFactory factory = new HttpConnectorFactory();
+    factory.setPort(12004);
+    return factory;
+  }
+
+  private RequestLogFactory getDefaultLogbackAccessRequestLogFactory() {
+    LogbackAccessRequestLogFactory logbackAccessRequestLogFactory = new LogbackAccessRequestLogFactory();
+    FileAppenderFactory<IAccessEvent> fileAppenderFactory = new FileAppenderFactory<>();
+    fileAppenderFactory.setArchive(true);
+    fileAppenderFactory.setCurrentLogFilename("access.log");
+    fileAppenderFactory.setThreshold(Level.ALL.toString());
+    fileAppenderFactory.setArchivedLogFilenamePattern("access.%d.log.gz");
+    fileAppenderFactory.setArchivedFileCount(14);
+    logbackAccessRequestLogFactory.setAppenders(ImmutableList.of(fileAppenderFactory));
+    return logbackAccessRequestLogFactory;
+  }
 
   public List<String> getDbAliases() {
     List<String> dbAliases = new ArrayList<>();

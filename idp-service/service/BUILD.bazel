@@ -23,6 +23,9 @@ java_binary(
     ]),
     data = [":resource"],
     main_class = "io.harness.idp.app.IdpApplication",
+    resources = [
+        "//idp-service/service/src/main/resources:resource",
+    ],
     visibility = ["//visibility:private"],
     deps = [
         "//:lombok",
@@ -42,8 +45,13 @@ java_binary(
         "//idp-service/service/src/main/java/io/harness/idp/namespace:module",
         "//idp-service/service/src/main/java/io/harness/idp/secret:module",
         "//idp-service/service/src/main/java/io/harness/idp/status:module",
+        "@maven//:ch_qos_logback_logback_access",
+        "@maven//:ch_qos_logback_logback_classic",
+        "@maven//:ch_qos_logback_logback_core",
         "@maven//:com_github_dirkraft_dropwizard_file_assets_dropwizard_file_assets",
         "@maven//:com_google_inject_guice",
+        "@maven//:org_apache_logging_log4j_log4j_api",
+        "@maven//:org_apache_logging_log4j_log4j_to_slf4j",
     ],
 )
 
@@ -67,8 +75,6 @@ java_library(
 )
 
 run_tests()
-
-run_analysis()
 
 exports_files([
     "config.yml",

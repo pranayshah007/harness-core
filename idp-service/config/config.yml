@@ -11,12 +11,14 @@ mongo:
   traceMode: DISABLED
   maxOperationTimeInMillis: 300000
 
-# change the ports
 server:
   applicationConnectors:
     - type: http
       port: 12003
       maxRequestHeaderSize: 100KiB
+  adminConnectors:
+    - type: http
+      port: 12004
   requestLog:
     appenders: []
   maxThreads: 1024
@@ -52,10 +54,10 @@ logging:
       threshold: TRACE
       target: STDOUT
       logFormat: "%date{ISO8601} %green([%thread]) %highlight(%-5level) %cyan(%logger) - %msg %yellow(%replace(%mdc){'(.+)', '[$1]'}) %n"
-#    - type: gke-console
-#      threshold: TRACE
-#      target: STDOUT
-#      stackdriverLogEnabled: true
+    - type: gke-console
+      threshold: TRACE
+      target: STDOUT
+      stackdriverLogEnabled: false
 
 logStreamingServiceConfig:
   baseUrl: http://localhost:8079
@@ -65,7 +67,6 @@ ngManagerServiceHttpClientConfig:
   baseUrl: http://localhost:7457/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
-  enableHttpLogging: ${ENABLE_HTTP_LOGGING:-false}
 
 ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 idpServiceSecret: ""
