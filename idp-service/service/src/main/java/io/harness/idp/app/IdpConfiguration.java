@@ -62,7 +62,7 @@ public class IdpConfiguration extends Configuration {
 
   public IdpConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();
-    defaultServerFactory.setJerseyRootPath("/api");
+    defaultServerFactory.setJerseyRootPath("/");
     defaultServerFactory.setRegisterDefaultExceptionMappers(Boolean.FALSE);
     defaultServerFactory.setAdminContextPath("/admin");
     defaultServerFactory.setAdminConnectors(singletonList(getDefaultAdminConnectorFactory()));
