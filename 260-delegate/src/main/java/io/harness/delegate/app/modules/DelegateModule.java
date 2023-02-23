@@ -102,6 +102,7 @@ import io.harness.delegate.app.DelegateApplication;
 import io.harness.delegate.aws.lambda.AwsLambdaCommandTaskHandler;
 import io.harness.delegate.aws.lambda.AwsLambdaDeployTaskCommandHandler;
 import io.harness.delegate.aws.lambda.AwsLambdaRollbackTaskCommandHandler;
+import io.harness.delegate.aws.lambda.AwsLambdaPrepareRollbackCommandTaskHandler;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.cf.PcfApplicationDetailsCommandTaskHandler;
@@ -238,6 +239,7 @@ import io.harness.delegate.task.aws.asg.AsgRollingDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackTaskNG;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
 import io.harness.delegate.task.aws.lambda.AwsLambdaDeployTask;
+import io.harness.delegate.task.aws.lambda.AwsLambdaPrepareRollbackTask;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.appservice.webapp.AzureWebAppTaskNG;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppFetchPreDeploymentDataRequestHandler;
@@ -2084,6 +2086,8 @@ public class DelegateModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), String.class, AwsLambdaCommandTaskHandler.class);
     awsCommandTaskHandler.addBinding(AwsLambdaCommandTypeNG.AWS_LAMBDA_DEPLOY.name())
         .to(AwsLambdaDeployTaskCommandHandler.class);
+    awsCommandTaskHandler.addBinding(AwsLambdaCommandTypeNG.AWS_LAMBDA_PREPARE_ROLLBACK.name())
+        .to(AwsLambdaPrepareRollbackCommandTaskHandler.class);
     awsCommandTaskHandler.addBinding(AwsLambdaCommandTypeNG.AWS_LAMBDA_ROLLBACK.name())
               .to(AwsLambdaRollbackTaskCommandHandler.class);
 
@@ -2158,6 +2162,8 @@ public class DelegateModule extends AbstractModule {
 
     // AWS Lambda
     mapBinder.addBinding(TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG).toInstance(AwsLambdaDeployTask.class);
+    mapBinder.addBinding(TaskType.AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG)
+        .toInstance(AwsLambdaPrepareRollbackTask.class);
   }
 
   private void registerSecretManagementBindings() {

@@ -114,7 +114,7 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
     OptionalSweepingOutput awsLambdaPrepareRollbackDataOptional =
             executionSweepingOutputService.resolveOptional(ambiance,
                     RefObjectUtils.getSweepingOutputRefObject(
-                            stepFnq + "." + OutcomeExpressionConstants.AWS_LAMBDA_PREPARE_ROLLBACK_OUTCOME));
+                            stepFnq + "." + OutcomeExpressionConstants.AWS_LAMBDA_FUNCTION_PREPARE_ROLLBACK_OUTCOME));
 
     if (!awsLambdaPrepareRollbackDataOptional.isFound()) {
       return skipTaskRequest(AWS_LAMBDA_DEPLOYMENT_STEP_MISSING);

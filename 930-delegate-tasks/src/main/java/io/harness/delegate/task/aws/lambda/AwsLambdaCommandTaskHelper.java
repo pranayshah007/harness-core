@@ -304,7 +304,7 @@ public class AwsLambdaCommandTaskHelper {
     throw new InvalidRequestException("Not Support ArtifactConfig Type");
   }
 
-  private AwsInternalConfig getAwsInternalConfig(AwsConnectorDTO awsConnectorDTO, String region) {
+  public AwsInternalConfig getAwsInternalConfig(AwsConnectorDTO awsConnectorDTO, String region) {
     AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO);
     awsInternalConfig.setDefaultRegion(region);
     return awsInternalConfig;
