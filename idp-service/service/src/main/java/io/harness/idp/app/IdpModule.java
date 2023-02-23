@@ -55,6 +55,7 @@ import io.harness.spec.server.idp.v1.EnvironmentSecretApi;
 import io.harness.spec.server.idp.v1.NamespaceApi;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
 import io.harness.threading.ThreadPool;
+import io.harness.token.TokenClientModule;
 import io.harness.version.VersionModule;
 
 import com.google.common.collect.ImmutableList;
@@ -157,6 +158,8 @@ public class IdpModule extends AbstractModule {
     install(new SecretNGManagerClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ConnectorResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new TokenClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
 
     bind(IdpConfiguration.class).toInstance(appConfig);

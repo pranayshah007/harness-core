@@ -134,3 +134,6 @@ replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_F
 replace_key_value backstageSaToken "$BACKSTAGE_SA_TOKEN"
 replace_key_value backstageSaCaCrt "$BACKSTAGE_SA_CA_CRT"
 replace_key_value backstageMasterUrl "$BACKSTAGE_MASTER_URL"
+replace_key_value idpServiceSecret "$IDP_SERVICE_SECRET"
+replace_key_value jwtAuthSecret "$JWT_SERVICE_SECRET"
+replace_key_value jwtIdentityServiceSecret "$JWT_IDENTITY_SERVICE_SECRET"
