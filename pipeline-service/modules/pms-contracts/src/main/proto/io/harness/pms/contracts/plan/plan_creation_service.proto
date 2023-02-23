@@ -164,9 +164,7 @@ message Dependency {
 
 enum RollbackModeBehaviour {
   UNDEFINED_BEHAVIOUR = 0;
-  PRESERVE_SELF_ONLY = 1;
   PRESERVE = 2;
-  REPLACE = 3;
 }
 
 // TODO: Looking forward to implement this Dependency model
