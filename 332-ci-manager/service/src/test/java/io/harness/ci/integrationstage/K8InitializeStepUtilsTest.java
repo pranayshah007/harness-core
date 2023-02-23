@@ -11,7 +11,6 @@ import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.DEFAULT
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.DEFAULT_LIMIT_MILLI_CPU;
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.PLUGIN_STEP_LIMIT_CPU;
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.PLUGIN_STEP_LIMIT_MEM;
-import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.getRunStepElementConfigAsJsonNode;
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.getRunStepElementConfigWithVariables;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
@@ -41,7 +40,6 @@ import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.NumberNGVariable;
-import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.core.variables.StringNGVariable;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
