@@ -191,4 +191,25 @@ public class IdpModule extends AbstractModule {
   private void registerRequiredBindings() {
     requireBinding(HPersistence.class);
   }
+
+  @Provides
+  @Singleton
+  @Named("backstageSaToken")
+  public String backstageSaToken() {
+    return this.appConfig.getBackstageSaToken();
+  }
+
+  @Provides
+  @Singleton
+  @Named("backstageSaCaCrt")
+  public String backstageSaCaCrt() {
+    return this.appConfig.getBackstageSaCaCrt();
+  }
+
+  @Provides
+  @Singleton
+  @Named("backstageMasterUrl")
+  public String backstageMasterUrl() {
+    return this.appConfig.getBackstageMasterUrl();
+  }
 }

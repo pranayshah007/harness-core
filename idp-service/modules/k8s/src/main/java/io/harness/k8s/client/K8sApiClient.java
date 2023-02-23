@@ -17,6 +17,7 @@ import io.harness.k8s.model.KubernetesConfig.KubernetesConfigBuilder;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
@@ -32,9 +33,9 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 @Slf4j
 public class K8sApiClient implements K8sClient {
-  private static final String MASTER_URL = "MASTER_URL";
-  private static final String TOKEN = "TOKEN";
-  private static final String CA_CRT = "CA_CRT";
+  @Inject @Named("backstageSaToken") private String backstageSaToken;
+  @Inject @Named("backstageSaCaCrt") private String backstageSaCaCrt;
+  @Inject @Named("backstageMasterUrl") private String backstageMasterUrl;
   @Inject private KubernetesHelperService kubernetesHelperService;
 
   @Override
@@ -134,25 +135,23 @@ public class K8sApiClient implements K8sClient {
     return true;
   }
 
-  public static KubernetesConfig getKubernetesConfig(String namespace) {
+  @Override
+  public KubernetesConfig getKubernetesConfig(String namespace) {
     if (StringUtils.isBlank(namespace)) {
       throw new InvalidRequestException("Empty namespace");
     }
-    String masterURL = System.getenv(MASTER_URL);
-    String token = System.getenv(TOKEN);
-    if (StringUtils.isBlank(masterURL)) {
+    if (StringUtils.isBlank(backstageMasterUrl)) {
       throw new ClusterCredentialsNotFoundException("Master URL not found");
     }
-    if (StringUtils.isBlank(token)) {
+    if (StringUtils.isBlank(backstageSaToken)) {
       throw new ClusterCredentialsNotFoundException("Service Account Token not found");
     }
     KubernetesConfigBuilder builder = KubernetesConfig.builder();
-    builder.masterUrl(masterURL);
-    builder.serviceAccountTokenSupplier(() -> token);
+    builder.masterUrl(backstageMasterUrl);
+    builder.serviceAccountTokenSupplier(() -> backstageSaToken);
 
-    String caCert = System.getenv(CA_CRT);
-    if (StringUtils.isNotBlank(caCert)) {
-      builder.clientCert(caCert.toCharArray());
+    if (StringUtils.isNotBlank(backstageSaCaCrt)) {
+      builder.clientCert(backstageSaCaCrt.toCharArray());
     }
     return builder.build();
   }
