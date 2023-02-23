@@ -19,6 +19,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseType;
 import io.harness.licensing.checks.ModuleLicenseState;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
