@@ -133,6 +133,7 @@ public class ExecutionHelper {
   AccessControlClient accessControlClient;
   PipelineStageHelper pipelineStageHelper;
   NodeExecutionService nodeExecutionService;
+  RollbackModeExecutionHelper rollbackModeExecutionHelper;
 
   public PipelineEntity fetchPipelineEntity(@NotNull String accountId, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier) {
@@ -464,7 +465,8 @@ public class ExecutionHelper {
 
   public PlanExecution startExecution(String accountId, String orgIdentifier, String projectIdentifier,
       ExecutionMetadata executionMetadata, PlanExecutionMetadata planExecutionMetadata, boolean isRetry,
-      List<String> identifierOfSkipStages, String previousExecutionId, List<String> retryStagesIdentifier) {
+      List<String> identifierOfSkipStages, String previousExecutionId, List<String> retryStagesIdentifier,
+      boolean isRollbackMode) {
     long startTs = System.currentTimeMillis();
     try (AutoLogContext ignore =
              PlanCreatorUtils.autoLogContext(executionMetadata, accountId, orgIdentifier, projectIdentifier)) {
@@ -488,6 +490,11 @@ public class ExecutionHelper {
       if (isRetry) {
         Plan newPlan = retryExecutionHelper.transformPlan(
             plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
+        return orchestrationService.startExecution(newPlan, abstractions, executionMetadata, planExecutionMetadata);
+      }
+      if (isRollbackMode) {
+        Plan newPlan = rollbackModeExecutionHelper.transformPlanForRollbackMode(resp, previousExecutionId,
+                planExecutionMetadata.getYaml());
         return orchestrationService.startExecution(newPlan, abstractions, executionMetadata, planExecutionMetadata);
       }
       return orchestrationService.startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
