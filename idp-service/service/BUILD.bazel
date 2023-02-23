@@ -22,6 +22,9 @@ java_binary(
         "src/main/java/**/*.java",
     ]),
     data = [":resource"],
+     resources = [
+            "//idp-service/service/src/main/resources:resource",
+        ],
     main_class = "io.harness.idp.app.IdpApplication",
     visibility = ["//visibility:private"],
     deps = [
