@@ -41,7 +41,7 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
     } catch (Exception e) {
       log.error("Could not create environment secret", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(ResponseMessage.builder().message(Arrays.toString(e.getStackTrace())).build())
+          .entity(ResponseMessage.builder().message(e.getCause().toString()).build())
           .build();
     }
     EnvironmentSecretResponse secretResponse = new EnvironmentSecretResponse();
