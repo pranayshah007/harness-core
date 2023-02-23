@@ -20,6 +20,8 @@ import io.harness.idp.config.resources.ConfigManagerResourceImpl;
 import io.harness.idp.config.service.AppConfigService;
 import io.harness.idp.config.service.AppConfigServiceImpl;
 import io.harness.idp.gitintegration.factory.ConnectorProcessorFactory;
+import io.harness.idp.gitintegration.service.GitIntegrationService;
+import io.harness.idp.gitintegration.service.GitIntegrationServiceImpl;
 import io.harness.idp.namespace.resource.AccountInfoApiImpl;
 import io.harness.idp.namespace.resource.NamespaceApiImpl;
 import io.harness.idp.namespace.service.NamespaceService;
@@ -171,6 +173,7 @@ public class IdpModule extends AbstractModule {
     bind(EnvironmentSecretService.class).to(EnvironmentSecretServiceImpl.class);
     bind(StatusInfoService.class).to(StatusInfoServiceImpl.class);
     bind(NamespaceService.class).to(NamespaceServiceImpl.class);
+    bind(GitIntegrationService.class).to(GitIntegrationServiceImpl.class);
     bind(ConfigManagerResource.class).to(ConfigManagerResourceImpl.class);
     bind(EnvironmentSecretApi.class).to(EnvironmentSecretApiImpl.class);
     bind(StatusInfoApi.class).to(StatusInfoApiImpl.class);
