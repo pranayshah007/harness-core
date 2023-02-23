@@ -251,10 +251,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
       @Provides
       @Singleton
       List<YamlSchemaRootClass> yamlSchemaRootClasses() {
-        return ImmutableList.<YamlSchemaRootClass>builder()
-            .addAll(CiBeansRegistrars.yamlSchemaRegistrars)
-            .addAll(SscaBeansRegistrar.yamlSchemaRegistrars)
-            .build();
+        return ImmutableList.<YamlSchemaRootClass>builder().addAll(CiBeansRegistrars.yamlSchemaRegistrars).build();
       }
     });
 
