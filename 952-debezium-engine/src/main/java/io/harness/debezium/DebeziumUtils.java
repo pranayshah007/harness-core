@@ -46,8 +46,8 @@ public class DebeziumUtils {
   public DebeziumEngine.CompletionCallback getCompletionCallback(String redisConfigJson, String redisKey,
       DebeziumController debeziumController, String collection, List<Integer> listOfErrorCodesForOffsetReset,
       String mode) {
-    try (AutoLogContext ignore = getAutoLogContext(collection, mode)) {
-      return (success, message, error) -> {
+    return (success, message, error) -> {
+      try (AutoLogContext ignore = getAutoLogContext(collection, mode)) {
         if (error instanceof InvalidRequestException
             && error.getMessage().contains("Stopping Debezium controller for collection:")) {
           log.info("Snapshot Completed for collection {}, stopping debezium controller..", collection);
@@ -60,8 +60,8 @@ public class DebeziumUtils {
         } else {
           log.info("Success: {}, message: {}, error: {}", success, message, error);
         }
-      };
-    }
+      }
+    };
   }
 
   public void resetOffset(RedisConfig redisConfig, String redisKey) {

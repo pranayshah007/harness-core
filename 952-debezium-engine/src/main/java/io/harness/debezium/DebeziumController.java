@@ -60,8 +60,8 @@ public class DebeziumController<T extends MongoCollectionChangeConsumer> impleme
   public void run() {
     while (!shouldStop.get()) {
       DebeziumEngine<ChangeEvent<String, String>> debeziumEngine = null;
-      try (AutoLogContext ignore = getAutoLogContext(
-               changeConsumer.getCollection(), props.get(DebeziumConfiguration.SNAPSHOT_MODE).toString())) {
+      String mode = props.get(DebeziumConfiguration.SNAPSHOT_MODE).toString();
+      try (AutoLogContext ignore = getAutoLogContext(changeConsumer.getCollection(), mode)) {
         try (AcquiredLock<?> aggregatorLock = acquireLock(true)) {
           long start = System.currentTimeMillis();
           if (aggregatorLock == null) {
@@ -80,7 +80,7 @@ public class DebeziumController<T extends MongoCollectionChangeConsumer> impleme
             TimeUnit.SECONDS.sleep(30);
             // Randomly releasing lock after 25-30 mins so that load can be distributed among the pods
             int result = new Random().nextInt(5) + 25;
-            if (System.currentTimeMillis() - start >= result * 60 * 1000) {
+            if (mode != "SNAPSHOT" && System.currentTimeMillis() - start >= result * 60 * 1000) {
               log.info("releasing lock {} after {} minutes", getLockName(), result);
               break;
             }
