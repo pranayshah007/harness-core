@@ -34,6 +34,7 @@ import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.template.yaml.TemplateRefHelper;
+import io.harness.template.yaml.TemplateYamlFacade;
 import io.harness.template.yaml.TemplateYamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -57,6 +58,7 @@ public class InputsValidator {
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
   @Inject private NGTemplateFeatureFlagHelperService featureFlagHelperService;
   @Inject private NgManagerReconcileClient ngManagerReconcileClient;
+  @Inject private TemplateYamlFacade templateYamlFacade;
 
   public ValidateInputsResponseDTO validateInputsForTemplate(
       String accountId, String orgId, String projectId, TemplateEntityGetResponse templateEntityGetResponse) {
@@ -116,7 +118,7 @@ public class InputsValidator {
     if (TemplateRefHelper.hasTemplateRef(yaml)) {
       Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
           accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache, false);
-      resolvedTemplatesYaml = TemplateYamlUtils.writeYamlString(resolvedTemplatesMap);
+      resolvedTemplatesYaml = templateYamlFacade.writeYamlString(resolvedTemplatesMap);
     }
     InputsValidationResponse ngManagerInputsValidationResponse =
         NGRestUtils.getResponse(ngManagerReconcileClient.validateYaml(accountId, orgId, projectId,
