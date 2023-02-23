@@ -493,8 +493,8 @@ public class ExecutionHelper {
         return orchestrationService.startExecution(newPlan, abstractions, executionMetadata, planExecutionMetadata);
       }
       if (isRollbackMode) {
-        Plan newPlan = rollbackModeExecutionHelper.transformPlanForRollbackMode(resp, previousExecutionId,
-                planExecutionMetadata.getYaml());
+        Plan newPlan = rollbackModeExecutionHelper.transformPlanForRollbackMode(
+            plan, previousExecutionId, resp.getPreservedNodesInRollbackModeList());
         return orchestrationService.startExecution(newPlan, abstractions, executionMetadata, planExecutionMetadata);
       }
       return orchestrationService.startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);

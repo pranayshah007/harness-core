@@ -346,4 +346,6 @@ public interface NodeExecutionService {
 
   // TODO(Projection): Make it paginated, has projection
   List<NodeExecution> fetchStageExecutionsWithEndTsAndStatusProjection(String planExecutionId);
+
+  List<NodeExecution> fetchNodesWithStageFQNs(String planExecutionId);
 }
