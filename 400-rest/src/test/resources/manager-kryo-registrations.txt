@@ -837,6 +837,7 @@
 5671:software.wings.api.EcsSetupElement
 5700:io.harness.waiter.StringNotifyProgressData
 5701:software.wings.service.impl.aws.model.embed.AwsLambdaDetails
+5808:io.harness.delegate.beans.DelegateCapacity
 6501:io.harness.delegate.beans.DelegateRegisterResponse
 6502:io.harness.delegate.beans.DelegateParams
 6503:io.harness.delegate.beans.DelegateConnectionHeartbeat
