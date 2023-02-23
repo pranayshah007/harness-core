@@ -16,16 +16,21 @@ import static org.joda.time.DateTimeConstants.SECONDS_PER_MINUTE;
 
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.ErrorAnalysisSummary;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.LogsAnalysisSummary;
-import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.Cluster;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterHostFrequencyData;
+import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterHostFrequencyData.ClusterHostFrequencyDataBuilder;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterSummary;
+import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterSummary.ClusterSummaryBuilder;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterType;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ControlClusterSummary;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.HostFrequencyData;
+import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.HostFrequencyData.HostFrequencyDataBuilder;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.HostSummary;
+import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.HostSummary.HostSummaryBuilder;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ResultSummary;
+import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ResultSummary.ResultSummaryBuilder;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.TimestampFrequencyCount;
+import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.TimestampFrequencyCount.TimestampFrequencyCountBuilder;
 import io.harness.cvng.analysis.beans.LogAnalysisClusterChartDTO;
 import io.harness.cvng.analysis.beans.LogAnalysisClusterDTO;
 import io.harness.cvng.analysis.beans.LogAnalysisClusterWithCountDTO;
@@ -53,8 +58,6 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.persistence.HPersistence;
-import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.PageUtils;
 
@@ -121,7 +124,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
 
       Map<Integer, ClusterSummary> clusterSummaryMap = new HashMap<>();
       deploymentLogAnalysis.getResultSummary().getTestClusterSummaries().forEach(
-          clusterSummary -> { clusterSummaryMap.put(clusterSummary.getLabel(), clusterSummary); });
+          clusterSummary -> clusterSummaryMap.put(clusterSummary.getLabel(), clusterSummary));
 
       logAnalysisClusterChartDTOList.forEach(logAnalysisClusterChartDTO -> {
         if (clusterSummaryMap.containsKey(logAnalysisClusterChartDTO.getLabel())
@@ -160,7 +163,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
     List<LogAnalysisClusterDTO> paginatedLogAnalysisClusters = paginatedLogAnalysisClusterDTO.getContent();
     Map<ClusterType, Long> eventCountByEventTypeMap =
         paginatedLogAnalysisClusters.stream()
-            .map(logAnalysisClusterDTO -> logAnalysisClusterDTO.getClusterType())
+            .map(LogAnalysisClusterDTO::getClusterType)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
     return LogAnalysisClusterWithCountDTO.builder()
@@ -344,8 +347,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
       List<TimestampFrequencyCount> timestampFrequencyCounts, long startTimeInMinutes) {
     List<TimestampFrequencyCount> newTimeStamps = new ArrayList<>();
     for (TimestampFrequencyCount timestampFrequencyCount : timestampFrequencyCounts) {
-      TimestampFrequencyCount.TimestampFrequencyCountBuilder timestampFrequencyCountBuilder =
-          timestampFrequencyCount.toBuilder();
+      TimestampFrequencyCountBuilder timestampFrequencyCountBuilder = timestampFrequencyCount.toBuilder();
       timestampFrequencyCountBuilder.timeStamp(startTimeInMinutes);
       startTimeInMinutes++;
       newTimeStamps.add(timestampFrequencyCountBuilder.build());
@@ -376,7 +378,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
         long startTimeInMinutes = instantStart.getEpochSecond() / SECONDS_PER_MINUTE;
         List<ClusterSummary> updatedTestClusterSummary = getUpdatedTestClusterSummary(
             deploymentLogAnalysis.getResultSummary().getTestClusterSummaries(), startTimeInMinutes);
-        ResultSummary.ResultSummaryBuilder resultSummaryBuilder = deploymentLogAnalysis.getResultSummary().toBuilder();
+        ResultSummaryBuilder resultSummaryBuilder = deploymentLogAnalysis.getResultSummary().toBuilder();
         resultSummaryBuilder.testClusterSummaries(updatedTestClusterSummary);
         deploymentLogAnalysis.setResultSummary(resultSummaryBuilder.build());
 
@@ -384,7 +386,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
             deploymentLogAnalysis.getResultSummary().getControlClusterHostFrequencies();
         List<ClusterHostFrequencyData> updatedControlHostFrequencyData =
             getUpdatedControlHostFrequencyData(controlHostFrequencyData, startTimeInMinutes, verificationJobType);
-        ResultSummary.ResultSummaryBuilder updatedResultSummary = deploymentLogAnalysis.getResultSummary().toBuilder();
+        ResultSummaryBuilder updatedResultSummary = deploymentLogAnalysis.getResultSummary().toBuilder();
         updatedResultSummary.controlClusterHostFrequencies(updatedControlHostFrequencyData);
         deploymentLogAnalysis.setResultSummary(updatedResultSummary.build());
 
@@ -396,10 +398,10 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
               resultSummary.getControlClusterHostFrequencies(), startTimeInMinutes, verificationJobType);
           List<ClusterSummary> testClusterSummaryUpdated =
               getUpdatedTestClusterSummary(resultSummary.getTestClusterSummaries(), startTimeInMinutes);
-          ResultSummary.ResultSummaryBuilder updatedResultSummaryBuilder = resultSummary.toBuilder();
+          ResultSummaryBuilder updatedResultSummaryBuilder = resultSummary.toBuilder();
           updatedResultSummaryBuilder.controlClusterHostFrequencies(updatedClusterHostFrequencyData)
               .testClusterSummaries(testClusterSummaryUpdated);
-          HostSummary.HostSummaryBuilder hostSummaryBuilder = hostSummary.toBuilder();
+          HostSummaryBuilder hostSummaryBuilder = hostSummary.toBuilder();
           hostSummaryBuilder.resultSummary(updatedResultSummaryBuilder.build());
           updatedHostSummaries.add(hostSummaryBuilder.build());
         }
@@ -420,11 +422,11 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
       for (HostFrequencyData frequencyData : hostFrequencyDataList) {
         List<TimestampFrequencyCount> updatedTimeStamps =
             updateTimeStamps(frequencyData.getFrequencies(), startTimeInMinutes);
-        HostFrequencyData.HostFrequencyDataBuilder hostFrequencyDataBuilder = frequencyData.toBuilder();
+        HostFrequencyDataBuilder hostFrequencyDataBuilder = frequencyData.toBuilder();
         hostFrequencyDataBuilder.frequencies(updatedTimeStamps);
         updatedHostFrequencyDataList.add(hostFrequencyDataBuilder.build());
       }
-      ClusterSummary.ClusterSummaryBuilder newClusterSummaryBuilder = clusterSummary.toBuilder();
+      ClusterSummaryBuilder newClusterSummaryBuilder = clusterSummary.toBuilder();
       newClusterSummaryBuilder.frequencyData(updatedHostFrequencyDataList);
       updatedTestClusterSummary.add(newClusterSummaryBuilder.build());
     }
@@ -438,20 +440,20 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
       startTimeInMinutes = startTimeInMinutes - 10;
     }
     List<ClusterHostFrequencyData> hostFrequencyData = new ArrayList<>();
-    if (controlHostFrequencyData == null)
+    if (controlHostFrequencyData == null) {
       return hostFrequencyData;
+    }
     for (ClusterHostFrequencyData clusterHostFrequencyData : controlHostFrequencyData) {
       List<HostFrequencyData> hostFrequencyDataList = clusterHostFrequencyData.getFrequencyData();
       List<HostFrequencyData> updatedHostFrequencyDataList = new ArrayList<>();
       for (HostFrequencyData frequencyData : hostFrequencyDataList) {
         List<TimestampFrequencyCount> updatedTimeStamps =
             updateTimeStamps(frequencyData.getFrequencies(), startTimeInMinutes);
-        HostFrequencyData.HostFrequencyDataBuilder hostFrequencyDataBuilder = frequencyData.toBuilder();
+        HostFrequencyDataBuilder hostFrequencyDataBuilder = frequencyData.toBuilder();
         hostFrequencyDataBuilder.frequencies(updatedTimeStamps);
         updatedHostFrequencyDataList.add(hostFrequencyDataBuilder.build());
       }
-      ClusterHostFrequencyData.ClusterHostFrequencyDataBuilder clusterHostFrequencyDataBuilder =
-          clusterHostFrequencyData.toBuilder();
+      ClusterHostFrequencyDataBuilder clusterHostFrequencyDataBuilder = clusterHostFrequencyData.toBuilder();
       clusterHostFrequencyDataBuilder.frequencyData(updatedHostFrequencyDataList);
       hostFrequencyData.add(clusterHostFrequencyDataBuilder.build());
     }
@@ -609,7 +611,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
 
     eventCountByEventTypeMap.put(ClusterType.BASELINE, baselineCount);
     eventCountByEventTypeMap.putAll(logAnalysisResults.stream()
-                                        .map(logAnalysisClusterDTO -> logAnalysisClusterDTO.getClusterType())
+                                        .map(LogAnalysisRadarChartListDTO::getClusterType)
                                         .collect(Collectors.groupingBy(Function.identity(), Collectors.counting())));
     List<EventCount> eventCounts =
         ClusterType.getNonBaselineValues()
@@ -721,8 +723,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
       List<ClusterHostFrequencyData> filteredClusterClusterHostFrequencies = getFilteredControlClusterHostFrequencies(
           deploymentLogAnalysis.getResultSummary().getControlClusterHostFrequencies(),
           deploymentLogAnalysisFilter.getHostNames());
-      ResultSummary.ResultSummaryBuilder filteredResultSummaryBuilder =
-          deploymentLogAnalysis.getResultSummary().toBuilder();
+      ResultSummaryBuilder filteredResultSummaryBuilder = deploymentLogAnalysis.getResultSummary().toBuilder();
       filteredResultSummaryBuilder.testClusterSummaries(testClusterSummaryList)
           .controlClusterHostFrequencies(filteredClusterClusterHostFrequencies)
           .build();
@@ -811,8 +812,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
     for (ClusterHostFrequencyData clusterHostFrequencyData : controlClusterHostFrequencies) {
       List<HostFrequencyData> hostFrequencyDataList =
           getFilteredHostFrequencyDataList(clusterHostFrequencyData.getFrequencyData(), hostNames);
-      ClusterHostFrequencyData.ClusterHostFrequencyDataBuilder clusterHostFrequencyDataBuilder =
-          clusterHostFrequencyData.toBuilder();
+      ClusterHostFrequencyDataBuilder clusterHostFrequencyDataBuilder = clusterHostFrequencyData.toBuilder();
       clusterHostFrequencyDataBuilder.frequencyData(hostFrequencyDataList);
       filteredClusterHostFrequencyData.add(clusterHostFrequencyDataBuilder.build());
     }
@@ -824,7 +824,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
     List<ClusterSummary> filteredClusterSummary = new ArrayList<>();
     for (ClusterSummary c : originalClusterSummaryList) {
       List<HostFrequencyData> hostFrequencyDataList = getFilteredHostFrequencyDataList(c.getFrequencyData(), hostNames);
-      ClusterSummary.ClusterSummaryBuilder clusterSummaryBuilder = c.toBuilder();
+      ClusterSummaryBuilder clusterSummaryBuilder = c.toBuilder();
       clusterSummaryBuilder.frequencyData(hostFrequencyDataList);
       filteredClusterSummary.add(clusterSummaryBuilder.build());
     }
@@ -916,7 +916,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
     for (Long time = startTimeMinutes; time < endTimeMinutes; time++) {
       List<Double> countList = timeStampFrequencyCountMap.get(time);
       double avg;
-      if (countList == null || countList.isEmpty()) {
+      if (isEmpty(countList)) {
         avg = 0.0;
       } else {
         avg = countList.stream().mapToDouble(i -> i).sum() / countList.size();
@@ -958,7 +958,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
     for (Long time = startTimeMinutes; time < endTimeInMinutes; time++) {
       List<Double> countList = timeStampFrequencyCountMap.get(time);
       double sum;
-      if (countList == null || countList.isEmpty()) {
+      if (isEmpty(countList)) {
         sum = 0.0;
       } else {
         sum = countList.stream().mapToDouble(i -> i).sum();

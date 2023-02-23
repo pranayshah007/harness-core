@@ -7,17 +7,24 @@
 
 package io.harness.cvng.core.services.impl;
 
+import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterSummary;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ResultSummary;
+import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ResultSummary.ResultSummaryBuilder;
 import io.harness.cvng.analysis.entities.DeploymentLogAnalysis;
+import io.harness.cvng.analysis.entities.DeploymentLogAnalysis.DeploymentLogAnalysisKeys;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.core.beans.LogFeedback;
+import io.harness.cvng.core.beans.LogFeedback.LogFeedbackBuilder;
 import io.harness.cvng.core.beans.LogFeedbackHistory;
+import io.harness.cvng.core.beans.LogFeedbackHistory.LogFeedbackHistoryBuilder;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ProjectPathParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
 import io.harness.cvng.core.entities.LogFeedbackEntity;
+import io.harness.cvng.core.entities.LogFeedbackEntity.LogFeedbackEntityBuilder;
 import io.harness.cvng.core.entities.LogFeedbackHistoryEntity;
 import io.harness.cvng.core.services.api.LogFeedbackService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
@@ -26,8 +33,6 @@ import io.harness.persistence.HPersistence;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.UserPrincipal;
 
-import com.google.inject.Inject;
-import dev.morphia.query.UpdateOperations;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +53,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
         hPersistence.createUpdateOperations(DeploymentLogAnalysis.class);
     for (DeploymentLogAnalysis deploymentLogAnalysis : deploymentLogAnalyses) {
       ResultSummary resultSummary = deploymentLogAnalysis.getResultSummary();
-      ResultSummary.ResultSummaryBuilder resultSummaryBuilder = resultSummary.toBuilder();
+      ResultSummaryBuilder resultSummaryBuilder = resultSummary.toBuilder();
       List<ClusterSummary> clusterSummaryList = resultSummary.getTestClusterSummaries();
       List<ClusterSummary> updatedClusterSummaryList = new ArrayList<>();
       for (ClusterSummary clusterSummary : clusterSummaryList) {
@@ -63,7 +68,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
         updatedClusterSummaryList.add(clusterSummaryBuilder.build());
       }
       resultSummaryBuilder.testClusterSummaries(updatedClusterSummaryList);
-      updateOperations.set(DeploymentLogAnalysis.DeploymentLogAnalysisKeys.resultSummary, resultSummaryBuilder.build());
+      updateOperations.set(DeploymentLogAnalysisKeys.resultSummary, resultSummaryBuilder.build());
       hPersistence.update(deploymentLogAnalysis, updateOperations);
     }
   }
@@ -144,8 +149,9 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
   @Override
   public LogFeedback get(ProjectPathParams projectParams, String feedbackId) {
     LogFeedbackEntity logFeedbackEntity = getLogFeedback(projectParams, feedbackId);
-    if (logFeedbackEntity == null)
+    if (logFeedbackEntity == null) {
       return null;
+    }
     return LogFeedback.builder()
         .feedbackId(feedbackId)
         .sampleMessage(logFeedbackEntity.getSampleMessage())
@@ -215,7 +221,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
   }
 
   private LogFeedback getLogFeedback(LogFeedbackEntity logFeedbackEntity) {
-    LogFeedback.LogFeedbackBuilder logFeedbackBuilder =
+    LogFeedbackBuilder logFeedbackBuilder =
         LogFeedback.builder()
             .feedbackId(logFeedbackEntity.getFeedbackId())
             .feedbackScore(LogFeedback.FeedbackScore.valueOf(logFeedbackEntity.getFeedbackScore()))
@@ -238,7 +244,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
       List<LogFeedbackHistoryEntity> logFeedbackHistoryEntities) {
     List<LogFeedbackHistory> logFeedbackHistoryList = new ArrayList<>();
     for (LogFeedbackHistoryEntity logFeedbackHistoryEntity : logFeedbackHistoryEntities) {
-      LogFeedbackHistory.LogFeedbackHistoryBuilder logFeedbackHistoryBuilder =
+      LogFeedbackHistoryBuilder logFeedbackHistoryBuilder =
           LogFeedbackHistory.builder()
               .logFeedback(getLogFeedback(logFeedbackHistoryEntity.getLogFeedbackEntity()))
               .createdBy(logFeedbackHistoryEntity.getCreatedByUser())
@@ -255,19 +261,18 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
   }
 
   public LogFeedbackEntity getLogFeedbackEntity(ProjectParams projectParams, LogFeedback logFeedback) {
-    LogFeedbackEntity.LogFeedbackEntityBuilder logFeedbackEntityBuilder =
-        LogFeedbackEntity.builder()
-            .projectIdentifier(projectParams.getProjectIdentifier())
-            .accountIdentifier(projectParams.getAccountIdentifier())
-            .orgIdentifier(projectParams.getOrgIdentifier())
-            .feedbackId(logFeedback.getFeedbackId())
-            .description(logFeedback.getDescription())
-            .feedbackScore(logFeedback.getFeedbackScore().toString());
+    LogFeedbackEntityBuilder logFeedbackEntityBuilder = LogFeedbackEntity.builder()
+                                                            .projectIdentifier(projectParams.getProjectIdentifier())
+                                                            .accountIdentifier(projectParams.getAccountIdentifier())
+                                                            .orgIdentifier(projectParams.getOrgIdentifier())
+                                                            .feedbackId(logFeedback.getFeedbackId())
+                                                            .description(logFeedback.getDescription())
+                                                            .feedbackScore(logFeedback.getFeedbackScore().toString());
     return logFeedbackEntityBuilder.build();
   }
 
   public LogFeedback getLogFeedbackFromFeedbackEntity(LogFeedbackEntity logFeedbackEntity) {
-    LogFeedback.LogFeedbackBuilder logFeedbackBuilder =
+    LogFeedbackBuilder logFeedbackBuilder =
         LogFeedback.builder()
             .description(logFeedbackEntity.getDescription())
             .feedbackScore(LogFeedback.FeedbackScore.valueOf(logFeedbackEntity.getFeedbackScore()))
