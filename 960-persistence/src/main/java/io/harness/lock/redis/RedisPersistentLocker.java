@@ -102,6 +102,7 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
     try {
       return acquireLock(name, timeout);
     } catch (WingsException exception) {
+      log.error("[OutboxEventPollJobDebug] Lock Acquire Exception", exception);
       return null;
     }
   }

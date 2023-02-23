@@ -61,6 +61,7 @@ public class OutboxEventPollJob implements Runnable {
   @Override
   public void run() {
     try {
+      log.info("[OutboxEventPollJobDebug] Maintenance Flag: [{}]", getMaintenanceFlag());
       if (!getMaintenanceFlag()) {
         pollAndHandleOutboxEvents();
       }
@@ -78,6 +79,7 @@ public class OutboxEventPollJob implements Runnable {
       List<OutboxEvent> outboxEvents;
       try {
         outboxEvents = outboxService.list(outboxEventFilter);
+        log.info("[OutboxEventPollJobDebug] Fetched {} events", outboxEvents.size());
       } catch (InstantiationError error) {
         log.error("InstantiationError occurred while fetching entries from the outbox", error);
         return;
